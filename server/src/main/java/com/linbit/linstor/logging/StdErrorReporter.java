@@ -155,7 +155,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             output = openReportFile(logName);
 
             // Error report header
-            reportHeader(output, reportNr);
+            reportHeader(output, reportNr, client);
 
             // Report the error and any nested errors
             int loopCtr = 0;
@@ -267,7 +267,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 output = openReportFile(logName);
 
                 // Error report header
-                reportHeader(output, reportNr);
+                reportHeader(output, reportNr, client);
 
                 reportLinStorException(output, errorInfo);
 

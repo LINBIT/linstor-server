@@ -135,7 +135,7 @@ public abstract class BaseErrorReporter
         }
     }
 
-    void reportHeader(PrintStream output, long reportNr)
+    void reportHeader(PrintStream output, long reportNr, Peer client)
     {
         output.print(String.format("ERROR REPORT %s-%06d\n\n", instanceId, reportNr));
         output.println(SECTION_SEPARATOR);
@@ -147,6 +147,10 @@ public abstract class BaseErrorReporter
         output.printf(ERROR_FIELD_FORMAT, "Build time:", LinStor.VERSION_INFO_PROVIDER.getBuildTime());
         output.printf(ERROR_FIELD_FORMAT, "Error time:", TIMESTAMP_FORMAT.format(new Date()));
         output.printf(ERROR_FIELD_FORMAT, "Node:", nodeName);
+        if (client != null)
+        {
+            output.printf(ERROR_FIELD_FORMAT, "Peer:", client.toString());
+        }
         output.println();
         output.println(SECTION_SEPARATOR);
         output.println();
