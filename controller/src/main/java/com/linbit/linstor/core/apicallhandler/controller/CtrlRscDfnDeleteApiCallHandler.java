@@ -34,10 +34,11 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -203,10 +204,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         else
         {
             boolean hasDisklessResources = false;
-            Iterator<Resource> rscIterator = getRscIteratorPrivileged(rscDfn);
-            while (rscIterator.hasNext())
+            for (Resource rsc : getRscStreamPrivileged(rscDfn).collect(Collectors.toList()))
             {
-                Resource rsc = rscIterator.next();
                 if (isDisklessPriveleged(rsc))
                 {
                     markDeletedPrivileged(rsc);
@@ -259,10 +258,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
         else
         {
-            Iterator<Resource> rscIterator = getRscIteratorPrivileged(rscDfn);
-            while (rscIterator.hasNext())
+            for (Resource rsc : getRscStreamPrivileged(rscDfn).collect(Collectors.toList()))
             {
-                Resource rsc = rscIterator.next();
                 if (isDisklessPriveleged(rsc))
                 {
                     deletePriveleged(rsc);
@@ -340,18 +337,18 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
     }
 
-    private Iterator<Resource> getRscIteratorPrivileged(ResourceDefinitionData rscDfn)
+    private Stream<Resource> getRscStreamPrivileged(ResourceDefinitionData rscDfn)
     {
-        Iterator<Resource> iterator;
+        Stream<Resource> stream;
         try
         {
-            iterator = rscDfn.iterateResource(apiCtx);
+            stream = rscDfn.streamResource(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ImplementationError(accDeniedExc);
         }
-        return iterator;
+        return stream;
     }
 
     private boolean hasSnapshotsPriveleged(ResourceDefinition rscDfn)

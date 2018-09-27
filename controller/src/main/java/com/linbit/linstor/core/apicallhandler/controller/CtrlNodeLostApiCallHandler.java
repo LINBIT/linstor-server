@@ -177,7 +177,7 @@ public class CtrlNodeLostApiCallHandler
 
         // If the node has no resources, then there should not be any volumes referenced
         // by the storage pool -- double check and delete storage pools
-        Iterator<StorPool> storPoolIterator = getStorPoolIterator(nodeData);
+        Iterator<StorPool> storPoolIterator = getStorPoolIteratorPriveleged(nodeData);
         while (storPoolIterator.hasNext())
         {
             StorPool storPool = storPoolIterator.next();
@@ -314,7 +314,7 @@ public class CtrlNodeLostApiCallHandler
         return stream;
     }
 
-    private Iterator<StorPool> getStorPoolIterator(Node node)
+    private Iterator<StorPool> getStorPoolIteratorPriveleged(Node node)
     {
         Iterator<StorPool> iterateStorPools;
         try
