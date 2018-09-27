@@ -8,6 +8,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.StltUpdateTracker;
@@ -22,6 +23,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import reactor.core.publisher.Flux;
 
 /**
  * Notifies the device manager to run resource operations (create/delete/...) on all resources
@@ -171,7 +173,11 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                 StltUpdateTracker updTracker = deviceManager.getUpdateTracker();
                 for (Map.Entry<ResourceName, UUID> entry : slctRsc.entrySet())
                 {
-                    updTracker.updateResource(entry.getValue(), entry.getKey(), localNodeName);
+                    Flux<ApiCallRc> fluxObj = updTracker.updateResource(
+                        entry.getValue(), entry.getKey(), localNodeName
+                    );
+                    // Subscribe a noop consumer
+                    fluxObj.subscribe(rc -> {});
                 }
 
                 if (nameMatcher == null)
@@ -220,7 +226,11 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                         Resource rsc = rscDfn.getResource(accCtx, localNodeName);
                         if (rsc != null)
                         {
-                            deviceManager.getUpdateTracker().updateResource(rsc.getUuid(), rscName, localNodeName);
+                            Flux<ApiCallRc> fluxObj = deviceManager.getUpdateTracker().updateResource(
+                                rsc.getUuid(), rscName, localNodeName
+                            );
+                            // Subscribe a noop consumer
+                            fluxObj.subscribe(rc -> {});
                             debugOut.println(
                                 "Device manager notified to adjust the resource '" +
                                 rscName.displayValue + "'"
