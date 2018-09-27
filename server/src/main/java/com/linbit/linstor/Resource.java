@@ -159,7 +159,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         Map<String, String> getProps();
         long getFlags();
         List<? extends Volume.VlmApi> getVlmList();
-        int getLocalRscNodeId();
+        Integer getLocalRscNodeId();
     }
 
     /**

@@ -336,7 +336,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
                 .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
                     updateResponses,
-                    nodeName,
+                    Collections.singleton(nodeName),
                     actionSelf,
                     actionPeer
                 ));
@@ -438,7 +438,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
             .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
                 updateResponses,
-                nodeName,
+                Collections.singleton(nodeName),
                 actionSelf,
                 actionPeer
             ));

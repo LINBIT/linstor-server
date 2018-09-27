@@ -12,6 +12,8 @@ import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 
 import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 public class ResponseUtils
@@ -236,12 +238,12 @@ public class ResponseUtils
         String messageFormat
     )
     {
-        return translateDeploymentSuccess(responses, null, messageFormat, messageFormat);
+        return translateDeploymentSuccess(responses, Collections.emptySet(), messageFormat, messageFormat);
     }
 
     public static Flux<ApiCallRc> translateDeploymentSuccess(
         Flux<Tuple2<NodeName, ApiCallRc>> responses,
-        NodeName nodeName,
+        Collection<NodeName> nodeNames,
         String messageFormatSelf,
         String messageFormatPeer
     )
@@ -255,7 +257,7 @@ public class ResponseUtils
                 {
                     if (rcEntry.getReturnCode() == ApiConsts.MODIFIED)
                     {
-                        String messageFormat = nodeName == null || nodeName.equals(responseNodeName) ?
+                        String messageFormat = nodeNames.contains(responseNodeName) ?
                             messageFormatSelf : messageFormatPeer;
                         if (messageFormat != null)
                         {

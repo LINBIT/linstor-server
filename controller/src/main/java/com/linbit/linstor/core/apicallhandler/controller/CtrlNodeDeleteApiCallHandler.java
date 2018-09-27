@@ -40,6 +40,7 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -236,7 +237,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             responseFlux = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
                 .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
                     updateResponses,
-                    nodeName,
+                    Collections.singleton(nodeName),
                     "Deleted resource {1} on {0}",
                     "Notified {0} that resource {1} on ''" + nodeName + "'' is being deleted"
                 ))

@@ -11,6 +11,7 @@ import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class VlmApiData implements VlmApi
 {
@@ -24,23 +25,13 @@ public class VlmApiData implements VlmApi
     @Override
     public UUID getVlmUuid()
     {
-        UUID vlmUuid = null;
-        if (vlm.hasVlmUuid())
-        {
-            vlmUuid = UUID.fromString(vlm.getVlmUuid());
-        }
-        return null;
+        return vlm.hasVlmUuid() ? UUID.fromString(vlm.getVlmUuid()) : null;
     }
 
     @Override
     public UUID getVlmDfnUuid()
     {
-        UUID vlmDfnUuid = null;
-        if (vlm.hasVlmDfnUuid())
-        {
-            vlmDfnUuid = UUID.fromString(vlm.getVlmDfnUuid());
-        }
-        return null;
+        return vlm.hasVlmDfnUuid() ? UUID.fromString(vlm.getVlmDfnUuid()) : null;
     }
 
     @Override
@@ -52,12 +43,7 @@ public class VlmApiData implements VlmApi
     @Override
     public UUID getStorPoolUuid()
     {
-        UUID vlmUuid = null;
-        if (vlm.hasStorPoolUuid())
-        {
-            vlmUuid = UUID.fromString(vlm.getStorPoolUuid());
-        }
-        return null;
+        return vlm.hasStorPoolUuid() ? UUID.fromString(vlm.getStorPoolUuid()) : null;
     }
 
     @Override
@@ -121,34 +107,22 @@ public class VlmApiData implements VlmApi
     @Override
     public Map<String, String> getVlmProps()
     {
-        Map<String, String> ret = new HashMap<>();
-        for (LinStorMapEntry entry : vlm.getVlmPropsList())
-        {
-            ret.put(entry.getKey(), entry.getValue());
-        }
-        return ret;
+        return vlm.getVlmPropsList().stream()
+            .collect(Collectors.toMap(LinStorMapEntry::getKey, LinStorMapEntry::getValue));
     }
 
     @Override
     public Map<String, String> getStorPoolDfnProps()
     {
-        Map<String, String> ret = new HashMap<>();
-        for (LinStorMapEntry entry : vlm.getStorPoolDfnPropsList())
-        {
-            ret.put(entry.getKey(), entry.getValue());
-        }
-        return ret;
+        return vlm.getStorPoolDfnPropsList().stream()
+            .collect(Collectors.toMap(LinStorMapEntry::getKey, LinStorMapEntry::getValue));
     }
 
     @Override
     public Map<String, String> getStorPoolProps()
     {
-        Map<String, String> ret = new HashMap<>();
-        for (LinStorMapEntry entry : vlm.getStorPoolPropsList())
-        {
-            ret.put(entry.getKey(), entry.getValue());
-        }
-        return ret;
+        return vlm.getStorPoolPropsList().stream()
+            .collect(Collectors.toMap(LinStorMapEntry::getKey, LinStorMapEntry::getValue));
     }
 
     public static Vlm toVlmProto(final VlmApi vlmApi)

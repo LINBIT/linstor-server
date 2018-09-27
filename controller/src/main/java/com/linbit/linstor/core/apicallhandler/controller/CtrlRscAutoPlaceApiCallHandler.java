@@ -218,7 +218,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     ResourceData rsc = rscApiCallHandler.createResourceDb(
                         node.getName().displayValue,
                         rscNameStr,
-                        Collections.emptyList(),
+                        0L,
                         rscPropsMap,
                         Collections.emptyList(),
                         null
@@ -244,9 +244,6 @@ public class CtrlRscAutoPlaceApiCallHandler
                     // TODO: allow other diskless storage pools
                     rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
 
-                    List<String> flagList = new ArrayList<>();
-                    flagList.add(RscFlags.DISKLESS.name());
-
                     // deploy resource disklessly on remaining nodes
                     for (Node disklessNode : disklessNodeList)
                     {
@@ -254,7 +251,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                             rscApiCallHandler.createResourceDb(
                                 disklessNode.getName().displayValue,
                                 rscNameStr,
-                                flagList,
+                                RscFlags.DISKLESS.flagValue,
                                 rscPropsMap,
                                 Collections.emptyList(),
                                 null

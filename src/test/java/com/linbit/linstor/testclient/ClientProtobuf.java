@@ -936,7 +936,7 @@ public class ClientProtobuf implements Runnable
             apiCallId,
             ApiConsts.API_CRT_RSC,
             MsgCrtRsc.newBuilder()
-                .setRsc(
+                .addRscs(
                     rscBuilder.build()
                 )
                 .build()

@@ -104,15 +104,9 @@ class CtrlRscCrtApiHelper
         ResourceDefinitionData rscDfn,
         Node node,
         NodeId nodeId,
-        List<String> flagList
+        long flags
     )
     {
-        Resource.RscFlags[] flags = Resource.RscFlags.restoreFlags(
-            FlagsHelper.fromStringList(
-                Resource.RscFlags.class,
-                flagList
-            )
-        );
         ResourceData rsc;
         try
         {
@@ -124,7 +118,7 @@ class CtrlRscCrtApiHelper
                 rscDfn,
                 node,
                 nodeId,
-                flags
+                Resource.RscFlags.restoreFlags(flags)
             );
 
             rsc.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_PEER_SLOTS, Short.toString(peerSlots));

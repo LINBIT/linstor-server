@@ -994,7 +994,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ctrlRscApiCallHandler.createResourceDb(
                     stltNameStr,
                     rscNameStrRef,
-                    Collections.emptyList(),
+                    0L,
                     rscPropsMap,
                     Collections.emptyList(),
                     null

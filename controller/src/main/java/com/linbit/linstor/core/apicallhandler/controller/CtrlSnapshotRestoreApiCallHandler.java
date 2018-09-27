@@ -176,7 +176,7 @@ public class CtrlSnapshotRestoreApiCallHandler
 
         NodeId nodeId = ctrlRscCrtApiHelper.getNextFreeNodeId(toRscDfn);
 
-        ResourceData rsc = ctrlRscCrtApiHelper.createResource(toRscDfn, node, nodeId, Collections.emptyList());
+        ResourceData rsc = ctrlRscCrtApiHelper.createResource(toRscDfn, node, nodeId, 0L);
 
         Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(toRscDfn);
         while (toVlmDfnIter.hasNext())

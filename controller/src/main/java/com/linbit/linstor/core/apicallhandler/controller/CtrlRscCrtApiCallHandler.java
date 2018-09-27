@@ -1,12 +1,13 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.InvalidNameException;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -15,6 +16,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
@@ -28,6 +30,7 @@ import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -35,10 +38,14 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
@@ -47,6 +54,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 @Singleton
 public class CtrlRscCrtApiCallHandler
 {
+    private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlRscApiCallHandler ctrlRscApiCallHandler;
@@ -60,6 +68,7 @@ public class CtrlRscCrtApiCallHandler
 
     @Inject
     public CtrlRscCrtApiCallHandler(
+        @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlRscApiCallHandler ctrlRscApiCallHandlerRef,
@@ -71,6 +80,7 @@ public class CtrlRscCrtApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
+        apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlRscApiCallHandler = ctrlRscApiCallHandlerRef;
@@ -83,111 +93,151 @@ public class CtrlRscCrtApiCallHandler
         peerAccCtx = peerAccCtxRef;
     }
 
-    public Flux<ApiCallRc> createResource(
-        String nodeNameStr,
-        String rscNameStr,
-        List<String> flagList,
-        Map<String, String> rscPropsMap,
-        List<Volume.VlmApi> vlmApiList,
-        Integer nodeIdInt
-    )
+    public Flux<ApiCallRc> createResource(List<Resource.RscApi> rscApiList)
     {
-        ResponseContext context = makeRscContext(
-            ApiOperation.makeRegisterOperation(),
-            nodeNameStr,
-            rscNameStr
-        );
+        List<String> rscNames = rscApiList.stream()
+            .map(Resource.RscApi::getName)
+            .sorted()
+            .distinct()
+            .collect(Collectors.toList());
 
-        return scopeRunner
-            .fluxInTransactionalScope(
-                LockGuard.createDeferred(
-                    nodesMapLock.writeLock(),
-                    rscDfnMapLock.writeLock()
-                ),
-                () -> createResourceInTransaction(
-                    nodeNameStr,
-                    rscNameStr,
-                    flagList,
-                    rscPropsMap,
-                    vlmApiList,
-                    nodeIdInt,
-                    context
-                )
-            )
-            .transform(responses -> responseConverter.reportingExceptions(context, responses));
-    }
-
-    private Flux<ApiCallRc> createResourceInTransaction(
-        String nodeNameStr,
-        String rscNameStr,
-        List<String> flagList,
-        Map<String, String> rscPropsMap,
-        List<Volume.VlmApi> vlmApiList,
-        Integer nodeIdInt,
-        ResponseContext context
-    )
-        throws InvalidNameException
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        ResourceData rsc = ctrlRscApiCallHandler.createResourceDb(
-            nodeNameStr,
-            rscNameStr,
-            flagList,
-            rscPropsMap,
-            vlmApiList,
-            nodeIdInt
-        ).extractApiCallRc(responses);
-
-        ctrlTransactionHelper.commit();
-
-        responseConverter.addWithOp(responses, context,
-            ApiSuccessUtils.defaultRegisteredEntry(rsc.getUuid(), getRscDescriptionInline(rsc)));
-
-        responses.addEntries(makeVolumeRegisteredEntries(rsc));
-
-        NodeName nodeName = rsc.getAssignedNode().getName();
-        ResourceName rscName = rsc.getDefinition().getName();
-
-        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-            .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
-                updateResponses,
-                nodeName,
-                "Created resource on {0}",
-                "Added peer ''" + nodeName.displayValue + "'' to resource on {0}"
-            ));
-
-        Mono<ApiCallRc> resourceReadyResponses;
-        if (rsc.getVolumeCount() == 0)
+        Flux<ApiCallRc> response;
+        if (rscNames.isEmpty())
         {
-            // Do DRBD resource is created when no volumes are present, so do not wait for it to be ready
-            resourceReadyResponses = Mono.just(responseConverter.addContextAll(
-                makeNoVolumesMessage(), context, false));
-        }
-        else if (allDiskless(rsc.getDefinition()))
-        {
-            resourceReadyResponses = Mono.just(makeAllDisklessMessage());
-        }
-        else if (supportsDrbd(rsc))
-        {
-            resourceReadyResponses = eventWaiter
-                .waitForStream(
-                    resourceStateEvent.get(),
-                    ObjectIdentifier.resource(nodeName, rscName)
-                )
-                .skipUntil(UsageState::getResourceReady)
-                .next()
-                .thenReturn(makeResourceReadyMessage(context, nodeName, rscName));
+            response = Flux.just(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
+                ApiConsts.WARN_NOT_FOUND, "No resources specified"
+            )));
         }
         else
         {
-            resourceReadyResponses = Mono.empty();
+            if (rscNames.size() > 1)
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_RSC_NAME,
+                    "All resources to be created must belong to the same resource definition"
+                ));
+            }
+
+            String rscNameStr = rscNames.get(0);
+
+            String nodeNamesStr = rscApiList.stream()
+                .map(Resource.RscApi::getNodeName)
+                .map(nodeNameStr -> "'" + nodeNameStr + "'")
+                .collect(Collectors.joining(", "));
+
+            Map<String, String> objRefs = new TreeMap<>();
+            objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+
+            ResponseContext context = new ResponseContext(
+                ApiOperation.makeRegisterOperation(),
+                "Node(s): " + nodeNamesStr + ", Resource: '" + rscNameStr + "'",
+                "resource '" + rscNameStr + "' on node(s) " + nodeNamesStr + "",
+                ApiConsts.MASK_RSC,
+                objRefs
+            );
+
+            response = scopeRunner
+                .fluxInTransactionalScope(
+                    LockGuard.createDeferred(
+                        nodesMapLock.writeLock(),
+                        rscDfnMapLock.writeLock()
+                    ),
+                    () -> createResourceInTransaction(rscApiList, context)
+                )
+                .transform(responses -> responseConverter.reportingExceptions(context, responses));
+        }
+
+        return response;
+    }
+
+    /**
+     * @param rscApiList Resources to create; at least one; all must belong to the same resource definition
+     */
+    private Flux<ApiCallRc> createResourceInTransaction(List<Resource.RscApi> rscApiList, ResponseContext context)
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        List<Resource> deployedResources = new ArrayList<>();
+        for (Resource.RscApi rscApi : rscApiList)
+        {
+            deployedResources.add(ctrlRscApiCallHandler.createResourceDb(
+                rscApi.getNodeName(),
+                rscApi.getName(),
+                rscApi.getFlags(),
+                rscApi.getProps(),
+                rscApi.getVlmList(),
+                rscApi.getLocalRscNodeId()
+            ).extractApiCallRc(responses));
+        }
+
+        ctrlTransactionHelper.commit();
+
+        for (Resource rsc : deployedResources)
+        {
+            responseConverter.addWithOp(responses, context,
+                ApiSuccessUtils.defaultRegisteredEntry(rsc.getUuid(), getRscDescriptionInline(rsc)));
+
+            responses.addEntries(makeVolumeRegisteredEntries(rsc));
+        }
+
+        ResourceDefinition rscDfn = deployedResources.get(0).getDefinition();
+        ResourceName rscName = rscDfn.getName();
+
+        Set<NodeName> nodeNames = deployedResources.stream()
+            .map(Resource::getAssignedNode)
+            .map(Node::getName)
+            .collect(Collectors.toSet());
+
+        String nodeNamesStr = nodeNames.stream()
+            .map(NodeName::getDisplayName)
+            .map(displayName -> "''" + displayName + "''")
+            .collect(Collectors.joining(", "));
+
+        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
+            .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                updateResponses,
+                nodeNames,
+                "Created resource {1} on {0}",
+                "Added peer(s) " + nodeNamesStr + " to resource {1} on {0}"
+            ));
+
+        Publisher<ApiCallRc> readyResponses;
+        if (getVolumeDfnCountPriveleged(rscDfn) == 0)
+        {
+            // No DRBD resource is created when no volumes are present, so do not wait for it to be ready
+            readyResponses = Mono.just(responseConverter.addContextAll(
+                makeNoVolumesMessage(), context, false));
+        }
+        else if (allDiskless(rscDfn))
+        {
+            readyResponses = Mono.just(makeAllDisklessMessage());
+        }
+        else
+        {
+            List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
+            for (Resource rsc : deployedResources)
+            {
+                NodeName nodeName = rsc.getAssignedNode().getName();
+                if (supportsDrbd(rsc))
+                {
+                    resourceReadyResponses.add(eventWaiter
+                        .waitForStream(
+                            resourceStateEvent.get(),
+                            ObjectIdentifier.resource(nodeName, rscName)
+                        )
+                        .skipUntil(UsageState::getResourceReady)
+                        .next()
+                        .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
+                    );
+                }
+            }
+            readyResponses = Flux.merge(resourceReadyResponses);
         }
 
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(satelliteUpdateResponses)
-            .concatWith(resourceReadyResponses)
+            .concatWith(readyResponses)
             .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
                 ignored -> Flux.just(makeResourceDidNotAppearMessage(context)))
@@ -195,7 +245,21 @@ public class CtrlRscCrtApiCallHandler
                 ignored -> Flux.just(makeEventStreamDisappearedUnexpectedlyMessage(context)));
     }
 
-    private ApiCallRc makeVolumeRegisteredEntries(ResourceData rsc)
+    private int getVolumeDfnCountPriveleged(ResourceDefinition rscDfn)
+    {
+        int volumeDfnCount;
+        try
+        {
+            volumeDfnCount = rscDfn.getVolumeDfnCount(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return volumeDfnCount;
+    }
+
+    private ApiCallRc makeVolumeRegisteredEntries(Resource rsc)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         Iterator<Volume> vlmIt = rsc.iterateVolumes();
@@ -275,7 +339,7 @@ public class CtrlRscCrtApiCallHandler
     {
         return ApiCallRcImpl.singletonApiCallRc(responseConverter.addContext(ApiCallRcImpl.simpleEntry(
             ApiConsts.CREATED,
-            "Resource ready"
+            "Resource '" + rscName + "' on '" + nodeName + "' ready"
         ), context, true));
     }
 

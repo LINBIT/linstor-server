@@ -131,7 +131,7 @@ public class CtrlRscApiCallHandler
      *
      * @param nodeNameStr
      * @param rscNameStr
-     * @param flagList
+     * @param flags
      * @param rscPropsMap
      * @param vlmApiList
      * @param nodeIdInt
@@ -141,9 +141,9 @@ public class CtrlRscApiCallHandler
     public ApiCallRcWith<ResourceData> createResourceDb(
         String nodeNameStr,
         String rscNameStr,
-        List<String> flagList,
+        long flags,
         Map<String, String> rscPropsMap,
-        List<VlmApi> vlmApiList,
+        List<? extends VlmApi> vlmApiList,
         Integer nodeIdInt
     )
     {
@@ -154,7 +154,7 @@ public class CtrlRscApiCallHandler
 
         NodeId nodeId = resolveNodeId(nodeIdInt, rscDfn);
 
-        ResourceData rsc = ctrlRscCrtApiHelper.createResource(rscDfn, node, nodeId, flagList);
+        ResourceData rsc = ctrlRscCrtApiHelper.createResource(rscDfn, node, nodeId, flags);
         Props rscProps = ctrlPropsHelper.getProps(rsc);
 
         ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);

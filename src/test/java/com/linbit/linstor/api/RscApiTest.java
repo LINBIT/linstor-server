@@ -4,15 +4,20 @@ import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume.VlmApi;
+import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.RscOuterClass;
+import com.linbit.linstor.proto.apidata.RscApiData;
+import com.linbit.linstor.proto.apidata.VlmApiData;
 import com.linbit.linstor.security.GenericDbBase;
 import junitparams.JUnitParamsRunner;
 import org.junit.After;
@@ -25,6 +30,7 @@ import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -160,14 +166,15 @@ public class RscApiTest extends ApiTestBase
         public ApiCallRc executeApiCall()
         {
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-            rscCrtApiCallHandler.createResource(
-                nodeName,
-                rscName,
-                flags,
-                rscPropsMap,
-                vlmApiDataList,
-                null
-            ).subscriberContext(subscriberContext).toStream().forEach(apiCallRc::addEntries);
+            rscCrtApiCallHandler.createResource(Collections.singletonList(new RscApiData(
+                RscOuterClass.Rsc.newBuilder()
+                    .setNodeName(nodeName)
+                    .setName(rscName)
+                    .addAllRscFlags(flags)
+                    .addAllProps(ProtoMapUtils.fromMap(rscPropsMap))
+                    .addAllVlms(VlmApiData.toVlmProtoList(vlmApiDataList))
+                    .build()
+            ))).subscriberContext(subscriberContext).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
 
