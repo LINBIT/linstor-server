@@ -2,9 +2,6 @@ package com.linbit.linstor.storage;
 
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOCATED_BYTES;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOWABLE_VALUES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY_BYTES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DATA;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DURABLE_NAME;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DURABLE_NAME_FORMAT;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ENDPOINTS;
@@ -16,7 +13,6 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_OEM;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_PARAMETERS;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_RESOURCE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_VALUE_NQN;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.PATTERN_NQN;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ACTIONS;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ATTACH_RESOURCE_ACTION_INFO;
@@ -24,9 +20,6 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_BASE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_COMPOSED_NODE_ATTACH_RESOURCE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_COMPOSED_NODE_DETACH_RESOURCE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_NODES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_SERVICES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
-
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.md.MaxSizeException;
@@ -53,21 +46,14 @@ import java.util.regex.Matcher;
 
 import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
 
-public class SwordfishInitiatorDriver implements StorageDriver
+public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 {
-    private final ErrorReporter errorReporter;
-    private final SwordfishInitiatorDriverKind swordfishDriverKind;
-
-    private String hostPort;
-    private String userName;
-    private String userPw;
     private long pollAttachVlmTimeout = 1000;
     private long pollAttachVlmMaxTries = 300;
     private long pollGrepNvmeUuidTimeout = 1000;
     private long pollGrepNvmeUuidMaxTries = 300;
     private String composedNodeName;
 
-    private final RestClient restClient;
     private final Crypt crypt;
     private final CoreTimer timer;
 
@@ -79,18 +65,11 @@ public class SwordfishInitiatorDriver implements StorageDriver
         Crypt cryptRef
     )
     {
-        errorReporter = errorReporterRef;
-        swordfishDriverKind = swordfishDriverKindRef;
-        restClient = restClientRef;
+        super(errorReporterRef, swordfishDriverKindRef, restClientRef);
         timer = timerRef;
         crypt = cryptRef;
     }
 
-    @Override
-    public StorageDriverKind getKind()
-    {
-        return swordfishDriverKind;
-    }
 
     @Override
     public void startVolume(String identifier, String cryptKey, Props vlmDfnProps) throws StorageException
@@ -115,7 +94,12 @@ public class SwordfishInitiatorDriver implements StorageDriver
     }
 
     @Override
-    public String createVolume(String ignore, long size, String cryptKey, Props vlmDfnProps)
+    public String createVolume(
+        String linstorVlmId,
+        long ignoredSize,
+        String cryptKey,
+        Props vlmDfnProps
+    )
         throws StorageException, MaxSizeException, MinSizeException
     {
         String volumePath;
@@ -133,7 +117,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
 
             // TODO implement health check on composed node
 
-            volumePath = getVolumePath(ignore, cryptKey != null, vlmDfnProps);
+            volumePath = getVolumePath(linstorVlmId, cryptKey != null, vlmDfnProps);
         }
         catch (InterruptedException interruptedExc)
         {
@@ -152,7 +136,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
             SF_COMPOSED_NODE_ATTACH_RESOURCE;
         RestResponse<Map<String, Object>> attachVlmResp = restClient.execute(
             RestOp.POST,
-            hostPort + attachAction,
+            sfUrl + attachAction,
             getDefaultHeader().build(),
             MapBuilder.defaultImpl().start()
                 .put(
@@ -192,7 +176,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
 
             RestResponse<Map<String, Object>> attachRscInfoResp = restClient.execute(
                 RestOp.GET,
-                hostPort  + attachInfoAction,
+                sfUrl  + attachInfoAction,
                 getDefaultHeader().noContentType().build(),
                 (String) null
             );
@@ -241,7 +225,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
                         pollAttachVlmTimeout,
                         JSON_KEY_PARAMETERS,
                         JSON_KEY_ALLOWABLE_VALUES,
-                        hostPort  + attachInfoAction
+                        sfUrl  + attachInfoAction
                     )
                 );
             }
@@ -274,7 +258,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
         // POST to Node/$id/Action/ComposedNode.DetachResource
         RestResponse<Map<String, Object>> detachVlmResp = restClient.execute(
             RestOp.POST,
-            hostPort + detachAction,
+            sfUrl + detachAction,
             getDefaultHeader().build(),
             MapBuilder.defaultImpl().start()
             .put(
@@ -345,11 +329,6 @@ public class SwordfishInitiatorDriver implements StorageDriver
         return sfVlmId;
     }
 
-    private boolean sfVolumeExists(String sfStorSvcId, String sfVlmId) throws StorageException
-    {
-        return getSfVlm(sfStorSvcId, sfVlmId).getStatusCode() == HttpHeader.HTTP_OK;
-    }
-
     @SuppressWarnings("unchecked")
     private boolean isSfVolumeAttached(String sfStorSvcId, String sfVlmId) throws StorageException
     {
@@ -362,7 +341,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
                 SF_BASE + SF_NODES + composedNodeName + SF_ACTIONS + SF_ATTACH_RESOURCE_ACTION_INFO;
             RestResponse<Map<String, Object>> attachInfoResp = restClient.execute(
                 RestOp.GET,
-                hostPort + composedNodeAttachAction,
+                sfUrl + composedNodeAttachAction,
                 getDefaultHeader().noContentType().build(),
                 (String) null
             );
@@ -399,32 +378,11 @@ public class SwordfishInitiatorDriver implements StorageDriver
     public SizeComparison compareVolumeSize(String lsIdentifier, long requiredSize, Props vlmDfnProps)
         throws StorageException
     {
-        SizeComparison ret;
-
-        String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
-        String sfVlmId = getSfVlmId(vlmDfnProps);
-        RestResponse<Map<String, Object>> response = getSfVlm(sfStorSvcId, sfVlmId);
-
-        if (response.getStatusCode() == HttpHeader.HTTP_OK)
-        {
-            long actualSize = getLong(response.getData().get(JSON_KEY_CAPACITY_BYTES)) / KIB;
-            if (actualSize >= requiredSize)
-            {
-                ret = SizeComparison.WITHIN_TOLERANCE; // no upper bound (yet)... TODO
-            }
-            else
-            {
-                ret = SizeComparison.TOO_SMALL;
-            }
-        }
-        else
-        {
-            throw new StorageException(
-                "Could not determine size of swordfish volume: '" + lsIdentifier + "'\n" +
-                "GET returned status code: " + response.getStatusCode()
-            );
-        }
-        return ret;
+        return compareVolumeSizeImpl(
+            getSfStorSvcId(vlmDfnProps),
+            getSfVlmId(vlmDfnProps),
+            requiredSize
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -570,43 +528,6 @@ public class SwordfishInitiatorDriver implements StorageDriver
 //        );
     }
 
-    @SuppressWarnings("unchecked")
-    private long getSpace(RestResponse<Map<String, Object>> restResponse, String key) throws StorageException
-    {
-        Map<String, Object> poolData = restResponse.getData();
-        Long space = null;
-        try
-        {
-            Map<String, Object> capacity = (Map<String, Object>) poolData.get(JSON_KEY_CAPACITY);
-            Map<String, Object> capacityData = (Map<String, Object>) capacity.get(JSON_KEY_DATA);
-            Object spaceObj = capacityData.get(key);
-            if (spaceObj instanceof Integer)
-            {
-                space = ((Integer) spaceObj).longValue();
-            }
-            else
-            if (spaceObj instanceof Long)
-            {
-                space = (Long) spaceObj;
-            }
-        }
-        catch (ClassCastException ccExc)
-        {
-            throw new StorageException("Unexpected json structure in response", ccExc);
-        }
-        catch (NullPointerException npExc)
-        {
-            throw new StorageException("Unexpected null entry in response", npExc);
-        }
-        if (space == null)
-        {
-            throw new StorageException("Could not retrieve requested space");
-        }
-        // linstor uses kb as internal unit, swordfish gives us bytes
-        return space / KIB;
-
-    }
-
     @Override
     public Map<String, String> getTraits(String ignore) throws StorageException
     {
@@ -623,12 +544,8 @@ public class SwordfishInitiatorDriver implements StorageDriver
         throws StorageException
     {
         // first, check if the config is valid
-        boolean requiresHostPort = hostPort == null;
         boolean requiresComposedNodeName = composedNodeName == null;
 
-        String tmpHostPort = stltNamespace.get(StorageConstants.CONFIG_SF_URL_KEY);
-        String tmpUserName = stltNamespace.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
-        String tmpUserPw = stltNamespace.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
         String tmpComposedNodeName = nodeNamespace.get(StorageConstants.CONFIG_SF_COMPOSED_NODE_NAME_KEY);
         String tmpAttachVlmTimeout = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY);
         String tmpAttachVlmRetries = storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_ATTACH_VLM_KEY);
@@ -637,32 +554,7 @@ public class SwordfishInitiatorDriver implements StorageDriver
         String tmpGrepNvmeUuidRetries =
             storPoolNamespace.get(StorageConstants.CONFIG_SF_POLL_RETRIES_GREP_NVME_UUID_KEY);
 
-        // temporary workaround to not having to disable security to set this property on controller-level
-        if (tmpHostPort == null || tmpHostPort.isEmpty())
-        {
-            tmpHostPort = nodeNamespace.get(StorageConstants.CONFIG_SF_URL_KEY);
-        }
-        if (tmpUserName == null || tmpUserName.isEmpty())
-        {
-            tmpUserName = nodeNamespace.get(StorageConstants.CONFIG_SF_USER_NAME_KEY);
-        }
-        if (tmpUserPw == null || tmpUserPw.isEmpty())
-        {
-            tmpUserPw = nodeNamespace.get(StorageConstants.CONFIG_SF_USER_PW_KEY);
-        }
-
         StringBuilder failErrorMsg = new StringBuilder();
-        appendIfEmptyButRequired(
-                "Missing swordfish host:port specification as a single value such as \n" +
-                    "https://127.0.0.1:1234\n" +
-                    "This property has to be set globally:\n\n" +
-                    "linstor controller set-property " +
-                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + StorageConstants.CONFIG_SF_URL_KEY +
-                    " <value>\n",
-                failErrorMsg,
-                tmpHostPort,
-                requiresHostPort
-        );
         appendIfEmptyButRequired(
             "Missing swordfish composed node name\n" +
                 "This property has to be set on node level: \n\n" +
@@ -686,31 +578,15 @@ public class SwordfishInitiatorDriver implements StorageDriver
             throw new StorageException(failErrorMsg.toString());
         }
 
+        // set sf-url, username and userpw
+        super.setConfiguration(
+            storPoolNameStr,
+            storPoolNamespace,
+            nodeNamespace,
+            stltNamespace
+        );
+
         // if all was good, apply the values
-        if (tmpHostPort != null)
-        {
-            while (tmpHostPort.endsWith("/"))
-            {
-                tmpHostPort = tmpHostPort.substring(0, tmpHostPort.length() - 1); // cut the trailing '/'
-            }
-            if (!tmpHostPort.startsWith("http"))
-            {
-                tmpHostPort = "http://" + tmpHostPort;
-            }
-            if (tmpHostPort.endsWith("/redfish/v1"))
-            {
-                tmpHostPort = tmpHostPort.substring(0, tmpHostPort.lastIndexOf("/redfish/v1"));
-            }
-            hostPort = tmpHostPort + "/";
-        }
-        if (tmpUserName != null)
-        {
-            userName = tmpUserName;
-        }
-        if (tmpUserPw != null)
-        {
-            userPw = tmpUserPw;
-        }
         if (tmpAttachVlmTimeoutLong != null)
         {
             pollAttachVlmTimeout = tmpAttachVlmTimeoutLong;
@@ -733,36 +609,6 @@ public class SwordfishInitiatorDriver implements StorageDriver
         }
     }
 
-    private void appendIfEmptyButRequired(String errorMsg, StringBuilder errorMsgBuilder, String str, boolean reqStr)
-    {
-        if ((str == null || str.isEmpty()) && reqStr)
-        {
-            errorMsgBuilder.append(errorMsg);
-        }
-    }
-
-    private Long getLong(String description, StringBuilder failErrorMsg, String str)
-    {
-        Long ret = null;
-        if (str != null && !str.isEmpty())
-        {
-            try
-            {
-                ret = Long.parseLong(str);
-            }
-            catch (NumberFormatException nfe)
-            {
-                failErrorMsg
-                    .append("Configured ")
-                    .append(description)
-                    .append(" value (")
-                    .append(str)
-                    .append(") is not a number\n");
-            }
-        }
-        return ret;
-    }
-
     @Override
     public void resizeVolume(String ignore, long size, String cryptKey, Props vlmDfnProps)
         throws StorageException, MaxSizeException, MinSizeException
@@ -770,106 +616,9 @@ public class SwordfishInitiatorDriver implements StorageDriver
         throw new ImplementationError("Resizing swordfish volumes is not supported");
     }
 
-    @Override
-    public void createSnapshot(String ignore, String snapshotName) throws StorageException
-    {
-        throw new StorageException("Swordfish driver cannot create snapshots");
-    }
-
-    @Override
-    public void restoreSnapshot(
-        String sourceIdentifier,
-        String snapshotName,
-        String targetIdentifier,
-        String cryptKey,
-        Props vlmDfnProps
-    )
-        throws StorageException
-    {
-        throw new StorageException("Swordfish driver cannot create or restore snapshots");
-    }
-
-    @Override
-    public void deleteSnapshot(String identifier, String snapshotName) throws StorageException
-    {
-        throw new StorageException("Swordfish driver cannot create or delete snapshots");
-    }
-
-    @Override
-    public boolean snapshotExists(String volumeIdentifier, String snapshotName) throws StorageException
-    {
-        throw new ImplementationError("Snapshots of swordfish volumes are not supported");
-    }
-
-//    private RestResponse<Map<String, Object>> getSwordfishPool(String sfStorSvcId, String sfStorPoolId)
-//        throws StorageException
-//    {
-//        return getSwordfishResource(
-//            SF_BASE + SF_STORAGE_SERVICES + "/" + sfStorSvcId + SF_STORAGE_POOLS + "/" + sfStorPoolId
-//        );
-//    }
-
     private RestResponse<Map<String, Object>> getSfVlm(String sfStorSvcId, String sfVlmId)
         throws StorageException
     {
         return getSwordfishResource(buildVlmOdataId(sfStorSvcId, sfVlmId));
-    }
-
-    private String buildVlmOdataId(String sfStorSvcId, String sfVlmId)
-    {
-        return SF_BASE + SF_STORAGE_SERVICES + "/" + sfStorSvcId + SF_VOLUMES + "/" + sfVlmId;
-    }
-
-    private RestResponse<Map<String, Object>> getSwordfishResource(String odataId)
-        throws StorageException
-    {
-        RestResponse<Map<String, Object>> rscInfo;
-        try
-        {
-            rscInfo = restClient.execute(
-                RestOp.GET,
-                hostPort + odataId,
-                getDefaultHeader().build(),
-                (String) null
-            );
-
-            if (rscInfo.getStatusCode() != HttpHeader.HTTP_OK)
-            {
-                throw new StorageException(
-                    "Error receiving info of swordfish resource '" + odataId + "'. Status code: " +
-                    rscInfo.getStatusCode()
-                );
-            }
-        }
-        catch (IOException ioExc)
-        {
-            throw new StorageException("IO Exception", ioExc);
-        }
-        return rscInfo;
-    }
-
-    private HttpHeader.Builder getDefaultHeader()
-    {
-        HttpHeader.Builder httpHeaderBuilder = HttpHeader.newBuilder();
-        httpHeaderBuilder.setJsonContentType();
-        if (userName != null && !userName.isEmpty())
-        {
-            httpHeaderBuilder.setAuth(userName, userPw);
-        }
-        return httpHeaderBuilder;
-    }
-
-    private long getLong(Object object)
-    {
-        long ret;
-        if (object instanceof Integer)
-        {
-            ret = ((Integer) object).longValue();
-        }
-        else
-        {
-            ret = (long) object;
-        }
-        return ret;
     }
 }
