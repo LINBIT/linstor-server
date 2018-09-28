@@ -40,7 +40,10 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     @Override
     public Flux<ApiCallRc> updateController()
     {
-        return update(cachedUpdates.controllerUpdate.orElse(new UpdateNotification(null)));
+        // we don't care if we override an existing value, we just have to make sure that
+        // cachedUpdates.controllerUpdate is NOT null (this will trigger the devMgr to re-generate .res files, etc)
+        cachedUpdates.controllerUpdate = Optional.of(new UpdateNotification(null));
+        return update(cachedUpdates.controllerUpdate.get());
     }
 
     @Override

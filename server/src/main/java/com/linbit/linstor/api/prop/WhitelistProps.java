@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.prop;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.util.Arrays;
@@ -192,26 +192,29 @@ public class WhitelistProps
 
     public boolean isAllowed(LinStorObject lsObj, String key, String value, boolean log)
     {
-        boolean validProp = false;
-        Property rule = rules.get(lsObj).get(key);
-        if (rule != null)
+        boolean validProp = key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/");
+        if (!validProp)
         {
-            validProp = rule.isValid(value);
-            if (!validProp && log)
+            Property rule = rules.get(lsObj).get(key);
+            if (rule != null)
             {
-                errorReporter.logWarning(
-                    "Value '%s' for key '%s' is not valid. Rule matches for: %s",
-                    value,
-                    key,
-                    rule.getDescription()
-                );
+                validProp = rule.isValid(value);
+                if (!validProp && log)
+                {
+                    errorReporter.logWarning(
+                        "Value '%s' for key '%s' is not valid. Rule matches for: %s",
+                        value,
+                        key,
+                        rule.getDescription()
+                    );
+                }
             }
-        }
-        else
-        {
-            if (log)
+            else
             {
-                errorReporter.logWarning("Ignoring unknown property key: %s", key);
+                if (log)
+                {
+                    errorReporter.logWarning("Ignoring unknown property key: %s", key);
+                }
             }
         }
         return validProp;
@@ -223,12 +226,13 @@ public class WhitelistProps
      */
     public String normalize(LinStorObject lsObj, String key, String value)
     {
+        String ret = value;
         Property rule = rules.get(lsObj).get(key);
-        if (rule == null)
+        if (rule != null)
         {
-            throw new ImplementationError("Cannot normalize unknown property");
+            ret = rule.normalize(value);
         }
-        return rule.normalize(value);
+        return ret;
     }
 
     public String getRuleValue(LinStorObject linstorObj, String key)

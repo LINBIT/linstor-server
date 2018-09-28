@@ -25,12 +25,14 @@ import java.util.concurrent.locks.ReadWriteLock;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -50,6 +52,7 @@ import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.core.SatelliteCoreModule;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.satellite.StltStorPoolApiCallHandler.ChangedData;
@@ -65,8 +68,10 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
@@ -79,6 +84,8 @@ public class StltApiCallHandler
     private final AccessContext apiCtx;
 
     private final CoreTimer timer;
+    private final FileSystemWatch fileSystemWatch;
+    private final StltConfigAccessor stltConfAccessor;
     private final ControllerPeerConnector controllerPeerConnector;
     private final UpdateMonitor updateMonitor;
     private final DeviceManager deviceManager;
@@ -120,6 +127,8 @@ public class StltApiCallHandler
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         CoreTimer timerRef,
+        FileSystemWatch fileSystemWatchRef,
+        StltConfigAccessor stltConfigAccessorRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         UpdateMonitor updateMonitorRef,
         DeviceManager deviceManagerRef,
@@ -152,6 +161,8 @@ public class StltApiCallHandler
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         timer = timerRef;
+        fileSystemWatch = fileSystemWatchRef;
+        stltConfAccessor = stltConfigAccessorRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         updateMonitor = updateMonitorRef;
         deviceManager = deviceManagerRef;
@@ -474,77 +485,9 @@ public class StltApiCallHandler
 
             transMgrProvider.get().commit();
 
-            Path tmpResFileOut = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
-            if (tmpResFileOut != null)
-            {
-                try (
-                    FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())
-                )
-                {
-                    ConfFileBuilder confFileBuilder = new ConfFileBuilder(
-                        errorReporter,
-                        whitelistProps
-                    );
-                    commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
-                }
-                catch (IOException ioExc)
-                {
-                    String ioErrorMsg = ioExc.getMessage();
-                    if (ioErrorMsg == null)
-                    {
-                        ioErrorMsg = "The runtime environment or operating system did not provide a " +
-                            "description of the I/O error";
-                    }
+            regenerateLinstorCommonConf();
 
-                    errorReporter.reportProblem(
-                        Level.ERROR,
-                        new LinStorException(
-                            "Creation of the common Linstor DRBD configuration file " +
-                                "'linstor_common.conf' failed due to an I/O error",
-                            null,
-                            "Creation of the DRBD configuration file failed due to an I/O error",
-                            "- Check whether enough free space is available for the creation of the file\n" +
-                                "- Check whether the application has write access to the target directory\n" +
-                                "- Check whether the storage is operating flawlessly",
-                            "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                            ioExc
-                        ),
-                        apiCtx,
-                        null,
-                        ioErrorMsg
-                    );
-                }
-
-                try
-                {
-                    Files.move(
-                        tmpResFileOut,
-                        Paths.get(SatelliteCoreModule.CONFIG_PATH + "/linstor_common.conf"),
-                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
-                    );
-                }
-                catch (IOException ioExc)
-                {
-                    String ioErrorMsg = ioExc.getMessage();
-                    errorReporter.reportProblem(
-                        Level.ERROR,
-                        new LinStorException(
-                            "Unable to move temporary common Linstor DRBD configuration file " +
-                                "'linstor_common.conf' failed due to an I/O error",
-                            null,
-                            "Creation of the DRBD configuration file failed due to an I/O error",
-                            "- Check whether enough free space is available for the creation of the file\n" +
-                                "- Check whether the application has write access to the target directory\n" +
-                                "- Check whether the storage is operating flawlessly",
-                            "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                            ioExc
-                        ),
-                        apiCtx,
-                        null,
-                        ioErrorMsg
-                    );
-                }
-            }
+            reconfigureAllStorageDrivers();
 
             Set<ResourceName> slctRsc = new TreeSet<>();
             for (ResourceDefinition curRscDfn : rscDfnMap.values())
@@ -558,6 +501,130 @@ public class StltApiCallHandler
         {
             // TODO: kill connection?
             errorReporter.reportError(exc);
+        }
+    }
+
+    private void regenerateLinstorCommonConf()
+    {
+        Path tmpResFileOut = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
+        if (tmpResFileOut != null)
+        {
+            try (
+                FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())
+            )
+            {
+                ConfFileBuilder confFileBuilder = new ConfFileBuilder(
+                    errorReporter,
+                    whitelistProps
+                );
+                commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
+            }
+            catch (IOException ioExc)
+            {
+                String ioErrorMsg = ioExc.getMessage();
+                if (ioErrorMsg == null)
+                {
+                    ioErrorMsg = "The runtime environment or operating system did not provide a " +
+                        "description of the I/O error";
+                }
+
+                errorReporter.reportProblem(
+                    Level.ERROR,
+                    new LinStorException(
+                        "Creation of the common Linstor DRBD configuration file " +
+                            "'linstor_common.conf' failed due to an I/O error",
+                        null,
+                        "Creation of the DRBD configuration file failed due to an I/O error",
+                        "- Check whether enough free space is available for the creation of the file\n" +
+                            "- Check whether the application has write access to the target directory\n" +
+                            "- Check whether the storage is operating flawlessly",
+                        "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                        ioExc
+                    ),
+                    apiCtx,
+                    null,
+                    ioErrorMsg
+                );
+            }
+
+            try
+            {
+                Files.move(
+                    tmpResFileOut,
+                    Paths.get(SatelliteCoreModule.CONFIG_PATH + "/linstor_common.conf"),
+                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+                );
+            }
+            catch (IOException ioExc)
+            {
+                String ioErrorMsg = ioExc.getMessage();
+                errorReporter.reportProblem(
+                    Level.ERROR,
+                    new LinStorException(
+                        "Unable to move temporary common Linstor DRBD configuration file " +
+                            "'linstor_common.conf' failed due to an I/O error",
+                        null,
+                        "Creation of the DRBD configuration file failed due to an I/O error",
+                        "- Check whether enough free space is available for the creation of the file\n" +
+                            "- Check whether the application has write access to the target directory\n" +
+                            "- Check whether the storage is operating flawlessly",
+                        "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                        ioExc
+                    ),
+                    apiCtx,
+                    null,
+                    ioErrorMsg
+                );
+            }
+        }
+    }
+
+    private void reconfigureAllStorageDrivers()
+    {
+        try
+        {
+            Node localNode = controllerPeerConnector.getLocalNode();
+            if (localNode != null)
+            {
+                Optional<Props> optNodeNamespace = controllerPeerConnector.getLocalNode()
+                    .getProps(apiCtx)
+                    .getNamespace(ApiConsts.NAMESPC_STORAGE_DRIVER);
+                ReadOnlyProps nodeNamespace;
+                if (optNodeNamespace.isPresent())
+                {
+                    nodeNamespace = new ReadOnlyProps(optNodeNamespace.get());
+                }
+                else
+                {
+                    nodeNamespace = ReadOnlyProps.emptyRoProps();
+                }
+                for (StorPoolDefinition spd : storPoolDfnMap.values())
+                {
+                    try
+                    {
+                        StorPool sp = spd.getStorPool(apiCtx, controllerPeerConnector.getLocalNodeName());
+                        sp.reconfigureStorageDriver(
+                            sp.getDriver(
+                                apiCtx,
+                                errorReporter,
+                                fileSystemWatch,
+                                timer,
+                                stltConfAccessor
+                            ),
+                            nodeNamespace,
+                            stltConfAccessor.getReadonlyProps(ApiConsts.NAMESPC_STORAGE_DRIVER)
+                        );
+                    }
+                    catch (StorageException exc)
+                    {
+                        errorReporter.reportError(exc);
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("Priveleged API context has not enough rights");
         }
     }
 

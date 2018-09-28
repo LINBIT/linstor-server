@@ -147,14 +147,11 @@ public class CtrlPropsHelper
         {
             String key = entry.getKey();
             String value = entry.getValue();
-            boolean isAuxProp = key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/");
 
-            boolean isPropAllowed =
-                isAuxProp ||
-                    propsWhiteList.isAllowed(linstorObj, key, value, true);
+            boolean isPropAllowed = propsWhiteList.isAllowed(linstorObj, key, value, true);
             if (isPropAllowed)
             {
-                String normalized = isAuxProp ? value : propsWhiteList.normalize(linstorObj, key, value);
+                String normalized = propsWhiteList.normalize(linstorObj, key, value);
                 try
                 {
                     targetProps.setProp(key, normalized);
@@ -169,7 +166,7 @@ public class CtrlPropsHelper
                 }
                 catch (InvalidKeyException exc)
                 {
-                    if (isAuxProp)
+                    if (key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/"))
                     {
                         throw new ApiRcException(ApiCallRcImpl
                             .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid key.")
@@ -186,7 +183,7 @@ public class CtrlPropsHelper
                 }
                 catch (InvalidValueException exc)
                 {
-                    if (isAuxProp)
+                    if (key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/"))
                     {
                         throw new ApiRcException(ApiCallRcImpl
                             .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid value.")
