@@ -1335,32 +1335,6 @@ public class CtrlApiCallHandler
         }
     }
 
-    public ApiCallRc createResourcesAutoPlace(
-        String rscName,
-        AutoSelectFilterApi selectFilter,
-        boolean disklessOnRemainingNodes
-    )
-    {
-        ApiCallRc apiCallRc;
-
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                ctrlConfigLock.writeLock(),
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.writeLock(),
-                storPoolDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = rscAutoPlaceApiCallHandler.autoPlace(
-                rscName,
-                selectFilter,
-                disklessOnRemainingNodes
-            );
-        }
-        return apiCallRc;
-    }
-
     public ApiCallRc createSnapshot(
         List<String> nodeNames,
         String rscName,

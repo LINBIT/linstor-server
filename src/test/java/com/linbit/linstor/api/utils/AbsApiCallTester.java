@@ -69,5 +69,6 @@ public abstract class AbsApiCallTester
         return sb.toString();
     }
 
-    public abstract ApiCallRc executeApiCall();
+    public abstract ApiCallRc executeApiCall()
+        throws Exception;
 }

@@ -73,8 +73,6 @@ public class CtrlRscApiCallHandler
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
-    private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
-    private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final NodeRepository nodeRepository;
@@ -91,8 +89,6 @@ public class CtrlRscApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
-        CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
-        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         NodeRepository nodeRepositoryRef,
@@ -108,8 +104,6 @@ public class CtrlRscApiCallHandler
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
-        ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
-        ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         nodeRepository = nodeRepositoryRef;
@@ -119,128 +113,6 @@ public class CtrlRscApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-    }
-
-    /**
-     * This method really creates the resource and its volumes.
-     *
-     * This method does NOT:
-     * * commit any transaction
-     * * update satellites
-     * * create success-apiCallRc entries (only error RC in case of exception)
-     *
-     * @param nodeNameStr
-     * @param rscNameStr
-     * @param flags
-     * @param rscPropsMap
-     * @param vlmApiList
-     * @param nodeIdInt
-     *
-     * @return the newly created resource
-     */
-    public ApiCallRcWith<ResourceData> createResourceDb(
-        String nodeNameStr,
-        String rscNameStr,
-        long flags,
-        Map<String, String> rscPropsMap,
-        List<? extends VlmApi> vlmApiList,
-        Integer nodeIdInt
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
-
-        NodeId nodeId = resolveNodeId(nodeIdInt, rscDfn);
-
-        ResourceData rsc = ctrlRscCrtApiHelper.createResource(rscDfn, node, nodeId, flags);
-        Props rscProps = ctrlPropsHelper.getProps(rsc);
-
-        ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
-
-        if (ctrlVlmCrtApiHelper.isDiskless(rsc) && rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME) == null)
-        {
-            rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
-        }
-
-        for (VlmApi vlmApi : vlmApiList)
-        {
-            VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
-
-            VolumeData vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
-                rsc, vlmDfn, vlmApi.getBlockDevice(), vlmApi.getMetaDisk()
-            ).extractApiCallRc(responses);
-
-            Props vlmProps = ctrlPropsHelper.getProps(vlmData);
-
-            ctrlPropsHelper.fillProperties(
-                LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
-        }
-
-        Iterator<VolumeDefinition> iterateVolumeDfn = ctrlRscCrtApiHelper.getVlmDfnIterator(rscDfn);
-        while (iterateVolumeDfn.hasNext())
-        {
-            VolumeDefinition vlmDfn = iterateVolumeDfn.next();
-
-            // first check if we probably just deployed a vlm for this vlmDfn
-            if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
-            {
-                // not deployed yet.
-
-                VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn)
-                    .extractApiCallRc(responses);
-            }
-        }
-        return new ApiCallRcWith<>(responses, rsc);
-    }
-
-    private NodeId resolveNodeId(Integer nodeIdInt, ResourceDefinitionData rscDfn)
-    {
-        NodeId nodeId;
-
-        if (nodeIdInt == null)
-        {
-            nodeId = ctrlRscCrtApiHelper.getNextFreeNodeId(rscDfn);
-        }
-        else
-        {
-            try
-            {
-                NodeId requestedNodeId = new NodeId(nodeIdInt);
-
-                Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx.get());
-                while (rscIterator.hasNext())
-                {
-                    if (requestedNodeId.equals(rscIterator.next().getNodeId()))
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_NODE_ID,
-                            "The specified node ID is already in use."
-                        ));
-                    }
-                }
-
-                nodeId = requestedNodeId;
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                throw new ApiAccessDeniedException(
-                    accDeniedExc,
-                    "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
-                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-                );
-            }
-            catch (ValueOutOfRangeException outOfRangeExc)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_NODE_ID,
-                    "The specified node ID is out of range."
-                ), outOfRangeExc);
-            }
-        }
-
-        return nodeId;
     }
 
     public ApiCallRc modifyResource(
@@ -454,55 +326,6 @@ public class CtrlRscApiCallHandler
                 )
             );
         }
-    }
-
-    private VolumeDefinitionData loadVlmDfn(
-        ResourceDefinitionData rscDfn,
-        int vlmNr,
-        boolean failIfNull
-    )
-    {
-        return loadVlmDfn(rscDfn, LinstorParsingUtils.asVlmNr(vlmNr), failIfNull);
-    }
-
-    private VolumeDefinitionData loadVlmDfn(
-        ResourceDefinitionData rscDfn,
-        VolumeNumber vlmNr,
-        boolean failIfNull
-    )
-    {
-        VolumeDefinitionData vlmDfn;
-        try
-        {
-            vlmDfn = (VolumeDefinitionData) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
-
-            if (failIfNull && vlmDfn == null)
-            {
-                String rscName = rscDfn.getName().displayValue;
-                throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_NOT_FOUND_VLM_DFN,
-                        "Volume definition with number '" + vlmNr.value + "' on resource definition '" +
-                            rscName + "' not found."
-                    )
-                    .setCause("The specified volume definition with number '" + vlmNr.value +
-                        "' on resource definition '" + rscName + "' could not be found in the database")
-                    .setCorrection("Create a volume definition with number '" + vlmNr.value +
-                        "' on resource definition '" + rscName + "' first.")
-                    .build()
-                );
-            }
-
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "load " + getVlmDfnDescriptionInline(rscDfn.getName().displayValue, vlmNr.value),
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        return vlmDfn;
     }
 
     void updateVolumeData(

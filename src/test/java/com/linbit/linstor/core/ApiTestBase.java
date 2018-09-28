@@ -124,11 +124,6 @@ public abstract class ApiTestBase extends GenericDbBase
             .thenReturn(tcpConnectorMock);
 
         enterScope();
-        if (seedDefaultPeerRule.shouldSeedDefaultPeer())
-        {
-            testScope.seed(Key.get(AccessContext.class, PeerContext.class), BOB_ACC_CTX);
-            testScope.seed(Peer.class, mockPeer);
-        }
     }
 
     private void create(TransactionMgr transMgr, AccessContext accCtx) throws Exception
@@ -164,6 +159,18 @@ public abstract class ApiTestBase extends GenericDbBase
             storPoolDefinitionRepository.get(SYS_CTX, new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)).getObjProt();
         disklessStorPoolDfnProt.setConnection(transMgr);
         disklessStorPoolDfnProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
+    }
+
+    @Override
+    protected void enterScope()
+        throws Exception
+    {
+        super.enterScope();
+        if (seedDefaultPeerRule.shouldSeedDefaultPeer())
+        {
+            testScope.seed(Key.get(AccessContext.class, PeerContext.class), BOB_ACC_CTX);
+            testScope.seed(Peer.class, mockPeer);
+        }
     }
 
     protected static NetInterfaceApi createNetInterfaceApi(String name, String address)
@@ -232,15 +239,8 @@ public abstract class ApiTestBase extends GenericDbBase
         return rc.getEntries().get(idx);
     }
 
-    protected void evaluateTestSequence(AbsApiCallTester... callSequence)
-    {
-        for (AbsApiCallTester currentCall : callSequence)
-        {
-            evaluateTest(currentCall);
-        }
-    }
-
     protected void evaluateTest(AbsApiCallTester currentCall)
+        throws Exception
     {
         Mockito.reset(satelliteConnector);
 

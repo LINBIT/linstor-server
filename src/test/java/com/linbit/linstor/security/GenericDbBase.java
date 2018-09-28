@@ -16,7 +16,6 @@ import com.linbit.linstor.FreeSpaceMgr;
 import com.linbit.linstor.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.FreeSpaceMgrRepository;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
@@ -232,11 +231,15 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @After
     public void tearDown() throws Exception
     {
-        cleanUp(true);
+        commitAndCleanUp(true);
     }
 
-    public void cleanUp(boolean exitScope) throws Exception
+    public void commitAndCleanUp(boolean inScope) throws Exception
     {
+        if (inScope)
+        {
+            transMgrProvider.get().commit();
+        }
         try
         {
             for (Statement statement : statements)
@@ -256,7 +259,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         }
         finally
         {
-            if (exitScope)
+            if (inScope)
             {
                 testScope.exit();
             }

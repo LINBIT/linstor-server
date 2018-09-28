@@ -4,7 +4,6 @@ import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -114,15 +113,14 @@ public class RscApiTest extends ApiTestBase
             tesTRscDfnTransportType
         );
         rscDfnMap.put(testRscName, testRscDfn);
-        transMgrProvider.get().commit();
-        cleanUp(true);
+        commitAndCleanUp(true);
     }
 
     @After
     @Override
     public void tearDown() throws Exception
     {
-        cleanUp(false);
+        commitAndCleanUp(false);
     }
 
     @Test

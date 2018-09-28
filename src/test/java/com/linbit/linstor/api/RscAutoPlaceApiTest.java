@@ -1,7 +1,5 @@
 package com.linbit.linstor.api;
 
-import javax.inject.Inject;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.FreeSpaceMgr;
@@ -23,24 +21,24 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.DisklessDriver;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.linstor.storage.LvmThinDriver;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import reactor.core.publisher.Flux;
 
-import java.sql.SQLException;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +48,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,6 +56,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 
 public class RscAutoPlaceApiTest extends ApiTestBase
 {
@@ -72,7 +73,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private static final AtomicInteger MINOR_GEN = new AtomicInteger(MINOR_NR_MIN);
 
     @Inject private CtrlRscAutoPlaceApiCallHandler rscAutoPlaceApiCallHandler;
-    @Inject private CtrlRscApiCallHandler ctrlRscApiCallHandler;
+    @Inject private CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
 
     private static final StorPoolName DFLT_DISKLESS_STOR_POOL_NAME;
 
@@ -99,7 +100,21 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         createRscDfn(TEST_RSC_NAME, TEST_TCP_PORT_NR);
         MINOR_GEN.set(MINOR_NR_MIN);
 
+        Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
+
+        // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be ready
+        Mockito.when(mockSatellite.apiCall(anyString(), any()))
+            .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
         Mockito.when(mockSatellite.isConnected()).thenReturn(true);
+
+        commitAndCleanUp(true);
+    }
+
+    @After
+    @Override
+    public void tearDown() throws Exception
+    {
+        commitAndCleanUp(false);
     }
 
     @Test
@@ -110,6 +125,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -137,6 +153,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 1,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             // Name and order the options so that the expected choice is in the middle in terms of creation sequence
@@ -167,6 +184,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 1,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt")
@@ -193,6 +211,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 1,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt")
@@ -217,6 +236,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                false,
                 ApiConsts.FAIL_NOT_ENOUGH_NODES
             )
             .stltBuilder("stlt1")
@@ -241,6 +261,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -270,6 +291,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -304,6 +326,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 3,
+                false,
                 ApiConsts.FAIL_NOT_ENOUGH_NODES
             )
             .stltBuilder("stlt1")
@@ -327,6 +350,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                false,
                 ApiConsts.FAIL_NOT_ENOUGH_NODES
             )
             .stltBuilder("stlt1")
@@ -357,6 +381,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -396,6 +421,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -435,6 +461,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -524,6 +551,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -569,6 +597,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -593,6 +622,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                false,
                 ApiConsts.MASK_CRT | ApiConsts.MASK_RSC | ApiConsts.WARN_RSC_ALREADY_DEPLOYED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
@@ -615,6 +645,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -639,6 +670,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 3,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
@@ -682,6 +714,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 2,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -708,6 +741,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
                 4,
+                true,
                 ApiConsts.CREATED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
@@ -830,13 +864,19 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         RscAutoPlaceApiCall(
             String rscNameStrRef,
             int placeCountRef,
+            boolean expectDeployment,
             long... expectedRetCodes
         )
         {
             super(
                 ApiConsts.MASK_RSC,
                 ApiConsts.MASK_CRT,
-                expectedRetCodes
+                expectDeployment ?
+                    // When the resources are successfully registered in the DB, the API call handler should try to
+                    // deploy them on the satellites. We deliberately cause this to fail. Hence we expect a failure
+                    // response after the registration success responses.
+                    LongStream.concat(LongStream.of(expectedRetCodes), LongStream.of(ApiConsts.FAIL_UNKNOWN_ERROR)).toArray() :
+                    expectedRetCodes
             );
             rscNameStr = rscNameStrRef;
             placeCount = placeCountRef;
@@ -880,8 +920,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         @Override
         public ApiCallRc executeApiCall()
+            throws Exception
         {
-            return rscAutoPlaceApiCallHandler.autoPlace(
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            rscAutoPlaceApiCallHandler.autoPlace(
                 rscNameStr,
                 new AutoSelectFilterApi()
                 {
@@ -923,11 +965,14 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     }
                 },
                 disklessOnRemaining
-            );
+            ).subscriberContext(subscriberContext).toStream().forEach(apiCallRc::addEntries);
+            return apiCallRc;
         }
 
         SatelliteBuilder stltBuilder(String stltName) throws Exception
         {
+            enterScope();
+
             NodeData stlt = nodeDataFactory.create(
                 ApiTestBase.BOB_ACC_CTX,
                 new NodeName(stltName),
@@ -958,11 +1003,15 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 fsm
             );
 
+            commitAndCleanUp(true);
+
             return new SatelliteBuilder(this, stlt);
         }
 
         RscAutoPlaceApiCall addVlmDfn(String rscNameStrRef, int vlmNrRef, long sizeRef) throws Exception
         {
+            enterScope();
+
             ResourceName rscName = new ResourceName(rscNameStrRef);
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
 
@@ -975,23 +1024,32 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 null
             );
 
+            commitAndCleanUp(true);
+
             return this;
         }
 
         RscAutoPlaceApiCall addRscDfn(String rscNameStrRef, int tcpPortRef) throws Exception
         {
+            enterScope();
+
             createRscDfn(rscNameStrRef, tcpPortRef);
+
+            commitAndCleanUp(true);
+
             return this;
         }
 
 
         RscAutoPlaceApiCall addRsc(String rscNameStrRef, String storPool, String... stltNameStrs) throws Exception
         {
+            enterScope();
+
             Map<String, String> rscPropsMap = new TreeMap<>();
             rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, storPool);
             for (String stltNameStr : stltNameStrs)
             {
-                ctrlRscApiCallHandler.createResourceDb(
+                ctrlRscCrtApiHelper.createResourceDb(
                     stltNameStr,
                     rscNameStrRef,
                     0L,
@@ -1000,6 +1058,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     null
                 );
             }
+
+            commitAndCleanUp(true);
+
             return this;
         }
     }
@@ -1017,9 +1078,14 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         }
 
         public SatelliteBuilder setNodeProp(String key, String value)
-            throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
+            throws Exception
         {
+            enterScope();
+
             stlt.getProps(ApiTestBase.BOB_ACC_CTX).setProp(key, value);
+
+            commitAndCleanUp(true);
+
             return this;
         }
 
@@ -1036,6 +1102,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         SatelliteBuilder addStorPool(String storPoolName, String freeSpaceMgrName, long storPoolSize, boolean thin)
             throws Exception
         {
+            enterScope();
+
             StorPoolDefinitionData storPoolDfn = storPoolDefinitionRepository.get(
                 ApiTestBase.BOB_ACC_CTX,
                 new StorPoolName(storPoolName)
@@ -1067,6 +1135,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             );
 
             storPool.getFreeSpaceTracker().setFreeSpace(GenericDbBase.SYS_CTX, storPoolSize);
+
+            commitAndCleanUp(true);
 
             return this;
         }
