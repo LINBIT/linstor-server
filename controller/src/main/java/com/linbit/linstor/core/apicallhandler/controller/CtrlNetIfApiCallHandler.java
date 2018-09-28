@@ -190,7 +190,10 @@ class CtrlNetIfApiCallHandler
             {
                 TcpPortNumber oldPort = netIf.getStltConnPort(apiCtx);
                 boolean needsStartProc = false;
-                if (stltPort != oldPort.value && NodeType.SWORDFISH_TARGET.equals(nodeType))
+                if (
+                    oldPort != null && stltPort != oldPort.value &&
+                    NodeType.SWORDFISH_TARGET.equals(nodeType)
+                )
                 {
                     sfTargetProcessMgr.stopProcess(netIf.getNode());
                     sfTargetPortPool.deallocate(oldPort.value);
