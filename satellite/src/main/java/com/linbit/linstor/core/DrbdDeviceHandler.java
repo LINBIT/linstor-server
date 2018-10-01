@@ -1038,7 +1038,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted, vlmDfnProps),
                 currentGi,
                 null,
-                false
+                true
             );
         }
     }
@@ -1638,11 +1638,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     Volume vlm = vlmIter.next();
                     VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
                     VolumeState vlmState = rscState.getVolumeState(vlmNr);
-                    if (isThinVlm((VolumeStateDevManager) vlmState))
-                    {
-                        skipSync(rscName, vlmNr);
-                    }
-                    else
+                    if (!isThinVlm((VolumeStateDevManager) vlmState))
                     {
                         haveFatVlm = true;
                     }

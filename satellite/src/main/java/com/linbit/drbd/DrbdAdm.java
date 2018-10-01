@@ -267,16 +267,16 @@ public class DrbdAdm
         String blockDevPath,
         String currentGi,
         String history1Gi,
-        boolean setFlags
+        boolean upToDateData
     )
         throws ExtCmdFailedException
     {
         String giData = currentGi + ":";
-        if (setFlags || history1Gi != null)
+        if (upToDateData || history1Gi != null)
         {
             String checkedHistory1Gi = history1Gi == null ? "0" : history1Gi;
             giData += "0:" + checkedHistory1Gi + ":0:";
-            if (setFlags)
+            if (upToDateData)
             {
                 giData += "1:1:";
             }
