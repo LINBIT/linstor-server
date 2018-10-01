@@ -2,9 +2,7 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallReactive;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
@@ -12,10 +10,9 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
+import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
-import com.linbit.linstor.storage.StorageException;
-
+import com.linbit.utils.Either;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
@@ -24,6 +21,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+
+import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBuilder.serializeApiCallRc;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_FREE_SPACE,
@@ -54,42 +53,38 @@ public class ReqFreeSpace implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        Flux<byte[]> ret;
-        try
-        {
-            Map<StorPool, SpaceInfo> freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
+        Map<StorPool, Either<SpaceInfo, ApiRcException>> freeSpaceMap = apiCallHandlerUtils.getAllSpaceInfo();
 
-            MsgIntFreeSpace.Builder builder = MsgIntFreeSpace.newBuilder();
-            for (Map.Entry<StorPool, SpaceInfo> entry : freeSpaceMap.entrySet())
-            {
-                StorPool storPool = entry.getKey();
-                builder.addFreeSpace(
-                    StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder()
-                        .setStorPoolUuid(storPool.getUuid().toString())
-                        .setStorPoolName(storPool.getName().displayValue)
-                        .setFreeCapacity(entry.getValue().freeCapacity)
-                        .setTotalCapacity(entry.getValue().totalCapacity)
-                        .build()
-                );
-            }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            builder.build().writeDelimitedTo(baos);
-
-            ret = Flux.just(commonSerializer
-                .answerBuilder(InternalApiConsts.API_REQUEST_FREE_SPACE, apiCallId)
-                .bytes(baos.toByteArray())
-                .build()
-            );
-        }
-        catch (StorageException storageExc)
+        MsgIntFreeSpace.Builder builder = MsgIntFreeSpace.newBuilder();
+        for (Map.Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry : freeSpaceMap.entrySet())
         {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(ApiConsts.FAIL_UNKNOWN_ERROR, "Failed to query free space from storage pool")
-                .setCause(storageExc.getMessage())
-                .build(),
-                storageExc
+            StorPool storPool = entry.getKey();
+
+            StorPoolFreeSpace.Builder freeSpaceBuilder = StorPoolFreeSpace.newBuilder()
+                .setStorPoolUuid(storPool.getUuid().toString())
+                .setStorPoolName(storPool.getName().displayValue);
+
+            entry.getValue().consume(
+                spaceInfo -> freeSpaceBuilder
+                    .setFreeCapacity(spaceInfo.freeCapacity)
+                    .setTotalCapacity(spaceInfo.totalCapacity),
+                apiRcException -> freeSpaceBuilder
+                    // required field
+                    .setFreeCapacity(0L)
+                    // required field
+                    .setTotalCapacity(0L)
+                    .addAllErrors(serializeApiCallRc(apiRcException.getApiCallRc()))
             );
+
+            builder.addFreeSpaces(freeSpaceBuilder.build());
         }
-        return ret;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        builder.build().writeDelimitedTo(baos);
+
+        return Flux.just(commonSerializer
+            .answerBuilder(InternalApiConsts.API_REQUEST_FREE_SPACE, apiCallId)
+            .bytes(baos.toByteArray())
+            .build()
+        );
     }
 }

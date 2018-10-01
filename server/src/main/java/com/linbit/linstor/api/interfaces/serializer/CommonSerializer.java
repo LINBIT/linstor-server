@@ -23,8 +23,6 @@ public interface CommonSerializer
 
     CommonSerializerBuilder completionBuilder(Long apiCallId);
 
-    ApiCallRc parseApiCallRc(ByteArrayInputStream msgApiCallRc) throws IOException;
-
     interface CommonSerializerBuilder
     {
         byte[] build();

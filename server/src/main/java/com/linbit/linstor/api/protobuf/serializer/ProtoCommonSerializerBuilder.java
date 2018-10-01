@@ -353,7 +353,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return this;
     }
 
-    protected List<MsgApiCallResponseOuterClass.MsgApiCallResponse> serializeApiCallRc(ApiCallRc apiCallRc)
+    public static List<MsgApiCallResponseOuterClass.MsgApiCallResponse> serializeApiCallRc(ApiCallRc apiCallRc)
     {
         List<MsgApiCallResponseOuterClass.MsgApiCallResponse> list = new ArrayList<>();
 

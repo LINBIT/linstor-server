@@ -13,6 +13,7 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -25,17 +26,17 @@ import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNode
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
-import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.Base64;
+import com.linbit.utils.Either;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Map.Entry;
 
@@ -92,19 +93,17 @@ public class FullSync implements ApiCall
             Base64.decode(fullSync.getMasterKey())
         );
 
-        Map<StorPool, SpaceInfo> freeSpaceMap = new HashMap<>();
-        try
-        {
-            freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
-        }
-        catch (StorageException storageExc)
-        {
-            // TODO: report about this error to the controller
-            errorReporter.reportError(storageExc);
-        }
+        Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap = apiCallHandlerUtils.getAllSpaceInfo();
+
+        Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
+
+        spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
+            spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
+            apiRcException -> errorReporter.reportError(apiRcException.getCause())
+        ));
 
         MsgIntFullSyncSuccess.Builder builder = MsgIntFullSyncSuccess.newBuilder();
-        for (Entry<StorPool, SpaceInfo> entry : freeSpaceMap.entrySet())
+        for (Entry<StorPool, SpaceInfo> entry : spaceInfoMap.entrySet())
         {
             StorPool storPool = entry.getKey();
             builder.addFreeSpace(

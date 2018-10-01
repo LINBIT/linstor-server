@@ -1,10 +1,7 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import javax.inject.Inject;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
@@ -21,12 +18,11 @@ import com.linbit.linstor.proto.javainternal.MsgIntApplyStorPoolSuccessOuterClas
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.storage.StorageException;
 
+import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -75,20 +71,13 @@ public class ApplyStorPool implements ApiCall
 
         try
         {
-            Map<StorPool, SpaceInfo> freeSpaceMap = apiCallHandlerUtils.getSpaceInfo();
-
+            SpaceInfo spaceInfo = apiCallHandlerUtils.getSpaceInfo(storPoolData.getStorPoolName());
             Long requestedFreeSpace = null;
             Long totalCapacity = null;
-
-            String storPoolName = storPoolData.getStorPoolName().toUpperCase();
-            for (Entry<StorPool, SpaceInfo> entry : freeSpaceMap.entrySet())
+            if (spaceInfo != null)
             {
-                if (entry.getKey().getName().value.equals(storPoolName))
-                {
-                    requestedFreeSpace = entry.getValue().freeCapacity;
-                    totalCapacity = entry.getValue().totalCapacity;
-                    break;
-                }
+                requestedFreeSpace = spaceInfo.freeCapacity;
+                totalCapacity = spaceInfo.totalCapacity;
             }
 
             if (requestedFreeSpace == null)

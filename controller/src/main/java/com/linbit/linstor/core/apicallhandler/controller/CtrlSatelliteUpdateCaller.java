@@ -11,12 +11,12 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -35,10 +35,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 /**
  * Notifies satellites of updates, returning the responses from the deployment of these changes.
@@ -218,16 +216,9 @@ public class CtrlSatelliteUpdateCaller
             {
                 MsgApiCallResponseOuterClass.MsgApiCallResponse apiCallResponse =
                     MsgApiCallResponseOuterClass.MsgApiCallResponse.parseDelimitedFrom(inputStream);
-                ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
-                entry.setReturnCode(apiCallResponse.getRetCode());
-                entry.setMessage(
-                    "(" + nodeName.displayValue + ") " + apiCallResponse.getMessage()
-                );
-                entry.setCause(apiCallResponse.getCause());
-                entry.setCorrection(apiCallResponse.getCorrection());
-                entry.setDetails(apiCallResponse.getDetails());
-                entry.putAllObjRef(readLinStorMap(apiCallResponse.getObjRefsList()));
-                deploymentState.addEntry(entry);
+                deploymentState.addEntry(ProtoDeserializationUtils.parseApiCallRc(
+                    apiCallResponse, "(" + nodeName.displayValue + ") "
+                ));
             }
         }
         catch (IOException exc)
@@ -236,15 +227,6 @@ public class CtrlSatelliteUpdateCaller
         }
 
         return deploymentState;
-    }
-
-    private Map<String, String> readLinStorMap(List<LinStorMapEntryOuterClass.LinStorMapEntry> linStorMap)
-    {
-        return linStorMap.stream()
-            .collect(Collectors.toMap(
-                LinStorMapEntryOuterClass.LinStorMapEntry::getKey,
-                LinStorMapEntryOuterClass.LinStorMapEntry::getValue
-            ));
     }
 
     /**

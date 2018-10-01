@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.BaseApiCall;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
@@ -326,16 +327,9 @@ public class CommonMessageProcessor implements MessageProcessor
                     MsgApiCallResponseOuterClass.MsgApiCallResponse.parseDelimitedFrom(msgDataIn);
                 if ((apiCallResponse.getRetCode() & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
                 {
-                    error = new ApiRcException(ApiCallRcImpl
-                        .entryBuilder(
-                            apiCallResponse.getRetCode(),
-                            "(" + peer + ") " + apiCallResponse.getMessage()
-                        )
-                        .setCause(apiCallResponse.getCause())
-                        .setCorrection(apiCallResponse.getCorrection())
-                        .setDetails(apiCallResponse.getDetails())
-                        .build()
-                    );
+                    error = new ApiRcException(ProtoDeserializationUtils.parseApiCallRc(
+                        apiCallResponse, "(" + peer + ") "
+                    ));
                 }
             }
             msgDataIn.reset();

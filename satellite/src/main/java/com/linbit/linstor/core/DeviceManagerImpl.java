@@ -18,14 +18,17 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateBundle;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -33,11 +36,11 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
+import com.linbit.utils.Either;
 import org.slf4j.event.Level;
 
 import com.google.inject.assistedinject.Assisted;
@@ -1116,26 +1119,21 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
         if (ctrlPeer != null)
         {
-            byte[] data = null;
-            try
-            {
-                data = interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
-                    .notifyResourceApplied(
-                        rsc,
-                        apiCallHandlerUtils.getSpaceInfo()
-                    )
-                    .build();
-            }
-            catch (StorageException exc)
-            {
-                errLog.reportError(exc);
-            }
+            Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap = apiCallHandlerUtils.getAllSpaceInfo();
 
-            if (data != null)
-            {
-                ctrlPeer.sendMessage(data);
-            }
+            Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
+
+            spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
+                spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
+                apiRcException -> errLog.reportError(apiRcException.getCause())
+            ));
+
+            ctrlPeer.sendMessage(
+                interComSerializer
+                    .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
+                    .notifyResourceApplied(rsc, spaceInfoMap)
+                    .build()
+            );
         }
     }
 
