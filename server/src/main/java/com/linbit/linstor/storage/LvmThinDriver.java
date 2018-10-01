@@ -270,7 +270,7 @@ public class LvmThinDriver extends LvmDriver
         {
             lvmCreateCommand,
             "--virtualsize", size + "k", // -V
-            "--thinpool", thinPoolName,  // -T
+            "--thinpool", thinPoolName,
             "--name", identifier,        // -n
             volumeGroup
         };
