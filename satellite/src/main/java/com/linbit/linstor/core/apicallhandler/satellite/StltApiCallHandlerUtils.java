@@ -14,6 +14,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -26,6 +27,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -176,9 +178,20 @@ public class StltApiCallHandlerUtils
         }
         else
         {
+            Optional<Props> nodeProps = storPool.getNode().getProps(apiCtx)
+                .getNamespace(ApiConsts.NAMESPC_STORAGE_DRIVER);
+            ReadOnlyProps nodeROProps;
+            if (nodeProps.isPresent())
+            {
+                nodeROProps = new ReadOnlyProps(nodeProps.get());
+            }
+            else
+            {
+                nodeROProps = ReadOnlyProps.emptyRoProps();
+            }
             storPool.reconfigureStorageDriver(
                 storageDriver,
-                new ReadOnlyProps(storPool.getNode().getProps(apiCtx)),
+                nodeROProps,
                 stltCfgAccessor.getReadonlyProps(ApiConsts.NAMESPC_STORAGE_DRIVER)
             );
             Long freeSpace = storageDriver.getFreeSpace();
