@@ -6,11 +6,9 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -20,20 +18,17 @@ import java.util.UUID;
 public class StltUpdateRequester
 {
     private final ErrorReporter errorReporter;
-    private final AccessContext apiCtx;
     private final CtrlStltSerializer interComSerializer;
     private final ControllerPeerConnector controllerPeerConnector;
 
     @Inject
     public StltUpdateRequester(
         ErrorReporter errorReporterRef,
-        @ApiContext AccessContext apiCtxRef,
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef
     )
     {
         errorReporter = errorReporterRef;
-        apiCtx = apiCtxRef;
         interComSerializer = interComSerializerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
     }
@@ -54,16 +49,6 @@ public class StltUpdateRequester
             interComSerializer
                 .onewayBuilder(InternalApiConsts.API_REQUEST_NODE)
                 .requestNodeUpdate(nodeUuid, nodeName.getDisplayName())
-                .build()
-        );
-    }
-
-    public void requestRscDfnUpate(UUID rscDfnUuid, ResourceName rscName)
-    {
-        sendRequest(
-            interComSerializer
-                .onewayBuilder(InternalApiConsts.API_REQUEST_RSC_DFN)
-                .requestResourceDfnUpdate(rscDfnUuid, rscName.getDisplayName())
                 .build()
         );
     }

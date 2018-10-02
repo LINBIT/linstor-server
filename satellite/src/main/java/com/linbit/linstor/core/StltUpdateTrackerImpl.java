@@ -53,12 +53,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     }
 
     @Override
-    public Flux<ApiCallRc> updateResourceDfn(UUID rscDfnUuid, ResourceName name)
-    {
-        return update(cachedUpdates.rscDfnUpdates.computeIfAbsent(name, ignored -> new UpdateNotification(rscDfnUuid)));
-    }
-
-    @Override
     public Flux<ApiCallRc> updateResource(
         UUID rscUuid,
         ResourceName resourceName,
@@ -178,7 +172,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         Optional<UpdateNotification> controllerUpdate = Optional.empty();
         final Map<NodeName, UpdateNotification> nodeUpdates = new TreeMap<>();
-        final Map<ResourceName, UpdateNotification> rscDfnUpdates = new TreeMap<>();
         final Map<Resource.Key, UpdateNotification> rscUpdates = new TreeMap<>();
         final Map<StorPoolName, UpdateNotification> storPoolUpdates = new TreeMap<>();
         final Map<SnapshotDefinition.Key, UpdateNotification> snapshotUpdates = new TreeMap<>();
@@ -195,7 +188,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
 
             other.controllerUpdate = controllerUpdate;
             other.nodeUpdates.putAll(nodeUpdates);
-            other.rscDfnUpdates.putAll(rscDfnUpdates);
             other.rscUpdates.putAll(rscUpdates);
             other.storPoolUpdates.putAll(storPoolUpdates);
             other.snapshotUpdates.putAll(snapshotUpdates);
@@ -208,7 +200,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
          */
         boolean isEmpty()
         {
-            return !controllerUpdate.isPresent() && nodeUpdates.isEmpty() && rscDfnUpdates.isEmpty() &&
+            return !controllerUpdate.isPresent() && nodeUpdates.isEmpty() &&
                 rscUpdates.isEmpty() && storPoolUpdates.isEmpty() && snapshotUpdates.isEmpty();
         }
 
@@ -220,7 +212,6 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             // Clear the collected updates
             controllerUpdate = Optional.empty();
             nodeUpdates.clear();
-            rscDfnUpdates.clear();
             rscUpdates.clear();
             storPoolUpdates.clear();
             snapshotUpdates.clear();

@@ -172,10 +172,6 @@ class StltRscApiCallHandler
 
             deviceManager.rscUpdateApplied(
                 Collections.singleton(new Resource.Key(rscName, controllerPeerConnector.getLocalNodeName())));
-
-            Set<ResourceName> rscDfnSet = new TreeSet<>();
-            rscDfnSet.add(rscName);
-            deviceManager.rscDefUpdateApplied(rscDfnSet);
         }
         catch (Exception | ImplementationError exc)
         {

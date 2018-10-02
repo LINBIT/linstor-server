@@ -608,13 +608,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName)
-    {
-        appendObjectId(rscDfnUuid, rscName);
-        return this;
-    }
-
-    @Override
     public ProtoCtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName)
     {
         appendObjectId(null, nodeName);

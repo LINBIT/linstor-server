@@ -19,7 +19,6 @@ public class InternalApiConsts
     public static final String API_APPLY_NODE         = "ApplyNode";
     public static final String API_APPLY_NODE_DELETED = "ApplyDeletedNode";
 
-    public static final String API_REQUEST_RSC_DFN       = "RequestRscDfn";
     public static final String API_NOTIFY_VLM_RESIZED    = "NotifyVlmResized";
     public static final String API_NOTIFY_VLM_DRBD_RESIZED = "NotifyDrbdVlmResized";
     public static final String API_NOTIFY_RSC_APPLIED    = "NotifyRscApplied";

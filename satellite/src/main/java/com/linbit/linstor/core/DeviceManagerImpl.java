@@ -348,22 +348,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void rscDefUpdateApplied(Set<ResourceName> rscDfnSet)
-    {
-        synchronized (sched)
-        {
-            for (ResourceName rscName : rscDfnSet)
-            {
-                markPendingDispatch(rcvPendingBundle.rscDfnUpdates.remove(rscName), rscDfnSet);
-            }
-            if (rcvPendingBundle.isEmpty())
-            {
-                sched.notify();
-            }
-        }
-    }
-
-    @Override
     public void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet)
     {
         synchronized (sched)
@@ -668,7 +652,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             requestControllerUpdates(updPendingBundle.controllerUpdate.isPresent());
             requestNodeUpdates(extractUuids(updPendingBundle.nodeUpdates));
             requestStorPoolUpdates(extractUuids(updPendingBundle.storPoolUpdates));
-            requestRscDfnUpdates(extractUuids(updPendingBundle.rscDfnUpdates));
             requestRscUpdates(extractUuids(updPendingBundle.rscUpdates));
             requestSnapshotUpdates(extractUuids(updPendingBundle.snapshotUpdates));
 
@@ -1021,18 +1004,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             errLog.logTrace("Requesting update for node '" + entry.getKey().displayValue + "'");
             stltUpdateRequester.requestNodeUpdate(
-                entry.getValue(),
-                entry.getKey()
-            );
-        }
-    }
-
-    private void requestRscDfnUpdates(Map<ResourceName, UUID> updateRscDfnMap)
-    {
-        for (Entry<ResourceName, UUID> entry : updateRscDfnMap.entrySet())
-        {
-            errLog.logTrace("Requesting update for resource definition '" + entry.getKey().displayValue + "'");
-            stltUpdateRequester.requestRscDfnUpate(
                 entry.getValue(),
                 entry.getKey()
             );

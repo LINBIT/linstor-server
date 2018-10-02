@@ -13,7 +13,6 @@ public interface StltUpdateTracker
 {
     Flux<ApiCallRc> updateController();
     Flux<ApiCallRc> updateNode(UUID nodeUuid, NodeName name);
-    Flux<ApiCallRc> updateResourceDfn(UUID rscDfnUuid, ResourceName name);
     Flux<ApiCallRc> updateResource(UUID rscUuid, ResourceName resourceName, NodeName nodeName);
     Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, StorPoolName storPoolName);
     Flux<ApiCallRc> updateSnapshot(UUID snapshotUuid, ResourceName resourceName, SnapshotName snapshotName);
