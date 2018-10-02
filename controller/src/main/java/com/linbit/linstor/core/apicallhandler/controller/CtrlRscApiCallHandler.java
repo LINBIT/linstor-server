@@ -362,8 +362,21 @@ public class CtrlRscApiCallHandler
                         propsMap.clear();
                         propsMap.putAll(vlmUpd.getVlmDfnPropsMap());
 
-                        long freeSpace = storPoolToFreeSpaceMap.get(vlm.getStorPool(apiCtx).getName().value);
-                        vlm.getStorPool(apiCtx).getFreeSpaceTracker().vlmCreationFinished(apiCtx, vlm, freeSpace);
+                        if (storPoolToFreeSpaceMap.containsKey(vlm.getStorPool(apiCtx).getName().value))
+                        {
+                            long freeSpace = storPoolToFreeSpaceMap.get(vlm.getStorPool(apiCtx).getName().value);
+                            vlm.getStorPool(apiCtx).getFreeSpaceTracker().vlmCreationFinished(apiCtx, vlm, freeSpace);
+                        }
+                        else
+                        {
+                            errorReporter.logWarning(
+                                String.format(
+                                    "No freespace info for storage pool '%s' on node: %s",
+                                    vlm.getStorPool(apiCtx).getName().value,
+                                    nodeName.displayValue
+                                )
+                            );
+                        }
 
                     }
                     else
