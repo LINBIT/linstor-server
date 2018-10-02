@@ -1,3 +1,63 @@
+linstor-server (0.6.5-1) experimental; urgency=medium
+
+  [ Roland Kammerer ]
+  * build,rpm: add myself back to changelog
+
+  [ Robert Altnoeder ]
+  * Added message size statistics
+  * Adjusted CmdRunDeviceManager to changes in the device manager
+  * Removed compile-time debugging from GenericTimer
+  * API processing: bounds on active worker threads and queue size
+  * Error reporting: Fixed DspRptLst debug command, replaced string litera [...]
+  * Code cleanup
+  * Fixed CmdDisplayReport: Adjusted to new instanceId format
+  * CmdRunDeviceManager: Mark resources for update instead of resource def [...]
+  * CmdRunDeviceManager: add a noop subscriber to the Flux object
+
+  [ Rene Peinthor ]
+  * apply-rsc-changes: Fix NPE if non existing rscconn is accessed
+  * apicallreply: add occurred error report id to the api call respond
+  * peer: set an PeerOffline for CONTROLLER | AUX node types
+  * picocli: upgrade to version 3.6.0
+  * cmdl-parsing: split common commandline parser into stlt and ctrl
+  * make: create jar.deps depending on build.gradle
+  * zfsthin: fix zfs thin reporting FAT provisioning
+  * drbddevicehandler: allow deleting of resource with broken storage pool
+  * thin_sync: fix initial thin resync
+
+  [ Gabor Hernadi ]
+  * Every api-message triggers a pongReceived()
+  * Fixed possible NPE
+  * Fixed ConcurrentModificationException
+  * Removed unnecessary payload from ChangedController API
+  * Fixed wrong SwordfishUserPw assignment typo
+  * Increased swordfish timeout to 300 sec
+  * Fixed swordfish stlt-port availability checking
+  * PriorityProps: added renderRelativeMap method
+  * Cleanups and minor changes required for DevLayers
+  * Included Peer description in ErrorReporting
+  * Fixed possible NPE
+  * Extracted common swordfish methods
+  * Updates to controller-props now re-configures ALL storDrivers
+  * Removed incorrect and misleading comment
+
+  [ Joel Colledge ]
+  * Remove unnecessary defer wrapping
+  * Remove barely used ScopeRunner convenience methods
+  * Allow an arbitrary number of API calls to run simultaneously
+  * Delete using reactive approach
+  * Remove internal deletion notification messages which are no longer used
+  * Automatically include the op return code fields and object references  [...]
+  * Remove the volume clean flag which is no longer set
+  * Respond to 'changed' calls which cause the dispatch of a given resourc [...]
+  * Notify connection listeners after disconnecting a deleted node
+  * Include peer in test error reporter header
+  * Only initiate an initial sync when the DRBD meta data is new
+  * Avoid deleting resources while iterating over them
+  * Respond with separate errors for each storage pool when getting the fr [...]
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 02 Oct 2018 08:13:02 +0200
+
 linstor-server (0.6.4-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
