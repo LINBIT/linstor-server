@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
@@ -42,8 +40,6 @@ public interface CommonSerializer
         CommonSerializerBuilder resourceStateEvent(UsageState usageState);
 
         CommonSerializerBuilder resourceDeploymentStateEvent(ApiCallRc apiCallRc);
-
-        CommonSerializerBuilder resourceDefinitionReadyEvent(int readyCount, int errorCount);
 
         CommonSerializerBuilder requestErrorReports(
             Set<String> nodes,
