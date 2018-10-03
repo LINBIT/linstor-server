@@ -1,19 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
@@ -26,6 +12,22 @@ import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import picocli.CommandLine;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 
@@ -181,19 +183,21 @@ public class LinstorConfig
         @CommandLine.Parameters(index = "0", description = "Database configuration file.")
         private File dbCfgFile = new File("./database.cfg");
 
-        @CommandLine.Parameters(index = "1", description = "SQL script.")
-        private File sqlFile;
+        @CommandLine.Parameters(index = "1", description = "SQL script.", arity = "0..1")
+        private File sqlFile = null;
 
         @Override
         public Object call() throws Exception
         {
+            Reader input = sqlFile != null ? new FileReader(sqlFile) : new InputStreamReader(System.in);
+
             try (PoolingDataSource<PoolableConnection> dataSource =
                      initConnectionProviderFromCfg(dbCfgFile);
                  Connection con = dataSource.getConnection())
             {
                 try
                 {
-                    GenericDbDriver.runSql(con, new BufferedReader(new FileReader(sqlFile)));
+                    GenericDbDriver.runSql(con, new BufferedReader(input));
                 }
                 catch (IOException ioExc)
                 {
