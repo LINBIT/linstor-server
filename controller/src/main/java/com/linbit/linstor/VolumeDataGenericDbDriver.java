@@ -162,7 +162,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     )
         throws SQLException
     {
-        Map<Volume, VolumeConnection> vlmConnsMap = new TreeMap<>();
+        Map<Volume.Key, VolumeConnection> vlmConnsMap = new TreeMap<>();
         VolumeData vlm = new VolumeData(
             java.util.UUID.fromString(resultSet.getString(VOL_UUID)),
             rsc,
@@ -417,15 +417,15 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
 
     private class VolumeInitMaps implements Volume.InitMaps
     {
-        private final Map<Volume, VolumeConnection> vlmConnMap;
+        private final Map<Volume.Key, VolumeConnection> vlmConnMap;
 
-        VolumeInitMaps(Map<Volume, VolumeConnection> vlmConnMapRef)
+        VolumeInitMaps(Map<Volume.Key, VolumeConnection> vlmConnMapRef)
         {
             vlmConnMap = vlmConnMapRef;
         }
 
         @Override
-        public Map<Volume, VolumeConnection> getVolumeConnections()
+        public Map<Volume.Key, VolumeConnection> getVolumeConnections()
         {
             return vlmConnMap;
         }

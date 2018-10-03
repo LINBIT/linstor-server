@@ -75,7 +75,7 @@ public class NodeData extends BaseTransactionObject implements Node
     private final TransactionMap<StorPoolName, StorPool> storPoolMap;
 
     // Map to the other endpoint of a node connection (this is NOT necessarily the source!)
-    private final TransactionMap<Node, NodeConnection> nodeConnections;
+    private final TransactionMap<NodeName, NodeConnection> nodeConnections;
 
     // Access controls for this object
     private final ObjectProtection objProt;
@@ -137,7 +137,7 @@ public class NodeData extends BaseTransactionObject implements Node
         Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
         Map<NetInterfaceName, NetInterface> netIfMapRef,
         Map<StorPoolName, StorPool> storPoolMapRef,
-        Map<Node, NodeConnection> nodeConnMapRef
+        Map<NodeName, NodeConnection> nodeConnMapRef
     )
         throws SQLException
     {
@@ -227,7 +227,7 @@ public class NodeData extends BaseTransactionObject implements Node
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         otherNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return nodeConnections.get(otherNode);
+        return nodeConnections.get(otherNode.getName());
     }
 
     @Override
@@ -243,11 +243,11 @@ public class NodeData extends BaseTransactionObject implements Node
 
         if (sourceNode == this)
         {
-            nodeConnections.put(targetNode, nodeConnection);
+            nodeConnections.put(targetNode.getName(), nodeConnection);
         }
         else
         {
-            nodeConnections.put(sourceNode, nodeConnection);
+            nodeConnections.put(sourceNode.getName(), nodeConnection);
         }
     }
 
@@ -265,11 +265,11 @@ public class NodeData extends BaseTransactionObject implements Node
 
         if (sourceNode == this)
         {
-            nodeConnections.remove(targetNode);
+            nodeConnections.remove(targetNode.getName());
         }
         else
         {
-            nodeConnections.remove(sourceNode);
+            nodeConnections.remove(sourceNode.getName());
         }
     }
 

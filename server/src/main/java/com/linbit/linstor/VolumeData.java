@@ -55,7 +55,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     // State flags
     private final StateFlags<VlmFlags> flags;
 
-    private final TransactionMap<Volume, VolumeConnection> volumeConnections;
+    private final TransactionMap<Volume.Key, VolumeConnection> volumeConnections;
 
     private final TransactionSimpleObject<VolumeData, String> backingDiskPath;
 
@@ -71,6 +71,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionSimpleObject<VolumeData, Boolean> deleted;
 
+    private final Key vlmKey;
+
     VolumeData(
         UUID uuid,
         Resource resRef,
@@ -83,7 +85,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
-        Map<Volume, VolumeConnection> vlmConnsMapRef
+        Map<Volume.Key, VolumeConnection> vlmConnsMapRef
     )
         throws SQLException
     {
@@ -124,6 +126,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
         nettoSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         bruttoSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+
+        vlmKey = new Key(this);
 
         transObjs = Arrays.asList(
             resource,
@@ -187,7 +191,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return volumeConnections.get(othervolume);
+        return volumeConnections.get(othervolume.getKey());
     }
 
     @Override
@@ -204,11 +208,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         if (this == sourceVolume)
         {
-            volumeConnections.put(targetVolume, volumeConnection);
+            volumeConnections.put(targetVolume.getKey(), volumeConnection);
         }
         else
         {
-            volumeConnections.put(sourceVolume, volumeConnection);
+            volumeConnections.put(sourceVolume.getKey(), volumeConnection);
         }
     }
 
@@ -226,11 +230,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         if (this == sourceVolume)
         {
-            volumeConnections.remove(targetVolume);
+            volumeConnections.remove(targetVolume.getKey());
         }
         else
         {
-            volumeConnections.remove(sourceVolume);
+            volumeConnections.remove(sourceVolume.getKey());
         }
     }
 
@@ -479,5 +483,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
             getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
             getStorPool(accCtx).getProps(accCtx).map()
         );
+    }
+
+    @Override
+    public Key getKey()
+    {
+        return vlmKey;
     }
 }

@@ -75,10 +75,8 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
-    private final VolumeDataFactory volumeDataFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-
 
     @Inject
     public ResourceDataGenericDbDriver(
@@ -86,7 +84,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        VolumeDataFactory volumeDataFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -95,7 +92,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         errorReporter = errorReporterRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
-        volumeDataFactory = volumeDataFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
@@ -204,7 +200,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     {
         NodeId nodeId = getNodeId(resultSet, node, rscDfn);
 
-        Map<Resource, ResourceConnection> rscConnMap = new TreeMap<>();
+        Map<Resource.Key, ResourceConnection> rscConnMap = new TreeMap<>();
         Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
         ResourceInitMaps initMaps = new ResourceInitMaps(rscConnMap, vlmMap);
 
@@ -217,7 +213,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             resultSet.getLong(RES_FLAGS),
             this,
             propsContainerFactory,
-            volumeDataFactory,
             transObjFactory,
             transMgrProvider,
             rscConnMap,
@@ -368,11 +363,11 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
 
     private class ResourceInitMaps implements Resource.InitMaps
     {
-        private final Map<Resource, ResourceConnection> rscConnMap;
+        private final Map<Resource.Key, ResourceConnection> rscConnMap;
         private final Map<VolumeNumber, Volume> vlmMap;
 
         ResourceInitMaps(
-            Map<Resource, ResourceConnection> rscConnMapRef,
+            Map<Resource.Key, ResourceConnection> rscConnMapRef,
             Map<VolumeNumber, Volume> vlmMapRef
         )
         {
@@ -381,7 +376,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         }
 
         @Override
-        public Map<Resource, ResourceConnection> getRscConnMap()
+        public Map<Resource.Key, ResourceConnection> getRscConnMap()
         {
             return rscConnMap;
         }

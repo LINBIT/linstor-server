@@ -49,7 +49,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     private final ResourceDefinition resourceDfn;
 
     // Connections to the peer resources
-    private final TransactionMap<Resource, ResourceConnection> resourceConnections;
+    private final TransactionMap<Resource.Key, ResourceConnection> resourceConnections;
 
     // List of volumes of this resource
     private final TransactionMap<VolumeNumber, Volume> volumeMap;
@@ -70,11 +70,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
     private final Props resourceProps;
 
     private final ResourceDataDatabaseDriver dbDriver;
-    private final VolumeDataFactory volumeDataFactory;
 
     private final TransactionSimpleObject<ResourceData, Boolean> deleted;
 
     private boolean createPrimary = false;
+
+    private final Key rscKey;
 
     ResourceData(
         UUID objIdRef,
@@ -85,17 +86,15 @@ public class ResourceData extends BaseTransactionObject implements Resource
         long initFlags,
         ResourceDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
-        VolumeDataFactory volumeDataFactoryRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
-        Map<Resource, ResourceConnection> rscConnMapRef,
+        Map<Resource.Key, ResourceConnection> rscConnMapRef,
         Map<VolumeNumber, Volume> vlmMapRef
     )
         throws SQLException
     {
         super(transMgrProviderRef);
         dbDriver = dbDriverRef;
-        volumeDataFactory = volumeDataFactoryRef;
 
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(ResourceData.class, Node.class, nodeRef);
@@ -123,6 +122,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
             dbDriver.getStateFlagPersistence(),
             initFlags
         );
+
+        rscKey = new Key(this);
 
         transObjs = Arrays.asList(
             resourceDfn,
@@ -179,11 +180,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         if (this == sourceResource)
         {
-            resourceConnections.put(targetResource, resCon);
+            resourceConnections.put(targetResource.getKey(), resCon);
         }
         else
         {
-            resourceConnections.put(sourceResource, resCon);
+            resourceConnections.put(sourceResource.getKey(), resCon);
         }
     }
 
@@ -200,11 +201,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         if (this == sourceResource)
         {
-            resourceConnections.remove(targetResource);
+            resourceConnections.remove(targetResource.getKey());
         }
         else
         {
-            resourceConnections.remove(sourceResource);
+            resourceConnections.remove(sourceResource.getKey());
         }
     }
 
@@ -223,7 +224,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return resourceConnections.get(otherResource);
+        return resourceConnections.get(otherResource.getKey());
     }
 
     @Override
@@ -345,6 +346,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         }
     }
 
+    @Override
     public boolean isDeleted()
     {
         return deleted.get();
@@ -425,6 +427,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
             fullSyncId,
             updateId
         );
+    }
+
+    @Override
+    public Key getKey()
+    {
+        return rscKey;
     }
 
     @Override

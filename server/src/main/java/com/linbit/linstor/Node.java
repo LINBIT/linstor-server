@@ -300,6 +300,6 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         Map<SnapshotDefinition.Key, Snapshot> getSnapshotMap();
         Map<NetInterfaceName, NetInterface> getNetIfMap();
         Map<StorPoolName, StorPool> getStorPoolMap();
-        Map<Node, NodeConnection> getNodeConnMap();
+        Map<NodeName, NodeConnection> getNodeConnMap();
     }
 }

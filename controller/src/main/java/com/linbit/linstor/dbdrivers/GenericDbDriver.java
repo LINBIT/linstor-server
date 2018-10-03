@@ -200,8 +200,8 @@ public class GenericDbDriver implements DatabaseDriver
             {
                 Node sourceNode = nodeConn.getSourceNode(dbCtx);
                 Node targetNode = nodeConn.getTargetNode(dbCtx);
-                loadedNodesMap.get(sourceNode).getNodeConnMap().put(targetNode, nodeConn);
-                loadedNodesMap.get(targetNode).getNodeConnMap().put(sourceNode, nodeConn);
+                loadedNodesMap.get(sourceNode).getNodeConnMap().put(targetNode.getName(), nodeConn);
+                loadedNodesMap.get(targetNode).getNodeConnMap().put(sourceNode.getName(), nodeConn);
             }
 
             // loading free space managers
@@ -255,8 +255,8 @@ public class GenericDbDriver implements DatabaseDriver
             {
                 Resource sourceResource = rscConn.getSourceResource(dbCtx);
                 Resource targetResource = rscConn.getTargetResource(dbCtx);
-                loadedResources.get(sourceResource).getRscConnMap().put(targetResource, rscConn);
-                loadedResources.get(targetResource).getRscConnMap().put(sourceResource, rscConn);
+                loadedResources.get(sourceResource).getRscConnMap().put(targetResource.getKey(), rscConn);
+                loadedResources.get(targetResource).getRscConnMap().put(sourceResource.getKey(), rscConn);
             }
 
             // loading volume definitions
@@ -308,8 +308,8 @@ public class GenericDbDriver implements DatabaseDriver
             {
                 Volume sourceVolume = vlmConn.getSourceVolume(dbCtx);
                 Volume targetVolume = vlmConn.getTargetVolume(dbCtx);
-                loadedVolumes.get(sourceVolume).getVolumeConnections().put(targetVolume, vlmConn);
-                loadedVolumes.get(targetVolume).getVolumeConnections().put(sourceVolume, vlmConn);
+                loadedVolumes.get(sourceVolume).getVolumeConnections().put(targetVolume.getKey(), vlmConn);
+                loadedVolumes.get(targetVolume).getVolumeConnections().put(sourceVolume.getKey(), vlmConn);
             }
 
             // loading snapshot definitions

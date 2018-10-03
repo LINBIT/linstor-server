@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -75,6 +76,11 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
     long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException;
 
     void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+
+    /**
+     * Returns the identification key without checking if "this" is already deleted
+     */
+    Key getKey();
 
     @Override
     default int compareTo(Volume otherVlm)
@@ -161,9 +167,91 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
         Map<String, String> getStorPoolProps();
     }
 
-    public interface InitMaps
+
+    /**
+     * Identifies a volume globally.
+     */
+    class Key implements Comparable<Key>
     {
-        Map<Volume, VolumeConnection> getVolumeConnections();
+        private final NodeName nodeName;
+        private final ResourceName resourceName;
+        private final VolumeNumber volumeNumber;
+
+        public Key(Volume volume)
+        {
+            this(
+                volume.getResource().getAssignedNode().getName(),
+                volume.getResourceDefinition().getName(),
+                volume.getVolumeDefinition().getVolumeNumber()
+            );
+        }
+
+        public Key(NodeName nodeNameRef, ResourceName resourceNameRef, VolumeNumber volumeNumberRef)
+        {
+            nodeName = nodeNameRef;
+            resourceName = resourceNameRef;
+            volumeNumber = volumeNumberRef;
+        }
+
+        public NodeName getNodeName()
+        {
+            return nodeName;
+        }
+
+        public ResourceName getResourceName()
+        {
+            return resourceName;
+        }
+
+        public VolumeNumber getVolumeNumber()
+        {
+            return volumeNumber;
+        }
+
+        @Override
+        // Code style exception: Automatically generated code
+        @SuppressWarnings({"DescendantToken", "ParameterName"})
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+            Key that = (Key) o;
+            return Objects.equals(nodeName, that.nodeName) &&
+                Objects.equals(resourceName, that.resourceName) &&
+                Objects.equals(volumeNumber, that.volumeNumber);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(nodeName, resourceName, volumeNumber);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public int compareTo(Key other)
+        {
+            int eq = nodeName.compareTo(other.nodeName);
+            if (eq == 0)
+            {
+                eq = resourceName.compareTo(other.resourceName);
+                if (eq == 0)
+                {
+                    eq = volumeNumber.compareTo(other.volumeNumber);
+                }
+            }
+            return eq;
+        }
     }
 
+    public interface InitMaps
+    {
+        Map<Volume.Key, VolumeConnection> getVolumeConnections();
+    }
 }

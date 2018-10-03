@@ -172,7 +172,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         final Map<SnapshotDefinition.Key, Snapshot> snapshotMap = new TreeMap<>();
         final Map<NetInterfaceName, NetInterface> netIfMap = new TreeMap<>();
         final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
-        final Map<Node, NodeConnection> nodeConnMap = new TreeMap<>();
+        final Map<NodeName, NodeConnection> nodeConnMap = new TreeMap<>();
 
         node = new NodeData(
             java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
@@ -350,14 +350,14 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         private final Map<SnapshotDefinition.Key, Snapshot> snapshotMap;
         private final Map<NetInterfaceName, NetInterface> netIfMap;
         private final Map<StorPoolName, StorPool> storPoolMap;
-        private final Map<Node, NodeConnection> nodeConnMap;
+        private final Map<NodeName, NodeConnection> nodeConnMap;
 
         NodeInitMaps(
             Map<ResourceName, Resource> rscMapRef,
             Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
             Map<NetInterfaceName, NetInterface> netIfMapRef,
             Map<StorPoolName, StorPool> storPoolMapRef,
-            Map<Node, NodeConnection> nodeConnMapRef
+            Map<NodeName, NodeConnection> nodeConnMapRef
         )
         {
             rscMap = rscMapRef;
@@ -392,7 +392,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         }
 
         @Override
-        public Map<Node, NodeConnection> getNodeConnMap()
+        public Map<NodeName, NodeConnection> getNodeConnMap()
         {
             return nodeConnMap;
         }

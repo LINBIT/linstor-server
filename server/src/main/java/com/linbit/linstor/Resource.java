@@ -84,6 +84,11 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     boolean isDiskless(AccessContext accCtx)
         throws AccessDeniedException;
 
+    /**
+     * Returns the identification key without checking if "this" is already deleted
+     */
+    Key getKey();
+
     @Override
     default int compareTo(Resource otherRsc)
     {
@@ -231,7 +236,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     public interface InitMaps
     {
-        Map<Resource, ResourceConnection> getRscConnMap();
+        Map<Resource.Key, ResourceConnection> getRscConnMap();
         Map<VolumeNumber, Volume> getVlmMap();
     }
 }
