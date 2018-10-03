@@ -14,6 +14,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.tasks.ReconnectorTask;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 
@@ -32,12 +33,14 @@ public class IntAuthAccept implements ApiCallReactive
     private final CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandler;
     private final Peer peer;
     private final AccessContext sysCtx;
+    private final ReconnectorTask reconnectorTask;
 
     @Inject
     public IntAuthAccept(
         ErrorReporter errorReporterRef,
         CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandlerRef,
         Peer peerRef,
+        ReconnectorTask reconnectorTaskRef,
         @SystemContext AccessContext sysCtxRef
     )
     {
@@ -45,6 +48,7 @@ public class IntAuthAccept implements ApiCallReactive
         ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
         peer = peerRef;
         sysCtx = sysCtxRef;
+        reconnectorTask = reconnectorTaskRef;
     }
 
     @Override
@@ -108,6 +112,9 @@ public class IntAuthAccept implements ApiCallReactive
                 )
             );
             peer.closeConnection();
+
+            reconnectorTask.add(peer);
+
             flux = Flux.empty();
         }
 
