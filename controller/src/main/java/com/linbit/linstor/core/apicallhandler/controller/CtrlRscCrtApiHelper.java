@@ -20,7 +20,6 @@ import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
-import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
@@ -47,6 +46,8 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.SwordfishTargetDriverKind;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -63,10 +64,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPriveleged;
 
 @Singleton
 public class CtrlRscCrtApiHelper
@@ -81,7 +82,6 @@ public class CtrlRscCrtApiHelper
     private final ResponseConverter responseConverter;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDataFactory resourceDataFactory;
-    private final VolumeDataFactory volumeDataFactory;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
@@ -96,7 +96,6 @@ public class CtrlRscCrtApiHelper
         ResponseConverter responseConverterRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDataFactory resourceDataFactoryRef,
-        VolumeDataFactory volumeDataFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -110,7 +109,6 @@ public class CtrlRscCrtApiHelper
         responseConverter = responseConverterRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDataFactory = resourceDataFactoryRef;
-        volumeDataFactory = volumeDataFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -157,6 +155,14 @@ public class CtrlRscCrtApiHelper
             rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
         }
 
+        boolean hasAlreadySwordfishTargetVolume = execPriveleged(() -> rscDfn.streamResource(apiCtx))
+            .flatMap(tmpRsc -> tmpRsc.streamVolumes())
+            .anyMatch(vlm ->
+                execPriveleged(() -> vlm.getStorPool(apiCtx)).getDriverKind() instanceof SwordfishTargetDriverKind
+            );
+
+        List<VolumeData> createdVolumes = new ArrayList<>();
+
         for (Volume.VlmApi vlmApi : vlmApiList)
         {
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
@@ -164,6 +170,7 @@ public class CtrlRscCrtApiHelper
             VolumeData vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                 rsc, vlmDfn, vlmApi.getBlockDevice(), vlmApi.getMetaDisk()
             ).extractApiCallRc(responses);
+            createdVolumes.add(vlmData);
 
             Props vlmProps = ctrlPropsHelper.getProps(vlmData);
 
@@ -183,8 +190,25 @@ public class CtrlRscCrtApiHelper
 
                 VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn)
                     .extractApiCallRc(responses);
+                createdVolumes.add(vlm);
             }
         }
+
+        boolean createsNewSwordfishTargetVolume = createdVolumes.stream()
+            .anyMatch(vlm ->
+                execPriveleged(() -> vlm.getStorPool(apiCtx)).getDriverKind() instanceof SwordfishTargetDriverKind
+            );
+
+        if (createsNewSwordfishTargetVolume && hasAlreadySwordfishTargetVolume)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_SWORDFISH_TARGET_PER_RSC_DFN,
+                    "Linstor currently only allows one swordfish target per resource definition"
+                )
+            );
+        }
+
         return new ApiCallRcWith<>(responses, rsc);
     }
 
