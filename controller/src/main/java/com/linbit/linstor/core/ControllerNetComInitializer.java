@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -77,6 +78,7 @@ public final class ControllerNetComInitializer
     private final NetComContainer netComContainer;
     private final Map<ServiceName, SystemService> systemServicesMap;
     private final LinStorScope initScope;
+    private final ControllerCmdlArguments controllerCmdlArguments;
 
     @Inject
     public ControllerNetComInitializer(
@@ -90,7 +92,8 @@ public final class ControllerNetComInitializer
         CtrlConnTracker ctrlConnTrackerRef,
         NetComContainer netComContainerRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
-        LinStorScope initScopeRef
+        LinStorScope initScopeRef,
+        ControllerCmdlArguments controllerCmdlArgumentsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -104,6 +107,7 @@ public final class ControllerNetComInitializer
         netComContainer = netComContainerRef;
         systemServicesMap = systemServicesMapRef;
         initScope = initScopeRef;
+        controllerCmdlArguments = controllerCmdlArgumentsRef;
     }
 
     public boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef)
@@ -224,6 +228,18 @@ public final class ControllerNetComInitializer
         }
     }
 
+    private Path resolveConfigFilePath(final String filePath)
+    {
+        Path path = Paths.get(filePath);
+        if (!path.isAbsolute())
+        {
+            path = Paths.get(controllerCmdlArguments.getConfigurationDirectory())
+                .resolve(path);
+        }
+
+        return path;
+    }
+
     private void createNetComService(
         ServiceName serviceName,
         Props configProp,
@@ -321,6 +337,10 @@ public final class ControllerNetComInitializer
                 String trustStoreFile = loadOrAddKey(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE, missingPropKeys);
                 String trustStorPw = loadOrAddKey(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD, missingPropKeys);
 
+                // resolve SSL file paths
+                Path keyStoreFilePath = resolveConfigFilePath(keyStoreFile);
+                Path trustStoreFilePath = resolveConfigFilePath(trustStoreFile);
+
                 boolean rejectStart = false;
                 if (!missingPropKeys.isEmpty())
                 {
@@ -341,26 +361,28 @@ public final class ControllerNetComInitializer
                 }
                 else
                 {
-                    boolean keyStorFileExists = Files.exists(Paths.get(keyStoreFile));
-                    boolean trustStoreFileExists = Files.exists(Paths.get(trustStoreFile));
+                    boolean keyStorFileExists = Files.exists(keyStoreFilePath);
+                    boolean trustStoreFileExists = Files.exists(trustStoreFilePath);
 
                     if (!keyStorFileExists)
                     {
-                        StringBuilder errorMsg = new StringBuilder();
-                        errorMsg.append("The SSL network communication service '").append(serviceName.displayValue)
-                            .append("' could not be started because the keyStore file (").append(keyStoreFile)
-                            .append(") is missing");
-                        errorLogRef.logWarning(errorMsg.toString());
+                        String errorMsg = String.format("The SSL network communication service '%s' " +
+                            "could not be started because the keyStore file (%s) is missing",
+                            serviceName.displayValue,
+                            keyStoreFilePath.toString()
+                        );
+                        errorLogRef.logWarning(errorMsg);
                         rejectStart = true;
                     }
                     else
                     if (!trustStoreFileExists)
                     {
-                        StringBuilder errorMsg = new StringBuilder();
-                        errorMsg.append("The SSL network communication service '").append(serviceName.displayValue)
-                            .append("' is missing the trustStor file (").append(trustStoreFile)
-                            .append(")");
-                        errorLogRef.logWarning(errorMsg.toString());
+                        String errorMsg = String.format("The SSL network communication service '%s' " +
+                            "is missing the trustStor file (%s)",
+                            serviceName.displayValue,
+                            trustStoreFilePath.toString()
+                        );
+                        errorLogRef.logWarning(errorMsg);
                         rejectStart = false;
                     }
                 }
