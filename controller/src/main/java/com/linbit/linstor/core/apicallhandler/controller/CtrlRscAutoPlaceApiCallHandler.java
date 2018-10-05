@@ -282,16 +282,30 @@ public class CtrlRscAutoPlaceApiCallHandler
                 // deploy resource disklessly on remaining nodes
                 for (Node disklessNode : disklessNodeList)
                 {
-                    deployedResources.add(
-                        ctrlRscCrtApiHelper.createResourceDb(
-                            disklessNode.getName().displayValue,
-                            rscNameStr,
-                            RscFlags.DISKLESS.flagValue,
-                            rscPropsMap,
-                            Collections.emptyList(),
-                            null
-                        ).extractApiCallRc(responses)
-                    );
+                    try
+                    {
+                        if (disklessNode.getNodeType(apiCtx) == Node.NodeType.SATELLITE) // only deploy on satellites
+                        {
+                            deployedResources.add(
+                                ctrlRscCrtApiHelper.createResourceDb(
+                                    disklessNode.getName().displayValue,
+                                    rscNameStr,
+                                    RscFlags.DISKLESS.flagValue,
+                                    rscPropsMap,
+                                    Collections.emptyList(),
+                                    null
+                                ).extractApiCallRc(responses)
+                            );
+                        }
+                    }
+                    catch (AccessDeniedException accDeniedExc)
+                    {
+                        throw new ApiAccessDeniedException(
+                            accDeniedExc,
+                            "access " + CtrlNodeApiCallHandler.getNodeDescriptionInline(disklessNode),
+                            ApiConsts.FAIL_ACC_DENIED_NODE
+                        );
+                    }
                 }
             }
 
