@@ -469,6 +469,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             MsgIntPrimaryOuterClass.MsgIntPrimary.newBuilder()
                 .setRscName(rscName)
                 .setRscUuid(rscUuid)
+                .setAlreadyInitialized(alreadyInitialized)
                 .build()
                 .writeDelimitedTo(baos);
         }

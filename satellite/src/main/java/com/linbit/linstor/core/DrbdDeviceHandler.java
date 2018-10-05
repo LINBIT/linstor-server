@@ -44,7 +44,6 @@ import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceDeploymentStateEvent;
 import com.linbit.linstor.event.satellite.InProgressSnapshotEvent;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
@@ -308,7 +307,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 }
                 else
                 {
-                    createResource(localNode, rscName, rsc, rscDfn, rscState);
+                    createResource(rscName, rsc, rscDfn, rscState);
                 }
 
                 deviceManagerProvider.get().notifyResourceApplied(rsc);
@@ -1044,7 +1043,6 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void createResource(
-        Node localNode,
         ResourceName rscName,
         Resource rsc,
         ResourceDefinition rscDfn,
@@ -1072,7 +1070,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 adjustResource(rsc, rscState);
 
-                condInitialOrSkipSync(localNode, rscName, rsc, rscDfn, rscState);
+                condInitialOrSkipSync(rscName, rsc, rscDfn, rscState);
             }
         }
 
@@ -1607,7 +1605,6 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void condInitialOrSkipSync(
-        Node localNode,
         ResourceName rscName,
         Resource rsc,
         ResourceDefinition rscDfn,
@@ -1620,11 +1617,15 @@ class DrbdDeviceHandler implements DeviceHandler
             if (rscDfn.getProps(wrkCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
                 rsc.getStateFlags().isUnset(wrkCtx, Resource.RscFlags.DISKLESS))
             {
-                errLog.logTrace("Requesting primary on %s", rscName.getDisplayName());
+                boolean alreadyInitialized = !allVlmsMetaDataNew(rscState);
+                errLog.logTrace("Requesting primary on %s; already initialized: %b",
+                    rscName.getDisplayName(), alreadyInitialized);
+                // Send a primary request even when volumes have already been initialized so that the controller can
+                // save DrbdPrimarySetOn so that subsequently added nodes do not request to be primary
                 sendRequestPrimaryResource(
                     rscDfn.getName().getDisplayName(),
                     rsc.getUuid().toString(),
-                    !allVlmsMetaDataNew(rscState)
+                    alreadyInitialized
                 );
             }
             else

@@ -271,7 +271,8 @@ public class CtrlRscDfnApiCallHandler
                 ctrlTransactionHelper.commit();
 
                 errorReporter.logTrace(
-                    "Primary set for " + currentPeer.getNode().getName().getDisplayName()
+                    "Primary set for " + currentPeer.getNode().getName().getDisplayName() + "; " +
+                        " already initialized: " + alreadyInitialized
                 );
 
                 ctrlSatelliteUpdater.updateSatellites(resDfn);
