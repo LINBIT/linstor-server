@@ -305,14 +305,6 @@ public class DrbdAdm
         execute(DRBDADM_UTIL, "resume-io", rscName.displayValue);
     }
 
-    /**
-     * Calls drbdadm to set a new current GI
-     */
-    public void newCurrentUuid(ResourceName resourceName, VolumeNumber volNum) throws ExtCmdFailedException
-    {
-        simpleAdmCommand(resourceName, volNum, "--clear-bitmap", "new-current-uuid");
-    }
-
     public void waitConnectResource(ResourceName resourceName, int timeout) throws ExtCmdFailedException
     {
         waitForFamily(resourceName, timeout, "wait-connect-resource");

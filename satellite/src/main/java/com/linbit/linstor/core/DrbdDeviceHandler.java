@@ -1695,33 +1695,6 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void skipSync(
-        ResourceName rscName,
-        VolumeNumber vlmNr
-    )
-        throws ResourceException
-    {
-        try
-        {
-            drbdUtils.newCurrentUuid(rscName, vlmNr);
-        }
-        catch (ExtCmdFailedException cmdExc)
-        {
-            throw new ResourceException(
-                "Skipping the initial resync of the DRBD resource '" + rscName.getDisplayName() + " volume " +
-                vlmNr.value + " failed",
-                getAbortMsg(rscName),
-                "The external command for adjusting the state of the DRBD resource's generation identifiers failed",
-                "- Check whether the required software is installed\n" +
-                "- Check whether the application's search path includes the location\n" +
-                "  of the external software\n" +
-                "- Check whether the application has execute permission for the external command\n",
-                null,
-                cmdExc
-            );
-        }
-    }
-
     private void handleSnapshots(ResourceName rscName, Collection<Snapshot> snapshots, ResourceState rscState)
         throws ResourceException, AccessDeniedException, StorageException
     {
