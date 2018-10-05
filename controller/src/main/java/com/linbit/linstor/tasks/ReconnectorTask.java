@@ -40,11 +40,20 @@ public class ReconnectorTask implements Task
         pingTask = pingTaskRef;
     }
 
-    public void add(Peer peer)
+    public void add(Peer peer, boolean authenticateImmediately)
     {
         synchronized (syncObj)
         {
-            peerList.add(peer);
+            if (authenticateImmediately && peer.isConnected(false))
+            {
+                // no locks needed
+                authenticatorProvider.get().completeAuthentication(peer);
+                pingTask.add(peer);
+            }
+            else
+            {
+                peerList.add(peer);
+            }
         }
     }
 

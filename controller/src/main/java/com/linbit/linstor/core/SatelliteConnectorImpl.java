@@ -156,19 +156,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
                 try
                 {
                     Peer peer = tcpConnector.connect(satelliteAddress, node);
-                    {
-                        node.setPeer(connectorCtx, peer);
-                    }
-                    if (peer.isConnected(false))
-                    {
-                        // no locks needed
-                        authenticator.completeAuthentication(peer);
-                        pingTask.add(peer);
-                    }
-                    else
-                    {
-                        reconnectorTask.add(peer);
-                    }
+                    reconnectorTask.add(peer, true);
                 }
                 catch (IOException ioExc)
                 {
@@ -186,16 +174,6 @@ public class SatelliteConnectorImpl implements SatelliteConnector
                             ioExc
                         )
                     );
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    errorReporter.reportError(
-                        new ImplementationError(
-                            "System context has not enough privileges to set peer for a connecting node",
-                            accDeniedExc
-                        )
-                    );
-                    accDeniedExc.printStackTrace();
                 }
             }
         };

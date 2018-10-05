@@ -87,7 +87,7 @@ public class PingTask implements Task
                 peersToRemove.add(peer);
                 try
                 {
-                    reconnector.add(peer.getConnector().reconnect(peer));
+                    reconnector.add(peer.getConnector().reconnect(peer), true);
                 }
                 catch (IOException ioExc)
                 {

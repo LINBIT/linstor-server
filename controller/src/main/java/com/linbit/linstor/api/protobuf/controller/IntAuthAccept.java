@@ -113,7 +113,7 @@ public class IntAuthAccept implements ApiCallReactive
             );
             peer.closeConnection();
 
-            reconnectorTask.add(peer);
+            reconnectorTask.add(peer, false);
 
             flux = Flux.empty();
         }
