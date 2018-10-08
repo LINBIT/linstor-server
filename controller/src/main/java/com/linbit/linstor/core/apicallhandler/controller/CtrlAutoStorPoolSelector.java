@@ -31,11 +31,13 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -75,13 +77,9 @@ public class CtrlAutoStorPoolSelector
             nodeSelectionStrategy
         );
 
-        if (candidateList.isEmpty())
-        {
-            failNotEnoughCandidates(selectFilter.getStorPoolNameStr(), rscSize);
-        }
-        candidateList.sort((c1, c2) ->
-            candidateSelectionStrategy.compare(c1, c2, peerAccCtx.get()));
-        return candidateList.get(0);
+        return candidateList.stream()
+            .max(candidateSelectionStrategy.makeComparator(peerAccCtx.get()))
+            .orElseThrow(() -> failNotEnoughCandidates(selectFilter.getStorPoolNameStr(), rscSize));
     }
 
     public List<Candidate> getCandidateList(
@@ -403,17 +401,15 @@ public class CtrlAutoStorPoolSelector
                 // to be different
                 for (List<Node> nodeGroup : nodeGroups)
                 {
-                    // Sort the nodes within the group so that the most preferred nodes are chosen first (sort
-                    // duplicate list because the input list may not be mutable)
-                    List<Node> sortNodes = new ArrayList<>(nodeGroup);
-                    sortNodes.sort((node1, node2) -> nodeSelectionStartegy.compare(
-                        node1,
-                        node2,
+                    // Sort the nodes within the group so that the most preferred nodes are chosen first
+                    Comparator<Node> nodeComparator = nodeSelectionStartegy.makeComparator(
                         candidateEntry.getKey(),
                         peerAccCtx.get()
-                    ));
-
-                    Collection<Node> remainingNodes = sortNodes;
+                    );
+                    Collection<Node> remainingNodes = nodeGroup.stream()
+                        // descending order of preference
+                        .sorted(nodeComparator.reversed())
+                        .collect(Collectors.toCollection(ArrayList::new));
                     for (String diffPropKey : replicasOnDiffParamList)
                     {
                         HashMap<String, Node> usedValues = new HashMap<>();
@@ -473,9 +469,9 @@ public class CtrlAutoStorPoolSelector
         }
     }
 
-    private void failNotEnoughCandidates(String storPoolName, final long rscSize)
+    private ApiRcException failNotEnoughCandidates(String storPoolName, final long rscSize)
     {
-        throw new ApiRcException(ApiCallRcImpl
+        return new ApiRcException(ApiCallRcImpl
             .entryBuilder(
                 ApiConsts.FAIL_NOT_ENOUGH_NODES,
                 "Not enough available nodes"
@@ -496,70 +492,67 @@ public class CtrlAutoStorPoolSelector
         );
     }
 
-    public static int mostRemainingSpaceCandidateStrategy(
-        Candidate cand1,
-        Candidate cand2,
-        AccessContext accCtx
-    )
+    public static Comparator<Candidate> mostRemainingSpaceCandidateStrategy(AccessContext accCtx)
     {
-        // the node-lists are already sorted by their storPools.
-        // that means, we only have to compare the freeCapacity of the first nodes of cand1 and cand2
-        int cmp = 0;
-        try
-        {
-            StorPool storPool1 = cand1.nodes.get(0).getStorPool(accCtx, cand1.storPoolName);
-            StorPool storPool2 = cand2.nodes.get(0).getStorPool(accCtx, cand2.storPoolName);
+        Comparator<StorPool> thickComparator = Comparator.<StorPool, Boolean>comparing(
+            storPool -> storPool.getDriverKind().usesThinProvisioning()
+        ).reversed();
 
-            // prefer thick to thin pools
-            cmp = Boolean.compare(
-                storPool1.getDriverKind().usesThinProvisioning(),
-                storPool2.getDriverKind().usesThinProvisioning()
-            );
+        Comparator<StorPool> freeSpaceComparator = Comparator.comparingLong(
+            storPool -> getFreeSpaceCurrentEstimationPrivileged(accCtx, storPool).orElse(0L)
+        );
 
-            if (cmp == 0)
-            {
-                // compare the arguments in reverse order so that the candidate with more free space comes first
-                cmp = Long.compare(
-                    storPool2.getFreeSpaceTracker().getFreeSpaceCurrentEstimation(accCtx).orElse(0L),
-                    storPool1.getFreeSpaceTracker().getFreeSpaceCurrentEstimation(accCtx).orElse(0L)
-                );
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            // this exception should have been thrown long ago
-            throw new ImplementationError(exc);
-        }
-        return cmp;
+        return comparingWithComparator(
+            candidate -> getStorPoolPrivileged(accCtx, candidate.nodes.get(0), candidate.storPoolName),
+            thickComparator.thenComparing(freeSpaceComparator)
+        );
     }
 
-    public static int mostRemainingSpaceNodeStrategy(
-        Node nodeA,
-        Node nodeB,
+    public static Comparator<Node> mostRemainingSpaceNodeStrategy(
         StorPoolName storPoolName,
         AccessContext accCtx
     )
     {
-        int cmp = 0;
+        return Comparator.comparingLong(node ->
+            getFreeSpaceCurrentEstimationPrivileged(
+                accCtx,
+                getStorPoolPrivileged(accCtx, node, storPoolName)
+            ).orElse(0L)
+        );
+    }
+
+    private static StorPool getStorPoolPrivileged(AccessContext accCtx, Node node, StorPoolName storPoolName)
+    {
+        StorPool storPool;
         try
         {
-            // compare the arguments in reverse order so that the node with more free space comes first
-            cmp = Long.compare(
-                nodeB.getStorPool(accCtx, storPoolName)
-                    .getFreeSpaceTracker()
-                    .getFreeSpaceCurrentEstimation(accCtx)
-                    .orElse(0L),
-                nodeA.getStorPool(accCtx, storPoolName)
-                    .getFreeSpaceTracker()
-                    .getFreeSpaceCurrentEstimation(accCtx)
-                    .orElse(0L)
-            );
+            storPool = node.getStorPool(accCtx, storPoolName);
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
-        return cmp;
+        return storPool;
+    }
+
+    private static Optional<Long> getFreeSpaceCurrentEstimationPrivileged(
+        AccessContext accCtx, StorPool storPool)
+    {
+        Optional<Long> freeSpaceCurrentEstimation;
+        try
+        {
+            freeSpaceCurrentEstimation = storPool.getFreeSpaceTracker().getFreeSpaceCurrentEstimation(accCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return freeSpaceCurrentEstimation;
+    }
+
+    private static <T, U> Comparator<T> comparingWithComparator(Function<T, U> mapper, Comparator<U> comparator)
+    {
+        return (t1, t2) -> comparator.compare(mapper.apply(t1), mapper.apply(t2));
     }
 
     private Map<StorPoolName, List<Node>> filterByRscNameStr(
@@ -571,12 +564,7 @@ public class CtrlAutoStorPoolSelector
         for (Entry<StorPoolName, List<Node>> entry: nodes.entrySet())
         {
             List<Node> nodeCandidates = entry.getValue().stream()
-                .sorted((node1, node2) ->
-                    getFreeSpace(node1, entry.getKey()).orElse(0L)
-                    .compareTo(
-                        getFreeSpace(node2, entry.getKey()).orElse(0L)
-                    )
-                )
+                .sorted(Comparator.comparing(node -> getFreeSpace(node, entry.getKey()).orElse(0L)))
                 .filter(node -> hasNoResourceOf(node, notPlaceWithRscList))
                 .collect(Collectors.toList());
 
@@ -741,12 +729,20 @@ public class CtrlAutoStorPoolSelector
     @FunctionalInterface
     public interface NodeSelectionStrategy
     {
-        int compare(Node nodeA, Node nodeB, StorPoolName storPoolName, AccessContext accCtx);
+        /**
+         * @return A comparator for nodes where the preferred node has the greater value as defined by
+         * {@link Comparator#compare(Object, Object)}.
+         */
+        Comparator<Node> makeComparator(StorPoolName storPoolName, AccessContext accCtx);
     }
 
     @FunctionalInterface
     public interface CandidateSelectionStrategy
     {
-        int compare(Candidate candidate1, Candidate candidate2, AccessContext accCtx);
+        /**
+         * @return A comparator for candidates where the preferred candidate has the greater value as defined by
+         * {@link Comparator#compare(Object, Object)}.
+         */
+        Comparator<Candidate> makeComparator(AccessContext accCtx);
     }
 }
