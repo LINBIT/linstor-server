@@ -236,7 +236,7 @@ project(':controller') {
         } else {
             compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
             compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
-            compile group: 'org.flywaydb', name: 'flyway-core', version: '5.0.7'
+            compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.0'
             runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
 //            runtime 'org.mariadb.jdbc:mariadb-java-client:2.2.6'
