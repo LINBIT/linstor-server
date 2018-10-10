@@ -64,7 +64,10 @@ public class ApplyRsc implements ApiCall
         List<VolumeDefinition.VlmDfnApi> vlmDfns = extractVlmDfns(rscData.getVlmDfnsList());
         List<Volume.VlmApi> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
-        List<ResourceConnection.RscConnApi> rscConns = extractRscConn(rscData.getRscConnectionsList());
+        List<ResourceConnection.RscConnApi> rscConns = extractRscConn(
+            rscData.getRscName(),
+            rscData.getRscConnectionsList()
+        );
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
             UUID.fromString(rscData.getRscDfnUuid()),
             rscData.getRscName(),
@@ -139,7 +142,10 @@ public class ApplyRsc implements ApiCall
         return list;
     }
 
-    private static List<ResourceConnection.RscConnApi> extractRscConn(List<RscConnectionData> rscConnections)
+    private static List<ResourceConnection.RscConnApi> extractRscConn(
+        String rscName,
+        List<RscConnectionData> rscConnections
+    )
     {
         return rscConnections.stream()
             .map(rscConnData ->
@@ -147,7 +153,9 @@ public class ApplyRsc implements ApiCall
                     UUID.fromString(rscConnData.getUuid()),
                     rscConnData.getNode1(),
                     rscConnData.getNode2(),
-                    ProtoMapUtils.asMap(rscConnData.getPropsList())))
+                    rscName,
+                    ProtoMapUtils.asMap(rscConnData.getPropsList()),
+                    rscConnData.getFlags()))
             .collect(Collectors.toList());
     }
 

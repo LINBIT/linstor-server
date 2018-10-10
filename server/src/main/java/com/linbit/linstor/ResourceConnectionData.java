@@ -1,5 +1,10 @@
 package com.linbit.linstor;
 
+import javax.inject.Provider;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.UUID;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
@@ -10,16 +15,11 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.UUID;
-
-import javax.inject.Provider;
 
 /**
  * Defines a connection between two LinStor resources
@@ -34,10 +34,12 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     // Runtime instance identifier for debug purposes
     private final transient UUID dbgInstanceId;
 
-    private final Resource sourceResource;
-    private final Resource targetResource;
+    private final ResourceConnectionKey connectionKey;
 
     private final Props props;
+
+    // State flags
+    private final StateFlags<ResourceConnection.RscConnFlags> flags;
 
     private final ResourceConnectionDataDatabaseDriver dbDriver;
 
@@ -50,15 +52,18 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         ResourceConnectionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        long initFlags
     )
         throws SQLException
     {
         super(transMgrProviderRef);
         dbDriver = dbDriverRef;
 
-        NodeName sourceNodeName = sourceResourceRef.getAssignedNode().getName();
-        NodeName targetNodeName = targetResourceRef.getAssignedNode().getName();
+        connectionKey = new ResourceConnectionKey(sourceResourceRef, targetResourceRef);
+
+        NodeName sourceNodeName = connectionKey.getSource().getAssignedNode().getName();
+        NodeName targetNodeName = connectionKey.getTarget().getAssignedNode().getName();
         if (sourceResourceRef.getDefinition() != targetResourceRef.getDefinition())
         {
             throw new ImplementationError(
@@ -78,30 +83,28 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         objId = uuid;
         dbgInstanceId = UUID.randomUUID();
 
-        if (sourceNodeName.getName().compareTo(targetNodeName.getName()) < 0)
-        {
-            sourceResource = sourceResourceRef;
-            targetResource = targetResourceRef;
-        }
-        else
-        {
-            sourceResource = targetResourceRef;
-            targetResource = sourceResourceRef;
-        }
-
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
-                sourceNodeName,
-                targetNodeName,
+                connectionKey.getSource().getAssignedNode().getName(),
+                connectionKey.getTarget().getAssignedNode().getName(),
                 sourceResourceRef.getDefinition().getName()
             )
         );
 
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
+        flags = transObjFactory.createStateFlagsImpl(
+            Arrays.asList(connectionKey.getSource().getObjProt(), connectionKey.getTarget().getObjProt()),
+            this,
+            ResourceConnection.RscConnFlags.class,
+            dbDriver.getStateFlagPersistence(),
+            initFlags
+        );
+
         transObjs = Arrays.asList(
-            sourceResource,
-            targetResource,
+            connectionKey.getSource(),
+            connectionKey.getTarget(),
+            flags,
             props,
             deleted
         );
@@ -114,23 +117,6 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     )
         throws AccessDeniedException
     {
-        Resource source;
-        Resource target;
-
-        NodeName sourceNodeName = sourceResource.getAssignedNode().getName();
-        NodeName targetNodeName = targetResource.getAssignedNode().getName();
-
-        if (sourceNodeName.compareTo(targetNodeName) < 0)
-        {
-            source = sourceResource;
-            target = targetResource;
-        }
-        else
-        {
-            source = targetResource;
-            target = sourceResource;
-        }
-
         return (ResourceConnectionData) sourceResource.getResourceConnection(accCtx, targetResource);
     }
 
@@ -151,14 +137,14 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     public Resource getSourceResource(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        return sourceResource;
+        return connectionKey.getSource();
     }
 
     @Override
     public Resource getTargetResource(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        return targetResource;
+        return connectionKey.getTarget();
     }
 
     @Override
@@ -167,10 +153,17 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         checkDeleted();
         return PropsAccess.secureGetProps(
             accCtx,
-            sourceResource.getObjProt(),
-            targetResource.getObjProt(),
+            connectionKey.getSource().getObjProt(),
+            connectionKey.getTarget().getObjProt(),
             props
         );
+    }
+
+    @Override
+    public StateFlags<ResourceConnection.RscConnFlags> getStateFlags()
+    {
+        checkDeleted();
+        return flags;
     }
 
     @Override
@@ -178,11 +171,11 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     {
         if (!deleted.get())
         {
-            sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+            connectionKey.getSource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+            connectionKey.getTarget().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-            sourceResource.removeResourceConnection(accCtx, this);
-            targetResource.removeResourceConnection(accCtx, this);
+            connectionKey.getSource().removeResourceConnection(accCtx, this);
+            connectionKey.getTarget().removeResourceConnection(accCtx, this);
 
             props.delete();
 
@@ -196,9 +189,9 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     @Override
     public String toString()
     {
-        return "Node1: '" + sourceResource.getAssignedNode().getName() + "', " +
-               "Node2: '" + targetResource.getAssignedNode().getName() + "', " +
-               "Rsc: '" + sourceResource.getDefinition().getName() + "'";
+        return "Node1: '" + connectionKey.getSource().getAssignedNode().getName() + "', " +
+               "Node2: '" + connectionKey.getTarget().getAssignedNode().getName() + "', " +
+               "Rsc: '" + connectionKey.getSource().getDefinition().getName() + "'";
     }
 
     private void checkDeleted()
@@ -215,9 +208,11 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     {
         return new RscConnPojo(
             getUuid(),
-            sourceResource.getAssignedNode().getName().getDisplayName(),
-            targetResource.getAssignedNode().getName().getDisplayName(),
-            getProps(accCtx).map()
+            connectionKey.getSource().getAssignedNode().getName().getDisplayName(),
+            connectionKey.getTarget().getAssignedNode().getName().getDisplayName(),
+            connectionKey.getSource().getDefinition().getName().getDisplayName(),
+            getProps(accCtx).map(),
+            getStateFlags().getFlagsBits(accCtx)
         );
     }
 }

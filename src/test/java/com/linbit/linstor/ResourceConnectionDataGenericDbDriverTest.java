@@ -91,7 +91,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            0
         );
     }
 
@@ -107,7 +108,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst);
+        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst, null);
         commit();
 
         checkDbPersist(false);
@@ -155,7 +156,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         ResourceConnectionData storedInstance = resourceConnectionDataFactory.create(
             SYS_CTX,
             resSrc,
-            resDst
+            resDst,
+            null
         );
 
         // no clear-cache
@@ -233,6 +235,6 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc.setResourceConnection(SYS_CTX, resCon);
         resDst.setResourceConnection(SYS_CTX, resCon);
 
-        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst);
+        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst, null);
     }
 }

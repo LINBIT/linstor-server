@@ -10,19 +10,25 @@ public class RscConnPojo implements ResourceConnection.RscConnApi
     private final UUID uuid;
     private String sourceNodeName;
     private String targetNodeName;
+    private String rscName;
     private final Map<String, String> props;
+    private long flags;
 
     public RscConnPojo(
         UUID uuidRef,
         String sourceNodeNameRef,
         String targetNodeNameRef,
-        Map<String, String> propsRef
+        String rscNameRef,
+        Map<String, String> propsRef,
+        long flagRef
     )
     {
         this.uuid = uuidRef;
         this.sourceNodeName = sourceNodeNameRef;
         this.targetNodeName = targetNodeNameRef;
+        this.rscName = rscNameRef;
         this.props = propsRef;
+        this.flags = flagRef;
     }
 
     @Override
@@ -44,8 +50,20 @@ public class RscConnPojo implements ResourceConnection.RscConnApi
     }
 
     @Override
+    public String getResourceName()
+    {
+        return rscName;
+    }
+
+    @Override
     public Map<String, String> getProps()
     {
         return props;
+    }
+
+    @Override
+    public long getFlags()
+    {
+        return flags;
     }
 }

@@ -6,6 +6,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -39,7 +40,8 @@ public class ResourceConnectionDataFactory
     public ResourceConnectionData create(
         AccessContext accCtx,
         Resource sourceResource,
-        Resource targetResource
+        Resource targetResource,
+        ResourceConnection.RscConnFlags[] initFlags
     )
         throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
@@ -60,7 +62,8 @@ public class ResourceConnectionDataFactory
             dbDriver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            StateFlagsBits.getMask(initFlags)
         );
         dbDriver.create(rscConData);
 
@@ -74,27 +77,13 @@ public class ResourceConnectionDataFactory
         AccessContext accCtx,
         UUID uuid,
         Resource sourceResource,
-        Resource targetResource
+        Resource targetResource,
+        ResourceConnection.RscConnFlags[] initFlags
     )
         throws ImplementationError
     {
         ResourceConnectionData rscConData = null;
-        Resource source;
-        Resource target;
-
-        NodeName sourceNodeName = sourceResource.getAssignedNode().getName();
-        NodeName targetNodeName = targetResource.getAssignedNode().getName();
-
-        if (sourceNodeName.compareTo(targetNodeName) < 0)
-        {
-            source = sourceResource;
-            target = targetResource;
-        }
-        else
-        {
-            source = targetResource;
-            target = sourceResource;
-        }
+        ResourceConnectionKey connectionKey = new ResourceConnectionKey(sourceResource, targetResource);
 
         try
         {
@@ -104,12 +93,13 @@ public class ResourceConnectionDataFactory
             {
                 rscConData = new ResourceConnectionData(
                     uuid,
-                    source,
-                    target,
+                    connectionKey.getSource(),
+                    connectionKey.getTarget(),
                     dbDriver,
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    StateFlagsBits.getMask(initFlags)
                 );
                 sourceResource.setResourceConnection(accCtx, rscConData);
                 targetResource.setResourceConnection(accCtx, rscConData);

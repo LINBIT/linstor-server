@@ -1,7 +1,9 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import java.sql.SQLException;
+
 import com.linbit.linstor.ResourceConnectionData;
+import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
  * Database driver for {@link ResourceConnectionData}.
@@ -27,4 +29,9 @@ public interface ResourceConnectionDataDatabaseDriver
      * @throws SQLException
      */
     void delete(ResourceConnectionData resConDfnData) throws SQLException;
+
+    /**
+     * A special sub-driver to update the persisted flags.
+     */
+    StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence();
 }

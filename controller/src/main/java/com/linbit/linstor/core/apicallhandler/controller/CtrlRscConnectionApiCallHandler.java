@@ -5,6 +5,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceConnectionDataFactory;
 import com.linbit.linstor.ResourceName;
@@ -25,6 +26,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlagsBits;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -89,7 +91,7 @@ class CtrlRscConnectionApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn = createRscConn(nodeName1Str, nodeName2Str, rscNameStr);
+            ResourceConnectionData rscConn = createRscConn(nodeName1Str, nodeName2Str, rscNameStr, null);
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.RSC_CONN, rscConnPropsMap, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
@@ -130,7 +132,7 @@ class CtrlRscConnectionApiCallHandler
             ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr);
             if (rscConn == null)
             {
-                rscConn = createRscConn(nodeName1, nodeName2, rscNameStr);
+                rscConn = createRscConn(nodeName1, nodeName2, rscNameStr, null);
             }
 
             if (rscConnUuid != null && !rscConnUuid.equals(rscConn.getUuid()))
@@ -203,7 +205,8 @@ class CtrlRscConnectionApiCallHandler
     private ResourceConnectionData createRscConn(
         String nodeName1Str,
         String nodeName2Str,
-        String rscNameStr
+        String rscNameStr,
+        ResourceConnection.RscConnFlags[] initFlags
     )
     {
         NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
@@ -219,7 +222,8 @@ class CtrlRscConnectionApiCallHandler
             rscConn = resourceConnectionDataFactory.create(
                 peerAccCtx.get(),
                 rsc1,
-                rsc2
+                rsc2,
+                initFlags
             );
         }
         catch (AccessDeniedException accDeniedExc)

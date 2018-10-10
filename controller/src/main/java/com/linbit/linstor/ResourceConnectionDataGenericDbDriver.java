@@ -1,5 +1,16 @@
 package com.linbit.linstor;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
@@ -10,21 +21,12 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.linbit.utils.StringUtils;
 
 @Singleton
 public class ResourceConnectionDataGenericDbDriver implements ResourceConnectionDataDatabaseDriver
@@ -35,20 +37,26 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private static final String NODE_SRC = DbConstants.NODE_NAME_SRC;
     private static final String NODE_DST = DbConstants.NODE_NAME_DST;
     private static final String RES_NAME = DbConstants.RESOURCE_NAME;
+    private static final String FLAGS = "FLAGS";
 
     private static final String SELECT_ALL =
-        " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  +
+        " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  + ", " + FLAGS +
         " FROM " + TBL_RES_CON_DFN;
 
     private static final String INSERT =
         " INSERT INTO " + TBL_RES_CON_DFN +
-        " (" + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST + ")" +
-        " VALUES (?, ?, ?, ?)";
+        " (" + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST + ", " + FLAGS + ")" +
+        " VALUES (?, ?, ?, ?, ?)";
     private static final String DELETE =
         " DELETE FROM " + TBL_RES_CON_DFN +
         " WHERE " + NODE_SRC + " = ? AND " +
                    NODE_DST + " = ? AND " +
                    RES_NAME + " = ?";
+    private static final String RES_UPDATE_FLAG =
+        " UPDATE " + TBL_RES_CON_DFN +
+            " SET " + FLAGS + " = ? " +
+            " WHERE " + NODE_SRC + " = ? AND " + NODE_DST + " = ? AND " +
+            RES_NAME      + " = ?";
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -56,6 +64,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final FlagDriver flagDriver;
 
     @Inject
     public ResourceConnectionDataGenericDbDriver(
@@ -71,6 +80,8 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+
+        flagDriver = new FlagDriver();
     }
 
     public List<ResourceConnectionData> loadAll(Map<Pair<NodeName, ResourceName>, ? extends Resource> tmpRscMap)
@@ -84,15 +95,17 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             {
                 while (resultSet.next())
                 {
-                    NodeName sourceNodeName = null;
-                    NodeName targetNodeName = null;
-                    ResourceName rscName = null;
+                    NodeName sourceNodeName;
+                    NodeName targetNodeName;
+                    ResourceName rscName;
+                    long flags;
 
                     try
                     {
                         sourceNodeName = new NodeName(resultSet.getString(NODE_SRC));
                         targetNodeName = new NodeName(resultSet.getString(NODE_DST));
                         rscName = new ResourceName(resultSet.getString(RES_NAME));
+                        flags = resultSet.getLong(FLAGS);
                     }
                     catch (InvalidNameException invalidNameExc)
                     {
@@ -102,7 +115,8 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                     ResourceConnectionData conDfn = restoreResourceConnection(
                         resultSet,
                         tmpRscMap.get(new Pair<>(sourceNodeName, rscName)),
-                        tmpRscMap.get(new Pair<>(targetNodeName, rscName))
+                        tmpRscMap.get(new Pair<>(targetNodeName, rscName)),
+                        flags
                     );
                     rscConnections.add(conDfn);
                 }
@@ -116,7 +130,8 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private ResourceConnectionData restoreResourceConnection(
         ResultSet resultSet,
         Resource sourceResource,
-        Resource targetResource
+        Resource targetResource,
+        long flags
     )
         throws SQLException
     {
@@ -127,7 +142,8 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             this,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            flags
         );
         errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(resConData));
 
@@ -144,11 +160,13 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getAssignedNode().getName();
             NodeName targetNodeName = conDfnData.getTargetResource(dbCtx).getAssignedNode().getName();
             ResourceName resName = conDfnData.getSourceResource(dbCtx).getDefinition().getName();
+            long flags = conDfnData.getStateFlags().getFlagsBits(dbCtx);
 
             stmt.setString(1, conDfnData.getUuid().toString());
             stmt.setString(2, resName.value);
             stmt.setString(3, sourceNodeName.value);
             stmt.setString(4, targetNodeName.value);
+            stmt.setLong(5, flags);
 
             stmt.executeUpdate();
 
@@ -213,5 +231,63 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private String getId(String sourceName, String targetName, String resName)
     {
         return "(SourceNode=" + sourceName + " TargetNode=" + targetName + " ResName=" + resName + ")";
+    }
+
+    @Override
+    public StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence()
+    {
+        return flagDriver;
+    }
+
+    private class FlagDriver implements StateFlagsPersistence<ResourceConnectionData>
+    {
+        @Override
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void persist(ResourceConnectionData rscCon, long flags) throws SQLException
+        {
+            try
+            {
+                String fromFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        ResourceConnection.RscConnFlags.class,
+                        rscCon.getStateFlags().getFlagsBits(dbCtx)
+                    ),
+                    ", "
+                );
+                String toFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        Resource.RscFlags.class,
+                        flags
+                    ),
+                    ", "
+                );
+
+                errorReporter.logTrace("Updating Resource connection's flags from [%s] to [%s] %s",
+                    fromFlags,
+                    toFlags,
+                    getId(rscCon)
+                );
+                try (PreparedStatement stmt = getConnection().prepareStatement(RES_UPDATE_FLAG))
+                {
+                    stmt.setLong(1, flags);
+
+                    stmt.setString(2, rscCon.getSourceResource(dbCtx).getAssignedNode().getName().value);
+                    stmt.setString(3, rscCon.getTargetResource(dbCtx).getAssignedNode().getName().value);
+                    stmt.setString(4, rscCon.getSourceResource(dbCtx).getDefinition().getName().value);
+
+                    stmt.executeUpdate();
+
+                    errorReporter.logTrace("Resource connection's flags updated from [%s] to [%s] %s",
+                        fromFlags,
+                        toFlags,
+                        getId(rscCon)
+                    );
+                }
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            }
+        }
     }
 }

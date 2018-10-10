@@ -593,7 +593,12 @@ class StltRscApiCallHandler
                 if (sourceResource != null && targetResource != null)
                 {
                     ResourceConnection rscConn = resourceConnectionDataFactory.getInstanceSatellite(
-                        apiCtx, rscConnApi.getUuid(), sourceResource, targetResource);
+                        apiCtx,
+                        rscConnApi.getUuid(),
+                        sourceResource,
+                        targetResource,
+                        ResourceConnection.RscConnFlags.restoreFlags(rscConnApi.getFlags())
+                    );
 
                     Map<String, String> propMap = rscConn.getProps(apiCtx).map();
                     propMap.clear();

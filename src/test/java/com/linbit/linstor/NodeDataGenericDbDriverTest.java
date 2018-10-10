@@ -454,7 +454,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             ResourceConnectionData resCon = resourceConnectionDataFactory.create(
                 SYS_CTX,
                 res1,
-                res2
+                res2,
+                null
             );
             resCon.getProps(SYS_CTX).setProp(resConTestKey, resConTestValue);
             resConUuid = resCon.getUuid();
