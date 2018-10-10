@@ -8,6 +8,10 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -57,8 +61,25 @@ public class TransactionObjectFactory
         long initFlags
     )
     {
+        return createStateFlagsImpl(
+            Collections.singletonList(objProt),
+            parentObj,
+            enumType,
+            stateFlagPersistence,
+            initFlags
+        );
+    }
+
+    public <PARENT, FLAG extends Enum<FLAG> & Flags> StateFlags<FLAG> createStateFlagsImpl(
+        List<ObjectProtection> objProts,
+        PARENT parentObj,
+        Class<FLAG> enumType,
+        StateFlagsPersistence<PARENT> stateFlagPersistence,
+        long initFlags
+    )
+    {
         return new StateFlagsBits<PARENT, FLAG>(
-            objProt,
+            objProts,
             parentObj,
             StateFlagsBits.getMask(
                 enumType.getEnumConstants()

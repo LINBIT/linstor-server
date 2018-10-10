@@ -2,6 +2,7 @@ package com.linbit.linstor.stateflags;
 
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.inject.Provider;
@@ -22,7 +23,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransactionObject
     implements StateFlags<FLAG>
 {
-    private final ObjectProtection objProt;
+    private final List<ObjectProtection> objProts;
     private final PRIMARY_KEY pk;
 
     private long stateFlags;
@@ -31,7 +32,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     private final StateFlagsPersistence<PRIMARY_KEY> persistence;
 
     public StateFlagsBits(
-        final ObjectProtection objProtRef,
+        final List<ObjectProtection> objProtRef,
         final PRIMARY_KEY parent,
         final long validFlagsMask,
         final StateFlagsPersistence<PRIMARY_KEY> persistenceRef,
@@ -42,7 +43,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     }
 
     public StateFlagsBits(
-        final ObjectProtection objProtRef,
+        final List<ObjectProtection> objProtRef,
         final PRIMARY_KEY pkRef,
         final long validFlagsMask,
         final StateFlagsPersistence<PRIMARY_KEY> persistenceRef,
@@ -56,7 +57,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
         ErrorCheck.ctorNotNull(StateFlagsBits.class, Object.class, pkRef);
         ErrorCheck.ctorNotNull(StateFlagsBits.class, StateFlagsPersistence.class, persistenceRef);
 
-        objProt = objProtRef;
+        objProts = objProtRef;
         pk = pkRef;
         mask = validFlagsMask;
         stateFlags = initialFlags;
@@ -64,11 +65,20 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
         persistence = persistenceRef;
     }
 
+    private void requireAccess(AccessContext accCtx, AccessType accessType)
+        throws AccessDeniedException
+    {
+        for (ObjectProtection objProt : objProts)
+        {
+            objProt.requireAccess(accCtx, accessType);
+        }
+    }
+
     @Override
     public void enableAllFlags(final AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        requireAccess(accCtx, AccessType.CHANGE);
 
         setFlags(changedStateFlags | mask);
     }
@@ -77,7 +87,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public void disableAllFlags(final AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        requireAccess(accCtx, AccessType.CHANGE);
 
         setFlags(0L);
     }
@@ -87,7 +97,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public void enableFlags(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
         setFlags((changedStateFlags | flagsBits) & mask);
@@ -97,7 +107,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     @Override
     public void resetFlagsTo(AccessContext accCtx, FLAG... flags) throws AccessDeniedException, SQLException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
         setFlags(flagsBits & mask);
@@ -108,7 +118,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public void disableFlags(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
         setFlags(changedStateFlags & ~flagsBits);
@@ -119,7 +129,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public void enableFlagsExcept(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
         setFlags(changedStateFlags | (mask & ~flagsBits));
@@ -130,7 +140,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public void disableFlagsExcept(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
         setFlags(changedStateFlags & flagsBits);
@@ -141,7 +151,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public boolean isSet(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        requireAccess(accCtx, AccessType.VIEW);
 
         final long flagsBits = getMask(flags);
         return (changedStateFlags & flagsBits) == flagsBits;
@@ -152,7 +162,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public boolean isUnset(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        requireAccess(accCtx, AccessType.VIEW);
 
         final long flagsBits = getMask(flags);
         return (changedStateFlags & flagsBits) == 0L;
@@ -163,7 +173,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public boolean isSomeSet(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        requireAccess(accCtx, AccessType.VIEW);
 
         final long flagsBits = getMask(flags);
         return (changedStateFlags & flagsBits) != 0L;
@@ -174,7 +184,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public boolean isSomeUnset(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        requireAccess(accCtx, AccessType.VIEW);
 
         final long flagsBits = getMask(flags);
         return (changedStateFlags & flagsBits) != flagsBits;
@@ -184,7 +194,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public long getFlagsBits(final AccessContext accCtx)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        requireAccess(accCtx, AccessType.VIEW);
 
         return changedStateFlags;
     }
@@ -217,7 +227,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     public long getValidFlagsBits(final AccessContext accCtx)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        requireAccess(accCtx, AccessType.VIEW);
 
         return mask;
     }

@@ -20,6 +20,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.testutils.SimpleIterator;
 import java.sql.SQLException;
+import java.util.Collections;
 
 import javax.inject.Provider;
 
@@ -775,7 +776,7 @@ public class StateFlagBitsTest
         StateFlagBitsImpl(ObjectProtection objProtRef, long validFlagsMask)
         {
             super(
-                objProtRef,
+                Collections.singletonList(objProtRef),
                 new Object(),
                 validFlagsMask,
                 ((objProt, flags) -> {}),
