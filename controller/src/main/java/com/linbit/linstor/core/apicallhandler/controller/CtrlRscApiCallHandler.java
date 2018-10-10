@@ -1,58 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeId;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.NodeRepository;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceDefinitionRepository;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.Volume.VlmApi;
-import com.linbit.linstor.VolumeData;
-import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.annotation.PeerContext;
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiCallRcWith;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.FreeSpacePojo;
-import com.linbit.linstor.api.pojo.VlmUpdatePojo;
-import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
-import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
-import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
-import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.satellitestate.SatelliteState;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,8 +14,52 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnection;
+import com.linbit.linstor.ResourceConnectionData;
+import com.linbit.linstor.ResourceConnectionKey;
+import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinitionRepository;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.pojo.RscConnPojo;
+import com.linbit.linstor.api.pojo.VlmUpdatePojo;
+import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.api.prop.Property;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+import static com.linbit.linstor.api.ApiConsts.API_LST_RSC_CONN;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static java.util.stream.Collectors.toList;
 
 @Singleton
@@ -254,6 +250,93 @@ public class CtrlRscApiCallHandler
                 .answerBuilder(API_LST_RSC, apiCallId)
                 .resourceList(rscs, satelliteStates)
                 .build();
+    }
+
+    byte[] listResourceConnections(
+        long apiCallId,
+        final String rscNameString
+    )
+    {
+        ResourceName rscName = null;
+        List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
+        try
+        {
+            rscName = new ResourceName(rscNameString);
+
+            ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, rscName);
+
+            if (rscDfn  != null)
+            {
+                for (Resource rsc : rscDfn.streamResource(apiCtx).collect(toList()))
+                {
+                    List<ResourceConnection> rscConnections = rsc.streamResourceConnections(apiCtx).collect(toList());
+                    for (ResourceConnection rscConn : rscConnections)
+                    {
+                        if (rscConns.stream().noneMatch(con -> con.getUuid() == rscConn.getUuid()))
+                        {
+                            rscConns.add(rscConn.getApiData(apiCtx));
+                        }
+                    }
+                }
+
+                // lazy instance other resource connections
+                List<Resource> resourceList = rscDfn.streamResource(apiCtx).collect(toList());
+                for (int i = 0; i < resourceList.size(); i++)
+                {
+                    for (int j = 1; j < resourceList.size(); j++)
+                    {
+                        ResourceConnectionKey conKey =
+                            new ResourceConnectionKey(resourceList.get(i), resourceList.get(j));
+
+                        if (conKey.getSource() != conKey.getTarget() &&
+                            rscConns.stream().noneMatch(con ->
+                                con.getSourceNodeName().equalsIgnoreCase(
+                                    conKey.getSource().getAssignedNode().getName().getName()) &&
+                                con.getTargetNodeName().equalsIgnoreCase(
+                                    conKey.getTarget().getAssignedNode().getName().getName()) &&
+                                con.getResourceName().equalsIgnoreCase(rscNameString)))
+                        {
+                            rscConns.add(new RscConnPojo(
+                                UUID.randomUUID(),
+                                conKey.getSource().getAssignedNode().getName().getDisplayName(),
+                                conKey.getTarget().getAssignedNode().getName().getDisplayName(),
+                                rscDfn.getName().getDisplayName(),
+                                new HashMap<>(),
+                                0
+                                )
+                            );
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+                    String.format("Resource definition '%s' not found.", rscNameString)
+                ));
+            }
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_RSC_NAME,
+                "Invalid resource name used"
+            ), exc);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + getRscDfnDescriptionInline(rscName.displayValue),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+
+        return clientComSerializer
+            .answerBuilder(API_LST_RSC_CONN, apiCallId)
+            .resourceConnList(rscConns)
+            .build();
     }
 
     public void respondResource(

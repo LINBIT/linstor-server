@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import com.linbit.linstor.Node.NodeApi;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource.RscApi;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinition;
@@ -33,11 +34,13 @@ import com.linbit.linstor.proto.MsgLstRscOuterClass;
 import com.linbit.linstor.proto.MsgLstSnapshotDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
+import com.linbit.linstor.proto.MsgLstRscConnOuterClass.MsgLstRscConn;
 import com.linbit.linstor.proto.RscStateOuterClass;
 import com.linbit.linstor.proto.SnapshotDfnOuterClass;
 import com.linbit.linstor.proto.VlmStateOuterClass;
 import com.linbit.linstor.proto.apidata.NodeApiData;
 import com.linbit.linstor.proto.apidata.RscApiData;
+import com.linbit.linstor.proto.apidata.RscConnApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
 import com.linbit.linstor.proto.apidata.StorPoolApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
@@ -177,6 +180,27 @@ public class ProtoCtrlClientSerializerBuilder
             }
 
             msgListRscsBuilder.build().writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlClientSerializerBuilder resourceConnList(List<ResourceConnection.RscConnApi> rscConns)
+    {
+        try
+        {
+            MsgLstRscConn.Builder msgListRscConnBuilder = MsgLstRscConn.newBuilder();
+
+            msgListRscConnBuilder.addAllRscConnections(
+                rscConns.stream()
+                    .map(RscConnApiData::toProto).collect(Collectors.toList())
+            );
+
+            msgListRscConnBuilder.build().writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

@@ -456,6 +456,27 @@ public class CtrlApiCallHandler
         return listVolumes;
     }
 
+    public byte[] listResourceConnections(String rscName)
+    {
+        byte[] listRscConns;
+        try
+        {
+            nodesMapLock.readLock().lock();
+            rscDfnMapLock.readLock().lock();
+            listRscConns = rscApiCallHandler.listResourceConnections(
+                apiCallId.get(),
+                rscName
+            );
+        }
+        finally
+        {
+            rscDfnMapLock.readLock().unlock();
+            nodesMapLock.readLock().unlock();
+        }
+
+        return listRscConns;
+    }
+
     public ApiCallRc volumeResized(String nodeName, String rscName, int volumeNr, long vlmSize)
     {
         ApiCallRc apiCallRc;

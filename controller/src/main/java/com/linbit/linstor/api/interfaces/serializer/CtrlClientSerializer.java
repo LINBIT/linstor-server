@@ -6,6 +6,7 @@ import java.util.Map;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
@@ -42,6 +43,7 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
         CtrlClientSerializerBuilder resourceList(
             List<Resource.RscApi> rscs, Map<NodeName, SatelliteState> satelliteStates);
+        CtrlClientSerializerBuilder resourceConnList(List<ResourceConnection.RscConnApi> rscConns);
         CtrlClientSerializerBuilder snapshotDfnList(List<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns);
 
         CtrlClientSerializerBuilder apiVersion(long features, String controllerInfo);
