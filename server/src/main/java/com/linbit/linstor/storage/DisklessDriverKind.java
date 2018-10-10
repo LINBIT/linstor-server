@@ -51,4 +51,10 @@ public class DisklessDriverKind implements StorageDriverKind
     {
         return false;
     }
+
+    @Override
+    public boolean needsConfiguration()
+    {
+        return false;
+    }
 }

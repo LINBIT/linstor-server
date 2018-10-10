@@ -92,4 +92,14 @@ public interface StorageDriverKind
     {
         return true;
     }
+
+    /**
+     * Returns whether the underlying storage driver needs its {@link StorageDriver#setConfiguration} method
+     * be called or not.
+     * That should be currently false for the DRBD-diskless driver, and true for all others.
+     */
+    default boolean needsConfiguration()
+    {
+        return true;
+    }
 }

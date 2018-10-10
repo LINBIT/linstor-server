@@ -188,7 +188,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         throws StorageException
     {
         checkDeleted();
-        if (storageDriverRef.getKind().hasBackingStorage())
+        if (storageDriverRef.getKind().needsConfiguration())
         {
             Optional<Props> namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
             Map<String, String> storPoolNamespace = namespace.map(Props::map).orElse(Collections.emptyMap());

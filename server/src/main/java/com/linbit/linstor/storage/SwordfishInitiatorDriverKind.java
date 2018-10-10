@@ -73,7 +73,7 @@ public class SwordfishInitiatorDriverKind implements StorageDriverKind
     @Override
     public boolean hasBackingStorage()
     {
-        return true;
+        return false;
     }
 
     @Override
