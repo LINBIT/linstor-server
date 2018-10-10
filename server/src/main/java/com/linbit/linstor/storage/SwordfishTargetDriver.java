@@ -350,7 +350,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     {
         return compareVolumeSizeImpl(
             storSvc,
-            buildVlmOdataId(linstorVlmId),
+            getSwordfishVolumeIdByLinstorId(linstorVlmId),
             requiredSize
         );
     }
