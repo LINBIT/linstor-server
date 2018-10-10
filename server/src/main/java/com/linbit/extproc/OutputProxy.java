@@ -110,6 +110,10 @@ public class OutputProxy implements Runnable
                         }
                     }
                 }
+                else
+                {
+                    deque.add(new EOFEvent());
+                }
             }
             catch (IOException ioExc)
             {
@@ -200,6 +204,13 @@ public class OutputProxy implements Runnable
         public ExceptionEvent(Exception excRef)
         {
             exc = excRef;
+        }
+    }
+
+    public static class EOFEvent implements Event
+    {
+        public EOFEvent()
+        {
         }
     }
 

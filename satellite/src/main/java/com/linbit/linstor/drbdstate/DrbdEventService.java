@@ -12,6 +12,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.DaemonHandler;
+import com.linbit.extproc.OutputProxy.EOFEvent;
 import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
@@ -120,6 +121,25 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 if (event instanceof PoisonEvent)
                 {
                     break;
+                }
+                else
+                if (event instanceof EOFEvent)
+                {
+                    if (running)
+                    {
+                        errorReporter.logWarning(
+                            "DRBD 'events2' exited. Restarting in %d ms %n", RESTART_TIMEOUT
+                        );
+                        // both, stdOut and stdErr will send us an EOFEvent. just consume the second
+                        Event nextEvent = eventDeque.peek();
+                        if (nextEvent != null && nextEvent instanceof EOFEvent)
+                        {
+                            eventDeque.take();
+                        }
+                        demonHandler.stop(true);
+                        Thread.sleep(RESTART_TIMEOUT);
+                        demonHandler.start();
+                    }
                 }
             }
             catch (InterruptedException | IOException exc)
