@@ -62,6 +62,7 @@ public abstract class LinstorMigration implements JavaMigration
 
     protected String getDbType()
     {
+        // FIXME: May want to use DatabaseInfo.DbProduct instead in the future
         return dbType;
     }
 

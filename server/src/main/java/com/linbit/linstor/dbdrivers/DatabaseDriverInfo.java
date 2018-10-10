@@ -13,10 +13,14 @@ public interface DatabaseDriverInfo
             case "derby":
                 dbdriver = new DerbyDatabaseInfo();
                 break;
+            case "db2":
+                dbdriver = new Db2DatabaseInfo();
+                break;
             case "postgresql":
                 dbdriver = new PostgresqlDatabaseInfo();
                 break;
             case "mysql":
+                // fall-through
             case "mariadb":
                 dbdriver = new MariaDBInfo(dbType);
                 break;

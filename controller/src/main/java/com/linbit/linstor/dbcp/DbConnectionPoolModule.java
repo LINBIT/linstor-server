@@ -9,5 +9,6 @@ public class DbConnectionPoolModule extends AbstractModule
     protected void configure()
     {
         bind(ControllerDatabase.class).to(DbConnectionPool.class);
+        bind(DatabaseInfo.class).to(DatabaseInfoImpl.class);
     }
 }
