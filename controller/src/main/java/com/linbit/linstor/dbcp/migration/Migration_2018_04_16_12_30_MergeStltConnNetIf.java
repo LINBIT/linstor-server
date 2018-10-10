@@ -47,10 +47,10 @@ public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigrat
     private void alterTableNetIf(Connection connection) throws SQLException
     {
         connection.createStatement().execute(
-            "ALTER TABLE " + TBL_NET_IF + " ADD " + NEW_NI_STLT_CONN_PORT + " SMALLINT" // nullable
+            "ALTER TABLE " + TBL_NET_IF + " ADD COLUMN " + NEW_NI_STLT_CONN_PORT + " SMALLINT" // nullable
         );
         connection.createStatement().execute(
-            "ALTER TABLE " + TBL_NET_IF + " ADD " + NEW_NI_STLT_CONN_ENCR_TYPE + " VARCHAR(5)" // nullable
+            "ALTER TABLE " + TBL_NET_IF + " ADD COLUMN " + NEW_NI_STLT_CONN_ENCR_TYPE + " VARCHAR(5)" // nullable
         );
     }
 

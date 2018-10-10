@@ -57,14 +57,14 @@ public class Migration_2018_08_20_17_00_FreeSpaceMgr extends LinstorMigration
             Statement stmt = connection.createStatement();
             stmt.executeUpdate(
                 "ALTER TABLE " + TBL_STOR_POOL +
-                " ADD " + NEW_SP_FREE_SPACE_MGR_NAME + " VARCHAR(255) NOT NULL" +
-                " DEFAULT ('SYSTEM:')"
+                " ADD COLUMN " + NEW_SP_FREE_SPACE_MGR_NAME + " VARCHAR(255) NOT NULL" +
+                " DEFAULT 'SYSTEM:'"
             // 55 = FreeSpaceName.MaxLen + "SYSTEM:".len
             );
             stmt.executeUpdate(
                 "ALTER TABLE " + TBL_STOR_POOL +
-                " ADD " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " VARCHAR(255) NOT NULL" +
-                " DEFAULT ('SYSTEM:')"
+                " ADD COLUMN " + NEW_SP_FREE_SPACE_MGR_DSP_NAME + " VARCHAR(255) NOT NULL" +
+                " DEFAULT 'SYSTEM:'"
             // 55 = FreeSpaceName.MaxLen + "SYSTEM:".len
             );
             stmt.executeUpdate(
