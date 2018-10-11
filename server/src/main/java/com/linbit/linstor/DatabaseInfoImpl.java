@@ -1,6 +1,6 @@
-package com.linbit.linstor.dbcp;
+package com.linbit.linstor;
 
-import com.linbit.linstor.dbcp.DatabaseInfo.DbProduct;
+import com.linbit.linstor.DatabaseInfo.DbProduct;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import javax.inject.Inject;

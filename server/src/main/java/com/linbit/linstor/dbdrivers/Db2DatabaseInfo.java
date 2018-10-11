@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.linbit.linstor.dbdrivers;
 
 /**
@@ -28,7 +22,7 @@ public class Db2DatabaseInfo implements DatabaseDriverInfo
     @Override
     public String isolationStatement()
     {
-        return "SET ISOLATION SERIALIZABLE;";
+        return "SET ISOLATION SERIALIZABLE";
     }
 
     @Override

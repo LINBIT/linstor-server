@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.google.common.io.Resources;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
+import com.linbit.linstor.DatabaseInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +15,8 @@ public class MigrationUtils
 {
     public static final String META_COL_TABLE_NAME = "TABLE_NAME";
     public static final String META_COL_COLUMN_NAME = "COLUMN_NAME";
+
+    private static DatabaseInfo dbInfo = null;
 
     public static String loadResource(String resourceName)
         throws IOException
@@ -64,6 +67,19 @@ public class MigrationUtils
         }
 
         return exists;
+    }
+
+    public static void setDatabaseInfo(DatabaseInfo dbInfoRef)
+    {
+        if (dbInfo == null)
+        {
+            dbInfo = dbInfoRef;
+        }
+    }
+
+    public static DatabaseInfo getDatabaseInfo()
+    {
+        return dbInfo;
     }
 
     private MigrationUtils()

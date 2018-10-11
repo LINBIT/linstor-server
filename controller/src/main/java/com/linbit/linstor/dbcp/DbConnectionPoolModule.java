@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbcp;
 
+import com.linbit.linstor.DatabaseInfo;
+import com.linbit.linstor.DatabaseInfoImpl;
 import com.google.inject.AbstractModule;
 import com.linbit.linstor.ControllerDatabase;
 

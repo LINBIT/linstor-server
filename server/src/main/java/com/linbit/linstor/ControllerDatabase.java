@@ -29,6 +29,8 @@ public interface ControllerDatabase extends SystemService
 
     void migrate(String dbType);
 
+    DatabaseInfo getDatabaseInfo();
+
     /**
      * Close all DB connections the calling thread had not closed yet.
      *

@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp;
 
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.ControllerCmdlArguments;
+import com.linbit.linstor.dbcp.migration.MigrationUtils;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.GenericDbUtils;
 import com.linbit.linstor.dbdrivers.H2DatabaseInfo;
@@ -63,6 +64,7 @@ public class DbConnectionPoolInitializer
             dbProps
         );
 
+        MigrationUtils.setDatabaseInfo(dbConnPool.getDatabaseInfo());
         dbConnPool.migrate(dbType);
 
         testDbConnection();

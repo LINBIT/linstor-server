@@ -24,7 +24,7 @@ public class MariaDBInfo implements DatabaseDriverInfo
     @Override
     public String isolationStatement()
     {
-        return "SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;";
+        return "SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE";
     }
 
     @Override

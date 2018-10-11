@@ -17,7 +17,7 @@ public class H2DatabaseInfo implements DatabaseDriverInfo
     @Override
     public String isolationStatement()
     {
-        return "SET LOCK_MODE 1;";
+        return "SET LOCK_MODE 1";
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.google.common.collect.ImmutableMap;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
@@ -63,6 +64,8 @@ public class DbConnectionPool implements ControllerDatabase
 
     private ThreadLocal<List<Connection>> threadLocalConnections;
 
+    private final DatabaseInfo dbInfo;
+
     static
     {
         try
@@ -76,10 +79,13 @@ public class DbConnectionPool implements ControllerDatabase
     }
 
     @Inject
-    public DbConnectionPool()
+    public DbConnectionPool(
+        final DatabaseInfo dbInfoRef
+    )
     {
         serviceNameInstance = SERVICE_NAME;
         threadLocalConnections = new ThreadLocal<>();
+        dbInfo = dbInfoRef;
     }
 
     @Override
@@ -187,6 +193,12 @@ public class DbConnectionPool implements ControllerDatabase
     }
 
     @Override
+    public DatabaseInfo getDatabaseInfo()
+    {
+        return dbInfo;
+    }
+
+    @Override
     public boolean closeAllThreadLocalConnections()
     {
         boolean ret = false;
@@ -256,6 +268,7 @@ public class DbConnectionPool implements ControllerDatabase
             poolConnFactory.setValidationQueryTimeout(dbTimeout);
             poolConnFactory.setMaxOpenPreparedStatements(dbMaxOpen);
             poolConnFactory.setMaxConnLifetimeMillis(DEFAULT_IDLE_TIMEOUT);
+            poolConnFactory.setDefaultTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
 
             dataSource = new PoolingDataSource<PoolableConnection>(connPool);
         }

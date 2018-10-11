@@ -20,6 +20,11 @@ public class Migration_2018_03_27_14_01_Init extends LinstorMigration
             String sql = MigrationUtils.loadResource("2018_03_27_14_01_init-db.sql");
 
             DatabaseDriverInfo databaseInfo = DatabaseDriverInfo.createDriverInfo(getDbType());
+            String isolationStatement = databaseInfo.isolationStatement();
+            if (isolationStatement.length() >= 1)
+            {
+                GenericDbUtils.executeStatement(connection, databaseInfo.isolationStatement());
+            }
             GenericDbDriver.runSql(connection, databaseInfo.prepareInit(sql));
         }
     }

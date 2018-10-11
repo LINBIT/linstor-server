@@ -1,4 +1,4 @@
-package com.linbit.linstor.dbcp;
+package com.linbit.linstor;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;

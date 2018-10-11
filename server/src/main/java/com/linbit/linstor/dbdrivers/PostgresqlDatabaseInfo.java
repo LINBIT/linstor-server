@@ -25,5 +25,4 @@ public class PostgresqlDatabaseInfo implements DatabaseDriverInfo
     {
         return initSQL;
     }
-
 }
