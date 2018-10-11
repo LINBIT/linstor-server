@@ -29,6 +29,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.utils.HttpHeader;
 import com.linbit.linstor.storage.utils.RestClient;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
+
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
 
@@ -40,6 +41,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.impl.CollectionBuilder;
 import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
@@ -189,9 +191,10 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     {
         // create volume
         // POST to volumes collection
+        String volumeCollUrl = sfUrl + SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES;
         RestResponse<Map<String, Object>> crtVlmResp = restClient.execute(
             RestOp.POST,
-            sfUrl + SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES,
+            volumeCollUrl,
             getDefaultHeader().build(),
             MapBuilder.defaultImpl().start()
                 .put(JSON_KEY_CAPACITY_BYTES, sizeInKiB * KIB) // convert to bytes
@@ -221,6 +224,17 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 .build()
         );
         // volume should be now in "creating" state. we have to wait for the taskMonitor to return HTTP_CREATED
+
+        if (crtVlmResp.getStatusCode() != HttpHeader.HTTP_CREATED)
+        {
+            throw new StorageException(
+                String.format(
+                    "Unexpected return code from POST to %s: %d",
+                    volumeCollUrl,
+                    crtVlmResp.getStatusCode()
+                )
+            );
+        }
 
         String taskMonitorLocation = crtVlmResp.getHeaders().get(HttpHeader.LOCATION_KEY);
         // taskLocation should start with SF_BASE + SF_TASK_SERVICE + SF_TASKS followed by "/$taskId/Monitor"
@@ -276,7 +290,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                         )
                     );
             }
-            if (vlmLocation == null && pollVlmCrtTries >= pollVlmCrtMaxTries)
+            if (pollVlmCrtTries >= pollVlmCrtMaxTries && vlmLocation == null)
             {
                 throw new StorageException(
                     String.format(

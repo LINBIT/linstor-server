@@ -269,8 +269,19 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             )
             .build()
         );
-        // detatchVlmResp.getStatusCode() might be 404 (not found) which is fine, just continue
-        // with deletion of the volume
+        if (
+            detachVlmResp.getStatusCode() != HttpHeader.HTTP_NO_CONTENT &&
+            detachVlmResp.getStatusCode() != HttpHeader.HTTP_NOT_FOUND
+        )
+        {
+            throw new StorageException(
+                String.format(
+                    "Unexpected return code from POST to %s: %d",
+                    detachAction,
+                    detachVlmResp.getStatusCode()
+                )
+            );
+        }
         return vlmOdataId;
     }
 
