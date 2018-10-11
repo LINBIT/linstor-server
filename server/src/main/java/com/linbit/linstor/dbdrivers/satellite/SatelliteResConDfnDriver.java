@@ -11,6 +11,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseDriver
 {
     private final AccessContext dbCtx;
+    private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
 
     @Inject
     public SatelliteResConDfnDriver(
@@ -35,6 +36,6 @@ public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseD
     @Override
     public StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence()
     {
-        return null; // no-op
+        return (StateFlagsPersistence<ResourceConnectionData>) stateFlagsDriver;
     }
 }
