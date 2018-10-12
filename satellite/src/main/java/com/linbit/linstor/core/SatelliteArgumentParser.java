@@ -42,6 +42,9 @@ class SatelliteArgumentParser
     @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
     private String bindAddress = null;
 
+    @CommandLine.Option(names = {"--override-node-name"}, description = "Overrides node name used in error reports.")
+    private String nodeName = null;
+
     static SatelliteCmdlArguments parseCommandLine(String[] args)
     {
         SatelliteArgumentParser linArgParser = new SatelliteArgumentParser();
@@ -91,6 +94,10 @@ class SatelliteArgumentParser
         cArgs.setOverridePlainPort(linArgParser.plainPort);
         cArgs.setSkipHostnameCheck(linArgParser.skipHostNameCheck);
         cArgs.setBindAddress(linArgParser.bindAddress);
+        if (linArgParser.nodeName != null)
+        {
+            cArgs.setOverrideNodeName(linArgParser.nodeName);
+        }
 
         return cArgs;
     }

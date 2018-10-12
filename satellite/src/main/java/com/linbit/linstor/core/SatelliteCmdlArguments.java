@@ -9,12 +9,14 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
 
     private Integer plainPortOverride;
     private String bindAddress;
+    private String overrideNodeName;
 
     public SatelliteCmdlArguments()
     {
         keepResPattern = null;
         skipHostnameCheck = false;
         plainPortOverride = null;
+        overrideNodeName = null;
     }
 
     public Pattern getKeepResPattern()
@@ -55,5 +57,15 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
     public String getBindAddress()
     {
         return bindAddress;
+    }
+
+    public String getOverrideNodeName()
+    {
+        return overrideNodeName;
+    }
+
+    public void setOverrideNodeName(String overrideNodeName)
+    {
+        this.overrideNodeName = overrideNodeName;
     }
 }

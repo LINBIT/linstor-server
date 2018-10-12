@@ -177,7 +177,8 @@ public class SwordfishTargetProcessManager
                 Integer.toString(port),
                 "--bind-address",
                 LOCALHOST,
-                "-d"
+                "-d",
+                "--override-node-name", node.getName().getDisplayName()
             );
             pb.redirectErrorStream(true);
             File stltLog = errorReporter.getLogDirectory().resolve(
