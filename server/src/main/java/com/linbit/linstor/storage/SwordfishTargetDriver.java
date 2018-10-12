@@ -225,7 +225,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         );
         // volume should be now in "creating" state. we have to wait for the taskMonitor to return HTTP_CREATED
 
-        if (crtVlmResp.getStatusCode() != HttpHeader.HTTP_CREATED)
+        if (crtVlmResp.getStatusCode() != HttpHeader.HTTP_ACCEPTED)
         {
             throw new StorageException(
                 String.format(
