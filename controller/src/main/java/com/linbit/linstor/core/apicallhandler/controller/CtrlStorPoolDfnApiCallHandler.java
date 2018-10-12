@@ -254,7 +254,14 @@ class CtrlStorPoolDfnApiCallHandler
         }
         candidateList = autoStorPoolSelector.getCandidateList(
             0L,
-            new AutoStorPoolSelectorConfig(selectFilter),
+            new AutoStorPoolSelectorConfig(
+                selectFilter.getPlaceCount(),
+                selectFilter.getReplicasOnDifferentList(),
+                selectFilter.getReplicasOnSameList(),
+                selectFilter.getNotPlaceWithRscRegex(),
+                selectFilter.getNotPlaceWithRscList(),
+                selectFilter.getStorPoolNameStr()
+            ),
             CtrlAutoStorPoolSelector::mostRemainingSpaceNodeStrategy
         );
         if (candidateList.isEmpty())
@@ -288,13 +295,13 @@ class CtrlStorPoolDfnApiCallHandler
                 );
             }
             result = clientComSerializer
-                .apiCallBuilder(ApiConsts.API_REPLY, apiCallIdProvider.get())
+                .answerBuilder(ApiConsts.API_REPLY, apiCallIdProvider.get())
                 .apiCallRcSeries(errRc)
                 .build();
         }
         else
         {
-            candidateList.sort(Comparator.comparingLong(c -> c.sizeAfterDeployment));
+            candidateList.sort(Comparator.comparingLong(Candidate::getSizeAfterDeployment));
 
             result = clientComSerializer
                 .answerBuilder(ApiConsts.API_RSP_MAX_VLM_SIZE, apiCallIdProvider.get())

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPool;
@@ -11,7 +12,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
@@ -64,24 +64,6 @@ public class CtrlAutoStorPoolSelector
         apiAccCtx = apiAccCtxRef;
     }
 
-    public Candidate findBestCandidate(
-        final long rscSize,
-        final AutoStorPoolSelectorConfig selectFilter,
-        final NodeSelectionStrategy nodeSelectionStrategy,
-        final CandidateSelectionStrategy candidateSelectionStrategy
-    )
-    {
-        List<Candidate> candidateList = getCandidateList(
-            rscSize,
-            selectFilter,
-            nodeSelectionStrategy
-        );
-
-        return candidateList.stream()
-            .max(candidateSelectionStrategy.makeComparator(peerAccCtx.get()))
-            .orElseThrow(() -> failNotEnoughCandidates(selectFilter.getStorPoolNameStr(), rscSize));
-    }
-
     public List<Candidate> getCandidateList(
         final long rscSize,
         final AutoStorPoolSelectorConfig selectFilter,
@@ -104,7 +86,7 @@ public class CtrlAutoStorPoolSelector
         return candidateList;
     }
 
-    private HashMap<StorPoolName, List<Node>> buildInitialCandidateList(final long rscSize)
+    private Map<StorPoolName, List<Node>> buildInitialCandidateList(final long rscSize)
     {
          /*
           * build a map of storage pools
@@ -148,8 +130,7 @@ public class CtrlAutoStorPoolSelector
         boolean hasSpace;
         try
         {
-            hasSpace = storPool.getDriverKind().usesThinProvisioning() ?
-                true :
+            hasSpace = storPool.getDriverKind().usesThinProvisioning() ||
                 storPool.getFreeSpaceTracker()
                     .getFreeSpaceCurrentEstimation(peerAccCtx.get())
                     .orElse(0L) >= rscSize;
@@ -208,23 +189,8 @@ public class CtrlAutoStorPoolSelector
         String forcedStorPoolName = selectFilter.getStorPoolNameStr();
         if (forcedStorPoolName != null)
         {
-            // As the statement "new StorPoolName(forcedStorPoolName)" could throw an
-            // InvalidNameException (which we want to avoid, as we should then handle the exception
-            // but not here, ... things get complicated) (should be better after api-rework :) )
-            // Therefore we search manually if we find the displayName somewhere and retain on that
-            StorPoolName storPoolName = null;
-            for (StorPoolName spn : nodes.keySet())
-            {
-                if (forcedStorPoolName.equals(spn.displayValue))
-                {
-                    storPoolName = spn;
-                    break;
-                }
-            }
-            if (storPoolName != null)
-            {
-                ret.put(storPoolName, nodes.get(storPoolName)); // skip all other entries
-            }
+            StorPoolName storPoolName = LinstorParsingUtils.asStorPoolName(selectFilter.getStorPoolNameStr());
+            ret.put(storPoolName, nodes.get(storPoolName)); // skip all other entries
         }
         else
         {
@@ -305,7 +271,7 @@ public class CtrlAutoStorPoolSelector
         Map<StorPoolName, List<Node>> nodes
     )
     {
-        List<String> notPlaceWithRscList = toUpperList(selectFilter.getNotPlaceWithRscList());
+        List<String> notPlaceWithRscList = new ArrayList<>(toUpperList(selectFilter.getNotPlaceWithRscList()));
         String notPlaceWithRscRegexStr = selectFilter.getNotPlaceWithRscRegex();
         if (notPlaceWithRscRegexStr != null)
         {
@@ -469,29 +435,6 @@ public class CtrlAutoStorPoolSelector
         }
     }
 
-    private ApiRcException failNotEnoughCandidates(String storPoolName, final long rscSize)
-    {
-        return new ApiRcException(ApiCallRcImpl
-            .entryBuilder(
-                ApiConsts.FAIL_NOT_ENOUGH_NODES,
-                "Not enough available nodes"
-            )
-            .setDetails(
-                "Not enough nodes fulfilling the following auto-place criteria:\n" +
-                    (
-                        storPoolName == null ?
-                            "" :
-                            " * has a deployed storage pool named '" + storPoolName + "'\n" +
-                                " * the storage pool '" + storPoolName + "' has to have at least '" +
-                                rscSize + "' free space\n"
-                    ) +
-                    " * the current access context has enough privileges to use the node and the storage pool\n" +
-                    " * the node is online"
-            )
-            .build()
-        );
-    }
-
     public static Comparator<Candidate> mostRemainingSpaceCandidateStrategy(AccessContext accCtx)
     {
         Comparator<StorPool> thickComparator = Comparator.<StorPool, Boolean>comparing(
@@ -642,52 +585,33 @@ public class CtrlAutoStorPoolSelector
 
     public static class AutoStorPoolSelectorConfig
     {
-        private AutoSelectFilterApi selectFilter;
+        private final int placeCount;
+        private final List<String> replicasOnDifferentList;
+        private final List<String> replicasOnSameList;
+        private final String notPlaceWithRscRegex;
+        private final List<String> notPlaceWithRscList;
+        private final String storPoolNameStr;
 
-        private int placeCount;
-        private List<String> replicasOnDifferentList;
-        private List<String> replicasOnSameList;
-        private String notPlaceWithRscRegex;
-        private List<String> notPlaceWithRscList;
-        private String storPoolNameStr;
-
-        public AutoStorPoolSelectorConfig()
+        public AutoStorPoolSelectorConfig(
+            int placeCountRef,
+            List<String> replicasOnDifferentListRef,
+            List<String> replicasOnSameListRef,
+            String notPlaceWithRscRegexRef,
+            List<String> notPlaceWithRscListRef,
+            String storPoolNameStrRef
+        )
         {
-            // no not use Collections.emptyList() as these lists might get additional values
-            // in the future.
-            placeCount = 0;
-            replicasOnDifferentList = new ArrayList<>();
-            replicasOnSameList = new ArrayList<>();
-            notPlaceWithRscRegex = "";
-            notPlaceWithRscList = new ArrayList<>();
-            storPoolNameStr = null;
-
-        }
-
-        public AutoStorPoolSelectorConfig(AutoSelectFilterApi selectFilterRef)
-        {
-            selectFilter = selectFilterRef;
-            placeCount = selectFilterRef.getPlaceCount();
-            replicasOnDifferentList = new ArrayList<>(selectFilterRef.getReplicasOnDifferentList());
-            replicasOnSameList = new ArrayList<>(selectFilterRef.getReplicasOnSameList());
-            notPlaceWithRscRegex = selectFilterRef.getNotPlaceWithRscRegex();
-            notPlaceWithRscList = new ArrayList<>(selectFilterRef.getNotPlaceWithRscList());
-            storPoolNameStr = selectFilterRef.getStorPoolNameStr();
+            placeCount = placeCountRef;
+            replicasOnDifferentList = replicasOnDifferentListRef;
+            replicasOnSameList = replicasOnSameListRef;
+            notPlaceWithRscRegex = notPlaceWithRscRegexRef;
+            notPlaceWithRscList = notPlaceWithRscListRef;
+            storPoolNameStr = storPoolNameStrRef;
         }
 
         public int getPlaceCount()
         {
             return placeCount;
-        }
-
-        public int getPlaceCountOrig()
-        {
-            return selectFilter.getPlaceCount();
-        }
-
-        public void overridePlaceCount(int placeCountRef)
-        {
-            placeCount = placeCountRef;
         }
 
         public List<String> getReplicasOnDifferentList()
@@ -714,16 +638,6 @@ public class CtrlAutoStorPoolSelector
         {
             return storPoolNameStr;
         }
-
-        public String getStorPoolNameStrOrig()
-        {
-            return selectFilter.getStorPoolNameStr();
-        }
-
-        public void overrideStorPoolNameStr(String storPoolNameStrRef)
-        {
-            storPoolNameStr = storPoolNameStrRef;
-        }
     }
 
     @FunctionalInterface
@@ -734,15 +648,5 @@ public class CtrlAutoStorPoolSelector
          * {@link Comparator#compare(Object, Object)}.
          */
         Comparator<Node> makeComparator(StorPoolName storPoolName, AccessContext accCtx);
-    }
-
-    @FunctionalInterface
-    public interface CandidateSelectionStrategy
-    {
-        /**
-         * @return A comparator for candidates where the preferred candidate has the greater value as defined by
-         * {@link Comparator#compare(Object, Object)}.
-         */
-        Comparator<Candidate> makeComparator(AccessContext accCtx);
     }
 }

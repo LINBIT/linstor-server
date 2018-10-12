@@ -6,6 +6,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
@@ -138,114 +139,84 @@ public class CtrlRscAutoPlaceApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         /*
-         * if the user already called an autoPlace with X replica,
-         * and now calls another autoPlace for the same resource with Y replica:
-         * case Y == X again
-         * either NOP or additionally deploy disklessly on new nodes
+         * If the resource is already deployed on X nodes, and the placement count now is Y:
          * case Y > X
-         * only deploy (Y-X) additionally resources, but on the previously selected
-         * storPoolName.
+         * only deploy (Y-X) additional resources, but on the previously selected storPoolName.
+         * case Y == X
+         * either NOP or additionally deploy disklessly on new nodes.
          * case Y < X
-         * Error.
-         *
-         * Y is our selectFilter.getPlaceCount(). We have to determine X now
+         * error.
          */
-        String upperRscName = rscNameStr.toUpperCase();
         List<Resource> alreadyPlaced =
-            nodesMap.values().stream()
-                .flatMap(node -> privilegedStreamResources(node))
-                .filter(rsc -> rsc.getDefinition().getName().value.equals(upperRscName))
-                .collect(Collectors.toList());
+            privilegedStreamResources(ctrlApiDataLoader.loadRscDfn(rscNameStr, true)).collect(Collectors.toList());
 
-        AutoStorPoolSelectorConfig selectorCfg = new AutoStorPoolSelectorConfig(selectFilter);
-        boolean nop = false;
+        int additionalPlaceCount = selectFilter.getPlaceCount() - alreadyPlaced.size();
 
-        if (!alreadyPlaced.isEmpty())
+        if (additionalPlaceCount < 0)
         {
-            String selectedStorPoolName =
-                ctrlPropsHelper.getProps(alreadyPlaced.get(0)).map()
-                    .get(InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME);
-            if (alreadyPlaced.size() == selectFilter.getPlaceCount())
-            {
-                responseConverter.addWithDetail(responses, context, ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.WARN_RSC_ALREADY_DEPLOYED,
-                        "Resource '" + rscNameStr + "' was already deployed on " +
-                            selectFilter.getPlaceCount() + " nodes. Skipping."
-                    )
-                    .setDetails("Used storage pool: '" + selectedStorPoolName + "'\n" +
-                        "Used nodes: '" +
-                        alreadyPlaced.stream().map(rsc -> rsc.getAssignedNode().getName().displayValue)
-                            .collect(Collectors.joining("', '")) + "'")
-                    .build()
-                );
-                nop = true;
-            }
-            else
-            {
-                if (alreadyPlaced.size() < selectFilter.getPlaceCount())
-                {
-                    errorReporter.logDebug(
-                        "Overriding placeCount. From %d to %d",
-                        selectFilter.getPlaceCount(),
-                        selectFilter.getPlaceCount() - alreadyPlaced.size()
-                    );
-                    selectorCfg.overridePlaceCount(selectFilter.getPlaceCount() - alreadyPlaced.size());
-                    if (selectFilter.getStorPoolNameStr() == null)
-                    {
-                        errorReporter.logDebug("Setting storPoolName. Using '%s'", selectedStorPoolName);
-                        selectorCfg.overrideStorPoolNameStr(selectedStorPoolName);
-                    }
-                }
-                else
-                {
-                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_PLACE_COUNT,
-                        String.format(
-                            "The resource '%s' was already deployed on %d nodes: %s. " +
-                                "Did you mean to autoplace with %d replica?",
-                            rscNameStr,
-                            alreadyPlaced.size(),
-                            alreadyPlaced.stream().map(rsc -> rsc.getAssignedNode().getName().displayValue)
-                                .collect(Collectors.joining("', '")),
-                            alreadyPlaced.size() + selectFilter.getPlaceCount()
-                        )
-                    ));
-                }
-
-                /*
-                 *  here we have two options. Either the user defined a storage pool manually OR the user did
-                 *  not specify a storPoolName in which case we set it to "selectedStorPoolName". This means,
-                 *  in both cases the selectorCfg.getStorPoolNameStr() will return != null.
-                 *
-                 *  Additionally restricting the candidates by rscName, will either not change anything at all
-                 *  (that is the case when the user set a storage pool manually != selectedStorPoolName), or
-                 *  will reduce the candidates on node-level, filtering the nodes out where the resource
-                 *  is already deployed.
-                 */
-                selectorCfg.getNotPlaceWithRscList().add(rscNameStr);
-            }
+            throw new ApiRcException(makePlaceCountTooLowResponse(rscNameStr, alreadyPlaced));
         }
 
-        Flux<ApiCallRc> deploymentResponses;
-        if (nop)
+        String storPoolName;
+        if (alreadyPlaced.isEmpty() || selectFilter.getStorPoolNameStr() != null)
         {
+            storPoolName = selectFilter.getStorPoolNameStr();
+        }
+        else
+        {
+            storPoolName = ctrlPropsHelper.getProps(alreadyPlaced.get(0)).map()
+                .get(InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME);
+        }
+
+        errorReporter.logDebug(
+            "Auto-placing '%s' on %d additional nodes" +
+                (storPoolName == null ? "" : " using pool '" + storPoolName + "'"),
+            rscNameStr,
+            additionalPlaceCount
+        );
+
+        Flux<ApiCallRc> deploymentResponses;
+        if (additionalPlaceCount == 0 && !disklessOnRemainingNodes)
+        {
+            responseConverter.addWithDetail(responses, context,
+                makeAlreadyDeployedResponse(
+                    rscNameStr,
+                    alreadyPlaced
+                )
+            );
+
             deploymentResponses = Flux.empty();
         }
         else
         {
-            Candidate bestCandidate = autoStorPoolSelector.findBestCandidate(
-                calculateResourceDefinitionSize(rscNameStr),
-                selectorCfg,
-                CtrlAutoStorPoolSelector::mostRemainingSpaceNodeStrategy,
-                CtrlAutoStorPoolSelector::mostRemainingSpaceCandidateStrategy
+            AutoStorPoolSelectorConfig selectorCfg = new AutoStorPoolSelectorConfig(
+                additionalPlaceCount,
+                selectFilter.getReplicasOnDifferentList(),
+                selectFilter.getReplicasOnSameList(),
+                selectFilter.getNotPlaceWithRscRegex(),
+                Stream.concat(
+                    selectFilter.getNotPlaceWithRscList().stream(),
+                    // Do not attempt to re-use nodes that already have this resource
+                    Stream.of(rscNameStr)
+                ).collect(Collectors.toList()),
+                storPoolName
             );
+
+            final long rscSize = calculateResourceDefinitionSize(rscNameStr);
+
+            List<Candidate> candidateList = autoStorPoolSelector.getCandidateList(
+                rscSize,
+                selectorCfg,
+                CtrlAutoStorPoolSelector::mostRemainingSpaceNodeStrategy
+            );
+
+            Candidate bestCandidate = candidateList.stream()
+                .max(CtrlAutoStorPoolSelector.mostRemainingSpaceCandidateStrategy(peerAccCtx.get()))
+                .orElseThrow(() -> failNotEnoughCandidates(storPoolName, rscSize));
 
             Map<String, String> rscPropsMap = new TreeMap<>();
             String selectedStorPoolName = bestCandidate.storPoolName.displayValue;
             rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, selectedStorPoolName);
-
-            ApiCallRcImpl createResourceResponses = new ApiCallRcImpl();
 
             List<Resource> deployedResources = new ArrayList<>();
             for (Node node : bestCandidate.nodes)
@@ -363,18 +334,76 @@ public class CtrlRscAutoPlaceApiCallHandler
         return size;
     }
 
-    private Stream<Resource> privilegedStreamResources(Node node)
+    private Stream<Resource> privilegedStreamResources(ResourceDefinition rscDfn)
     {
         Stream<Resource> ret;
         try
         {
-            ret = node.streamResources(apiCtx);
+            ret = rscDfn.streamResource(apiCtx);
         }
         catch (AccessDeniedException accDenied)
         {
             throw new ImplementationError("ApiCtx has not enough privileges", accDenied);
         }
         return ret;
+    }
+
+    private ApiCallRcImpl.ApiCallRcEntry makeAlreadyDeployedResponse(
+        String rscNameStr,
+        List<Resource> alreadyPlaced
+    )
+    {
+        return ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.WARN_RSC_ALREADY_DEPLOYED,
+                "Resource '" + rscNameStr + "' was already deployed on " +
+                    alreadyPlaced.size() + " nodes. Skipping."
+            )
+            .setDetails("Used nodes: '" +
+                alreadyPlaced.stream().map(rsc -> rsc.getAssignedNode().getName().displayValue)
+                    .collect(Collectors.joining("', '")) + "'")
+            .build();
+    }
+
+    private ApiCallRcImpl.ApiCallRcEntry makePlaceCountTooLowResponse(
+        String rscNameStr,
+        List<Resource> alreadyPlaced
+    )
+    {
+        return ApiCallRcImpl.simpleEntry(
+            ApiConsts.FAIL_INVLD_PLACE_COUNT,
+            String.format(
+                "The resource '%s' was already deployed on %d nodes: %s. " +
+                    "The resource would have to be deleted from nodes to reach the placement count.",
+                rscNameStr,
+                alreadyPlaced.size(),
+                alreadyPlaced.stream().map(rsc -> "'" + rsc.getAssignedNode().getName().displayValue + "'")
+                    .collect(Collectors.joining(", "))
+            )
+        );
+    }
+
+    private ApiRcException failNotEnoughCandidates(String storPoolName, final long rscSize)
+    {
+        return new ApiRcException(ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.FAIL_NOT_ENOUGH_NODES,
+                "Not enough available nodes"
+            )
+            .setDetails(
+                "Not enough nodes fulfilling the following auto-place criteria:\n" +
+                    (
+                        storPoolName == null ?
+                            "" :
+                            " * has a deployed storage pool named '" + storPoolName + "'\n" +
+                                " * the storage pool '" + storPoolName + "' has to have at least '" +
+                                rscSize + "' free space\n"
+                    ) +
+                    " * the current access context has enough privileges to use the node and the storage pool\n" +
+                    " * the node is online"
+            )
+            .build()
+        );
     }
 
     private static String getObjectDescription(String rscNameStr)
