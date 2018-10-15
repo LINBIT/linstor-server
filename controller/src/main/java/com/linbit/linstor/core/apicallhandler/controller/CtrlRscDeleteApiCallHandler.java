@@ -1,16 +1,28 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -33,25 +45,8 @@ import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
@@ -180,6 +175,19 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             );
         }
 
+        if (checkIfLastDiskfullPriveleged(rsc))
+        {
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_IN_USE,
+                    String.format("Last diskfull resource '%s' still has diskless resources attached.", rscNameStr)
+                )
+                .setCause("Resource still has diskless users.")
+                .setCorrection("Before deleting this resource, delete the diskless resources attached to it.")
+                .build()
+            );
+        }
+
         markDeletedWithVolumes(rsc);
 
         ctrlTransactionHelper.commit();
@@ -260,8 +268,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
             ResourceDefinition rscDfn = rsc.getDefinition();
 
-            checkForDependencies(rsc);
-
             deletePriveleged(rsc);
 
             if (rscDfn.getResourceCount() == 0)
@@ -285,100 +291,18 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         return flux;
     }
 
-    /**
-     * This method currently only checks if the current resource is a swordfish-target-resource and the
-     * resource definition still has swordfish-initiator-resource(s).
-     *
-     * @param rsc
-     */
-    private void checkForDependencies(ResourceData rsc)
+    private boolean checkIfLastDiskfullPriveleged(Resource rsc)
     {
-        ResourceDefinition rscDfn = rsc.getDefinition();
-
-        List<Volume> swordfishInitiatorVolumes = getSwordfishInitiatorVolume(rscDfn);
-        if (
-            isSwordfishTargetResource(rsc) &&
-            !swordfishInitiatorVolumes.isEmpty()
-        )
-        {
-            // swordfish currently might not allow multiple initiator per target, but nvme does
-            List<String> nodeNames = swordfishInitiatorVolumes.stream()
-                    .map(vlm -> vlm.getResource().getAssignedNode().getName().displayValue)
-                    .collect(Collectors.toList());
-
-            String rscNameStr = getRscDescription(rsc);
-            String nodeNamesStr = nodeNames.size() == 1 ? nodeNames.get(0) : nodeNames.toString();
-            throw new ApiRcException(
-                ApiCallRcImpl.entryBuilder(
-                    ApiConsts.FAIL_IN_USE,
-                    String.format("Swordfish-target resource '%s' is still in use.", rscNameStr)
-                )
-                .setCause("Resource is mounted/in use.")
-                .setCorrection(
-                    String.format(
-                        "First remove the swordfish-initiator resource on node%s '%s'",
-                        nodeNames.size() == 1 ? "" : "s",
-                        nodeNamesStr
-                    )
-                )
-                .build()
-            );
-        }
-    }
-
-    private List<Volume> getSwordfishInitiatorVolume(ResourceDefinition rscDfn)
-    {
-        return streamResourcesPriveleged(rscDfn)
-            .flatMap(rsc -> rsc.streamVolumes())
-            .filter(vlm -> getStorPoolPriveleged(vlm).getDriverKind() instanceof SwordfishInitiatorDriverKind)
-            .collect(Collectors.toList());
-    }
-
-    private StorPool getStorPoolPriveleged(Volume vlm)
-    {
-        StorPool storPool;
         try
         {
-            storPool = vlm.getStorPool(apiCtx);
+            return !rsc.isDiskless(apiCtx) &&
+                rsc.getDefinition().hasDiskless(apiCtx) &&
+                rsc.getDefinition().diskfullCount(apiCtx) == 1;
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ImplementationError(accDeniedExc);
         }
-        return storPool;
-    }
-
-    private boolean isSwordfishTargetResource(ResourceData rsc)
-    {
-        return getNodeTypePriveleged(rsc).equals(NodeType.SWORDFISH_TARGET);
-    }
-
-    private Stream<Resource> streamResourcesPriveleged(ResourceDefinition rscDfn)
-    {
-        Stream<Resource> stream;
-        try
-        {
-            stream = rscDfn.streamResource(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return stream;
-    }
-
-    private NodeType getNodeTypePriveleged(ResourceData rsc)
-    {
-        NodeType nodeType;
-        try
-        {
-            nodeType = rsc.getAssignedNode().getNodeType(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return nodeType;
     }
 
     private Peer getPeerPriveleged(Node node)

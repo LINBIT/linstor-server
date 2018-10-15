@@ -232,6 +232,20 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public int diskfullCount(AccessContext accCtx) throws AccessDeniedException
+    {
+        int count = 0;
+        for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
+        {
+            if (rsc.getStateFlags().isUnset(accCtx, Resource.RscFlags.DISKLESS))
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    @Override
     public Iterator<Resource> iterateResource(AccessContext accCtx)
         throws AccessDeniedException
     {

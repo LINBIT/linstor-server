@@ -52,6 +52,9 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
 
     int getResourceCount();
 
+    int diskfullCount(AccessContext accCtx)
+        throws AccessDeniedException;
+
     Iterator<Resource> iterateResource(AccessContext accCtx)
         throws AccessDeniedException;
 
