@@ -2,12 +2,15 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -43,6 +46,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
@@ -55,6 +59,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlAutoStorPoolSelector autoStorPoolSelector;
+    private final FreeCapacityFetcher freeCapacityFetcher;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
@@ -72,6 +77,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
         CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
+        FreeCapacityFetcher freeCapacityFetcherRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
@@ -88,6 +94,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
         autoStorPoolSelector = autoStorPoolSelectorRef;
+        freeCapacityFetcher = freeCapacityFetcherRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
@@ -189,7 +196,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         }
         else
         {
-            AutoStorPoolSelectorConfig selectorCfg = new AutoStorPoolSelectorConfig(
+            AutoStorPoolSelectorConfig autoStorPoolSelectorConfig = new AutoStorPoolSelectorConfig(
                 additionalPlaceCount,
                 selectFilter.getReplicasOnDifferentList(),
                 selectFilter.getReplicasOnSameList(),
@@ -204,100 +211,47 @@ public class CtrlRscAutoPlaceApiCallHandler
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);
 
-            List<Candidate> candidateList = autoStorPoolSelector.getCandidateList(
+            Optional<Candidate> bestCandidate = findBestCandidate(
+                autoStorPoolSelectorConfig,
                 rscSize,
-                selectorCfg,
-                CtrlAutoStorPoolSelector::mostRemainingSpaceNodeStrategy
+                // Try thick placement - do not override any free capacities
+                Collections.emptyMap(),
+                // Exclude thin storage pools
+                false
             );
 
-            Candidate bestCandidate = candidateList.stream()
-                .max(CtrlAutoStorPoolSelector.mostRemainingSpaceCandidateStrategy(peerAccCtx.get()))
-                .orElseThrow(() -> failNotEnoughCandidates(storPoolName, rscSize));
-
-            Map<String, String> rscPropsMap = new TreeMap<>();
-            String selectedStorPoolName = bestCandidate.storPoolName.displayValue;
-            rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, selectedStorPoolName);
-
-            List<Resource> deployedResources = new ArrayList<>();
-            for (Node node : bestCandidate.nodes)
+            if (bestCandidate.isPresent())
             {
-                ResourceData rsc = ctrlRscCrtApiHelper.createResourceDb(
-                    node.getName().displayValue,
+                Candidate candidate = bestCandidate.get();
+
+                List<Resource> deployedResources = createResources(
+                    context,
+                    responses,
                     rscNameStr,
-                    0L,
-                    rscPropsMap,
-                    Collections.emptyList(),
-                    null
-                ).extractApiCallRc(responses);
-                deployedResources.add(rsc);
-
-                // bypass the whilteList
-                ctrlPropsHelper.getProps(rsc).map().put(
-                    InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME,
-                    selectedStorPoolName
+                    disklessOnRemainingNodes,
+                    candidate
                 );
-            }
 
-            if (disklessOnRemainingNodes)
+                ctrlTransactionHelper.commit();
+
+                deploymentResponses = deployedResources.isEmpty() ?
+                    Flux.empty() :
+                    ctrlRscCrtApiHelper.deployResources(context, deployedResources);
+            }
+            else
             {
-                ArrayList<Node> disklessNodeList = new ArrayList<>(nodesMap.values()); // copy
-                disklessNodeList.removeAll(bestCandidate.nodes); // remove all selected nodes
-                disklessNodeList.removeAll(
-                    // remove all nodes the rsc is already deployed
-                    alreadyPlaced.stream().map(Resource::getAssignedNode).collect(Collectors.toList())
+                // Thick placement failed; ensure we haven't changed anything
+                ctrlTransactionHelper.rollback();
+
+                deploymentResponses = autoPlaceThin(
+                    context,
+                    rscNameStr,
+                    storPoolName,
+                    rscSize,
+                    autoStorPoolSelectorConfig,
+                    disklessOnRemainingNodes
                 );
-
-                // TODO: allow other diskless storage pools
-                rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
-
-                // deploy resource disklessly on remaining nodes
-                for (Node disklessNode : disklessNodeList)
-                {
-                    try
-                    {
-                        if (disklessNode.getNodeType(apiCtx) == Node.NodeType.SATELLITE) // only deploy on satellites
-                        {
-                            deployedResources.add(
-                                ctrlRscCrtApiHelper.createResourceDb(
-                                    disklessNode.getName().displayValue,
-                                    rscNameStr,
-                                    RscFlags.DISKLESS.flagValue,
-                                    rscPropsMap,
-                                    Collections.emptyList(),
-                                    null
-                                ).extractApiCallRc(responses)
-                            );
-                        }
-                    }
-                    catch (AccessDeniedException accDeniedExc)
-                    {
-                        throw new ApiAccessDeniedException(
-                            accDeniedExc,
-                            "access " + CtrlNodeApiCallHandler.getNodeDescriptionInline(disklessNode),
-                            ApiConsts.FAIL_ACC_DENIED_NODE
-                        );
-                    }
-                }
             }
-
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithOp(responses, context, ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.CREATED,
-                    "Resource '" + rscNameStr + "' successfully autoplaced on " +
-                        selectFilter.getPlaceCount() + " nodes"
-                )
-                .setDetails("Used storage pool: '" + bestCandidate.storPoolName.displayValue + "'\n" +
-                    "Used nodes: '" + bestCandidate.nodes.stream()
-                    .map(node -> node.getName().displayValue)
-                    .collect(Collectors.joining("', '")) + "'")
-                .build()
-            );
-
-            deploymentResponses = deployedResources.isEmpty() ?
-                Flux.empty() :
-                ctrlRscCrtApiHelper.deployResources(context, deployedResources);
         }
 
         return Flux
@@ -308,6 +262,219 @@ public class CtrlRscAutoPlaceApiCallHandler
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
             .onErrorResume(EventStreamClosedException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
+    }
+
+    private Flux<ApiCallRc> autoPlaceThin(
+        ResponseContext context,
+        String rscNameStr,
+        String storPoolName,
+        long rscSize,
+        AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
+        boolean disklessOnRemainingNodes
+    )
+    {
+        return freeCapacityFetcher.fetchFreeCapacities(Collections.emptySet())
+            .flatMapMany(freeCapacities -> scopeRunner
+                .fluxInTransactionalScope(
+                    LockGuard.createDeferred(
+                        nodesMapLock.writeLock(),
+                        rscDfnMapLock.writeLock(),
+                        storPoolDfnMapLock.writeLock()
+                    ),
+                    () -> autoPlaceThinInTransaction(
+                        context,
+                        rscNameStr,
+                        storPoolName,
+                        rscSize,
+                        autoStorPoolSelectorConfig,
+                        disklessOnRemainingNodes,
+                        freeCapacities
+                    )
+                ));
+    }
+
+    private Flux<ApiCallRc> autoPlaceThinInTransaction(
+        ResponseContext context,
+        String rscNameStr,
+        String storPoolName,
+        long rscSize,
+        AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
+        boolean disklessOnRemainingNodes,
+        Map<StorPool.Key, Long> freeCapacities
+    )
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        Optional<Candidate> bestCandidate = findBestCandidate(
+            autoStorPoolSelectorConfig,
+            rscSize,
+            freeCapacities,
+            true
+        );
+
+        Candidate candidate = bestCandidate
+            .orElseThrow(() -> failNotEnoughCandidates(storPoolName, rscSize));
+
+        List<Resource> deployedResources = createResources(
+            context,
+            responses,
+            rscNameStr,
+            disklessOnRemainingNodes,
+            candidate
+        );
+
+        ctrlTransactionHelper.commit();
+
+        Flux<ApiCallRc> deploymentResponses = deployedResources.isEmpty() ?
+            Flux.empty() :
+            ctrlRscCrtApiHelper.deployResources(context, deployedResources);
+
+        return Flux
+            .<ApiCallRc>just(responses)
+            .concatWith(deploymentResponses);
+    }
+
+    private Optional<Candidate> findBestCandidate(
+        AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
+        long rscSize,
+        Map<StorPool.Key, Long> freeCapacities,
+        boolean includeThin
+    )
+    {
+        Map<StorPoolName, List<Node>> availableStorPools = autoStorPoolSelector.listAvailableStorPools();
+
+        Map<StorPoolName, List<Node>> usableStorPools = availableStorPools.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> filterUsableNodes(rscSize, freeCapacities, includeThin, entry.getKey(), entry.getValue())
+            ));
+
+        List<Candidate> candidates = autoStorPoolSelector.getCandidateList(
+            usableStorPools,
+            autoStorPoolSelectorConfig,
+            FreeCapacityAutoPoolSelectorUtils.mostFreeCapacityNodeStrategy(freeCapacities)
+        );
+
+        return candidates.stream()
+            .max(FreeCapacityAutoPoolSelectorUtils.mostFreeCapacityCandidateStrategy(peerAccCtx.get(), freeCapacities));
+    }
+
+    private List<Node> filterUsableNodes(
+        long rscSize,
+        Map<StorPool.Key, Long> freeCapacities,
+        boolean includeThin,
+        StorPoolName storPoolName,
+        List<Node> nodes
+    )
+    {
+        return nodes.stream()
+            .filter(node -> isStorPoolUsable(rscSize, freeCapacities, includeThin, storPoolName, node))
+            .collect(Collectors.toList());
+    }
+
+    private boolean isStorPoolUsable(
+        long rscSize,
+        Map<StorPool.Key, Long> freeCapacities,
+        boolean includeThin,
+        StorPoolName storPoolName,
+        Node node
+    )
+    {
+        StorPool storPool = FreeCapacityAutoPoolSelectorUtils.getStorPoolPrivileged(apiCtx, node, storPoolName);
+        boolean usableProvisioning = includeThin || !storPool.getDriverKind().usesThinProvisioning();
+        return usableProvisioning &&
+            FreeCapacityAutoPoolSelectorUtils
+                .getFreeCapacityCurrentEstimationPrivileged(
+                    apiCtx,
+                    freeCapacities,
+                    storPool
+                )
+                .map(freeCapacity -> freeCapacity >= rscSize)
+                .orElse(false);
+    }
+
+    private List<Resource> createResources(
+        ResponseContext context,
+        ApiCallRcImpl responses,
+        String rscNameStr,
+        boolean disklessOnRemainingNodes,
+        Candidate bestCandidate
+    )
+    {
+        Map<String, String> rscPropsMap = new TreeMap<>();
+        String selectedStorPoolName = bestCandidate.storPoolName.displayValue;
+        rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, selectedStorPoolName);
+
+        List<Resource> deployedResources = new ArrayList<>();
+        for (Node node : bestCandidate.nodes)
+        {
+            ResourceData rsc = ctrlRscCrtApiHelper.createResourceDb(
+                node.getName().displayValue,
+                rscNameStr,
+                0L,
+                rscPropsMap,
+                Collections.emptyList(),
+                null
+            ).extractApiCallRc(responses);
+            deployedResources.add(rsc);
+
+            // bypass the whilteList
+            ctrlPropsHelper.getProps(rsc).map().put(
+                InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME,
+                selectedStorPoolName
+            );
+        }
+
+        if (disklessOnRemainingNodes)
+        {
+            // TODO: allow other diskless storage pools
+            rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
+
+            // deploy resource disklessly on remaining nodes
+            for (Node disklessNode : nodesMap.values())
+            {
+                try
+                {
+                    if (disklessNode.getNodeType(apiCtx) == Node.NodeType.SATELLITE && // only deploy on satellites
+                        disklessNode.getResource(apiCtx, LinstorParsingUtils.asRscName(rscNameStr)) == null)
+                    {
+                        deployedResources.add(
+                            ctrlRscCrtApiHelper.createResourceDb(
+                                disklessNode.getName().displayValue,
+                                rscNameStr,
+                                RscFlags.DISKLESS.flagValue,
+                                rscPropsMap,
+                                Collections.emptyList(),
+                                null
+                            ).extractApiCallRc(responses)
+                        );
+                    }
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    throw new ApiAccessDeniedException(
+                        accDeniedExc,
+                        "access " + CtrlNodeApiCallHandler.getNodeDescriptionInline(disklessNode),
+                        ApiConsts.FAIL_ACC_DENIED_NODE
+                    );
+                }
+            }
+        }
+
+        responseConverter.addWithOp(responses, context, ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.CREATED,
+                "Resource '" + rscNameStr + "' successfully autoplaced on " +
+                    bestCandidate.nodes.size() + " nodes"
+            )
+            .setDetails("Used storage pool: '" + bestCandidate.storPoolName.displayValue + "'\n" +
+                "Used nodes: '" + bestCandidate.nodes.stream()
+                .map(node -> node.getName().displayValue)
+                .collect(Collectors.joining("', '")) + "'")
+            .build()
+        );
+
+        return deployedResources;
     }
 
     private long calculateResourceDefinitionSize(String rscNameStr)

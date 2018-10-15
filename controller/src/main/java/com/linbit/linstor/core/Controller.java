@@ -354,7 +354,7 @@ public final class Controller
                 new LinStorModule(),
                 new CoreModule(),
                 new ControllerCoreModule(),
-                new ControllerSatelliteConnectorModule(),
+                new ControllerSatelliteCommunicationModule(),
                 new ControllerDbModule(),
                 new DbConnectionPoolModule(),
                 new NetComModule(),

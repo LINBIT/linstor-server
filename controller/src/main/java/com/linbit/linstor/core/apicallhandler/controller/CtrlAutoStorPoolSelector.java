@@ -14,7 +14,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
-import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.netcom.Peer;
@@ -27,7 +26,6 @@ import com.linbit.linstor.storage.DisklessDriverKind;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,9 +33,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,37 +60,15 @@ public class CtrlAutoStorPoolSelector
         apiAccCtx = apiAccCtxRef;
     }
 
-    public List<Candidate> getCandidateList(
-        final long rscSize,
-        final AutoStorPoolSelectorConfig selectFilter,
-        final NodeSelectionStrategy nodeSelectionStrategy
-    )
+    public Map<StorPoolName, List<Node>> listAvailableStorPools()
     {
-        Map<StorPoolName, List<Node>> nodes = buildInitialCandidateList(rscSize);
-
-        nodes = filterByStorPoolName(selectFilter, nodes);
-
-        nodes = filterByDoNotPlaceWithResource(selectFilter, nodes);
-
-        // this method already trims the node-list to placeCount.
-        List<Candidate> candidateList = filterByReplicasOn(
-            selectFilter,
-            nodes,
-            nodeSelectionStrategy
-        );
-
-        return candidateList;
-    }
-
-    private Map<StorPoolName, List<Node>> buildInitialCandidateList(final long rscSize)
-    {
-         /*
-          * build a map of storage pools
-          * * where the user has access to
-          * * that have enough free space
-          * * that are not diskless
-          */
-         HashMap<StorPoolName, List<StorPool>> tmpMap = storPoolDfnMap.values().stream()
+        /*
+         * build a map of storage pools
+         * * where the user has access to
+         * * that have enough free space
+         * * that are not diskless
+         */
+        HashMap<StorPoolName, List<StorPool>> tmpMap = storPoolDfnMap.values().stream()
             // filter for user access on storPoolDfn
             .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
             .flatMap(this::getStorPoolStream)
@@ -104,8 +78,6 @@ public class CtrlAutoStorPoolSelector
             .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
             // filter for node connected
             .filter(storPool -> getPeerPrivileged(storPool).isConnected())
-            // filter for enough free space
-            .filter(storPool -> poolHasSpaceFor(storPool, rscSize))
             .collect(
                 Collectors.groupingBy(
                     StorPool::getName,
@@ -113,33 +85,36 @@ public class CtrlAutoStorPoolSelector
                     Collectors.toList()
                 )
             );
-         HashMap<StorPoolName, List<Node>> candidateMap = new HashMap<>();
-         for (Entry<StorPoolName, List<StorPool>> entry : tmpMap.entrySet())
-         {
-             candidateMap.put(
-                 entry.getKey(),
-                 entry.getValue().stream().map(StorPool::getNode).collect(Collectors.toList())
-             );
-         }
+        HashMap<StorPoolName, List<Node>> candidateMap = new HashMap<>();
+        for (Entry<StorPoolName, List<StorPool>> entry : tmpMap.entrySet())
+        {
+            candidateMap.put(
+                entry.getKey(),
+                entry.getValue().stream().map(StorPool::getNode).collect(Collectors.toList())
+            );
+        }
 
         return candidateMap;
     }
 
-    private boolean poolHasSpaceFor(StorPool storPool, long rscSize)
+    public List<Candidate> getCandidateList(
+        final Map<StorPoolName, List<Node>> availableStorPools,
+        final AutoStorPoolSelectorConfig selectFilter,
+        final NodeSelectionStrategy nodeSelectionStrategy
+    )
     {
-        boolean hasSpace;
-        try
-        {
-            hasSpace = storPool.getDriverKind().usesThinProvisioning() ||
-                storPool.getFreeSpaceTracker()
-                    .getFreeSpaceCurrentEstimation(peerAccCtx.get())
-                    .orElse(0L) >= rscSize;
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw queryFreeSpaceAccDenied(exc, storPool.getNode().getName(), storPool.getName());
-        }
-        return hasSpace;
+        Map<StorPoolName, List<Node>> storPools = availableStorPools;
+
+        storPools = filterByStorPoolName(selectFilter, storPools);
+
+        storPools = filterByDoNotPlaceWithResource(selectFilter, storPools);
+
+        // this method already trims the node-list to placeCount.
+        return filterByReplicasOn(
+            selectFilter,
+            storPools,
+            nodeSelectionStrategy
+        );
     }
 
     private List<String> toUpperList(List<String> list)
@@ -182,7 +157,7 @@ public class CtrlAutoStorPoolSelector
 
     private Map<StorPoolName, List<Node>> filterByStorPoolName(
         final AutoStorPoolSelectorConfig selectFilter,
-        Map<StorPoolName, List<Node>> nodes
+        Map<StorPoolName, List<Node>> storPools
     )
     {
         Map<StorPoolName, List<Node>> ret = new HashMap<>();
@@ -190,11 +165,19 @@ public class CtrlAutoStorPoolSelector
         if (forcedStorPoolName != null)
         {
             StorPoolName storPoolName = LinstorParsingUtils.asStorPoolName(selectFilter.getStorPoolNameStr());
-            ret.put(storPoolName, nodes.get(storPoolName)); // skip all other entries
+            List<Node> nodes = storPools.get(storPoolName);
+            if (nodes == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
+                    "Storage pool '" + forcedStorPoolName + "' not found"
+                ));
+            }
+            ret.put(storPoolName, nodes); // skip all other entries
         }
         else
         {
-            ret.putAll(nodes);
+            ret.putAll(storPools);
         }
         return ret;
     }
@@ -225,45 +208,6 @@ public class CtrlAutoStorPoolSelector
             throw new ImplementationError(exc);
         }
         return peer;
-    }
-
-    private Optional<Long> getFreeSpace(Node node, StorPoolName storPoolName)
-    {
-        Optional<Long> freeSpace;
-        if (node == null || storPoolName == null)
-        {
-            freeSpace = Optional.empty();
-        }
-        else
-        {
-            try
-            {
-                freeSpace = node.getStorPool(peerAccCtx.get(), storPoolName)
-                    .getFreeSpaceTracker()
-                    .getFreeSpaceCurrentEstimation(peerAccCtx.get());
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw queryFreeSpaceAccDenied(exc, node.getName(), storPoolName);
-            }
-        }
-        return freeSpace;
-    }
-
-    private ApiAccessDeniedException queryFreeSpaceAccDenied(
-        AccessDeniedException exc,
-        NodeName nodeName,
-        StorPoolName storPoolName
-    )
-    {
-        return new ApiAccessDeniedException(
-            exc,
-            "query free space of " + StorPoolHelper.getStorPoolDescriptionInline(
-                nodeName.displayValue,
-                storPoolName.displayValue
-            ),
-            ApiConsts.FAIL_ACC_DENIED_STOR_POOL
-        );
     }
 
     private Map<StorPoolName, List<Node>> filterByDoNotPlaceWithResource(
@@ -424,78 +368,11 @@ public class CtrlAutoStorPoolSelector
                     storPoolName,
                     nodeList,
                     nodeList.stream()
-                        .map(node -> getFreeSpace(node, storPoolName).orElse(0L))
-                        .min(Long::compare)
-                        .orElse(0L),
-                    nodeList.stream()
                         .allMatch(node ->
                             getStorPoolPrivileged(node, storPoolName).getDriverKind().usesThinProvisioning())
                 )
             );
         }
-    }
-
-    public static Comparator<Candidate> mostRemainingSpaceCandidateStrategy(AccessContext accCtx)
-    {
-        Comparator<StorPool> thickComparator = Comparator.<StorPool, Boolean>comparing(
-            storPool -> storPool.getDriverKind().usesThinProvisioning()
-        ).reversed();
-
-        Comparator<StorPool> freeSpaceComparator = Comparator.comparingLong(
-            storPool -> getFreeSpaceCurrentEstimationPrivileged(accCtx, storPool).orElse(0L)
-        );
-
-        return comparingWithComparator(
-            candidate -> getStorPoolPrivileged(accCtx, candidate.nodes.get(0), candidate.storPoolName),
-            thickComparator.thenComparing(freeSpaceComparator)
-        );
-    }
-
-    public static Comparator<Node> mostRemainingSpaceNodeStrategy(
-        StorPoolName storPoolName,
-        AccessContext accCtx
-    )
-    {
-        return Comparator.comparingLong(node ->
-            getFreeSpaceCurrentEstimationPrivileged(
-                accCtx,
-                getStorPoolPrivileged(accCtx, node, storPoolName)
-            ).orElse(0L)
-        );
-    }
-
-    private static StorPool getStorPoolPrivileged(AccessContext accCtx, Node node, StorPoolName storPoolName)
-    {
-        StorPool storPool;
-        try
-        {
-            storPool = node.getStorPool(accCtx, storPoolName);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return storPool;
-    }
-
-    private static Optional<Long> getFreeSpaceCurrentEstimationPrivileged(
-        AccessContext accCtx, StorPool storPool)
-    {
-        Optional<Long> freeSpaceCurrentEstimation;
-        try
-        {
-            freeSpaceCurrentEstimation = storPool.getFreeSpaceTracker().getFreeSpaceCurrentEstimation(accCtx);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return freeSpaceCurrentEstimation;
-    }
-
-    private static <T, U> Comparator<T> comparingWithComparator(Function<T, U> mapper, Comparator<U> comparator)
-    {
-        return (t1, t2) -> comparator.compare(mapper.apply(t1), mapper.apply(t2));
     }
 
     private Map<StorPoolName, List<Node>> filterByRscNameStr(
@@ -507,7 +384,6 @@ public class CtrlAutoStorPoolSelector
         for (Entry<StorPoolName, List<Node>> entry: nodes.entrySet())
         {
             List<Node> nodeCandidates = entry.getValue().stream()
-                .sorted(Comparator.comparing(node -> getFreeSpace(node, entry.getKey()).orElse(0L)))
                 .filter(node -> hasNoResourceOf(node, notPlaceWithRscList))
                 .collect(Collectors.toList());
 
@@ -539,19 +415,16 @@ public class CtrlAutoStorPoolSelector
     {
         final StorPoolName storPoolName;
         final List<Node> nodes;
-        final long sizeAfterDeployment;
         final boolean allThin;
 
         Candidate(
             StorPoolName storPoolNameRef,
             List<Node> nodesRef,
-            long sizeAfterDeploymentRef,
             boolean allThinRef
         )
         {
             storPoolName = storPoolNameRef;
             nodes = nodesRef;
-            sizeAfterDeployment = sizeAfterDeploymentRef;
             allThin = allThinRef;
         }
 
@@ -565,11 +438,6 @@ public class CtrlAutoStorPoolSelector
             return nodes;
         }
 
-        public long getSizeAfterDeployment()
-        {
-            return sizeAfterDeployment;
-        }
-
         public boolean allThin()
         {
             return allThin;
@@ -578,8 +446,7 @@ public class CtrlAutoStorPoolSelector
         @Override
         public String toString()
         {
-            return "Candidate [storPoolName=" + storPoolName + ", nodes=" + nodes +
-                ", sizeAfterDeployment=" + sizeAfterDeployment + "]";
+            return "Candidate [storPoolName=" + storPoolName + ", nodes=" + nodes + "]";
         }
     }
 

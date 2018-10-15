@@ -49,6 +49,7 @@ import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
+import reactor.util.function.Tuple2;
 
 public class ProtoCtrlClientSerializerBuilder
     extends ProtoCommonSerializerBuilder implements CtrlClientSerializer.CtrlClientSerializerBuilder
@@ -322,17 +323,20 @@ public class ProtoCtrlClientSerializerBuilder
 
 
     @Override
-    public CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<Candidate> candidateList)
+    public CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<Tuple2<Candidate, Long>> candidateList)
     {
         try
         {
             List<MsgRspMaxVlmSizesOuterClass.Candidate> protoCandidates = new ArrayList<>();
 
-            for (Candidate candidate : candidateList)
+            for (Tuple2<Candidate, Long> candidateWithCapacity : candidateList)
             {
+                Candidate candidate = candidateWithCapacity.getT1();
+                Long capacity = candidateWithCapacity.getT2();
+
                 protoCandidates.add(
                     MsgRspMaxVlmSizesOuterClass.Candidate.newBuilder()
-                        .setMaxVlmSize(candidate.getSizeAfterDeployment())
+                        .setMaxVlmSize(capacity)
                         .addAllNodeNames(
                             candidate.getNodes().stream()
                                 .map(node -> node.getName().displayValue)

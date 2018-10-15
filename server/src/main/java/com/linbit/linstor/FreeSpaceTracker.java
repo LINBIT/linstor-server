@@ -20,7 +20,7 @@ public interface FreeSpaceTracker extends TransactionObject
 
     Optional<Long> getFreeSpaceLastUpdated(AccessContext accCtx) throws AccessDeniedException;
 
-    Optional<Long> getFreeSpaceCurrentEstimation(AccessContext accCtx) throws AccessDeniedException;
+    long getReservedCapacity(AccessContext accCtx) throws AccessDeniedException;
 
     void setFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException;
 }

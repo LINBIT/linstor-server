@@ -14,6 +14,7 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.satellitestate.SatelliteState;
+import reactor.util.function.Tuple2;
 
 public interface CtrlClientSerializer extends CommonSerializer
 {
@@ -52,6 +53,6 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder ctrlCfgProps(Map<String, String> map);
 
         CtrlClientSerializerBuilder snapshotDeploymentEvent(ApiCallRc apiCallRc);
-        CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<Candidate> candidateList);
+        CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<Tuple2<Candidate, Long>> candidateList);
     }
 }

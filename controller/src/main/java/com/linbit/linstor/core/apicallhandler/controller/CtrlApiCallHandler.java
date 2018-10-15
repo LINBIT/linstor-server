@@ -30,12 +30,10 @@ import java.util.concurrent.locks.ReadWriteLock;
 public class CtrlApiCallHandler
 {
     private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
-    private final CtrlFullSyncApiCallHandler fullSyncApiCallHandler;
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
     private final CtrlRscApiCallHandler rscApiCallHandler;
-    private final CtrlRscAutoPlaceApiCallHandler rscAutoPlaceApiCallHandler;
     private final CtrlVlmApiCallHandler vlmApiCallHandler;
     private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
     private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
@@ -59,12 +57,10 @@ public class CtrlApiCallHandler
     @Inject
     CtrlApiCallHandler(
         CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
-        CtrlFullSyncApiCallHandler fullSyncApiCallHandlerRef,
         CtrlNodeApiCallHandler nodeApiCallHandlerRef,
         CtrlRscDfnApiCallHandler rscDfnApiCallHandlerRef,
         CtrlVlmDfnApiCallHandler vlmDfnApiCallHandlerRef,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
-        CtrlRscAutoPlaceApiCallHandler rscAutoPlaceApiCallHandlerRef,
         CtrlVlmApiCallHandler vlmApiCallHandlerRef,
         CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandlerRef,
         CtrlStorPoolApiCallHandler storPoolApiCallHandlerRef,
@@ -85,12 +81,10 @@ public class CtrlApiCallHandler
     )
     {
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
-        fullSyncApiCallHandler = fullSyncApiCallHandlerRef;
         nodeApiCallHandler = nodeApiCallHandlerRef;
         rscDfnApiCallHandler = rscDfnApiCallHandlerRef;
         vlmDfnApiCallHandler = vlmDfnApiCallHandlerRef;
         rscApiCallHandler = rscApiCallHandlerRef;
-        rscAutoPlaceApiCallHandler = rscAutoPlaceApiCallHandlerRef;
         vlmApiCallHandler = vlmApiCallHandlerRef;
         storPoolDfnApiCallHandler = storPoolDfnApiCallHandlerRef;
         storPoolApiCallHandler = storPoolApiCallHandlerRef;
@@ -1472,17 +1466,5 @@ public class CtrlApiCallHandler
             apiCallRc = ctrlConfApiCallHandler.enterPassphrase(passphrase);
         }
         return apiCallRc;
-    }
-
-    public byte[] queryMaxVlmSize(AutoSelectFilterApi selectFilter)
-    {
-        byte[] response;
-        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), storPoolDfnMapLock.readLock()))
-        {
-            response = storPoolDfnApiCallHandler.getMaxVlmSizeForReplicaCount(
-                selectFilter
-            );
-        }
-        return response;
     }
 }

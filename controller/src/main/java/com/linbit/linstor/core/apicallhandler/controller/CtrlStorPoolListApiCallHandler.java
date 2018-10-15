@@ -72,7 +72,7 @@ public class CtrlStorPoolListApiCallHandler
         final Set<NodeName> nodesFilter =
             nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
 
-        return freeCapacityFetcher.fetchFreeCapacities(nodesFilter)
+        return freeCapacityFetcher.fetchFreeSpaceInfo(nodesFilter)
             .flatMapMany(freeCapacityAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     LockGuard.createDeferred(storPoolDfnMapLock.readLock()),

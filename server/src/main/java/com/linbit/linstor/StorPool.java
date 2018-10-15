@@ -214,6 +214,12 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
             }
             return eq;
         }
+
+        @Override
+        public String toString()
+        {
+            return "Node: '" + nodeName + "' StorPool: '" + storPoolName + "'";
+        }
     }
 
     public interface InitMaps

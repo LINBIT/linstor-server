@@ -1,15 +1,14 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlQueryMaxVlmSizeApiCallHandler;
 import com.linbit.linstor.proto.MsgQryMaxVlmSizesOuterClass.MsgQryMaxVlmSizes;
 import com.linbit.linstor.proto.apidata.AutoSelectFilterApiData;
+import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
-
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -17,29 +16,24 @@ import java.io.InputStream;
     name = ApiConsts.API_QRY_MAX_VLM_SIZE,
     description = "Queries the maximum volume size by given replica-count"
 )
-public class MaxVlmSize implements ApiCall
+public class MaxVlmSize implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final CtrlQueryMaxVlmSizeApiCallHandler ctrlQueryMaxVlmSizeApiCallHandler;
 
     @Inject
-    public MaxVlmSize(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public MaxVlmSize(CtrlQueryMaxVlmSizeApiCallHandler ctrlQueryMaxVlmSizeApiCallHandlerRef)
     {
-        apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        ctrlQueryMaxVlmSizeApiCallHandler = ctrlQueryMaxVlmSizeApiCallHandlerRef;
     }
 
+
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         MsgQryMaxVlmSizes msgQuery = MsgQryMaxVlmSizes.parseDelimitedFrom(msgDataIn);
-        client.sendMessage(
-            apiCallHandler.queryMaxVlmSize(
-                new AutoSelectFilterApiData(
-                    msgQuery.getSelectFilter()
-                )
-            )
+        return ctrlQueryMaxVlmSizeApiCallHandler.queryMaxVlmSize(
+            new AutoSelectFilterApiData(msgQuery.getSelectFilter())
         );
     }
 }

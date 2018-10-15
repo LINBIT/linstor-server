@@ -4,6 +4,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.linbit.linstor.annotation.SatelliteConnectorContext;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcherProto;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -11,12 +13,13 @@ import com.linbit.linstor.security.PrivilegeSet;
 
 import javax.inject.Singleton;
 
-public class ControllerSatelliteConnectorModule extends AbstractModule
+public class ControllerSatelliteCommunicationModule extends AbstractModule
 {
     @Override
     protected void configure()
     {
         bind(SatelliteConnector.class).to(SatelliteConnectorImpl.class);
+        bind(FreeCapacityFetcher.class).to(FreeCapacityFetcherProto.class);
     }
 
     @Provides

@@ -148,39 +148,29 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @throws AccessDeniedException
      */
     @Override
-    public Optional<Long> getFreeSpaceCurrentEstimation(AccessContext accCtx) throws AccessDeniedException
+    public long getReservedCapacity(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        Optional<Long> ret;
-        Long freeSpaceTmp = freeSpace.get();
-        if (freeSpaceTmp == null)
+        long sum = 0;
+        try
         {
-            ret = Optional.empty();
-        }
-        else
-        {
-            long sum = 0;
-            try
+            HashSet<Volume> pendingAddCopy;
+            synchronized (pendingVolumesToAdd)
             {
-                HashSet<Volume> pendingAddCopy;
-                synchronized (pendingVolumesToAdd)
-                {
-                    pendingAddCopy = new HashSet<>(pendingVolumesToAdd);
-                }
+                pendingAddCopy = new HashSet<>(pendingVolumesToAdd);
+            }
 
-                for (Volume vlm : pendingAddCopy)
-                {
-                    sum += vlm.getVolumeDefinition().getVolumeSize(privCtx);
-                }
-            }
-            catch (AccessDeniedException accDeniedExc)
+            for (Volume vlm : pendingAddCopy)
             {
-                throw new ImplementationError("Privileged access context has not enough privileges", accDeniedExc);
+                sum += vlm.getVolumeDefinition().getVolumeSize(privCtx);
             }
-            ret = Optional.of(freeSpaceTmp - sum);
         }
-        return ret;
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError("Privileged access context has not enough privileges", accDeniedExc);
+        }
+        return sum;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.linbit.linstor.api;
 
+import com.google.inject.testing.fieldbinder.Bind;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.FreeSpaceMgr;
@@ -23,6 +24,7 @@ import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -37,6 +39,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -92,6 +95,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     @Mock
     protected Peer mockSatellite;
 
+    @Bind @Mock
+    protected FreeCapacityFetcher freeCapacityFetcher;
+
     @Before
     @Override
     public void setUp() throws Exception
@@ -106,6 +112,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         Mockito.when(mockSatellite.apiCall(anyString(), any()))
             .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
         Mockito.when(mockSatellite.isConnected()).thenReturn(true);
+
+        Mockito.when(freeCapacityFetcher.fetchFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 
         commitAndCleanUp(true);
     }
