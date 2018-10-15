@@ -233,15 +233,6 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         );
     }
 
-    private EventIdentifier volumeDiskStateEventIdentifier(DrbdResource resource, DrbdVolume volume)
-    {
-        return EventIdentifier.volumeDefinition(
-            ApiConsts.EVENT_VOLUME_DISK_STATE,
-            resource.getResName(),
-            volume.getVolNr()
-        );
-    }
-
     private UsageState determineUsageState(DrbdResource drbdResource)
     {
         Map<VolumeNumber, DrbdVolume> volumesMap = drbdResource.getVolumesMap();
