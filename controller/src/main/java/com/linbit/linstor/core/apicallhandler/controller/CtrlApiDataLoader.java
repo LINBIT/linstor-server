@@ -13,6 +13,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolData;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
@@ -294,8 +295,8 @@ public class CtrlApiDataLoader
     }
 
     public final StorPoolData loadStorPool(
-        StorPoolDefinitionData storPoolDfn,
-        NodeData node,
+        StorPoolDefinition storPoolDfn,
+        Node node,
         boolean failIfNull
     )
     {

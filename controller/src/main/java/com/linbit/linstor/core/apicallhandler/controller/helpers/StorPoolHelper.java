@@ -4,10 +4,12 @@ import com.linbit.linstor.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDataControllerFactory;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.annotation.PeerContext;
@@ -23,7 +25,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
 import java.sql.SQLException;
 
 public class StorPoolHelper
@@ -133,7 +134,7 @@ public class StorPoolHelper
         );
     }
 
-    public static String getStorPoolDescriptionInline(NodeData node, StorPoolDefinitionData storPoolDfn)
+    public static String getStorPoolDescriptionInline(Node node, StorPoolDefinition storPoolDfn)
     {
         return getStorPoolDescriptionInline(
             node.getName().displayValue,
