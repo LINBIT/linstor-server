@@ -368,16 +368,17 @@ public class CtrlRscAutoPlaceApiCallHandler
     )
     {
         return nodes.stream()
-            .filter(node -> isStorPoolUsable(rscSize, freeCapacities, includeThin, storPoolName, node))
+            .filter(node -> isStorPoolUsable(rscSize, freeCapacities, includeThin, storPoolName, node, apiCtx))
             .collect(Collectors.toList());
     }
 
-    private boolean isStorPoolUsable(
+    public static boolean isStorPoolUsable(
         long rscSize,
         Map<StorPool.Key, Long> freeCapacities,
         boolean includeThin,
         StorPoolName storPoolName,
-        Node node
+        Node node,
+        AccessContext apiCtx
     )
     {
         StorPool storPool = FreeCapacityAutoPoolSelectorUtils.getStorPoolPrivileged(apiCtx, node, storPoolName);
