@@ -1,5 +1,6 @@
 package com.linbit.linstor.api;
 
+import com.google.inject.testing.fieldbinder.Bind;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
@@ -13,6 +14,7 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.RscOuterClass;
 import com.linbit.linstor.proto.apidata.RscApiData;
@@ -26,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -61,6 +64,9 @@ public class RscApiTest extends ApiTestBase
 
     @Mock
     protected Peer mockSatellite;
+
+    @Bind @Mock
+    protected FreeCapacityFetcher freeCapacityFetcher;
 
     @SuppressWarnings("checkstyle:magicnumber")
     public RscApiTest() throws Exception
@@ -103,6 +109,8 @@ public class RscApiTest extends ApiTestBase
         );
         testSatelliteNode.setPeer(GenericDbBase.SYS_CTX, mockSatellite);
         nodesMap.put(testSatelliteName, testSatelliteNode);
+
+        Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 
         testRscDfn = resourceDefinitionDataFactory.create(
             ApiTestBase.BOB_ACC_CTX,
