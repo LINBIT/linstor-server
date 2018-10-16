@@ -180,15 +180,7 @@ public class StltApiCallHandlerUtils
         {
             Optional<Props> nodeProps = storPool.getNode().getProps(apiCtx)
                 .getNamespace(ApiConsts.NAMESPC_STORAGE_DRIVER);
-            ReadOnlyProps nodeROProps;
-            if (nodeProps.isPresent())
-            {
-                nodeROProps = new ReadOnlyProps(nodeProps.get());
-            }
-            else
-            {
-                nodeROProps = ReadOnlyProps.emptyRoProps();
-            }
+            ReadOnlyProps nodeROProps = nodeProps.map(ReadOnlyProps::new).orElseGet(ReadOnlyProps::emptyRoProps);
             storPool.reconfigureStorageDriver(
                 storageDriver,
                 nodeROProps,

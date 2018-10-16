@@ -9,7 +9,6 @@ import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.utils.Either;
@@ -30,20 +29,17 @@ import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBu
 )
 public class ReqFreeSpace implements ApiCallReactive
 {
-    private final ErrorReporter errorReporter;
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
     private final CommonSerializer commonSerializer;
     private final long apiCallId;
 
     @Inject
     public ReqFreeSpace(
-        ErrorReporter errorReporterRef,
         StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         CommonSerializer commonSerializerRef,
         @Named(ApiModule.API_CALL_ID) Long apiCallIdRef
     )
     {
-        errorReporter = errorReporterRef;
         apiCallHandlerUtils = apiCallHandlerUtilsRef;
         commonSerializer = commonSerializerRef;
         apiCallId = apiCallIdRef;

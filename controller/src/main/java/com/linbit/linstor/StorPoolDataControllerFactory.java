@@ -26,22 +26,19 @@ public class StorPoolDataControllerFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-    private final FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
 
     @Inject
     public StorPoolDataControllerFactory(
         StorPoolDataDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
-        FreeSpaceMgrControllerFactory freeSpaceMgrFactoryRef
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
-        freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
     }
 
     public StorPoolData create(
