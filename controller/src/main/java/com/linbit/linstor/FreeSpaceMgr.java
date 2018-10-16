@@ -28,7 +28,8 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     private final FreeSpaceMgrName sharedPoolName;
     private final Set<StorPool> sharedStoragePools;
 
-    private final TransactionSimpleObject<FreeSpaceMgr, Long> freeSpace;
+    private final TransactionSimpleObject<FreeSpaceMgr, Long> freeCapacity;
+    private final TransactionSimpleObject<FreeSpaceMgr, Long> totalCapacity;
 
     private final Set<Volume> pendingVolumesToAdd = new HashSet<>();
 
@@ -46,9 +47,11 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         sharedPoolName = freeSpaceMgrNameRef;
         sharedStoragePools = new TreeSet<>();
 
-        freeSpace = transObjFactory.createTransactionSimpleObject(this, null, null);
+        freeCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
+        totalCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
         transObjs = Arrays.asList(
-            freeSpace
+            freeCapacity,
+            totalCapacity
         );
     }
 
@@ -113,16 +116,16 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * {@link #getFreeSpaceLastUpdated()}.
      * To be more precise, a call of this method followed atomically by a call of
      * {@link #getFreeSpaceLastUpdated()} returns <code>freeSpaceRef</code>
-     *
-     * @param vlm
-     * @param freeSpaceRef
+     *  @param vlm
+     * @param freeCapacityRef
+     * @param totalCapacityRef
      */
     @Override
-    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException
+    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeCapacityRef, long totalCapacityRef) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
         synchronizedRemove(pendingVolumesToAdd, vlm);
-        setImpl(freeSpaceRef);
+        setImpl(freeCapacityRef, totalCapacityRef);
     }
 
     /**
@@ -133,11 +136,19 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @throws AccessDeniedException
      */
     @Override
-    public Optional<Long> getFreeSpaceLastUpdated(AccessContext accCtx) throws AccessDeniedException
+    public Optional<Long> getFreeCapacityLastUpdated(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return Optional.ofNullable(freeSpace.get());
+        return Optional.ofNullable(freeCapacity.get());
+    }
+
+    @Override
+    public Optional<Long> getTotalCapacity(AccessContext accCtx) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return Optional.ofNullable(totalCapacity.get());
     }
 
     /**
@@ -174,29 +185,11 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     }
 
     @Override
-    public void setFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException
+    public void setCapacityInfo(AccessContext accCtx, long freeSpaceRef, long totalCapacityRef) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        setImpl(freeSpaceRef);
-    }
-
-    @Override
-    public boolean isDirty()
-    {
-        return freeSpace.isDirty();
-    }
-
-    @Override
-    public void commitImpl()
-    {
-        freeSpace.commit();
-    }
-
-    @Override
-    public void rollbackImpl()
-    {
-        freeSpace.rollback();
+        setImpl(freeSpaceRef, totalCapacityRef);
     }
 
     private <T> boolean synchronizedAdd(Set<T> set, T element)
@@ -215,11 +208,12 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         }
     }
 
-    private void setImpl(long freeSpaceRef)
+    private void setImpl(long freeCapacityRef, long totalCapacityRef)
     {
         try
         {
-            freeSpace.set(freeSpaceRef);
+            freeCapacity.set(freeCapacityRef);
+            totalCapacity.set(totalCapacityRef);
         }
         catch (SQLException sqlExc)
         {

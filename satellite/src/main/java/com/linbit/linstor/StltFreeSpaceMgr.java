@@ -62,14 +62,14 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
-    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeSpaceRef)
+    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeCapacityRef, long totalCapacityRef)
         throws AccessDeniedException
     {
         // Ignore
     }
 
     @Override
-    public Optional<Long> getFreeSpaceLastUpdated(AccessContext accCtx)
+    public Optional<Long> getFreeCapacityLastUpdated(AccessContext accCtx)
         throws AccessDeniedException
     {
         throw new UnsupportedOperationException("Satellite does not track free space");
@@ -83,7 +83,14 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
-    public void setFreeSpace(AccessContext accCtx, long freeSpaceRef)
+    public Optional<Long> getTotalCapacity(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        throw new UnsupportedOperationException("Satellite does not track free space");
+    }
+
+    @Override
+    public void setCapacityInfo(AccessContext accCtx, long freeSpaceRef, long totalCapacity)
         throws AccessDeniedException
     {
         throw new UnsupportedOperationException("Satellite does not track free space");

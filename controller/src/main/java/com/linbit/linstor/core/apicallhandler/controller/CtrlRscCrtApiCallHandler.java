@@ -86,8 +86,7 @@ public class CtrlRscCrtApiCallHandler
             .distinct()
             .collect(Collectors.toList());
 
-        Flux<ApiCallRc> response = Flux.empty();
-        Flux<ApiCallRc> fluxCrtRsc = Flux.empty();
+        Flux<ApiCallRc> response;
         if (rscNames.isEmpty())
         {
             response = Flux.just(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
@@ -106,7 +105,7 @@ public class CtrlRscCrtApiCallHandler
 
             ResponseContext context = makeRscCrtContext(rscApiList, rscNames.get(0));
 
-            fluxCrtRsc = freeCapacityFetcher.fetchFreeCapacities(Collections.emptySet())
+            response = freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
                 .flatMapMany(freeCapacities ->
                     scopeRunner
                     .fluxInTransactionalScope(
@@ -120,7 +119,7 @@ public class CtrlRscCrtApiCallHandler
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
         }
 
-        return response.concatWith(fluxCrtRsc);
+        return response;
     }
 
     private Flux<ApiCallRc> checkEnoughSpaceForResource(

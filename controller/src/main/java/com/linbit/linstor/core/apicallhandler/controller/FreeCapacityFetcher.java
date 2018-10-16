@@ -13,7 +13,7 @@ import java.util.Set;
 
 public interface FreeCapacityFetcher
 {
-    Mono<Map<StorPool.Key, Long>> fetchFreeCapacities(Set<NodeName> nodesFilter);
+    Mono<Map<StorPool.Key, Long>> fetchThinFreeCapacities(Set<NodeName> nodesFilter);
 
-    Mono<Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>>> fetchFreeSpaceInfo(Set<NodeName> nodesFilter);
+    Mono<Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>>> fetchThinFreeSpaceInfo(Set<NodeName> nodesFilter);
 }

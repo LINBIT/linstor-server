@@ -2,7 +2,7 @@ package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 
 import java.util.ArrayList;
@@ -32,16 +32,17 @@ public class ProtoStorPoolFreeSpaceUtils
         return list;
     }
 
-    public static List<FreeSpacePojo> toFreeSpacePojo(List<StorPoolFreeSpace> protoList)
+    public static List<CapacityInfoPojo> toFreeSpacePojo(List<StorPoolFreeSpace> protoList)
     {
-        List<FreeSpacePojo> list = new ArrayList<>();
+        List<CapacityInfoPojo> list = new ArrayList<>();
         for (StorPoolFreeSpace protoFreeSpace : protoList)
         {
             list.add(
-                new FreeSpacePojo(
+                new CapacityInfoPojo(
                     UUID.fromString(protoFreeSpace.getStorPoolUuid()),
                     protoFreeSpace.getStorPoolName(),
-                    protoFreeSpace.getFreeCapacity()
+                    protoFreeSpace.getFreeCapacity(),
+                    protoFreeSpace.getTotalCapacity()
                 )
             );
         }

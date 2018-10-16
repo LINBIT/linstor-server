@@ -1090,7 +1090,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
         if (ctrlPeer != null)
         {
-            Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap = apiCallHandlerUtils.getAllSpaceInfo();
+            Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
+                apiCallHandlerUtils.getAllSpaceInfo(false);
 
             Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
 

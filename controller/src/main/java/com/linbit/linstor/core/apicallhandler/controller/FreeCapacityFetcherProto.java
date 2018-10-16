@@ -71,9 +71,9 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     }
 
     @Override
-    public Mono<Map<StorPool.Key, Long>> fetchFreeCapacities(Set<NodeName> nodesFilter)
+    public Mono<Map<StorPool.Key, Long>> fetchThinFreeCapacities(Set<NodeName> nodesFilter)
     {
-        return fetchFreeSpaceInfo(nodesFilter).map(
+        return fetchThinFreeSpaceInfo(nodesFilter).map(
             freeSpaceInfo -> freeSpaceInfo.getT1().entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 entry -> entry.getValue().freeCapacity
@@ -82,7 +82,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     }
 
     @Override
-    public Mono<Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>>> fetchFreeSpaceInfo(Set<NodeName> nodesFilter)
+    public Mono<Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>>> fetchThinFreeSpaceInfo(Set<NodeName> nodesFilter)
     {
         return scopeRunner
             .fluxInTransactionlessScope(
@@ -117,7 +117,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         Flux<ByteArrayInputStream> result = Flux.empty();
         if (peer != null)
         {
-            result = peer.apiCall(InternalApiConsts.API_REQUEST_FREE_SPACE, new byte[]{})
+            result = peer.apiCall(InternalApiConsts.API_REQUEST_THIN_FREE_SPACE, new byte[]{})
                 // No data from disconnected satellites
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
         }

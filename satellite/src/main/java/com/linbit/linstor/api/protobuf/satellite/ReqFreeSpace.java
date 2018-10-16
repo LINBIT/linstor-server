@@ -24,7 +24,7 @@ import java.util.Map;
 import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBuilder.serializeApiCallRc;
 
 @ProtobufApiCall(
-    name = InternalApiConsts.API_REQUEST_FREE_SPACE,
+    name = InternalApiConsts.API_REQUEST_THIN_FREE_SPACE,
     description = "Returns the free space."
 )
 public class ReqFreeSpace implements ApiCallReactive
@@ -49,7 +49,7 @@ public class ReqFreeSpace implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        Map<StorPool, Either<SpaceInfo, ApiRcException>> freeSpaceMap = apiCallHandlerUtils.getAllSpaceInfo();
+        Map<StorPool, Either<SpaceInfo, ApiRcException>> freeSpaceMap = apiCallHandlerUtils.getAllSpaceInfo(true);
 
         MsgIntFreeSpace.Builder builder = MsgIntFreeSpace.newBuilder();
         for (Map.Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry : freeSpaceMap.entrySet())
@@ -78,7 +78,7 @@ public class ReqFreeSpace implements ApiCallReactive
         builder.build().writeDelimitedTo(baos);
 
         return Flux.just(commonSerializer
-            .answerBuilder(InternalApiConsts.API_REQUEST_FREE_SPACE, apiCallId)
+            .answerBuilder(InternalApiConsts.API_REQUEST_THIN_FREE_SPACE, apiCallId)
             .bytes(baos.toByteArray())
             .build()
         );

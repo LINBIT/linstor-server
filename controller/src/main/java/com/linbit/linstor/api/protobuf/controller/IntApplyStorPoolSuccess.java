@@ -3,7 +3,7 @@ package com.linbit.linstor.api.protobuf.controller;
 import javax.inject.Inject;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
@@ -39,10 +39,11 @@ public class IntApplyStorPoolSuccess implements ApiCall
         StorPoolFreeSpace freeSpaceProto = successMsg.getFreeSpace();
         apiCallHandler.updateRealFreeSpace(
             Arrays.asList(
-                new FreeSpacePojo(
+                new CapacityInfoPojo(
                     UUID.fromString(freeSpaceProto.getStorPoolUuid()),
                     freeSpaceProto.getStorPoolName(),
-                    freeSpaceProto.getFreeCapacity()
+                    freeSpaceProto.getFreeCapacity(),
+                    freeSpaceProto.getTotalCapacity()
                 )
             )
         );

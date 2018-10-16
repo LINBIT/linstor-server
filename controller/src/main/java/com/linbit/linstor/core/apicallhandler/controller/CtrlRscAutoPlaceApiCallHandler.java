@@ -273,7 +273,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         boolean disklessOnRemainingNodes
     )
     {
-        return freeCapacityFetcher.fetchFreeCapacities(Collections.emptySet())
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
             .flatMapMany(freeCapacities -> scopeRunner
                 .fluxInTransactionalScope(
                     LockGuard.createDeferred(

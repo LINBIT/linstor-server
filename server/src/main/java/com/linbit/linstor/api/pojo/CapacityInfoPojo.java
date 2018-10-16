@@ -2,21 +2,24 @@ package com.linbit.linstor.api.pojo;
 
 import java.util.UUID;
 
-public class FreeSpacePojo
+public class CapacityInfoPojo
 {
     private final UUID storPoolUuid;
     private final String storPoolName;
-    private final long freeSpace;
+    private final long freeCapacity;
+    private final long totalCapacity;
 
-    public FreeSpacePojo(
+    public CapacityInfoPojo(
         UUID storPoolUuidRef,
         String storPoolNameRef,
-        long freeSpaceRef
+        long freeSpaceRef,
+        long totalCapacityRef
     )
     {
         storPoolUuid = storPoolUuidRef;
         storPoolName = storPoolNameRef;
-        freeSpace = freeSpaceRef;
+        freeCapacity = freeSpaceRef;
+        totalCapacity = totalCapacityRef;
     }
 
     public UUID getStorPoolUuid()
@@ -29,8 +32,13 @@ public class FreeSpacePojo
         return storPoolName;
     }
 
-    public long getFreeSpace()
+    public long getFreeCapacity()
     {
-        return freeSpace;
+        return freeCapacity;
+    }
+
+    public long getTotalCapacity()
+    {
+        return totalCapacity;
     }
 }

@@ -68,7 +68,7 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
 
     public Flux<byte[]> queryMaxVlmSize(AutoSelectFilterApi selectFilter)
     {
-        return freeCapacityFetcher.fetchFreeCapacities(Collections.emptySet())
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
             .flatMapMany(freeCapacities -> scopeRunner
                 .fluxInTransactionlessScope(
                     LockGuard.createDeferred(

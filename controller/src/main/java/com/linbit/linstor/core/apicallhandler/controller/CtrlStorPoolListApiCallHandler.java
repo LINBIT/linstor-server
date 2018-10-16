@@ -72,7 +72,7 @@ public class CtrlStorPoolListApiCallHandler
         final Set<NodeName> nodesFilter =
             nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
 
-        return freeCapacityFetcher.fetchFreeSpaceInfo(nodesFilter)
+        return freeCapacityFetcher.fetchThinFreeSpaceInfo(nodesFilter)
             .flatMapMany(freeCapacityAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     LockGuard.createDeferred(storPoolDfnMapLock.readLock()),
@@ -108,14 +108,28 @@ public class CtrlStorPoolListApiCallHandler
                                     nodesFilter.contains(storPool.getNode().getName()))
                                 .collect(toList()))
                             {
+                                Long freeCapacity;
+                                Long totalCapacity;
+
                                 SpaceInfo spaceInfo = freeCapacityMap.get(new StorPool.Key(storPool));
-                                Long freeCapacity = null;
-                                Long totalCapacity = null;
-                                if (spaceInfo != null)
+                                if (!storPool.getNode().getPeer(peerAccCtx.get()).isConnected())
+                                {
+                                    freeCapacity = null;
+                                    totalCapacity = null;
+                                }
+                                else if (spaceInfo == null)
+                                {
+                                    freeCapacity = storPool.getFreeSpaceTracker()
+                                        .getFreeCapacityLastUpdated(peerAccCtx.get()).orElse(null);
+                                    totalCapacity = storPool.getFreeSpaceTracker()
+                                        .getTotalCapacity(peerAccCtx.get()).orElse(null);
+                                }
+                                else
                                 {
                                     freeCapacity = spaceInfo.freeCapacity;
                                     totalCapacity = spaceInfo.totalCapacity;
                                 }
+
                                 // fullSyncId and updateId null, as they are not going to be serialized anyway
                                 storPools.add(storPool.getApiData(
                                     totalCapacity,

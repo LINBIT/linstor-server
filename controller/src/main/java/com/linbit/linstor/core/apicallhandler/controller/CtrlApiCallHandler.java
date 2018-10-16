@@ -6,8 +6,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
@@ -1333,7 +1332,7 @@ public class CtrlApiCallHandler
     public void updateVolumeData(
         String resourceName,
         List<VlmUpdatePojo> vlmUpdates,
-        List<FreeSpacePojo> freeSpaceList
+        List<CapacityInfoPojo> freeSpaceList
     )
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
@@ -1342,11 +1341,11 @@ public class CtrlApiCallHandler
         }
     }
 
-    public void updateRealFreeSpace(List<FreeSpacePojo> freeSpacePojoList)
+    public void updateRealFreeSpace(List<CapacityInfoPojo> capacityInfoPojoList)
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()))
         {
-            storPoolApiCallHandler.updateRealFreeSpace(freeSpacePojoList);
+            storPoolApiCallHandler.updateRealFreeSpace(capacityInfoPojoList);
         }
     }
 

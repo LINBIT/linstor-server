@@ -12,23 +12,26 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceConnectionKey;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
@@ -38,11 +41,10 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -52,7 +54,6 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -414,16 +415,16 @@ public class CtrlRscApiCallHandler
     void updateVolumeData(
         String resourceName,
         List<VlmUpdatePojo> vlmUpdates,
-        List<FreeSpacePojo> freeSpaceList
+        List<CapacityInfoPojo> capacityInfos
     )
     {
         try
         {
             NodeName nodeName = peer.get().getNode().getName();
-            Map<String, Long> storPoolToFreeSpaceMap = freeSpaceList.stream().collect(
+            Map<StorPoolName, CapacityInfoPojo> storPoolToCapacityInfoMap = capacityInfos.stream().collect(
                 Collectors.toMap(
-                    freeSpacePojo -> freeSpacePojo.getStorPoolName().toUpperCase(),
-                    freeSpacePojo -> freeSpacePojo.getFreeSpace()
+                    freeSpacePojo -> LinstorParsingUtils.asStorPoolName(freeSpacePojo.getStorPoolName()),
+                    Function.identity()
                 )
             );
             ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
@@ -445,17 +446,24 @@ public class CtrlRscApiCallHandler
                         propsMap.clear();
                         propsMap.putAll(vlmUpd.getVlmDfnPropsMap());
 
-                        if (storPoolToFreeSpaceMap.containsKey(vlm.getStorPool(apiCtx).getName().value))
+                        StorPool storPool = vlm.getStorPool(apiCtx);
+                        CapacityInfoPojo capacityInfo =
+                            storPoolToCapacityInfoMap.get(storPool.getName());
+                        if (capacityInfo != null)
                         {
-                            long freeSpace = storPoolToFreeSpaceMap.get(vlm.getStorPool(apiCtx).getName().value);
-                            vlm.getStorPool(apiCtx).getFreeSpaceTracker().vlmCreationFinished(apiCtx, vlm, freeSpace);
+                            storPool.getFreeSpaceTracker().vlmCreationFinished(
+                                apiCtx,
+                                vlm,
+                                capacityInfo.getFreeCapacity(),
+                                capacityInfo.getTotalCapacity()
+                            );
                         }
-                        else
+                        else if (!storPool.getDriverKind().usesThinProvisioning())
                         {
                             errorReporter.logWarning(
                                 String.format(
                                     "No freespace info for storage pool '%s' on node: %s",
-                                    vlm.getStorPool(apiCtx).getName().value,
+                                    storPool.getName().value,
                                     nodeName.displayValue
                                 )
                             );

@@ -113,7 +113,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
         Mockito.when(mockSatellite.isConnected()).thenReturn(true);
 
-        Mockito.when(freeCapacityFetcher.fetchFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
+        Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 
         commitAndCleanUp(true);
     }
@@ -1142,7 +1142,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 fsm
             );
 
-            storPool.getFreeSpaceTracker().setFreeSpace(GenericDbBase.SYS_CTX, storPoolSize);
+            storPool.getFreeSpaceTracker().setCapacityInfo(GenericDbBase.SYS_CTX, storPoolSize, storPoolSize);
 
             commitAndCleanUp(true);
 

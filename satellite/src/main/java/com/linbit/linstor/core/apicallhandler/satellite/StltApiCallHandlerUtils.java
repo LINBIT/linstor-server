@@ -67,7 +67,7 @@ public class StltApiCallHandlerUtils
         stltCfgAccessor = stltCfgAccessorRef;
     }
 
-    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getAllSpaceInfo()
+    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getAllSpaceInfo(boolean thin)
     {
         Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
 
@@ -81,7 +81,10 @@ public class StltApiCallHandlerUtils
 
             for (StorPool storPool : controllerPeerConnector.getLocalNode().streamStorPools(apiCtx).collect(toList()))
             {
-                spaceMap.put(storPool, getStoragePoolSpaceInfoOrError(storPool));
+                if (storPool.getDriverKind().usesThinProvisioning() == thin)
+                {
+                    spaceMap.put(storPool, getStoragePoolSpaceInfoOrError(storPool));
+                }
             }
         }
         catch (AccessDeniedException exc)
@@ -97,7 +100,7 @@ public class StltApiCallHandlerUtils
         return spaceMap;
     }
 
-    public SpaceInfo getSpaceInfo(String storPoolNameStr)
+    public SpaceInfo getSpaceInfoThickPool(String storPoolNameStr)
         throws StorageException
     {
         Lock nodesMapReadLock = nodesMapLock.readLock();
@@ -113,7 +116,7 @@ public class StltApiCallHandlerUtils
 
             StorPool storPool = controllerPeerConnector.getLocalNode().getStorPool(apiCtx, storPoolName);
 
-            if (storPool != null)
+            if (storPool != null && !storPool.getDriverKind().usesThinProvisioning())
             {
                 storagePoolSpaceInfo = getStoragePoolSpaceInfo(storPool);
             }

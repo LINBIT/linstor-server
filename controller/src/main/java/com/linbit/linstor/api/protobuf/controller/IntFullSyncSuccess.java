@@ -5,7 +5,7 @@ import javax.inject.Named;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallReactive;
-import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -61,14 +61,15 @@ public class IntFullSyncSuccess implements ApiCallReactive
     {
         MsgIntFullSyncSuccess msgIntFullSyncSuccess = MsgIntFullSyncSuccess.parseDelimitedFrom(msgDataIn);
 
-        List<FreeSpacePojo> freeSpacePojoList = new ArrayList<>();
+        List<CapacityInfoPojo> capacityInfoPojoList = new ArrayList<>();
         for (StorPoolFreeSpace protoFreeSpace : msgIntFullSyncSuccess.getFreeSpaceList())
         {
-            freeSpacePojoList.add(
-                new FreeSpacePojo(
+            capacityInfoPojoList.add(
+                new CapacityInfoPojo(
                     UUID.fromString(protoFreeSpace.getStorPoolUuid()),
                     protoFreeSpace.getStorPoolName(),
-                    protoFreeSpace.getFreeCapacity()
+                    protoFreeSpace.getFreeCapacity(),
+                    protoFreeSpace.getTotalCapacity()
                 )
             );
         }
@@ -78,7 +79,7 @@ public class IntFullSyncSuccess implements ApiCallReactive
                 LockGuard.createDeferred(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()),
                 () ->
                 {
-                    storPoolApiCallHandler.updateRealFreeSpace(freeSpacePojoList);
+                    storPoolApiCallHandler.updateRealFreeSpace(capacityInfoPojoList);
                     return Flux.empty();
                 }
             )

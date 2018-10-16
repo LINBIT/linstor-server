@@ -120,7 +120,7 @@ public class FreeCapacityAutoPoolSelectorUtils
         Optional<Long> freeSpaceLastUpdated;
         try
         {
-            freeSpaceLastUpdated = storPool.getFreeSpaceTracker().getFreeSpaceLastUpdated(accCtx);
+            freeSpaceLastUpdated = storPool.getFreeSpaceTracker().getFreeCapacityLastUpdated(accCtx);
         }
         catch (AccessDeniedException exc)
         {

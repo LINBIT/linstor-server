@@ -18,7 +18,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.FreeSpacePojo;
+import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
@@ -346,7 +346,7 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    public void updateRealFreeSpace(List<FreeSpacePojo> freeSpacePojoList)
+    public void updateRealFreeSpace(List<CapacityInfoPojo> capacityInfoPojoList)
     {
         if (!peer.get().getNode().isDeleted())
         {
@@ -354,20 +354,24 @@ public class CtrlStorPoolApiCallHandler
 
             try
             {
-                for (FreeSpacePojo freeSpacePojo : freeSpacePojoList)
+                for (CapacityInfoPojo capacityInfoPojo : capacityInfoPojoList)
                 {
                     ResponseContext context = makeStorPoolContext(
                         ApiOperation.makeModifyOperation(),
                         peer.get().getNode().getName().displayValue,
-                        freeSpacePojo.getStorPoolName()
+                        capacityInfoPojo.getStorPoolName()
                     );
 
                     try
                     {
-                        StorPoolData storPool = loadStorPool(nodeName, freeSpacePojo.getStorPoolName(), true);
-                        if (storPool.getUuid().equals(freeSpacePojo.getStorPoolUuid()))
+                        StorPoolData storPool = loadStorPool(nodeName, capacityInfoPojo.getStorPoolName(), true);
+                        if (storPool.getUuid().equals(capacityInfoPojo.getStorPoolUuid()))
                         {
-                            setRealFreeSpace(storPool, freeSpacePojo.getFreeSpace());
+                            setCapacityInfo(
+                                storPool,
+                                capacityInfoPojo.getFreeCapacity(),
+                                capacityInfoPojo.getTotalCapacity()
+                            );
                         }
                         else
                         {
@@ -405,11 +409,11 @@ public class CtrlStorPoolApiCallHandler
         // soon be deleted as well.
     }
 
-    private void setRealFreeSpace(StorPoolData storPool, long freeSpace)
+    private void setCapacityInfo(StorPoolData storPool, long freeCapacity, long totalCapacity)
     {
         try
         {
-            storPool.getFreeSpaceTracker().setFreeSpace(peerAccCtx.get(), freeSpace);
+            storPool.getFreeSpaceTracker().setCapacityInfo(peerAccCtx.get(), freeCapacity, totalCapacity);
         }
         catch (AccessDeniedException accDeniedExc)
         {

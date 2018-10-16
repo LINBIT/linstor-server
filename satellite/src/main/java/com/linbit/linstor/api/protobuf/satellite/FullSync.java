@@ -93,7 +93,8 @@ public class FullSync implements ApiCall
             Base64.decode(fullSync.getMasterKey())
         );
 
-        Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap = apiCallHandlerUtils.getAllSpaceInfo();
+        Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
+            apiCallHandlerUtils.getAllSpaceInfo(false);
 
         Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
 

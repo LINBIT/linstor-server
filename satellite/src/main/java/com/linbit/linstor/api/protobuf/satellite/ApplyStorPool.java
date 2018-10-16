@@ -71,7 +71,7 @@ public class ApplyStorPool implements ApiCall
 
         try
         {
-            SpaceInfo spaceInfo = apiCallHandlerUtils.getSpaceInfo(storPoolData.getStorPoolName());
+            SpaceInfo spaceInfo = apiCallHandlerUtils.getSpaceInfoThickPool(storPoolData.getStorPoolName());
             Long requestedFreeSpace = null;
             Long totalCapacity = null;
             if (spaceInfo != null)

@@ -16,11 +16,14 @@ public interface FreeSpaceTracker extends TransactionObject
 
     void vlmCreating(AccessContext accCtx, Volume vlm) throws AccessDeniedException;
 
-    void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeSpaceRef) throws AccessDeniedException;
+    void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeCapacityRef, long totalCapacityRef)
+        throws AccessDeniedException;
 
-    Optional<Long> getFreeSpaceLastUpdated(AccessContext accCtx) throws AccessDeniedException;
+    Optional<Long> getFreeCapacityLastUpdated(AccessContext accCtx) throws AccessDeniedException;
+
+    Optional<Long> getTotalCapacity(AccessContext accCtx) throws AccessDeniedException;
 
     long getReservedCapacity(AccessContext accCtx) throws AccessDeniedException;
 
-    void setFreeSpace(AccessContext accCtx, long freeSpaceRef) throws AccessDeniedException;
+    void setCapacityInfo(AccessContext accCtx, long freeSpaceRef, long totalCapacity) throws AccessDeniedException;
 }
