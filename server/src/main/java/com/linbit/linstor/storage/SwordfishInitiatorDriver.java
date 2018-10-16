@@ -27,7 +27,6 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -47,11 +46,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.utils.HttpClientUtils;
 
 public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 {
+    private static final String STATE_WAITING_ATTACHABLE = "wf: attachable";
+    private static final String STATE_WAITING_ATTACHABLE_TIMEOUT = "to: attachable";
+    private static final String STATE_ATTACHABLE = "attachable";
+    private static final String STATE_ATTACHING = "attaching";
+    private static final String STATE_ATTACHING_TIMEOUT = "to: attaching";
+    private static final String STATE_ATTACHED = "attached";
+    private static final String STATE_DETACHING = "detaching";
+
     private long pollAttachVlmTimeout = 1000;
     private long pollAttachVlmMaxTries = 300;
     private long pollGrepNvmeUuidTimeout = 1000;
@@ -115,8 +120,8 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 
             if (!isSfVolumeAttached(sfStorSvcId, sfVlmId))
             {
-                waitUntilSfVlmIsAttachable(vlmOdataId);
-                attachSfVolume(vlmOdataId);
+                waitUntilSfVlmIsAttachable(linstorVlmId, vlmOdataId);
+                attachSfVolume(linstorVlmId, vlmOdataId);
             }
 
             // TODO implement health check on composed node
@@ -134,7 +139,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         return volumePath;
     }
 
-    private void attachSfVolume(String vlmOdataId) throws IOException, StorageException
+    private void attachSfVolume(String linstorVlmId, String vlmOdataId) throws IOException, StorageException
     {
         String attachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
             SF_COMPOSED_NODE_ATTACH_RESOURCE;
@@ -152,15 +157,18 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                 .build(),
             Arrays.asList(HttpHeader.HTTP_NO_CONTENT)
         );
+        setState(linstorVlmId, STATE_ATTACHING);
     }
 
     @SuppressWarnings("unchecked")
-    private void waitUntilSfVlmIsAttachable(String vlmOdataId)
+    private void waitUntilSfVlmIsAttachable(String linstorVlmId, String vlmOdataId)
         throws InterruptedException, IOException, StorageException
     {
         String attachInfoAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
             SF_ATTACH_RESOURCE_ACTION_INFO;
         boolean attachable = false;
+
+        setState(linstorVlmId, STATE_WAITING_ATTACHABLE);
 
         int pollAttachRscTries = 0;
         while (!attachable)
@@ -203,6 +211,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 
             if (++pollAttachRscTries >= pollAttachVlmMaxTries)
             {
+                setState(linstorVlmId, STATE_WAITING_ATTACHABLE_TIMEOUT);
                 throw new StorageException(
                     String.format(
                         "Volume could not be attached after %d x %dms. \n" +
@@ -216,14 +225,15 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                 );
             }
         }
+        setState(linstorVlmId, STATE_ATTACHABLE);
     }
 
     @Override
-    public void deleteVolume(String ignore, boolean isEncrypted, Props vlmDfnProps) throws StorageException
+    public void deleteVolume(String linstorVlmId, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
         try
         {
-            detatchSfVlm(vlmDfnProps);
+            detatchSfVlm(linstorVlmId, vlmDfnProps);
 
             // TODO health check on composed node
         }
@@ -233,7 +243,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         }
     }
 
-    private String detatchSfVlm(Props vlmDfnProps) throws IOException, StorageException
+    private String detatchSfVlm(String linstorVlmId, Props vlmDfnProps) throws IOException, StorageException
     {
         String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
         String sfVlmId = getSfVlmId(vlmDfnProps, true);
@@ -260,6 +270,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                     .build(),
                 Arrays.asList(HttpHeader.HTTP_NO_CONTENT, HttpHeader.HTTP_NOT_FOUND, HttpHeader.HTTP_BAD_REQUEST)
             );
+            setState(linstorVlmId, STATE_DETACHING);
 
             switch (detachVlmResp.getStatusCode())
             {
@@ -461,11 +472,13 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                                     // nvme device
                                     path = "/dev/nvme" + matcher.group(1) + "n1";
                                     grepFound = true;
+                                    setState(linstorVlmId, STATE_ATTACHED);
                                 }
                             }
 
                             if (++grepTries >= pollGrepNvmeUuidMaxTries)
                             {
+                                setState(linstorVlmId, STATE_ATTACHING_TIMEOUT);
                                 grepFailed = true;
                             }
                             else
@@ -497,16 +510,6 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             {
                 throw new StorageException("IO exception occured", ioExc);
             }
-
-            // TODO: somehow we have to find out the NVME device. for that we need at least
-            // the target NQN maybe via the volume?
-            // if we have the NQN we can make the following external calls:
-
-            // ext command on initiator from folder
-            // /sys/devices/virtual/nvme-fabrics/ctl
-            // cmd: grep -H --color=never <target NQN>  nvme*/subsysnqn
-            // nvme2/subsysnqn:<target NQN>                 # this is how we get the nvme$number
-            // the previous command should also have exitcode 0
         }
         return path;
     }

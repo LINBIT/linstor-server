@@ -51,6 +51,10 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
 {
     private static final Map<String, Object> JSON_OBJ;
 
+    private static final String STATE_CREATING = "creating";
+    private static final String STATE_CREATED = "created";
+    private static final String STATE_DELETING = "deleting";
+
     private Map<String, String> linstorIdToSwordfishId;
 
     private String storSvc;
@@ -121,7 +125,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
             String vlmOdataId = null;
             if (!sfVlmExistsByLsVlmId(linstorVlmId))
             {
-                vlmOdataId = createSfVlm(size);
+                vlmOdataId = createSfVlm(linstorVlmId, size);
                 // extract the swordfish id of that volume and persist if for later lookups
                 String sfId = vlmOdataId.substring(
                     (SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES + "/").length()
@@ -188,7 +192,8 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         }
     }
 
-    private String createSfVlm(long sizeInKiB) throws IOException, StorageException, InterruptedException
+    private String createSfVlm(String linstorVlmId, long sizeInKiB)
+        throws IOException, StorageException, InterruptedException
     {
         // create volume
         // POST to volumes collection
@@ -225,6 +230,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 .build(),
             Arrays.asList(HttpHeader.HTTP_ACCEPTED)
         );
+        setState(linstorVlmId, STATE_CREATING);
         // volume should be now in "creating" state. we have to wait for the taskMonitor to return HTTP_CREATED
 
         String taskMonitorLocation = crtVlmResp.getHeaders().get(HttpHeader.LOCATION_KEY);
@@ -295,6 +301,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 );
             }
         }
+        setState(linstorVlmId, STATE_CREATED);
         return vlmLocation;
     }
 
@@ -315,6 +322,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 (String) null,
                 Arrays.asList(HttpHeader.HTTP_ACCEPTED, HttpHeader.HTTP_NOT_FOUND)
             );
+            setState(linstorVlmId, STATE_DELETING);
         }
         catch (IOException ioExc)
         {
@@ -328,7 +336,6 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     {
         boolean exists = false;
 
-        // TODO implement encrypted "volumesExists"
         String sfVlmId = getSwordfishVolumeIdByLinstorId(linstorVlmId);
         if (sfVlmId != null)
         {

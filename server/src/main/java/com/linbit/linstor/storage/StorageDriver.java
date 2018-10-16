@@ -294,6 +294,17 @@ public interface StorageDriver
      */
     boolean snapshotExists(String volumeIdentifier, String snapshotName) throws StorageException;
 
+    /**
+     * Returns a string representing the state of the volume. Defaults to null
+     *
+     * @param linstorVlmId
+     * @return
+     */
+    default String getVolumeState(String linstorVlmId)
+    {
+        return null;
+    }
+
     enum SizeComparison
     {
         TOO_SMALL,

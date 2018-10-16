@@ -121,13 +121,14 @@ public class RestHttpClient implements RestClient
                 null,
                 String.format(
                     "Request%n   %-8s %s%n   %-8s %s%n   %-8s %s%n   %-8s %s%n" +
-                    "Response%n   %-23s %d%n   %-23s %s%n   %-23s %s",
+                    "Response%n   %-23s %d%n   %-23s %s%n   %-23s %s%n   %-23s %s",
                     "Type", op.name(),
                     "URL", restURL,
                     "Headers", httpHeaders,
                     "Data", payload,
                     "Status code", statusCode,
                     "Expected status code(s)", expectedRcs.toString(),
+                    "HEaders", sfHeaders,
                     "Data", respRoot
                 )
             );

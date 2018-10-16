@@ -9,6 +9,7 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_SERVIC
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -19,6 +20,7 @@ import com.linbit.linstor.storage.utils.RestClient.RestOp;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbsSwordfishDriver implements StorageDriver
@@ -26,6 +28,8 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     protected final ErrorReporter errorReporter;
     protected final StorageDriverKind storageDriverKind;
     protected final RestClient restClient;
+
+    private final Map<String, String> volumeStates;
 
     protected String sfUrl;
     protected String userName;
@@ -40,6 +44,8 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         errorReporter = errorReporterRef;
         storageDriverKind = storageDriverKindRef;
         restClient = restClientRef;
+
+        volumeStates = new HashMap<>();
     }
 
     @Override
@@ -274,6 +280,17 @@ public abstract class AbsSwordfishDriver implements StorageDriver
             httpHeaderBuilder.setAuth(userName, userPw);
         }
         return httpHeaderBuilder;
+    }
+
+    protected void setState(String linstorVlmId, String state)
+    {
+        volumeStates.put(linstorVlmId, state);
+    }
+
+    @Override
+    public String getVolumeState(String linstorVlmId)
+    {
+        return volumeStates.get(linstorVlmId);
     }
 
     protected String buildVlmOdataId(String storSvc, String sfVlmId)

@@ -42,6 +42,7 @@ import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceDeploymentStateEvent;
+import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.event.satellite.InProgressSnapshotEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -121,6 +122,7 @@ class DrbdDeviceHandler implements DeviceHandler
     private static final String DRBD_CONFIG_SUFFIX = ".res";
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
     private StltConfigAccessor stltCfgAccessor;
+    private VolumeDiskStateEvent vlmDiskStateEvent;
 
     @Inject
     DrbdDeviceHandler(
@@ -138,7 +140,8 @@ class DrbdDeviceHandler implements DeviceHandler
         WhitelistProps whitelistPropsRef,
         ResourceDeploymentStateEvent resourceDeploymentStateEventRef,
         InProgressSnapshotEvent inProgressSnapshotEventRef,
-        StltConfigAccessor stltCfgAccessorRef
+        StltConfigAccessor stltCfgAccessorRef,
+        VolumeDiskStateEvent vlmDiskStateEventRef
     )
     {
         errLog = errLogRef;
@@ -156,6 +159,7 @@ class DrbdDeviceHandler implements DeviceHandler
         resourceDeploymentStateEvent = resourceDeploymentStateEventRef;
         inProgressSnapshotEvent = inProgressSnapshotEventRef;
         stltCfgAccessor = stltCfgAccessorRef;
+        vlmDiskStateEvent = vlmDiskStateEventRef;
         drbdMd = new MetaData();
     }
 
@@ -309,6 +313,38 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     createResource(rscName, rsc, rscDfn, rscState);
                 }
+
+                rsc.streamVolumes().forEach(
+                    vlm ->
+                    {
+                        String vlmState;
+                        try
+                        {
+                            vlmState = vlm.getStorPool(wrkCtx)
+                                .getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor)
+                                .getVolumeState(
+                                    computeVlmName(
+                                        rscDfn,
+                                        vlm.getVolumeDefinition().getVolumeNumber()
+                                    )
+                                );
+                            if (vlmState != null)
+                            {
+                                vlmDiskStateEvent.get().triggerEvent(
+                                    ObjectIdentifier.volumeDefinition(
+                                        rscName,
+                                        vlm.getVolumeDefinition().getVolumeNumber()
+                                        ),
+                                    vlmState
+                                );
+                            }
+                        }
+                        catch (AccessDeniedException exc)
+                        {
+                            throw new ImplementationError(exc);
+                        }
+                    }
+                );
 
                 deviceManagerProvider.get().notifyResourceApplied(rsc);
 
