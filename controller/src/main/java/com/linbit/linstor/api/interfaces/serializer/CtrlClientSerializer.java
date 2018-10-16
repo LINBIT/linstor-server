@@ -10,11 +10,10 @@ import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
+import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.satellitestate.SatelliteState;
-import reactor.util.function.Tuple2;
 
 public interface CtrlClientSerializer extends CommonSerializer
 {
@@ -39,7 +38,7 @@ public interface CtrlClientSerializer extends CommonSerializer
          * Controller -> Client
          */
         CtrlClientSerializerBuilder nodeList(List<Node.NodeApi> nodes);
-        CtrlClientSerializerBuilder storPoolDfnList(List<StorPoolDefinition.StorPoolDfnApi> storPoolDfns);
+        CtrlClientSerializerBuilder storPoolDfnList(List<StorPoolDfnApi> storPoolDfns);
         CtrlClientSerializerBuilder storPoolList(List<StorPool.StorPoolApi> storPools);
         CtrlClientSerializerBuilder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
         CtrlClientSerializerBuilder resourceList(
@@ -53,6 +52,6 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder ctrlCfgProps(Map<String, String> map);
 
         CtrlClientSerializerBuilder snapshotDeploymentEvent(ApiCallRc apiCallRc);
-        CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<Tuple2<Candidate, Long>> candidateList);
+        CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<MaxVlmSizeCandidatePojo> candidates);
     }
 }

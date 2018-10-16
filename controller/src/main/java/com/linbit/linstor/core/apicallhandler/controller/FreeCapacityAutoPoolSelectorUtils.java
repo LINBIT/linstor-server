@@ -20,7 +20,7 @@ import java.util.Optional;
 
 public class FreeCapacityAutoPoolSelectorUtils
 {
-    private static final double DEFAULT_MAX_OVERSUBSCRIPTION_RATIO = 20.;
+    public static final double DEFAULT_MAX_OVERSUBSCRIPTION_RATIO = 20.;
 
     public static Comparator<Candidate> mostFreeCapacityCandidateStrategy(
         AccessContext accCtx,

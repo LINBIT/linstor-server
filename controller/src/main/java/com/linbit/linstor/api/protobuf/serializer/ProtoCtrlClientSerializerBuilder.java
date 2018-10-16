@@ -20,9 +20,10 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.CtrlClientSerializerBuilder;
+import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
 import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
@@ -49,7 +50,6 @@ import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
-import reactor.util.function.Tuple2;
 
 public class ProtoCtrlClientSerializerBuilder
     extends ProtoCommonSerializerBuilder implements CtrlClientSerializer.CtrlClientSerializerBuilder
@@ -321,35 +321,32 @@ public class ProtoCtrlClientSerializerBuilder
         return this;
     }
 
-
     @Override
-    public CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<Tuple2<Candidate, Long>> candidateList)
+    public CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<MaxVlmSizeCandidatePojo> candidates)
     {
         try
         {
             List<MsgRspMaxVlmSizesOuterClass.Candidate> protoCandidates = new ArrayList<>();
 
-            for (Tuple2<Candidate, Long> candidateWithCapacity : candidateList)
+            for (MaxVlmSizeCandidatePojo maxVlmSizeCandidatePojo : candidates)
             {
-                Candidate candidate = candidateWithCapacity.getT1();
-                Long capacity = candidateWithCapacity.getT2();
-
                 protoCandidates.add(
                     MsgRspMaxVlmSizesOuterClass.Candidate.newBuilder()
-                        .setMaxVlmSize(capacity)
-                        .addAllNodeNames(
-                            candidate.getNodes().stream()
-                                .map(node -> node.getName().displayValue)
-                                .collect(Collectors.toList())
-                            )
-                        .setStorPoolName(candidate.getStorPoolName().displayValue)
-                        .setAllThin(candidate.allThin())
+                        .setMaxVlmSize(maxVlmSizeCandidatePojo.getMaxVlmSize())
+                        .addAllNodeNames(maxVlmSizeCandidatePojo.getNodeNames())
+                        .setStorPoolDfn(StorPoolDfnApiData.fromStorPoolDfnApi(
+                            maxVlmSizeCandidatePojo.getStorPoolDfnApi()
+                        ))
+                        .setAllThin(maxVlmSizeCandidatePojo.areAllThin())
                         .build()
                 );
             }
 
             MsgRspMaxVlmSizes.newBuilder()
                 .addAllCandidates(protoCandidates)
+                .setDefaultMaxOversubscriptionRatio(
+                    Double.toString(FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO)
+                )
                 .build()
                 .writeDelimitedTo(baos);
         }

@@ -1,23 +1,27 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 
+import com.linbit.GenericName;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.ComparatorUtils;
 import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -99,27 +103,52 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
             FreeCapacityAutoPoolSelectorUtils.mostFreeCapacityNodeStrategy(freeCapacities)
         );
 
-        List<Tuple2<Candidate, Long>> candidatesWithCapacity = candidates.stream()
+        List<MaxVlmSizeCandidatePojo> candidatesWithCapacity = candidates.stream()
             .flatMap(candidate -> candidateWithCapacity(freeCapacities, candidate))
             .collect(Collectors.toList());
 
         return Flux.just(makeResponse(candidatesWithCapacity));
     }
 
-    private Stream<Tuple2<Candidate, Long>> candidateWithCapacity(
+    private Stream<MaxVlmSizeCandidatePojo> candidateWithCapacity(
         Map<StorPool.Key, Long> freeCapacities,
         Candidate candidate
     )
     {
+        StorPool storPool = FreeCapacityAutoPoolSelectorUtils.getCandidateStorPoolPrivileged(apiCtx, candidate);
         Optional<Long> freeCapacity = FreeCapacityAutoPoolSelectorUtils.getFreeCapacityCurrentEstimationPrivileged(
             apiCtx,
             freeCapacities,
-            FreeCapacityAutoPoolSelectorUtils.getCandidateStorPoolPrivileged(apiCtx, candidate)
+            storPool
         );
-        return freeCapacity.map(capacity -> Stream.of(Tuples.of(candidate, capacity))).orElseGet(Stream::empty);
+        return freeCapacity
+            .map(capacity -> Stream.of(new MaxVlmSizeCandidatePojo(
+                getStorPoolDfnApiData(storPool),
+                candidate.allThin(),
+                candidate.getNodes().stream()
+                    .map(Node::getName)
+                    .map(GenericName::getDisplayName)
+                    .collect(Collectors.toList()),
+                capacity
+            )))
+            .orElseGet(Stream::empty);
     }
 
-    private byte[] makeResponse(List<Tuple2<Candidate, Long>> candidates)
+    private StorPoolDefinition.StorPoolDfnApi getStorPoolDfnApiData(StorPool storPool)
+    {
+        StorPoolDefinition.StorPoolDfnApi apiData;
+        try
+        {
+            apiData = storPool.getDefinition(apiCtx).getApiData(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return apiData;
+    }
+
+    private byte[] makeResponse(List<MaxVlmSizeCandidatePojo> candidates)
     {
         byte[] result;
         if (candidates.isEmpty())
@@ -135,8 +164,8 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
         else
         {
             candidates.sort(ComparatorUtils.comparingWithComparator(
-                Tuple2::getT1,
-                Comparator.comparing(Candidate::getStorPoolName)
+                MaxVlmSizeCandidatePojo::getStorPoolDfnApi,
+                Comparator.comparing(StorPoolDefinition.StorPoolDfnApi::getName)
             ));
 
             result = clientComSerializer
