@@ -27,6 +27,7 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -46,6 +47,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.utils.HttpClientUtils;
 
 public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 {
@@ -107,7 +110,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         try
         {
             String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
-            String sfVlmId = getSfVlmId(vlmDfnProps);
+            String sfVlmId = getSfVlmId(vlmDfnProps, false);
             String vlmOdataId = buildVlmOdataId(sfStorSvcId, sfVlmId);
 
             if (!isSfVolumeAttached(sfStorSvcId, sfVlmId))
@@ -233,26 +236,48 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
     private String detatchSfVlm(Props vlmDfnProps) throws IOException, StorageException
     {
         String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
-        String vlmOdataId = buildVlmOdataId(sfStorSvcId, getSfVlmId(vlmDfnProps));
+        String sfVlmId = getSfVlmId(vlmDfnProps, true);
+        String vlmOdataId = null;
 
-        // detach volume from node
-        String detachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
-            SF_COMPOSED_NODE_DETACH_RESOURCE;
-        // POST to Node/$id/Action/ComposedNode.DetachResource
-        restClient.execute(
-            RestOp.POST,
-            sfUrl + detachAction,
-            getDefaultHeader().build(),
-            MapBuilder.defaultImpl().start()
-                .put(
-                    JSON_KEY_RESOURCE,
-                    MapBuilder.defaultImpl().start()
-                        .put(JSON_KEY_ODATA_ID, vlmOdataId)
-                        .build()
-                )
-                .build(),
-            Arrays.asList(HttpHeader.HTTP_NO_CONTENT, HttpHeader.HTTP_NOT_FOUND)
-        );
+        if (sfVlmId != null)
+        {
+            vlmOdataId = buildVlmOdataId(sfStorSvcId, sfVlmId);
+            // detach volume from node
+            String detachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
+                SF_COMPOSED_NODE_DETACH_RESOURCE;
+            // POST to Node/$id/Action/ComposedNode.DetachResource
+            RestResponse<Map<String, Object>> detachVlmResp = restClient.execute(
+                RestOp.POST,
+                sfUrl + detachAction,
+                getDefaultHeader().build(),
+                MapBuilder.defaultImpl().start()
+                    .put(
+                        JSON_KEY_RESOURCE,
+                        MapBuilder.defaultImpl().start()
+                            .put(JSON_KEY_ODATA_ID, vlmOdataId)
+                            .build()
+                    )
+                    .build(),
+                Arrays.asList(HttpHeader.HTTP_NO_CONTENT, HttpHeader.HTTP_NOT_FOUND, HttpHeader.HTTP_BAD_REQUEST)
+            );
+
+            switch (detachVlmResp.getStatusCode())
+            {
+                case HttpHeader.HTTP_BAD_REQUEST:
+                    errorReporter.logWarning(
+                        String.format("Bad request to detach swordfish volume '%s'. Maybe already deleted?", sfVlmId)
+                    );
+                    break;
+                case HttpHeader.HTTP_NO_CONTENT:
+                case HttpHeader.HTTP_NOT_FOUND:
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            errorReporter.logError("Swordfish volume id is null");
+        }
         return vlmOdataId;
     }
 
@@ -263,17 +288,25 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 
         // TODO implement encrypted "volumesExists"
         String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
-        String sfVlmId = getSfVlmId(vlmDfnProps);
-        exists = sfVolumeExists(sfStorSvcId, sfVlmId) && isSfVolumeAttached(sfStorSvcId, sfVlmId);
+        try
+        {
+            String sfVlmId = getSfVlmId(vlmDfnProps, false);
+            exists = sfVolumeExists(sfStorSvcId, sfVlmId) && isSfVolumeAttached(sfStorSvcId, sfVlmId);
+        }
+        catch (StorageException storExc)
+        {
+            errorReporter.logError("Swordfish volume id property not set, assume volume does not exist.");
+        }
         return exists;
     }
 
-    private String getSfVlmId(Props vlmDfnProps) throws StorageException
+    private String getSfVlmId(Props vlmDfnProps, boolean allowNull) throws StorageException
     {
         return getSfProp(
             vlmDfnProps,
             SwordfishConsts.DRIVER_SF_VLM_ID_KEY,
-            "volume id"
+            "volume id",
+            allowNull
         );
     }
 
@@ -282,11 +315,12 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         return getSfProp(
             vlmDfnProps,
             SwordfishConsts.DRIVER_SF_STOR_SVC_ID_KEY,
-            "storage service id"
+            "storage service id",
+            false
         );
     }
 
-    private String getSfProp(Props vlmDfnProps, String propKey, String errObjDescr)
+    private String getSfProp(Props vlmDfnProps, String propKey, String errObjDescr, boolean allowNull)
         throws StorageException, ImplementationError
     {
         String sfVlmId;
@@ -301,7 +335,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         {
             throw new ImplementationError(exc);
         }
-        if (sfVlmId == null)
+        if (!allowNull && sfVlmId == null)
         {
             throw new StorageException(
                 "No swordfish " + errObjDescr + " given. This usually happens if you forgot to " +
@@ -360,7 +394,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
     {
         return compareVolumeSizeImpl(
             getSfStorSvcId(vlmDfnProps),
-            getSfVlmId(vlmDfnProps),
+            getSfVlmId(vlmDfnProps, false),
             requiredSize
         );
     }
@@ -381,7 +415,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                 String nqnUuid = null;
 
                 String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
-                String sfVlmId = getSfVlmId(vlmDfnProps);
+                String sfVlmId = getSfVlmId(vlmDfnProps, false);
                 RestResponse<Map<String, Object>> vlmInfo = getSfVlm(sfStorSvcId, sfVlmId);
 
                 Map<String, Object> vlmData = vlmInfo.getData();
@@ -481,7 +515,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
     public long getSize(String ignore, Props vlmDfnProps) throws StorageException
     {
         return getSpace(
-            getSfVlm(getSfStorSvcId(vlmDfnProps), getSfVlmId(vlmDfnProps)),
+            getSfVlm(getSfStorSvcId(vlmDfnProps), getSfVlmId(vlmDfnProps, false)),
             JSON_KEY_ALLOCATED_BYTES
         );
     }
