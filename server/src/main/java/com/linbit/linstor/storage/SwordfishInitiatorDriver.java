@@ -243,6 +243,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         }
     }
 
+    @SuppressWarnings("unchecked")
     private String detatchSfVlm(String linstorVlmId, Props vlmDfnProps) throws IOException, StorageException
     {
         String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
@@ -275,9 +276,28 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             switch (detachVlmResp.getStatusCode())
             {
                 case HttpHeader.HTTP_BAD_REQUEST:
-                    errorReporter.logWarning(
-                        String.format("Bad request to detach swordfish volume '%s'. Maybe already deleted?", sfVlmId)
-                    );
+                    Map<String, Object> errorMap = (Map<String, Object>) detachVlmResp.getData().get("error");
+                    Map<String, Object> extInfo = (Map<String, Object>) errorMap.get("@Message.ExtendedInfo");
+                    String sfErrMsg = (String) extInfo.get("Message");
+                    if (sfErrMsg.contains("not attached"))
+                    {
+                        errorReporter.logWarning(
+                            String.format(
+                                "Bad request to detach swordfish volume '%s' (not attached).",
+                                sfVlmId
+                            )
+                        );
+                    }
+                    else
+                    {
+                        throw new StorageException(
+                            "Unexpected status code",
+                            "A REST call returned the unexpected status code " + detachVlmResp.getStatusCode(),
+                            null,
+                            null,
+                            detachVlmResp.toString()
+                        );
+                    }
                     break;
                 case HttpHeader.HTTP_NO_CONTENT:
                 case HttpHeader.HTTP_NOT_FOUND:
@@ -299,14 +319,22 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 
         // TODO implement encrypted "volumesExists"
         String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
+        String sfVlmId = null;
         try
         {
-            String sfVlmId = getSfVlmId(vlmDfnProps, false);
+            sfVlmId = getSfVlmId(vlmDfnProps, false);
             exists = sfVolumeExists(sfStorSvcId, sfVlmId) && isSfVolumeAttached(sfStorSvcId, sfVlmId);
         }
         catch (StorageException storExc)
         {
-            errorReporter.logError("Swordfish volume id property not set, assume volume does not exist.");
+            if (sfVlmId == null)
+            {
+                errorReporter.logError("Swordfish volume id property not set, assume volume does not exist.");
+            }
+            else
+            {
+                throw storExc;
+            }
         }
         return exists;
     }

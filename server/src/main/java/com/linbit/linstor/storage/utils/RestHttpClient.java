@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -40,53 +39,41 @@ public class RestHttpClient implements RestClient
     }
 
     @Override
-    public RestResponse<Map<String, Object>> execute(
-        RestOp op,
-        String restURL,
-        Map<String, String> httpHeaders,
-        String jsonString,
-        List<Integer> expectedRcs
-    )
+    public RestResponse<Map<String, Object>> execute(RestHttpRequest request)
         throws IOException, StorageException
     {
         HttpUriRequest req;
-        String payload;
-        switch (op)
+        switch (request.op)
         {
             case GET:
-                req = new HttpGet(restURL);
+                req = new HttpGet(request.restURL);
                 break;
             case POST:
-                req = new HttpPost(restURL);
+                req = new HttpPost(request.restURL);
                 break;
             case PUT:
-                req = new HttpPut(restURL);
+                req = new HttpPut(request.restURL);
                 break;
             case PATCH:
-                req = new HttpPatch(restURL);
+                req = new HttpPatch(request.restURL);
                 break;
             case DELETE:
-                req = new HttpDelete(restURL);
+                req = new HttpDelete(request.restURL);
                 break;
             default:
-                throw new ImplementationError("Unknown Rest operation: " + op);
+                throw new ImplementationError("Unknown Rest operation: " + request.op);
         }
         // add data if possible and available
-        if (req instanceof HttpEntityEnclosingRequest && jsonString != null && !jsonString.equals(""))
+        if (req instanceof HttpEntityEnclosingRequest && request.payload!= null && !request.payload.equals(""))
         {
             ((HttpEntityEnclosingRequest) req).setEntity(
                 new StringEntity(
-                    jsonString,
+                    request.payload,
                     ContentType.APPLICATION_JSON
                 )
             );
-            payload = jsonString;
         }
-        else
-        {
-            payload = "";
-        }
-        for (Entry<String, String> entry : httpHeaders.entrySet())
+        for (Entry<String, String> entry : request.httpHeaders.entrySet())
         {
             req.addHeader(entry.getKey(), entry.getValue());
         }
@@ -112,29 +99,25 @@ public class RestHttpClient implements RestClient
         }
 
         int statusCode = response.getStatusLine().getStatusCode();
-        if (!expectedRcs.contains(statusCode))
+
+        RestHttpResponse restResponse = new RestHttpResponse(
+            request,
+            statusCode,
+            sfHeaders,
+            respRoot
+        );
+        if (!request.expectedRcs.contains(statusCode))
         {
             throw new StorageException(
                 "Unexpected status code",
-                "A REST call returned the unexpected status code " + statusCode,
+                "A REST call returned the unexpected status code " + restResponse.statusCode,
                 null,
                 null,
-                String.format(
-                    "Request%n   %-8s %s%n   %-8s %s%n   %-8s %s%n   %-8s %s%n" +
-                    "Response%n   %-23s %d%n   %-23s %s%n   %-23s %s%n   %-23s %s",
-                    "Type", op.name(),
-                    "URL", restURL,
-                    "Headers", httpHeaders,
-                    "Data", payload,
-                    "Status code", statusCode,
-                    "Expected status code(s)", expectedRcs.toString(),
-                    "HEaders", sfHeaders,
-                    "Data", respRoot
-                )
+                restResponse.toString()
             );
         }
 
-        return new RestHttpResponse(statusCode, sfHeaders, respRoot);
+        return restResponse;
     }
 
     private byte[] readContent(HttpResponse response) throws IOException
@@ -163,12 +146,19 @@ public class RestHttpClient implements RestClient
 
     private class RestHttpResponse implements RestResponse<Map<String, Object>>
     {
-        private int statusCode;
-        private Map<String, Object> respRoot;
-        private Map<String, String> headers;
+        private final int statusCode;
+        private final Map<String, Object> respRoot;
+        private final Map<String, String> headers;
+        private final RestHttpRequest request;
 
-        RestHttpResponse(int statusCodeRef, Map<String, String> headersRef, Map<String, Object> respRootRef)
+        RestHttpResponse(
+            RestHttpRequest requestRef,
+            int statusCodeRef,
+            Map<String, String> headersRef,
+            Map<String, Object> respRootRef
+        )
         {
+            request = requestRef;
             statusCode = statusCodeRef;
             headers = headersRef;
             respRoot = respRootRef;
@@ -190,6 +180,23 @@ public class RestHttpClient implements RestClient
         public Map<String, String> getHeaders()
         {
             return headers;
+        }
+
+        @Override
+        public String toString()
+        {
+            return String.format(
+                "Request%n   %-8s %s%n   %-8s %s%n   %-8s %s%n   %-8s %s%n" +
+                "Response%n   %-23s %d%n   %-23s %s%n   %-23s %s%n   %-23s %s",
+                "Type", request.op,
+                "URL", request.restURL,
+                "Headers", request.httpHeaders,
+                "Data", request.payload,
+                "Status code", statusCode,
+                "Expected status code(s)", request.expectedRcs.toString(),
+                "HEaders", headers,
+                "Data", respRoot
+            );
         }
     }
 }
