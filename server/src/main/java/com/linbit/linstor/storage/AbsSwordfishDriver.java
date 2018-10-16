@@ -18,6 +18,7 @@ import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 public abstract class AbsSwordfishDriver implements StorageDriver
@@ -253,17 +254,9 @@ public abstract class AbsSwordfishDriver implements StorageDriver
                 RestOp.GET,
                 sfUrl + odataId,
                 getDefaultHeader().build(),
-                (String) null
+                (String) null,
+                Arrays.asList(HttpHeader.HTTP_OK)
             );
-
-            if (rscInfo.getStatusCode() != HttpHeader.HTTP_OK)
-            {
-                throw new SfRscException(
-                    "Error receiving info of swordfish resource '" + odataId + "'. Status code: " +
-                    rscInfo.getStatusCode(),
-                    rscInfo.getStatusCode()
-                );
-            }
         }
         catch (IOException ioExc)
         {

@@ -40,6 +40,7 @@ import com.linbit.linstor.timer.CoreTimer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -134,7 +135,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
     {
         String attachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
             SF_COMPOSED_NODE_ATTACH_RESOURCE;
-        RestResponse<Map<String, Object>> attachVlmResp = restClient.execute(
+        restClient.execute(
             RestOp.POST,
             sfUrl + attachAction,
             getDefaultHeader().build(),
@@ -145,18 +146,9 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                         .put(JSON_KEY_ODATA_ID, vlmOdataId)
                         .build()
                 )
-                .build()
+                .build(),
+            Arrays.asList(HttpHeader.HTTP_NO_CONTENT)
         );
-        if (attachVlmResp.getStatusCode() != HttpHeader.HTTP_NO_CONTENT)
-        {
-            throw new StorageException(
-                String.format(
-                    "Unexpected return code from attaching volume %s: %d",
-                    attachAction,
-                    attachVlmResp.getStatusCode()
-                )
-            );
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -178,18 +170,9 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                 RestOp.GET,
                 sfUrl  + attachInfoAction,
                 getDefaultHeader().noContentType().build(),
-                (String) null
+                (String) null,
+                Arrays.asList(HttpHeader.HTTP_OK)
             );
-            if (attachRscInfoResp.getStatusCode() != HttpHeader.HTTP_OK)
-            {
-                throw new StorageException(
-                    String.format(
-                        "Unexpected return code (%d) from %s",
-                        attachRscInfoResp.getStatusCode(),
-                        attachInfoAction
-                    )
-                );
-            }
             Map<String, Object> attachRscInfoData = attachRscInfoResp.getData();
             ArrayList<Object> attachInfoParameters = (ArrayList<Object>) attachRscInfoData.get(JSON_KEY_PARAMETERS);
             for (Object attachInfoParameter : attachInfoParameters)
@@ -256,32 +239,20 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         String detachAction = SF_BASE + SF_NODES + "/" + composedNodeName + SF_ACTIONS +
             SF_COMPOSED_NODE_DETACH_RESOURCE;
         // POST to Node/$id/Action/ComposedNode.DetachResource
-        RestResponse<Map<String, Object>> detachVlmResp = restClient.execute(
+        restClient.execute(
             RestOp.POST,
             sfUrl + detachAction,
             getDefaultHeader().build(),
             MapBuilder.defaultImpl().start()
-            .put(
-                JSON_KEY_RESOURCE,
-                MapBuilder.defaultImpl().start()
-                    .put(JSON_KEY_ODATA_ID, vlmOdataId)
-                    .build()
-            )
-            .build()
-        );
-        if (
-            detachVlmResp.getStatusCode() != HttpHeader.HTTP_NO_CONTENT &&
-            detachVlmResp.getStatusCode() != HttpHeader.HTTP_NOT_FOUND
-        )
-        {
-            throw new StorageException(
-                String.format(
-                    "Unexpected return code from POST to %s: %d",
-                    detachAction,
-                    detachVlmResp.getStatusCode()
+                .put(
+                    JSON_KEY_RESOURCE,
+                    MapBuilder.defaultImpl().start()
+                        .put(JSON_KEY_ODATA_ID, vlmOdataId)
+                        .build()
                 )
-            );
-        }
+                .build(),
+            Arrays.asList(HttpHeader.HTTP_NO_CONTENT, HttpHeader.HTTP_NOT_FOUND)
+        );
         return vlmOdataId;
     }
 
@@ -354,23 +325,21 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                 RestOp.GET,
                 sfUrl + composedNodeAttachAction,
                 getDefaultHeader().noContentType().build(),
-                (String) null
+                (String) null,
+                Arrays.asList(HttpHeader.HTTP_OK)
             );
-            if (attachInfoResp.getStatusCode() == HttpHeader.HTTP_OK)
-            {
-                Map<String, Object> attachInfoData = attachInfoResp.getData();
-                Map<String, Object> paramMap = (Map<String, Object>) attachInfoData.get(JSON_KEY_PARAMETERS);
-                Object[] allowableValues = (Object[]) paramMap.get(JSON_KEY_ALLOWABLE_VALUES);
+            Map<String, Object> attachInfoData = attachInfoResp.getData();
+            Map<String, Object> paramMap = (Map<String, Object>) attachInfoData.get(JSON_KEY_PARAMETERS);
+            Object[] allowableValues = (Object[]) paramMap.get(JSON_KEY_ALLOWABLE_VALUES);
 
-                for (Object allowableValue : allowableValues)
+            for (Object allowableValue : allowableValues)
+            {
+                if (vlmOdataId.equals(
+                    ((Map<String, Object>) allowableValue).get(JSON_KEY_ODATA_ID))
+                )
                 {
-                    if (vlmOdataId.equals(
-                        ((Map<String, Object>) allowableValue).get(JSON_KEY_ODATA_ID))
-                    )
-                    {
-                        attached = true;
-                        break;
-                    }
+                    attached = true;
+                    break;
                 }
             }
         }
@@ -504,8 +473,6 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             // cmd: grep -H --color=never <target NQN>  nvme*/subsysnqn
             // nvme2/subsysnqn:<target NQN>                 # this is how we get the nvme$number
             // the previous command should also have exitcode 0
-
-//            throw new ImplementationError("Not implemented yet");
         }
         return path;
     }
@@ -523,20 +490,20 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
     public long getFreeSpace() throws StorageException
     {
         return Long.MAX_VALUE;
-//        return getSpace(
-//            getSwordfishPool(),
-//            JSON_KEY_GUARANTEED_BYTES
-//        );
+        // return getSpace(
+        //    getSwordfishPool(),
+        //    JSON_KEY_GUARANTEED_BYTES
+        // );
     }
 
     @Override
     public long getTotalSpace() throws StorageException
     {
         return Long.MAX_VALUE;
-//        return getSpace(
-//            getSwordfishPool(),
-//            JSON_KEY_ALLOCATED_BYTES
-//        );
+        // return getSpace(
+        //    getSwordfishPool(),
+        //    JSON_KEY_ALLOCATED_BYTES
+        // );
     }
 
     @Override

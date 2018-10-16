@@ -1,17 +1,19 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.storage.StorageException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -42,11 +44,13 @@ public class RestHttpClient implements RestClient
         RestOp op,
         String restURL,
         Map<String, String> httpHeaders,
-        String jsonString
+        String jsonString,
+        List<Integer> expectedRcs
     )
-        throws IOException
+        throws IOException, StorageException
     {
         HttpUriRequest req;
+        String payload;
         switch (op)
         {
             case GET:
@@ -76,12 +80,16 @@ public class RestHttpClient implements RestClient
                     ContentType.APPLICATION_JSON
                 )
             );
+            payload = jsonString;
+        }
+        else
+        {
+            payload = "";
         }
         for (Entry<String, String> entry : httpHeaders.entrySet())
         {
             req.addHeader(entry.getKey(), entry.getValue());
         }
-        logSend(req);
 
         HttpResponse response = httpClient.execute(req);
 
@@ -103,27 +111,29 @@ public class RestHttpClient implements RestClient
             respRoot = Collections.emptyMap();
         }
 
-        logReceive(("Headers:" + sfHeaders.toString()).getBytes());
-        logReceive(responseContent);
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (!expectedRcs.contains(statusCode))
+        {
+            throw new StorageException(
+                "Unexpected status code",
+                "A REST call returned the unexpected status code " + statusCode,
+                null,
+                null,
+                String.format(
+                    "Request%n   %-8s %s%n   %-8s %s%n   %-8s %s%n   %-8s %s%n" +
+                    "Response%n   %-23s %d%n   %-23s %s%n   %-23s %s",
+                    "Type", op.name(),
+                    "URL", restURL,
+                    "Headers", httpHeaders,
+                    "Data", payload,
+                    "Status code", statusCode,
+                    "Expected status code(s)", expectedRcs.toString(),
+                    "Data", respRoot
+                )
+            );
+        }
 
-        return new RestHttpResponse(response.getStatusLine().getStatusCode(), sfHeaders, respRoot);
-    }
-
-    private void logSend(HttpRequest req) throws IOException
-    {
-//System.out.println(">>> " + req.getRequestLine().toString());
-//        if (req instanceof HttpEntityEnclosingRequest)
-//        {
-//            HttpEntityEnclosingRequest enclReq = (HttpEntityEnclosingRequest) req;
-//            if (enclReq.getEntity() != null)
-//            {
-//                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//                enclReq.getEntity().writeTo(baos);
-//                String out = new String(baos.toByteArray());
-//                out = out.replaceAll("\n", "\n>>> ");
-//System.out.println(">>> " + out);
-//            }
-//        }
+        return new RestHttpResponse(statusCode, sfHeaders, respRoot);
     }
 
     private byte[] readContent(HttpResponse response) throws IOException
@@ -148,14 +158,6 @@ public class RestHttpClient implements RestClient
             result = baos.toByteArray();
         }
         return result;
-    }
-
-    private void logReceive(byte[] content)
-        throws UnsupportedOperationException, IOException
-    {
-//        String out = new String(content, StandardCharsets.UTF_8.name());
-//        out = out.replaceAll("\n", "\n<<< ");
-//        System.out.println("<<< " + out);
     }
 
     private class RestHttpResponse implements RestResponse<Map<String, Object>>

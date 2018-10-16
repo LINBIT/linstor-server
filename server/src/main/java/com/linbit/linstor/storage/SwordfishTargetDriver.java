@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -221,20 +222,10 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                         )
                         .buildArray()
                 )
-                .build()
+                .build(),
+            Arrays.asList(HttpHeader.HTTP_ACCEPTED)
         );
         // volume should be now in "creating" state. we have to wait for the taskMonitor to return HTTP_CREATED
-
-        if (crtVlmResp.getStatusCode() != HttpHeader.HTTP_ACCEPTED)
-        {
-            throw new StorageException(
-                String.format(
-                    "Unexpected return code from POST to %s: %d",
-                    volumeCollUrl,
-                    crtVlmResp.getStatusCode()
-                )
-            );
-        }
 
         String taskMonitorLocation = crtVlmResp.getHeaders().get(HttpHeader.LOCATION_KEY);
         // taskLocation should start with SF_BASE + SF_TASK_SERVICE + SF_TASKS followed by "/$taskId/Monitor"
@@ -272,7 +263,8 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 RestOp.GET,
                 sfUrl  + taskMonitorLocation,
                 getDefaultHeader().noContentType().build(),
-                (String) null
+                (String) null,
+                Arrays.asList(HttpHeader.HTTP_ACCEPTED, HttpHeader.HTTP_CREATED)
             );
             switch (crtVlmTaskResp.getStatusCode())
             {
@@ -282,9 +274,9 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                     vlmLocation = crtVlmTaskResp.getHeaders().get(HttpHeader.LOCATION_KEY);
                     break;
                 default: // problem
-                    throw new StorageException(
+                    throw new ImplementationError(
                         String.format(
-                            "Unexpected return code from task monitor %s: %d",
+                            "Received none-whitelisted REST status code. URL %s; status code: %d",
                             taskMonitorLocation,
                             crtVlmTaskResp.getStatusCode()
                         )
@@ -316,26 +308,13 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
             // TODO health check on composed node
 
             // DELETE to volumes collection
-            RestResponse<Map<String, Object>> delVlmResp = restClient.execute(
+            restClient.execute(
                 RestOp.DELETE,
                 sfUrl + vlmOdataId,
                 getDefaultHeader().noContentType().build(),
-                (String) null
+                (String) null,
+                Arrays.asList(HttpHeader.HTTP_ACCEPTED, HttpHeader.HTTP_NOT_FOUND)
             );
-
-            if (
-                delVlmResp.getStatusCode() != HttpHeader.HTTP_ACCEPTED &&
-                delVlmResp.getStatusCode() != HttpHeader.HTTP_NOT_FOUND // nothing to do :)
-            )
-            {
-                throw new StorageException(
-                    String.format(
-                        "Unexpected return code from DELETE to %s: %d",
-                        vlmOdataId,
-                        delVlmResp.getStatusCode()
-                    )
-                );
-            }
         }
         catch (IOException ioExc)
         {
