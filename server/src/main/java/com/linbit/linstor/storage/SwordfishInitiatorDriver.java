@@ -2,9 +2,11 @@ package com.linbit.linstor.storage;
 
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOCATED_BYTES;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOWABLE_VALUES;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CONNECTED_ENTITIES;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DURABLE_NAME;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DURABLE_NAME_FORMAT;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ENDPOINTS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ENTITY_ROLE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_IDENTIFIERS;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_INTEL_RACK_SCALE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_LINKS;
@@ -13,6 +15,7 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_OEM;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_PARAMETERS;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_RESOURCE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_VALUE_NQN;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_VALUE_TARGET;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.PATTERN_NQN;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ACTIONS;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ATTACH_RESOURCE_ACTION_INFO;
@@ -42,6 +45,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
@@ -118,10 +122,14 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             String sfVlmId = getSfVlmId(vlmDfnProps, false);
             String vlmOdataId = buildVlmOdataId(sfStorSvcId, sfVlmId);
 
-            if (!isSfVolumeAttached(sfStorSvcId, sfVlmId))
+            if (!isSfVolumeAttached(vlmDfnProps))
             {
                 waitUntilSfVlmIsAttachable(linstorVlmId, vlmOdataId);
                 attachSfVolume(linstorVlmId, vlmOdataId);
+            }
+            else
+            {
+                setState(linstorVlmId, STATE_ATTACHABLE);
             }
 
             // TODO implement health check on composed node
@@ -277,18 +285,24 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             {
                 case HttpHeader.HTTP_BAD_REQUEST:
                     Map<String, Object> errorMap = (Map<String, Object>) detachVlmResp.getData().get("error");
-                    Map<String, Object> extInfo = (Map<String, Object>) errorMap.get("@Message.ExtendedInfo");
-                    String sfErrMsg = (String) extInfo.get("Message");
-                    if (sfErrMsg.contains("not attached"))
+                    List<Map<String, Object>> extInfo = (List<Map<String, Object>>) errorMap
+                        .get("@Message.ExtendedInfo");
+                    boolean found = false;
+                    for (Map<String, Object> sfErrMsgEntry : extInfo)
                     {
-                        errorReporter.logWarning(
-                            String.format(
-                                "Bad request to detach swordfish volume '%s' (not attached).",
-                                sfVlmId
-                            )
-                        );
+                        String errMsg = (String) sfErrMsgEntry.get("Message");
+                        if (errMsg.contains("not attached"))
+                        {
+                            errorReporter.logWarning(
+                                String.format(
+                                    "Bad request to detach swordfish volume '%s' (not attached).",
+                                    sfVlmId
+                                )
+                            );
+                            found = true;
+                        }
                     }
-                    else
+                    if (!found)
                     {
                         throw new StorageException(
                             "Unexpected status code",
@@ -304,6 +318,8 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                 default:
                     break;
             }
+
+            remoteState(linstorVlmId); // deleting
         }
         else
         {
@@ -313,7 +329,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
     }
 
     @Override
-    public boolean volumeExists(String ignore, boolean isEncrypted, Props vlmDfnProps) throws StorageException
+    public boolean volumeExists(String linstorVlmId, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
         boolean exists = false;
 
@@ -323,7 +339,13 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         try
         {
             sfVlmId = getSfVlmId(vlmDfnProps, false);
-            exists = sfVolumeExists(sfStorSvcId, sfVlmId) && isSfVolumeAttached(sfStorSvcId, sfVlmId);
+            exists = sfVolumeExists(sfStorSvcId, sfVlmId) &&
+                isSfVolumeAttached(vlmDfnProps) &&
+                getVolumePath(linstorVlmId, isEncrypted, vlmDfnProps) != null;
+            if (exists)
+            {
+                setState(linstorVlmId, STATE_ATTACHED);
+            }
         }
         catch (StorageException storExc)
         {
@@ -384,47 +406,10 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         return sfVlmId;
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean isSfVolumeAttached(String sfStorSvcId, String sfVlmId) throws StorageException
+    private boolean isSfVolumeAttached(Props vlmDfnProps)
+        throws StorageException
     {
-        boolean attached = false;
-        try
-        {
-            String vlmOdataId = buildVlmOdataId(sfStorSvcId, sfVlmId);
-
-            String composedNodeAttachAction =
-                SF_BASE + SF_NODES + composedNodeName + SF_ACTIONS + SF_ATTACH_RESOURCE_ACTION_INFO;
-            RestResponse<Map<String, Object>> attachInfoResp = restClient.execute(
-                RestOp.GET,
-                sfUrl + composedNodeAttachAction,
-                getDefaultHeader().noContentType().build(),
-                (String) null,
-                Arrays.asList(HttpHeader.HTTP_OK)
-            );
-            Map<String, Object> attachInfoData = attachInfoResp.getData();
-            Map<String, Object> paramMap = (Map<String, Object>) attachInfoData.get(JSON_KEY_PARAMETERS);
-            Object[] allowableValues = (Object[]) paramMap.get(JSON_KEY_ALLOWABLE_VALUES);
-
-            for (Object allowableValue : allowableValues)
-            {
-                if (vlmOdataId.equals(
-                    ((Map<String, Object>) allowableValue).get(JSON_KEY_ODATA_ID))
-                )
-                {
-                    attached = true;
-                    break;
-                }
-            }
-        }
-        catch (IOException exc)
-        {
-            throw new StorageException("IO exception", exc);
-        }
-        catch (ClassCastException ccExc)
-        {
-            throw new StorageException("Unexpected datastucture", ccExc);
-        }
-        return attached;
+        return getSfVolumeEndpointDurableNameNqn(vlmDfnProps) != null;
     }
 
     @Override
@@ -438,7 +423,6 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
         );
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public String getVolumePath(String linstorVlmId, boolean isEncrypted, Props vlmDfnProps) throws StorageException
     {
@@ -453,68 +437,48 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             {
                 String nqnUuid = null;
 
-                String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
-                String sfVlmId = getSfVlmId(vlmDfnProps, false);
-                RestResponse<Map<String, Object>> vlmInfo = getSfVlm(sfStorSvcId, sfVlmId);
+                String nqn = getSfVolumeEndpointDurableNameNqn(vlmDfnProps);
 
-                Map<String, Object> vlmData = vlmInfo.getData();
-                Map<String, Object> vlmLinks = (Map<String, Object>) vlmData.get(JSON_KEY_LINKS);
-                Map<String, Object> linksOem = (Map<String, Object>) vlmLinks.get(JSON_KEY_OEM);
-                Map<String, Object> oemIntelRackscale = (Map<String, Object>) linksOem.get(JSON_KEY_INTEL_RACK_SCALE);
-                ArrayList<Object> intelRackscaleEndpoints =
-                    (ArrayList<Object>) oemIntelRackscale.get(JSON_KEY_ENDPOINTS);
-                Map<String, Object> endpoint = (Map<String, Object>) intelRackscaleEndpoints.get(0);
-                String endpointOdataId = (String) endpoint.get(JSON_KEY_ODATA_ID);
-
-                RestResponse<Map<String, Object>> endpointInfo = getSwordfishResource(endpointOdataId);
-                Map<String, Object> endpointData = endpointInfo.getData();
-                ArrayList<Object> endpointIdentifiers = (ArrayList<Object>) endpointData.get(JSON_KEY_IDENTIFIERS);
-                for (Object endpointIdentifier : endpointIdentifiers)
+                if (nqn != null)
                 {
-                    Map<String, Object> endpointIdMap = (Map<String, Object>) endpointIdentifier;
-                    if (JSON_VALUE_NQN.equals(endpointIdMap.get(JSON_KEY_DURABLE_NAME_FORMAT)))
+                    nqnUuid = nqn.substring(nqn.lastIndexOf("uuid:") + "uuid:".length());
+
+                    int grepTries = 0;
+                    boolean grepFailed = false;
+                    boolean grepFound = false;
+                    while (!grepFailed && !grepFound)
                     {
-                        String nqn = (String) endpointIdMap.get(JSON_KEY_DURABLE_NAME);
-                        nqnUuid = nqn.substring(nqn.lastIndexOf("uuid:") + "uuid:".length());
-
-                        int grepTries = 0;
-                        boolean grepFailed = false;
-                        boolean grepFound = false;
-                        while (!grepFailed && !grepFound)
+                        final ExtCmd extCmd = new ExtCmd(timer, errorReporter);
+                        OutputData outputData = extCmd.exec(
+                            "/bin/bash",
+                            "-c",
+                            "grep -H --color=never " + nqnUuid +
+                            " /sys/devices/virtual/nvme-fabrics/ctl/nvme*/subsysnqn"
+                        );
+                        if (outputData.exitCode == 0)
                         {
-                            final ExtCmd extCmd = new ExtCmd(timer, errorReporter);
-                            OutputData outputData = extCmd.exec(
-                                "/bin/bash",
-                                "-c",
-                                "grep -H --color=never " + nqnUuid +
-                                " /sys/devices/virtual/nvme-fabrics/ctl/nvme*/subsysnqn"
-                            );
-                            if (outputData.exitCode == 0)
+                            String outString = new String(outputData.stdoutData);
+                            Matcher matcher = PATTERN_NQN.matcher(outString);
+                            if (matcher.find())
                             {
-                                String outString = new String(outputData.stdoutData);
-                                Matcher matcher = PATTERN_NQN.matcher(outString);
-                                if (matcher.find())
-                                {
-                                    // although nvme supports multiple namespace, the current implementation
-                                    // relies on podmanager's limitation of only supporting one namespace per
-                                    // nvme device
-                                    path = "/dev/nvme" + matcher.group(1) + "n1";
-                                    grepFound = true;
-                                    setState(linstorVlmId, STATE_ATTACHED);
-                                }
-                            }
-
-                            if (++grepTries >= pollGrepNvmeUuidMaxTries)
-                            {
-                                setState(linstorVlmId, STATE_ATTACHING_TIMEOUT);
-                                grepFailed = true;
-                            }
-                            else
-                            {
-                                Thread.sleep(pollGrepNvmeUuidTimeout);
+                                // although nvme supports multiple namespace, the current implementation
+                                // relies on podmanager's limitation of only supporting one namespace per
+                                // nvme device
+                                path = "/dev/nvme" + matcher.group(1) + "n1";
+                                grepFound = true;
+                                setState(linstorVlmId, STATE_ATTACHED);
                             }
                         }
-                        break;
+
+                        if (++grepTries >= pollGrepNvmeUuidMaxTries)
+                        {
+                            setState(linstorVlmId, STATE_ATTACHING_TIMEOUT);
+                            grepFailed = true;
+                        }
+                        else
+                        {
+                            Thread.sleep(pollGrepNvmeUuidTimeout);
+                        }
                     }
                 }
                 if (path == null)
@@ -540,6 +504,58 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             }
         }
         return path;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String getSfVolumeEndpointDurableNameNqn(Props vlmDfnProps) throws StorageException
+    {
+        String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
+        String sfVlmId = getSfVlmId(vlmDfnProps, false);
+        RestResponse<Map<String, Object>> vlmInfo = getSfVlm(sfStorSvcId, sfVlmId);
+
+        Map<String, Object> vlmData = vlmInfo.getData();
+        Map<String, Object> vlmLinks = (Map<String, Object>) vlmData.get(JSON_KEY_LINKS);
+        Map<String, Object> linksOem = (Map<String, Object>) vlmLinks.get(JSON_KEY_OEM);
+        Map<String, Object> oemIntelRackscale = (Map<String, Object>) linksOem.get(JSON_KEY_INTEL_RACK_SCALE);
+        ArrayList<Object> intelRackscaleEndpoints =
+            (ArrayList<Object>) oemIntelRackscale.get(JSON_KEY_ENDPOINTS);
+
+        String nqn = null;
+        for (Object endpointObj : intelRackscaleEndpoints)
+        {
+            Map<String, Object> endpoint = (Map<String, Object>) endpointObj;
+
+            String endpointOdataId = (String) endpoint.get(JSON_KEY_ODATA_ID);
+
+            RestResponse<Map<String, Object>> endpointInfo = getSwordfishResource(endpointOdataId);
+            Map<String, Object> endpointData = endpointInfo.getData();
+
+            List<Map<String, Object>> connectedEntities =
+                (List<Map<String, Object>>) endpointData.get(JSON_KEY_CONNECTED_ENTITIES);
+            for (Map<String, Object> connectedEntity : connectedEntities)
+            {
+                if (connectedEntity.get(JSON_KEY_ENTITY_ROLE).equals(JSON_VALUE_TARGET))
+                {
+                    List<Object> endpointIdentifiers =
+                        (List<Object>) endpointData.get(JSON_KEY_IDENTIFIERS);
+                    for (Object endpointIdentifier : endpointIdentifiers)
+                    {
+                        Map<String, Object> endpointIdMap = (Map<String, Object>) endpointIdentifier;
+
+                        if (JSON_VALUE_NQN.equals(endpointIdMap.get(JSON_KEY_DURABLE_NAME_FORMAT)))
+                        {
+                            nqn = (String) endpointIdMap.get(JSON_KEY_DURABLE_NAME);
+                            break;
+                        }
+                    }
+                    if (nqn != null)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        return nqn;
     }
 
     @Override

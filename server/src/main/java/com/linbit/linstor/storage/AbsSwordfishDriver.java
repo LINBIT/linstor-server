@@ -9,7 +9,6 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_SERVIC
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -231,6 +230,14 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         return ret;
     }
 
+    /**
+     * Asks swordfish server if the volume exists
+     *
+     * @param sfStorSvcId
+     * @param sfVlmId
+     * @return
+     * @throws StorageException
+     */
     protected boolean sfVolumeExists(String sfStorSvcId, String sfVlmId) throws StorageException
     {
         boolean exists = false;
@@ -285,6 +292,11 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     protected void setState(String linstorVlmId, String state)
     {
         volumeStates.put(linstorVlmId, state);
+    }
+
+    protected void remoteState(String linstorVlmId)
+    {
+        volumeStates.remove(linstorVlmId);
     }
 
     @Override

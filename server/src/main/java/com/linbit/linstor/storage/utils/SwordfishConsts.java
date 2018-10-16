@@ -36,8 +36,12 @@ public class SwordfishConsts
     public static final Object JSON_KEY_ENDPOINTS = "Endpoints";
     public static final Object JSON_KEY_PARAMETERS = "Parameters";
     public static final Object JSON_KEY_ALLOWABLE_VALUES = "AllowableValues";
+    public static final Object JSON_KEY_CONNECTED_ENTITIES = "ConnectedEntities";
+    public static final Object JSON_KEY_ENTITY_ROLE = "EntityRole";
     public static final String JSON_VALUE_DURABLE_NAME_FORMAT_SYSTEM_PATH = "SystemPath";
     public static final Object JSON_VALUE_NQN = "NQN";
+    public static final Object JSON_VALUE_RESOURCE = "Resource";
+    public static final Object JSON_VALUE_TARGET = "Target";
 
     public static final String SF_BASE = "/redfish/v1";
     public static final String SF_STORAGE_SERVICES = "/StorageServices";

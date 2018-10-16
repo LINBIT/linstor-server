@@ -53,7 +53,6 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
 
     private static final String STATE_CREATING = "creating";
     private static final String STATE_CREATED = "created";
-    private static final String STATE_DELETING = "deleting";
 
     private Map<String, String> linstorIdToSwordfishId;
 
@@ -138,6 +137,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 vlmOdataId = buildVlmOdataId(linstorVlmId);
                 errorReporter.logTrace("volume found with @odata.id: %s", vlmOdataId);
             }
+            setState(linstorVlmId, STATE_CREATED);
             // volume exists
         }
         catch (InterruptedException interruptedExc)
@@ -322,7 +322,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 (String) null,
                 Arrays.asList(HttpHeader.HTTP_ACCEPTED, HttpHeader.HTTP_NOT_FOUND)
             );
-            setState(linstorVlmId, STATE_DELETING);
+            remoteState(linstorVlmId); // deleting
         }
         catch (IOException ioExc)
         {
@@ -340,6 +340,10 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         if (sfVlmId != null)
         {
             exists = sfVolumeExists(storSvc, sfVlmId);
+        }
+        if (exists)
+        {
+            setState(linstorVlmId, STATE_CREATED);
         }
         return exists;
     }
