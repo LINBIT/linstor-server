@@ -62,6 +62,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     private transient StorageDriver storageDriver;
 
+    private final transient Object syncObj = new Object();
+
     StorPoolData(
         UUID id,
         Node nodeRef,
@@ -155,12 +157,18 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             node.getObjProt().requireAccess(accCtx, AccessType.USE);
             if (storageDriver == null)
             {
-                storageDriver = storageDriverKind.makeStorageDriver(
-                    errorReporter,
-                    fileSystemWatch,
-                    timer,
-                    stltCfgAccessor
-                );
+                synchronized (syncObj)
+                {
+                    if (storageDriver == null)
+                    {
+                        storageDriver = storageDriverKind.makeStorageDriver(
+                            errorReporter,
+                            fileSystemWatch,
+                            timer,
+                            stltCfgAccessor
+                        );
+                    }
+                }
             }
         }
         return storageDriver;
