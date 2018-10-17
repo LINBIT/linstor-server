@@ -51,8 +51,8 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
 {
     private static final Map<String, Object> JSON_OBJ;
 
-    private static final String STATE_CREATING = "creating";
-    private static final String STATE_CREATED = "created";
+    private static final String STATE_CREATING = "Creating";
+    private static final String STATE_CREATED = "Created";
 
     private Map<String, String> linstorIdToSwordfishId;
 

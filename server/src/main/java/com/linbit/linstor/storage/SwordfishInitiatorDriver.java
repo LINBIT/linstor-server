@@ -53,13 +53,13 @@ import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
 
 public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 {
-    private static final String STATE_WAITING_ATTACHABLE = "wf: attachable";
-    private static final String STATE_WAITING_ATTACHABLE_TIMEOUT = "to: attachable";
-    private static final String STATE_ATTACHABLE = "attachable";
-    private static final String STATE_ATTACHING = "attaching";
-    private static final String STATE_ATTACHING_TIMEOUT = "to: attaching";
-    private static final String STATE_ATTACHED = "attached";
-    private static final String STATE_DETACHING = "detaching";
+    private static final String STATE_WAITING_ATTACHABLE = "Wf: Attachable";
+    private static final String STATE_WAITING_ATTACHABLE_TIMEOUT = "To: Attachable";
+    private static final String STATE_ATTACHABLE = "Attachable";
+    private static final String STATE_ATTACHING = "Attaching";
+    private static final String STATE_ATTACHING_TIMEOUT = "To: Attaching";
+    private static final String STATE_ATTACHED = "Attached";
+    private static final String STATE_DETACHING = "Detaching";
 
     private long pollAttachVlmTimeout = 1000;
     private long pollAttachVlmMaxTries = 300;
