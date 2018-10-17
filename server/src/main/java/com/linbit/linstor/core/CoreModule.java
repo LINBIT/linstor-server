@@ -39,6 +39,10 @@ public class CoreModule extends AbstractModule
 
     private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
+    // Path to the DRBD configuration files; this should be replaced by some meaningful constant or possibly
+    // a value configurable in the cluster configuration
+    public static final String CONFIG_PATH = "/var/lib/linstor.d";
+
     @Override
     protected void configure()
     {

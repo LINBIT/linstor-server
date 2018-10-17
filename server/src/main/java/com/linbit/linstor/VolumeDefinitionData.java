@@ -20,6 +20,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage2.layer.data.categories.VlmDfnLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -41,6 +42,7 @@ import javax.inject.Provider;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@SuppressWarnings("unchecked")
 public class VolumeDefinitionData extends BaseTransactionObject implements VolumeDefinition
 {
     // Object identifier
@@ -77,6 +79,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     private transient TransactionSimpleObject<VolumeDefinitionData, String> cryptKey;
 
+    private final TransactionMap<Class<? extends VlmDfnLayerData>, VlmDfnLayerData> layerDataMap;
+
     VolumeDefinitionData(
         UUID uuid,
         ResourceDefinition resDfnRef,
@@ -89,7 +93,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
-        Map<String, Volume> vlmMapRef
+        Map<String, Volume> vlmMapRef,
+        Map<Class<? extends VlmDfnLayerData>, VlmDfnLayerData> layerDataMapRef
     )
         throws MdException, SQLException
     {
@@ -123,6 +128,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             PropsContainer.buildPath(resDfnRef.getName(), volumeNr)
         );
 
+        layerDataMap = transObjFactory.createTransactionMap(layerDataMapRef, null); // TODO: create database driver
+
         volumes = transObjFactory.createTransactionMap(vlmMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -143,7 +150,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             volumeSize,
             flags,
             deleted,
-            cryptKey
+            cryptKey,
+            layerDataMap
         );
     }
 
@@ -281,7 +289,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     @Override
-    public void setKey(AccessContext accCtx, String key) throws AccessDeniedException, SQLException
+    public void setCryptKey(AccessContext accCtx, String key) throws AccessDeniedException, SQLException
     {
         checkDeleted();
         if (!accCtx.subjectId.equals(Identity.SYSTEM_ID))
@@ -292,7 +300,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     @Override
-    public String getKey(AccessContext accCtx) throws AccessDeniedException
+    public String getCryptKey(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         if (!accCtx.subjectId.equals(Identity.SYSTEM_ID))
@@ -300,6 +308,30 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             throw new AccessDeniedException("Only system context is allowed to get crypt key");
         }
         return cryptKey.get();
+    }
+
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends VlmDfnLayerData> T setLayerData(AccessContext accCtx, T vlmDfnLayerData)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        Class<? extends VlmDfnLayerData> clazz = vlmDfnLayerData.getClass();
+        T ret = (T) layerDataMap.get(clazz);
+        layerDataMap.put(clazz, vlmDfnLayerData);
+        return ret;
+    }
+
+    @Override
+    public <T extends VlmDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> clazz) throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        VlmDfnLayerData obj = layerDataMap.get(clazz);
+        clazz.cast(obj);
+        return (T) obj;
     }
 
     @Override
@@ -341,6 +373,12 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         }
     }
 
+    @Override
+    public boolean isDeleted()
+    {
+        return deleted.get();
+    }
+
     private void checkDeleted()
     {
         if (deleted.get())
@@ -362,12 +400,10 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         );
     }
 
-
-
     @Override
     public String toString()
     {
-        return "Rsc: '" + resourceDfn.getName() + "', " +
-               "VlmNr: '" + volumeNr + "'";
+        return resourceDfn.toString() +
+               ", VlmNr: '" + volumeNr + "'";
     }
 }

@@ -28,6 +28,7 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.StorPoolDefinition;
@@ -74,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -171,7 +173,14 @@ class StltRscApiCallHandler
                 "' and the corresponding resource removed by Controller.");
 
             deviceManager.rscUpdateApplied(
-                Collections.singleton(new Resource.Key(rscName, controllerPeerConnector.getLocalNodeName())));
+                Collections.singleton(
+                    new Resource.Key(
+                        controllerPeerConnector.getLocalNodeName(),
+                        rscName,
+                        ResourceType.DEFAULT
+                    )
+                )
+            );
         }
         catch (Exception | ImplementationError exc)
         {
@@ -639,7 +648,7 @@ class StltRscApiCallHandler
 
                         if (tmpVlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.ENCRYPTED))
                         {
-                            String key = tmpVlmDfn.getKey(apiCtx);
+                            String key = tmpVlmDfn.getCryptKey(apiCtx);
                             if (key == null)
                             {
                                 String encryptedKey = tmpVlmDfn.getProps(apiCtx)
@@ -648,7 +657,7 @@ class StltRscApiCallHandler
                                 SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
                                 String decrpytedKey = new String(cipher.decrypt(Base64.decode(encryptedKey)));
 
-                                tmpVlmDfn.setKey(apiCtx, decrpytedKey);
+                                tmpVlmDfn.setCryptKey(apiCtx, decrpytedKey);
                             }
                         }
                     }
@@ -765,7 +774,6 @@ class StltRscApiCallHandler
         {
             checkUuid(vlm, vlmApi);
         }
-
         StorPool storPool = getStorPool(vlm.getResource(), vlmApi, remoteRsc);
         vlm.setStorPool(apiCtx, storPool);
 
@@ -907,7 +915,7 @@ class StltRscApiCallHandler
             vlm.getUuid(),
             vlmRaw.getVlmUuid(),
             "Volume",
-            vlm.toString(),
+            vlm.getKey().toString(),
             String.format(
                 "Rsc: '%s', VlmNr: '%d'",
                 vlm.getResource().getDefinition().getName().displayValue,

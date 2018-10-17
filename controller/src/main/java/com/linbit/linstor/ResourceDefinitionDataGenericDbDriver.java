@@ -216,7 +216,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         ObjectProtection objProt = getObjectProtection(resourceName);
 
         Map<VolumeNumber, VolumeDefinition> vlmDfnMap = new TreeMap<>();
-        Map<NodeName, Resource> rscMap = new TreeMap<>();
+        Map<Pair<NodeName, ResourceType>, Resource> rscMap = new TreeMap<>();
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
 
         resDfn = new ResourceDefinitionData(
@@ -234,7 +234,8 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             transMgrProvider,
             vlmDfnMap,
             rscMap,
-            snapshotDfnMap
+            snapshotDfnMap,
+            null // TODO: restore layer data
         );
 
         retPair.objA = resDfn;
@@ -437,12 +438,12 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     private class RscDfnInitMaps implements ResourceDefinition.InitMaps
     {
         private final Map<VolumeNumber, VolumeDefinition> vlmDfnMap;
-        private final Map<NodeName, Resource> rscMap;
+        private final Map<Pair<NodeName, ResourceType>, Resource> rscMap;
         private final Map<SnapshotName, SnapshotDefinition> snapshotDfnMap;
 
         RscDfnInitMaps(
             Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
-            Map<NodeName, Resource> rscMapRef,
+            Map<Pair<NodeName, ResourceType>, Resource> rscMapRef,
             Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef
         )
         {
@@ -452,7 +453,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         }
 
         @Override
-        public Map<NodeName, Resource> getRscMap()
+        public Map<Pair<NodeName, ResourceType>, Resource> getRscMap()
         {
             return rscMap;
         }

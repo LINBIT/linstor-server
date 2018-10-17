@@ -7,7 +7,12 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage2.layer.data.categories.RscLayerData;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.utils.RemoveAfterDevMgrRework;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -40,6 +45,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     Node getAssignedNode();
 
+    @RemoveAfterDevMgrRework
     NodeId getNodeId();
 
     Stream<ResourceConnection> streamResourceConnections(AccessContext accCtx)
@@ -62,6 +68,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     /**
      * Whether peers should treat this resource as diskless.
      */
+    @RemoveAfterDevMgrRework
     boolean disklessForPeers(AccessContext accCtx)
         throws AccessDeniedException;
 
@@ -73,16 +80,53 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     boolean isDeleted();
 
+    @RemoveAfterDevMgrRework
     boolean supportsDrbd(AccessContext accCtx)
         throws AccessDeniedException;
 
     RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException;
 
+    @RemoveAfterDevMgrRework
     boolean isCreatePrimary();
 
     boolean isDiskless(AccessContext accCtx)
         throws AccessDeniedException;
+
+    ResourceType getType();
+
+    RscLayerData setLayerData(AccessContext accCtx, RscLayerData rscLayerData)
+        throws AccessDeniedException, SQLException;
+
+    RscLayerData getLayerData(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    @Nullable Resource getParentResource(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    void addChild(AccessContext accCtx, Resource child)
+        throws AccessDeniedException, SQLException;
+
+    void removeChild(AccessContext accCtx, Resource child)
+        throws AccessDeniedException, SQLException;
+
+    /**
+     * @return A list that is not allowed to be null, but empty
+     */
+    @Nonnull List<Resource> getChildResources(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    default void setParentResource(AccessContext accCtx, Resource parent)
+        throws AccessDeniedException, SQLException
+    {
+        setParentResource(accCtx, parent, false);
+    }
+
+    void setParentResource(AccessContext accCtx, Resource parent, boolean overrideOldParent)
+        throws AccessDeniedException, SQLException;
+
+    void removeParent(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
 
     /**
      * Returns the identification key without checking if "this" is already deleted
@@ -103,7 +147,8 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     static String getStringId(Resource rsc)
     {
         return rsc.getAssignedNode().getName().value + "/" +
-               rsc.getDefinition().getName().value;
+               rsc.getDefinition().getName().value + "/" +
+               rsc.getType().name();
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -172,19 +217,25 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
      */
     class Key implements Comparable<Key>
     {
-        private final ResourceName resourceName;
-
         private final NodeName nodeName;
+        private final ResourceName resourceName;
+        private final ResourceType resourceType;
 
         public Key(Resource resource)
         {
-            this(resource.getDefinition().getName(), resource.getAssignedNode().getName());
+            this(resource.getAssignedNode().getName(), resource.getDefinition().getName(), resource.getType());
         }
 
-        public Key(ResourceName resourceNameRef, NodeName nodeNameRef)
+        public Key(NodeName nodeNameRef, ResourceName resourceNameRef, ResourceType resourceTypeRef)
         {
             resourceName = resourceNameRef;
             nodeName = nodeNameRef;
+            resourceType = resourceTypeRef;
+        }
+
+        public NodeName getNodeName()
+        {
+            return nodeName;
         }
 
         public ResourceName getResourceName()
@@ -192,9 +243,9 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
             return resourceName;
         }
 
-        public NodeName getNodeName()
+        public ResourceType getResourceType()
         {
-            return nodeName;
+            return resourceType;
         }
 
         @Override
@@ -211,26 +262,36 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
                 return false;
             }
             Key that = (Key) o;
-            return Objects.equals(resourceName, that.resourceName) &&
-                Objects.equals(nodeName, that.nodeName);
+            return Objects.equals(nodeName, that.nodeName) &&
+                Objects.equals(resourceName, that.resourceName) &&
+                Objects.equals(resourceType, that.resourceType);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(resourceName, nodeName);
+            return Objects.hash(nodeName, resourceName, resourceType);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public int compareTo(Key other)
         {
-            int eq = resourceName.compareTo(other.resourceName);
+            int eq = nodeName.compareTo(other.nodeName);
             if (eq == 0)
             {
-                eq = nodeName.compareTo(other.nodeName);
+                eq = resourceName.compareTo(other.resourceName);
+                if (eq == 0)
+                {
+                    eq = resourceType.compareTo(other.resourceType);
+                }
             }
             return eq;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Resource.Key [Node: " + nodeName + ", Resource: " + resourceName + ", Type: " + resourceType + "]";
         }
     }
 

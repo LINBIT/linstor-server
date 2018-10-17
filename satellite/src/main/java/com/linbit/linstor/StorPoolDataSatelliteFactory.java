@@ -57,8 +57,7 @@ public class StorPoolDataSatelliteFactory
                 FreeSpaceTracker fsm;
                 if (freeSpaceTrackerRef == null)
                 {
-                    fsm = freeSpaceMgrFactory.getInstance(
-                    );
+                    fsm = freeSpaceMgrFactory.getInstance();
                 }
                 else
                 {

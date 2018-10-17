@@ -279,6 +279,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     {
         if (grossSize < DRBD_MIN_GROSS_kiB)
         {
+System.out.println("grossSize [" + grossSize + "] < [" + DRBD_MIN_GROSS_kiB + "]");
             throw new MinSizeException();
         }
     }

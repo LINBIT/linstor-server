@@ -154,7 +154,7 @@ public class VlmApiData implements VlmApi
         }
         builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
         builder.addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()));
-        vlmApi.getAllocated().ifPresent(builder::setAllocated);
+        vlmApi.getAllocated().ifPresent(builder::setAllocatedSize);
 
         return builder.build();
     }

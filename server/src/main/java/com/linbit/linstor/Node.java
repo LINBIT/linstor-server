@@ -17,6 +17,8 @@ import com.linbit.linstor.storage.SwordfishTargetDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.utils.Pair;
+import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -50,7 +52,13 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     Stream<NetInterface> streamNetInterfaces(AccessContext accCtx)
         throws AccessDeniedException;
 
-    Resource getResource(AccessContext accCtx, ResourceName resName)
+    @RemoveAfterDevMgrRework
+    default Resource getResource(AccessContext accCtx, ResourceName name) throws AccessDeniedException
+    {
+        return getResource(accCtx, name, ResourceType.DEFAULT);
+    }
+
+    Resource getResource(AccessContext accCtx, ResourceName resName, ResourceType type)
         throws AccessDeniedException;
 
     void addResource(AccessContext accCtx, Resource resRef)
@@ -302,7 +310,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
 
     interface InitMaps
     {
-        Map<ResourceName, Resource> getRscMap();
+        Map<Pair<ResourceName, ResourceType>, Resource> getRscMap();
         Map<SnapshotDefinition.Key, Snapshot> getSnapshotMap();
         Map<NetInterfaceName, NetInterface> getNetIfMap();
         Map<StorPoolName, StorPool> getStorPoolMap();

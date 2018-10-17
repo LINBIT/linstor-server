@@ -9,7 +9,9 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage2.layer.data.categories.RscDfnLayerData;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.utils.Pair;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -62,11 +64,17 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
         throws AccessDeniedException;
 
     void copyResourceMap(
-        AccessContext accCtx, Map<? super NodeName, ? super Resource> dstMap
+        AccessContext accCtx, Map<Pair<NodeName, ResourceType>, ? super Resource> dstMap
     )
         throws AccessDeniedException;
 
-    Resource getResource(AccessContext accCtx, NodeName clNodeName)
+    default Resource getResource(AccessContext accCtx, NodeName clNodeName)
+        throws AccessDeniedException
+    {
+        return getResource(accCtx, clNodeName, ResourceType.DEFAULT);
+    }
+
+    Resource getResource(AccessContext accCtx, NodeName clNodeName, ResourceType type)
         throws AccessDeniedException;
 
     void addResource(AccessContext accCtx, Resource resRef)
@@ -124,7 +132,14 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
     Optional<Resource> anyResourceInUse(AccessContext accCtx)
         throws AccessDeniedException;
 
-    RscDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    RscDfnApi getApiData(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    <T extends RscDfnLayerData> T setLayerData(AccessContext accCtx, T layerData)
+        throws AccessDeniedException, SQLException;
+
+    <T extends RscDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> clazz)
+        throws AccessDeniedException;
 
     @Override
     default int compareTo(ResourceDefinition otherRscDfn)
@@ -230,7 +245,7 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
 
     public interface InitMaps
     {
-        Map<NodeName, Resource> getRscMap();
+        Map<Pair<NodeName, ResourceType>, Resource> getRscMap();
         Map<VolumeNumber, VolumeDefinition> getVlmDfnMap();
         Map<SnapshotName, SnapshotDefinition> getSnapshotDfnMap();
     }

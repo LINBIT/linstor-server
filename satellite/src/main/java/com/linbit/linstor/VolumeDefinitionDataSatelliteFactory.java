@@ -8,6 +8,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.utils.ComparatorUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -68,7 +69,8 @@ public class VolumeDefinitionDataSatelliteFactory
                     propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
-                    new TreeMap<>()
+                    new TreeMap<>(),
+                    new TreeMap<>(ComparatorUtils::compareClassesByFQN)
                 );
                 ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
             }

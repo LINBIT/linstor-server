@@ -7,6 +7,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage2.layer.data.categories.VlmDfnLayerData;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
@@ -58,11 +59,19 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    boolean isDeleted();
+
     VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
-    void setKey(AccessContext accCtx, String key) throws AccessDeniedException, SQLException;
+    void setCryptKey(AccessContext accCtx, String key) throws AccessDeniedException, SQLException;
 
-    String getKey(AccessContext accCtx) throws AccessDeniedException;
+    String getCryptKey(AccessContext accCtx) throws AccessDeniedException;
+
+    <T extends VlmDfnLayerData> T setLayerData(AccessContext accCtx, T layerData)
+        throws AccessDeniedException;
+
+    <T extends VlmDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> clazz)
+        throws AccessDeniedException;
 
     @Override
     default int compareTo(VolumeDefinition otherVlmDfn)

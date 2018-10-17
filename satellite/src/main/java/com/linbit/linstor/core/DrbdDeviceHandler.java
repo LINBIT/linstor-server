@@ -3,13 +3,11 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.drbd.DrbdAdm;
-import com.linbit.drbd.MdSuperblockBuffer;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -52,6 +50,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.AbsSwordfishDriver;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
+import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -591,7 +591,7 @@ class DrbdDeviceHandler implements DeviceHandler
             // Skip the local resource
             if (!peerRsc.getAssignedNode().getName().equals(localNodeName))
             {
-                DrbdConnection drbdConn = drbdRsc.getConnection(localNodeName.displayValue);
+                DrbdConnection drbdConn = drbdRsc.getConnection(peerRsc.getAssignedNode().getName().displayValue);
                 if (drbdConn != null)
                 {
                     DrbdConnection.State connState = drbdConn.getState();
@@ -878,7 +878,7 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         try
         {
-            storDrv.startVolume(computeVlmName(wrkCtx, vlmDfn), vlmDfn.getKey(wrkCtx), vlmDfn.getProps(wrkCtx));
+            storDrv.startVolume(computeVlmName(wrkCtx, vlmDfn), vlmDfn.getCryptKey(wrkCtx), vlmDfn.getProps(wrkCtx));
         }
         catch (StorageException exc)
         {
@@ -902,7 +902,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 restoreVlmName,
                 restoreSnapshotName,
                 computeVlmName(wrkCtx, vlmDfn),
-                vlmDfn.getKey(wrkCtx),
+                vlmDfn.getCryptKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)
             );
         }
@@ -939,7 +939,7 @@ class DrbdDeviceHandler implements DeviceHandler
             vlmState.getDriver().createVolume(
                 computeVlmName(rscDfn, vlmState.getVlmNr()),
                 vlmState.getGrossSize(),
-                vlmDfn.getKey(wrkCtx),
+                vlmDfn.getCryptKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)
             );
         }
@@ -977,7 +977,7 @@ class DrbdDeviceHandler implements DeviceHandler
             vlmState.getDriver().resizeVolume(
                 computeVlmName(rscDfn, vlmState.getVlmNr()),
                 vlmState.getGrossSize(),
-                vlmDfn.getKey(wrkCtx),
+                vlmDfn.getCryptKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)
             );
         }
@@ -1276,7 +1276,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         if (vlmState.hasDisk())
                         {
                             // store the real size of the volume (after applied extent size, etc)
-                            vlm.setNettoSize(
+                            vlm.setUsableSize(
                                 wrkCtx,
                                 vlmState.getDriver().getSize(vlmName, vlmDfnProps)
                             );
@@ -1384,10 +1384,10 @@ class DrbdDeviceHandler implements DeviceHandler
         }
 
         Path actualResFile = Paths.get(
-            SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX
+            CoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_SUFFIX
         );
         Path tmpResFileOut = Paths.get(
-            SatelliteCoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_TMP_SUFFIX
+            CoreModule.CONFIG_PATH + "/" + rscName.displayValue + DRBD_CONFIG_TMP_SUFFIX
         );
 
         try (
@@ -2084,7 +2084,7 @@ class DrbdDeviceHandler implements DeviceHandler
             vlmState.getDriver().rollbackVolume(
                 computeVlmName(wrkCtx, vlmDfn),
                 snapshotName.displayValue,
-                vlmDfn.getKey(wrkCtx),
+                vlmDfn.getCryptKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)
             );
         }
@@ -2241,7 +2241,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             FileSystem dfltFs = FileSystems.getDefault();
             Path cfgFilePath = dfltFs.getPath(
-                SatelliteCoreModule.CONFIG_PATH,
+                CoreModule.CONFIG_PATH,
                 rscName.displayValue + DRBD_CONFIG_SUFFIX
             );
             Files.delete(cfgFilePath);

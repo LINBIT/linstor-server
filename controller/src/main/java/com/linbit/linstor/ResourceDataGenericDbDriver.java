@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -211,12 +212,15 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             node,
             nodeId,
             resultSet.getLong(RES_FLAGS),
+            ResourceType.DEFAULT, // TODO: restore actual resourceType
+            Collections.emptyList(), // TODO: restore actual child resources
             this,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             rscConnMap,
-            vlmMap
+            vlmMap,
+            null // TODO: restore actual layer data
         );
         return new Pair<ResourceData, InitMaps>(rscData, initMaps);
     }

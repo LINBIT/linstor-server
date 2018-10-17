@@ -1,6 +1,6 @@
 package com.linbit.utils;
 
-import com.google.common.base.Objects;
+import java.util.Objects;
 
 public class Pair<A, B> implements Comparable<Pair<A, B>>
 {
@@ -34,7 +34,7 @@ public class Pair<A, B> implements Comparable<Pair<A, B>>
         if (!eq && obj != null && getClass() == obj.getClass())
         {
             Pair<?, ?> other = (Pair<?, ?>) obj;
-            eq = Objects.equal(objA, other.objA) && Objects.equal(objB, other.objB);
+            eq = Objects.equals(objA, other.objA) && Objects.equals(objB, other.objB);
         }
         return eq;
     }
@@ -53,5 +53,11 @@ public class Pair<A, B> implements Comparable<Pair<A, B>>
             eq = ((Comparable<B>) objB).compareTo(otherPair.objB);
         }
         return eq;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Pair (" + java.util.Objects.toString(objA) + ", " + java.util.Objects.toString(objB) + ")";
     }
 }

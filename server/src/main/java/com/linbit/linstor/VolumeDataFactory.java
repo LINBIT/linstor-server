@@ -115,6 +115,9 @@ public class VolumeDataFactory
                 ((ResourceData) rsc).putVolume(accCtx, vlmData);
                 storPoolRef.putVolume(accCtx, vlmData);
                 ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, vlmData);
+
+                vlmData.setAllocatedSize(accCtx, vlmDfn.getVolumeSize(accCtx));
+                // usable size depends on deviceLayer
             }
         }
         catch (Exception exc)

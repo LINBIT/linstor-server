@@ -1,7 +1,7 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.CollectionDatabaseDriver;
 import com.linbit.MapDatabaseDriver;
-import com.linbit.SetDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
@@ -56,10 +56,19 @@ public class TransactionObjectFactory
     public <PARENT, VALUE extends TransactionObject> TransactionSet<PARENT, VALUE> createTransactionSet(
         PARENT parent,
         Set<VALUE> backingSet,
-        SetDatabaseDriver<PARENT, VALUE> dbDriver
+        CollectionDatabaseDriver<PARENT, VALUE> dbDriver
     )
     {
         return new TransactionSet<PARENT, VALUE>(parent, backingSet, dbDriver, transMgrProvider);
+    }
+
+    public <PARENT, VALUE extends TransactionObject> TransactionList<PARENT, VALUE> createTransactionList(
+        PARENT parent,
+        List<VALUE> backingList,
+        CollectionDatabaseDriver<PARENT, VALUE> dbDriver
+    )
+    {
+        return new TransactionList<PARENT, VALUE>(parent, backingList, dbDriver, transMgrProvider);
     }
 
     public <PARENT, FLAG extends Enum<FLAG> & Flags> StateFlags<FLAG> createStateFlagsImpl(

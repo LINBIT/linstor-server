@@ -33,6 +33,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -166,7 +167,8 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                 propsContainerFactory,
                 transObjFactory,
                 transMgrProvider,
-                vlmMap
+                vlmMap,
+                Collections.emptyMap() // TODO: restore the actual layer data
             );
             retPair = new Pair<>(vlmDfn, new VolumeDefinitionInitMaps(vlmMap));
 

@@ -11,6 +11,8 @@ import com.linbit.linstor.api.ApiConsts;
  */
 public class StorageConstants
 {
+    public static final String NAMESPACE_STOR_DRIVER = ApiConsts.NAMESPC_STORAGE_DRIVER;
+
     /*
      * LVM
      */

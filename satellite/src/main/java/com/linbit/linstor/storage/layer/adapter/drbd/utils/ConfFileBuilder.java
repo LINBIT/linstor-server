@@ -1,4 +1,4 @@
-package com.linbit.linstor;
+package com.linbit.linstor.storage.layer.adapter.drbd.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +13,19 @@ import java.util.TreeSet;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnection;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -37,7 +50,6 @@ public class ConfFileBuilder
 
     private StringBuilder stringBuilder;
     private int indentDepth;
-
 
     public ConfFileBuilder(
         final ErrorReporter errorReporterRef,
@@ -595,7 +607,7 @@ public class ConfFileBuilder
                                 "recently occured error. Please check the error logs and try to solve the other " +
                                 "other errors first",
                             null,
-                            null
+                            vlm.toString()
                         );
                     }
                     disk = backingDiskPath;

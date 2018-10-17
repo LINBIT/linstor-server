@@ -239,7 +239,10 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     {
         running = false;
         demonHandler.stop(true);
-        thread.interrupt();
+        if (thread != null)
+        {
+            thread.interrupt();
+        }
         eventDeque.addFirst(new PoisonEvent());
         started = false;
     }
@@ -247,7 +250,10 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     @Override
     public void awaitShutdown(long timeout) throws InterruptedException
     {
-        thread.join(timeout);
+        if (thread != null)
+        {
+            thread.join(timeout);
+        }
     }
 
     @Override

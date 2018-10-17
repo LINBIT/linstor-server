@@ -10,6 +10,11 @@ public class ComparatorUtils
         return (t1, t2) -> comparator.compare(mapper.apply(t1), mapper.apply(t2));
     }
 
+    public static int compareClassesByFQN(Class<?> cls1, Class<?> cls2)
+    {
+        return cls1.getCanonicalName().compareTo(cls2.getCanonicalName());
+    }
+
     private ComparatorUtils()
     {
     }

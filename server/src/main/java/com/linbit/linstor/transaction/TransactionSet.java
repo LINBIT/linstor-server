@@ -1,7 +1,7 @@
 package com.linbit.linstor.transaction;
 
-import com.linbit.NoOpSetDatabaseDriver;
-import com.linbit.SetDatabaseDriver;
+import com.linbit.CollectionDatabaseDriver;
+import com.linbit.NoOpCollectionDatabaseDriver;
 
 import javax.inject.Provider;
 
@@ -16,30 +16,22 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     extends AbsTransactionObject implements Set<VALUE>
 {
     private final PARENT parent;
-    private final SetDatabaseDriver<PARENT, VALUE> dbDriver;
+    private final CollectionDatabaseDriver<PARENT, VALUE> dbDriver;
     private final Set<VALUE> backingSet;
     private final Set<VALUE> oldValues;
 
     public TransactionSet(
         PARENT parentRef,
         Set<VALUE> backingSetRef,
-        SetDatabaseDriver<PARENT, VALUE> driver,
+        CollectionDatabaseDriver<PARENT, VALUE> dbDriverRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(transMgrProviderRef);
         parent = parentRef;
-        backingSet = backingSetRef;
-        if (driver == null)
-        {
-            dbDriver = new NoOpSetDatabaseDriver<>();
-        }
-        else
-        {
-            dbDriver = driver;
-        }
-
+        backingSet = backingSetRef == null ? new HashSet<>() : backingSetRef;
         oldValues = new HashSet<>();
+        dbDriver = dbDriverRef == null ? new NoOpCollectionDatabaseDriver<>() : dbDriverRef;
     }
 
     @Override

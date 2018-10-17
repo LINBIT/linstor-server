@@ -46,6 +46,14 @@ public class PriorityProps
         }
     }
 
+    public void addFirstProps(Props prop)
+    {
+        if (prop != null)
+        {
+            propList.add(0, prop);
+        }
+    }
+
     public void addProps(Props prop)
     {
         if (prop != null)

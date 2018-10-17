@@ -1,5 +1,9 @@
 package com.linbit.linstor.stateflags;
 
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -10,7 +14,6 @@ import java.util.List;
  */
 public class FlagsHelper
 {
-
     public static <E extends Enum<E> & Flags> List<String> toStringList(
         Class<E> enumClass,
         long rscFlags
@@ -41,5 +44,25 @@ public class FlagsHelper
         }
 
         return value;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E extends Enum<E> & Flags> E[] toFlagsArray(
+        Class<E> enumClass,
+        StateFlags<E> flags,
+        AccessContext accCtx
+    )
+        throws AccessDeniedException
+    {
+        EnumSet<E> values = EnumSet.allOf(enumClass);
+        List<E> setFlags = new ArrayList<>();
+        for (E val : values)
+        {
+            if (flags.isSet(accCtx, val))
+            {
+                setFlags.add(val);
+            }
+        }
+        return setFlags.toArray((E[]) Array.newInstance(enumClass, setFlags.size()));
     }
 }

@@ -168,7 +168,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
 
         ObjectProtection objProt = getObjectProtection(nodeName);
 
-        final Map<ResourceName, Resource> rscMap = new TreeMap<>();
+        final Map<Pair<ResourceName, ResourceType>, Resource> rscMap = new TreeMap<>();
         final Map<SnapshotDefinition.Key, Snapshot> snapshotMap = new TreeMap<>();
         final Map<NetInterfaceName, NetInterface> netIfMap = new TreeMap<>();
         final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
@@ -346,14 +346,14 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
 
     private class NodeInitMaps implements Node.InitMaps
     {
-        private final Map<ResourceName, Resource> rscMap;
+        private final Map<Pair<ResourceName, ResourceType>, Resource> rscMap;
         private final Map<SnapshotDefinition.Key, Snapshot> snapshotMap;
         private final Map<NetInterfaceName, NetInterface> netIfMap;
         private final Map<StorPoolName, StorPool> storPoolMap;
         private final Map<NodeName, NodeConnection> nodeConnMap;
 
         NodeInitMaps(
-            Map<ResourceName, Resource> rscMapRef,
+            Map<Pair<ResourceName, ResourceType>, Resource> rscMapRef,
             Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
             Map<NetInterfaceName, NetInterface> netIfMapRef,
             Map<StorPoolName, StorPool> storPoolMapRef,
@@ -368,7 +368,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         }
 
         @Override
-        public Map<ResourceName, Resource> getRscMap()
+        public Map<Pair<ResourceName, ResourceType>, Resource> getRscMap()
         {
             return rscMap;
         }

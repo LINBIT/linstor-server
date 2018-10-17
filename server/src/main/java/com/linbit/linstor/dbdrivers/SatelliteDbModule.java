@@ -2,6 +2,11 @@ package com.linbit.linstor.dbdrivers;
 
 import com.google.inject.AbstractModule;
 import com.linbit.linstor.SatelliteDbDriver;
+import com.linbit.linstor.dbdrivers.interfaces.CryptSetupDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdRscDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdVlmDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -18,6 +23,11 @@ import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDri
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.satellite.SatelliteCryptSetupDriver;
+import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdRscDfnDriver;
+import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdRscDriver;
+import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdVlmDfnDriver;
+import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdVlmDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteNiDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteNodeConDfnDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteNodeDriver;
@@ -65,5 +75,11 @@ public class SatelliteDbModule extends AbstractModule
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SatelliteSnapshotVlmDfnDriver.class);
         bind(SnapshotDataDatabaseDriver.class).to(SatelliteSnapshotDriver.class);
         bind(SnapshotVolumeDataDatabaseDriver.class).to(SatelliteSnapshotVlmDriver.class);
+
+        bind(CryptSetupDatabaseDriver.class).to(SatelliteCryptSetupDriver.class);
+        bind(DrbdRscDatabaseDriver.class).to(SatelliteDrbdRscDriver.class);
+        bind(DrbdRscDfnDatabaseDriver.class).to(SatelliteDrbdRscDfnDriver.class);
+        bind(DrbdVlmDatabaseDriver.class).to(SatelliteDrbdVlmDriver.class);
+        bind(DrbdVlmDfnDatabaseDriver.class).to(SatelliteDrbdVlmDfnDriver.class);
     }
 }

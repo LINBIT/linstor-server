@@ -13,6 +13,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage2.layer.data.categories.VlmDfnLayerData;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
@@ -20,6 +21,8 @@ import javax.inject.Named;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -61,6 +64,22 @@ public class VolumeDefinitionDataControllerFactory
         throws SQLException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
+        return create(accCtx, rscDfn, vlmNr, minor, vlmSize, initFlags, Collections.emptyMap());
+    }
+
+    public VolumeDefinitionData create(
+        AccessContext accCtx,
+        ResourceDefinition rscDfn,
+        VolumeNumber vlmNr,
+        Integer minor,
+        Long vlmSize,
+        VolumeDefinition.VlmDfnFlags[] initFlags,
+        Map<Class<? extends VlmDfnLayerData>, VlmDfnLayerData> layerData
+    )
+        throws SQLException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
+        ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
+    {
+
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         VolumeDefinitionData vlmDfnData = (VolumeDefinitionData) rscDfn.getVolumeDfn(accCtx, vlmNr);
@@ -93,7 +112,8 @@ public class VolumeDefinitionDataControllerFactory
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            layerData
         );
 
         driver.create(vlmDfnData);

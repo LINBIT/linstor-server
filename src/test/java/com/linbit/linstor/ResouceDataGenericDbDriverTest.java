@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -85,12 +86,15 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
+            ResourceType.DEFAULT,
+            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
         driver.create(res);
         commit();
@@ -151,12 +155,15 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
+            ResourceType.DEFAULT,
+            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
         driver.create(res);
         node.addResource(SYS_CTX, res);
@@ -184,12 +191,15 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
+            ResourceType.DEFAULT,
+            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
         driver.create(res);
 
@@ -239,12 +249,15 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
+            ResourceType.DEFAULT,
+            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
         driver.create(res);
         commit();
@@ -270,12 +283,15 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
+            ResourceType.DEFAULT,
+            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
         driver.create(res);
         commit();
@@ -311,12 +327,15 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
+            ResourceType.DEFAULT,
+            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
         driver.ensureResExists(SYS_CTX, res);
         commit();
@@ -348,12 +367,15 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
+            ResourceType.DEFAULT,
+            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
         driver.create(res);
         node.addResource(SYS_CTX, res);

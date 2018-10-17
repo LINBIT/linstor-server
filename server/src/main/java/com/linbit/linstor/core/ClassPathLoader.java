@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -25,6 +24,14 @@ public class ClassPathLoader
      * Load implementations of the given class which have the required annotation.
      *
      * The packages to search are determined by appending each of the given suffixes onto the base package name.
+     *
+     * @param basePackage The base package which will be expanded with the elements of packageSuffixes.
+     *  E.g. "org.example"
+     * @param packageSuffixes The suffixes that get concatenated with the base package.
+     *  E.g ["foo", "bar"] -> ["org.example.foo", "org.example.bar"]
+     * @param requiredClass The base class every top-level class of the package(s) have to extend
+     *  (directly or indirectly)
+     * @param requiredAnnotation The annotation every top-level class has to have
      */
     public <T> List<Class<? extends T>> loadClasses(
         String basePackage,
@@ -33,19 +40,43 @@ public class ClassPathLoader
         Class<? extends Annotation> requiredAnnotation
     )
     {
+        List<Class<? extends T>> classes = packageSuffixes.stream()
+            .map(packageSuffix -> basePackage + "." + packageSuffix)
+            .map(fullQualPkgName -> loadClasses(fullQualPkgName, requiredClass))
+            .flatMap(List::stream)
+            .filter(clazz -> clazz.getAnnotation(requiredAnnotation) != null)
+            .collect(Collectors.toList());
+
+        if (classes.isEmpty())
+        {
+            errorReporter.logWarning(
+                "No api classes were found in classpath."
+            );
+        }
+
+        return classes;
+    }
+
+    /**
+     * Loads all classes from a single package
+     *
+     * @param pkgName The package all top level classes should be loaded from
+     * @param requiredClass The base class all classes have to extend (directly or indirectly)
+     */
+    public <T> List<Class<? extends T>> loadClasses(
+        String pkgName,
+        Class<T> requiredClass
+    )
+    {
         List<Class<? extends T>> classes = Collections.emptyList();
         try
         {
-            ClassPath classPath = ClassPath.from(ClassPathLoader.class.getClassLoader());
-
-            classes = packageSuffixes.stream()
-                .map(packageSuffix -> basePackage + "." + packageSuffix)
-                .map(classPath::getTopLevelClasses)
-                .flatMap(ImmutableSet::stream)
+            classes = ClassPath.from(ClassPathLoader.class.getClassLoader())
+                .getTopLevelClasses(pkgName)
+                .stream()
                 .map(ClassPath.ClassInfo::load)
                 .map(clazz -> ClassPathLoader.<T>asClass(requiredClass, clazz))
                 .filter(Objects::nonNull)
-                .filter(clazz -> clazz.getAnnotation(requiredAnnotation) != null)
                 .collect(Collectors.toList());
         }
         catch (IOException ioExc)
@@ -61,14 +92,6 @@ public class ClassPathLoader
                 )
             );
         }
-
-        if (classes.isEmpty())
-        {
-            errorReporter.logWarning(
-                "No api classes were found in classpath."
-            );
-        }
-
         return classes;
     }
 

@@ -169,7 +169,7 @@ public class StltVlmDfnApiCallHandler
             SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
             byte[] decryptedVlmKey = cipher.decrypt(encryptedVlmKey);
 
-            vlmDfn.setKey(apiCtx, new String(decryptedVlmKey));
+            vlmDfn.setCryptKey(apiCtx, new String(decryptedVlmKey));
 
             success = true;
         }

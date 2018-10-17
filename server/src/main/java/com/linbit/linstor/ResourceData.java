@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -12,12 +13,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage2.layer.data.categories.RscLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,6 +71,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
     // Properties container for this resource
     private final Props resourceProps;
 
+    private final ResourceType rscType;
+
     private final ResourceDataDatabaseDriver dbDriver;
 
     private final TransactionSimpleObject<ResourceData, Boolean> deleted;
@@ -77,6 +81,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     private final Key rscKey;
 
+    private final TransactionList<ResourceData, Resource> children;
+
+    private final TransactionSimpleObject<ResourceData, RscLayerData> layerData;
+
+    private final TransactionSimpleObject<ResourceData, Resource> parent;
+
     ResourceData(
         UUID objIdRef,
         ObjectProtection objProtRef,
@@ -84,12 +94,15 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Node nodeRef,
         NodeId nodeIdRef,
         long initFlags,
+        ResourceType rscTypeRef,
+        List<Resource> childrenRef,
         ResourceDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<Resource.Key, ResourceConnection> rscConnMapRef,
-        Map<VolumeNumber, Volume> vlmMapRef
+        Map<VolumeNumber, Volume> vlmMapRef,
+        RscLayerData layerDataRef
     )
         throws SQLException
     {
@@ -102,6 +115,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         resourceDfn = resDfnRef;
         assgNode = nodeRef;
         objId = objIdRef;
+        rscType = rscTypeRef;
         dbgInstanceId = UUID.randomUUID();
 
         resourceConnections = transObjFactory.createTransactionMap(rscConnMapRef, null);
@@ -125,6 +139,19 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         rscKey = new Key(this);
 
+        children = transObjFactory.createTransactionList(
+            this,
+            childrenRef,
+            null // TODO: create actual database driver
+        );
+        parent = transObjFactory.createTransactionSimpleObject(
+            this,
+            null,
+            null // TODO: create actual database driver
+        );
+        layerData = transObjFactory.createTransactionSimpleObject(this, layerDataRef, null);
+        // TODO: create actual database driver
+
         transObjs = Arrays.asList(
             resourceDfn,
             assgNode,
@@ -133,6 +160,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
             resourceConnections,
             volumeMap,
             resourceProps,
+            children,
+            layerData,
             deleted
         );
     }
@@ -305,6 +334,94 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
+    public ResourceType getType()
+    {
+        return rscType;
+    }
+
+    @Override
+    public RscLayerData setLayerData(AccessContext accCtx, RscLayerData rscLayerData)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        RscLayerData ret = layerData.get();
+        layerData.set(rscLayerData);
+        return ret;
+    }
+
+    @Override
+    public RscLayerData getLayerData(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        return layerData.get();
+    }
+
+    @Override
+    public List<Resource> getChildResources(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        return children;
+    }
+
+    @Override
+    public Resource getParentResource(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return parent.get();
+    }
+
+    @Override
+    public void setParentResource(AccessContext accCtx, Resource parentRef, boolean overrideOldParent)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        Resource parentRsc = parent.get();
+        if (parentRsc == null || overrideOldParent)
+        {
+            if (parentRsc != null)
+            {
+                parentRsc.removeChild(accCtx, this);
+            }
+            parent.set(parentRef);
+            parentRef.addChild(accCtx, this);
+        }
+        else
+        {
+            throw new ImplementationError("Unintentional override of parent-resource");
+        }
+    }
+
+    @Override
+    public void removeParent(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        parent.get().removeChild(accCtx, this);
+        parent.set(null);
+    }
+
+    @Override
+    public void addChild(AccessContext accCtx, Resource child) throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        children.add(child);
+    }
+
+    @Override
+    public void removeChild(AccessContext accCtx, Resource child) throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        children.remove(child);
+    }
+
+    @Override
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         getStateFlags().enableFlags(accCtx, RscFlags.DELETE);
@@ -432,6 +549,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     @Override
     public Key getKey()
     {
+        // no call to checkDeleted
         return rscKey;
     }
 
@@ -439,7 +557,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
     public String toString()
     {
         return "Node: '" + assgNode.getName() + "', " +
-               "Rsc: '" + resourceDfn.getName() + "'";
+               "Rsc: '" + resourceDfn.getName() + "', " +
+               "Type: '" + rscType.name() + "'";
     }
 
     @Override

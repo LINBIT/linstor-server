@@ -25,7 +25,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
@@ -102,7 +101,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             transMgrProvider,
             new TreeMap<>(),
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
     }
 

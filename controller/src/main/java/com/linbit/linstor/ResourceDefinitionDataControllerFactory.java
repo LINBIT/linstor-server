@@ -3,6 +3,8 @@ package com.linbit.linstor;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -12,6 +14,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage2.layer.data.categories.RscDfnLayerData;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -20,6 +23,8 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -65,6 +70,29 @@ public class ResourceDefinitionDataControllerFactory
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
+        return createTyped(
+            accCtx,
+            rscName,
+            port,
+            flags,
+            secret,
+            transType,
+            Collections.emptyMap()
+        );
+    }
+
+    private ResourceDefinitionData createTyped(
+        AccessContext accCtx,
+        ResourceName rscName,
+        Integer port,
+        RscDfnFlags[] flags,
+        String secret,
+        TransportType transType,
+        Map<Class<? extends RscDfnLayerData>, RscDfnLayerData> layerData
+    )
+        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
+        ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
+    {
         ResourceDefinitionData rscDfn = resourceDefinitionRepository.get(accCtx, rscName);
 
         if (rscDfn != null)
@@ -102,7 +130,8 @@ public class ResourceDefinitionDataControllerFactory
             transMgrProvider,
             new TreeMap<>(),
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            layerData
         );
         driver.create(rscDfn);
 

@@ -16,4 +16,6 @@ public interface StltUpdateTracker
     Flux<ApiCallRc> updateResource(UUID rscUuid, ResourceName resourceName, NodeName nodeName);
     Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, StorPoolName storPoolName);
     Flux<ApiCallRc> updateSnapshot(UUID snapshotUuid, ResourceName resourceName, SnapshotName snapshotName);
+
+    boolean isEmpty();
 }

@@ -1,4 +1,4 @@
-package com.linbit.drbd;
+package com.linbit.linstor.storage.layer.adapter.drbd.utils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -29,6 +29,16 @@ public class MdSuperblockBuffer
 
     // Values for generation identifier that indicate new metadata; that is, no initial sync has been performed
     private static final List<Long> INITIAL_GENERATION_OPTIONS = Arrays.asList(0x0L, 0x4L);
+
+    private static final byte[] ZEROES = new byte[SUPERBLK_SIZE];
+    private static final ByteBuffer ZEROES_BUFFER;
+
+    static
+    {
+        Arrays.fill(ZEROES, (byte) 0);
+        ZEROES_BUFFER = ByteBuffer.wrap(ZEROES);
+        ZEROES_BUFFER.limit(ZEROES_BUFFER.capacity());
+    }
 
     private byte[] data;
     private ByteBuffer buffer;
@@ -103,6 +113,39 @@ public class MdSuperblockBuffer
         mdAlStripeSize          = buffer.getInt();
 
         buffer.rewind();
+    }
+
+    public static void wipe(final String objPath) throws IOException
+    {
+        synchronized (ZEROES_BUFFER)
+        {
+            Path openPath = FileSystems.getDefault().getPath(objPath);
+            try (FileChannel inChan = FileChannel.open(openPath, StandardOpenOption.WRITE))
+            {
+                long fileSize = inChan.size();
+
+                // Align to a 4 kiB boundary
+                fileSize &= ALIGN_4K_MASK;
+
+                // Calculate the offset where to find the DRBD meta data superblock
+                if (fileSize < SUPERBLK_SIZE)
+                {
+                    throw new IOException(
+                        "Object '" + objPath + "' is too small to contain a DRBD meta data superblock"
+                    );
+                }
+                long offset = fileSize - SUPERBLK_SIZE;
+
+                // Read the DRBD meta data superblock
+                inChan.position(offset);
+
+                inChan.write(ZEROES_BUFFER);
+            }
+            finally
+            {
+                ZEROES_BUFFER.flip();
+            }
+        }
     }
 
     public boolean hasMetaData()

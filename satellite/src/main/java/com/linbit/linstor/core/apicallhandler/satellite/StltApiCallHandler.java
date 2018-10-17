@@ -26,7 +26,6 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -75,6 +74,7 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
@@ -527,7 +527,7 @@ public class StltApiCallHandler
 
     private void regenerateLinstorCommonConf()
     {
-        Path tmpResFileOut = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
+        Path tmpResFileOut = Paths.get(CoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
         NodeType localNodeType;
         try
         {
@@ -581,7 +581,7 @@ public class StltApiCallHandler
             {
                 Files.move(
                     tmpResFileOut,
-                    Paths.get(SatelliteCoreModule.CONFIG_PATH + "/linstor_common.conf"),
+                    Paths.get(CoreModule.CONFIG_PATH + "/linstor_common.conf"),
                     StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
                 );
             }

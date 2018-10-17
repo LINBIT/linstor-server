@@ -10,10 +10,12 @@ import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.utils.ComparatorUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.util.Comparator;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -77,7 +79,8 @@ public class ResourceDefinitionDataSatelliteFactory
                     transMgrProvider,
                     new TreeMap<>(),
                     new TreeMap<>(),
-                    new TreeMap<>()
+                    new TreeMap<>(),
+                    new TreeMap<>(ComparatorUtils::compareClassesByFQN)
                 );
             }
         }
@@ -88,6 +91,16 @@ public class ResourceDefinitionDataSatelliteFactory
                 exc
             );
         }
+        new Comparator<Class<?>>()
+        {
+
+            @Override
+            public int compare(Class<?> o1, Class<?> o2)
+            {
+                // TODO Auto-generated method stub
+                throw new ImplementationError("Not implemented yet");
+            }
+        };
         return rscDfn;
     }
 }

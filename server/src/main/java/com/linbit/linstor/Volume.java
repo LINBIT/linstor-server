@@ -6,6 +6,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
@@ -62,19 +63,27 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     void setDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
 
-    boolean isNettoSizeSet(AccessContext accCtx) throws AccessDeniedException;
+    boolean isUsableSizeSet(AccessContext accCtx) throws AccessDeniedException;
 
-    void setNettoSize(AccessContext accCtx, long size) throws AccessDeniedException;
+    void setUsableSize(AccessContext accCtx, long size) throws AccessDeniedException;
 
-    long getNettoSize(AccessContext accCtx) throws AccessDeniedException;
+    long getUsableSize(AccessContext accCtx) throws AccessDeniedException;
 
-    boolean isBruttoSizeSet(AccessContext accCtx) throws AccessDeniedException;
+    boolean isAllocatedSizeSet(AccessContext accCtx) throws AccessDeniedException;
 
-    void setBruttoSize(AccessContext accCtx, long size) throws AccessDeniedException;
+    void setAllocatedSize(AccessContext accCtx, long size) throws AccessDeniedException;
 
-    long getBruttoSize(AccessContext accCtx) throws AccessDeniedException;
+    long getAllocatedSize(AccessContext accCtx) throws AccessDeniedException;
 
     long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException;
+
+    VlmLayerData setLayerData(AccessContext storDriverAccCtx, VlmLayerData data)
+        throws AccessDeniedException, SQLException;
+
+    VlmLayerData getLayerData(AccessContext storDriverAccCtx)
+        throws AccessDeniedException, SQLException;
+
+    boolean isDeleted();
 
     void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
@@ -249,6 +258,13 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
                 }
             }
             return eq;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Volume.Key [nodeName=" + nodeName + ", resourceName=" + resourceName + ", volumeNumber=" +
+                volumeNumber + "]";
         }
     }
 

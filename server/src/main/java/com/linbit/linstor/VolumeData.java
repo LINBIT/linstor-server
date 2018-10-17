@@ -11,6 +11,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -64,15 +65,17 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionSimpleObject<VolumeData, String> devicePath;
 
-    private final TransactionSimpleObject<VolumeData, Long> nettoSize;
+    private final TransactionSimpleObject<VolumeData, Long> usableSize;
 
-    private final TransactionSimpleObject<VolumeData, Long> bruttoSize;
+    private final TransactionSimpleObject<VolumeData, Long> allocatedSize;
 
     private final VolumeDataDatabaseDriver dbDriver;
 
     private final TransactionSimpleObject<VolumeData, Boolean> deleted;
 
     private final Key vlmKey;
+
+    private final TransactionSimpleObject<VolumeData, VlmLayerData> layerData;
 
     VolumeData(
         UUID uuid,
@@ -124,9 +127,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 volDfnRef.getVolumeNumber()
             )
         );
-        nettoSize = transObjFactory.createTransactionSimpleObject(this, null, null);
-        bruttoSize = transObjFactory.createTransactionSimpleObject(this, null, null);
+        usableSize = transObjFactory.createTransactionSimpleObject(this, null, null);
+        allocatedSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+
+        layerData = transObjFactory.createTransactionSimpleObject(this, null, null); // TODO dbDriver
 
         vlmKey = new Key(this);
 
@@ -136,10 +141,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
             storPool,
             volumeConnections,
             volumeProps,
-            nettoSize,
+            usableSize,
             flags,
             backingDiskPath,
             metaDiskPath,
+            layerData,
             deleted
         );
     }
@@ -347,23 +353,23 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public boolean isNettoSizeSet(AccessContext accCtx) throws AccessDeniedException
+    public boolean isUsableSizeSet(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
-        return nettoSize.get() != null;
+        return usableSize.get() != null;
     }
 
     @Override
-    public void setNettoSize(AccessContext accCtx, long size) throws AccessDeniedException
+    public void setUsableSize(AccessContext accCtx, long size) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         try
         {
-            nettoSize.set(size);
+            usableSize.set(size);
         }
         catch (SQLException exc)
         {
@@ -372,30 +378,30 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public long getNettoSize(AccessContext accCtx) throws AccessDeniedException
+    public long getUsableSize(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
-        return nettoSize.get();
+        return usableSize.get();
     }
 
     @Override
-    public boolean isBruttoSizeSet(AccessContext accCtx) throws AccessDeniedException
+    public boolean isAllocatedSizeSet(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return bruttoSize.get() != null;
+        return allocatedSize.get() != null;
     }
 
     @Override
-    public void setBruttoSize(AccessContext accCtx, long size) throws AccessDeniedException
+    public void setAllocatedSize(AccessContext accCtx, long size) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.USE);
         try
         {
-            bruttoSize.set(size);
+            allocatedSize.set(size);
         }
         catch (SQLException exc)
         {
@@ -404,11 +410,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public long getBruttoSize(AccessContext accCtx) throws AccessDeniedException
+    public long getAllocatedSize(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return bruttoSize.get();
+        return allocatedSize.get();
     }
 
     @Override
@@ -418,6 +424,28 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
         return volumeDfn.getVolumeSize(accCtx);
+    }
+
+
+    @Override
+    public VlmLayerData setLayerData(AccessContext accCtx, VlmLayerData data)
+        throws AccessDeniedException, SQLException
+    {
+        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
+        return layerData.set(data);
+    }
+
+    @Override
+    public VlmLayerData getLayerData(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return layerData.get();
+    }
+
+    @Override
+    public boolean isDeleted()
+    {
+        return deleted.get();
     }
 
     @Override

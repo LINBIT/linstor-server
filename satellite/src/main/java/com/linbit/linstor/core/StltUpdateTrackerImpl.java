@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
@@ -23,14 +24,14 @@ import reactor.core.scheduler.Scheduler;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-class StltUpdateTrackerImpl implements StltUpdateTracker
+public class StltUpdateTrackerImpl implements StltUpdateTracker
 {
     private final Object sched;
 
     private final UpdateBundle cachedUpdates;
     private final Scheduler scheduler;
 
-    StltUpdateTrackerImpl(Object schedRef, Scheduler schedulerRef)
+    public StltUpdateTrackerImpl(Object schedRef, Scheduler schedulerRef)
     {
         sched = schedRef;
         scheduler = schedulerRef;
@@ -59,7 +60,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         NodeName nodeName
     )
     {
-        Resource.Key resourceKey = new Resource.Key(resourceName, nodeName);
+        Resource.Key resourceKey = new Resource.Key(nodeName, resourceName, ResourceType.DEFAULT);
         return update(cachedUpdates.rscUpdates.computeIfAbsent(
             resourceKey, ignored -> new UpdateNotification(rscUuid)));
     }
@@ -83,7 +84,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             snapshotKey, ignored -> new UpdateNotification(snapshotUuid)));
     }
 
-    void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean condFlag, boolean block)
+    public void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean condFlag, boolean block)
     {
         synchronized (sched)
         {
@@ -105,6 +106,12 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             // Clear queued updates
             clearImpl();
         }
+    }
+
+    @Override
+    public boolean isEmpty()
+    {
+        return cachedUpdates.isEmpty();
     }
 
     void clear()
@@ -137,13 +144,13 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             .publishOn(scheduler);
     }
 
-    static class UpdateNotification
+    public static class UpdateNotification
     {
         private final UUID uuid;
 
         private final List<FluxSink<ApiCallRc>> responseSinks;
 
-        UpdateNotification(UUID uuidRef)
+        public UpdateNotification(UUID uuidRef)
         {
             uuid = uuidRef;
             responseSinks = new ArrayList<>();
@@ -168,13 +175,13 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     /**
      * Groups update notifications and check notifications
      */
-    static class UpdateBundle
+    public static class UpdateBundle
     {
-        Optional<UpdateNotification> controllerUpdate = Optional.empty();
-        final Map<NodeName, UpdateNotification> nodeUpdates = new TreeMap<>();
-        final Map<Resource.Key, UpdateNotification> rscUpdates = new TreeMap<>();
-        final Map<StorPoolName, UpdateNotification> storPoolUpdates = new TreeMap<>();
-        final Map<SnapshotDefinition.Key, UpdateNotification> snapshotUpdates = new TreeMap<>();
+        public Optional<UpdateNotification> controllerUpdate = Optional.empty();
+        public final Map<NodeName, UpdateNotification> nodeUpdates = new TreeMap<>();
+        public final Map<Resource.Key, UpdateNotification> rscUpdates = new TreeMap<>();
+        public final Map<StorPoolName, UpdateNotification> storPoolUpdates = new TreeMap<>();
+        public final Map<SnapshotDefinition.Key, UpdateNotification> snapshotUpdates = new TreeMap<>();
 
         /**
          * Copies the update notifications, but not the check notifications, to another UpdateBundle
@@ -182,7 +189,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
          *
          * @param other The UpdateBundle to copy the requests to
          */
-        void copyUpdateRequestsTo(UpdateBundle other)
+        public void copyUpdateRequestsTo(UpdateBundle other)
         {
             other.clear();
 
@@ -198,7 +205,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
          *
          * @return True if the UpdateBundle contains notifications, false otherwise
          */
-        boolean isEmpty()
+        public boolean isEmpty()
         {
             return !controllerUpdate.isPresent() && nodeUpdates.isEmpty() &&
                 rscUpdates.isEmpty() && storPoolUpdates.isEmpty() && snapshotUpdates.isEmpty();
@@ -207,7 +214,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         /**
          * Clears all notifications
          */
-        void clear()
+        public void clear()
         {
             // Clear the collected updates
             controllerUpdate = Optional.empty();
