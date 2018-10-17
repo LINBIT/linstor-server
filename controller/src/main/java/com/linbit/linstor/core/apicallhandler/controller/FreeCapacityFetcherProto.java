@@ -24,6 +24,7 @@ import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -50,6 +51,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
 {
     private final ScopeRunner scopeRunner;
     private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock storPoolDfnMapLock;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeRepository nodeRepository;
     private final Provider<AccessContext> peerAccCtx;
@@ -58,6 +60,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     public FreeCapacityFetcherProto(
         ScopeRunner scopeRunnerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeRepository nodeRepositoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
@@ -65,6 +68,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     {
         scopeRunner = scopeRunnerRef;
         nodesMapLock = nodesMapLockRef;
+        storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeRepository = nodeRepositoryRef;
         peerAccCtx = peerAccCtxRef;
@@ -86,7 +90,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     {
         return scopeRunner
             .fluxInTransactionlessScope(
-                LockGuard.createDeferred(nodesMapLock.readLock()),
+                LockGuard.createDeferred(nodesMapLock.readLock(), storPoolDfnMapLock.readLock()),
                 () -> assembleRequests(nodesFilter)
             )
             .collect(Collectors.toList())
@@ -100,7 +104,9 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
             nodeRepository.getMapForView(peerAccCtx.get()).values().stream() :
             nodesFilter.stream().map(nodeName -> ctrlApiDataLoader.loadNode(nodeName, true));
 
-        List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeStream
+        Stream<Node> nodeWithThinStream = nodeStream.filter(this::hasThinPools);
+
+        List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeWithThinStream
             .map(node -> Tuples.of(node.getName(), prepareFreeSpaceApiCall(node)))
             .collect(Collectors.toList());
 
@@ -109,6 +115,13 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
             .flatMap(nameAndRequest -> nameAndRequest.getT2()
                 .map(byteStream -> Tuples.of(nameAndRequest.getT1(), byteStream))
             );
+    }
+
+    private boolean hasThinPools(Node node)
+    {
+        return streamStorPools(node)
+            .map(StorPool::getDriverKind)
+            .anyMatch(StorageDriverKind::usesThinProvisioning);
     }
 
     private Flux<ByteArrayInputStream> prepareFreeSpaceApiCall(Node node)
@@ -122,6 +135,24 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
         }
         return result;
+    }
+
+    private Stream<StorPool> streamStorPools(Node node)
+    {
+        Stream<StorPool> storPoolStream;
+        try
+        {
+            storPoolStream = node.streamStorPools(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accessDeniedExc,
+                "stream storage pools of " + node,
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return storPoolStream;
     }
 
     private Peer getPeer(Node node)

@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
@@ -23,10 +25,10 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
@@ -94,7 +96,11 @@ public class CtrlRscCrtApiCallHandler
 
             ResponseContext context = makeRscCrtContext(rscApiList, rscNames.get(0));
 
-            response = freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
+            Set<NodeName> nodeNames = rscApiList.stream()
+                .map(Resource.RscApi::getNodeName)
+                .map(LinstorParsingUtils::asNodeName)
+                .collect(Collectors.toSet());
+            response = freeCapacityFetcher.fetchThinFreeCapacities(nodeNames)
                 .flatMapMany(thinFreeCapacities ->
                     scopeRunner
                     .fluxInTransactionalScope(
