@@ -19,8 +19,8 @@ import com.linbit.linstor.storage.utils.RestClient.RestOp;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbsSwordfishDriver implements StorageDriver
 {
@@ -44,7 +44,7 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         storageDriverKind = storageDriverKindRef;
         restClient = restClientRef;
 
-        volumeStates = new HashMap<>();
+        volumeStates = new ConcurrentHashMap<String, String>();
     }
 
     @Override
@@ -52,7 +52,6 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     {
         return storageDriverKind;
     }
-
 
     @Override
     public void createSnapshot(String ignore, String snapshotName) throws StorageException
@@ -294,7 +293,7 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         volumeStates.put(linstorVlmId, state);
     }
 
-    protected void remoteState(String linstorVlmId)
+    protected void removeState(String linstorVlmId)
     {
         volumeStates.remove(linstorVlmId);
     }

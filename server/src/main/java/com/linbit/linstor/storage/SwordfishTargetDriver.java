@@ -322,7 +322,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 (String) null,
                 Arrays.asList(HttpHeader.HTTP_ACCEPTED, HttpHeader.HTTP_NOT_FOUND)
             );
-            remoteState(linstorVlmId); // deleting
+            removeState(linstorVlmId); // deleting
         }
         catch (IOException ioExc)
         {

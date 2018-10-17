@@ -319,7 +319,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                     break;
             }
 
-            remoteState(linstorVlmId); // deleting
+            removeState(linstorVlmId); // deleting
         }
         else
         {
