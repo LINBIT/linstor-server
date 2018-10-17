@@ -3,14 +3,11 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -18,8 +15,6 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
@@ -41,7 +36,6 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscCrtApiCallHandler
 {
-    private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
@@ -49,12 +43,10 @@ public class CtrlRscCrtApiCallHandler
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
-    private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final FreeCapacityFetcher freeCapacityFetcher;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
-        @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
@@ -62,11 +54,9 @@ public class CtrlRscCrtApiCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef
     )
     {
-        apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
@@ -74,7 +64,6 @@ public class CtrlRscCrtApiCallHandler
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
-        ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
     }
 
