@@ -229,7 +229,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                     responses,
                     rscNameStr,
                     disklessOnRemainingNodes,
-                    candidate
+                    candidate,
+                    null
                 );
 
                 ctrlTransactionHelper.commit();
@@ -300,7 +301,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         long rscSize,
         AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
         boolean disklessOnRemainingNodes,
-        Map<StorPool.Key, Long> freeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -308,7 +309,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         Optional<Candidate> bestCandidate = findBestCandidate(
             autoStorPoolSelectorConfig,
             rscSize,
-            freeCapacities,
+            thinFreeCapacities,
             true
         );
 
@@ -320,7 +321,8 @@ public class CtrlRscAutoPlaceApiCallHandler
             responses,
             rscNameStr,
             disklessOnRemainingNodes,
-            candidate
+            candidate,
+            thinFreeCapacities
         );
 
         ctrlTransactionHelper.commit();
@@ -368,30 +370,15 @@ public class CtrlRscAutoPlaceApiCallHandler
     )
     {
         return nodes.stream()
-            .filter(node -> isStorPoolUsable(rscSize, freeCapacities, includeThin, storPoolName, node, apiCtx))
+            .filter(node -> FreeCapacityAutoPoolSelectorUtils.isStorPoolUsable(
+                rscSize,
+                freeCapacities,
+                includeThin,
+                storPoolName,
+                node,
+                apiCtx
+            ))
             .collect(Collectors.toList());
-    }
-
-    public static boolean isStorPoolUsable(
-        long rscSize,
-        Map<StorPool.Key, Long> freeCapacities,
-        boolean includeThin,
-        StorPoolName storPoolName,
-        Node node,
-        AccessContext apiCtx
-    )
-    {
-        StorPool storPool = FreeCapacityAutoPoolSelectorUtils.getStorPoolPrivileged(apiCtx, node, storPoolName);
-        boolean usableProvisioning = includeThin || !storPool.getDriverKind().usesThinProvisioning();
-        return usableProvisioning &&
-            FreeCapacityAutoPoolSelectorUtils
-                .getFreeCapacityCurrentEstimationPrivileged(
-                    apiCtx,
-                    freeCapacities,
-                    storPool
-                )
-                .map(freeCapacity -> freeCapacity >= rscSize)
-                .orElse(false);
     }
 
     private List<Resource> createResources(
@@ -399,7 +386,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         ApiCallRcImpl responses,
         String rscNameStr,
         boolean disklessOnRemainingNodes,
-        Candidate bestCandidate
+        Candidate bestCandidate,
+        Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         Map<String, String> rscPropsMap = new TreeMap<>();
@@ -415,7 +403,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                 0L,
                 rscPropsMap,
                 Collections.emptyList(),
-                null
+                null,
+                thinFreeCapacities
             ).extractApiCallRc(responses);
             deployedResources.add(rsc);
 
@@ -446,7 +435,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 RscFlags.DISKLESS.flagValue,
                                 rscPropsMap,
                                 Collections.emptyList(),
-                                null
+                                null,
+                                thinFreeCapacities
                             ).extractApiCallRc(responses)
                         );
                     }

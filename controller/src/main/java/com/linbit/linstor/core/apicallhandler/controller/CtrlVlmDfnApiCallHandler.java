@@ -148,7 +148,7 @@ class CtrlVlmDfnApiCallHandler
             {
                 for (Resource rsc : rscList)
                 {
-                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn);
+                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn, null);
                 }
             }
 

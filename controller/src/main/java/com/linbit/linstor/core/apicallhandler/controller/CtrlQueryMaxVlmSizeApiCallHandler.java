@@ -73,19 +73,19 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
     public Flux<byte[]> queryMaxVlmSize(AutoSelectFilterApi selectFilter)
     {
         return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
-            .flatMapMany(freeCapacities -> scopeRunner
+            .flatMapMany(thinFreeCapacities -> scopeRunner
                 .fluxInTransactionlessScope(
                     LockGuard.createDeferred(
                         nodesMapLock.writeLock(),
                         storPoolDfnMapLock.writeLock()
                     ),
-                    () -> queryMaxVlmSizeInScope(selectFilter, freeCapacities)
+                    () -> queryMaxVlmSizeInScope(selectFilter, thinFreeCapacities)
                 ));
     }
 
     private Flux<byte[]> queryMaxVlmSizeInScope(
         AutoSelectFilterApi selectFilter,
-        Map<StorPool.Key, Long> freeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         AutoStorPoolSelectorConfig autoStorPoolSelectorConfig = new AutoStorPoolSelectorConfig(
@@ -100,25 +100,25 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
         List<Candidate> candidates = ctrlAutoStorPoolSelector.getCandidateList(
             ctrlAutoStorPoolSelector.listAvailableStorPools(),
             autoStorPoolSelectorConfig,
-            FreeCapacityAutoPoolSelectorUtils.mostFreeCapacityNodeStrategy(freeCapacities)
+            FreeCapacityAutoPoolSelectorUtils.mostFreeCapacityNodeStrategy(thinFreeCapacities)
         );
 
         List<MaxVlmSizeCandidatePojo> candidatesWithCapacity = candidates.stream()
-            .flatMap(candidate -> candidateWithCapacity(freeCapacities, candidate))
+            .flatMap(candidate -> candidateWithCapacity(thinFreeCapacities, candidate))
             .collect(Collectors.toList());
 
         return Flux.just(makeResponse(candidatesWithCapacity));
     }
 
     private Stream<MaxVlmSizeCandidatePojo> candidateWithCapacity(
-        Map<StorPool.Key, Long> freeCapacities,
+        Map<StorPool.Key, Long> thinFreeCapacities,
         Candidate candidate
     )
     {
         StorPool storPool = FreeCapacityAutoPoolSelectorUtils.getCandidateStorPoolPrivileged(apiCtx, candidate);
         Optional<Long> freeCapacity = FreeCapacityAutoPoolSelectorUtils.getFreeCapacityCurrentEstimationPrivileged(
             apiCtx,
-            freeCapacities,
+            thinFreeCapacities,
             storPool
         );
         return freeCapacity

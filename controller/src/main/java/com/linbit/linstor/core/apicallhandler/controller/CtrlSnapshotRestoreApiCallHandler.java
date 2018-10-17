@@ -216,7 +216,7 @@ public class CtrlSnapshotRestoreApiCallHandler
 
             StorPool storPool = fromSnapshotVolume.getStorPool(peerAccCtx.get());
 
-            Volume vlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null, null);
+            Volume vlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null, null, null);
             Props vlmProps = vlm.getProps(peerAccCtx.get());
             vlmProps.setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);

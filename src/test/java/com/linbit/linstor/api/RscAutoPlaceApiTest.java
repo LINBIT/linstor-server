@@ -1063,6 +1063,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     0L,
                     rscPropsMap,
                     Collections.emptyList(),
+                    null,
                     null
                 );
             }

@@ -18,6 +18,7 @@ import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
@@ -64,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
@@ -127,6 +129,7 @@ public class CtrlRscCrtApiHelper
      * @param vlmApiList
      * @param nodeIdInt
      *
+     * @param thinFreeCapacities
      * @return the newly created resource
      */
     public ApiCallRcWith<ResourceData> createResourceDb(
@@ -135,7 +138,8 @@ public class CtrlRscCrtApiHelper
         long flags,
         Map<String, String> rscPropsMap,
         List<? extends Volume.VlmApi> vlmApiList,
-        Integer nodeIdInt
+        Integer nodeIdInt,
+        Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -168,7 +172,7 @@ public class CtrlRscCrtApiHelper
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
 
             VolumeData vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
-                rsc, vlmDfn, vlmApi.getBlockDevice(), vlmApi.getMetaDisk()
+                rsc, vlmDfn, thinFreeCapacities, vlmApi.getBlockDevice(), vlmApi.getMetaDisk()
             ).extractApiCallRc(responses);
             createdVolumes.add(vlmData);
 
@@ -188,7 +192,7 @@ public class CtrlRscCrtApiHelper
             {
                 // not deployed yet.
 
-                VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn)
+                VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn, thinFreeCapacities)
                     .extractApiCallRc(responses);
                 createdVolumes.add(vlm);
             }

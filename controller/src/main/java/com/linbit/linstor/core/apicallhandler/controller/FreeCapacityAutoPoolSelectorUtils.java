@@ -22,6 +22,27 @@ public class FreeCapacityAutoPoolSelectorUtils
 {
     public static final double DEFAULT_MAX_OVERSUBSCRIPTION_RATIO = 20.;
 
+    public static boolean isStorPoolUsable(
+        long rscSize,
+        Map<StorPool.Key, Long> freeCapacities,
+        boolean includeThin,
+        StorPoolName storPoolName,
+        Node node,
+        AccessContext apiCtx
+    )
+    {
+        StorPool storPool = getStorPoolPrivileged(apiCtx, node, storPoolName);
+        boolean usableProvisioning = includeThin || !storPool.getDriverKind().usesThinProvisioning();
+        return usableProvisioning &&
+            getFreeCapacityCurrentEstimationPrivileged(
+                apiCtx,
+                freeCapacities,
+                storPool
+            )
+                .map(freeCapacity -> freeCapacity >= rscSize)
+                .orElse(false);
+    }
+
     public static Comparator<Candidate> mostFreeCapacityCandidateStrategy(
         AccessContext accCtx,
         Map<StorPool.Key, Long> freeCapacities
@@ -54,40 +75,28 @@ public class FreeCapacityAutoPoolSelectorUtils
         );
     }
 
-    public static NodeSelectionStrategy mostFreeCapacityNodeStrategy(Map<StorPool.Key, Long> freeCapacities)
+    public static NodeSelectionStrategy mostFreeCapacityNodeStrategy(Map<StorPool.Key, Long> thinFreeCapacities)
     {
         return (storPoolName, accCtx) -> Comparator.comparingLong(node ->
             getFreeCapacityCurrentEstimationPrivileged(
                 accCtx,
-                freeCapacities,
+                thinFreeCapacities,
                 getStorPoolPrivileged(accCtx, node, storPoolName)
             ).orElse(0L)
         );
     }
 
-    public static StorPool getStorPoolPrivileged(AccessContext accCtx, Node node, StorPoolName storPoolName)
-    {
-        StorPool storPool;
-        try
-        {
-            storPool = node.getStorPool(accCtx, storPoolName);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return storPool;
-    }
-
     public static Optional<Long> getFreeCapacityCurrentEstimationPrivileged(
         AccessContext accCtx,
-        Map<StorPool.Key, Long> freeCapacities,
+        Map<StorPool.Key, Long> thinFreeCapacities,
         StorPool storPool
     )
     {
         long reservedCapacity = getReservedCapacityPrivileged(accCtx, storPool);
 
-        Long freeCapacityOverride = freeCapacities.get(new StorPool.Key(storPool));
+        Long freeCapacityOverride = thinFreeCapacities == null ?
+            null :
+            thinFreeCapacities.get(new StorPool.Key(storPool));
 
         Optional<Long> freeCapacity = freeCapacityOverride != null ?
             Optional.of(freeCapacityOverride) : getFreeSpaceLastUpdatedPrivileged(accCtx, storPool);
@@ -99,6 +108,20 @@ public class FreeCapacityAutoPoolSelectorUtils
         );
 
         return usableCapacity.map(capacity -> capacity - reservedCapacity);
+    }
+
+    private static StorPool getStorPoolPrivileged(AccessContext accCtx, Node node, StorPoolName storPoolName)
+    {
+        StorPool storPool;
+        try
+        {
+            storPool = node.getStorPool(accCtx, storPoolName);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return storPool;
     }
 
     private static long getReservedCapacityPrivileged(AccessContext accCtx, StorPool storPool)

@@ -106,7 +106,7 @@ public class CtrlRscCrtApiCallHandler
             ResponseContext context = makeRscCrtContext(rscApiList, rscNames.get(0));
 
             response = freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
-                .flatMapMany(freeCapacities ->
+                .flatMapMany(thinFreeCapacities ->
                     scopeRunner
                     .fluxInTransactionalScope(
                         LockGuard.createDeferred(
@@ -114,63 +114,12 @@ public class CtrlRscCrtApiCallHandler
                             rscDfnMapLock.writeLock(),
                             storPoolDfnMapLock.readLock()
                         ),
-                        () -> createResourceInTransaction(rscApiList, context, freeCapacities)
+                        () -> createResourceInTransaction(rscApiList, context, thinFreeCapacities)
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
         }
 
         return response;
-    }
-
-    private Flux<ApiCallRc> checkEnoughSpaceForResource(
-        List<Resource> resources,
-        Map<StorPool.Key, Long> freeCapacities
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        for (Resource rsc : resources)
-        {
-            if (!ctrlVlmCrtApiHelper.isDiskless(rsc))
-            {
-                try
-                {
-                    for (VolumeDefinition vlmDfn : rsc.getDefinition()
-                        .streamVolumeDfn(apiCtx).collect(Collectors.toList()))
-                    {
-                        StorPool storPool =
-                            ctrlVlmCrtApiHelper.resolveStorPool(rsc, vlmDfn, ctrlVlmCrtApiHelper.isDiskless(rsc))
-                                .extractApiCallRc(responses);
-
-                        if (!CtrlRscAutoPlaceApiCallHandler.isStorPoolUsable(
-                            vlmDfn.getVolumeSize(apiCtx),
-                            freeCapacities,
-                            true,
-                            storPool.getName(),
-                            rsc.getAssignedNode(),
-                            apiCtx))
-                        {
-                            throw new ApiRcException(
-                                ApiCallRcImpl.simpleEntry(
-                                    ApiConsts.FAIL_INVLD_VLM_SIZE,
-                                    String.format("Not enough free space available for resource '%s'.",
-                                        rsc.getDefinition().getName().getDisplayName())
-                                )
-                            );
-                        }
-                    }
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    throw new ApiAccessDeniedException(
-                        accDeniedExc,
-                        "Volume definition access denied.",
-                        ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-                    );
-                }
-            }
-        }
-
-        return Flux.just(responses);
     }
 
     /**
@@ -179,7 +128,7 @@ public class CtrlRscCrtApiCallHandler
     private Flux<ApiCallRc> createResourceInTransaction(
         List<Resource.RscApi> rscApiList,
         ResponseContext context,
-        Map<StorPool.Key, Long> freeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -193,12 +142,10 @@ public class CtrlRscCrtApiCallHandler
                 rscApi.getFlags(),
                 rscApi.getProps(),
                 rscApi.getVlmList(),
-                rscApi.getLocalRscNodeId()
+                rscApi.getLocalRscNodeId(),
+                thinFreeCapacities
             ).extractApiCallRc(responses));
         }
-
-        Flux<ApiCallRc> flux = Flux.<ApiCallRc>just(responses)
-            .concatWith(checkEnoughSpaceForResource(deployedResources, freeCapacities));
 
         ctrlTransactionHelper.commit();
 
@@ -213,7 +160,7 @@ public class CtrlRscCrtApiCallHandler
 
         Flux<ApiCallRc> deploymentResponses = ctrlRscCrtApiHelper.deployResources(context, deployedResources);
 
-        return flux.concatWith(Flux.just(responses))
+        return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
             .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,

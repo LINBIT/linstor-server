@@ -132,7 +132,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                 Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
                 while (rscIterator.hasNext())
                 {
-                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rscIterator.next(), vlmDfn);
+                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rscIterator.next(), vlmDfn, null);
                 }
             }
 

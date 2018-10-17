@@ -30,6 +30,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.Map;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
@@ -65,15 +66,17 @@ class CtrlVlmCrtApiHelper
 
     public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
         Resource rsc,
-        VolumeDefinition vlmDfn
+        VolumeDefinition vlmDfn,
+        Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
-        return createVolumeResolvingStorPool(rsc, vlmDfn, null, null);
+        return createVolumeResolvingStorPool(rsc, vlmDfn, thinFreeCapacities, null, null);
     }
 
     public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
         Resource rsc,
         VolumeDefinition vlmDfn,
+        Map<StorPool.Key, Long> thinFreeCapacities,
         String blockDevice,
         String metaDisk
     )
@@ -85,6 +88,7 @@ class CtrlVlmCrtApiHelper
                 rsc,
                 vlmDfn,
                 resolveStorPool(rsc, vlmDfn, isDiskless(rsc)).extractApiCallRc(apiCallRc),
+                thinFreeCapacities,
                 blockDevice,
                 metaDisk
             )
@@ -95,10 +99,35 @@ class CtrlVlmCrtApiHelper
         Resource rsc,
         VolumeDefinition vlmDfn,
         StorPool storPool,
+        Map<StorPool.Key, Long> thinFreeCapacities,
         String blockDevice,
         String metaDisk
     )
     {
+        if (storPool.getDriverKind().hasBackingStorage() &&
+            (thinFreeCapacities != null || !storPool.getDriverKind().usesThinProvisioning()))
+        {
+            if (!FreeCapacityAutoPoolSelectorUtils.isStorPoolUsable(
+                getVolumeSizePrivileged(vlmDfn),
+                thinFreeCapacities,
+                true,
+                storPool.getName(),
+                rsc.getAssignedNode(),
+                apiCtx))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_VLM_SIZE,
+                        String.format(
+                            "Not enough free space available for volume %d of resource '%s'.",
+                            vlmDfn.getVolumeNumber().value,
+                            rsc.getDefinition().getName().getDisplayName()
+                        )
+                    )
+                );
+            }
+        }
+
         VolumeData vlm;
         try
         {
@@ -198,6 +227,20 @@ class CtrlVlmCrtApiHelper
         }
 
         return new ApiCallRcWith<>(responses, storPool);
+    }
+
+    private long getVolumeSizePrivileged(VolumeDefinition vlmDfn)
+    {
+        long volumeSize;
+        try
+        {
+            volumeSize = vlmDfn.getVolumeSize(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return volumeSize;
     }
 
     public boolean isDiskless(Resource rsc)
