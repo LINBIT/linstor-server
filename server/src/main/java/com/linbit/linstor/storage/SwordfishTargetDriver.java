@@ -52,6 +52,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     private static final Map<String, Object> JSON_OBJ;
 
     private static final String STATE_CREATING = "Creating";
+    private static final String STATE_CREATING_TIMEOUT = "To: Creating";
     private static final String STATE_CREATED = "Created";
 
     private Map<String, String> linstorIdToSwordfishId;
@@ -290,6 +291,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
             }
             if (pollVlmCrtTries >= pollVlmCrtMaxTries && vlmLocation == null)
             {
+                setState(linstorVlmId, STATE_CREATING_TIMEOUT);
                 throw new StorageException(
                     String.format(
                         "Volume creation not finished after %d x %dms. \n" +
