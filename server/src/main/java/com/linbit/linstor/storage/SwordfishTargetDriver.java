@@ -59,7 +59,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
 
     private String storSvc;
     private String storPool;
-    private long pollVlmCrtTimeout = 500;
+    private long pollVlmCrtTimeout = 600;
     private long pollVlmCrtMaxTries = 100;
 
     static

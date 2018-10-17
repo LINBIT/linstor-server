@@ -62,9 +62,9 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
     private static final String STATE_DETACHING = "Detaching";
 
     private long pollAttachVlmTimeout = 1000;
-    private long pollAttachVlmMaxTries = 300;
+    private long pollAttachVlmMaxTries = 290;
     private long pollGrepNvmeUuidTimeout = 1000;
-    private long pollGrepNvmeUuidMaxTries = 300;
+    private long pollGrepNvmeUuidMaxTries = 290;
     private String composedNodeName;
 
     private final Crypt crypt;
