@@ -285,12 +285,13 @@ class DrbdDeviceHandler implements DeviceHandler
 
         final ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         boolean resourceDeleted = false;
+        Resource rsc = null;
         try
         {
             Node localNode = controllerPeerConnector.getLocalNode();
             NodeName localNodeName = localNode.getName();
 
-            Resource rsc = rscDfn.getResource(wrkCtx, localNodeName);
+            rsc = rscDfn.getResource(wrkCtx, localNodeName);
             if (rsc != null)
             {
                 // Volatile state information of the resource and its volumes
@@ -313,38 +314,6 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     createResource(rscName, rsc, rscDfn, rscState);
                 }
-
-                rsc.streamVolumes().forEach(
-                    vlm ->
-                    {
-                        String vlmState;
-                        try
-                        {
-                            vlmState = vlm.getStorPool(wrkCtx)
-                                .getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor)
-                                .getVolumeState(
-                                    computeVlmName(
-                                        rscDfn,
-                                        vlm.getVolumeDefinition().getVolumeNumber()
-                                    )
-                                );
-                            if (vlmState != null)
-                            {
-                                vlmDiskStateEvent.get().triggerEvent(
-                                    ObjectIdentifier.volumeDefinition(
-                                        rscName,
-                                        vlm.getVolumeDefinition().getVolumeNumber()
-                                        ),
-                                    vlmState
-                                );
-                            }
-                        }
-                        catch (AccessDeniedException exc)
-                        {
-                            throw new ImplementationError(exc);
-                        }
-                    }
-                );
 
                 deviceManagerProvider.get().notifyResourceApplied(rsc);
 
@@ -413,6 +382,42 @@ class DrbdDeviceHandler implements DeviceHandler
                 ApiConsts.FAIL_UNKNOWN_ERROR, null, apiCallRc, errLog, null, null
             );
         }
+
+        if (rsc != null)
+        {
+            rsc.streamVolumes().forEach(
+                vlm ->
+                {
+                    String vlmState;
+                    try
+                    {
+                        vlmState = vlm.getStorPool(wrkCtx)
+                            .getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor)
+                            .getVolumeState(
+                                computeVlmName(
+                                    rscDfn,
+                                    vlm.getVolumeDefinition().getVolumeNumber()
+                                )
+                            );
+                        if (vlmState != null)
+                        {
+                            vlmDiskStateEvent.get().triggerEvent(
+                                ObjectIdentifier.volumeDefinition(
+                                    rscName,
+                                    vlm.getVolumeDefinition().getVolumeNumber()
+                                    ),
+                                vlmState
+                            );
+                        }
+                    }
+                    catch (AccessDeniedException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                }
+            );
+        }
+
 
         deviceManagerProvider.get().notifyResourceDispatchResponse(rscName, apiCallRc);
 
