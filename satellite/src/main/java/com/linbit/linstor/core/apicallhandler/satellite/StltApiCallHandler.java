@@ -30,6 +30,7 @@ import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
@@ -291,8 +292,6 @@ public class StltApiCallHandler
                 rscDfnMap.clear();
                 storPoolDfnMap.clear();
 
-                doApplyControllerChanges(satelliteProps);
-
                 for (NodePojo node : nodes)
                 {
                     Node curNode = nodeHandler.applyChanges(node);
@@ -302,6 +301,8 @@ public class StltApiCallHandler
                     }
                 }
                 controllerPeerConnector.setControllerPeerToCurrentLocalNode();
+
+                doApplyControllerChanges(satelliteProps);
 
                 for (StorPoolPojo storPool : storPools)
                 {
@@ -507,7 +508,16 @@ public class StltApiCallHandler
     private void regenerateLinstorCommonConf()
     {
         Path tmpResFileOut = Paths.get(SatelliteCoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
-        if (tmpResFileOut != null)
+        NodeType localNodeType;
+        try
+        {
+            localNodeType = controllerPeerConnector.getLocalNode().getNodeType(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        if (tmpResFileOut != null && !localNodeType.equals(NodeType.SWORDFISH_TARGET))
         {
             try (
                 FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())
