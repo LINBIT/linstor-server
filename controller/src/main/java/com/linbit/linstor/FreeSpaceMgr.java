@@ -8,6 +8,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSet;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
@@ -31,7 +32,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     private final TransactionSimpleObject<FreeSpaceMgr, Long> freeCapacity;
     private final TransactionSimpleObject<FreeSpaceMgr, Long> totalCapacity;
 
-    private final Set<Volume> pendingVolumesToAdd = new HashSet<>();
+    private final TransactionSet<FreeSpaceMgr, Volume> pendingVolumesToAdd;
 
     public FreeSpaceMgr(
         AccessContext privCtxRef,
@@ -49,9 +50,11 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
 
         freeCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
         totalCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
+        pendingVolumesToAdd = transObjFactory.createTransactionSet(this, new TreeSet<>(), null);
         transObjs = Arrays.asList(
             freeCapacity,
-            totalCapacity
+            totalCapacity,
+            pendingVolumesToAdd
         );
     }
 

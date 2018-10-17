@@ -12,20 +12,23 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 
-public class TransactionSet<VALUE extends TransactionObject>
+public class TransactionSet<PARENT, VALUE extends TransactionObject>
     extends AbsTransactionObject implements Set<VALUE>
 {
-    private SetDatabaseDriver<VALUE> dbDriver;
-    private Set<VALUE> backingSet;
-    private Set<VALUE> oldValues;
+    private final PARENT parent;
+    private final SetDatabaseDriver<PARENT, VALUE> dbDriver;
+    private final Set<VALUE> backingSet;
+    private final Set<VALUE> oldValues;
 
     public TransactionSet(
+        PARENT parentRef,
         Set<VALUE> backingSetRef,
-        SetDatabaseDriver<VALUE> driver,
+        SetDatabaseDriver<PARENT, VALUE> driver,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(transMgrProviderRef);
+        parent = parentRef;
         backingSet = backingSetRef;
         if (driver == null)
         {
@@ -124,7 +127,7 @@ public class TransactionSet<VALUE extends TransactionObject>
     public boolean add(VALUE element)
     {
         boolean ret = backingSet.add(element);
-        dbDriver.insert(element);
+        dbDriver.insert(parent, element);
         return ret;
     }
 
@@ -135,7 +138,7 @@ public class TransactionSet<VALUE extends TransactionObject>
         boolean ret = backingSet.remove(obj);
         if (ret) // also prevents class cast exception
         {
-            dbDriver.remove((VALUE) obj);
+            dbDriver.remove(parent, (VALUE) obj);
         }
         return ret;
     }

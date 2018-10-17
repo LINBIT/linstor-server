@@ -1,15 +1,15 @@
 package com.linbit;
 
-public class NoOpSetDatabaseDriver<T> implements SetDatabaseDriver<T>
+public class NoOpSetDatabaseDriver<PARENT, VALUE> implements SetDatabaseDriver<PARENT, VALUE>
 {
     @Override
-    public void insert(T element)
+    public void insert(PARENT parent, VALUE element)
     {
         // no-op
     }
 
     @Override
-    public void remove(T element)
+    public void remove(PARENT parent, VALUE element)
     {
         // no-op
     }

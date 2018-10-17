@@ -1,6 +1,7 @@
 package com.linbit.linstor.transaction;
 
 import com.linbit.MapDatabaseDriver;
+import com.linbit.SetDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
@@ -8,11 +9,10 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -51,6 +51,15 @@ public class TransactionObjectFactory
     )
     {
         return new TransactionMap<>(mapRef, driver, transMgrProvider);
+    }
+
+    public <PARENT, VALUE extends TransactionObject> TransactionSet<PARENT, VALUE> createTransactionSet(
+        PARENT parent,
+        Set<VALUE> backingSet,
+        SetDatabaseDriver<PARENT, VALUE> dbDriver
+    )
+    {
+        return new TransactionSet<PARENT, VALUE>(parent, backingSet, dbDriver, transMgrProvider);
     }
 
     public <PARENT, FLAG extends Enum<FLAG> & Flags> StateFlags<FLAG> createStateFlagsImpl(

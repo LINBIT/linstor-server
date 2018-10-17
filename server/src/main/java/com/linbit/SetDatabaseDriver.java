@@ -1,8 +1,8 @@
 package com.linbit;
 
-public interface SetDatabaseDriver<T>
+public interface SetDatabaseDriver<PARENT, VALUE>
 {
-    void insert(T element);
+    void insert(PARENT parent, VALUE value);
 
-    void remove(T element);
+    void remove(PARENT parent, VALUE value);
 }
