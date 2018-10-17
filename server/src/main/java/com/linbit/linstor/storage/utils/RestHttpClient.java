@@ -118,6 +118,10 @@ public class RestHttpClient implements RestClient
         );
         if (!request.expectedRcs.contains(statusCode))
         {
+            for (UnexpectedReturnCodeHandler handler : handlers)
+            {
+                handler.handle(restResponse);
+            }
             throw new StorageException(
                 "Unexpected status code",
                 "A REST call returned the unexpected status code " + restResponse.statusCode,

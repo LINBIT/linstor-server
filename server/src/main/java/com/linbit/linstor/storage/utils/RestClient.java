@@ -14,8 +14,6 @@ public interface RestClient
         GET, POST, PUT, PATCH, DELETE
     }
 
-
-
     void addFailHandler(UnexpectedReturnCodeHandler handler);
 
     default RestResponse<Map<String, Object>> execute(
