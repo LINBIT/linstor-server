@@ -159,7 +159,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         String sfVlmId = getSwordfishVolumeIdByLinstorId(linstorVlmId);
         if (sfVlmId != null)
         {
-            exists = sfVolumeExists(storSvc, sfVlmId);
+            exists = sfVolumeExists(linstorVlmId, storSvc, sfVlmId);
         }
         return exists;
     }
@@ -200,6 +200,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         // POST to volumes collection
         String volumeCollUrl = sfUrl + SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES;
         RestResponse<Map<String, Object>> crtVlmResp = restClient.execute(
+            linstorVlmId,
             RestOp.POST,
             volumeCollUrl,
             getDefaultHeader().build(),
@@ -267,6 +268,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
             Thread.sleep(pollVlmCrtTimeout);
 
             RestResponse<Map<String, Object>> crtVlmTaskResp = restClient.execute(
+                linstorVlmId,
                 RestOp.GET,
                 sfUrl  + taskMonitorLocation,
                 getDefaultHeader().noContentType().build(),
@@ -318,6 +320,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
 
             // DELETE to volumes collection
             restClient.execute(
+                linstorVlmId,
                 RestOp.DELETE,
                 sfUrl + vlmOdataId,
                 getDefaultHeader().noContentType().build(),
@@ -341,7 +344,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         String sfVlmId = getSwordfishVolumeIdByLinstorId(linstorVlmId);
         if (sfVlmId != null)
         {
-            exists = sfVolumeExists(storSvc, sfVlmId);
+            exists = sfVolumeExists(linstorVlmId, storSvc, sfVlmId);
         }
         if (exists)
         {
@@ -355,6 +358,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         throws StorageException
     {
         return compareVolumeSizeImpl(
+            linstorVlmId,
             storSvc,
             getSwordfishVolumeIdByLinstorId(linstorVlmId),
             requiredSize
@@ -478,13 +482,14 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     private RestResponse<Map<String, Object>> getSwordfishPool() throws StorageException
     {
         return getSwordfishResource(
+            "",
             SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_STORAGE_POOLS + "/" + storPool
         );
     }
 
     private RestResponse<Map<String, Object>> getSwordfishVolumeByLinstorId(String linstorVlmId) throws StorageException
     {
-        return getSwordfishResource(buildVlmOdataId(linstorVlmId));
+        return getSwordfishResource(linstorVlmId, buildVlmOdataId(linstorVlmId));
     }
 
     private String buildVlmOdataId(String linstorVlmId)

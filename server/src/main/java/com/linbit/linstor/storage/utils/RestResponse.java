@@ -9,4 +9,6 @@ public interface RestResponse<T>
     int getStatusCode();
 
     Map<String, String> getHeaders();
+
+    String getLinstorVlmId();
 }

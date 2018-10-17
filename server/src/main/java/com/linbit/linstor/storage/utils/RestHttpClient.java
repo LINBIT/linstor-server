@@ -6,8 +6,10 @@ import com.linbit.linstor.storage.StorageException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -31,11 +33,19 @@ public class RestHttpClient implements RestClient
 {
     private static final long KIB = 1024;
 
-    protected HttpClient httpClient;
+    private final List<UnexpectedReturnCodeHandler> handlers;
+    protected final HttpClient httpClient;
 
     public RestHttpClient()
     {
         httpClient = HttpClientBuilder.create().build();
+        handlers = new ArrayList<>();
+    }
+
+    @Override
+    public void addFailHandler(UnexpectedReturnCodeHandler handler)
+    {
+        handlers.add(handler);
     }
 
     @Override
@@ -180,6 +190,12 @@ public class RestHttpClient implements RestClient
         public Map<String, String> getHeaders()
         {
             return headers;
+        }
+
+        @Override
+        public String getLinstorVlmId()
+        {
+            return request.linstorVlmId;
         }
 
         @Override

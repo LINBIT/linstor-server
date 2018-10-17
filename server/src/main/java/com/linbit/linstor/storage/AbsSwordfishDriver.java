@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbsSwordfishDriver implements StorageDriver
 {
+    private static final String STATE_FAILED = "Failed";
+
     protected final ErrorReporter errorReporter;
     protected final StorageDriverKind storageDriverKind;
     protected final RestClient restClient;
@@ -44,7 +46,14 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         storageDriverKind = storageDriverKindRef;
         restClient = restClientRef;
 
+        restClient.addFailHandler(this::handleUnexpectedReturnCode);
+
         volumeStates = new ConcurrentHashMap<String, String>();
+    }
+
+    private void handleUnexpectedReturnCode(RestResponse<Map<String, Object>> response)
+    {
+        setState(response.getLinstorVlmId(), STATE_FAILED);
     }
 
     @Override
@@ -197,6 +206,7 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     }
 
     protected SizeComparison compareVolumeSizeImpl(
+        String linstorVlmId,
         String sfStorSvcId,
         String sfVlmId,
         long requiredSize
@@ -205,7 +215,13 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         throws StorageException
     {
         SizeComparison ret;
-        RestResponse<Map<String, Object>> response = getSwordfishResource(buildVlmOdataId(sfStorSvcId, sfVlmId));
+        RestResponse<Map<String, Object>> response = getSwordfishResource(
+            linstorVlmId,
+            buildVlmOdataId(
+                sfStorSvcId,
+                sfVlmId
+            )
+        );
 
         if (response.getStatusCode() == HttpHeader.HTTP_OK)
         {
@@ -232,17 +248,25 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     /**
      * Asks swordfish server if the volume exists
      *
+     * @param linstorVlmId
      * @param sfStorSvcId
      * @param sfVlmId
      * @return
      * @throws StorageException
      */
-    protected boolean sfVolumeExists(String sfStorSvcId, String sfVlmId) throws StorageException
+    protected boolean sfVolumeExists(String linstorVlmId, String sfStorSvcId, String sfVlmId)
+        throws StorageException
     {
         boolean exists = false;
         try
         {
-            RestResponse<Map<String, Object>> resp = getSwordfishResource(buildVlmOdataId(sfStorSvcId, sfVlmId));
+            RestResponse<Map<String, Object>> resp = getSwordfishResource(
+                linstorVlmId,
+                buildVlmOdataId(
+                    sfStorSvcId,
+                    sfVlmId
+                )
+            );
             exists = resp.getStatusCode() == HttpHeader.HTTP_OK;
         }
         catch (SfRscException sfExc)
@@ -256,13 +280,14 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     }
 
 
-    protected RestResponse<Map<String, Object>> getSwordfishResource(String odataId)
+    protected RestResponse<Map<String, Object>> getSwordfishResource(String linstorVlmId, String odataId)
         throws StorageException
     {
         RestResponse<Map<String, Object>> rscInfo;
         try
         {
             rscInfo = restClient.execute(
+                linstorVlmId,
                 RestOp.GET,
                 sfUrl + odataId,
                 getDefaultHeader().build(),

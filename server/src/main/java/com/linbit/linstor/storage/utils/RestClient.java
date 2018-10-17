@@ -14,7 +14,12 @@ public interface RestClient
         GET, POST, PUT, PATCH, DELETE
     }
 
+
+
+    void addFailHandler(UnexpectedReturnCodeHandler handler);
+
     default RestResponse<Map<String, Object>> execute(
+        String linstorVlmId,
         RestOp op,
         String restURL,
         Map<String, String> httpHeaders,
@@ -24,11 +29,12 @@ public interface RestClient
         throws IOException, StorageException
     {
         return execute(
-            new RestHttpRequest(op, restURL, httpHeaders, JSON.std.asString(jsonMap), expectedRcs)
+            new RestHttpRequest(linstorVlmId, op, restURL, httpHeaders, JSON.std.asString(jsonMap), expectedRcs)
         );
     }
 
     default RestResponse<Map<String, Object>> execute(
+        String linstorVlmId,
         RestOp op,
         String restURL,
         Map<String, String> httpHeaders,
@@ -38,7 +44,7 @@ public interface RestClient
         throws IOException, StorageException
     {
         return execute(
-            new RestHttpRequest(op, restURL, httpHeaders, jsonString, expectedRcs)
+            new RestHttpRequest(linstorVlmId, op, restURL, httpHeaders, jsonString, expectedRcs)
         );
     }
 
@@ -46,6 +52,8 @@ public interface RestClient
 
     class RestHttpRequest
     {
+        final String linstorVlmId;
+
         final RestOp op;
         final String restURL;
         final Map<String, String> httpHeaders;
@@ -53,6 +61,7 @@ public interface RestClient
         final List<Integer> expectedRcs;
 
         RestHttpRequest(
+            String linstorVlmIdRef,
             RestOp opRef,
             String restURLRef,
             Map<String, String> httpHeadersRef,
@@ -60,11 +69,18 @@ public interface RestClient
             List<Integer> expectedRcsRef
         )
         {
+            linstorVlmId = linstorVlmIdRef;
             op = opRef;
             restURL = restURLRef;
             httpHeaders = httpHeadersRef;
             payload = payloadRef;
             expectedRcs = expectedRcsRef;
         }
+    }
+
+    @FunctionalInterface
+    interface UnexpectedReturnCodeHandler
+    {
+        void handle(RestResponse<Map<String, Object>> response);
     }
 }
