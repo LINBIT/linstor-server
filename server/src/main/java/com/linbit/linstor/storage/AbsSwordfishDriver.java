@@ -18,7 +18,8 @@ import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -220,7 +221,8 @@ public abstract class AbsSwordfishDriver implements StorageDriver
             buildVlmOdataId(
                 sfStorSvcId,
                 sfVlmId
-            )
+            ),
+            false
         );
 
         if (response.getStatusCode() == HttpHeader.HTTP_OK)
@@ -265,7 +267,8 @@ public abstract class AbsSwordfishDriver implements StorageDriver
                 buildVlmOdataId(
                     sfStorSvcId,
                     sfVlmId
-                )
+                ),
+                true
             );
             exists = resp.getStatusCode() == HttpHeader.HTTP_OK;
         }
@@ -280,19 +283,29 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     }
 
 
-    protected RestResponse<Map<String, Object>> getSwordfishResource(String linstorVlmId, String odataId)
+    protected RestResponse<Map<String, Object>> getSwordfishResource(
+        String linstorVlmId,
+        String odataId,
+        boolean allowNotFound
+    )
         throws StorageException
     {
         RestResponse<Map<String, Object>> rscInfo;
         try
         {
+            List<Integer> expectedRcs = new ArrayList<>();
+            expectedRcs.add(HttpHeader.HTTP_OK);
+            if (allowNotFound)
+            {
+                expectedRcs.add(HttpHeader.HTTP_NOT_FOUND);
+            }
             rscInfo = restClient.execute(
                 linstorVlmId,
                 RestOp.GET,
                 sfUrl + odataId,
                 getDefaultHeader().build(),
                 (String) null,
-                Arrays.asList(HttpHeader.HTTP_OK)
+                expectedRcs
             );
         }
         catch (IOException ioExc)

@@ -531,7 +531,11 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 
             String endpointOdataId = (String) endpoint.get(JSON_KEY_ODATA_ID);
 
-            RestResponse<Map<String, Object>> endpointInfo = getSwordfishResource(linstorVlmId, endpointOdataId);
+            RestResponse<Map<String, Object>> endpointInfo = getSwordfishResource(
+                linstorVlmId,
+                endpointOdataId,
+                false
+            );
             Map<String, Object> endpointData = endpointInfo.getData();
 
             List<Map<String, Object>> connectedEntities =
@@ -682,6 +686,10 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
     private RestResponse<Map<String, Object>> getSfVlm(String linstorVlmId, String sfStorSvcId, String sfVlmId)
         throws StorageException
     {
-        return getSwordfishResource(linstorVlmId, buildVlmOdataId(sfStorSvcId, sfVlmId));
+        return getSwordfishResource(
+            linstorVlmId,
+            buildVlmOdataId(sfStorSvcId, sfVlmId),
+            false
+        );
     }
 }

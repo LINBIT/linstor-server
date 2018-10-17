@@ -483,13 +483,14 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     {
         return getSwordfishResource(
             "",
-            SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_STORAGE_POOLS + "/" + storPool
+            SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_STORAGE_POOLS + "/" + storPool,
+            false
         );
     }
 
     private RestResponse<Map<String, Object>> getSwordfishVolumeByLinstorId(String linstorVlmId) throws StorageException
     {
-        return getSwordfishResource(linstorVlmId, buildVlmOdataId(linstorVlmId));
+        return getSwordfishResource(linstorVlmId, buildVlmOdataId(linstorVlmId), false);
     }
 
     private String buildVlmOdataId(String linstorVlmId)
