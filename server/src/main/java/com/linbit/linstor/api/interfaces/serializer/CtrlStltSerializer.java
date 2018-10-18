@@ -99,6 +99,8 @@ public interface CtrlStltSerializer extends CommonSerializer
             String snapshotName
         );
 
+        CtrlStltSerializerBuilder updateFreeCapacity(UUID storPoolUuid, String storPoolName, SpaceInfo spaceInfo);
+
         CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
 
         CtrlStltSerializerBuilder inProgressSnapshotEvent(SnapshotState snapshotState);

@@ -4,8 +4,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
+import com.linbit.utils.StringUtils;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,18 +16,29 @@ public class ProtoDeserializationUtils
         MsgApiCallResponseOuterClass.MsgApiCallResponse apiCallResponse,
         String messagePrefix
     )
-        throws IOException
     {
-        return ApiCallRcImpl
+        ApiCallRcImpl.EntryBuilder entryBuilder = ApiCallRcImpl
             .entryBuilder(
                 apiCallResponse.getRetCode(),
                 messagePrefix + apiCallResponse.getMessage()
-            )
-            .setCause(apiCallResponse.getCause())
-            .setCorrection(apiCallResponse.getCorrection())
-            .setDetails(apiCallResponse.getDetails())
-            .putAllObjRefs(readLinStorMap(apiCallResponse.getObjRefsList()))
-            .build();
+            );
+
+        if (!StringUtils.isEmpty(apiCallResponse.getCause()))
+        {
+            entryBuilder.setCause(apiCallResponse.getCause());
+        }
+        if (!StringUtils.isEmpty(apiCallResponse.getCorrection()))
+        {
+            entryBuilder.setCorrection(apiCallResponse.getCorrection());
+        }
+        if (!StringUtils.isEmpty(apiCallResponse.getDetails()))
+        {
+            entryBuilder.setDetails(apiCallResponse.getDetails());
+        }
+
+        entryBuilder.putAllObjRefs(readLinStorMap(apiCallResponse.getObjRefsList()));
+
+        return entryBuilder.build();
     }
 
     private static Map<String, String> readLinStorMap(List<LinStorMapEntryOuterClass.LinStorMapEntry> linStorMap)

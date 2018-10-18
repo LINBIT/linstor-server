@@ -9,7 +9,6 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
-import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
@@ -35,7 +34,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -57,13 +56,11 @@ public class CtrlStorPoolApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final StorPoolHelper storPoolHelper;
 
     @Inject
     public CtrlStorPoolApiCallHandler(
@@ -72,8 +69,6 @@ public class CtrlStorPoolApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        StorPoolHelper storPoolHelperRef,
-        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -86,62 +81,11 @@ public class CtrlStorPoolApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        storPoolHelper = storPoolHelperRef;
-        storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-    }
-
-    public ApiCallRc createStorPool(
-        String nodeNameStr,
-        String storPoolNameStr,
-        String driver,
-        String freeSpaceMgrNameStr,
-        Map<String, String> storPoolPropsMap
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeStorPoolContext(
-            ApiOperation.makeRegisterOperation(),
-            nodeNameStr,
-            storPoolNameStr
-        );
-
-        try
-        {
-            // as the storage pool definition is implicitly created if it doesn't exist
-            // we always will update the storPoolDfnMap even if not necessary
-            // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
-            requireStorPoolDfnMapChangeAccess();
-
-            StorPoolData storPool = storPoolHelper.createStorPool(
-                nodeNameStr,
-                storPoolNameStr,
-                driver,
-                freeSpaceMgrNameStr
-            );
-            ctrlPropsHelper.fillProperties(
-                LinStorObject.STORAGEPOOL, storPoolPropsMap, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
-
-            updateStorPoolDfnMap(storPool);
-
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithDetail(
-                responses, context, ctrlSatelliteUpdater.updateSatellite(storPool));
-
-            responseConverter.addWithOp(responses, context,
-                ApiSuccessUtils.defaultRegisteredEntry(storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
     }
 
     public ApiCallRc modifyStorPool(
@@ -171,11 +115,15 @@ public class CtrlStorPoolApiCallHandler
                 ));
             }
 
-            Props props = getProps(storPool);
+            Props props = ctrlPropsHelper.getProps(storPool);
             Map<String, String> propsMap = props.map();
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.STORAGEPOOL, overrideProps, getProps(storPool), ApiConsts.FAIL_ACC_DENIED_STOR_POOL);
+                LinStorObject.STORAGEPOOL,
+                overrideProps,
+                ctrlPropsHelper.getProps(storPool),
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+            );
 
             for (String delKey : deletePropKeys)
             {
@@ -427,41 +375,6 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    private void requireStorPoolDfnMapChangeAccess()
-    {
-        try
-        {
-            storPoolDefinitionRepository.requireAccess(
-                peerAccCtx.get(),
-                AccessType.CHANGE
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "change any storage pools",
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
-            );
-        }
-    }
-
-    private void updateStorPoolDfnMap(StorPoolData storPool)
-    {
-        try
-        {
-            storPoolDefinitionRepository.put(
-                apiCtx,
-                storPool.getName(),
-                storPool.getDefinition(apiCtx)
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-    }
-
     private Collection<Volume> getVolumes(StorPoolData storPool)
     {
         Collection<Volume> volumes;
@@ -509,26 +422,7 @@ public class CtrlStorPoolApiCallHandler
         );
     }
 
-    private Props getProps(StorPoolData storPool)
-    {
-        Props props;
-        try
-        {
-            props = storPool.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access properties of storage pool '" + storPool.getName().displayValue +
-                    "' on node '" + storPool.getNode().getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
-            );
-        }
-        return props;
-    }
-
-    private static ResponseContext makeStorPoolContext(
+    static ResponseContext makeStorPoolContext(
         ApiOperation operation,
         String nodeNameStr,
         String storPoolNameStr

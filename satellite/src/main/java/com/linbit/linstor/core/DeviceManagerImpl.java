@@ -28,6 +28,7 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateBundle;
+import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateNotification;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.drbdstate.DrbdEventService;
@@ -348,13 +349,27 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet)
+    public void storPoolUpdateApplied(
+        Set<StorPoolName> storPoolSet,
+        Set<ResourceName> rscSet,
+        ApiCallRc responses
+    )
     {
         synchronized (sched)
         {
             for (StorPoolName storPoolName : storPoolSet)
             {
-                markPendingDispatch(rcvPendingBundle.storPoolUpdates.remove(storPoolName), rscSet);
+                UpdateNotification updateNotification = rcvPendingBundle.storPoolUpdates.remove(storPoolName);
+
+                markPendingDispatch(updateNotification, rscSet);
+
+                List<FluxSink<ApiCallRc>> responseSinks = updateNotification == null ?
+                    Collections.emptyList() :
+                    updateNotification.getResponseSinks();
+                for (FluxSink<ApiCallRc> responseSink : responseSinks)
+                {
+                    responseSink.next(responses);
+                }
             }
             if (rcvPendingBundle.isEmpty())
             {
@@ -402,7 +417,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     private void markPendingDispatch(
-        StltUpdateTrackerImpl.UpdateNotification updateNotification,
+        UpdateNotification updateNotification,
         Set<ResourceName> rscSet
     )
     {
@@ -1195,7 +1210,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
-    static <K> Map<K, UUID> extractUuids(Map<K, StltUpdateTrackerImpl.UpdateNotification> map)
+    static <K> Map<K, UUID> extractUuids(Map<K, UpdateNotification> map)
     {
         return map.entrySet().stream()
             .collect(Collectors.toMap(

@@ -15,7 +15,7 @@ public interface DeviceManager extends DrbdStateChange
 {
     void controllerUpdateApplied(Set<ResourceName> rscSet);
     void nodeUpdateApplied(Set<NodeName> nodeSet, Set<ResourceName> rscSet);
-    void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet);
+    void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet, ApiCallRc responses);
     void rscUpdateApplied(Set<Resource.Key> rscSet);
     void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
 

@@ -6,6 +6,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -167,6 +168,50 @@ public class CtrlSatelliteUpdateCaller
         }
 
         return mergeExtractingApiRcExceptions(Flux.fromIterable(responses));
+    }
+
+    public Flux<ApiCallRc> updateSatellite(final StorPool storPool)
+    {
+        final Node node = storPool.getNode();
+        NodeName nodeName = node.getName();
+
+        Flux<ApiCallRc> response;
+
+        try
+        {
+            Peer currentPeer = node.getPeer(apiCtx);
+
+            if (currentPeer.isConnected() && currentPeer.hasFullSyncFailed())
+            {
+                response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
+            }
+            else
+            {
+                response = currentPeer
+                    .apiCall(
+                        InternalApiConsts.API_CHANGED_STOR_POOL,
+                        internalComSerializer
+                            .headerlessBuilder()
+                            .changedStorPool(
+                                storPool.getUuid(),
+                                storPool.getName().displayValue
+                            )
+                            .build()
+                    )
+
+                    .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
+
+                    .onErrorMap(PeerNotConnectedException.class, ignored ->
+                        new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))
+                    );
+            }
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+
+        return response;
     }
 
     private Flux<ApiCallRc> updateResource(Resource currentRsc)

@@ -1,16 +1,16 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
 import com.linbit.linstor.proto.MsgCrtStorPoolOuterClass.MsgCrtStorPool;
 import com.linbit.linstor.proto.StorPoolOuterClass.StorPool;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -18,33 +18,37 @@ import java.io.InputStream;
     name = ApiConsts.API_CRT_STOR_POOL,
     description = "Creates a storage pool name registration"
 )
-public class CreateStorPool implements ApiCall
+public class CreateStorPool implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final ApiCallAnswerer apiCallAnswerer;
+    private final CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtApiCallHandler;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public CreateStorPool(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
+    public CreateStorPool(
+        CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtApiCallHandlerRef,
+        ResponseSerializer responseSerializerRef
+    )
     {
-        apiCallHandler = apiCallHandlerRef;
-        apiCallAnswerer = apiCallAnswererRef;
+        ctrlStorPoolCrtApiCallHandler = ctrlStorPoolCrtApiCallHandlerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         MsgCrtStorPool msgCreateStorPool = MsgCrtStorPool.parseDelimitedFrom(msgDataIn);
         StorPool storPool = msgCreateStorPool.getStorPool();
 
-        ApiCallRc apiCallRc = apiCallHandler.createStoragePool(
-            storPool.getNodeName(),
-            storPool.getStorPoolName(),
-            storPool.getDriver(),
-            storPool.getFreeSpaceMgrName(),
-            ProtoMapUtils.asMap(storPool.getPropsList())
-        );
-        apiCallAnswerer.answerApiCallRc(apiCallRc);
+        return ctrlStorPoolCrtApiCallHandler
+            .createStorPool(
+                storPool.getNodeName(),
+                storPool.getStorPoolName(),
+                storPool.getDriver(),
+                storPool.getFreeSpaceMgrName(),
+                ProtoMapUtils.asMap(storPool.getPropsList())
+            )
+            .transform(responseSerializer::transform);
     }
 
 }

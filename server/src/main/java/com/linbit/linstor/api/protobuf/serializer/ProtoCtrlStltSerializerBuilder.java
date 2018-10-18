@@ -37,10 +37,12 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
+import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.EventInProgressSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData;
 import com.linbit.linstor.proto.javainternal.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
@@ -630,6 +632,31 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         appendObjectId(null, rscName);
         appendObjectId(snapshotUuid, snapshotName);
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder updateFreeCapacity(
+        UUID storPoolUuid, String storPoolName, SpaceInfo spaceInfo
+    )
+    {
+        try
+        {
+            MsgIntApplyStorPoolSuccess.newBuilder()
+                .setFreeSpace(StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder()
+                    .setStorPoolUuid(storPoolUuid.toString())
+                    .setStorPoolName(storPoolName)
+                    .setFreeCapacity(spaceInfo.freeCapacity)
+                    .setTotalCapacity(spaceInfo.totalCapacity)
+                    .build()
+                )
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
         return this;
     }
 

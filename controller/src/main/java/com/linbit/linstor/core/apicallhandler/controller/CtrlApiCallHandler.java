@@ -611,48 +611,6 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Creates a {@link StorPool}.
-     *
-     * @param nodeName required
-     * @param storPoolName required
-     * @param driver required
-     * @param storPoolPropsMap optional
-     * @return
-     */
-    public ApiCallRc createStoragePool(
-        String nodeName,
-        String storPoolName,
-        String driver,
-        String freeSpaceMgrNameStr,
-        Map<String, String> storPoolPropsMap
-    )
-    {
-        ApiCallRc apiCallRc;
-        Map<String, String> storPoolProps = storPoolPropsMap;
-        if (storPoolProps == null)
-        {
-            storPoolProps = Collections.emptyMap();
-        }
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.writeLock(),
-                storPoolDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = storPoolApiCallHandler.createStorPool(
-                nodeName,
-                storPoolName,
-                driver,
-                freeSpaceMgrNameStr,
-                storPoolProps
-            );
-        }
-
-        return apiCallRc;
-    }
-
-    /**
      * Modifies an existing {@link StorPool}
      *
      * @param storPoolUuid optional, if given checked against persisted UUID

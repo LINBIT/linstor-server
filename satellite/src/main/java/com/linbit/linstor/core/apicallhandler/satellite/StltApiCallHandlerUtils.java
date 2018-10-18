@@ -1,10 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -100,44 +98,6 @@ public class StltApiCallHandlerUtils
         return spaceMap;
     }
 
-    public SpaceInfo getSpaceInfoThickPool(String storPoolNameStr)
-        throws StorageException
-    {
-        Lock nodesMapReadLock = nodesMapLock.readLock();
-        Lock storPoolDfnMapReadLock = storPoolDfnMapLock.readLock();
-
-        SpaceInfo storagePoolSpaceInfo = null;
-        try
-        {
-            nodesMapReadLock.lock();
-            storPoolDfnMapReadLock.lock();
-
-            StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
-
-            StorPool storPool = controllerPeerConnector.getLocalNode().getStorPool(apiCtx, storPoolName);
-
-            if (storPool != null && !storPool.getDriverKind().usesThinProvisioning())
-            {
-                storagePoolSpaceInfo = getStoragePoolSpaceInfo(storPool);
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            errorReporter.reportError(new ImplementationError(exc));
-        }
-        catch (InvalidNameException exc)
-        {
-            errorReporter.reportError(exc);
-        }
-        finally
-        {
-            storPoolDfnMapReadLock.unlock();
-            nodesMapReadLock.unlock();
-        }
-
-        return storagePoolSpaceInfo;
-    }
-
     private Either<SpaceInfo, ApiRcException> getStoragePoolSpaceInfoOrError(StorPool storPool)
         throws AccessDeniedException
     {
@@ -158,7 +118,7 @@ public class StltApiCallHandlerUtils
         return result;
     }
 
-    private SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
+    public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
         throws AccessDeniedException, StorageException
     {
         SpaceInfo spaceInfo;

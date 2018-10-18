@@ -68,53 +68,6 @@ public class ApplyStorPool implements ApiCall
             controllerPeerConnector.getLocalNode().getName().displayValue
         );
         apiCallHandler.applyStorPoolChanges(storPoolRaw);
-
-        try
-        {
-            SpaceInfo spaceInfo = apiCallHandlerUtils.getSpaceInfoThickPool(storPoolData.getStorPoolName());
-            Long requestedFreeSpace = null;
-            Long totalCapacity = null;
-            if (spaceInfo != null)
-            {
-                requestedFreeSpace = spaceInfo.freeCapacity;
-                totalCapacity = spaceInfo.totalCapacity;
-            }
-
-            if (requestedFreeSpace == null)
-            {
-                errorReporter.reportError(
-                    new ImplementationError(
-                        "Applied storage pool name not found",
-                        null
-                    )
-                );
-            }
-            else
-            {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                MsgIntApplyStorPoolSuccess.newBuilder()
-                    .setFreeSpace(StorPoolFreeSpace.newBuilder()
-                        .setStorPoolUuid(storPoolData.getStorPoolUuid())
-                        .setStorPoolName(storPoolData.getStorPoolName())
-                        .setFreeCapacity(requestedFreeSpace)
-                        .setTotalCapacity(totalCapacity)
-                        .build()
-                    )
-                    .build()
-                    .writeDelimitedTo(baos);
-                controllerPeer.sendMessage(
-                    apiCallAnswerer.prepareOnewayMessage(
-                        baos.toByteArray(),
-                        InternalApiConsts.API_APPLY_STOR_POOL_SUCCESS
-                    )
-                );
-            }
-        }
-        catch (StorageException storageExc)
-        {
-            // TODO: report about this error to the controller
-            errorReporter.reportError(storageExc);
-        }
     }
 
     static StorPoolPojo asStorPoolPojo(MsgIntStorPoolData storPoolData, String nodeName)

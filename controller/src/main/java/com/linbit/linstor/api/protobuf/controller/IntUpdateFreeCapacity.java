@@ -15,15 +15,15 @@ import java.util.Arrays;
 import java.util.UUID;
 
 @ProtobufApiCall(
-    name = InternalApiConsts.API_APPLY_STOR_POOL_SUCCESS,
+    name = InternalApiConsts.API_UPDATE_FREE_CAPACITY,
     description = "Satellite successfully applied a storage pool"
 )
-public class IntApplyStorPoolSuccess implements ApiCall
+public class IntUpdateFreeCapacity implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
 
     @Inject
-    public IntApplyStorPoolSuccess(
+    public IntUpdateFreeCapacity(
         CtrlApiCallHandler apiCallHandlerRef
     )
     {

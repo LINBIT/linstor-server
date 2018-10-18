@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.PeerContext;
@@ -55,6 +56,25 @@ public class CtrlPropsHelper
                 accDeniedExc,
                 "access properties for node '" + node.getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return props;
+    }
+
+    public Props getProps(StorPoolData storPool)
+    {
+        Props props;
+        try
+        {
+            props = storPool.getProps(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access properties of storage pool '" + storPool.getName().displayValue +
+                    "' on node '" + storPool.getNode().getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
         return props;

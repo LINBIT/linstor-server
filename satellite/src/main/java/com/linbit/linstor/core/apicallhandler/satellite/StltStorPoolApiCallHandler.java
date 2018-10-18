@@ -2,6 +2,8 @@ package com.linbit.linstor.core.apicallhandler.satellite;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.FreeSpaceMgrSatelliteFactory;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.ResourceDefinition;
@@ -13,20 +15,21 @@ import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collection;
@@ -49,7 +52,8 @@ class StltStorPoolApiCallHandler
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
-    private final Props stltProps;
+    private final StltApiCallHandlerUtils apiCallHandlerUtils;
+    private final CtrlStltSerializer ctrlStltSerializer;
 
     @Inject
     StltStorPoolApiCallHandler(
@@ -62,7 +66,8 @@ class StltStorPoolApiCallHandler
         StorPoolDataSatelliteFactory storPoolDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
-        @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef
+        StltApiCallHandlerUtils apiCallHandlerUtilsRef,
+        CtrlStltSerializer ctrlStltSerializerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -74,7 +79,8 @@ class StltStorPoolApiCallHandler
         storPoolDataFactory = storPoolDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
-        stltProps = stltPropsRef;
+        apiCallHandlerUtils = apiCallHandlerUtilsRef;
+        ctrlStltSerializer = ctrlStltSerializerRef;
     }
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
@@ -102,7 +108,7 @@ class StltStorPoolApiCallHandler
 
             Set<StorPoolName> storPoolSet = new TreeSet<>();
             storPoolSet.add(storPoolName);
-            deviceManager.storPoolUpdateApplied(storPoolSet, Collections.emptySet());
+            deviceManager.storPoolUpdateApplied(storPoolSet, Collections.emptySet(), new ApiCallRcImpl());
         }
         catch (Exception | ImplementationError exc)
         {
@@ -114,6 +120,10 @@ class StltStorPoolApiCallHandler
     public ChangedData applyChanges(StorPoolPojo storPoolRaw)
     {
         ChangedData changedData = null;
+        Set<StorPoolName> storPoolSet = new HashSet<>();
+        Set<ResourceName> changedResources = new TreeSet<>();
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         try
         {
             StorPoolName storPoolName;
@@ -131,7 +141,6 @@ class StltStorPoolApiCallHandler
                 throw new ImplementationError("ApplyChanges called with invalid localnode", new NullPointerException());
             }
             storPool = localNode.getStorPool(apiCtx, storPoolName);
-            Set<ResourceName> changedResources = new TreeSet<>();
             if (storPool != null)
             {
                 checkUuid(storPool, storPoolRaw);
@@ -193,14 +202,46 @@ class StltStorPoolApiCallHandler
                 storPoolName.displayValue
             );
 
-            Set<StorPoolName> storPoolSet = new HashSet<>();
             storPoolSet.add(storPoolName);
-            deviceManager.storPoolUpdateApplied(storPoolSet, changedResources);
+
+            SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool);
+            if (spaceInfo != null && !storPool.getDriverKind().usesThinProvisioning())
+            {
+                controllerPeerConnector.getControllerPeer().sendMessage(
+                    ctrlStltSerializer
+                        .onewayBuilder(InternalApiConsts.API_UPDATE_FREE_CAPACITY)
+                        .updateFreeCapacity(storPool.getUuid(), storPoolName.getDisplayName(), spaceInfo)
+                        .build()
+                );
+            }
+
+            responses.addEntry(ApiCallRcImpl.simpleEntry(
+                ApiConsts.MODIFIED,
+                "Changes applied to storage pool '" + storPoolName + "'"
+            ));
+        }
+        catch (LinStorException linStorException)
+        {
+            errorReporter.reportError(linStorException);
+            responses.addEntry(ApiCallRcImpl.copyFromLinstorExc(
+                ApiConsts.FAIL_STOR_POOL_CONFIGURATION_ERROR,
+                linStorException
+            ));
         }
         catch (Exception | ImplementationError exc)
         {
             errorReporter.reportError(exc);
+            responses.addEntry(ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Failed to apply storage pool changes"
+                )
+                .setCause(exc.getMessage())
+                .build()
+            );
         }
+
+        deviceManager.storPoolUpdateApplied(storPoolSet, changedResources, responses);
 
         return changedData;
     }
