@@ -27,7 +27,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -71,7 +70,6 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 @Singleton
 public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionListener
 {
-    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -86,7 +84,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
-        ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
@@ -100,7 +97,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
@@ -179,7 +175,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_RSC_BUSY,
-                "Additional of disk to resource already requested"
+                "Addition of disk to resource already requested"
             ));
         }
         if (hasDiskRemoveRequested(rsc))
@@ -548,34 +544,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             throw new ApiSQLException(sqlExc);
         }
-    }
-
-    private boolean hasDiskAdding(Resource rsc)
-    {
-        boolean diskAdding;
-        try
-        {
-            diskAdding = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_ADDING);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return diskAdding;
-    }
-
-    private boolean hasDiskRemoving(Resource rsc)
-    {
-        boolean diskAdding;
-        try
-        {
-            diskAdding = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_REMOVING);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return diskAdding;
     }
 
     private void markDiskAdding(Resource rsc)
