@@ -1,17 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
-import com.linbit.ValueInUseException;
-import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionData;
-import com.linbit.linstor.ResourceConnectionDataControllerFactory;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -20,7 +11,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
-import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -45,8 +35,7 @@ class CtrlRscConnectionApiCallHandler
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
-    private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ResourceConnectionDataControllerFactory resourceConnectionDataFactory;
+    private final CtrlRscConnectionHelper ctrlRscConnectionHelper;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
@@ -57,8 +46,7 @@ class CtrlRscConnectionApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
-        CtrlApiDataLoader ctrlApiDataLoaderRef,
-        ResourceConnectionDataControllerFactory resourceConnectionDataFactoryRef,
+        CtrlRscConnectionHelper ctrlRscConnectionHelperRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
@@ -68,8 +56,7 @@ class CtrlRscConnectionApiCallHandler
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
-        ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
+        ctrlRscConnectionHelper = ctrlRscConnectionHelperRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
@@ -93,7 +80,8 @@ class CtrlRscConnectionApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn = createRscConn(nodeName1Str, nodeName2Str, rscNameStr, null);
+            ResourceConnectionData rscConn =
+                ctrlRscConnectionHelper.createRscConn(nodeName1Str, nodeName2Str, rscNameStr, null);
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.RSC_CONN, rscConnPropsMap, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
@@ -131,19 +119,8 @@ class CtrlRscConnectionApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr);
-            if (rscConn == null)
-            {
-                rscConn = createRscConn(nodeName1, nodeName2, rscNameStr, null);
-            }
-
-            if (rscConnUuid != null && !rscConnUuid.equals(rscConn.getUuid()))
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_UUID_RSC_CONN,
-                    "UUID-check failed"
-                ));
-            }
+            ResourceConnectionData rscConn =
+                ctrlRscConnectionHelper.loadOrCreateRscConn(rscConnUuid, nodeName1, nodeName2, rscNameStr);
 
             Props props = getProps(rscConn);
             Map<String, String> propsMap = props.map();
@@ -186,7 +163,8 @@ class CtrlRscConnectionApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn = loadRscConn(nodeName1Str, nodeName2Str, rscNameStr);
+            ResourceConnectionData rscConn =
+                ctrlRscConnectionHelper.loadRscConn(nodeName1Str, nodeName2Str, rscNameStr);
             UUID rscConnUuid = rscConn.getUuid();
             delete(rscConn);
 
@@ -202,121 +180,6 @@ class CtrlRscConnectionApiCallHandler
         }
 
         return responses;
-    }
-
-    private ResourceConnectionData createRscConn(
-        String nodeName1Str,
-        String nodeName2Str,
-        String rscNameStr,
-        ResourceConnection.RscConnFlags[] initFlags
-    )
-    {
-        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
-        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
-        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
-
-        Resource rsc1 = loadRsc(node1, rscName);
-        Resource rsc2 = loadRsc(node2, rscName);
-
-        ResourceConnectionData rscConn;
-        try
-        {
-            rscConn = resourceConnectionDataFactory.create(
-                peerAccCtx.get(),
-                rsc1,
-                rsc2,
-                initFlags,
-                null,
-                false
-            );
-        }
-        catch (ValueOutOfRangeException | ValueInUseException exc)
-        {
-            // Port cannot be specified
-            throw new ImplementationError(exc);
-        }
-        catch (ExhaustedPoolException exc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT,
-                "Could not find free TCP port"
-            ), exc);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "create " + getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
-                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_EXISTS_RSC_CONN,
-                "The " + getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr) +
-                    " already exists."
-            ), dataAlreadyExistsExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-        return rscConn;
-    }
-
-    private ResourceConnectionData loadRscConn(
-        String nodeName1,
-        String nodeName2,
-        String rscNameStr
-    )
-    {
-        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
-        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
-        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
-
-        Resource rsc1 = loadRsc(node1, rscName);
-        Resource rsc2 = loadRsc(node2, rscName);
-
-        ResourceConnectionData rscConn;
-        try
-        {
-            rscConn = ResourceConnectionData.get(
-                peerAccCtx.get(),
-                rsc1,
-                rsc2
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "load " + getResourceConnectionDescriptionInline(nodeName1, nodeName2, rscNameStr),
-                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
-            );
-        }
-        return rscConn;
-    }
-
-    private Resource loadRsc(NodeData node, ResourceName rscName)
-    {
-        Resource rsc;
-        try
-        {
-            rsc = node.getResource(
-                peerAccCtx.get(),
-                rscName
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "load resource '" + rscName.displayValue + "' from node '" + node.getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        return rsc;
     }
 
     private Props getProps(ResourceConnectionData rscConn)
@@ -380,7 +243,7 @@ class CtrlRscConnectionApiCallHandler
             nodeName2 + " for resource " + rscName;
     }
 
-    public static String getResourceConnectionDescriptionInline(AccessContext accCtx, ResourceConnectionData rscConn)
+    public static String getResourceConnectionDescriptionInline(AccessContext accCtx, ResourceConnection rscConn)
     {
         String descriptionInline;
         try
@@ -404,7 +267,7 @@ class CtrlRscConnectionApiCallHandler
             nodeName2 + "' for resource '" + rscName + "'";
     }
 
-    private static ResponseContext makeResourceConnectionContext(
+    static ResponseContext makeResourceConnectionContext(
         ApiOperation operation,
         String nodeName1Str,
         String nodeName2Str,

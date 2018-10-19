@@ -3,9 +3,7 @@ package com.linbit.linstor;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -84,9 +82,6 @@ public class ConfFileBuilder
         Set<Resource> peerRscSet = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
         peerRscSet.addAll(remoteResources); // node-alphabetically sorted
 
-        final Set<Set<String>> nodeMeshes = new HashSet<>();
-        final Map<String, List<String>> singleConnections = new HashMap<>();
-
         final ResourceDefinition rscDfn = localRsc.getDefinition();
 
         appendLine(header());
@@ -144,10 +139,6 @@ public class ConfFileBuilder
             int port = localRsc.getDefinition().getPort(accCtx).value;
             // Create local network configuration
             {
-                NetInterface localNetIf = getPreferredNetIf(localRsc);
-                LsIpAddress localAddr = localNetIf.getAddress(accCtx);
-
-                String localAddrText = localAddr.getAddress();
                 appendLine("");
                 appendLine("on %s", localRsc.getAssignedNode().getName().displayValue);
                 try (Section onSection = new Section())
@@ -157,14 +148,6 @@ public class ConfFileBuilder
                     {
                         appendVlmIfPresent(vlmIterator.next(), accCtx, false);
                     }
-                    if (localAddr.getAddressType() == LsIpAddress.AddrType.IPv6)
-                    {
-                        appendLine("address    ipv6 [%s]:%d;", localAddrText, port);
-                    }
-                    else
-                    {
-                        appendLine("address    ipv4 %s:%d;", localAddrText, port);
-                    }
                     appendLine("node-id    %d;", localRsc.getNodeId().value);
                 }
             }
@@ -173,10 +156,6 @@ public class ConfFileBuilder
             {
                 if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE))
                 {
-                    NetInterface peerNetIf = getPreferredNetIf(peerRsc);
-                    LsIpAddress peerAddr = peerNetIf.getAddress(accCtx);
-
-                    String peerAddrText = peerAddr.getAddress();
                     appendLine("");
                     appendLine("on %s", peerRsc.getAssignedNode().getName().displayValue);
                     try (Section onSection = new Section())
@@ -187,14 +166,6 @@ public class ConfFileBuilder
                             appendVlmIfPresent(peerVlms.next(), accCtx, true);
                         }
 
-                        if (peerAddr.getAddressType() == LsIpAddress.AddrType.IPv6)
-                        {
-                            appendLine("address    ipv6 [%s]:%d;", peerAddrText, port);
-                        }
-                        else
-                        {
-                            appendLine("address    ipv4 %s:%d;", peerAddrText, port);
-                        }
                         appendLine("node-id    %d;", peerRsc.getNodeId().value);
 
                         // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
@@ -203,7 +174,6 @@ public class ConfFileBuilder
                 }
             }
 
-            // TODO: find a better way to generate the connections
             // first generate all with local first
             for (final Resource peerRsc : peerRscSet)
             {
@@ -213,21 +183,14 @@ public class ConfFileBuilder
                         !(peerRsc.disklessForPeers(accCtx) &&
                             localRsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS)))
                 {
-                    Node fromNode = localRsc.getAssignedNode();
-                    Node toNode = peerRsc.getAssignedNode();
-
-                    String fromHost = fromNode.getName().displayValue;
-                    String toHost = toNode.getName().displayValue;
-
                     appendLine("");
                     appendLine("connection");
                     try (Section connectionSection = new Section())
                     {
-                        String format = "host %s;";
-                        appendLine(format, fromHost);
-                        appendLine(format, toHost);
-
                         ResourceConnection rscConn = localRsc.getResourceConnection(accCtx, peerRsc);
+
+                        appendConnectionHost(port, localRsc, rscConn);
+                        appendConnectionHost(port, peerRsc, rscConn);
 
                         if (rscConn != null)
                         {
@@ -284,48 +247,46 @@ public class ConfFileBuilder
                     }
                 }
             }
-
-            // FIXME: dead code (for connection meshes)
-            // if (!nodeMeshes.isEmpty())
-            // {
-            //     appendLine("connection-mesh");
-            //     try (Section connectionMeshSection = new Section())
-            //     {
-            //         for (final Set<String> mesh : nodeMeshes)
-            //         {
-            //             appendIndent();
-            //             append("hosts");
-            //             for (String node : mesh)
-            //             {
-            //                 append(" ");
-            //                 append(node);
-            //             }
-            //             appendLine(";");
-            //         }
-            //     }
-            // }
-            //
-            // if (!singleConnections.isEmpty())
-            // {
-            //     final Set<Entry<String,List<String>>> entrySet = singleConnections.entrySet();
-            //     for (final Entry<String, List<String>> entry : entrySet)
-            //     {
-            //         final String source = entry.getKey();
-            //         final List<String> targets = entry.getValue();
-            //         for (final String target : targets)
-            //         {
-            //             appendLine("connection");
-            //             try (Section connectionSection = new Section())
-            //             {
-            //                 appendLine("host %s;", source);
-            //                 appendLine("host %s;", target);
-            //             }
-            //         }
-            //     }
-            // }
         }
 
         return stringBuilder.toString();
+    }
+
+    private void appendConnectionHost(int rscDfnPort, Resource rsc, ResourceConnection rscConn)
+        throws AccessDeniedException
+    {
+        TcpPortNumber rscConnPort = rscConn == null ? null : rscConn.getPort(accCtx);
+        int port = rscConnPort == null ? rscDfnPort : rscConnPort.value;
+
+        NetInterface netIf = getPreferredNetIf(rsc);
+        LsIpAddress addr = netIf.getAddress(accCtx);
+        String addrText = addr.getAddress();
+
+        String outsideAddress;
+        if (addr.getAddressType() == LsIpAddress.AddrType.IPv6)
+        {
+            outsideAddress = String.format("ipv6 [%s]:%d", addrText, port);
+        }
+        else
+        {
+            outsideAddress = String.format("ipv4 %s:%d", addrText, port);
+        }
+
+        String hostName = rsc.getAssignedNode().getName().displayValue;
+
+        if (rscConn != null && rscConn.getStateFlags().isSet(accCtx, ResourceConnection.RscConnFlags.LOCAL_DRBD_PROXY))
+        {
+            appendLine("host %s address 127.0.0.1:%d via proxy on %s", hostName, port, hostName);
+            try (Section ignore = new Section())
+            {
+                appendLine("inside 127.0.0.2:%d;", port);
+                appendLine("outside %s;", outsideAddress);
+            }
+        }
+        else
+        {
+            appendLine("host %s address %s;", hostName, outsideAddress);
+        }
     }
 
     public String buildCommonConf(final Props satelliteProps)

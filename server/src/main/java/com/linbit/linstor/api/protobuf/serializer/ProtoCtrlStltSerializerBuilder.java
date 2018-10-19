@@ -919,7 +919,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                     .setUuid(conn.getUuid().toString())
                     .setNode1(conn.getSourceResource(serializerCtx).getAssignedNode().getName().getDisplayName())
                     .setNode2(conn.getTargetResource(serializerCtx).getAssignedNode().getName().getDisplayName())
-                    .addAllProps(ProtoMapUtils.fromMap(conn.getProps(serializerCtx).map()));
+                    .addAllProps(ProtoMapUtils.fromMap(conn.getProps(serializerCtx).map()))
+                    .setFlags(conn.getStateFlags().getFlagsBits(serializerCtx));
 
                 TcpPortNumber port = conn.getPort(serializerCtx);
                 if (port != null)

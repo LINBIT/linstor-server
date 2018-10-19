@@ -5,8 +5,10 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -206,6 +208,29 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             }
         }
         return port.set(portNr);
+    }
+
+    @Override
+    public void autoAllocatePort(AccessContext accCtx)
+        throws SQLException, ExhaustedPoolException
+    {
+        TcpPortNumber tcpPortNumber = port.get();
+        if (tcpPortNumber != null)
+        {
+            tcpPortPool.deallocate(tcpPortNumber.value);
+        }
+
+        TcpPortNumber portNr;
+        try
+        {
+            portNr = new TcpPortNumber(tcpPortPool.autoAllocate());
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            throw new ImplementationError("Auto-allocated TCP port number out of range", exc);
+        }
+
+        port.set(portNr);
     }
 
     @Override

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.propscon.Props;
@@ -41,10 +42,14 @@ public interface ResourceConnection extends DbgInstanceUuid, TransactionObject
     TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port)
         throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException;
 
+    void autoAllocatePort(AccessContext accCtx)
+        throws AccessDeniedException, SQLException, ExhaustedPoolException;
+
     @SuppressWarnings("checkstyle:magicnumber")
     enum RscConnFlags implements Flags
     {
-        DELETED(1L << 0);
+        DELETED(1L << 0),
+        LOCAL_DRBD_PROXY(1L << 1);
 
         public final long flagValue;
 

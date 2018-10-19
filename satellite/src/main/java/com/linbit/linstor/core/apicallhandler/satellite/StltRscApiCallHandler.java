@@ -597,13 +597,19 @@ class StltRscApiCallHandler
                         rscConnApi.getUuid(),
                         sourceResource,
                         targetResource,
-                        ResourceConnection.RscConnFlags.restoreFlags(rscConnApi.getFlags()),
-                        rscConnApi.getPort() == null ? null : new TcpPortNumber(rscConnApi.getPort())
+                        new ResourceConnection.RscConnFlags[] {},
+                        null
                     );
 
                     Map<String, String> propMap = rscConn.getProps(apiCtx).map();
                     propMap.clear();
                     propMap.putAll(rscConnApi.getProps());
+
+                    rscConn.getStateFlags().resetFlagsTo(
+                        apiCtx, ResourceConnection.RscConnFlags.restoreFlags(rscConnApi.getFlags()));
+
+                    rscConn.setPort(
+                        apiCtx, rscConnApi.getPort() == null ? null : new TcpPortNumber(rscConnApi.getPort()));
                 }
             }
 

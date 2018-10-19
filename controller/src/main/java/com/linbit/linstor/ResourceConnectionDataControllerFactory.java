@@ -1,8 +1,5 @@
 package com.linbit.linstor;
 
-import com.linbit.ExhaustedPoolException;
-import com.linbit.ValueInUseException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -51,12 +48,9 @@ public class ResourceConnectionDataControllerFactory
         AccessContext accCtx,
         Resource sourceResource,
         Resource targetResource,
-        ResourceConnection.RscConnFlags[] initFlags,
-        Integer port,
-        boolean allocatePort
+        ResourceConnection.RscConnFlags[] initFlags
     )
-        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException,
-        ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
+        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
         sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
@@ -68,26 +62,11 @@ public class ResourceConnectionDataControllerFactory
             throw new LinStorDataAlreadyExistsException("The ResourceConnection already exists");
         }
 
-        TcpPortNumber chosenTcpPort;
-        if (port != null)
-        {
-            chosenTcpPort = new TcpPortNumber(port);
-            tcpPortPool.allocate(port);
-        }
-        else if (allocatePort)
-        {
-            chosenTcpPort = new TcpPortNumber(tcpPortPool.autoAllocate());
-        }
-        else
-        {
-            chosenTcpPort = null;
-        }
-
         rscConData = new ResourceConnectionData(
             UUID.randomUUID(),
             sourceResource,
             targetResource,
-            chosenTcpPort,
+            null,
             tcpPortPool,
             dbDriver,
             propsContainerFactory,

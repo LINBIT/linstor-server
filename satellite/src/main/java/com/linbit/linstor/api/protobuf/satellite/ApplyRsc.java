@@ -156,7 +156,7 @@ public class ApplyRsc implements ApiCall
                     rscName,
                     ProtoMapUtils.asMap(rscConnData.getPropsList()),
                     rscConnData.getFlags(),
-                    rscConnData.getPort()
+                    rscConnData.getPort() == 0 ? null : rscConnData.getPort()
                 )
             )
             .collect(Collectors.toList());
