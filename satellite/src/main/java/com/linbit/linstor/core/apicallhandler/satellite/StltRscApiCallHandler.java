@@ -19,7 +19,7 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.ResourceConnectionDataFactory;
+import com.linbit.linstor.ResourceConnectionDataSatelliteFactory;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition;
@@ -97,7 +97,7 @@ class StltRscApiCallHandler
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
-    private final ResourceConnectionDataFactory resourceConnectionDataFactory;
+    private final ResourceConnectionDataSatelliteFactory resourceConnectionDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
@@ -121,7 +121,7 @@ class StltRscApiCallHandler
         VolumeDataFactory volumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
-        ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
+        ResourceConnectionDataSatelliteFactory resourceConnectionDataFactoryRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef
     )
     {
@@ -597,7 +597,8 @@ class StltRscApiCallHandler
                         rscConnApi.getUuid(),
                         sourceResource,
                         targetResource,
-                        ResourceConnection.RscConnFlags.restoreFlags(rscConnApi.getFlags())
+                        ResourceConnection.RscConnFlags.restoreFlags(rscConnApi.getFlags()),
+                        rscConnApi.getPort() == null ? null : new TcpPortNumber(rscConnApi.getPort())
                     );
 
                     Map<String, String> propMap = rscConn.getProps(apiCtx).map();

@@ -5,6 +5,8 @@ import com.linbit.ValueInUseException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
@@ -17,7 +19,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.SF_TARGET_PORT_POOL;
@@ -108,6 +112,31 @@ public class DbNumberPoolInitializer
                 {
                     errorReporter.logError(
                         "Skipping initial allocation in pool: " + exc.getMessage());
+                }
+
+                Iterator<Resource> rscIter = curRscDfn.iterateResource(initCtx);
+                Set<ResourceConnection> rscConns = new HashSet<>();
+                while (rscIter.hasNext())
+                {
+                    Resource rsc = rscIter.next();
+                    rsc.streamResourceConnections(initCtx).forEach(rscConns::add);
+                }
+
+                for (ResourceConnection rscConn : rscConns)
+                {
+                    TcpPortNumber connPortNr = rscConn.getPort(initCtx);
+                    if (connPortNr != null)
+                    {
+                        try
+                        {
+                            tcpPortPool.allocate(connPortNr.value);
+                        }
+                        catch (ValueInUseException exc)
+                        {
+                            errorReporter.logError(
+                                "Skipping initial allocation in pool: " + exc.getMessage());
+                        }
+                    }
                 }
             }
         }

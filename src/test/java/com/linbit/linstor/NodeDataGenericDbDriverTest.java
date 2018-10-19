@@ -455,7 +455,9 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 res1,
                 res2,
-                null
+                null,
+                null,
+                false
             );
             resCon.getProps(SYS_CTX).setProp(resConTestKey, resConTestValue);
             resConUuid = resCon.getUuid();

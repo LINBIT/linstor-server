@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -33,6 +35,11 @@ public interface ResourceConnection extends DbgInstanceUuid, TransactionObject
     RscConnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
     StateFlags<RscConnFlags> getStateFlags();
+
+    TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException;
+
+    TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port)
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException;
 
     @SuppressWarnings("checkstyle:magicnumber")
     enum RscConnFlags implements Flags
@@ -84,5 +91,6 @@ public interface ResourceConnection extends DbgInstanceUuid, TransactionObject
         String getResourceName();
         Map<String, String> getProps();
         long getFlags();
+        Integer getPort();
     }
 }

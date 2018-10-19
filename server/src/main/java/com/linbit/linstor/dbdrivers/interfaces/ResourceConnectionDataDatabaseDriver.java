@@ -1,9 +1,11 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
-
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.ResourceConnectionData;
+import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+
+import java.sql.SQLException;
 
 /**
  * Database driver for {@link ResourceConnectionData}.
@@ -34,4 +36,9 @@ public interface ResourceConnectionDataDatabaseDriver
      * A special sub-driver to update the persisted flags.
      */
     StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence();
+
+    /**
+     * A special sub-driver to update the port
+     */
+    SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> getPortDriver();
 }

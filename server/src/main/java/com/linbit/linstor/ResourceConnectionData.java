@@ -6,8 +6,10 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.ValueInUseException;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -41,6 +43,11 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     // State flags
     private final StateFlags<ResourceConnection.RscConnFlags> flags;
 
+    // TCP Port
+    private final TransactionSimpleObject<ResourceConnectionData, TcpPortNumber> port;
+
+    private final DynamicNumberPool tcpPortPool;
+
     private final ResourceConnectionDataDatabaseDriver dbDriver;
 
     private final TransactionSimpleObject<ResourceConnectionData, Boolean> deleted;
@@ -49,6 +56,8 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         UUID uuid,
         Resource sourceResourceRef,
         Resource targetResourceRef,
+        TcpPortNumber portRef,
+        DynamicNumberPool tcpPortPoolRef,
         ResourceConnectionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -58,6 +67,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         throws SQLException
     {
         super(transMgrProviderRef);
+        tcpPortPool = tcpPortPoolRef;
         dbDriver = dbDriverRef;
 
         connectionKey = new ResourceConnectionKey(sourceResourceRef, targetResourceRef);
@@ -101,11 +111,18 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             initFlags
         );
 
+        port = transObjFactory.createTransactionSimpleObject(
+            this,
+            portRef,
+            this.dbDriver.getPortDriver()
+        );
+
         transObjs = Arrays.asList(
             connectionKey.getSource(),
             connectionKey.getTarget(),
             flags,
             props,
+            port,
             deleted
         );
     }
@@ -167,6 +184,31 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public TcpPortNumber getPort(AccessContext accCtx)
+    {
+        return port.get();
+    }
+
+    @Override
+    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber portNr)
+        throws SQLException, ValueInUseException
+    {
+        if (tcpPortPool != null)
+        {
+            TcpPortNumber tcpPortNumber = port.get();
+            if (tcpPortNumber != null)
+            {
+                tcpPortPool.deallocate(tcpPortNumber.value);
+            }
+            if (portNr != null)
+            {
+                tcpPortPool.allocate(portNr.value);
+            }
+        }
+        return port.set(portNr);
+    }
+
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         if (!deleted.get())
@@ -178,6 +220,11 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             connectionKey.getTarget().removeResourceConnection(accCtx, this);
 
             props.delete();
+
+            if (tcpPortPool != null && port.get() != null)
+            {
+                tcpPortPool.deallocate(port.get().value);
+            }
 
             activateTransMgr();
             dbDriver.delete(this);
@@ -212,7 +259,8 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             connectionKey.getTarget().getAssignedNode().getName().getDisplayName(),
             connectionKey.getSource().getDefinition().getName().getDisplayName(),
             getProps(accCtx).map(),
-            getStateFlags().getFlagsBits(accCtx)
+            getStateFlags().getFlagsBits(accCtx),
+            TcpPortNumber.getValueNullable(getPort(accCtx))
         );
     }
 }

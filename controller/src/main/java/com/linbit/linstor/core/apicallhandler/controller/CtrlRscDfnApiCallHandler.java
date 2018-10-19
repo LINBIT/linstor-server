@@ -405,7 +405,7 @@ public class CtrlRscDfnApiCallHandler
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT,
-                "Could not find free tcp port"
+                "Could not find free TCP port"
             ), exc);
         }
         catch (AccessDeniedException accDeniedExc)

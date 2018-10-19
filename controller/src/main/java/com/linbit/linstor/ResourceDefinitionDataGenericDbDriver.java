@@ -368,7 +368,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             try
             {
                 errorReporter.logTrace(
-                    "Updating ResourceDefinition's flags from [%d] to [%d] %s",
+                    "Updating ResourceDefinition's port from [%d] to [%d] %s",
                     resourceDefinition.getPort(dbCtx).value,
                     port.value,
                     getId(resourceDefinition)
@@ -380,7 +380,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                     stmt.executeUpdate();
                 }
                 errorReporter.logTrace(
-                    "ResourceDefinition's flags updated from [%d] to [%d] %s",
+                    "ResourceDefinition's port updated from [%d] to [%d] %s",
                     resourceDefinition.getPort(dbCtx).value,
                     port.value,
                     getId(resourceDefinition)

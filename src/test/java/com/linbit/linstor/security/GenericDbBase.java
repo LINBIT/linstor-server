@@ -26,7 +26,7 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceConnectionDataFactory;
+import com.linbit.linstor.ResourceConnectionDataControllerFactory;
 import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
@@ -144,7 +144,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected ObjectProtectionFactory objectProtectionFactory;
     @Inject protected PropsContainerFactory propsContainerFactory;
     @Inject protected NodeDataControllerFactory nodeDataFactory;
-    @Inject protected ResourceConnectionDataFactory resourceConnectionDataFactory;
+    @Inject protected ResourceConnectionDataControllerFactory resourceConnectionDataFactory;
     @Inject protected ResourceDataFactory resourceDataFactory;
     @Inject protected StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;

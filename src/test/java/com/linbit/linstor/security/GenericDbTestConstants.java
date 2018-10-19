@@ -139,7 +139,7 @@ public interface GenericDbTestConstants
     int TBL_COL_COUNT_VOLUME_DEFINITIONS    = 6;
     int TBL_COL_COUNT_VOLUMES               = 8;
     int TBL_COL_COUNT_NODE_CONNECTIONS      = 3;
-    int TBL_COL_COUNT_RESOURCE_CONNECTIONS  = 4;
+    int TBL_COL_COUNT_RESOURCE_CONNECTIONS  = 6;
     int TBL_COL_COUNT_VOLUME_CONNECTIONS    = 5;
     int TBL_COL_COUNT_PROPS_CONTAINERS      = 3;
 

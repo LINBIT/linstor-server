@@ -8,11 +8,12 @@ import com.linbit.linstor.ResourceConnection;
 public class RscConnPojo implements ResourceConnection.RscConnApi
 {
     private final UUID uuid;
-    private String sourceNodeName;
-    private String targetNodeName;
-    private String rscName;
+    private final String sourceNodeName;
+    private final String targetNodeName;
+    private final String rscName;
     private final Map<String, String> props;
-    private long flags;
+    private final long flags;
+    private final Integer port;
 
     public RscConnPojo(
         UUID uuidRef,
@@ -20,7 +21,8 @@ public class RscConnPojo implements ResourceConnection.RscConnApi
         String targetNodeNameRef,
         String rscNameRef,
         Map<String, String> propsRef,
-        long flagRef
+        long flagRef,
+        Integer portRef
     )
     {
         this.uuid = uuidRef;
@@ -29,6 +31,7 @@ public class RscConnPojo implements ResourceConnection.RscConnApi
         this.rscName = rscNameRef;
         this.props = propsRef;
         this.flags = flagRef;
+        this.port = portRef;
     }
 
     @Override
@@ -65,5 +68,11 @@ public class RscConnPojo implements ResourceConnection.RscConnApi
     public long getFlags()
     {
         return flags;
+    }
+
+    @Override
+    public Integer getPort()
+    {
+        return port;
     }
 }

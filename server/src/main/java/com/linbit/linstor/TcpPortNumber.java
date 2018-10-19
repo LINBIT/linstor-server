@@ -106,4 +106,9 @@ public class TcpPortNumber implements Comparable<TcpPortNumber>
     {
         Checks.genericRangeCheck(portNr, PORT_NR_MIN, PORT_NR_MAX, PORT_NR_EXC_FORMAT);
     }
+
+    public static Integer getValueNullable(TcpPortNumber tcpPortNumber)
+    {
+        return tcpPortNumber == null ? null : tcpPortNumber.value;
+    }
 }

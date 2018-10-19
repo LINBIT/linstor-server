@@ -1,13 +1,16 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionData;
-import com.linbit.linstor.ResourceConnectionDataFactory;
+import com.linbit.linstor.ResourceConnectionDataControllerFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -26,7 +29,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.stateflags.StateFlagsBits;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -44,7 +46,7 @@ class CtrlRscConnectionApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ResourceConnectionDataFactory resourceConnectionDataFactory;
+    private final ResourceConnectionDataControllerFactory resourceConnectionDataFactory;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
@@ -56,7 +58,7 @@ class CtrlRscConnectionApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        ResourceConnectionDataFactory resourceConnectionDataFactoryRef,
+        ResourceConnectionDataControllerFactory resourceConnectionDataFactoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
@@ -223,8 +225,22 @@ class CtrlRscConnectionApiCallHandler
                 peerAccCtx.get(),
                 rsc1,
                 rsc2,
-                initFlags
+                initFlags,
+                null,
+                false
             );
+        }
+        catch (ValueOutOfRangeException | ValueInUseException exc)
+        {
+            // Port cannot be specified
+            throw new ImplementationError(exc);
+        }
+        catch (ExhaustedPoolException exc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT,
+                "Could not find free TCP port"
+            ), exc);
         }
         catch (AccessDeniedException accDeniedExc)
         {

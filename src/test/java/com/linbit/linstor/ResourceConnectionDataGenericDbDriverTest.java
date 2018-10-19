@@ -65,7 +65,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         super.setUpAndEnterScope();
         assertEquals(
             TBL_RESOURCE_CONNECTIONS + " table's column count has changed. Update tests accordingly!",
-            4,
+            6,
             TBL_COL_COUNT_RESOURCE_CONNECTIONS
         );
 
@@ -88,6 +88,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
             uuid,
             resSrc,
             resDst,
+            null,
+            tcpPortPoolMock,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -108,7 +110,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst, null);
+        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst, null, null, false);
         commit();
 
         checkDbPersist(false);
@@ -157,7 +159,9 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             resSrc,
             resDst,
-            null
+            null,
+            null,
+            false
         );
 
         // no clear-cache
@@ -235,6 +239,6 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc.setResourceConnection(SYS_CTX, resCon);
         resDst.setResourceConnection(SYS_CTX, resCon);
 
-        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst, null);
+        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst, null, null, false);
     }
 }

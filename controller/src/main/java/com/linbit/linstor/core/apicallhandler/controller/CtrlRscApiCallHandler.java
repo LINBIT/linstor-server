@@ -303,9 +303,9 @@ public class CtrlRscApiCallHandler
                                 conKey.getTarget().getAssignedNode().getName().getDisplayName(),
                                 rscDfn.getName().getDisplayName(),
                                 new HashMap<>(),
-                                0
-                                )
-                            );
+                                0,
+                                null
+                            ));
                         }
                     }
                 }

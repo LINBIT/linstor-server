@@ -1,24 +1,21 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import javax.inject.Inject;
-
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.ResourceConnectionData;
-import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+
+import javax.inject.Inject;
 
 public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseDriver
 {
-    private final AccessContext dbCtx;
     private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
+    private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
 
     @Inject
-    public SatelliteResConDfnDriver(
-        @SystemContext AccessContext dbCtxRef
-    )
+    public SatelliteResConDfnDriver()
     {
-        dbCtx = dbCtxRef;
     }
 
     @Override
@@ -33,9 +30,17 @@ public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseD
         // no-op
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence()
     {
         return (StateFlagsPersistence<ResourceConnectionData>) stateFlagsDriver;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> getPortDriver()
+    {
+        return (SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber>) singleColDriver;
     }
 }

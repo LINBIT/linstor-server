@@ -24,6 +24,7 @@ import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.SpaceInfo;
@@ -914,13 +915,19 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             for (ResourceConnection conn : localResource.streamResourceConnections(serializerCtx)
                 .collect(Collectors.toList()))
             {
-                list.add(RscConnectionData.newBuilder()
+                RscConnectionData.Builder builder = RscConnectionData.newBuilder()
                     .setUuid(conn.getUuid().toString())
                     .setNode1(conn.getSourceResource(serializerCtx).getAssignedNode().getName().getDisplayName())
                     .setNode2(conn.getTargetResource(serializerCtx).getAssignedNode().getName().getDisplayName())
-                    .addAllProps(ProtoMapUtils.fromMap(conn.getProps(serializerCtx).map()))
-                    .build()
-                );
+                    .addAllProps(ProtoMapUtils.fromMap(conn.getProps(serializerCtx).map()));
+
+                TcpPortNumber port = conn.getPort(serializerCtx);
+                if (port != null)
+                {
+                    builder.setPort(port.value);
+                }
+
+                list.add(builder.build());
             }
             return list;
         }

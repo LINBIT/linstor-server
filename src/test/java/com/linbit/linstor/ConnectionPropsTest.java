@@ -103,7 +103,7 @@ public class ConnectionPropsTest extends GenericDbBase
         vol2 = volumeDataFactory.create(SYS_CTX, res2, volDfn, storPool2, blockDev2, metaDisk2, null);
 
         nodeCon = nodeConnectionDataFactory.create(SYS_CTX, node1, node2);
-        resCon = resourceConnectionDataFactory.create(SYS_CTX, res1, res2, null);
+        resCon = resourceConnectionDataFactory.create(SYS_CTX, res1, res2, null, null, false);
         volCon = volumeConnectionDataFactory.create(SYS_CTX, vol1, vol2);
 
         nodeConProps = nodeCon.getProps(SYS_CTX);

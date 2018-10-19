@@ -1,23 +1,29 @@
 package com.linbit.linstor;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -38,15 +44,16 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private static final String NODE_DST = DbConstants.NODE_NAME_DST;
     private static final String RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String FLAGS = "FLAGS";
+    private static final String PORT = "TCP_PORT";
 
     private static final String SELECT_ALL =
-        " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  + ", " + FLAGS +
+        " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  + ", " + FLAGS + ", " + PORT +
         " FROM " + TBL_RES_CON_DFN;
 
     private static final String INSERT =
         " INSERT INTO " + TBL_RES_CON_DFN +
-        " (" + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST + ", " + FLAGS + ")" +
-        " VALUES (?, ?, ?, ?, ?)";
+        " (" + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST + ", " + FLAGS + ", " + PORT + ")" +
+        " VALUES (?, ?, ?, ?, ?, ?)";
     private static final String DELETE =
         " DELETE FROM " + TBL_RES_CON_DFN +
         " WHERE " + NODE_SRC + " = ? AND " +
@@ -57,20 +64,28 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             " SET " + FLAGS + " = ? " +
             " WHERE " + NODE_SRC + " = ? AND " + NODE_DST + " = ? AND " +
             RES_NAME      + " = ?";
+    private static final String RES_UPDATE_PORT =
+        " UPDATE " + TBL_RES_CON_DFN +
+            " SET " + PORT + " = ? " +
+            " WHERE " + NODE_SRC + " = ? AND " + NODE_DST + " = ? AND " +
+            RES_NAME      + " = ?";
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
     private final PropsContainerFactory propsContainerFactory;
+    private final DynamicNumberPool tcpPortPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final FlagDriver flagDriver;
+    private final SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> portDriver;
 
     @Inject
     public ResourceConnectionDataGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
+        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -78,10 +93,12 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         propsContainerFactory = propsContainerFactoryRef;
+        tcpPortPool = tcpPortPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
         flagDriver = new FlagDriver();
+        portDriver = new PortDriver();
     }
 
     public List<ResourceConnectionData> loadAll(Map<Pair<NodeName, ResourceName>, ? extends Resource> tmpRscMap)
@@ -99,6 +116,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                     NodeName targetNodeName;
                     ResourceName rscName;
                     long flags;
+                    TcpPortNumber port;
 
                     try
                     {
@@ -106,17 +124,21 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                         targetNodeName = new NodeName(resultSet.getString(NODE_DST));
                         rscName = new ResourceName(resultSet.getString(RES_NAME));
                         flags = resultSet.getLong(FLAGS);
+
+                        int portInt = resultSet.getInt(PORT);
+                        port = resultSet.wasNull() ? null : new TcpPortNumber(portInt);
                     }
-                    catch (InvalidNameException invalidNameExc)
+                    catch (InvalidNameException | ValueOutOfRangeException exc)
                     {
-                        throw new ImplementationError(invalidNameExc);
+                        throw new ImplementationError(exc);
                     }
 
                     ResourceConnectionData conDfn = restoreResourceConnection(
                         resultSet,
                         tmpRscMap.get(new Pair<>(sourceNodeName, rscName)),
                         tmpRscMap.get(new Pair<>(targetNodeName, rscName)),
-                        flags
+                        flags,
+                        port
                     );
                     rscConnections.add(conDfn);
                 }
@@ -131,7 +153,8 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         ResultSet resultSet,
         Resource sourceResource,
         Resource targetResource,
-        long flags
+        long flags,
+        TcpPortNumber port
     )
         throws SQLException
     {
@@ -139,6 +162,8 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             java.util.UUID.fromString(resultSet.getString(UUID)),
             sourceResource,
             targetResource,
+            port,
+            tcpPortPool,
             this,
             propsContainerFactory,
             transObjFactory,
@@ -167,6 +192,16 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             stmt.setString(3, sourceNodeName.value);
             stmt.setString(4, targetNodeName.value);
             stmt.setLong(5, flags);
+
+            TcpPortNumber port = conDfnData.getPort(dbCtx);
+            if (port == null)
+            {
+                stmt.setNull(6, Types.INTEGER);
+            }
+            else
+            {
+                stmt.setInt(6, port.value);
+            }
 
             stmt.executeUpdate();
 
@@ -239,6 +274,12 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         return flagDriver;
     }
 
+    @Override
+    public SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> getPortDriver()
+    {
+        return portDriver;
+    }
+
     private class FlagDriver implements StateFlagsPersistence<ResourceConnectionData>
     {
         @Override
@@ -283,6 +324,53 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                         getId(rscCon)
                     );
                 }
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            }
+        }
+    }
+
+    private class PortDriver implements SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber>
+    {
+        @Override
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(ResourceConnectionData rscCon, TcpPortNumber port)
+            throws SQLException
+        {
+            try
+            {
+                TcpPortNumber fromPort = rscCon.getPort(dbCtx);
+
+                errorReporter.logTrace("Updating Resource connection's port from [%d] to [%d] %s",
+                    TcpPortNumber.getValueNullable(fromPort),
+                    TcpPortNumber.getValueNullable(port),
+                    getId(rscCon)
+                );
+
+                try (PreparedStatement stmt = getConnection().prepareStatement(RES_UPDATE_PORT))
+                {
+                    if (port == null)
+                    {
+                        stmt.setNull(1, Types.INTEGER);
+                    }
+                    else
+                    {
+                        stmt.setInt(1, port.value);
+                    }
+                    stmt.setString(2, rscCon.getSourceResource(dbCtx).getAssignedNode().getName().value);
+                    stmt.setString(3, rscCon.getTargetResource(dbCtx).getAssignedNode().getName().value);
+                    stmt.setString(4, rscCon.getSourceResource(dbCtx).getDefinition().getName().value);
+
+                    stmt.executeUpdate();
+                }
+
+                errorReporter.logTrace("Resource connection's port updated from [%d] to [%d] %s",
+                    TcpPortNumber.getValueNullable(fromPort),
+                    TcpPortNumber.getValueNullable(port),
+                    getId(rscCon)
+                );
             }
             catch (AccessDeniedException accDeniedExc)
             {

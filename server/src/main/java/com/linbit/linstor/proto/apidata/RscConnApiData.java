@@ -52,6 +52,12 @@ public class RscConnApiData implements ResourceConnection.RscConnApi
         return ResourceConnection.RscConnFlags.fromStringList(rscConnProto.getRscConnFlagsList());
     }
 
+    @Override
+    public Integer getPort()
+    {
+        return rscConnProto.hasPort() ? rscConnProto.getPort() : null;
+    }
+
     public static RscConnOuterClass.RscConn toProto(
         final ResourceConnection.RscConnApi apiResourceConn
     )
@@ -64,6 +70,10 @@ public class RscConnApiData implements ResourceConnection.RscConnApi
         rscConnBld.addAllRscConnProps(ProtoMapUtils.fromMap(apiResourceConn.getProps()));
         rscConnBld.setRscConnUuid(apiResourceConn.getUuid().toString());
         rscConnBld.addAllRscConnFlags(ResourceConnection.RscConnFlags.toStringList(apiResourceConn.getFlags()));
+        if (apiResourceConn.getPort() != null)
+        {
+            rscConnBld.setPort(apiResourceConn.getPort());
+        }
 
         return rscConnBld.build();
     }
