@@ -536,7 +536,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     {
                         pendingDispatchRscs.clear();
                         pendingDispatchRscs.putAll(dispatchRscs);
-                        pendingResponseSinks.clear();
                     }
                 }
                 else
