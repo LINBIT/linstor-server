@@ -95,10 +95,10 @@ public class ConfFileBuilderTest
         assertThat(countOccurrences(confFile, "^ *disk ")).isEqualTo(2);
         assertThat(countOccurrences(confFile, "^ *meta-disk ")).isEqualTo(2);
         assertThat(countOccurrences(confFile, "^ *device ")).isEqualTo(2);
-        assertThat(countOccurrences(confFile, "^ *address ")).isEqualTo(2);
         assertThat(countOccurrences(confFile, "^ *node-id ")).isEqualTo(2);
         assertThat(countOccurrences(confFile, "^ *connection")).isEqualTo(1);
         assertThat(countOccurrences(confFile, "^ *host ")).isEqualTo(2);
+        assertThat(countOccurrences(confFile, " address ")).isEqualTo(2);
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
