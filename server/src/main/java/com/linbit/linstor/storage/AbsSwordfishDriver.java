@@ -11,10 +11,12 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.utils.HttpHeader;
 import com.linbit.linstor.storage.utils.RestClient;
 import com.linbit.linstor.storage.utils.RestResponse;
+import com.linbit.linstor.storage.utils.SwordfishConsts;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
 
 import java.io.IOException;
@@ -394,6 +396,42 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         {
             errorMsgBuilder.append(errorMsg);
         }
+    }
+
+
+    protected String getSfVlmId(Props vlmDfnProps, boolean allowNull) throws StorageException
+    {
+        return getSfProp(
+            vlmDfnProps,
+            SwordfishConsts.DRIVER_SF_VLM_ID_KEY,
+            "volume id",
+            allowNull
+        );
+    }
+
+    protected String getSfProp(Props vlmDfnProps, String propKey, String errObjDescr, boolean allowNull)
+        throws StorageException, ImplementationError
+    {
+        String sfVlmId;
+        try
+        {
+            sfVlmId = vlmDfnProps.getProp(
+                propKey,
+                StorageDriver.STORAGE_NAMESPACE
+            );
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        if (!allowNull && sfVlmId == null)
+        {
+            throw new StorageException(
+                "No swordfish " + errObjDescr + " given. This usually happens if you forgot to " +
+                "create a resource of this resource definition using a swordfishTargetDriver"
+            );
+        }
+        return sfVlmId;
     }
 
     protected static class SfRscException extends StorageException

@@ -37,6 +37,20 @@ public class StltConfigAccessor
         return dmStatsStr != null && Boolean.valueOf(dmStatsStr);
     }
 
+    public String getNodeName()
+    {
+        String name = null;
+        try
+        {
+            name = stltProps.getProp(LinStor.KEY_NODE_NAME);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError("Hardcoded property key is invalid", exc);
+        }
+        return name;
+    }
+
     public ReadOnlyProps getReadonlyProps()
     {
         return getReadonlyProps(null);

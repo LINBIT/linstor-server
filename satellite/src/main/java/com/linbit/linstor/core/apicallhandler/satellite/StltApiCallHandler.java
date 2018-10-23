@@ -68,6 +68,8 @@ import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
@@ -257,6 +259,14 @@ public class StltApiCallHandler
                         accExc
                     )
                 );
+            }
+            try
+            {
+                stltConf.setProp(LinStor.KEY_NODE_NAME, nodeName);
+            }
+            catch (AccessDeniedException | InvalidKeyException | InvalidValueException | SQLException exc)
+            {
+                throw new ImplementationError(exc);
             }
             errorReporter.logInfo("Controller connected and authenticated (" + controllerPeer.getId() + ")");
         }

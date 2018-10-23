@@ -8,9 +8,9 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ODATA_ID
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_PROVIDING_POOLS;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_BASE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_MAPPING_PATH;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_MAPPING_PATH_TMP;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_MONITOR;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_MAPPING_PATH_FORMAT;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_MAPPING_PATH_TMP_FORMAT;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_POOLS;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_SERVICES;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_TASKS;
@@ -21,6 +21,7 @@ import com.linbit.ImplementationError;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -36,12 +37,14 @@ import com.linbit.linstor.storage.utils.SwordfishConsts;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.impl.CollectionBuilder;
@@ -49,12 +52,17 @@ import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
 
 public class SwordfishTargetDriver extends AbsSwordfishDriver
 {
-    private static final Map<String, Object> JSON_OBJ;
+    private static final Object SYNC_OBJ = new Object();
+    private static Map<String, Object> jsonObj;
 
     private static final String STATE_CREATING = "Creating";
     private static final String STATE_CREATING_TIMEOUT = "To: Creating";
     private static final String STATE_CREATED = "Created";
 
+    private final StltConfigAccessor stltCfgAccessor;
+
+    private Path jsonPath;
+    private Path jsonPathTmp;
     private Map<String, String> linstorIdToSwordfishId;
 
     private String storSvc;
@@ -62,44 +70,59 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     private long pollVlmCrtTimeout = 600;
     private long pollVlmCrtMaxTries = 100;
 
-    static
-    {
-        try
-        {
-            Path jsonPath = SF_MAPPING_PATH;
-            String jsonContent = "{}";
-            if (Files.exists(jsonPath))
-            {
-                jsonContent = new String(Files.readAllBytes(SF_MAPPING_PATH));
-            }
-            else
-            {
-                Files.createDirectories(jsonPath.getParent());
-                Files.createFile(jsonPath);
-            }
-            if (jsonContent.trim().isEmpty())
-            {
-                JSON_OBJ = JSON.std.mapFrom("{}");
-            }
-            else
-            {
-                JSON_OBJ = JSON.std.mapFrom(jsonContent);
-            }
-        }
-        catch (IOException exc)
-        {
-            throw new LinStorRuntimeException("Failed to load swordfish.json", exc);
-        }
-    }
-
     public SwordfishTargetDriver(
         ErrorReporter errorReporterRef,
         SwordfishTargetDriverKind swordfishDriverKindRef,
-        RestClient restClientRef
+        RestClient restClientRef,
+        StltConfigAccessor stltCfgAccessorRef
     )
     {
         super(errorReporterRef, swordfishDriverKindRef, restClientRef);
+        stltCfgAccessor = stltCfgAccessorRef;
+
+        loadJson();
     }
+
+
+    private void loadJson()
+    {
+        synchronized (SYNC_OBJ)
+        {
+            if (jsonObj == null)
+            {
+                try
+                {
+                    String nodeName = stltCfgAccessor.getNodeName();
+                    jsonPath = Paths.get(String.format(SF_MAPPING_PATH_FORMAT, nodeName));
+                    jsonPath = Paths.get(String.format(SF_MAPPING_PATH_TMP_FORMAT, nodeName));
+                    String jsonContent = "{}";
+                    if (Files.exists(jsonPath))
+                    {
+                        jsonContent = new String(Files.readAllBytes(jsonPath));
+                    }
+                    else
+                    {
+                        Files.createDirectories(jsonPath.getParent());
+                        Files.createFile(jsonPath);
+                    }
+                    if (jsonContent.trim().isEmpty())
+                    {
+                        jsonObj = JSON.std.mapFrom("{}");
+                    }
+                    else
+                    {
+                        jsonObj = JSON.std.mapFrom(jsonContent);
+                    }
+                    jsonObj = new ConcurrentHashMap<>(jsonObj);
+                }
+                catch (IOException exc)
+                {
+                    throw new LinStorRuntimeException("Failed to load swordfish.json", exc);
+                }
+            }
+        }
+    }
+
 
     @Override
     public void startVolume(String identifier, String cryptKey, Props vlmDfnProps) throws StorageException
@@ -314,26 +337,54 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     {
         try
         {
-            String vlmOdataId = buildVlmOdataId(linstorVlmId);
+            String sfVlmId = getSwordfishVolumeIdByLinstorId(linstorVlmId);
+            if (sfVlmId == null)
+            {
+                /*
+                 *  two cases:
+                 *  1)  we failed to create the volume and now cleaning up
+                 *  -> no-op
+                 *  2) persisted json does no longer have the the sworfish-id.
+                 *  -> check if volumeDefinitionProps has it.
+                 *  ---> if yes: impl error
+                 *  ---> if no: most likely case 1). Even if not, there is nothing we can do at this point
+                 */
+                sfVlmId = getSfVlmId(vlmDfnProps, true);
+                if (sfVlmId != null)
+                {
+                    throw new ImplementationError(
+                        String.format(
+                            "Persisted JSON does not contain sworfish-volume id for linstor volume '%s'.%n" +
+                            "The volume definition properties however has the entry of '%s'.",
+                            linstorVlmId,
+                            sfVlmId
+                        )
+                    );
+                }
+            }
+            else
+            {
+                String vlmOdataId = buildVlmOdataId(storSvc, sfVlmId);
 
-            // TODO health check on composed node
+                // TODO health check on composed node
 
-            // DELETE to volumes collection
-            restClient.execute(
-                linstorVlmId,
-                RestOp.DELETE,
-                sfUrl + vlmOdataId,
-                getDefaultHeader().noContentType().build(),
-                (String) null,
-                Arrays.asList(HttpHeader.HTTP_ACCEPTED, HttpHeader.HTTP_NOT_FOUND)
-            );
+                // DELETE to volumes collection
+                restClient.execute(
+                    linstorVlmId,
+                    RestOp.DELETE,
+                    sfUrl + vlmOdataId,
+                    getDefaultHeader().noContentType().build(),
+                    (String) null,
+                    Arrays.asList(HttpHeader.HTTP_ACCEPTED, HttpHeader.HTTP_NOT_FOUND)
+                );
+                removeSfVlmId(linstorVlmId, vlmDfnProps);
+            }
             removeState(linstorVlmId); // deleting
         }
         catch (IOException ioExc)
         {
             throw new StorageException("IO Exception", ioExc);
         }
-        removeSfVlmId(linstorVlmId, vlmDfnProps);
     }
 
     @Override
@@ -463,11 +514,11 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, String> lut =  (Map<String, String>) JSON_OBJ.get(storPoolNameStr);
+        Map<String, String> lut =  (Map<String, String>) jsonObj.get(storPoolNameStr);
         if (lut == null)
         {
             lut = new HashMap<>();
-            JSON_OBJ.put(storPoolNameStr, lut);
+            jsonObj.put(storPoolNameStr, lut);
         }
         linstorIdToSwordfishId = lut;
     }
@@ -505,16 +556,16 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
 
     private void persistJson() throws StorageException
     {
-        synchronized (JSON_OBJ)
+        synchronized (SYNC_OBJ)
         {
             boolean writeComplete = false;
             try
             {
-                JSON.std.write(JSON_OBJ, SF_MAPPING_PATH_TMP.toFile());
+                JSON.std.write(jsonObj, jsonPathTmp.toFile());
                 writeComplete = true;
                 Files.move(
-                    SF_MAPPING_PATH_TMP,
-                    SF_MAPPING_PATH,
+                    jsonPathTmp,
+                    jsonPath,
                     StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING
                 );
             }

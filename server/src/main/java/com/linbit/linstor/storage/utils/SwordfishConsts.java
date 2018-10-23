@@ -1,7 +1,5 @@
 package com.linbit.linstor.storage.utils;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
 public class SwordfishConsts
@@ -11,8 +9,8 @@ public class SwordfishConsts
         Pattern.DOTALL | Pattern.MULTILINE
     );
 
-    public static final Path SF_MAPPING_PATH = Paths.get("/", "var", "lib", "linstor", "swordfish.json");
-    public static final Path SF_MAPPING_PATH_TMP = Paths.get("/", "var", "lib", "linstor", "swordfish.json.tmp");
+    public static final String SF_MAPPING_PATH_FORMAT = "/var/lib/linstor/swordfish_%s.json";
+    public static final String SF_MAPPING_PATH_TMP_FORMAT = "/var/lib/linstor/swordfish_%s.json.tmp";
 
     public static final String ODATA = "@odata";
     public static final String JSON_KEY_ODATA_ID = ODATA + ".id";
