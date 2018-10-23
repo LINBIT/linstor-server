@@ -86,15 +86,15 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
 
     private void loadJson()
     {
+        String nodeName = stltCfgAccessor.getNodeName();
+        jsonPath = Paths.get(String.format(SF_MAPPING_PATH_FORMAT, nodeName));
+        jsonPathTmp = Paths.get(String.format(SF_MAPPING_PATH_TMP_FORMAT, nodeName));
         synchronized (SYNC_OBJ)
         {
             if (jsonObj == null)
             {
                 try
                 {
-                    String nodeName = stltCfgAccessor.getNodeName();
-                    jsonPath = Paths.get(String.format(SF_MAPPING_PATH_FORMAT, nodeName));
-                    jsonPath = Paths.get(String.format(SF_MAPPING_PATH_TMP_FORMAT, nodeName));
                     String jsonContent = "{}";
                     if (Files.exists(jsonPath))
                     {
