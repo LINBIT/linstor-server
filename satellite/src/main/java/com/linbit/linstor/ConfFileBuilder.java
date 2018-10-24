@@ -218,6 +218,7 @@ public class ConfFileBuilder
                                 try (Section ignore = new Section())
                                 {
                                     appendConflictingDrbdOptions(
+                                        LinStorObject.CONTROLLER,
                                         "resource-definition",
                                         rscDfn.getProps(accCtx),
                                         rscConn.getProps(accCtx),
@@ -245,6 +246,20 @@ public class ConfFileBuilder
                             }
                         }
                     }
+                }
+            }
+
+            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS).isPresent())
+            {
+                appendLine("");
+                appendLine("proxy");
+                try (Section ignore = new Section())
+                {
+                    appendDrbdOptions(
+                        LinStorObject.DRBD_PROXY,
+                        rscDfn.getProps(accCtx),
+                        ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS
+                    );
                 }
             }
         }
@@ -347,12 +362,13 @@ public class ConfFileBuilder
     }
 
     private boolean checkValidDrbdOption(
+        final LinStorObject lsObj,
         final String key,
         final String value
     )
     {
         boolean ret = true;
-        if (!whitelistProps.isAllowed(LinStorObject.CONTROLLER, key, value, true))
+        if (!whitelistProps.isAllowed(lsObj, key, value, true))
         {
             ret = false;
             errorReporter.reportProblem(
@@ -371,6 +387,7 @@ public class ConfFileBuilder
     }
 
     private void appendConflictingDrbdOptions(
+        final LinStorObject lsObj,
         final String parentName,
         final Props propsParent,
         final Props props,
@@ -390,7 +407,7 @@ public class ConfFileBuilder
             String key = entry.getKey();
             String value = entry.getValue();
             final String configKey = key.substring(namespace.length() + 1);
-            if (checkValidDrbdOption(key, value))
+            if (checkValidDrbdOption(lsObj, key, value))
             {
                 final String absKey = Props.PATH_SEPARATOR + key; // key needs to be absolute
                 if (mapProps.containsKey(absKey))
@@ -421,7 +438,7 @@ public class ConfFileBuilder
             String key = entry.getKey();
             String value = entry.getValue();
             final String configKey = key.substring(namespace.length() + 1);
-            if (!writtenProps.contains(key) && checkValidDrbdOption(key, value))
+            if (!writtenProps.contains(key) && checkValidDrbdOption(lsObj, key, value))
             {
                 appendLine("%s %s;",
                     configKey,
@@ -444,7 +461,7 @@ public class ConfFileBuilder
         {
             String key = entry.getKey();
             String value = entry.getValue();
-            if (checkValidDrbdOption(key, value))
+            if (checkValidDrbdOption(lsObj, key, value))
             {
                 appendLine("%s %s;",
                     key.substring(namespace.length() + 1),

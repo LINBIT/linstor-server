@@ -14,7 +14,10 @@ public enum LinStorObject
     CONTROLLER,
     STORAGEPOOL,
     STORAGEPOOL_DEFINITION,
-    SNAPSHOT;
+    SNAPSHOT,
+    // DRBD Proxy is considered a separate object for the purposes of setting properties, even though the properties
+    // are stored in the resource definition
+    DRBD_PROXY;
 
     LinStorObject()
     {

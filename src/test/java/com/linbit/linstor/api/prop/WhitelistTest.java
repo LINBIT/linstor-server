@@ -166,7 +166,7 @@ public class WhitelistTest
             whitelistProps = whitelistPropsRef;
 
             // clear all previously loaded and default rules (i.e. from GeneratedPropertyRules.java)
-            whitelistPropsRef.reconfigure();
+            whitelistPropsRef.reconfigure(LinStorObject.values());
 
             xmlBuilder.append(xmlHeader);
         }

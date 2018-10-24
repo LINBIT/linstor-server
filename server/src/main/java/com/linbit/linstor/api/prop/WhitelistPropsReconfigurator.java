@@ -43,7 +43,7 @@ public class WhitelistPropsReconfigurator
         {
             reconfigurationLock.writeLock().lock();
 
-            whitelistProps.reconfigure();
+            whitelistProps.reconfigure(LinStorObject.CONTROLLER);
 
             ExtCmd resourceOptsExcCmd = new ExtCmd(timer, errLog);
             OutputData rscOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "resource-options");

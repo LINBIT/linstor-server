@@ -44,6 +44,7 @@ public class CtrlApiCallHandler
     private final CtrlSnapshotApiCallHandler snapshotApiCallHandler;
     private final CtrlSnapshotRestoreApiCallHandler snapshotRestoreApiCallHandler;
     private final CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandler;
+    private final CtrlDrbdProxyModifyApiCallHandler drbdProxyModifyApiCallHandler;
 
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
@@ -71,6 +72,7 @@ public class CtrlApiCallHandler
         CtrlSnapshotApiCallHandler snapshotApiCallHandlerRef,
         CtrlSnapshotRestoreApiCallHandler snapshotRestoreApiCallHandlerRef,
         CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandlerRef,
+        CtrlDrbdProxyModifyApiCallHandler drbdProxyModifyApiCallHandlerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
@@ -95,6 +97,7 @@ public class CtrlApiCallHandler
         snapshotApiCallHandler = snapshotApiCallHandlerRef;
         snapshotRestoreApiCallHandler = snapshotRestoreApiCallHandlerRef;
         snapshotRestoreVlmDfnApiCallHandler = snapshotRestoreVlmDfnApiCallHandlerRef;
+        drbdProxyModifyApiCallHandler = drbdProxyModifyApiCallHandlerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
@@ -1421,6 +1424,36 @@ public class CtrlApiCallHandler
         try (LockGuard ls = LockGuard.createLocked(ctrlConfigLock.writeLock()))
         {
             apiCallRc = ctrlConfApiCallHandler.enterPassphrase(passphrase);
+        }
+        return apiCallRc;
+    }
+
+    /**
+     * Modifies the DRBD Proxy configuration for a given resource definition.
+     *
+     * @param rscDfnUuid optional - if given, modification is only performed if it matches the found
+     *   rscDfn's UUID.
+     * @param rscName required
+     * @param overrideProps required (can be empty) - overrides the given property key-value pairs
+     * @param deletePropKeys required (can be empty) - deletes the given property keys
+     * @return
+     */
+    public ApiCallRc modifyDrbdProxy(
+        UUID rscDfnUuid,
+        String rscName,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
+        {
+            apiCallRc = drbdProxyModifyApiCallHandler.modifyDrbdProxy(
+                rscDfnUuid,
+                rscName,
+                overrideProps,
+                deletePropKeys
+            );
         }
         return apiCallRc;
     }

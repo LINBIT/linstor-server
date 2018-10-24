@@ -75,9 +75,12 @@ public class WhitelistProps
      * This instance should be singleton, as (beside reconfiguration) it is only read-only.
      * Modifying it while not holding the reconf.writeLock might cause {@link ConcurrentModificationException}s
      */
-    public void reconfigure()
+    public void reconfigure(LinStorObject... lsObjs)
     {
-        rules.clear();
+        for (LinStorObject lsObj : lsObjs)
+        {
+            rules.remove(lsObj);
+        }
     }
 
     public void appendRules(
