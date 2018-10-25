@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
@@ -157,6 +156,13 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 .build()
             );
             responseFlux = Flux.just(responses);
+        }
+        else if (hasSnapshots(node))
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                "Cannot delete '" + nodeName + "' because it has snapshots."
+            ));
         }
         else
         {
@@ -389,6 +395,24 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
+    }
+
+    private boolean hasSnapshots(Node node)
+    {
+        boolean hasSnapshots;
+        try
+        {
+            hasSnapshots = node.hasSnapshots(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check whether '" + node.getName().displayValue + "' has snapshots",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return hasSnapshots;
     }
 
     private Peer getPeerPriveleged(Node node)

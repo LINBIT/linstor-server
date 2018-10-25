@@ -349,6 +349,15 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
+    public boolean hasSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return !snapshotMap.isEmpty();
+    }
+
+    @Override
     public Collection<Snapshot> getInProgressSnapshots(AccessContext accCtx)
         throws AccessDeniedException
     {

@@ -78,6 +78,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
 
     void removeSnapshot(SnapshotData snapshotData);
 
+    boolean hasSnapshots(AccessContext accCtx)
+        throws AccessDeniedException;
+
     Collection<Snapshot> getInProgressSnapshots(AccessContext accCtx)
         throws AccessDeniedException;
 
