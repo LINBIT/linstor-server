@@ -8,6 +8,7 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.ApiContext;
@@ -39,6 +40,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -134,7 +136,7 @@ public class CtrlNodeLostApiCallHandler
             );
         }
 
-        Peer nodePeer = getPeerPriveleged(nodeData);
+        Peer nodePeer = getPeerPrivileged(nodeData);
         if (nodePeer != null && nodePeer.isConnected())
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -153,14 +155,14 @@ public class CtrlNodeLostApiCallHandler
         // compile a list of used resource definitions that should be checked if they are now fully connected
         List<ResourceDefinition> rscDfnToCheck = new ArrayList<>();
 
-        for (Resource rsc : getRscStreamPriveleged(nodeData).collect(toList()))
+        for (Resource rsc : getRscStreamPrivileged(nodeData).collect(toList()))
         {
             ResourceDefinition rscDfn = rsc.getDefinition();
             rscDfnToCheck.add(rscDfn);
 
             if (!isMarkedForDeletion(rsc))
             {
-                for (Resource peerRsc : getRscStreamPriveleged(rscDfn).collect(toList()))
+                for (Resource peerRsc : getRscStreamPrivileged(rscDfn).collect(toList()))
                 {
                     Node peerNode = peerRsc.getAssignedNode();
                     if (peerNode.getName() != nodeName)
@@ -169,7 +171,7 @@ public class CtrlNodeLostApiCallHandler
                     }
                 }
             }
-            deletePriveleged(rsc);
+            deletePrivileged(rsc);
         }
 
         // set node mark deleted for updates to other satellites
@@ -177,13 +179,13 @@ public class CtrlNodeLostApiCallHandler
 
         // If the node has no resources, then there should not be any volumes referenced
         // by the storage pool -- double check and delete storage pools
-        Iterator<StorPool> storPoolIterator = getStorPoolIteratorPriveleged(nodeData);
+        Iterator<StorPool> storPoolIterator = getStorPoolIteratorPrivileged(nodeData);
         while (storPoolIterator.hasNext())
         {
             StorPool storPool = storPoolIterator.next();
-            if (!hasVolumesPriveleged(storPool))
+            if (!hasVolumesPrivileged(storPool))
             {
-                delete(storPool);
+                deletePrivileged(storPool);
             }
             else
             {
@@ -199,12 +201,18 @@ public class CtrlNodeLostApiCallHandler
             }
         }
 
+        Collection<Snapshot> snapshots = getSnapshotsPrivileged(nodeData);
+        for (Snapshot snapshot : snapshots)
+        {
+            deletePrivileged(snapshot);
+        }
+
         String successMessage = firstLetterCaps(getNodeDescriptionInline(nodeNameStr)) + " deleted.";
         UUID nodeUuid = nodeData.getUuid(); // store node uuid to avoid deleted node access
 
-        delete(nodeData);
+        deletePrivileged(nodeData);
 
-        removeNodePriveleged(nodeName);
+        removeNodePrivileged(nodeName);
 
         ctrlTransactionHelper.commit();
 
@@ -258,7 +266,7 @@ public class CtrlNodeLostApiCallHandler
         }
     }
 
-    private Peer getPeerPriveleged(Node node)
+    private Peer getPeerPrivileged(Node node)
     {
         Peer nodePeer;
         try
@@ -272,7 +280,7 @@ public class CtrlNodeLostApiCallHandler
         return nodePeer;
     }
 
-    private boolean hasVolumesPriveleged(StorPool storPool)
+    private boolean hasVolumesPrivileged(StorPool storPool)
     {
         boolean hasVolumes;
         try
@@ -286,7 +294,7 @@ public class CtrlNodeLostApiCallHandler
         return hasVolumes;
     }
 
-    private Stream<Resource> getRscStreamPriveleged(Node node)
+    private Stream<Resource> getRscStreamPrivileged(Node node)
     {
         Stream<Resource> stream;
         try
@@ -300,7 +308,7 @@ public class CtrlNodeLostApiCallHandler
         return stream;
     }
 
-    private Stream<Resource> getRscStreamPriveleged(ResourceDefinition rscDfn)
+    private Stream<Resource> getRscStreamPrivileged(ResourceDefinition rscDfn)
     {
         Stream<Resource> stream;
         try
@@ -314,7 +322,7 @@ public class CtrlNodeLostApiCallHandler
         return stream;
     }
 
-    private Iterator<StorPool> getStorPoolIteratorPriveleged(Node node)
+    private Iterator<StorPool> getStorPoolIteratorPrivileged(Node node)
     {
         Iterator<StorPool> iterateStorPools;
         try
@@ -331,6 +339,20 @@ public class CtrlNodeLostApiCallHandler
             throw new ImplementationError(accDeniedExc);
         }
         return iterateStorPools;
+    }
+
+    private Collection<Snapshot> getSnapshotsPrivileged(NodeData nodeData)
+    {
+        Collection<Snapshot> snapshots;
+        try
+        {
+            snapshots = nodeData.getSnapshots(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return snapshots;
     }
 
     private boolean isMarkedForDeletion(Resource rsc)
@@ -371,7 +393,7 @@ public class CtrlNodeLostApiCallHandler
         }
     }
 
-    private void delete(Node node)
+    private void deletePrivileged(Node node)
     {
         try
         {
@@ -397,7 +419,7 @@ public class CtrlNodeLostApiCallHandler
         }
     }
 
-    private void delete(StorPool storPool)
+    private void deletePrivileged(StorPool storPool)
     {
         try
         {
@@ -413,7 +435,7 @@ public class CtrlNodeLostApiCallHandler
         }
     }
 
-    private void deletePriveleged(Resource rsc)
+    private void deletePrivileged(Resource rsc)
     {
         try
         {
@@ -429,7 +451,23 @@ public class CtrlNodeLostApiCallHandler
         }
     }
 
-    private void removeNodePriveleged(NodeName nodeName)
+    private void deletePrivileged(Snapshot snapshot)
+    {
+        try
+        {
+            snapshot.delete(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    private void removeNodePrivileged(NodeName nodeName)
     {
         try
         {

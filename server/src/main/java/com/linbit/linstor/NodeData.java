@@ -376,6 +376,16 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
+    public Collection<Snapshot> getSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return snapshotMap.values();
+    }
+
+    @Override
     public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
     {
         checkDeleted();
@@ -596,6 +606,16 @@ public class NodeData extends BaseTransactionObject implements Node
         if (!deleted.get())
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+            if (!resourceMap.isEmpty())
+            {
+                throw new ImplementationError("Node with resources cannot be deleted");
+            }
+
+            if (!snapshotMap.isEmpty())
+            {
+                throw new ImplementationError("Node with snapshots cannot be deleted");
+            }
 
             // Shallow copy the collection because elements may be removed from it
             ArrayList<NodeConnection> values = new ArrayList<>(nodeConnections.values());

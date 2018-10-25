@@ -84,6 +84,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     Collection<Snapshot> getInProgressSnapshots(AccessContext accCtx)
         throws AccessDeniedException;
 
+    Collection<Snapshot> getSnapshots(AccessContext accCtx)
+        throws AccessDeniedException;
+
     void copyStorPoolMap(AccessContext accCtx, Map<? super StorPoolName, ? super StorPool> dstMap)
         throws AccessDeniedException;
 
