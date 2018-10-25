@@ -1,10 +1,13 @@
 package com.linbit.linstor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -249,7 +252,13 @@ public class ConfFileBuilder
                 }
             }
 
-            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS).isPresent())
+            Optional<String> compressionTypeProp = rscDfn.getProps(accCtx)
+                .getNamespace(ApiConsts.NAMESPC_DRBD_PROXY)
+                .map(Props::map)
+                .map(map -> map.get(ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE));
+
+            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS).isPresent() ||
+                compressionTypeProp.isPresent())
             {
                 appendLine("");
                 appendLine("proxy");
@@ -260,6 +269,11 @@ public class ConfFileBuilder
                         rscDfn.getProps(accCtx),
                         ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS
                     );
+
+                    if (compressionTypeProp.isPresent())
+                    {
+                        appendCompressionPlugin(rscDfn, compressionTypeProp.get());
+                    }
                 }
             }
         }
@@ -359,6 +373,36 @@ public class ConfFileBuilder
         }
 
         return stringBuilder.toString();
+    }
+
+    private void appendCompressionPlugin(ResourceDefinition rscDfn, String compressionType)
+        throws AccessDeniedException
+    {
+        appendLine("plugin");
+        try (Section pluginSection = new Section())
+        {
+            String namespace = ApiConsts.NAMESPC_DRBD_PROXY_COMPRESSION_OPTIONS;
+
+            List<String> compressionPluginTerms = new ArrayList<>();
+            compressionPluginTerms.add(compressionType);
+
+            Map<String, String> drbdProps = rscDfn.getProps(accCtx)
+                .getNamespace(namespace)
+                .map(Props::map).orElse(new HashMap<>());
+
+            for (Map.Entry<String, String> entry : drbdProps.entrySet())
+            {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (checkValidDrbdOption(LinStorObject.drbdProxyCompressionObject(compressionType), key, value))
+                {
+                    compressionPluginTerms.add(key.substring(namespace.length() + 1));
+                    compressionPluginTerms.add(value);
+                }
+            }
+
+            appendLine("%s;", String.join(" ", compressionPluginTerms));
+        }
     }
 
     private boolean checkValidDrbdOption(

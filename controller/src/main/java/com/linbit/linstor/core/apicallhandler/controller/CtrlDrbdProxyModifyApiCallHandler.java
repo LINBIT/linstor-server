@@ -8,16 +8,22 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +34,9 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 @Singleton
 public class CtrlDrbdProxyModifyApiCallHandler
 {
+    private static final String FULL_KEY_COMPRESSION_TYPE =
+        ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE;
+
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -57,7 +66,9 @@ public class CtrlDrbdProxyModifyApiCallHandler
         UUID rscDfnUuid,
         String rscNameStr,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        String compressionType,
+        Map<String, String> compressionProps
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -82,12 +93,14 @@ public class CtrlDrbdProxyModifyApiCallHandler
                     .build()
                 );
             }
+
+            Props props = ctrlPropsHelper.getProps(rscDfn);
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
-                Map<String, String> map = ctrlPropsHelper.getProps(rscDfn).map();
+                Map<String, String> map = props.map();
 
                 ctrlPropsHelper.fillProperties(LinStorObject.DRBD_PROXY, overrideProps,
-                    ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
+                    props, ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
                 for (String delKey : deletePropKeys)
                 {
@@ -100,6 +113,36 @@ public class CtrlDrbdProxyModifyApiCallHandler
                                                 "This operation had no effect."
                         ));
                     }
+                }
+            }
+
+            if (compressionType != null)
+            {
+                props.getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_COMPRESSION_OPTIONS).ifPresent(this::clearProps);
+
+                if (ApiConsts.VAL_DRBD_PROXY_COMPRESSION_NONE.equals(compressionType))
+                {
+                    props.map().remove(FULL_KEY_COMPRESSION_TYPE);
+                }
+                else
+                {
+                    LinStorObject linStorObject = LinStorObject.drbdProxyCompressionObject(compressionType);
+                    if (linStorObject == null)
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_DRBD_PROXY_COMPRESSION_TYPE,
+                            "Unknown compression type '" + compressionType + "'"
+                        ));
+                    }
+
+                    ctrlPropsHelper.fillProperties(
+                        LinStorObject.RESOURCE_DEFINITION,
+                        Collections.singletonMap(FULL_KEY_COMPRESSION_TYPE, compressionType),
+                        props,
+                        ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+                    );
+                    ctrlPropsHelper.fillProperties(linStorObject, compressionProps,
+                        props, ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
                 }
             }
 
@@ -121,5 +164,25 @@ public class CtrlDrbdProxyModifyApiCallHandler
         }
 
         return responses;
+    }
+
+    private void clearProps(Props props)
+    {
+        try
+        {
+            props.clear();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "reset DRBD Proxy compression properties",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (SQLException exc)
+        {
+            throw new ApiSQLException(exc);
+        }
     }
 }

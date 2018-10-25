@@ -38,15 +38,21 @@ public class ModifyDrbdProxy implements ApiCall
         throws IOException
     {
         MsgModDrbdProxy modDrbdProxy = MsgModDrbdProxy.parseDelimitedFrom(msgDataIn);
+
         UUID rscDfnUUID = modDrbdProxy.hasRscDfnUuid() ? UUID.fromString(modDrbdProxy.getRscDfnUuid()) : null;
         String rscNameStr = modDrbdProxy.getRscName();
         Map<String, String> overrideProps = ProtoMapUtils.asMap(modDrbdProxy.getOverridePropsList());
         Set<String> delProps = new HashSet<>(modDrbdProxy.getDeletePropKeysList());
+        String compressionType = modDrbdProxy.hasCompressionType() ? modDrbdProxy.getCompressionType() : null;
+        Map<String, String> compressionProps = ProtoMapUtils.asMap(modDrbdProxy.getCompressionPropsList());
+
         ApiCallRc apiCallRc = apiCallHandler.modifyDrbdProxy(
             rscDfnUUID,
             rscNameStr,
             overrideProps,
-            delProps
+            delProps,
+            compressionType,
+            compressionProps
         );
 
         apiCallAnswerer.answerApiCallRc(apiCallRc);

@@ -1442,7 +1442,9 @@ public class CtrlApiCallHandler
         UUID rscDfnUuid,
         String rscName,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        String compressionType,
+        Map<String, String> compressionProps
     )
     {
         ApiCallRc apiCallRc;
@@ -1452,7 +1454,9 @@ public class CtrlApiCallHandler
                 rscDfnUuid,
                 rscName,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                compressionType,
+                compressionProps
             );
         }
         return apiCallRc;
