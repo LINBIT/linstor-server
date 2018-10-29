@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public abstract class AbsSwordfishDriver implements StorageDriver
 {
@@ -38,6 +39,9 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     protected String sfUrl;
     protected String userName;
     protected String userPw;
+    protected Integer retryCount;
+    protected Long retryDelay;
+
 
     public AbsSwordfishDriver(
         ErrorReporter errorReporterRef,
@@ -166,6 +170,26 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         {
             userPw = tmpUserPw;
         }
+
+        retryCount = getAsNumberByPriority(
+            StorageConstants.CONFIG_SF_RETRY_COUNT_KEY,
+            Integer::parseInt,
+            StorageConstants.CONFIG_SF_RETRY_COUNT_DEFAULT,
+            stltNamespace,
+            nodeNamespace,
+            storPoolNamespace
+        );
+        retryDelay = getAsNumberByPriority(
+            StorageConstants.CONFIG_SF_RETRY_DELAY_KEY,
+            Long::parseLong,
+            StorageConstants.CONFIG_SF_RETRY_DELAY_DEFAULT,
+            stltNamespace,
+            nodeNamespace,
+            storPoolNamespace
+        );
+
+        restClient.setRetryCountOnStatusCode(HttpHeader.HTTP_SERVICE_UNAVAILABLE, retryCount);
+        restClient.setRetryDelayOnStatusCode(HttpHeader.HTTP_SERVICE_UNAVAILABLE, retryDelay);
     }
 
     @SuppressWarnings("unchecked")
@@ -365,12 +389,17 @@ public abstract class AbsSwordfishDriver implements StorageDriver
 
     protected Long getLong(String description, StringBuilder failErrorMsg, String str)
     {
-        Long ret = null;
+        return getAsNumber(description, failErrorMsg, str, Long::parseLong);
+    }
+
+    protected <T> T getAsNumber(String description, StringBuilder failErrorMsg, String str, Function<String, T> parser)
+    {
+        T ret = null;
         if (str != null && !str.isEmpty())
         {
             try
             {
-                ret = Long.parseLong(str);
+                ret = parser.apply(str);
             }
             catch (NumberFormatException nfe)
             {
@@ -380,6 +409,33 @@ public abstract class AbsSwordfishDriver implements StorageDriver
                     .append(" value (")
                     .append(str)
                     .append(") is not a number\n");
+            }
+        }
+        return ret;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> T getAsNumberByPriority(
+        String configKey,
+        Function<String, T> parseFunction,
+        T defaultValue,
+        Map<String, String>... configMaps
+    )
+    {
+        T ret = defaultValue;
+        for (Map<String, String> config : configMaps)
+        {
+            String val = config.get(configKey);
+            if (val != null)
+            {
+                try
+                {
+                    ret = parseFunction.apply(val);
+                    break;
+                }
+                catch (NumberFormatException ignored)
+                {
+                }
             }
         }
         return ret;

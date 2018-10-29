@@ -31,7 +31,7 @@ public class SwordfishInitiatorDriverKind implements StorageDriverKind
         return new SwordfishInitiatorDriver(
             errorReporter,
             this,
-            new RestHttpClient(),
+            new RestHttpClient(errorReporter),
             timer,
             new CryptSetup(timer, errorReporter)
         );

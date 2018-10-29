@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 
 import java.io.ByteArrayOutputStream;
@@ -12,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -31,13 +33,20 @@ import com.fasterxml.jackson.jr.ob.JSON;
 
 public class RestHttpClient implements RestClient
 {
+    private static final long DEFAULT_RETRY_DELAY = 1000;
     private static final long KIB = 1024;
 
     private final List<UnexpectedReturnCodeHandler> handlers;
     protected final HttpClient httpClient;
 
-    public RestHttpClient()
+    private final Map<Integer, Integer> retryCounts = new TreeMap<>();
+    private final Map<Integer, Long> retryDelays = new TreeMap<>();
+
+    private final ErrorReporter errorReporter;
+
+    public RestHttpClient(ErrorReporter errorReporterRef)
     {
+        errorReporter = errorReporterRef;
         httpClient = HttpClientBuilder.create().build();
         handlers = new ArrayList<>();
     }
@@ -46,6 +55,18 @@ public class RestHttpClient implements RestClient
     public void addFailHandler(UnexpectedReturnCodeHandler handler)
     {
         handlers.add(handler);
+    }
+
+    @Override
+    public void setRetryCountOnStatusCode(int statusCode, int retryCount)
+    {
+        retryCounts.put(statusCode, retryCount);
+    }
+
+    @Override
+    public void setRetryDelayOnStatusCode(int statusCode, long retryDelay)
+    {
+        retryDelays.put(statusCode, retryDelay);
     }
 
     @Override
@@ -74,7 +95,7 @@ public class RestHttpClient implements RestClient
                 throw new ImplementationError("Unknown Rest operation: " + request.op);
         }
         // add data if possible and available
-        if (req instanceof HttpEntityEnclosingRequest && request.payload!= null && !request.payload.equals(""))
+        if (req instanceof HttpEntityEnclosingRequest && request.payload != null && !request.payload.equals(""))
         {
             ((HttpEntityEnclosingRequest) req).setEntity(
                 new StringEntity(
@@ -88,48 +109,93 @@ public class RestHttpClient implements RestClient
             req.addHeader(entry.getKey(), entry.getValue());
         }
 
-        HttpResponse response = httpClient.execute(req);
-
-        byte[] responseContent = readContent(response);
-        Map<String, String> sfHeaders = new HashMap<>();
-        Header[] msgHeaders = response.getAllHeaders();
-        for (Header header : msgHeaders)
+        RestHttpResponse restResponse = null;
+        int attemptNumber = 0;
+        boolean retry;
+        do
         {
-            sfHeaders.put(header.getName(), header.getValue());
-        }
+            retry = false;
+            HttpResponse response = httpClient.execute(req);
 
-        Map<String, Object> respRoot;
-        if (responseContent.length > 0)
-        {
-            respRoot = JSON.std.mapFrom(responseContent);
-        }
-        else
-        {
-            respRoot = Collections.emptyMap();
-        }
-
-        int statusCode = response.getStatusLine().getStatusCode();
-
-        RestHttpResponse restResponse = new RestHttpResponse(
-            request,
-            statusCode,
-            sfHeaders,
-            respRoot
-        );
-        if (!request.expectedRcs.contains(statusCode))
-        {
-            for (UnexpectedReturnCodeHandler handler : handlers)
+            byte[] responseContent = readContent(response);
+            Map<String, String> sfHeaders = new HashMap<>();
+            Header[] msgHeaders = response.getAllHeaders();
+            for (Header header : msgHeaders)
             {
-                handler.handle(restResponse);
+                sfHeaders.put(header.getName(), header.getValue());
             }
-            throw new StorageException(
-                "Unexpected status code",
-                "A REST call returned the unexpected status code " + restResponse.statusCode,
-                null,
-                null,
-                restResponse.toString()
+
+            Map<String, Object> respRoot;
+            if (responseContent.length > 0)
+            {
+                respRoot = JSON.std.mapFrom(responseContent);
+            }
+            else
+            {
+                respRoot = Collections.emptyMap();
+            }
+
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            restResponse = new RestHttpResponse(
+                request,
+                statusCode,
+                sfHeaders,
+                respRoot
             );
+            if (!request.expectedRcs.contains(statusCode))
+            {
+                Integer retryCount = retryCounts.get(statusCode);
+                Long retryDelay = retryDelays.get(statusCode);
+
+                if (retryCount != null && retryDelay == null)
+                {
+                    errorReporter.logWarning(
+                        "Status code %d has configured a retry count of %d, but has no retry delay defined. " +
+                            "Defaulting to %d",
+                        statusCode,
+                        retryCount,
+                        DEFAULT_RETRY_DELAY
+                    );
+                    retryDelay = DEFAULT_RETRY_DELAY;
+                }
+
+                if (retryCount == null || attemptNumber++ >= retryCount)
+                {
+                    for (UnexpectedReturnCodeHandler handler : handlers)
+                    {
+                        handler.handle(restResponse);
+                    }
+                    throw new StorageException(
+                        "Unexpected status code",
+                        "A REST call returned the unexpected status code " + restResponse.statusCode,
+                        null,
+                        null,
+                        restResponse.toString()
+                    );
+                }
+                else
+                {
+                    retry = true;
+                    errorReporter.logInfo(
+                        "Request returned %d. Attempt count: %d / %d. Waiting %dms before next attempt",
+                        statusCode,
+                        attemptNumber,
+                        retryCount,
+                        retryDelay
+                    );
+                    try
+                    {
+                        Thread.sleep(retryDelay);
+                    }
+                    catch (InterruptedException exc)
+                    {
+                        throw new StorageException("Retry delay interrupted", exc);
+                    }
+                }
+            }
         }
+        while (retry);
 
         return restResponse;
     }

@@ -81,4 +81,8 @@ public interface RestClient
     {
         void handle(RestResponse<Map<String, Object>> response);
     }
+
+    void setRetryCountOnStatusCode(int statusCode, int retryCount);
+
+    void setRetryDelayOnStatusCode(int statusCode, long retryDelay);
 }

@@ -30,7 +30,7 @@ public class SwordfishTargetDriverKind implements StorageDriverKind
         return new SwordfishTargetDriver(
             errorReporter,
             this,
-            new RestHttpClient(),
+            new RestHttpClient(errorReporter),
             stltCfgAccessor
         );
     }

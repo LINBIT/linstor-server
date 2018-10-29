@@ -11,9 +11,12 @@ public class HttpHeader
     public static final int HTTP_CREATED = 201;
     public static final int HTTP_ACCEPTED = 202;
     public static final int HTTP_NO_CONTENT = 204;
+
     public static final int HTTP_BAD_REQUEST = 400;
     public static final int HTTP_NOT_FOUND = 404;
     public static final int HTTP_CONFLICT = 409;
+
+    public static final int HTTP_SERVICE_UNAVAILABLE = 503;
 
     public static final String LOCATION_KEY = "Location";
     public static final String CONTENT_TYPE_KEY = "Content-Type";
