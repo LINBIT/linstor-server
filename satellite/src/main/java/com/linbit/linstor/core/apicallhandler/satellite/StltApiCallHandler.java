@@ -263,6 +263,7 @@ public class StltApiCallHandler
             try
             {
                 stltConf.setProp(LinStor.KEY_NODE_NAME, nodeName);
+                transMgrProvider.get().commit();
             }
             catch (AccessDeniedException | InvalidKeyException | InvalidValueException | SQLException exc)
             {
