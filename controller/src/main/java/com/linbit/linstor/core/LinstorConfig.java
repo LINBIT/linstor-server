@@ -195,6 +195,7 @@ public class LinstorConfig
                      initConnectionProviderFromCfg(dbCfgFile);
                  Connection con = dataSource.getConnection())
             {
+                con.setAutoCommit(false);
                 try
                 {
                     GenericDbDriver.runSql(con, new BufferedReader(input));
