@@ -1,5 +1,5 @@
 Name: linstor
-Version: 0.6.5
+Version: 0.7.0
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -120,6 +120,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Tue Oct 30 2018 Rene Peinthor <rene.peinthor@linbit.com> 0.7.0-1
+- New upstream release. Proxy support, transactional resource create, ...
+
 * Tue Oct 02 2018 Rene Peinthor <rene.peinthor@linbit.com> 0.6.5-1
 - New upstream release. Sync delete, fixes.
 

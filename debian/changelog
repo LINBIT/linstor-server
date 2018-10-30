@@ -1,3 +1,92 @@
+linstor-server (0.7.0-1) experimental; urgency=medium
+
+  [ Joel Colledge ]
+  * Allow multiple resources to be created with a single API call
+  * Make resource auto-place synchronous
+  * Remove resource definition ready event which is no longer used
+  * Remove unused RequestRscDfn code from the satellite
+  * Make new node connection a little less racy
+  * Remove unused skipSync method
+  * Actually send the already initialized field with the primary request
+  * Tidy up use of comparators in the stor pool selection
+  * Extract free capacity fetching from the storage pool listing
+  * Tidy up auto-place placement count decision logic
+  * Auto-place using actual free capacity of thin pools
+  * Tidy up some unused imports etc
+  * Only fetch free capacities for thin pools and only track free capaciti [...]
+  * Fix RscApiTest which now has a free capacity fetcher dependency
+  * Supply oversubscription information with the max volume size query
+  * Fix resource creation free capacity check to allow resources that cons [...]
+  * Remove unused dependencies
+  * Only fetch thin free capacity from nodes that have thin pools
+  * Remove unused toggle disk methods and dependency
+  * Make storage pool creation synchronous so that configuration errors ar [...]
+  * Ensure that the satellite answers even when the request was made befor [...]
+  * Add optional port field to resource connection to make proxy connectio [...]
+  * Add configuration of DRBD proxy running locally
+  * Fix test that expected address entries in the node sections rather tha [...]
+  * Add configuration of DRBD Proxy options
+  * Add configuration of DRBD Proxy compression plugins
+  * Refuse to delete a node with snapshots
+  * Delete snapshots when a node is lost
+
+  [ Gabor Hernadi ]
+  * Fixed usage of correct node namespace for storPool reconfiguration
+  * Fixed possible "Access to deleted <object>"
+  * Fix: prevent deletion of sf_t resource before sf_i resource
+  * Fix: prevent multiple swordfish-target-resources per rscDfn
+  * Upgraded FlyWay dependency to version 5.2
+  * Made swordfish-initator-driver "diskless"
+  * Fixed wrong swrodfish-volume-url
+  * Drbdsetup events2 all now restarts when manually killed
+  * Added missing return-code checks for swordfish-REST calls
+  * Swordfish: Added centralized status-code check
+  * Swordfish: Added meaningful volume states
+  * Swordfish: Minor error-reporting changes
+  * Swordfish: fixed state-checking issues
+  * Fixed race-condition when creating storDriver
+  * SwordfishDriver also reports volume-state after exception
+  * Swordfish_Target nodetype does no longer try to move linstor_common.conf
+  * Fixed race-condition in swordfish-driver
+  * Fixed swordfish-state strings
+  * Added TransactionSet class
+  * Made FreeSpaceMgr's pendingVolumesToAdd transaction-safe
+  * Swordfish: added "To: Creating" state
+  * Swordfish: "Failed" state on unexpected response code
+  * Swordfish: Fixed NOT_FOUND response handling in "volumeExists"
+  * Swordfish: Actually calling the unexpectedRespCodeHandler
+  * Swordfish: Decreased default timeout to 290 sec
+  * Fixed race-condition in SF-driver and preventing DELETE with null volume-id
+  * Swordfish: Fixed NPE
+  * Swordfish: added configurable retry count and delay for 503 responses
+
+  [ Rene Peinthor ]
+  * storpool-freespace: fix null pointer exception if storage pool broken
+  * controller: Add version mismatch satellites to the reconnector task
+  * linstor-config,sql-script: read from stdin if no sql script was given
+  * controller,ssl: resolve the keystore and trustdb file on config direct [...]
+  * auto-place: do not try to deploy a diskless pool on any non SATELLITE  [...]
+  * StateFlagsBits: allow more than one objectProtection
+  * RscConn: Add flags to resource connections
+  * RscCon: add a resource connection list API
+  * StltResConDfnDriver: fix NPE
+  * give swordfish target satellites a error report node name
+  * swordfishtarget: create volume return is http 202
+  * rsc-del: rework swordfish target check to a common diskfull/diskless check
+  * drbdeventpublisher: remove unused method
+  * use interfaces instead of implementation classes
+  * swordfish-initiator: be more generous while deleting volumes
+  * ctrlrscautoplaceapicallHandler: make isStorPoolUsable static
+  * rsc-create: check storage pool if enough space is available
+  * increase API_VERSION
+  * swordfish-target: set log directory for error reports
+  * linstorconfig: disable auto commit on sql-script command
+
+  [ Robert Altnoeder ]
+  * TcpConnectorService: Automatic fallback from loopback/anylocal IPv6 to IPv4
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 30 Oct 2018 10:30:35 +0100
+
 linstor-server (0.6.5-1) experimental; urgency=medium
 
   [ Roland Kammerer ]
