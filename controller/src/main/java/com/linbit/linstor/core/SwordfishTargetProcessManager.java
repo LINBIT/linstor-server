@@ -34,7 +34,9 @@ import java.util.concurrent.TimeUnit;
 public class SwordfishTargetProcessManager
 {
     private static final String LOCALHOST = "localhost";
-    private static final String SATELLITE_OUT_FILE_FORMAT = "sfTargets/satellite-%d.log";
+    private static final String SATELLITE_LOG_DIRECTORY = "sfTargets";
+    private static final String SATELLITE_ERR_LOG_DIRECTORY = "satellite-%d-logs";
+    private static final String SATELLITE_OUT_FILE_FORMAT = SATELLITE_LOG_DIRECTORY + "/satellite-%d.log";
 
     private final NodesMap nodesMap;
     private final ErrorReporter errorReporter;
@@ -170,6 +172,8 @@ public class SwordfishTargetProcessManager
                 throw new ImplementationError("Swordfish target node has no network interfaces");
             }
 
+            Path sfSatLogDir = errorReporter.getLogDirectory().resolve(SATELLITE_LOG_DIRECTORY);
+            Path sfErrLogDir = sfSatLogDir.resolve(String.format(SATELLITE_ERR_LOG_DIRECTORY, port));
             ProcessBuilder pb = new ProcessBuilder(
                 getSatellitePath().toString(),
                 "-s",
@@ -178,7 +182,8 @@ public class SwordfishTargetProcessManager
                 "--bind-address",
                 LOCALHOST,
                 "-d",
-                "--override-node-name", node.getName().getDisplayName()
+                "--override-node-name", node.getName().getDisplayName(),
+                "--logs", sfErrLogDir.toAbsolutePath().toString()
             );
             pb.redirectErrorStream(true);
             File stltLog = errorReporter.getLogDirectory().resolve(
