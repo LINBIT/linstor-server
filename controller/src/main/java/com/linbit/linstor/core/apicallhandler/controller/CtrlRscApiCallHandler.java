@@ -449,16 +449,15 @@ public class CtrlRscApiCallHandler
                         StorPool storPool = vlm.getStorPool(apiCtx);
                         CapacityInfoPojo capacityInfo =
                             storPoolToCapacityInfoMap.get(storPool.getName());
-                        if (capacityInfo != null)
-                        {
-                            storPool.getFreeSpaceTracker().vlmCreationFinished(
-                                apiCtx,
-                                vlm,
-                                capacityInfo.getFreeCapacity(),
-                                capacityInfo.getTotalCapacity()
-                            );
-                        }
-                        else if (!storPool.getDriverKind().usesThinProvisioning())
+
+                        storPool.getFreeSpaceTracker().vlmCreationFinished(
+                            apiCtx,
+                            vlm,
+                            capacityInfo == null ? null : capacityInfo.getFreeCapacity(),
+                            capacityInfo == null ? null : capacityInfo.getTotalCapacity()
+                        );
+
+                        if (capacityInfo == null && !storPool.getDriverKind().usesThinProvisioning())
                         {
                             errorReporter.logWarning(
                                 String.format(

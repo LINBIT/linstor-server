@@ -62,7 +62,7 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
-    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeCapacityRef, long totalCapacityRef)
+    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, Long freeCapacityRef, Long totalCapacityRef)
         throws AccessDeniedException
     {
         // Ignore

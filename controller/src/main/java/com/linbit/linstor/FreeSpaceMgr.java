@@ -124,11 +124,15 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @param totalCapacityRef
      */
     @Override
-    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, long freeCapacityRef, long totalCapacityRef) throws AccessDeniedException
+    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, Long freeCapacityRef, Long totalCapacityRef)
+        throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
         synchronizedRemove(pendingVolumesToAdd, vlm);
-        setImpl(freeCapacityRef, totalCapacityRef);
+        if (freeCapacityRef != null && totalCapacityRef != null)
+        {
+            setImpl(freeCapacityRef, totalCapacityRef);
+        }
     }
 
     /**
