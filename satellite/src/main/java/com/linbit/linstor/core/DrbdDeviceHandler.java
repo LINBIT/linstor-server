@@ -309,6 +309,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     deleteResource(rsc, rscDfn, rscState)
                         .ifPresent(apiCallRc::addEntry);
+                    resourceDeleted = true;
                 }
                 else
                 {
