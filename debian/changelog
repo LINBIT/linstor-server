@@ -1,3 +1,11 @@
+linstor-server (0.7.1-1) experimental; urgency=medium
+
+  [ Joel Colledge ]
+  * Remove thin volume from pending volumes when it has been deployed
+  * Close resource deployment event stream when the resource is deleted
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 31 Oct 2018 12:11:19 +0100
+
 linstor-server (0.7.0-1) experimental; urgency=medium
 
   [ Joel Colledge ]
