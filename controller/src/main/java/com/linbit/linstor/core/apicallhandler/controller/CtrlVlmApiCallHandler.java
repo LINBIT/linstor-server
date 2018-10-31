@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.ImplementationError;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
@@ -10,20 +8,10 @@ import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
-import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
-import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -38,7 +26,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_VLM;
@@ -48,158 +35,25 @@ import static java.util.stream.Collectors.toList;
 public class CtrlVlmApiCallHandler
 {
     private final ErrorReporter errorReporter;
-    private final AccessContext apiCtx;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final NodeRepository nodeRepository;
     private final CtrlClientSerializer clientComSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final ResponseConverter responseConverter;
-    private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     public CtrlVlmApiCallHandler(
         ErrorReporter errorReporterRef,
-        @ApiContext AccessContext apiCtxRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         NodeRepository nodeRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        ResponseConverter responseConverterRef,
-        Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         errorReporter = errorReporterRef;
-        apiCtx = apiCtxRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
-        ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         nodeRepository = nodeRepositoryRef;
         clientComSerializer = clientComSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        responseConverter = responseConverterRef;
-        peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-    }
-
-    ApiCallRc volumeResized(
-        String nodeNameStr,
-        String rscNameStr,
-        int volumeNr,
-        long vlmSize
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeVlmContext(
-            ApiOperation.makeModifyOperation(),
-            nodeNameStr,
-            rscNameStr,
-            volumeNr
-        );
-
-        try
-        {
-            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
-            VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
-
-            Volume vlm = rscData.getVolume(volumeNumber);
-
-            boolean updateSatellites = false;
-
-            boolean resizeExpected = vlm.getFlags().isSet(apiCtx, VlmFlags.RESIZE);
-
-            if (resizeExpected)
-            {
-                // Verify that this resize matches the current target size
-                long expectedSize = vlm.getVolumeDefinition().getVolumeSize(apiCtx);
-                if (vlmSize == expectedSize)
-                {
-                    errorReporter.logDebug("Volume %s resized to %d.", vlm, vlmSize);
-
-                    vlm.getFlags().disableFlags(apiCtx, VlmFlags.RESIZE);
-
-                    // If all volumes have been resized, can resize DRBD
-                    boolean allResized = true;
-                    Iterator<Volume> vlmIter = vlm.getVolumeDefinition().iterateVolumes(apiCtx);
-                    while (vlmIter.hasNext())
-                    {
-                        Volume otherVlm = vlmIter.next();
-
-                        if (otherVlm.getFlags().isSet(apiCtx, VlmFlags.RESIZE))
-                        {
-                            allResized = false;
-                            break;
-                        }
-                    }
-
-                    if (allResized)
-                    {
-                        vlm.getFlags().enableFlags(apiCtx, VlmFlags.DRBD_RESIZE);
-                        updateSatellites = true;
-                    }
-                }
-                else
-                {
-                    // This can occur when multiple resize commands are being executed concurrently.
-                    // E.g. when the controller receives a command to resize a volume to size X and then one to resize
-                    // to size Y, the first resize notification will have size X while the expected size will be Y.
-                    errorReporter.logWarning(
-                        "Volume %s resized to %d, awaiting resize to %d.", vlm, vlmSize, expectedSize);
-                }
-            }
-
-            ctrlTransactionHelper.commit();
-
-            if (updateSatellites)
-            {
-                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscData));
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
-    ApiCallRc volumeDrbdResized(
-        String nodeNameStr,
-        String rscNameStr,
-        int volumeNr
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeVlmContext(
-            ApiOperation.makeModifyOperation(),
-            nodeNameStr,
-            rscNameStr,
-            volumeNr
-        );
-
-        try
-        {
-            ResourceData rscData = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
-            VolumeNumber volumeNumber = LinstorParsingUtils.asVlmNr(volumeNr);
-
-            Volume vlm = rscData.getVolume(volumeNumber);
-
-            vlm.getFlags().disableFlags(apiCtx, VlmFlags.DRBD_RESIZE);
-            vlm.getVolumeDefinition().getFlags().disableFlags(peerAccCtx.get(), VlmDfnFlags.RESIZE);
-
-            ctrlTransactionHelper.commit();
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
     }
 
     byte[] listVolumes(
@@ -316,21 +170,6 @@ public class CtrlVlmApiCallHandler
             .build();
     }
 
-    public static String getVlmDescription(Volume vlm)
-    {
-        return getVlmDescription(
-            vlm.getResource().getAssignedNode().getName().displayValue,
-            vlm.getResourceDefinition().getName().displayValue,
-            vlm.getVolumeDefinition().getVolumeNumber().value
-        );
-    }
-
-    public static String getVlmDescription(String nodeNameStr, String rscNameStr, Integer vlmNr)
-    {
-        return "Node: " + nodeNameStr + ", Resource: " + rscNameStr +
-            " Volume number: " + vlmNr;
-    }
-
     public static String getVlmDescriptionInline(Volume vlm)
     {
         return getVlmDescriptionInline(vlm.getResource(), vlm.getVolumeDefinition());
@@ -349,26 +188,5 @@ public class CtrlVlmApiCallHandler
     {
         return "volume with volume number '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" +
             nodeNameStr + "'";
-    }
-
-    static ResponseContext makeVlmContext(
-        ApiOperation operation,
-        String nodeNameStr,
-        String rscNameStr,
-        int volumeNr
-    )
-    {
-        Map<String, String> objRefs = new TreeMap<>();
-        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
-        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(volumeNr));
-
-        return new ResponseContext(
-            operation,
-            getVlmDescription(nodeNameStr, rscNameStr, volumeNr),
-            getVlmDescriptionInline(nodeNameStr, rscNameStr, volumeNr),
-            ApiConsts.MASK_VLM,
-            objRefs
-        );
     }
 }

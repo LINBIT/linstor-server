@@ -1,15 +1,12 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.drbd.md.GidGenerator;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
@@ -27,8 +24,6 @@ import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -41,15 +36,12 @@ import com.linbit.utils.Base64;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.UUID;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
@@ -259,108 +251,6 @@ class CtrlVlmDfnApiCallHandler
         return vlmDfn;
     }
 
-    ApiCallRc modifyVlmDfn(
-        UUID vlmDfnUuid,
-        String rscName,
-        int vlmNr,
-        Long size,
-        Integer minorNr,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeVlmDfnContext(
-            ApiOperation.makeModifyOperation(),
-            rscName,
-            vlmNr
-        );
-
-        try
-        {
-            VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, true);
-
-            if (vlmDfnUuid != null && !vlmDfnUuid.equals(vlmDfn.getUuid()))
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_UUID_VLM_DFN,
-                    "UUID check failed. Given UUID: " + vlmDfnUuid + ". Persisted UUID: " + vlmDfn.getUuid()
-                ));
-            }
-            Props props = getVlmDfnProps(vlmDfn);
-            Map<String, String> propsMap = props.map();
-
-            ctrlPropsHelper.fillProperties(LinStorObject.VOLUME_DEFINITION, overrideProps,
-                getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
-
-            for (String delKey : deletePropKeys)
-            {
-                propsMap.remove(delKey);
-            }
-
-            if (size != null)
-            {
-                long vlmDfnSize = getVlmDfnSize(vlmDfn);
-                if (size >= vlmDfnSize)
-                {
-                    setVlmDfnSize(vlmDfn, size);
-
-                    Iterator<Volume> vlmIter = vlmDfn.iterateVolumes(peerAccCtx.get());
-
-                    if (vlmIter.hasNext())
-                    {
-                        vlmDfn.getFlags().enableFlags(peerAccCtx.get(), VlmDfnFlags.RESIZE);
-                    }
-
-                    while (vlmIter.hasNext())
-                    {
-                        Volume vlm = vlmIter.next();
-
-                        vlm.getFlags().enableFlags(peerAccCtx.get(), Volume.VlmFlags.RESIZE);
-                    }
-                }
-                else
-                {
-                    if (!hasDeployedVolumes(vlmDfn))
-                    {
-                        setVlmDfnSize(vlmDfn, size);
-                    }
-                    else
-                    {
-                        throw new ApiRcException(ApiCallRcImpl
-                            .entryBuilder(
-                                ApiConsts.FAIL_INVLD_VLM_SIZE,
-                                "Deployed volumes can only grow in size, not shrink."
-                            )
-                            .setCorrection("If you want to shrink the volume definition, you have to remove all " +
-                                "volumes of this volume definition first.")
-                            .build()
-                        );
-                    }
-                }
-            }
-
-            if (minorNr != null)
-            {
-                setMinorNr(vlmDfn, minorNr);
-            }
-
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
-                vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
-
-            responseConverter.addWithDetail(
-                responses, context, ctrlSatelliteUpdater.updateSatellites(vlmDfn.getResourceDefinition()));
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
     private Iterator<Resource> getRscIterator(ResourceDefinition rscDfn)
     {
         Iterator<Resource> iterator;
@@ -445,93 +335,6 @@ class CtrlVlmDfnApiCallHandler
             throw new ImplementationError(accDeniedExc);
         }
         return vlmDfnCrtSuccessEntry;
-    }
-
-    private long getVlmDfnSize(VolumeDefinitionData vlmDfn)
-    {
-        long volumeSize;
-        try
-        {
-            volumeSize = vlmDfn.getVolumeSize(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access Volume definition's size",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        return volumeSize;
-    }
-
-    private void setVlmDfnSize(VolumeDefinitionData vlmDfn, Long size)
-    {
-        try
-        {
-            vlmDfn.setVolumeSize(peerAccCtx.get(), size);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "update Volume definition's size",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-
-    }
-
-    private boolean hasDeployedVolumes(VolumeDefinitionData vlmDfn)
-    {
-        boolean hasVolumes;
-        try
-        {
-            hasVolumes = vlmDfn.iterateVolumes(peerAccCtx.get()).hasNext();
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access volume definition",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        return hasVolumes;
-    }
-
-    private void setMinorNr(VolumeDefinitionData vlmDfn, Integer minorNr)
-    {
-        try
-        {
-            vlmDfn.setMinorNr(
-                peerAccCtx.get(),
-                new MinorNumber(minorNr)
-            );
-        }
-        catch (ValueOutOfRangeException | ValueInUseException exc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_MINOR_NR, String.format(
-                "The specified minor number '%d' is invalid.",
-                minorNr
-            )), exc);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "set the minor number",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
     }
 
     public static String getVlmDfnDescription(String rscName, Integer vlmNr)

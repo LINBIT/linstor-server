@@ -20,5 +20,6 @@ public class CtrlApiCallHandlerModule extends AbstractModule
         commandsBinder.addBinding().to(CtrlRscDfnDeleteApiCallHandler.class);
         commandsBinder.addBinding().to(CtrlRscToggleDiskApiCallHandler.class);
         commandsBinder.addBinding().to(CtrlVlmDfnDeleteApiCallHandler.class);
+        commandsBinder.addBinding().to(CtrlVlmDfnModifyApiCallHandler.class);
     }
 }

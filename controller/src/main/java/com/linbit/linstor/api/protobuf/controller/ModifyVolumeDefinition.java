@@ -1,15 +1,15 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
 import com.linbit.linstor.proto.MsgModVlmDfnOuterClass.MsgModVlmDfn;
+import reactor.core.publisher.Flux;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -21,20 +21,23 @@ import java.util.UUID;
     name = ApiConsts.API_MOD_VLM_DFN,
     description = "Modifies a volume definition"
 )
-public class ModifyVolumeDefinition implements ApiCall
+public class ModifyVolumeDefinition implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final ApiCallAnswerer apiCallAnswerer;
+    private final CtrlVlmDfnModifyApiCallHandler ctrlVlmDfnModifyApiCallHandler;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public ModifyVolumeDefinition(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
+    public ModifyVolumeDefinition(
+        CtrlVlmDfnModifyApiCallHandler ctrlVlmDfnModifyApiCallHandlerRef,
+        ResponseSerializer responseSerializerRef
+    )
     {
-        apiCallHandler = apiCallHandlerRef;
-        apiCallAnswerer = apiCallAnswererRef;
+        ctrlVlmDfnModifyApiCallHandler = ctrlVlmDfnModifyApiCallHandlerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         MsgModVlmDfn msgModVlmDfn = MsgModVlmDfn.parseDelimitedFrom(msgDataIn);
@@ -51,16 +54,16 @@ public class ModifyVolumeDefinition implements ApiCall
         Long size = msgModVlmDfn.hasVlmSize() ? msgModVlmDfn.getVlmSize() : null;
         Integer minorNr = msgModVlmDfn.hasVlmMinor() ? msgModVlmDfn.getVlmMinor() : null;
 
-        ApiCallRc apiCallRc = apiCallHandler.modifyVlmDfn(
-            vlmDfnUuid,
-            rscName,
-            vlmNr,
-            size,
-            minorNr,
-            overrideProps,
-            deletePropKeys
-        );
-        apiCallAnswerer.answerApiCallRc(apiCallRc);
+        return ctrlVlmDfnModifyApiCallHandler
+            .modifyVlmDfn(
+                vlmDfnUuid,
+                rscName,
+                vlmNr,
+                size,
+                minorNr,
+                overrideProps,
+                deletePropKeys
+            )
+            .transform(responseSerializer::transform);
     }
-
 }

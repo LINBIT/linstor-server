@@ -1124,54 +1124,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void notifyVolumeResized(Volume vlm)
-    {
-        try
-        {
-            Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-            if (ctrlPeer != null)
-            {
-                String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
-                String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
-
-                ctrlPeer.sendMessage(interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_NOTIFY_VLM_RESIZED)
-                    .notifyVolumeResized(
-                        msgNodeName,
-                        msgRscName,
-                        vlm.getVolumeDefinition().getVolumeNumber().value,
-                        vlm.getVolumeDefinition().getVolumeSize(wrkCtx)
-                    )
-                    .build()
-                );
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
-    @Override
     public void notifyDrbdVolumeResized(Volume vlm)
     {
-        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-        if (ctrlPeer != null)
-        {
-            String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
-            String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
-
-            ctrlPeer.sendMessage(interComSerializer
-                .onewayBuilder(InternalApiConsts.API_NOTIFY_VLM_DRBD_RESIZED)
-                .notifyDrbdVolumeResized(
-                    msgNodeName,
-                    msgRscName,
-                    vlm.getVolumeDefinition().getVolumeNumber().value
-                )
-                .build()
-            );
-        }
-
         // Remember the resize to clear the flag after DeviceHandler instances have finished
         synchronized (sched)
         {

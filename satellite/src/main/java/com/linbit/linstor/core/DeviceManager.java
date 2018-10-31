@@ -21,7 +21,6 @@ public interface DeviceManager extends DrbdStateChange
 
     void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response);
     void notifyResourceApplied(Resource rsc);
-    void notifyVolumeResized(Volume vlm);
     void notifyDrbdVolumeResized(Volume vlm);
     void notifyResourceDeleted(Resource rsc);
     void notifyVolumeDeleted(Volume vlm, long freeSpace);

@@ -1239,13 +1239,6 @@ class DrbdDeviceHandler implements DeviceHandler
                             vlmState.setDiskNeedsResize(false);
                         }
 
-                        if (vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.RESIZE))
-                        {
-                            // Notify the controller that the volume was resized even if we haven't actually changed the
-                            // size, because notification may have been missed when it was actually resized.
-                            deviceManagerProvider.get().notifyVolumeResized(vlm);
-                        }
-
                         // Set block device paths
                         if (vlmState.hasDisk())
                         {

@@ -316,55 +316,6 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Modifies an existing {@link VolumeDefinition}
-     *
-     * @param vlmDfnUuid optional, if given checked against persisted UUID
-     * @param rscName required
-     * @param vlmNr required
-     * @param size optional
-     * @param minorNr optional
-     * @param overrideProps optional
-     * @param deletePropKeys optional
-     * @return
-     */
-    public ApiCallRc modifyVlmDfn(
-        UUID vlmDfnUuid,
-        String rscName,
-        int vlmNr,
-        Long size,
-        Integer minorNr,
-        Map<String, String> overridePropsRef,
-        Set<String> deletePropKeysRef
-    )
-    {
-        ApiCallRc apiCallRc;
-
-        Map<String, String> overrideProps = overridePropsRef;
-        Set<String> deletePropKeys = deletePropKeysRef;
-        if (overrideProps == null)
-        {
-            overrideProps = Collections.emptyMap();
-        }
-        if (deletePropKeys == null)
-        {
-            deletePropKeys = Collections.emptySet();
-        }
-        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
-        {
-            apiCallRc = vlmDfnApiCallHandler.modifyVlmDfn(
-                vlmDfnUuid,
-                rscName,
-                vlmNr,
-                size,
-                minorNr,
-                overrideProps,
-                deletePropKeys
-            );
-        }
-        return apiCallRc;
-    }
-
-    /**
      * Modifies an existing {@link Resource}
      *
      * @param rscUuid optional, if given checked against persisted UUID
@@ -471,47 +422,6 @@ public class CtrlApiCallHandler
         }
 
         return listRscConns;
-    }
-
-    public ApiCallRc volumeResized(String nodeName, String rscName, int volumeNr, long vlmSize)
-    {
-        ApiCallRc apiCallRc;
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.writeLock(),
-                storPoolDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = vlmApiCallHandler.volumeResized(
-                nodeName,
-                rscName,
-                volumeNr,
-                vlmSize
-            );
-        }
-        return apiCallRc;
-    }
-
-    public ApiCallRc volumeDrbdResized(String nodeName, String rscName, int volumeNr)
-    {
-        ApiCallRc apiCallRc;
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.writeLock(),
-                storPoolDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = vlmApiCallHandler.volumeDrbdResized(
-                nodeName,
-                rscName,
-                volumeNr
-            );
-        }
-        return apiCallRc;
     }
 
     /**
