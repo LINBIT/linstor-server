@@ -6,6 +6,8 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -34,10 +36,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Notifies satellites of updates, returning the responses from the deployment of these changes.
@@ -214,6 +216,31 @@ public class CtrlSatelliteUpdateCaller
         return response;
     }
 
+    public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(
+        SnapshotDefinition snapshotDfn,
+        NotConnectedHandler notConnectedHandler
+    )
+    {
+        List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();
+
+        try
+        {
+            // notify all peers that a snapshot has changed
+            for (Snapshot snapshot : snapshotDfn.getAllSnapshots(apiCtx))
+            {
+                Flux<ApiCallRc> response = updateSnapshot(snapshot, notConnectedHandler);
+
+                responses.add(Tuples.of(snapshot.getNodeName(), response));
+            }
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+
+        return mergeExtractingApiRcExceptions(Flux.fromIterable(responses));
+    }
+
     private Flux<ApiCallRc> updateResource(Resource currentRsc)
         throws AccessDeniedException
     {
@@ -245,6 +272,45 @@ public class CtrlSatelliteUpdateCaller
 
                 .onErrorMap(PeerNotConnectedException.class, ignored ->
                     new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))
+                );
+        }
+
+        return response;
+    }
+
+    private Flux<ApiCallRc> updateSnapshot(Snapshot snapshot, NotConnectedHandler notConnectedHandler)
+        throws AccessDeniedException
+    {
+        Node node = snapshot.getNode();
+        NodeName nodeName = node.getName();
+
+        Flux<ApiCallRc> response;
+        Peer currentPeer = node.getPeer(apiCtx);
+
+        if (currentPeer.isConnected() && currentPeer.hasFullSyncFailed())
+        {
+            response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
+        }
+        else
+        {
+            response = currentPeer
+                .apiCall(
+                    InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT,
+                    internalComSerializer
+                        .headerlessBuilder()
+                        .changedSnapshot(
+                            snapshot.getResourceName().displayValue,
+                            snapshot.getUuid(),
+                            snapshot.getSnapshotName().displayValue
+                        )
+                        .build()
+                )
+
+                .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
+
+                .onErrorResume(
+                    PeerNotConnectedException.class,
+                    ignored -> notConnectedHandler.handleNotConnected(nodeName)
                 );
         }
 
@@ -294,7 +360,7 @@ public class CtrlSatelliteUpdateCaller
             )
             .compose(signalFlux ->
                 {
-                    AtomicBoolean hasError = new AtomicBoolean();
+                    List<ApiRcException> errors = Collections.synchronizedList(new ArrayList<>());
                     return signalFlux
                         .map(namedSignal ->
                             {
@@ -302,8 +368,8 @@ public class CtrlSatelliteUpdateCaller
                                 ApiCallRc apiCallRc;
                                 if (signal.isOnError())
                                 {
-                                    hasError.set(true);
                                     ApiRcException apiRcException = (ApiRcException) signal.getThrowable();
+                                    errors.add(apiRcException);
                                     apiCallRc = apiRcException.getApiCallRc();
                                 }
                                 else
@@ -314,9 +380,9 @@ public class CtrlSatelliteUpdateCaller
                             }
                         )
                         .concatWith(Flux.defer(() ->
-                            hasError.get() ?
-                                Flux.error(new DelayedApiRcException()) :
-                                Flux.empty()
+                            errors.isEmpty() ?
+                                Flux.empty() :
+                                Flux.error(new DelayedApiRcException(errors))
                         ));
                 }
             );
@@ -327,9 +393,23 @@ public class CtrlSatelliteUpdateCaller
      */
     public static class DelayedApiRcException extends RuntimeException
     {
-        public DelayedApiRcException()
+        private final List<ApiRcException> errors;
+
+        public DelayedApiRcException(List<ApiRcException> errorsRef)
         {
             super("Exceptions have been converted to responses");
+            errors = errorsRef;
         }
+
+        public List<ApiRcException> getErrors()
+        {
+            return errors;
+        }
+    }
+
+    @FunctionalInterface
+    public interface NotConnectedHandler
+    {
+        Flux<ApiCallRc> handleNotConnected(NodeName nodeName);
     }
 }

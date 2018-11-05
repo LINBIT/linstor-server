@@ -1,14 +1,14 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.proto.MsgCrtSnapshotOuterClass.MsgCrtSnapshot;
 import com.linbit.linstor.proto.SnapshotDfnOuterClass;
 import com.linbit.linstor.proto.SnapshotDfnOuterClass.SnapshotDfn;
+import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -19,32 +19,36 @@ import java.util.stream.Collectors;
     name = ApiConsts.API_CRT_SNAPSHOT,
     description = "Creates a snapshot"
 )
-public class CreateSnapshot implements ApiCall
+public class CreateSnapshot implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final ApiCallAnswerer apiCallAnswerer;
+    private final CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandler;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public CreateSnapshot(CtrlApiCallHandler apiCallHandlerRef, ApiCallAnswerer apiCallAnswererRef)
+    public CreateSnapshot(
+        CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandlerRef,
+        ResponseSerializer responseSerializerRef
+    )
     {
-        apiCallHandler = apiCallHandlerRef;
-        apiCallAnswerer = apiCallAnswererRef;
+        ctrlSnapshotCrtApiCallHandler = ctrlSnapshotCrtApiCallHandlerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        MsgCrtSnapshot msgCrtRsc = MsgCrtSnapshot.parseDelimitedFrom(msgDataIn);
-        SnapshotDfn snapshotDfn = msgCrtRsc.getSnapshotDfn();
+        MsgCrtSnapshot msgCrtSnapshot = MsgCrtSnapshot.parseDelimitedFrom(msgDataIn);
+        SnapshotDfn snapshotDfn = msgCrtSnapshot.getSnapshotDfn();
 
-        ApiCallRc apiCallRc = apiCallHandler.createSnapshot(
-            snapshotDfn.getSnapshotsList().stream()
-                .map(SnapshotDfnOuterClass.Snapshot::getNodeName)
-                .collect(Collectors.toList()),
-            snapshotDfn.getRscName(),
-            snapshotDfn.getSnapshotName()
-        );
-        apiCallAnswerer.answerApiCallRc(apiCallRc);
+        return ctrlSnapshotCrtApiCallHandler
+            .createSnapshot(
+                snapshotDfn.getSnapshotsList().stream()
+                    .map(SnapshotDfnOuterClass.Snapshot::getNodeName)
+                    .collect(Collectors.toList()),
+                snapshotDfn.getRscName(),
+                snapshotDfn.getSnapshotName()
+            )
+            .transform(responseSerializer::transform);
     }
 }

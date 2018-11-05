@@ -10,7 +10,6 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.core.SnapshotState;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
@@ -91,7 +90,5 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder updateFreeCapacity(UUID storPoolUuid, String storPoolName, SpaceInfo spaceInfo);
 
         CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
-
-        CtrlStltSerializerBuilder inProgressSnapshotEvent(SnapshotState snapshotState);
     }
 }

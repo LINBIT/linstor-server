@@ -1234,30 +1234,6 @@ public class CtrlApiCallHandler
         }
     }
 
-    public ApiCallRc createSnapshot(
-        List<String> nodeNames,
-        String rscName,
-        String snapshotName
-    )
-    {
-        ApiCallRc apiCallRc;
-
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.readLock(),
-                rscDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = snapshotApiCallHandler.createSnapshot(
-                nodeNames,
-                rscName,
-                snapshotName
-            );
-        }
-        return apiCallRc;
-    }
-
     public ApiCallRc restoreVlmDfn(String fromRscName, String fromSnapshotName, String toRscName)
     {
         ApiCallRc apiCallRc;

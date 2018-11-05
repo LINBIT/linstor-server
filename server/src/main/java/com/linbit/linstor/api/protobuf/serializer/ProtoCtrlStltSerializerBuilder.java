@@ -32,7 +32,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.core.SnapshotState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
@@ -41,7 +40,6 @@ import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
-import com.linbit.linstor.proto.javainternal.EventInProgressSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
@@ -629,27 +627,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setCryptKey(ByteString.copyFrom(cryptKey))
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
-                .build()
-                .writeDelimitedTo(baos);
-        }
-        catch (IOException exc)
-        {
-            handleIOException(exc);
-        }
-        return this;
-    }
-
-    @Override
-    public ProtoCtrlStltSerializerBuilder inProgressSnapshotEvent(
-        SnapshotState snapshotState
-    )
-    {
-        try
-        {
-            EventInProgressSnapshotOuterClass.EventInProgressSnapshot.newBuilder()
-                .setSuspended(snapshotState.isSuspended())
-                .setSnapshotTaken(snapshotState.isSnapshotTaken())
-                .setDeleted(snapshotState.isSnapshotDeleted())
                 .build()
                 .writeDelimitedTo(baos);
         }

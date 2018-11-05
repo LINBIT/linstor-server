@@ -3,28 +3,17 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.Resource;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.SnapshotDataControllerFactory;
 import com.linbit.linstor.SnapshotDefinition;
-import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
-import com.linbit.linstor.SnapshotDefinitionData;
-import com.linbit.linstor.SnapshotDefinitionDataControllerFactory;
 import com.linbit.linstor.SnapshotName;
-import com.linbit.linstor.SnapshotVolumeDataControllerFactory;
 import com.linbit.linstor.SnapshotVolumeDefinition;
-import com.linbit.linstor.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
-import com.linbit.linstor.SnapshotVolumeDefinitionControllerFactory;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -34,14 +23,12 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
-import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -51,13 +38,10 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 
 @Singleton
 public class CtrlSnapshotApiCallHandler
@@ -66,10 +50,6 @@ public class CtrlSnapshotApiCallHandler
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
-    private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
-    private final SnapshotDataControllerFactory snapshotDataFactory;
-    private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
@@ -84,10 +64,6 @@ public class CtrlSnapshotApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactoryRef,
-        SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
-        SnapshotDataControllerFactory snapshotDataFactoryRef,
-        SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
@@ -101,10 +77,6 @@ public class CtrlSnapshotApiCallHandler
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
-        snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
-        snapshotDataFactory = snapshotDataFactoryRef;
-        snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
@@ -112,176 +84,6 @@ public class CtrlSnapshotApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-    }
-
-    /**
-     * Create a snapshot of a resource.
-     * <p>
-     * Snapshots are created in a multi-stage process:
-     * <ol>
-     *     <li>Add the snapshot objects (definition and instances), including the in-progress snapshot objects to
-     *     be sent to the satellites</li>
-     *     <li>When all satellites have received the in-progress snapshots, mark the resource with the suspend flag</li>
-     *     <li>When all resources are suspended, send out a snapshot request</li>
-     *     <li>When all snapshots have been created, mark the resource as resuming by removing the suspend flag</li>
-     *     <li>When all resources have been resumed, remove the in-progress snapshots</li>
-     * </ol>
-     * This is process is implemented by {@link com.linbit.linstor.event.handler.SnapshotStateMachine}.
-     */
-    public ApiCallRc createSnapshot(
-        List<String> nodeNameStrs,
-        String rscNameStr,
-        String snapshotNameStr
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeSnapshotContext(
-            ApiOperation.makeRegisterOperation(),
-            nodeNameStrs,
-            rscNameStr,
-            snapshotNameStr
-        );
-
-        try
-        {
-            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
-
-            SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
-            SnapshotDefinition snapshotDfn = createSnapshotDfnData(
-                peerAccCtx.get(),
-                rscDfn,
-                snapshotName,
-                new SnapshotDfnFlags[] {}
-            );
-
-            ensureSnapshotsViable(rscDfn);
-
-            rscDfn.addSnapshotDfn(peerAccCtx.get(), snapshotDfn);
-            snapshotDfn.setInCreation(peerAccCtx.get(), true);
-
-            Iterator<VolumeDefinition> vlmDfnIterator = rscDfn.iterateVolumeDfn(peerAccCtx.get());
-            while (vlmDfnIterator.hasNext())
-            {
-                VolumeDefinition vlmDfn = vlmDfnIterator.next();
-
-                SnapshotVolumeDefinition snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.create(
-                    apiCtx,
-                    snapshotDfn,
-                    vlmDfn.getVolumeNumber(),
-                    vlmDfn.getVolumeSize(peerAccCtx.get()),
-                    new SnapshotVlmDfnFlags[]{}
-                );
-
-                Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
-                boolean isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
-                if (isEncrypted)
-                {
-                    Map<String, String> vlmDfnPropsMap = getVlmDfnProps(vlmDfn).map();
-
-                    String cryptPasswd = vlmDfnPropsMap.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
-                    if (cryptPasswd == null)
-                    {
-                        throw new ImplementationError("Encrypted volume definition without crypt passwd found");
-                    }
-
-                    snapshotVlmDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotVlmDfnFlags.ENCRYPTED);
-                    snapshotVlmDfnPropsMaps.put(
-                        ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
-                        cryptPasswd
-                    );
-                }
-
-                String overrideId = vlmDfn.getProps(apiCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
-                if (overrideId != null)
-                {
-                    snapshotVlmDfnPropsMaps.put(
-                        ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID,
-                        overrideId
-                    );
-                }
-            }
-
-            if (nodeNameStrs.isEmpty())
-            {
-                Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx.get());
-                while (rscIterator.hasNext())
-                {
-                    Resource rsc = rscIterator.next();
-
-                    if (!isDiskless(rsc))
-                    {
-                        createSnapshotOnNode(snapshotDfn, rsc);
-                    }
-                }
-            }
-            else
-            {
-                for (String nodeNameStr : nodeNameStrs)
-                {
-                    Resource rsc = rscDfn.getResource(peerAccCtx.get(), LinstorParsingUtils.asNodeName(nodeNameStr));
-                    if (rsc == null)
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_NOT_FOUND_RSC,
-                            "Resource '" + rscDfn.getName().getDisplayName() +
-                                "' on node '" + nodeNameStr + "' not found."
-                        ));
-                    }
-
-                    if (isDiskless(rsc))
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
-                            "Cannot create snapshot from diskless resource on node '" + nodeNameStr + "'"
-                        ));
-                    }
-                    createSnapshotOnNode(snapshotDfn, rsc);
-                }
-            }
-
-            if (snapshotDfn.getAllSnapshots(peerAccCtx.get()).isEmpty())
-            {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_NOT_FOUND_RSC,
-                            "No resources found for snapshotting"
-                        ));
-                }
-
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(snapshotDfn));
-
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultRegisteredEntry(
-                snapshotDfn.getUuid(), getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr)));
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
-    private void createSnapshotOnNode(SnapshotDefinition snapshotDfn, Resource rsc)
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        Snapshot snapshot = snapshotDataFactory.create(
-            apiCtx,
-            rsc.getAssignedNode(),
-            snapshotDfn,
-            new Snapshot.SnapshotFlags[]{}
-        );
-
-        for (SnapshotVolumeDefinition snapshotVolumeDefinition :
-            snapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
-        {
-            snapshotVolumeDataControllerFactory.create(
-                apiCtx,
-                snapshot,
-                snapshotVolumeDefinition,
-                rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()).getStorPool(apiCtx)
-            );
-        }
     }
 
     public ApiCallRc deleteSnapshot(String rscNameStr, String snapshotNameStr)
@@ -426,180 +228,6 @@ public class CtrlSnapshotApiCallHandler
             .build();
     }
 
-    private void ensureSnapshotsViable(ResourceDefinitionData rscDfn)
-        throws AccessDeniedException
-    {
-        Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
-        while (rscIterator.hasNext())
-        {
-            Resource currentRsc = rscIterator.next();
-            ensureDriversSupportSnapshots(currentRsc);
-            ensureInternalMetaDisks(currentRsc);
-            ensureSatelliteConnected(currentRsc);
-        }
-    }
-
-    private void ensureDriversSupportSnapshots(Resource rsc)
-        throws AccessDeniedException
-    {
-        if (!isDiskless(rsc))
-        {
-            Iterator<Volume> vlmIterator = rsc.iterateVolumes();
-            while (vlmIterator.hasNext())
-            {
-                StorPool storPool = vlmIterator.next().getStorPool(apiCtx);
-
-                if (!storPool.getDriverKind().isSnapshotSupported())
-                {
-                    throw new ApiRcException(ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
-                            "Storage driver '" + storPool.getDriverName() + "' " + "does not support snapshots."
-                        )
-                        .setDetails("Used for storage pool '" + storPool.getName() + "'" +
-                            " on '" + rsc.getAssignedNode().getName() + "'.")
-                        .build()
-                    );
-                }
-            }
-        }
-    }
-
-    private void ensureInternalMetaDisks(Resource rsc)
-        throws AccessDeniedException
-    {
-        Iterator<Volume> vlmIterator = rsc.iterateVolumes();
-        while (vlmIterator.hasNext())
-        {
-            Volume vlm = vlmIterator.next();
-
-            String metaDiskPath = vlm.getMetaDiskPath(peerAccCtx.get());
-            if (metaDiskPath != null && !metaDiskPath.isEmpty() && !metaDiskPath.equals("internal"))
-            {
-                throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
-                        "Snapshot with external meta-disk not supported."
-                    )
-                    .setDetails("Volume " + vlm.getVolumeDefinition().getVolumeNumber().value +
-                        " on node " + rsc.getAssignedNode().getName().displayValue +
-                        " has meta disk path '" + metaDiskPath + "'")
-                    .build()
-                );
-            }
-        }
-    }
-
-    private void ensureSatelliteConnected(Resource rsc)
-        throws AccessDeniedException
-    {
-        Node node = rsc.getAssignedNode();
-        Peer currentPeer = node.getPeer(apiCtx);
-
-        boolean connected = currentPeer.isConnected();
-        if (!connected)
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_NOT_CONNECTED,
-                    "No active connection to satellite '" + node.getName() + "'."
-                )
-                .setDetails("Snapshots cannot be created when the corresponding satellites are not connected.")
-                .build()
-            );
-        }
-    }
-
-    private boolean isDiskless(Resource rsc)
-    {
-        boolean isDiskless;
-        try
-        {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS);
-        }
-        catch (AccessDeniedException implError)
-        {
-            throw new ImplementationError(implError);
-        }
-        return isDiskless;
-    }
-
-    private SnapshotDefinitionData createSnapshotDfnData(
-        AccessContext accCtx,
-        ResourceDefinition rscDfn,
-        SnapshotName snapshotName,
-        SnapshotDfnFlags[] snapshotDfnInitFlags
-    )
-    {
-        SnapshotDefinitionData snapshotDfn;
-        try
-        {
-            snapshotDfn = snapshotDefinitionDataFactory.create(
-                accCtx,
-                rscDfn,
-                snapshotName,
-                snapshotDfnInitFlags
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "register " + getSnapshotDfnDescriptionInline(rscDfn.getName().displayValue, snapshotName.displayValue),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN, String.format(
-                "A snapshot definition with the name '%s' already exists in resource definition '%s'.",
-                snapshotName,
-                rscDfn.getName().displayValue
-            )), dataAlreadyExistsExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-        return snapshotDfn;
-    }
-
-    private Props getVlmDfnProps(VolumeDefinition vlmDfn)
-    {
-        Props props;
-        try
-        {
-            props = vlmDfn.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access the properties of " + getVlmDfnDescriptionInline(vlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        return props;
-    }
-
-    private Props getSnapshotVlmDfnProps(SnapshotVolumeDefinition snapshotVlmDfn)
-    {
-        Props props;
-        try
-        {
-            props = snapshotVlmDfn.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access the properties of " + getSnapshotVlmDfnDescriptionInline(snapshotVlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
-            );
-        }
-        return props;
-    }
-
     private void markSnapshotDfnDeleted(SnapshotDefinition snapshotDfn)
     {
         try
@@ -706,7 +334,18 @@ public class CtrlSnapshotApiCallHandler
             "' of snapshot '" + snapshotNameStr + "' of resource '" + rscNameStr + "'";
     }
 
-    private static ResponseContext makeSnapshotContext(
+    public static String getSnapshotVlmDescriptionInline(
+        NodeName nodeName,
+        ResourceName resourceName,
+        SnapshotName snapshotName,
+        VolumeNumber volumeNumber
+    )
+    {
+        return "volume with number '" + volumeNumber.value +
+            "' of snapshot '" + snapshotName + "' of resource '" + resourceName + "' on '" + nodeName + "'";
+    }
+
+    public static ResponseContext makeSnapshotContext(
         ApiOperation operation,
         List<String> nodeNameStrs,
         String rscNameStr,

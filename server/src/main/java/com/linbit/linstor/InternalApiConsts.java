@@ -49,8 +49,6 @@ public class InternalApiConsts
 
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 
-    public static final String EVENT_IN_PROGRESS_SNAPSHOT = "InProgressSnapshot";
-
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
 
     public static final int EXIT_CODE_NETCOM_ERROR = 20;

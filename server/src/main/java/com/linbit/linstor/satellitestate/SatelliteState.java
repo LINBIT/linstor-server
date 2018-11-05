@@ -1,9 +1,7 @@
 package com.linbit.linstor.satellitestate;
 
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.core.SnapshotState;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -105,26 +103,6 @@ public class SatelliteState
         if (resourceState != null)
         {
             resourceState.unsetOnVolume(volumeNumber, setter);
-
-            if (resourceState.isEmpty())
-            {
-                resourceStates.remove(resourceName);
-            }
-        }
-    }
-
-    public SnapshotState getSnapshotState(ResourceName resourceName, SnapshotName snapshotName)
-    {
-        return resourceStates.computeIfAbsent(resourceName, ignored -> new SatelliteResourceState())
-            .getSnapshotState(snapshotName);
-    }
-
-    public <T> void setSnapshotState(ResourceName resourceName, SnapshotName snapshotName, SnapshotState snapshotState)
-    {
-        SatelliteResourceState resourceState = resourceStates.get(resourceName);
-        if (resourceState != null)
-        {
-            resourceState.setSnapshotState(snapshotName, snapshotState);
 
             if (resourceState.isEmpty())
             {

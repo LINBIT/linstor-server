@@ -41,9 +41,7 @@ import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
 import com.linbit.linstor.event.ObjectIdentifier;
-import com.linbit.linstor.event.common.ResourceDeploymentStateEvent;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
-import com.linbit.linstor.event.satellite.InProgressSnapshotEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -107,8 +105,6 @@ class DrbdDeviceHandler implements DeviceHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final MetaDataApi drbdMd;
     private final WhitelistProps whitelistProps;
-    private final ResourceDeploymentStateEvent resourceDeploymentStateEvent;
-    private final InProgressSnapshotEvent inProgressSnapshotEvent;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -138,8 +134,6 @@ class DrbdDeviceHandler implements DeviceHandler
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         WhitelistProps whitelistPropsRef,
-        ResourceDeploymentStateEvent resourceDeploymentStateEventRef,
-        InProgressSnapshotEvent inProgressSnapshotEventRef,
         StltConfigAccessor stltCfgAccessorRef,
         VolumeDiskStateEvent vlmDiskStateEventRef
     )
@@ -156,8 +150,6 @@ class DrbdDeviceHandler implements DeviceHandler
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         whitelistProps = whitelistPropsRef;
-        resourceDeploymentStateEvent = resourceDeploymentStateEventRef;
-        inProgressSnapshotEvent = inProgressSnapshotEventRef;
         stltCfgAccessor = stltCfgAccessorRef;
         vlmDiskStateEvent = vlmDiskStateEventRef;
         drbdMd = new MetaData();
@@ -284,7 +276,6 @@ class DrbdDeviceHandler implements DeviceHandler
         );
 
         final ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        boolean resourceDeleted = false;
         Resource rsc = null;
         try
         {
@@ -309,7 +300,6 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     deleteResource(rsc, rscDfn, rscState)
                         .ifPresent(apiCallRc::addEntry);
-                    resourceDeleted = true;
                 }
                 else
                 {
@@ -421,26 +411,6 @@ class DrbdDeviceHandler implements DeviceHandler
 
 
         deviceManagerProvider.get().notifyResourceDispatchResponse(rscName, apiCallRc);
-
-        try
-        {
-            ObjectIdentifier objectIdentifier = ObjectIdentifier.resourceDefinition(rscName);
-            resourceDeploymentStateEvent.get().triggerEvent(objectIdentifier, apiCallRc);
-            if (resourceDeleted)
-            {
-                resourceDeploymentStateEvent.get().closeStream(objectIdentifier);
-            }
-        }
-        catch (Exception exc)
-        {
-            errLog.reportError(
-                Level.ERROR,
-                new ImplementationError(
-                    "Exception updating resource deployment state",
-                    exc
-                )
-            );
-        }
 
         errLog.logTrace(
             "DrbdDeviceHandler: dispatchRsc() - End actions: Resource '" +
@@ -1736,7 +1706,6 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         errLog.logTrace("Handle snapshots for " + rscName.getDisplayName());
 
-        boolean snapshotInProgress = false;
         boolean shouldSuspend = false;
         for (Snapshot snapshot : snapshots)
         {
@@ -1748,11 +1717,6 @@ class DrbdDeviceHandler implements DeviceHandler
                         .addIf(snapshot.getSuspendResource(wrkCtx), "suspend")
                         .addIf(snapshot.getTakeSnapshot(wrkCtx), "take")
                         .toString() + "'");
-            }
-
-            if (!snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE))
-            {
-                snapshotInProgress = true;
             }
 
             if (snapshot.getSuspendResource(wrkCtx))
@@ -1768,9 +1732,6 @@ class DrbdDeviceHandler implements DeviceHandler
         for (Snapshot snapshot : snapshots)
         {
             SnapshotName snapshotName = snapshot.getSnapshotName();
-
-            boolean snapshotTaken;
-            boolean snapshotDeleted;
 
             if (snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE))
             {
@@ -1802,9 +1763,6 @@ class DrbdDeviceHandler implements DeviceHandler
                 }
 
                 deviceManagerProvider.get().notifySnapshotDeleted(snapshot);
-
-                snapshotTaken = true;
-                snapshotDeleted = true;
             }
             else
             {
@@ -1836,27 +1794,7 @@ class DrbdDeviceHandler implements DeviceHandler
                             );
                         }
                     }
-
-                    snapshotTaken = true;
                 }
-                else
-                {
-                    snapshotTaken = false;
-                }
-                snapshotDeleted = false;
-            }
-
-            ObjectIdentifier objectIdentifier = ObjectIdentifier.snapshotDefinition(rscName, snapshotName);
-
-            inProgressSnapshotEvent.get().triggerEvent(objectIdentifier, new SnapshotState(
-                shouldSuspend,
-                snapshotTaken,
-                snapshotDeleted
-            ));
-
-            if (snapshotDeleted)
-            {
-                inProgressSnapshotEvent.get().closeStream(objectIdentifier);
             }
         }
     }

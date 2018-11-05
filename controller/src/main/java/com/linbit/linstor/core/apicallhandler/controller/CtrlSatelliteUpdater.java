@@ -218,6 +218,7 @@ public class CtrlSatelliteUpdater
         return responses;
     }
 
+    // TODO remove
     public ApiCallRc updateSatellites(SnapshotDefinition snapshotDfn)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();

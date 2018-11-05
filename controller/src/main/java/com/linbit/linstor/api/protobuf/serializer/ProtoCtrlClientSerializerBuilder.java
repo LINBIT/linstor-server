@@ -17,7 +17,6 @@ import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer.CtrlClientSerializerBuilder;
 import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
@@ -45,7 +44,6 @@ import com.linbit.linstor.proto.apidata.RscConnApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
 import com.linbit.linstor.proto.apidata.StorPoolApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
-import com.linbit.linstor.proto.eventdata.EventSnapshotDeploymentOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -294,23 +292,6 @@ public class ProtoCtrlClientSerializerBuilder
                 .addAllProps(
                     ProtoMapUtils.fromMap(map)
                 )
-                .build()
-                .writeDelimitedTo(baos);
-        }
-        catch (IOException exc)
-        {
-            handleIOException(exc);
-        }
-        return this;
-    }
-
-    @Override
-    public ProtoCtrlClientSerializerBuilder snapshotDeploymentEvent(ApiCallRc apiCallRc)
-    {
-        try
-        {
-            EventSnapshotDeploymentOuterClass.EventSnapshotDeployment.newBuilder()
-                .addAllResponses(serializeApiCallRc(apiCallRc))
                 .build()
                 .writeDelimitedTo(baos);
         }

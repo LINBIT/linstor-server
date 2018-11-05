@@ -187,6 +187,19 @@ public class CtrlApiDataLoader
     {
         Node node = loadNode(nodeName, true);
         ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
+        return loadRsc(rscDfn, node, failIfNull);
+    }
+
+    public ResourceData loadRsc(ResourceDefinition rscDfn, String nodeNameStr, boolean failIfNull)
+    {
+        Node node = loadNode(nodeNameStr, true);
+        return loadRsc(rscDfn, node, failIfNull);
+    }
+
+    public ResourceData loadRsc(ResourceDefinition rscDfn, Node node, boolean failIfNull)
+    {
+        ResourceName rscName = rscDfn.getName();
+        NodeName nodeName = node.getName();
         ResourceData rscData;
         try
         {
@@ -215,6 +228,14 @@ public class CtrlApiDataLoader
             );
         }
         return rscData;
+    }
+
+    public final SnapshotDefinitionData loadSnapshotDfn(
+        ResourceName rscName,
+        SnapshotName snapshotName
+    )
+    {
+        return loadSnapshotDfn(loadRscDfn(rscName, true), snapshotName);
     }
 
     public final SnapshotDefinitionData loadSnapshotDfn(
@@ -330,5 +351,4 @@ public class CtrlApiDataLoader
         }
         return storPool;
     }
-
 }

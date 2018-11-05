@@ -11,7 +11,6 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.satellitestate.SatelliteState;
 
@@ -51,7 +50,6 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder ctrlCfgSingleProp(String namespace, String key, String value);
         CtrlClientSerializerBuilder ctrlCfgProps(Map<String, String> map);
 
-        CtrlClientSerializerBuilder snapshotDeploymentEvent(ApiCallRc apiCallRc);
         CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<MaxVlmSizeCandidatePojo> candidates);
     }
 }

@@ -1,0 +1,1008 @@
+package com.linbit.linstor.core.apicallhandler.controller;
+
+import com.linbit.ImplementationError;
+import com.linbit.drbd.md.MdException;
+import com.linbit.drbd.md.MetaData;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDataControllerFactory;
+import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
+import com.linbit.linstor.SnapshotDefinitionData;
+import com.linbit.linstor.SnapshotDefinitionDataControllerFactory;
+import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolumeDataControllerFactory;
+import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
+import com.linbit.linstor.SnapshotVolumeDefinitionControllerFactory;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuard;
+import reactor.core.publisher.Flux;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotVlmDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotVlmDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler.getVlmDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+
+@Singleton
+public class CtrlSnapshotCrtApiCallHandler
+{
+    private final AccessContext apiCtx;
+    private final ScopeRunner scopeRunner;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
+    private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
+    private final SnapshotDataControllerFactory snapshotDataFactory;
+    private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+    private final ResponseConverter responseConverter;
+    private final ReadWriteLock nodesMapLock;
+    private final ReadWriteLock rscDfnMapLock;
+    private final Provider<AccessContext> peerAccCtx;
+
+    @Inject
+    public CtrlSnapshotCrtApiCallHandler(
+        @ApiContext AccessContext apiCtxRef,
+        ScopeRunner scopeRunnerRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactoryRef,
+        SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
+        SnapshotDataControllerFactory snapshotDataFactoryRef,
+        SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        ResponseConverter responseConverterRef,
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
+    )
+    {
+        apiCtx = apiCtxRef;
+        scopeRunner = scopeRunnerRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
+        snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
+        snapshotDataFactory = snapshotDataFactoryRef;
+        snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        responseConverter = responseConverterRef;
+        nodesMapLock = nodesMapLockRef;
+        rscDfnMapLock = rscDfnMapLockRef;
+        peerAccCtx = peerAccCtxRef;
+    }
+
+    /**
+     * Create a snapshot of a resource.
+     * <p>
+     * Snapshots are created in a multi-stage process:
+     * <ol>
+     *     <li>Add the snapshot objects (definition and instances), marked with the suspend flag</li>
+     *     <li>When all resources are suspended, send out a snapshot request</li>
+     *     <li>When all snapshots have been created, mark the resource as resuming by removing the suspend flag</li>
+     *     <li>When all resources have been resumed, remove the in-progress snapshots</li>
+     * </ol>
+     */
+    public Flux<ApiCallRc> createSnapshot(
+        List<String> nodeNameStrs,
+        String rscNameStr,
+        String snapshotNameStr
+    )
+    {
+        ResponseContext context = makeSnapshotContext(
+            ApiOperation.makeRegisterOperation(),
+            nodeNameStrs,
+            rscNameStr,
+            snapshotNameStr
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                () -> createSnapshotInTransaction(nodeNameStrs, rscNameStr, snapshotNameStr)
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> createSnapshotInTransaction(
+        List<String> nodeNameStrs,
+        String rscNameStr,
+        String snapshotNameStr
+    )
+    {
+        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+        ResourceName rscName = rscDfn.getName();
+
+        SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
+        SnapshotDefinition snapshotDfn = createSnapshotDfnData(
+            rscDfn,
+            snapshotName,
+            new SnapshotDfnFlags[] {}
+        );
+
+        ensureSnapshotsViable(rscDfn);
+
+        setInCreation(snapshotDfn);
+
+        Iterator<VolumeDefinition> vlmDfnIterator = iterateVolumeDfn(rscDfn);
+        List<SnapshotVolumeDefinition> snapshotVolumeDefinitions = new ArrayList<>();
+        while (vlmDfnIterator.hasNext())
+        {
+            VolumeDefinition vlmDfn = vlmDfnIterator.next();
+
+            SnapshotVolumeDefinition snapshotVlmDfn = createSnapshotVlmDfnData(snapshotDfn, vlmDfn);
+            snapshotVolumeDefinitions.add(snapshotVlmDfn);
+
+            Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
+            boolean isEncrypted = isEncrypted(vlmDfn);
+            if (isEncrypted)
+            {
+                Map<String, String> vlmDfnPropsMap = getVlmDfnProps(vlmDfn).map();
+
+                String cryptPasswd = vlmDfnPropsMap.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+                if (cryptPasswd == null)
+                {
+                    throw new ImplementationError("Encrypted volume definition without crypt passwd found");
+                }
+
+                markEncrypted(snapshotVlmDfn);
+                snapshotVlmDfnPropsMaps.put(
+                    ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
+                    cryptPasswd
+                );
+            }
+
+            String overrideId = getVlmDfnProps(vlmDfn).map().get(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+            if (overrideId != null)
+            {
+                snapshotVlmDfnPropsMaps.put(
+                    ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID,
+                    overrideId
+                );
+            }
+        }
+
+        boolean resourceFound = false;
+        if (nodeNameStrs.isEmpty())
+        {
+            Iterator<Resource> rscIterator = iterateResource(rscDfn);
+            while (rscIterator.hasNext())
+            {
+                Resource rsc = rscIterator.next();
+
+                if (!isDisklessPrivileged(rsc))
+                {
+                    createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
+                    resourceFound = true;
+                }
+            }
+        }
+        else
+        {
+            for (String nodeNameStr : nodeNameStrs)
+            {
+                Resource rsc = ctrlApiDataLoader.loadRsc(rscDfn, nodeNameStr, true);
+
+                if (isDisklessPrivileged(rsc))
+                {
+                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
+                        "Cannot create snapshot from diskless resource on node '" + nodeNameStr + "'"
+                    ));
+                }
+                createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
+                resourceFound = true;
+            }
+        }
+
+        if (!resourceFound)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_NOT_FOUND_RSC, "No resources found for snapshotting"
+            ));
+        }
+
+        ctrlTransactionHelper.commit();
+
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        responses.addEntry(ApiSuccessUtils.defaultRegisteredEntry(
+            snapshotDfn.getUuid(), getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr)
+        ));
+
+        Flux<ApiCallRc> satelliteUpdateResponses =
+            ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                    updateResponses,
+                    "Suspended IO of {1} on {0} for snapshot"
+                ));
+
+        return Flux
+            .<ApiCallRc>just(responses)
+            .concatWith(satelliteUpdateResponses)
+            .concatWith(takeSnapshot(rscName, snapshotName))
+            .onErrorResume(exception -> abortSnapshot(rscName, snapshotName, exception))
+            .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+    }
+
+    private Flux<ApiCallRc> abortSnapshot(
+        ResourceName rscName,
+        SnapshotName snapshotName,
+        Throwable exception
+    )
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                () -> abortSnapshotInTransaction(rscName, snapshotName, exception)
+            );
+    }
+
+    private Flux<ApiCallRc> abortSnapshotInTransaction(
+        ResourceName rscName,
+        SnapshotName snapshotName,
+        Throwable exception
+    )
+    {
+        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName);
+
+        SnapshotDfnFlags flag = exception instanceof CtrlSatelliteUpdateCaller.DelayedApiRcException &&
+            isFailNotConnected((CtrlSatelliteUpdateCaller.DelayedApiRcException) exception) ?
+            SnapshotDfnFlags.FAILED_DISCONNECT :
+            SnapshotDfnFlags.FAILED_DEPLOYMENT;
+
+        enableFlagPrivileged(snapshotDfn, flag);
+        unsetInCreationPrivileged(snapshotDfn);
+
+        ctrlTransactionHelper.commit();
+
+        Flux<ApiCallRc> satelliteUpdateResponses =
+            ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedCannotAbort())
+                .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+                    responses,
+                    "Aborted snapshot of {1} on {0}"
+                ))
+                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+
+        return satelliteUpdateResponses
+            .concatWith(Flux.error(exception));
+    }
+
+    private Flux<ApiCallRc> takeSnapshot(ResourceName rscName, SnapshotName snapshotName)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                () -> takeSnapshotInTransaction(rscName, snapshotName)
+            );
+    }
+
+    private Flux<ApiCallRc> takeSnapshotInTransaction(ResourceName rscName, SnapshotName snapshotName)
+    {
+        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName);
+
+        for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
+        {
+            setTakeSnapshotPrivileged(snapshot);
+        }
+
+        ctrlTransactionHelper.commit();
+
+        Flux<ApiCallRc> satelliteUpdateResponses =
+            ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+                .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+                    responses,
+                    "Took snapshot of {1} on {0}"
+                ));
+
+        return satelliteUpdateResponses
+            .concatWith(resumeResource(rscName, snapshotName));
+    }
+
+    private Flux<ApiCallRc> resumeResource(ResourceName rscName, SnapshotName snapshotName)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                () -> resumeResourceInTransaction(rscName, snapshotName)
+            );
+    }
+
+    private Flux<ApiCallRc> resumeResourceInTransaction(ResourceName rscName, SnapshotName snapshotName)
+    {
+        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName);
+
+        for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
+        {
+            unsetSuspendResourcePrivileged(snapshot);
+        }
+
+        ctrlTransactionHelper.commit();
+
+        Flux<ApiCallRc> satelliteUpdateResponses =
+            ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+                .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+                    responses,
+                    "Resumed IO of {1} on {0} after snapshot"
+                ));
+
+        return satelliteUpdateResponses
+            .concatWith(removeInProgressSnapshots(rscName, snapshotName));
+    }
+
+    private Flux<ApiCallRc> removeInProgressSnapshots(ResourceName rscName, SnapshotName snapshotName)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                () -> removeInProgressSnapshotsInTransaction(rscName, snapshotName)
+            );
+    }
+
+    private Flux<ApiCallRc> removeInProgressSnapshotsInTransaction(ResourceName rscName, SnapshotName snapshotName)
+    {
+        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName);
+
+        unsetInCreationPrivileged(snapshotDfn);
+
+        enableFlagPrivileged(snapshotDfn, SnapshotDfnFlags.SUCCESSFUL);
+
+        ctrlTransactionHelper.commit();
+
+        return ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+            // Ignore responses from cleanup
+            .thenMany(Flux.empty());
+    }
+
+    private void createSnapshotOnNode(
+        SnapshotDefinition snapshotDfn,
+        Collection<SnapshotVolumeDefinition> snapshotVolumeDefinitions,
+        Resource rsc
+    )
+    {
+        Snapshot snapshot = createSnapshotData(snapshotDfn, rsc);
+        setSuspendResource(snapshot);
+
+        for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitions)
+        {
+            createSnapshotVolumeData(rsc, snapshot, snapshotVolumeDefinition);
+        }
+    }
+
+    private void ensureSnapshotsViable(ResourceDefinitionData rscDfn)
+    {
+        Iterator<Resource> rscIterator = iterateResource(rscDfn);
+        while (rscIterator.hasNext())
+        {
+            Resource currentRsc = rscIterator.next();
+            ensureDriversSupportSnapshots(currentRsc);
+            ensureInternalMetaDisks(currentRsc);
+            ensureSatelliteConnected(currentRsc);
+        }
+    }
+
+    private void ensureDriversSupportSnapshots(Resource rsc)
+    {
+        if (!isDisklessPrivileged(rsc))
+        {
+            Iterator<Volume> vlmIterator = rsc.iterateVolumes();
+            while (vlmIterator.hasNext())
+            {
+                Volume vlm = vlmIterator.next();
+                StorPool storPool = getStorPool(vlm);
+
+                if (!storPool.getDriverKind().isSnapshotSupported())
+                {
+                    throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
+                            "Storage driver '" + storPool.getDriverName() + "' " + "does not support snapshots."
+                        )
+                        .setDetails("Used for storage pool '" + storPool.getName() + "'" +
+                            " on '" + rsc.getAssignedNode().getName() + "'.")
+                        .build()
+                    );
+                }
+            }
+        }
+    }
+
+    private void ensureInternalMetaDisks(Resource rsc)
+    {
+        Iterator<Volume> vlmIterator = rsc.iterateVolumes();
+        while (vlmIterator.hasNext())
+        {
+            Volume vlm = vlmIterator.next();
+
+            String metaDiskPath = getMetaDiskPath(vlm);
+            if (metaDiskPath != null && !metaDiskPath.isEmpty() && !metaDiskPath.equals("internal"))
+            {
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
+                        "Snapshot with external meta-disk not supported."
+                    )
+                    .setDetails("Volume " + vlm.getVolumeDefinition().getVolumeNumber().value +
+                        " on node " + rsc.getAssignedNode().getName().displayValue +
+                        " has meta disk path '" + metaDiskPath + "'")
+                    .build()
+                );
+            }
+        }
+    }
+
+    private void ensureSatelliteConnected(Resource rsc)
+    {
+        Node node = rsc.getAssignedNode();
+        Peer currentPeer = getPeer(node);
+
+        boolean connected = currentPeer.isConnected();
+        if (!connected)
+        {
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_NOT_CONNECTED,
+                    "No active connection to satellite '" + node.getName() + "'."
+                )
+                .setDetails("Snapshots cannot be created when the corresponding satellites are not connected.")
+                .build()
+            );
+        }
+    }
+
+    private boolean isDisklessPrivileged(Resource rsc)
+    {
+        boolean isDiskless;
+        try
+        {
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS);
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+        return isDiskless;
+    }
+
+    private SnapshotDefinitionData createSnapshotDfnData(
+        ResourceDefinition rscDfn,
+        SnapshotName snapshotName,
+        SnapshotDfnFlags[] snapshotDfnInitFlags
+    )
+    {
+        SnapshotDefinitionData snapshotDfn;
+        try
+        {
+            snapshotDfn = snapshotDefinitionDataFactory.create(
+                peerAccCtx.get(),
+                rscDfn,
+                snapshotName,
+                snapshotDfnInitFlags
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "register " + getSnapshotDfnDescriptionInline(rscDfn.getName().displayValue, snapshotName.displayValue),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN, String.format(
+                "A snapshot definition with the name '%s' already exists in resource definition '%s'.",
+                snapshotName,
+                rscDfn.getName().displayValue
+            )), dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+        return snapshotDfn;
+    }
+
+    private SnapshotVolumeDefinition createSnapshotVlmDfnData(SnapshotDefinition snapshotDfn, VolumeDefinition vlmDfn)
+    {
+        String descriptionInline = getSnapshotVlmDfnDescriptionInline(
+            snapshotDfn.getResourceName().displayValue,
+            snapshotDfn.getName().displayValue,
+            vlmDfn.getVolumeNumber().value
+        );
+        long volumeSize = getVolumeSize(vlmDfn);
+
+        SnapshotVolumeDefinition snapshotVlmDfn;
+        try
+        {
+            snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.create(
+                peerAccCtx.get(),
+                snapshotDfn,
+                vlmDfn.getVolumeNumber(),
+                volumeSize,
+                new SnapshotVlmDfnFlags[]{}
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "register " + descriptionInline,
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN, String.format(
+                "Volume %d of snapshot definition with the name '%s' already exists in resource definition '%s'.",
+                vlmDfn.getVolumeNumber().value,
+                snapshotDfn.getName().displayValue,
+                snapshotDfn.getResourceName().displayValue
+            )), dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+        catch (MdException mdExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_VLM_SIZE, String.format(
+                "The " + descriptionInline + " has an invalid size of '%d'. " +
+                    "Valid sizes range from %d to %d.",
+                volumeSize,
+                MetaData.DRBD_MIN_NET_kiB,
+                MetaData.DRBD_MAX_kiB
+            )), mdExc);
+        }
+        return snapshotVlmDfn;
+    }
+
+    private Snapshot createSnapshotData(SnapshotDefinition snapshotDfn, Resource rsc)
+    {
+        String snapshotNameStr = snapshotDfn.getName().displayValue;
+        String rscNameStr = rsc.getDefinition().getName().displayValue;
+        String nodeNameStr = rsc.getAssignedNode().getName().displayValue;
+
+        Snapshot snapshot;
+        try
+        {
+            snapshot = snapshotDataFactory.create(
+                peerAccCtx.get(),
+                rsc.getAssignedNode(),
+                snapshotDfn,
+                new Snapshot.SnapshotFlags[]{}
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "register " + getSnapshotDescriptionInline(
+                    Collections.singletonList(nodeNameStr),
+                    rscNameStr,
+                    snapshotNameStr
+                ),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT, String.format(
+                "A snapshot with the name '%s' of the resource '%s' on '%s' already exists.",
+                snapshotNameStr,
+                rscNameStr,
+                nodeNameStr
+            )), dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+        return snapshot;
+    }
+
+    private void createSnapshotVolumeData(
+        Resource rsc,
+        Snapshot snapshot,
+        SnapshotVolumeDefinition snapshotVolumeDefinition
+    )
+    {
+        try
+        {
+            snapshotVolumeDataControllerFactory.create(
+                peerAccCtx.get(),
+                snapshot,
+                snapshotVolumeDefinition,
+                getStorPool(rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()))
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "register " + getSnapshotVlmDescriptionInline(
+                    snapshot.getNodeName(),
+                    snapshot.getResourceName(),
+                    snapshot.getSnapshotName(),
+                    snapshotVolumeDefinition.getVolumeNumber()
+                ),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT, String.format(
+                "Volume %d of snapshot '%s' of the resource '%s' on '%s' already exists.",
+                snapshotVolumeDefinition.getVolumeNumber().value,
+                snapshot.getSnapshotName(),
+                snapshot.getResourceName(),
+                snapshot.getNodeName()
+            )), dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    private void setSuspendResource(Snapshot snapshot)
+    {
+        try
+        {
+            snapshot.setSuspendResource(peerAccCtx.get(), true);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "set resource suspension for " + getSnapshotDescriptionInline(snapshot),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+            );
+        }
+    }
+
+    private Props getVlmDfnProps(VolumeDefinition vlmDfn)
+    {
+        Props props;
+        try
+        {
+            props = vlmDfn.getProps(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access the properties of " + getVlmDfnDescriptionInline(vlmDfn),
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        return props;
+    }
+
+    private Props getSnapshotVlmDfnProps(SnapshotVolumeDefinition snapshotVlmDfn)
+    {
+        Props props;
+        try
+        {
+            props = snapshotVlmDfn.getProps(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access the properties of " + getSnapshotVlmDfnDescriptionInline(snapshotVlmDfn),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
+            );
+        }
+        return props;
+    }
+
+    private StorPool getStorPool(Volume vlm)
+    {
+        StorPool storPool;
+        try
+        {
+            storPool = vlm.getStorPool(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "get storage pool of " + getVlmDescriptionInline(vlm),
+                ApiConsts.FAIL_ACC_DENIED_VLM
+            );
+        }
+        return storPool;
+    }
+
+    private String getMetaDiskPath(Volume vlm)
+    {
+        String metaDiskPath;
+        try
+        {
+            metaDiskPath = vlm.getMetaDiskPath(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "get meta disk path of " + getVlmDescriptionInline(vlm),
+                ApiConsts.FAIL_ACC_DENIED_VLM
+            );
+        }
+        return metaDiskPath;
+    }
+
+    private Peer getPeer(Node node)
+    {
+        Peer peer;
+        try
+        {
+            peer = node.getPeer(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "get peer of " + getNodeDescriptionInline(node),
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return peer;
+    }
+
+    private Iterator<Resource> iterateResource(ResourceDefinitionData rscDfn)
+    {
+        Iterator<Resource> rscIter;
+        try
+        {
+            rscIter = rscDfn.iterateResource(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "iterate the resources of " + getRscDfnDescriptionInline(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        return rscIter;
+    }
+
+    private void markEncrypted(SnapshotVolumeDefinition snapshotVlmDfn)
+    {
+        try
+        {
+            snapshotVlmDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotVlmDfnFlags.ENCRYPTED);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "mark " + getSnapshotVlmDfnDescriptionInline(snapshotVlmDfn) + " as encrypted",
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    private boolean isEncrypted(VolumeDefinition vlmDfn)
+    {
+        boolean isEncrypted;
+        try
+        {
+            isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check whether " + getVlmDfnDescriptionInline(vlmDfn) + " is encrypted",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        return isEncrypted;
+    }
+
+    private long getVolumeSize(VolumeDefinition vlmDfn)
+    {
+        long volumeSize;
+        try
+        {
+            volumeSize = vlmDfn.getVolumeSize(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "get size of " + getVlmDfnDescriptionInline(vlmDfn),
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        return volumeSize;
+    }
+
+    private Iterator<VolumeDefinition> iterateVolumeDfn(ResourceDefinitionData rscDfn)
+    {
+        Iterator<VolumeDefinition> vlmDfnIter;
+        try
+        {
+            vlmDfnIter = rscDfn.iterateVolumeDfn(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "iterate the volume definitions of " + getRscDfnDescriptionInline(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        return vlmDfnIter;
+    }
+
+    private void setInCreation(SnapshotDefinition snapshotDfn)
+    {
+        try
+        {
+            snapshotDfn.setInCreation(peerAccCtx.get(), true);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "mark " + getSnapshotDfnDescriptionInline(snapshotDfn) + " in creation",
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    private void unsetInCreationPrivileged(SnapshotDefinition snapshotDfn)
+    {
+        try
+        {
+            snapshotDfn.setInCreation(apiCtx, false);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    private void enableFlagPrivileged(SnapshotDefinitionData snapshotDfn, SnapshotDfnFlags flag)
+    {
+        try
+        {
+            snapshotDfn.getFlags().enableFlags(apiCtx, flag);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    private void unsetSuspendResourcePrivileged(Snapshot snapshot)
+    {
+        try
+        {
+            snapshot.setSuspendResource(apiCtx, false);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+    }
+
+    private Collection<Snapshot> getAllSnapshotsPrivileged(SnapshotDefinitionData snapshotDfn)
+    {
+        Collection<Snapshot> allSnapshots;
+        try
+        {
+            allSnapshots = snapshotDfn.getAllSnapshots(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return allSnapshots;
+    }
+
+    private void setTakeSnapshotPrivileged(Snapshot snapshot)
+    {
+        try
+        {
+            snapshot.setTakeSnapshot(apiCtx, true);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+    }
+
+    private static boolean isFailNotConnected(CtrlSatelliteUpdateCaller.DelayedApiRcException exception)
+    {
+        return exception.getErrors().stream()
+            .flatMap(apiRcException -> apiRcException.getApiCallRc().getEntries().stream())
+            .anyMatch(rcEntry -> rcEntry.getReturnCode() == ApiConsts.FAIL_NOT_CONNECTED);
+    }
+
+    private static CtrlSatelliteUpdateCaller.NotConnectedHandler notConnectedError()
+    {
+        return nodeName -> Flux.error(new ApiRcException(ApiCallRcImpl.simpleEntry(
+            ApiConsts.FAIL_NOT_CONNECTED,
+            "Connection to satellite '" + nodeName + "' lost"
+        )));
+    }
+
+    private static CtrlSatelliteUpdateCaller.NotConnectedHandler notConnectedCannotAbort()
+    {
+        return nodeName -> Flux.error(new ApiRcException(ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.WARN_NOT_CONNECTED,
+                "Unable to abort snapshot process on disconnected satellite '" + nodeName + "'"
+            )
+            .setDetails("IO may be suspended until the connection to the satellite is re-established")
+            .build()
+        ));
+    }
+}
