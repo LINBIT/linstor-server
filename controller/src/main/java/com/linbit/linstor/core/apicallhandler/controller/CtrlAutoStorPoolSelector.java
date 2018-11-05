@@ -34,9 +34,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 @Singleton
 public class CtrlAutoStorPoolSelector
@@ -263,6 +267,27 @@ public class CtrlAutoStorPoolSelector
         return candidates;
     }
 
+    /**
+     * Parses a property value tuple 'RackId=2' into its key and value part.
+     * Property values could also omit the value part.
+     *
+     * @param propEntry Key value string
+     * @return Tuple containing the key and if provided the value.
+     */
+    private Tuple2<String, Optional<String>> parsePropTuple(final String propEntry)
+    {
+        String key = propEntry;
+        String value = null;
+        int equalPos = propEntry.indexOf("=");
+        if (equalPos >= 0)
+        {
+            key = propEntry.substring(0, equalPos);
+            value = propEntry.substring(equalPos + 1);
+        }
+
+        return Tuples.of(key, Optional.ofNullable(value));
+    }
+
     /*
      * We can NOT return a Map<StorPoolName, List<Node>> here anymore, as we might have multiple
      * node-lists per storPoolName. For example: if one of our map entry-values contain 10 nodes,
@@ -289,21 +314,40 @@ public class CtrlAutoStorPoolSelector
             for (Entry<StorPoolName, List<Node>> candidateEntry : candidatesIn.entrySet())
             {
                 List<Node> candidateNodes = candidateEntry.getValue();
+                List<Node> interestingNodes = new ArrayList<>();
 
                 // Gather the prop values for the props that need to be the same
                 Map<NodeName, Map<String, String>> propsForNodes = new HashMap<>();
                 for (Node node : candidateNodes)
                 {
                     Map<String, String> props = new HashMap<>();
-                    for (String samePropKey : replicasOnSamePropList)
+                    for (String samePropEntry : replicasOnSamePropList)
                     {
-                        props.put(samePropKey, node.getProps(peerAccCtx.get()).getProp(samePropKey));
+                        Tuple2<String, Optional<String>> samePropTuple = parsePropTuple(samePropEntry);
+                        String propValue = node.getProps(peerAccCtx.get()).getProp(samePropTuple.getT1());
+                        if (samePropTuple.getT2().isPresent())
+                        {
+                            if (samePropTuple.getT2().get().equals(propValue))
+                            {
+                                props.put(samePropTuple.getT1(), propValue);
+                            }
+                        }
+                        else if (propValue != null)
+                        {
+                            props.put(samePropTuple.getT1(), propValue);
+                        }
                     }
-                    propsForNodes.put(node.getName(), props);
+
+                    // don't add nodes that haven't all specified replicas on same properties
+                    if (props.size() == replicasOnSamePropList.size())
+                    {
+                        interestingNodes.add(node);
+                        propsForNodes.put(node.getName(), props);
+                    }
                 }
 
                 // Form groups of nodes where all the prop values match
-                Collection<List<Node>> nodeGroups = candidateNodes.stream()
+                Collection<List<Node>> nodeGroups = interestingNodes.stream()
                     .collect(Collectors.groupingBy(node -> propsForNodes.get(node.getName())))
                     .values();
 
