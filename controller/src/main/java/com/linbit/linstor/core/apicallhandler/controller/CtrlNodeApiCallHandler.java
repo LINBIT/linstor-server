@@ -64,10 +64,12 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -460,6 +462,39 @@ public class CtrlNodeApiCallHandler
             responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
+        return responses;
+    }
+
+    public ApiCallRc reconnectNode(
+        List<String> nodes
+    )
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = new ResponseContext(
+            ApiOperation.makeModifyOperation(),
+            "Nodes: [" + String.join(",", nodes) + "]",
+            "nodes: [" + String.join(",", nodes) + "]",
+            ApiConsts.MASK_NODE,
+            new HashMap<>()
+        );
+
+        try
+        {
+            for (String nodeStr : nodes)
+            {
+                NodeData node = ctrlApiDataLoader.loadNode(new NodeName(nodeStr), true);
+                node.getPeer(apiCtx).closeConnection();
+            }
+
+            responses.addEntry(ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_MOD | ApiConsts.MASK_NODE | ApiConsts.MASK_SUCCESS,
+                "Nodes [" + String.join(",", nodes) + "] will be reconnected."
+            ));
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            responses = responseConverter.reportException(peer.get(), context, exc);
+        }
         return responses;
     }
 

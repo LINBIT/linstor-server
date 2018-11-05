@@ -174,6 +174,20 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    public ApiCallRc reconnectNode(
+        List<String> nodes
+    )
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock()))
+        {
+            apiCallRc = nodeApiCallHandler.reconnectNode(
+                nodes
+            );
+        }
+        return apiCallRc;
+    }
+
     public byte[] listNode()
     {
         byte[] listNodes;
