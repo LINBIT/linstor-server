@@ -1,3 +1,10 @@
+linstor-server (0.7.1-2) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * Fully clean intermediate build files 
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 06 Nov 2018 09:10:12 +0100
+
 linstor-server (0.7.1-1) experimental; urgency=medium
 
   [ Joel Colledge ]

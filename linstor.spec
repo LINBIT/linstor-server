@@ -1,6 +1,6 @@
 Name: linstor
 Version: 0.7.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
 %define GRADLE_TASKS installdist
@@ -120,6 +120,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Tue Nov 06 2018 Rene Peinthor <rene.peinthor@linbit.com> 0.7.1-2
+- Correctly clean intermediate build files.
+
 * Wed Oct 31 2018 Rene Peinthor <rene.peinthor@linbit.com> 0.7.1-1
 - New upstream release. Fix thin resource deletion.
 
