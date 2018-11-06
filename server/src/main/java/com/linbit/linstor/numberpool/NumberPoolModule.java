@@ -53,7 +53,7 @@ public class NumberPoolModule extends AbstractModule
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
     )
     {
-        DynamicNumberPool minorNrPool = new DynamicNumberPoolImpl(
+        return new DynamicNumberPoolImpl(
             errorReporter,
             ctrlConfRef,
             ApiConsts.KEY_MINOR_NR_AUTO_RANGE,
@@ -63,10 +63,6 @@ public class NumberPoolModule extends AbstractModule
             DEFAULT_MINOR_NR_MIN,
             DEFAULT_MINOR_NR_MAX
         );
-
-        minorNrPool.reloadRange();
-
-        return minorNrPool;
     }
 
     @Provides
@@ -77,7 +73,7 @@ public class NumberPoolModule extends AbstractModule
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
     )
     {
-        DynamicNumberPool tcpPortPool = new DynamicNumberPoolImpl(
+        return new DynamicNumberPoolImpl(
             errorReporter,
             ctrlConfRef,
             ApiConsts.KEY_TCP_PORT_AUTO_RANGE,
@@ -87,10 +83,6 @@ public class NumberPoolModule extends AbstractModule
             DEFAULT_TCP_PORT_MIN,
             DEFAULT_TCP_PORT_MAX
         );
-
-        tcpPortPool.reloadRange();
-
-        return tcpPortPool;
     }
 
     @Provides
@@ -101,7 +93,7 @@ public class NumberPoolModule extends AbstractModule
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
     )
     {
-        DynamicNumberPool sfTargetPortPool = new DynamicNumberPoolImpl(
+        return new DynamicNumberPoolImpl(
             errorReporter,
             ctrlConfRef,
             ApiConsts.KEY_SF_TARGET_PORT_AUTO_RANGE,
@@ -111,9 +103,5 @@ public class NumberPoolModule extends AbstractModule
             DEFAULT_SF_TARGET_TCP_PORT_MIN,
             DEFAULT_SF_TARGET_TCP_PORT_MAX
         );
-
-        sfTargetPortPool.reloadRange();
-
-        return sfTargetPortPool;
     }
 }

@@ -66,6 +66,8 @@ public class DbNumberPoolInitializer
 
     private void initializeMinorNrPool()
     {
+        minorNrPool.reloadRange();
+
         try
         {
             for (ResourceDefinition curRscDfn : rscDfnMap.values())
@@ -99,6 +101,8 @@ public class DbNumberPoolInitializer
 
     private void initializeTcpPortPool()
     {
+        tcpPortPool.reloadRange();
+
         try
         {
             for (ResourceDefinition curRscDfn : rscDfnMap.values())
@@ -152,6 +156,8 @@ public class DbNumberPoolInitializer
 
     private void initializeSfTargetPortPool()
     {
+        sfTargetPortPool.reloadRange();
+
         try
         {
             for (Node curNode : nodesMap.values())
