@@ -171,7 +171,7 @@ public interface GenericDbTestConstants
     String[] INSERT_DEFAULT_VALUES =
     {
         "INSERT INTO SEC_CONFIGURATION (ENTRY_KEY, ENTRY_DSP_KEY, ENTRY_VALUE) \n" +
-        "    VALUES ('SECURITYLEVEL', 'SecurityLevel', 'MAC')",
+        "    VALUES ('SECURITYLEVEL', 'SecurityLevel', 'NO_SECURITY')",
         "INSERT INTO SEC_CONFIGURATION (ENTRY_KEY, ENTRY_DSP_KEY, ENTRY_VALUE) \n" +
         "    VALUES ('AUTHREQUIRED', 'AuthRequired', 'false')",
         "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +

@@ -22,7 +22,9 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.security.SecurityLevel;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -89,6 +91,8 @@ public class NodeApiTest extends ApiTestBase
     @DoNotSeedDefaultPeer
     public void crtFailNodesMapViewAccDenied() throws Exception
     {
+        DummySecurityInitializer.setSecurityLevel(SYS_CTX, SecurityLevel.MAC);
+
         nodeRepository.getObjProt().delAclEntry(GenericDbBase.SYS_CTX, GenericDbBase.PUBLIC_CTX.subjectRole);
         nodeRepository.getObjProt().addAclEntry(GenericDbBase.SYS_CTX, GenericDbBase.PUBLIC_CTX.subjectRole, AccessType.VIEW);
 
@@ -170,6 +174,8 @@ public class NodeApiTest extends ApiTestBase
     @DoNotSeedDefaultPeer
     public void modDifferentUserAccDenied() throws Exception
     {
+        DummySecurityInitializer.setSecurityLevel(SYS_CTX, SecurityLevel.MAC);
+
         testScope.seed(Key.get(AccessContext.class, PeerContext.class), ApiTestBase.ALICE_ACC_CTX);
         testScope.seed(Peer.class, mockPeer);
         Mockito.when(mockPeer.getAccessContext()).thenReturn(GenericDbBase.PUBLIC_CTX);

@@ -2,6 +2,8 @@ package com.linbit.linstor.security;
 
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
+import java.sql.SQLException;
+
 public class DummySecurityInitializer
 {
     private static TransactionObjectFactory transObjFactory;
@@ -48,5 +50,11 @@ public class DummySecurityInitializer
     public static ObjectProtection getDummyObjectProtection(AccessContext accCtx)
     {
         return new ObjectProtection(accCtx, null, null, transObjFactory, null);
+    }
+
+    public static void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
+        throws AccessDeniedException, SQLException
+    {
+        SecurityLevel.set(accCtx, newLevel, null, null);
     }
 }
