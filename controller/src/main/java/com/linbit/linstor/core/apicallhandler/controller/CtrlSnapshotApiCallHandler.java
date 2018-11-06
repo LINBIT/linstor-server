@@ -3,10 +3,8 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
@@ -16,17 +14,11 @@ import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
-import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
-import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -35,7 +27,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,13 +39,9 @@ public class CtrlSnapshotApiCallHandler
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final CtrlStltSerializer ctrlStltSerializer;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
 
@@ -62,76 +49,20 @@ public class CtrlSnapshotApiCallHandler
     public CtrlSnapshotApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlClientSerializer clientComSerializerRef,
         CtrlStltSerializer ctrlStltSerializerRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
-        ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-    }
-
-    public ApiCallRc deleteSnapshot(String rscNameStr, String snapshotNameStr)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeSnapshotContext(
-            ApiOperation.makeDeleteOperation(),
-            Collections.emptyList(),
-            rscNameStr,
-            snapshotNameStr
-        );
-
-        try
-        {
-            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
-
-            SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
-            SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscDfn, snapshotName);
-
-            UUID uuid = snapshotDfn.getUuid();
-            if (snapshotDfn.getAllSnapshots(peerAccCtx.get()).isEmpty())
-            {
-                snapshotDfn.delete(peerAccCtx.get());
-
-                ctrlTransactionHelper.commit();
-            }
-            else
-            {
-                markSnapshotDfnDeleted(snapshotDfn);
-                for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx.get()))
-                {
-                    markSnapshotDeleted(snapshot);
-                }
-
-                ctrlTransactionHelper.commit();
-
-                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(snapshotDfn));
-            }
-
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                uuid, getSnapshotDfnDescriptionInline(rscNameStr, snapshotNameStr)));
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
     }
 
     public void respondSnapshot(long apiCallId, String resourceNameStr, UUID snapshotUuid, String snapshotNameStr)
@@ -228,46 +159,6 @@ public class CtrlSnapshotApiCallHandler
             .build();
     }
 
-    private void markSnapshotDfnDeleted(SnapshotDefinition snapshotDfn)
-    {
-        try
-        {
-            snapshotDfn.markDeleted(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "mark " + getSnapshotDfnDescriptionInline(snapshotDfn) + " as deleted",
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
-    private void markSnapshotDeleted(Snapshot snapshot)
-    {
-        try
-        {
-            snapshot.markDeleted(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "mark " + getSnapshotDescriptionInline(snapshot) + " as deleted",
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-    }
-
     public static String getSnapshotDescription(
         List<String> nodeNameStrs,
         String rscNameStr,
@@ -303,8 +194,15 @@ public class CtrlSnapshotApiCallHandler
 
     public static String getSnapshotDfnDescriptionInline(SnapshotDefinition snapshotDfn)
     {
-        return getSnapshotDfnDescriptionInline(
-            snapshotDfn.getResourceName().displayValue, snapshotDfn.getName().displayValue);
+        return getSnapshotDfnDescriptionInline(snapshotDfn.getResourceName(), snapshotDfn.getName());
+    }
+
+    public static String getSnapshotDfnDescriptionInline(
+        ResourceName rscName,
+        SnapshotName snapshotName
+    )
+    {
+        return getSnapshotDfnDescriptionInline(rscName.displayValue, snapshotName.displayValue);
     }
 
     public static String getSnapshotDfnDescriptionInline(

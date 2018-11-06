@@ -1279,25 +1279,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc deleteSnapshot(String rscName, String snapshotName)
-    {
-        ApiCallRc apiCallRc;
-
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.readLock(),
-                rscDfnMapLock.writeLock()
-            )
-        )
-        {
-            apiCallRc = snapshotApiCallHandler.deleteSnapshot(
-                rscName,
-                snapshotName
-            );
-        }
-        return apiCallRc;
-    }
-
     public byte[] listSnapshotDefinition()
     {
         byte[] listSnapshotDefinitions;

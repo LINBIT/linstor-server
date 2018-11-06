@@ -412,4 +412,9 @@ public class CtrlSatelliteUpdateCaller
     {
         Flux<ApiCallRc> handleNotConnected(NodeName nodeName);
     }
+
+    public static NotConnectedHandler notConnectedWarn()
+    {
+        return nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName)));
+    }
 }

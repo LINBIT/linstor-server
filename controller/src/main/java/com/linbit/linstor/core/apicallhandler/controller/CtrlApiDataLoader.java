@@ -231,16 +231,31 @@ public class CtrlApiDataLoader
     }
 
     public final SnapshotDefinitionData loadSnapshotDfn(
-        ResourceName rscName,
-        SnapshotName snapshotName
+        String rscNameStr,
+        String snapshotNameStr,
+        boolean failIfNull
     )
     {
-        return loadSnapshotDfn(loadRscDfn(rscName, true), snapshotName);
+        return loadSnapshotDfn(
+            LinstorParsingUtils.asRscName(rscNameStr),
+            LinstorParsingUtils.asSnapshotName(snapshotNameStr),
+            failIfNull
+        );
+    }
+
+    public final SnapshotDefinitionData loadSnapshotDfn(
+        ResourceName rscName,
+        SnapshotName snapshotName,
+        boolean failIfNull
+    )
+    {
+        return loadSnapshotDfn(loadRscDfn(rscName, true), snapshotName, failIfNull);
     }
 
     public final SnapshotDefinitionData loadSnapshotDfn(
         ResourceDefinition rscDfn,
-        SnapshotName snapshotName
+        SnapshotName snapshotName,
+        boolean failIfNull
     )
     {
         SnapshotDefinitionData snapshotDfn;
@@ -248,7 +263,7 @@ public class CtrlApiDataLoader
         {
             snapshotDfn = (SnapshotDefinitionData) rscDfn.getSnapshotDfn(peerAccCtx.get(), snapshotName);
 
-            if (snapshotDfn == null)
+            if (failIfNull && snapshotDfn == null)
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(

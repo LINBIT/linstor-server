@@ -290,7 +290,7 @@ public class CtrlSnapshotCrtApiCallHandler
         Throwable exception
     )
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName);
+        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
         SnapshotDfnFlags flag = exception instanceof CtrlSatelliteUpdateCaller.DelayedApiRcException &&
             isFailNotConnected((CtrlSatelliteUpdateCaller.DelayedApiRcException) exception) ?
@@ -325,7 +325,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private Flux<ApiCallRc> takeSnapshotInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName);
+        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
         for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
         {
@@ -356,7 +356,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private Flux<ApiCallRc> resumeResourceInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName);
+        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
         for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
         {
@@ -387,7 +387,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private Flux<ApiCallRc> removeInProgressSnapshotsInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName);
+        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
         unsetInCreationPrivileged(snapshotDfn);
 
