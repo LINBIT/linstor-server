@@ -8,6 +8,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -269,7 +271,14 @@ public class RestHttpClient implements RestClient
         }
 
         @Override
-        public String toString()
+        public String toString(Integer... excludeExpectedRcs)
+        {
+           ArrayList<Integer> list = new ArrayList<>(request.expectedRcs);
+           list.removeAll(Arrays.asList(excludeExpectedRcs));
+           return toString(list);
+        }
+
+        private String toString(Collection<Integer> shownExpectedRcs)
         {
             return String.format(
                 "Request%n   %-8s %s%n   %-8s %s%n   %-8s %s%n   %-8s %s%n" +
@@ -279,7 +288,7 @@ public class RestHttpClient implements RestClient
                 "Headers", request.httpHeaders,
                 "Data", request.payload,
                 "Status code", statusCode,
-                "Expected status code(s)", request.expectedRcs.toString(),
+                "Expected status code(s)", shownExpectedRcs.toString(),
                 "HEaders", headers,
                 "Data", respRoot
             );

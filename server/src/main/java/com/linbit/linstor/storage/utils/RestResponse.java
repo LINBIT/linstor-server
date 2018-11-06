@@ -11,4 +11,6 @@ public interface RestResponse<T>
     Map<String, String> getHeaders();
 
     String getLinstorVlmId();
+
+    String toString(Integer... excludeExpectedRcs);
 }

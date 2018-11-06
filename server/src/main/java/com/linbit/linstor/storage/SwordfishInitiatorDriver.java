@@ -311,7 +311,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                             "A REST call returned the unexpected status code " + detachVlmResp.getStatusCode(),
                             null,
                             null,
-                            detachVlmResp.toString()
+                            detachVlmResp.toString(HttpHeader.HTTP_BAD_REQUEST)
                         );
                     }
                     break;
