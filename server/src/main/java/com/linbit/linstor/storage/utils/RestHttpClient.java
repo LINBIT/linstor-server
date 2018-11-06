@@ -271,6 +271,12 @@ public class RestHttpClient implements RestClient
         }
 
         @Override
+        public String toString()
+        {
+            return toString(request.expectedRcs);
+        }
+
+        @Override
         public String toString(Integer... excludeExpectedRcs)
         {
            ArrayList<Integer> list = new ArrayList<>(request.expectedRcs);
