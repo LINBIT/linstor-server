@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +52,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SatelliteSecurityModule;
 import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.security.StltCoreObjProtInitializer;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
@@ -94,6 +96,8 @@ public final class Satellite
 
     private static boolean skipHostnameCheck;
 
+    private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
+
     @Inject
     public Satellite(
         ErrorReporter errorReporterRef,
@@ -108,7 +112,8 @@ public final class Satellite
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
-        SatelliteCmdlArguments satelliteCmdlArgumentsRef
+        SatelliteCmdlArguments satelliteCmdlArgumentsRef,
+        StltCoreObjProtInitializer stltCoreObjProtInitializerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -124,6 +129,7 @@ public final class Satellite
         drbdEventSvc = drbdEventSvcRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         satelliteCmdlArguments = satelliteCmdlArgumentsRef;
+        stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
     }
 
     public void start()
@@ -147,6 +153,8 @@ public final class Satellite
             systemServicesMap.put(devMgr.getInstanceName(), devMgr);
             systemServicesMap.put(drbdEventPublisher.getInstanceName(), drbdEventPublisher);
 
+            stltCoreObjProtInitializer.initialize();
+
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             errorReporter.logInfo("Initializing main network communications service");
@@ -168,6 +176,10 @@ public final class Satellite
                     "Initialization failed.",
                 accessExc
             );
+        }
+        catch (SQLException exc)
+        {
+            throw new ImplementationError(exc);
         }
         finally
         {
