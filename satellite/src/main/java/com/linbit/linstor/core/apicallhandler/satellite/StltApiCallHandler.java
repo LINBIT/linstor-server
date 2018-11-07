@@ -262,6 +262,8 @@ public class StltApiCallHandler
             }
             try
             {
+                // this will be cleared and re-set in fullsync. This is just for safety so that this property
+                // is always set
                 stltConf.setProp(LinStor.KEY_NODE_NAME, nodeName);
                 transMgrProvider.get().commit();
             }
@@ -508,11 +510,18 @@ public class StltApiCallHandler
             }
 
             deviceManager.controllerUpdateApplied(slctRsc);
+
+            // local nodename need to be set for swordfish driver
+            stltConf.setProp(LinStor.KEY_NODE_NAME, controllerPeerConnector.getLocalNodeName().displayValue);
         }
         catch (AccessDeniedException | SQLException exc)
         {
             // TODO: kill connection?
             errorReporter.reportError(exc);
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
