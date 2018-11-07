@@ -199,6 +199,7 @@ public class LinstorConfig
                 try
                 {
                     GenericDbDriver.runSql(con, new BufferedReader(input));
+                    con.commit();
                 }
                 catch (IOException ioExc)
                 {

@@ -41,8 +41,6 @@ public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigrat
             alterTableNetIf(connection);
             copyData(connection);
             dropTableStltConn(connection);
-
-            connection.commit();
         }
     }
 

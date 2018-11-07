@@ -17,7 +17,7 @@ public class PostgresqlDatabaseInfo implements DatabaseDriverInfo
     @Override
     public String isolationStatement()
     {
-        return "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;";
+        return "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE;";
     }
 
     @Override

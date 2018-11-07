@@ -438,7 +438,6 @@ public class GenericDbDriver implements DatabaseDriver
                 }
             }
         }
-        con.commit();
         scanner.close();
     }
 
@@ -461,7 +460,6 @@ public class GenericDbDriver implements DatabaseDriver
                 }
             }
         }
-        con.commit();
     }
 
     private static <T> BinaryOperator<T> throwingMerger()

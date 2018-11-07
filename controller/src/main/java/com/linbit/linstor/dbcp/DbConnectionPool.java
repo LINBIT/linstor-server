@@ -8,7 +8,10 @@ import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
+import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.GenericDbUtils;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -167,6 +170,8 @@ public class DbConnectionPool implements ControllerDatabase
     @Override
     public void migrate(String dbType)
     {
+        setTransactionIsolation(dbType);
+
         Flyway flyway = Flyway.configure()
             .schemas(DATABASE_SCHEMA_NAME)
             .dataSource(dataSource)
@@ -284,5 +289,21 @@ public class DbConnectionPool implements ControllerDatabase
     public boolean isStarted()
     {
         return atomicStarted.get();
+    }
+
+    private void setTransactionIsolation(String dbType)
+    {
+        try
+        {
+            try (Connection connection = dataSource.getConnection())
+            {
+                DatabaseDriverInfo databaseInfo = DatabaseDriverInfo.createDriverInfo(dbType);
+                GenericDbUtils.executeStatement(connection, databaseInfo.isolationStatement());
+            }
+        }
+        catch (SQLException exc)
+        {
+            throw new LinStorSqlRuntimeException("Failed to set transaction isolation", exc);
+        }
     }
 }
