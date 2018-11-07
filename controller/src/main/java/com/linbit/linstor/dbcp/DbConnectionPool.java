@@ -167,18 +167,17 @@ public class DbConnectionPool implements ControllerDatabase
     @Override
     public void migrate(String dbType)
     {
-        Flyway flyway = new Flyway();
-        flyway.setSchemas(DATABASE_SCHEMA_NAME);
-        flyway.setDataSource(dataSource);
-        flyway.setTable(SCHEMA_HISTORY_TABLE_NAME);
+        Flyway flyway = Flyway.configure()
+            .schemas(DATABASE_SCHEMA_NAME)
+            .dataSource(dataSource)
+            .table(SCHEMA_HISTORY_TABLE_NAME)
+            // When migrations are added in branches they can be applied in different orders
+            .outOfOrder(true)
+            // Pass the DB type to the migrations
+            .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType))
+            .locations(LinstorMigration.class.getPackage().getName())
+            .load();
 
-        // When migrations are added in branches they can be applied in different orders
-        flyway.setOutOfOrder(true);
-
-        // Pass the DB type to the migrations
-        flyway.setPlaceholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType));
-
-        flyway.setLocations(LinstorMigration.class.getPackage().getName());
         flyway.migrate();
     }
 

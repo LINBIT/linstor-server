@@ -1,10 +1,10 @@
 package com.linbit.linstor.dbcp.migration;
 
 import org.flywaydb.core.api.MigrationVersion;
-import org.flywaydb.core.api.configuration.ConfigurationAware;
-import org.flywaydb.core.api.configuration.FlywayConfiguration;
-import org.flywaydb.core.api.migration.MigrationInfoProvider;
-import org.flywaydb.core.api.migration.jdbc.JdbcMigration;
+import org.flywaydb.core.api.migration.Context;
+import org.flywaydb.core.api.migration.JavaMigration;
+
+import java.sql.Connection;
 
 /**
  * Base migration class to enable the individual migration classes to be as simple as possible.
@@ -16,7 +16,7 @@ import org.flywaydb.core.api.migration.jdbc.JdbcMigration;
  * <p>
  * Under normal circumstances migrations should not be changed once they have been released.
  */
-public abstract class LinstorMigration implements JdbcMigration, MigrationInfoProvider, ConfigurationAware
+public abstract class LinstorMigration implements JavaMigration
 {
     public static final String PLACEHOLDER_KEY_DB_TYPE = "dbType";
 
@@ -35,19 +35,36 @@ public abstract class LinstorMigration implements JdbcMigration, MigrationInfoPr
     }
 
     @Override
+    public Integer getChecksum()
+    {
+        return null;
+    }
+
+    @Override
     public boolean isUndo()
     {
         return false;
     }
 
     @Override
-    public void setFlywayConfiguration(FlywayConfiguration flywayConfiguration)
+    public boolean canExecuteInTransaction()
     {
-        dbType = flywayConfiguration.getPlaceholders().get(PLACEHOLDER_KEY_DB_TYPE);
+        return true;
+    }
+
+    @Override
+    public void migrate(Context context)
+        throws Exception
+    {
+        dbType = context.getConfiguration().getPlaceholders().get(PLACEHOLDER_KEY_DB_TYPE);
+        migrate(context.getConnection());
     }
 
     protected String getDbType()
     {
         return dbType;
     }
+
+    protected abstract void migrate(Connection connection)
+        throws Exception;
 }
