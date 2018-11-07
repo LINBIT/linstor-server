@@ -47,7 +47,7 @@ subprojects {
             testRuntime fileTree(dir: "libs/testRuntime")
         } else {
             compile group: 'com.google.inject', name: 'guice', version: '4.2.2'
-            compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.0'
+            compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.2'
 
             compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
