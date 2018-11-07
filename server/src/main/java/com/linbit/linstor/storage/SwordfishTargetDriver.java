@@ -20,7 +20,6 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -60,6 +59,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     private static final String STATE_CREATED = "Created";
 
     private final StltConfigAccessor stltCfgAccessor;
+    private static String loadedNodeName = null;
 
     private Path jsonPath;
     private Path jsonPathTmp;
@@ -79,50 +79,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
     {
         super(errorReporterRef, swordfishDriverKindRef, restClientRef);
         stltCfgAccessor = stltCfgAccessorRef;
-
-        loadJson();
     }
-
-
-    private void loadJson()
-    {
-        String nodeName = stltCfgAccessor.getNodeName();
-        jsonPath = Paths.get(String.format(SF_MAPPING_PATH_FORMAT, nodeName));
-        jsonPathTmp = Paths.get(String.format(SF_MAPPING_PATH_TMP_FORMAT, nodeName));
-        synchronized (SYNC_OBJ)
-        {
-            if (jsonObj == null)
-            {
-                try
-                {
-                    String jsonContent = "{}";
-                    if (Files.exists(jsonPath))
-                    {
-                        jsonContent = new String(Files.readAllBytes(jsonPath));
-                    }
-                    else
-                    {
-                        Files.createDirectories(jsonPath.getParent());
-                        Files.createFile(jsonPath);
-                    }
-                    if (jsonContent.trim().isEmpty())
-                    {
-                        jsonObj = JSON.std.mapFrom("{}");
-                    }
-                    else
-                    {
-                        jsonObj = JSON.std.mapFrom(jsonContent);
-                    }
-                    jsonObj = new ConcurrentHashMap<>(jsonObj);
-                }
-                catch (IOException exc)
-                {
-                    throw new LinStorRuntimeException("Failed to load swordfish.json", exc);
-                }
-            }
-        }
-    }
-
 
     @Override
     public void startVolume(String identifier, String cryptKey, Props vlmDfnProps) throws StorageException
@@ -513,6 +470,8 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
             pollVlmCrtMaxTries = tmpVlmCrtTriesLong;
         }
 
+        loadJson();
+
         @SuppressWarnings("unchecked")
         Map<String, String> lut =  (Map<String, String>) jsonObj.get(storPoolNameStr);
         if (lut == null)
@@ -521,6 +480,50 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
             jsonObj.put(storPoolNameStr, lut);
         }
         linstorIdToSwordfishId = lut;
+    }
+
+    private void loadJson() throws StorageException
+    {
+        String nodeName = stltCfgAccessor.getNodeName();
+        if (nodeName == null)
+        {
+            throw new StorageException("NodeName not set. Cannot load swordfish_<nodename>.json");
+        }
+        jsonPath = Paths.get(String.format(SF_MAPPING_PATH_FORMAT, nodeName));
+        jsonPathTmp = Paths.get(String.format(SF_MAPPING_PATH_TMP_FORMAT, nodeName));
+        synchronized (SYNC_OBJ)
+        {
+            if (!nodeName.equals(loadedNodeName))
+            {
+                try
+                {
+                    String jsonContent = "{}";
+                    if (Files.exists(jsonPath))
+                    {
+                        jsonContent = new String(Files.readAllBytes(jsonPath));
+                    }
+                    else
+                    {
+                        Files.createDirectories(jsonPath.getParent());
+                        Files.createFile(jsonPath);
+                    }
+                    if (jsonContent.trim().isEmpty())
+                    {
+                        jsonObj = JSON.std.mapFrom("{}");
+                    }
+                    else
+                    {
+                        jsonObj = JSON.std.mapFrom(jsonContent);
+                    }
+                    jsonObj = new ConcurrentHashMap<>(jsonObj);
+                    loadedNodeName = nodeName;
+                }
+                catch (IOException exc)
+                {
+                    throw new StorageException("Failed to load " + jsonPath, exc);
+                }
+            }
+        }
     }
 
     @Override
@@ -573,8 +576,8 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
             {
                 throw new StorageException(
                     writeComplete ?
-                        "Failed to move swordfish.json.tmp to swordfish.json" :
-                        "Failed to write swordfish.json",
+                        ("Failed to move " + jsonPathTmp + " to " + jsonPath) :
+                        ("Failed to write " + jsonPathTmp),
                     exc
                 );
             }
