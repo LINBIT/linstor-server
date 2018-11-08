@@ -33,6 +33,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Base64;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -42,8 +44,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
 @Singleton
 class CtrlVlmDfnApiCallHandler
@@ -140,7 +140,12 @@ class CtrlVlmDfnApiCallHandler
             {
                 for (Resource rsc : rscList)
                 {
-                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn, null);
+                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+                        rsc,
+                        vlmDfn,
+                        null,
+                        CtrlVlmCrtApiHelper.firstStorageDriverKind(rscDfn, vlmDfn, apiCtx)
+                    );
                 }
             }
 

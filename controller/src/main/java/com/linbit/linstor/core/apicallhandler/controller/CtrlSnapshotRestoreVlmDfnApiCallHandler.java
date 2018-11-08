@@ -26,6 +26,10 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotVlmDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -34,10 +38,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotVlmDfnDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
 class CtrlSnapshotRestoreVlmDfnApiCallHandler
@@ -132,7 +132,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                 Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
                 while (rscIterator.hasNext())
                 {
-                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rscIterator.next(), vlmDfn, null);
+                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rscIterator.next(), vlmDfn, null, null);
                 }
             }
 

@@ -6,7 +6,9 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
@@ -24,13 +26,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.util.Map;
+import com.linbit.linstor.storage.StorageDriverKind;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
@@ -38,6 +34,14 @@ import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler.getVlmDescriptionInline;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 class CtrlVlmCrtApiHelper
@@ -67,10 +71,11 @@ class CtrlVlmCrtApiHelper
     public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        StorageDriverKind allowedKind
     )
     {
-        return createVolumeResolvingStorPool(rsc, vlmDfn, thinFreeCapacities, null, null);
+        return createVolumeResolvingStorPool(rsc, vlmDfn, thinFreeCapacities, null, null, allowedKind);
     }
 
     public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
@@ -78,21 +83,71 @@ class CtrlVlmCrtApiHelper
         VolumeDefinition vlmDfn,
         Map<StorPool.Key, Long> thinFreeCapacities,
         String blockDevice,
-        String metaDisk
+        String metaDisk,
+        StorageDriverKind allowedKind
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        return new ApiCallRcWith<>(
-            apiCallRc,
-            createVolume(
-                rsc,
-                vlmDfn,
-                resolveStorPool(rsc, vlmDfn, isDiskless(rsc)).extractApiCallRc(apiCallRc),
-                thinFreeCapacities,
-                blockDevice,
-                metaDisk
-            )
-        );
+        boolean isDskless = isDiskless(rsc);
+        StorPool storPool = resolveStorPool(rsc, vlmDfn, isDskless).extractApiCallRc(apiCallRc);
+
+        if (allowedKind != null && !isDskless && storPool.getDriverKind() != allowedKind)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_INVLD_STOR_DRIVER,
+                    String.format(
+                        "Storage driver '%s' not allowed for volume.",
+                        storPool.getDriverKind().getDriverName()))
+                    .setDetails("It is not supported to use storage pools with different" +
+                        "storage drivers on the same volume definition.")
+                    .setCorrection(
+                        String.format("Use a storage pool with the driver kind '%s'", allowedKind.getDriverName()))
+                    .build()
+            );
+        }
+
+        return new ApiCallRcWith<>(apiCallRc, createVolume(
+            rsc,
+            vlmDfn,
+            storPool,
+            thinFreeCapacities,
+            blockDevice,
+            metaDisk
+        ));
+    }
+
+    public static StorageDriverKind firstStorageDriverKind(
+        final ResourceDefinition rscDfn,
+        final VolumeDefinition vlmDfn,
+        final AccessContext apiCtx
+    )
+    {
+        StorageDriverKind allowedDriverKind = null;
+        try
+        {
+            for (Resource rsc : rscDfn.streamResource(apiCtx).collect(Collectors.toList()))
+            {
+                if (!rsc.isDiskless(apiCtx))
+                {
+                    if (rsc.streamVolumes().findFirst().isPresent())
+                    {
+                        Volume vlm = rsc.getVolume(vlmDfn.getVolumeNumber());
+                        if (vlm != null)
+                        {
+                            StorPool storPool = vlm.getStorPool(apiCtx);
+                            allowedDriverKind = storPool.getDriverKind();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return allowedDriverKind;
     }
 
     public VolumeData createVolume(

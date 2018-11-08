@@ -49,9 +49,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.SwordfishTargetDriverKind;
 
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPriveleged;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -66,10 +67,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPriveleged;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Singleton
 public class CtrlRscCrtApiHelper
@@ -172,7 +172,12 @@ public class CtrlRscCrtApiHelper
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
 
             VolumeData vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
-                rsc, vlmDfn, thinFreeCapacities, vlmApi.getBlockDevice(), vlmApi.getMetaDisk()
+                rsc,
+                vlmDfn,
+                thinFreeCapacities,
+                vlmApi.getBlockDevice(),
+                vlmApi.getMetaDisk(),
+                CtrlVlmCrtApiHelper.firstStorageDriverKind(rscDfn, vlmDfn, apiCtx)
             ).extractApiCallRc(responses);
             createdVolumes.add(vlmData);
 
@@ -192,8 +197,12 @@ public class CtrlRscCrtApiHelper
             {
                 // not deployed yet.
 
-                VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rsc, vlmDfn, thinFreeCapacities)
-                    .extractApiCallRc(responses);
+                VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+                    rsc,
+                    vlmDfn,
+                    thinFreeCapacities,
+                    CtrlVlmCrtApiHelper.firstStorageDriverKind(rscDfn, vlmDfn, apiCtx)
+                ).extractApiCallRc(responses);
                 createdVolumes.add(vlm);
             }
         }
