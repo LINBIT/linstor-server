@@ -1,3 +1,40 @@
+linstor-server (0.7.2-1) experimental; urgency=medium
+
+  [ Joel Colledge ]
+  * Make volume definition resize synchronous
+  * Create snapshots using reactive approach
+  * Delete snapshots using reactive approach
+  * Ensure security levels are set consistently for tests
+  * Reload number pool auto-allocation ranges after loading properties fro [...]
+  * Upgrade guice to 4.2.2 for better Java 10 and 11 support
+  * Replace usage of deprecated Flyway features
+  * Do not commit or rollback in Flyway migrations
+
+  [ Rene Peinthor ]
+  * db-init: set SECURITYLEVEL to NO_SECURITY
+  * Add node reconnect API
+  * auto-place: allow replicas-on-same to specify property values
+  * linstor-common: use latest makefile changes
+  * gradle: use same guice versions for extensions
+  * Prevent creating resources/volumes with different storage drivers
+
+  [ Gabor Hernadi ]
+  * Swordfish: Commiting stltProps.NodeName on auth
+  * Swordfish: Exclude specially handled status code
+  * Swordfish: Redirect default toString to error generating toString
+  * Swordfish: (re-)load json on reconfigure
+  * Swordfish: (Re)set nodename in stltProps after FullSync
+  * Satellite: setting shutdown-objProt
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 12 Nov 2018 09:44:37 +0100
+
+linstor-server (0.7.1-2) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * Fully clean intermediate build files 
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 06 Nov 2018 09:10:12 +0100
+
 linstor-server (0.7.1-1) experimental; urgency=medium
 
   [ Joel Colledge ]
