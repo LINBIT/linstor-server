@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.GenericDbUtils;
 
 import java.sql.Connection;
 
