@@ -89,7 +89,7 @@ public class LvmProvider implements DeviceProvider
 
         HashMap<String, LvsInfo> lvsInfo = LvmUtils.getLvsInfo(
             extCmdFactory.create(),
-            getAffectedVolumeGroups(volumes)
+            getAffectedVolumeGroups(volumes, true)
         );
         try
         {
@@ -102,8 +102,10 @@ public class LvmProvider implements DeviceProvider
 
                 if (state.exists())
                 {
+                    errorReporter.logTrace("Lv %s found", state.identifier);
                     if (vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
                     {
+                        errorReporter.logTrace("Lv %s will be deleted", state.identifier);
                         vlmsToDelete.add(vlm);
                     }
                     else
@@ -113,6 +115,7 @@ public class LvmProvider implements DeviceProvider
                             state.sizeState == Size.TOO_LARGE // not within tolerance
                         )
                         {
+                            errorReporter.logTrace("Lv %s will be resized", state.identifier);
                             vlmsToResize.add(vlm);
                         }
                     }
@@ -121,10 +124,12 @@ public class LvmProvider implements DeviceProvider
                 {
                     if (!vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
                     {
+                        errorReporter.logTrace("Lv %s will be created", state.identifier);
                         vlmsToCreate.add(vlm);
                     }
                     else
                     {
+                        errorReporter.logTrace("Lv %s should be deleted but not exists - no-op", state.identifier);
                         toDeleteNotExisting.add(vlm);
                     }
                 }
@@ -158,7 +163,7 @@ public class LvmProvider implements DeviceProvider
                 exc
             );
         }
-        catch (SQLException exc)
+        catch (SQLException | InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -167,19 +172,11 @@ public class LvmProvider implements DeviceProvider
     }
 
     private Map<Volume, StorageException> createVolumes(List<Volume> vlms)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, SQLException, InvalidKeyException
     {
         Map<Volume, StorageException> exceptions = BatchRunner.runBatch(
             vlms,
-            vlm ->
-            {
-                LvmCommands.create(
-                    extCmdFactory.create(),
-                    ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
-                    asLvmIdentifier(vlm),
-                    getVlmDfnSize(vlm.getVolumeDefinition())
-                );
-            }
+            this::createLvImpl
         );
 
         updateVolumeStates(vlms);
@@ -204,8 +201,19 @@ public class LvmProvider implements DeviceProvider
         return exceptions;
     }
 
+    protected void createLvImpl(Volume vlm)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        LvmCommands.createFat(
+            extCmdFactory.create(),
+            ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
+            asLvmIdentifier(vlm),
+            getVlmDfnSize(vlm.getVolumeDefinition())
+        );
+    }
+
     private Map<Volume, StorageException> resizeVolumes(List<Volume> vlms)
-        throws AccessDeniedException, SQLException, StorageException
+        throws AccessDeniedException, SQLException, StorageException, InvalidKeyException
     {
         Map<Volume, StorageException> exceptions = BatchRunner.runBatch(
             vlms,
@@ -224,7 +232,7 @@ public class LvmProvider implements DeviceProvider
     }
 
     private Map<Volume, StorageException> deleteVolumes(List<Volume> vlms)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, SQLException, InvalidKeyException
     {
         Map<String, Pair<String, String>> devicesToWipe = new TreeMap<>();
         Map<Volume, StorageException> exceptions = BatchRunner.runBatch(
@@ -337,8 +345,6 @@ public class LvmProvider implements DeviceProvider
             );
     }
 
-
-
     @Override
     public long getPoolCapacity(StorPool storPool) throws StorageException
     {
@@ -350,7 +356,7 @@ public class LvmProvider implements DeviceProvider
             {
                 throw new StorageException("Unset volume group for " + storPool);
             }
-            capacity = LvmUtils.getVGTotalSize(
+            capacity = LvmUtils.getVgTotalSize(
                 extCmdFactory.create(),
                 Collections.singleton(vg)
             ).get(vg);
@@ -373,7 +379,7 @@ public class LvmProvider implements DeviceProvider
             {
                 throw new StorageException("Unset volume group for " + storPool);
             }
-            freeSpace = LvmUtils.getVGFreeSize(
+            freeSpace = LvmUtils.getVgFreeSize(
                 extCmdFactory.create(),
                 Collections.singleton(vg)
             ).get(vg);
@@ -384,6 +390,7 @@ public class LvmProvider implements DeviceProvider
         }
         return freeSpace;
     }
+
     @Override
     public void createSnapshot(Volume vlm, String snapshotName) throws StorageException
     {
@@ -415,41 +422,58 @@ public class LvmProvider implements DeviceProvider
         throw new ImplementationError("Not implemented yet");
     }
 
-    private Set<String> getAffectedVolumeGroups(Collection<Volume> vlms)
+    private Set<String> getAffectedVolumeGroups(Collection<Volume> vlms, boolean forLvs)
     {
         Set<String> volumeGroups = new HashSet<>();
         try
         {
             for (Volume vlm : vlms)
             {
-                volumeGroups.add(
-                    getVolumeGroup(vlm.getStorPool(storDriverAccCtx))
-                );
+                volumeGroups.add(getVolumeGroup(vlm.getStorPool(storDriverAccCtx)));
             }
         }
-        catch (InvalidKeyException | AccessDeniedException exc)
+        catch (AccessDeniedException | InvalidKeyException exc)
         {
-            throw new ImplementationError("Failed to access storage pool", exc);
+            throw new ImplementationError(exc);
         }
         return volumeGroups;
     }
 
-    private String getVolumeGroup(StorPool storPool) throws AccessDeniedException, InvalidKeyException
+    protected String getVolumeGroupForLvs(StorPool storPool) throws AccessDeniedException, InvalidKeyException
     {
-        return DeviceLayerUtils.getNamespaceStorDriver(
-            storPool.getProps(storDriverAccCtx)
-        )
-        .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
+        return getVolumeGroup(storPool);
     }
 
+    protected String getVolumeGroup(Volume vlm) throws AccessDeniedException, SQLException, InvalidKeyException
+    {
+        String volumeGroup = null;
+        LvmLayerData layerData = (LvmLayerData) vlm.getLayerData(storDriverAccCtx);
+        if (layerData == null)
+        {
+            volumeGroup = getVolumeGroup(vlm.getStorPool(storDriverAccCtx));
+        }
+        else
+        {
+            volumeGroup = layerData.getVolumeGroup();
+        }
+        return volumeGroup;
+    }
+
+    protected String getVolumeGroup(StorPool storPool) throws AccessDeniedException, InvalidKeyException
+    {
+        return DeviceLayerUtils.getNamespaceStorDriver(
+                storPool.getProps(storDriverAccCtx)
+            )
+            .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
+    }
 
     private void updateVolumeStates(Collection<Volume> vlms)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, SQLException, InvalidKeyException
     {
         updateVolumeStates(
             LvmUtils.getLvsInfo(
                 extCmdFactory.create(),
-                getAffectedVolumeGroups(vlms)
+                getAffectedVolumeGroups(vlms, true)
             ),
             vlms
         );
@@ -459,11 +483,11 @@ public class LvmProvider implements DeviceProvider
         HashMap<String, LvsInfo> lvsInfo,
         Collection<Volume> vlms
     )
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, SQLException, InvalidKeyException
     {
         final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
             extCmdFactory.create(),
-            getAffectedVolumeGroups(vlms)
+            getAffectedVolumeGroups(vlms, false)
         );
         for (Volume vlm : vlms)
         {
@@ -515,34 +539,27 @@ public class LvmProvider implements DeviceProvider
         }
     }
 
-    private LvmLayerDataStlt createLayerData(Volume vlm, LvsInfo info) throws AccessDeniedException, SQLException
+    protected LvmLayerDataStlt createLayerData(Volume vlm, LvsInfo info) throws AccessDeniedException, SQLException
     {
         LvmLayerDataStlt data = new LvmLayerDataStlt(info);
         vlm.setLayerData(storDriverAccCtx, data);
         return data;
     }
 
-    private LvmLayerDataStlt createEmptyLayerData(Volume vlm) throws AccessDeniedException, SQLException
+    protected LvmLayerDataStlt createEmptyLayerData(Volume vlm)
+        throws AccessDeniedException, SQLException, InvalidKeyException
     {
-        LvmLayerDataStlt data;
-        try
-        {
-            data = new LvmLayerDataStlt(
-                getVolumeGroup(vlm.getStorPool(storDriverAccCtx)),
-                null, // thin pool
-                asLvmIdentifier(vlm),
-                -1
-            );
-            vlm.setLayerData(storDriverAccCtx, data);
-        }
-        catch (InvalidKeyException exc)
-        {
-            throw new ImplementationError(exc);
-        }
+        LvmLayerDataStlt data = new LvmLayerDataStlt(
+            getVolumeGroup(vlm),
+            null, // thin pool
+            asLvmIdentifier(vlm),
+            -1
+        );
+        vlm.setLayerData(storDriverAccCtx, data);
         return data;
     }
 
-    private String asLvmIdentifier(Volume vlm)
+    protected String asLvmIdentifier(Volume vlm)
     {
         // TODO: check for migration property
         return String.format(
@@ -552,7 +569,7 @@ public class LvmProvider implements DeviceProvider
         );
     }
 
-    private long getVlmDfnSize(VolumeDefinition vlmDfn)
+    protected long getVlmDfnSize(VolumeDefinition vlmDfn)
     {
         return AccessUtils.execPrivileged(
             () -> vlmDfn.getVolumeSize(storDriverAccCtx),

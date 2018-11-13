@@ -304,11 +304,7 @@ public class DrbdLayer implements DeviceLayer
                                     VolumeDefinition drbdVlmDfn = drbdVlm.getVolumeDefinition();
 
                                     DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) drbdVlm.getLayerData(workerCtx);
-                                    drbdUtils.createMd(
-                                        rsc.getDefinition().getName(),
-                                        drbdVlmDfn.getVolumeNumber(),
-                                        vlmState.peerSlots
-                                    );
+                                    createMetaData(rsc, drbdVlmDfn, vlmState);
                                     vlmState.metaDataIsNew = true;
                                 }
 
@@ -348,6 +344,58 @@ public class DrbdLayer implements DeviceLayer
             throw new StorageException("DRBD state tracking is unavailable", drbdStateExc);
         }
         return exceptions;
+    }
+
+    private void createMetaData(Resource rsc, VolumeDefinition drbdVlmDfn, DrbdVlmDataStlt vlmState)
+        throws ExtCmdFailedException, AccessDeniedException, StorageException, ImplementationError
+    {
+        VolumeNumber vlmNr = drbdVlmDfn.getVolumeNumber();
+        drbdUtils.createMd(
+            rsc.getDefinition().getName(),
+            vlmNr,
+            vlmState.peerSlots
+        );
+        if (VolumeUtils.isVolumeThinlyBacked(workerCtx, rsc.getVolume(vlmNr)))
+        {
+            ResourceDefinition rscDfn = rsc.getDefinition();
+
+            String currentGi = null;
+            try
+            {
+                currentGi = drbdVlmDfn.getProps(workerCtx).getProp(ApiConsts.KEY_DRBD_CURRENT_GI);
+            }
+            catch (InvalidKeyException invKeyExc)
+            {
+                throw new ImplementationError(
+                    "API constant contains an invalid key",
+                    invKeyExc
+                );
+            }
+            if (currentGi == null)
+            {
+                throw new StorageException(
+                    "Meta data creation for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmNr.value + " failed",
+                    getAbortMsg(rscDfn.getName(), vlmNr),
+                    "Volume " + vlmNr.value + " of the resource uses a thin provisioning storage driver,\n" +
+                    "but no initial value for the DRBD current generation is set on the volume definition",
+                    "- Ensure that the initial DRBD current generation is set on the volume definition\n" +
+                    "or\n" +
+                    "- Recreate the volume definition",
+                    "The key of the initial DRBD current generation property is:\n" +
+                    ApiConsts.KEY_DRBD_CURRENT_GI,
+                    null
+                );
+            }
+            drbdUtils.setGi(
+                rsc.getNodeId(),
+                drbdVlmDfn.getMinorNr(workerCtx),
+                rsc.getVolume(vlmNr).getBackingDiskPath(workerCtx),
+                currentGi,
+                null,
+                true
+            );
+        }
     }
 
     private void updateToCurrentDrbdStates(Collection<Resource> resources)
@@ -654,7 +702,6 @@ public class DrbdLayer implements DeviceLayer
     private void condInitialOrSkipSync(Resource rsc, DrbdRscDataStlt rscState)
         throws AccessDeniedException, StorageException
     {
-
         try
         {
             ResourceDefinition rscDfn = rsc.getDefinition();
@@ -766,6 +813,11 @@ public class DrbdLayer implements DeviceLayer
     private String getAbortMsg(ResourceName rscName)
     {
         return "Operations on resource '" + rscName.displayValue + "' were aborted";
+    }
+
+    private String getAbortMsg(ResourceName rscName, VolumeNumber vlmNr)
+    {
+        return "Operations on volume " + vlmNr.value + " of resource '" + rscName.displayValue + "' were aborted";
     }
 
     @Override

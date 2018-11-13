@@ -1,14 +1,28 @@
 package com.linbit.linstor.storage.layer.provider.lvm;
 
+import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageConstants;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.utils.LvmUtils;
+import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.storage2.layer.data.LvmThinLayerData;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Provider;
+
+import java.io.File;
+import java.sql.SQLException;
+import java.util.Collections;
 
 public class LvmThinProvider extends LvmProvider
 {
@@ -30,6 +44,109 @@ public class LvmThinProvider extends LvmProvider
             notificationListenerRef,
             storageLayerRef,
             errorReporterRef
+        );
+    }
+
+    @Override
+    protected void createLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
+    {
+        LvmThinLayerData lvmThinData = (LvmThinLayerData) vlm.getLayerData(storDriverAccCtx);
+        LvmCommands.createThin(
+            extCmdFactory.create(),
+            lvmThinData.getVolumeGroup(),
+            lvmThinData.getThinPool(),
+            asLvmIdentifier(vlm),
+            getVlmDfnSize(vlm.getVolumeDefinition())
+        );
+    }
+
+    @Override
+    protected LvmThinLayerDataStlt createLayerData(Volume vlm, LvsInfo info) throws AccessDeniedException, SQLException
+    {
+        LvmThinLayerDataStlt layerData = new LvmThinLayerDataStlt(info);
+        vlm.setLayerData(storDriverAccCtx, layerData);
+        return layerData;
+    }
+
+    @Override
+    protected LvmThinLayerDataStlt createEmptyLayerData(Volume vlm) throws AccessDeniedException, SQLException
+    {
+        LvmThinLayerDataStlt data;
+        try
+        {
+            StorPool storPool = vlm.getStorPool(storDriverAccCtx);
+            data = new LvmThinLayerDataStlt(
+                getVolumeGroup(storPool),
+                getThinPool(storPool), // thin pool
+                asLvmIdentifier(vlm),
+                -1
+            );
+            vlm.setLayerData(storDriverAccCtx, data);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return data;
+    }
+
+    @Override
+    public long getPoolCapacity(StorPool storPool) throws StorageException
+    {
+        long capacity;
+        try
+        {
+            String vg = getVolumeGroupForLvs(storPool);
+            if (vg == null)
+            {
+                throw new StorageException("Unset volume group for " + storPool);
+            }
+            capacity = LvmUtils.getThinTotalSize(
+                extCmdFactory.create(),
+                Collections.singleton(vg)
+            ).get(vg);
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return capacity;
+    }
+
+    @Override
+    public long getPoolFreeSpace(StorPool storPool) throws StorageException
+    {
+        long freeSpace;
+        try
+        {
+            String vg = getVolumeGroupForLvs(storPool);
+            if (vg == null)
+            {
+                throw new StorageException("Unset volume group for " + storPool);
+            }
+            freeSpace = LvmUtils.getThinFreeSize(
+                extCmdFactory.create(),
+                Collections.singleton(vg)
+            ).get(vg);
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return freeSpace;
+    }
+
+    @Override
+    protected String getVolumeGroupForLvs(StorPool storPool) throws AccessDeniedException, InvalidKeyException
+    {
+        return getVolumeGroup(storPool) + File.separator + getThinPool(storPool);
+    }
+
+    private String getThinPool(StorPool storPool) throws AccessDeniedException, InvalidKeyException
+    {
+        return storPool.getProps(storDriverAccCtx).getProp(
+            StorageConstants.CONFIG_LVM_THIN_POOL_KEY,
+            StorageConstants.NAMESPACE_STOR_DRIVER
         );
     }
 }

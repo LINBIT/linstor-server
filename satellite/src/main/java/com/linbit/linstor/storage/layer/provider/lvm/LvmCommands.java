@@ -60,7 +60,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData create(ExtCmd extCmd, String volumeGroup, String vlmId, long size)
+    public static OutputData createFat(ExtCmd extCmd, String volumeGroup, String vlmId, long size)
         throws StorageException
     {
         return genericExecutor(
@@ -76,6 +76,30 @@ public class LvmCommands
             "Failed to create new lvm volume '" + vlmId + "' in volume group '" + volumeGroup +
                 "' with size " + size + "kb"
         );
+    }
+
+    public static OutputData createThin(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String thinPoolName,
+        String vlmId,
+        long size
+    )
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "lvcreate",
+                "--virtualsize", size + "k", // -V
+                "--thinpool", thinPoolName,
+                "--name", vlmId,        // -n
+                volumeGroup
+            },
+            "Failed to create lvm volume",
+            "Failed to create new lvm volume '" + vlmId + "' in volume group '" + volumeGroup +
+            "' with size " + size + "kb"
+            );
     }
 
     public static OutputData delete(ExtCmd extCmd, String volumeGroup, String vlmId)
@@ -125,7 +149,6 @@ public class LvmCommands
         );
     }
 
-
     public static OutputData getVgTotalSize(ExtCmd extCmd, Set<String> volumeGroups)
         throws StorageException
     {
@@ -168,6 +191,50 @@ public class LvmCommands
             "Failed to query free size of volume group(s) " + volumeGroups,
             "Failed to query free size of volume group(s) " + volumeGroups
         );
+    }
+
+    public static OutputData getVgThinTotalSize(ExtCmd extCmd, Set<String> volumeGroups)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            concat(
+                new String[]
+                    {
+                        "lvs",
+                        "-o", "lv_size",
+                        "--units", "k",
+                        "--separator", StorageUtils.DELIMITER,
+                        "--noheadings",
+                        "--nosuffix"
+                    },
+                    volumeGroups
+                ),
+            "Failed to query total size of volume group(s) " + volumeGroups,
+            "Failed to query total size of volume group(s) " + volumeGroups
+            );
+    }
+
+    public static OutputData getVgThinFreeSize(ExtCmd extCmd, Set<String> volumeGroups)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            concat(
+                new String[]
+                    {
+                        "vgs",
+                        "-o", "lv_name,lv_size,data_percent",
+                        "--units", "k",
+                        "--separator", StorageUtils.DELIMITER,
+                        "--noheadings",
+                        "--nosuffix"
+                    },
+                    volumeGroups
+                ),
+            "Failed to query free size of volume group(s) " + volumeGroups,
+            "Failed to query free size of volume group(s) " + volumeGroups
+            );
     }
 
     private static String[] concat(String[] array, Set<String> list)
