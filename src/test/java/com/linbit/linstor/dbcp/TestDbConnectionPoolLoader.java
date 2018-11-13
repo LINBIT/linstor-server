@@ -2,7 +2,10 @@ package com.linbit.linstor.dbcp;
 
 import java.sql.SQLException;
 import java.util.Properties;
+
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.DatabaseInfoImpl;
+import com.linbit.linstor.dbcp.migration.MigrationUtils;
 
 public class TestDbConnectionPoolLoader
 {
@@ -20,8 +23,10 @@ public class TestDbConnectionPoolLoader
         DB_PROPS.setProperty("user", DB_USER);
         DB_PROPS.setProperty("password", DB_PASSWORD);
 
-        DbConnectionPool dbConnPool = new DbConnectionPool(new DatabaseInfoImpl());
+        DatabaseInfo dbInfo = new DatabaseInfoImpl();
+        DbConnectionPool dbConnPool = new DbConnectionPool(dbInfo);
         dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
+        MigrationUtils.setDatabaseInfo(dbInfo);
 
         return dbConnPool;
     }
