@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -56,6 +57,9 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
         throws AccessDeniedException;
 
     void removeSnapshot(AccessContext accCtx, Snapshot snapshotRef)
+        throws AccessDeniedException;
+
+    Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
     StateFlags<SnapshotDfnFlags> getFlags();

@@ -4,6 +4,10 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsAccess;
+import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -39,6 +43,9 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
     private final SnapshotDefinitionDataDatabaseDriver dbDriver;
 
+    // Properties container for this snapshot definition
+    private final Props snapshotDfnProps;
+
     // State flags
     private final StateFlags<SnapshotDfnFlags> flags;
 
@@ -58,10 +65,12 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         long initFlags,
         SnapshotDefinitionDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
+        PropsContainerFactory propsContainerFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMapRef,
         Map<NodeName, Snapshot> snapshotMapRef
     )
+        throws SQLException
     {
         super(transMgrProviderRef);
         objId = objIdRef;
@@ -70,6 +79,10 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
+
+        snapshotDfnProps = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(resourceDfn.getName(), snapshotName)
+        );
 
         flags = transObjFactory.createStateFlagsImpl(
             resourceDfnRef.getObjProt(),
@@ -199,6 +212,14 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     }
 
     @Override
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, resourceDfn.getObjProt(), snapshotDfnProps);
+    }
+
+    @Override
     public StateFlags<SnapshotDfnFlags> getFlags()
     {
         checkDeleted();
@@ -235,6 +256,8 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
             {
                 snapshotVolumeDefinition.delete(accCtx);
             }
+
+            snapshotDfnProps.delete();
 
             activateTransMgr();
             dbDriver.delete(this);

@@ -188,6 +188,8 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
 
             snapshotDfn.removeSnapshotVolumeDefinition(accCtx, volumeNr);
 
+            snapshotVlmDfnProps.delete();
+
             activateTransMgr();
             dbDriver.delete(this);
 

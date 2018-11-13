@@ -61,6 +61,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private static final String PATH_NODE_CON_DEFINITIONS     = "/conDfn/nodes/";
     private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
     private static final String PATH_VOLUME_CON_DEFINITIONS   = "/conDfn/volume/";
+    private static final String PATH_SNAPSHOT_DEFINITIONS = "/snapshotdefinitions/";
     private static final String PATH_SNAPSHOT_VOLUME_DEFINITIONS = "/snapshotvolumedefinitions/";
 
     public static final int PATH_MAX_LENGTH = 256;
@@ -2388,6 +2389,15 @@ public class PropsContainer extends AbsTransactionObject implements Props
             PATH_SEPARATOR + targetName.value +
             PATH_SEPARATOR + resName.value +
             PATH_SEPARATOR + volNr.value;
+    }
+
+    /**
+     * PropsCon-path for SnapshotDefinitionData
+     */
+    public static String buildPath(ResourceName resName, SnapshotName snapshotName)
+    {
+        return PATH_SNAPSHOT_DEFINITIONS + resName.value +
+            PATH_SEPARATOR + snapshotName.value;
     }
 
     /**

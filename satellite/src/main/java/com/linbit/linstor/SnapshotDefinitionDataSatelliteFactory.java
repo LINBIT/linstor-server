@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -15,17 +16,20 @@ import java.util.UUID;
 public class SnapshotDefinitionDataSatelliteFactory
 {
     private final SnapshotDefinitionDataDatabaseDriver driver;
+    private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public SnapshotDefinitionDataSatelliteFactory(
         SnapshotDefinitionDataDatabaseDriver driverRef,
+        PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
+        propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -52,6 +56,7 @@ public class SnapshotDefinitionDataSatelliteFactory
                     StateFlagsBits.getMask(flags),
                     driver,
                     transObjFactory,
+                    propsContainerFactory,
                     transMgrProvider,
                     new TreeMap<>(),
                     new TreeMap<>()

@@ -1,6 +1,11 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -17,17 +22,20 @@ import java.util.UUID;
 public class SnapshotDefinitionDataControllerFactory
 {
     private final SnapshotDefinitionDataDatabaseDriver driver;
+    private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public SnapshotDefinitionDataControllerFactory(
         SnapshotDefinitionDataDatabaseDriver driverRef,
+        PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
+        propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -56,14 +64,54 @@ public class SnapshotDefinitionDataControllerFactory
             StateFlagsBits.getMask(initFlags),
             driver,
             transObjFactory,
+            propsContainerFactory,
             transMgrProvider,
             new TreeMap<>(),
             new TreeMap<>()
         );
 
+        try
+        {
+            long sequenceNumber = nextSequenceNumber(accCtx, rscDfn);
+            snapshotDfnData.getProps(accCtx).setProp(
+                ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER, Long.toString(sequenceNumber));
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError("Internal property not valid", exc);
+        }
+
         driver.create(snapshotDfnData);
         rscDfn.addSnapshotDfn(accCtx, snapshotDfnData);
 
         return snapshotDfnData;
+    }
+
+    private long nextSequenceNumber(AccessContext accCtx, ResourceDefinition rscDfn)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        long maxSequenceNumber = 0L;
+        for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(accCtx))
+        {
+            String sequenceNumberProp =
+                snapshotDfn.getProps(accCtx).getProp(ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER);
+            try
+            {
+                long sequenceNumber = Long.valueOf(sequenceNumberProp);
+                if (sequenceNumber > maxSequenceNumber)
+                {
+                    maxSequenceNumber = sequenceNumber;
+                }
+            }
+            catch (NumberFormatException exc)
+            {
+                throw new ImplementationError(
+                    "Unable to parse internal value of internal property " +
+                        ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER,
+                    exc
+                );
+            }
+        }
+        return maxSequenceNumber + 1L;
     }
 }

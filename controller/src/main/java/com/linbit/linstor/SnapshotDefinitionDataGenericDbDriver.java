@@ -8,6 +8,7 @@ import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -59,6 +60,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
+    private final PropsContainerFactory propsContainerFactory;
 
     private final FlagDriver flagsDriver;
     private final TransactionObjectFactory transObjFactory;
@@ -68,12 +70,14 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     public SnapshotDefinitionDataGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
+        PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
+        propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         flagsDriver = new FlagDriver();
@@ -124,6 +128,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
             resultSet.getLong(SD_FLAGS),
             this,
             transObjFactory,
+            propsContainerFactory,
             transMgrProvider,
             snapshotVlmDfnMap,
             snapshotMap
