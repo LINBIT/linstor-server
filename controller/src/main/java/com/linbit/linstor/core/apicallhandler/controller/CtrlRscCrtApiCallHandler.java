@@ -144,7 +144,6 @@ public class CtrlRscCrtApiCallHandler
 
         ctrlTransactionHelper.commit();
 
-        responses = new ApiCallRcImpl();
         for (Resource rsc : deployedResources)
         {
             responseConverter.addWithOp(responses, context,
