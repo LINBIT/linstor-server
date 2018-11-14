@@ -88,10 +88,11 @@ class CtrlVlmCrtApiHelper
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        boolean isDskless = isDiskless(rsc);
-        StorPool storPool = resolveStorPool(rsc, vlmDfn, isDskless).extractApiCallRc(apiCallRc);
+        boolean isDless = isDiskless(rsc);
+        StorPool storPool = resolveStorPool(rsc, vlmDfn, isDless).extractApiCallRc(apiCallRc);
+        isDless = isDiskless(rsc);  // recheck diskless, resolveStorPool might mark resource diskless if dless storage
 
-        if (allowedKind != null && !isDskless && storPool.getDriverKind() != allowedKind)
+        if (allowedKind != null && !isDless && storPool.getDriverKind() != allowedKind)
         {
             throw new ApiRcException(
                 ApiCallRcImpl.entryBuilder(
