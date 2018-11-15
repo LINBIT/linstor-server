@@ -497,6 +497,9 @@ public class StltApiCallHandler
             stltConf.clear();
             stltConf.map().putAll(satelliteProps);
 
+            // local nodename need to be set for swordfish driver
+            stltConf.setProp(LinStor.KEY_NODE_NAME, controllerPeerConnector.getLocalNodeName().displayValue);
+
             transMgrProvider.get().commit();
 
             regenerateLinstorCommonConf();
@@ -510,9 +513,6 @@ public class StltApiCallHandler
             }
 
             deviceManager.controllerUpdateApplied(slctRsc);
-
-            // local nodename need to be set for swordfish driver
-            stltConf.setProp(LinStor.KEY_NODE_NAME, controllerPeerConnector.getLocalNodeName().displayValue);
         }
         catch (AccessDeniedException | SQLException exc)
         {
