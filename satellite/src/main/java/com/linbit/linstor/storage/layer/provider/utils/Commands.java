@@ -11,6 +11,8 @@ import java.io.IOException;
 
 public class Commands
 {
+    private static final int KIB = 1024;
+
     public static OutputData genericExecutor(
         ExtCmd extCmd,
         String[] command,
@@ -64,6 +66,27 @@ public class Commands
             "Failed to wipeFs of " + devicePath,
             "Failed to wipeFs of " + devicePath
         );
+    }
+
+    public static long getBlockSizeInKib(
+        ExtCmd extCmd,
+        String devicePath
+    )
+        throws StorageException
+    {
+        OutputData output = genericExecutor(
+            extCmd,
+            new String[]
+                {
+                    "blockdev",
+                    "--getsize64",
+                    devicePath
+                },
+            "Failed to get block size of " + devicePath,
+            "Failed to get block size of " + devicePath
+        );
+        String outRaw = new String(output.stdoutData);
+        return Long.parseLong(outRaw.trim()) / KIB;
     }
 
 }

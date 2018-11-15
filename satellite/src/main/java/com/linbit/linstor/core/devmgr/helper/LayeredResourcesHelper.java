@@ -282,7 +282,7 @@ public class LayeredResourcesHelper
                 errorReporter.logTrace("Creating typed resources for %s", origRsc.toString());
 
                 ResourceDefinition rscDfn = origRsc.getDefinition();
-                Resource currentRsc = origRsc;
+                Resource currentRsc = null;
 
                 // for the lowest resource, we only need volume-based data
                 // additionally, we do not need extra layer-specific data.
@@ -452,6 +452,7 @@ public class LayeredResourcesHelper
             typedRsc.getUuid().equals(rscUuid) ? "Created new " : "Loaded",
             typedRsc
         );
+        typedRsc.setParentResource(sysCtx, origRsc, true); // just to keep the reference
         add(layeredResources, typedRsc);
         return typedRsc;
     }
@@ -533,7 +534,10 @@ public class LayeredResourcesHelper
                 type,
                 typedResource
             );
-            typedChild.setParentResource(sysCtx, typedResource, true);
+            if (typedChild != null) // could be == null in case of DISKLESS drbd
+            {
+                typedChild.setParentResource(sysCtx, typedResource, true);
+            }
             typedResource.setParentResource(sysCtx, origRsc, true); // just to keep the reference
         }
         catch (SQLException exc)

@@ -2,13 +2,14 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.storage2.layer.kinds.CryptSetupLayerKind;
+import com.linbit.linstor.storage2.layer.kinds.DefaultLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.DrbdLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.StorageLayerKind;
 
 public enum ResourceType
 {
-    DEFAULT(null), // special type, only temporary used until the rework is completed
+    DEFAULT(new DefaultLayerKind()), // special type, only temporary used until the rework is completed
 
     DRBD(new DrbdLayerKind()),
     CRYPT(new CryptSetupLayerKind()),

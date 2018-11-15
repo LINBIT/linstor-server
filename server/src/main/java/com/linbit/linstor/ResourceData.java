@@ -389,6 +389,18 @@ public class ResourceData extends BaseTransactionObject implements Resource
             }
             parent.set(parentRef);
             parentRef.addChild(accCtx, this);
+
+            // check for cycles
+
+            parentRsc = parentRef;
+            while (parentRsc != null)
+            {
+                if (parentRsc.equals(this))
+                {
+                    throw new ImplementationError("Cyclic resource parent-child relation detected");
+                }
+                parentRsc = parentRsc.getParentResource(accCtx);
+            }
         }
         else
         {

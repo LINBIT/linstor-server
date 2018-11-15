@@ -14,19 +14,21 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Resource.RscFlags;
-import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.devmgr.DeviceHandler2;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
@@ -39,13 +41,15 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.DrbdAdm;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
+import com.linbit.linstor.storage.layer.exceptions.ResourceException;
+import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.storage.utils.ResourceUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
-import com.linbit.utils.AccessUtils;
-
 import static com.linbit.linstor.storage.utils.VolumeUtils.getBackingVolume;
 
 import java.io.FileOutputStream;
@@ -60,11 +64,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-public class DrbdLayer implements DeviceLayer
+public class DrbdLayer implements ResourceLayer
 {
+    private static final boolean TO_DELETE_PARTITON = true;
+
     private static final String DRBD_CONFIG_SUFFIX = ".res";
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
 
@@ -84,6 +89,7 @@ public class DrbdLayer implements DeviceLayer
     // Number of activity log stripes; this should be replaced with a property of the resource definition,
     // a property of the volume definition, or or otherwise a system-wide default
     private static final long FIXME_AL_STRIPE_SIZE = 32;
+    private DeviceHandler2 resourceProcessor;
 
     public DrbdLayer(
         @SystemContext AccessContext workerCtxRef,
@@ -93,7 +99,8 @@ public class DrbdLayer implements DeviceLayer
         ErrorReporter errorReporterRef,
         WhitelistProps whiltelistPropsRef,
         CtrlStltSerializer interComSerializerRef,
-        ControllerPeerConnector controllerPeerConnectorRef
+        ControllerPeerConnector controllerPeerConnectorRef,
+        DeviceHandler2 resourceProcessorRef
     )
     {
         workerCtx = workerCtxRef;
@@ -104,405 +111,527 @@ public class DrbdLayer implements DeviceLayer
         whitelistProps = whiltelistPropsRef;
         interComSerializer = interComSerializerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
+        resourceProcessor = resourceProcessorRef;
     }
 
     @Override
-    public Map<Resource, StorageException> adjustTopDown(
-        Collection<Resource> resources,
-        Collection<Snapshot> snapshots
-    )
-        throws StorageException
+    public String getName()
     {
-        Map<Resource, StorageException> exceptions = new TreeMap<>();
-        for (Resource rsc : resources)
+        return this.getClass().getSimpleName();
+    }
+
+    @Override
+    public void prepare(List<Resource> value) throws StorageException
+    {
+        // no-op
+    }
+
+    @Override
+    public void clearCache()
+    {
+        // no-op
+    }
+
+    @Override
+    public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
+    {
+        ResourceName resourceName = rsc.getDefinition().getName();
+        if (rsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE))
         {
-            ResourceName rscName = rsc.getDefinition().getName();
-            try
-            {
-                if (rsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE))
-                {
-                    try
-                    {
-                        // delete whole resource
-                        errorReporter.logTrace("Shutting down drbd resource %s", rscName);
-                        drbdUtils.down(rscName);
-                        Path resFile = asResourceFile(rscName, false);
-                        errorReporter.logTrace("Deleting res file: %s ", resFile);
-                        Files.deleteIfExists(resFile);
-                        notificationListener.notifyResourceDeleted(rsc);
-                    }
-                    catch (ExtCmdFailedException cmdExc)
-                    {
-                        exceptions.put(
-                            rsc,
-                            new StorageException(
-                                "Shutdown of the DRBD resource '" + rscName.displayValue + " failed",
-                                getAbortMsg(rscName),
-                                "The external command for stopping the DRBD resource failed",
-                                "- Check whether the required software is installed\n" +
-                                "- Check whether the application's search path includes the location\n" +
-                                "  of the external software\n" +
-                                "- Check whether the application has execute permission for the external command\n",
-                                null,
-                                cmdExc
-                            )
-                        );
-                    }
-                    catch (IOException exc)
-                    {
-                        exceptions.put(rsc, new StorageException("IOException while removing resource file", exc));
-                    }
-                }
-                else
-                {
-                    // detatch volumes that should be deleted so that their backing disk can be removed
-                    // by the storage layer.
-                    List<Volume> volumesToDetatch = rsc.streamVolumes().filter(
-                        this::hasVolumeDeleteFlagSet
-                    )
-                    .collect(Collectors.toList());
+            deleteDrbd(rsc);
+            addDeletedMsg(resourceName, apiCallRc);
 
-                    for (Volume vlm : volumesToDetatch)
-                    {
-                        try
-                        {
-                            VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
-                            errorReporter.logTrace("Detaching volume %s/%d", rscName, vlmNr.value);
-                            drbdUtils.detach(rscName, vlmNr);
-                            vlm.delete(workerCtx); // only deletes the drbd-volume, not the storage volume
-                        }
-                        catch (ExtCmdFailedException exc)
-                        {
-                            exceptions.put(
-                                rsc,
-                                new StorageException(
-                                    "Detaching volume '" + vlm.toString() + "' failed.",
-                                    exc
-                                )
-                            );
-                        }
-                        catch (SQLException exc)
-                        {
-                            throw new ImplementationError(exc);
-                        }
-                    }
-                }
-                // no adjust - that will be done in adjustBottomUp
+            processChild(rsc, snapshots, apiCallRc);
 
-                // TODO: suspend IO for snapshots
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                throw new ImplementationError(accDeniedExc);
-            }
+            rsc.delete(workerCtx);
         }
-        return exceptions;
+        else
+        {
+            adjustDrbd(rsc, snapshots, apiCallRc);
+            addAdjustedMsg(resourceName, apiCallRc);
+        }
     }
 
-    private boolean hasVolumeDeleteFlagSet(Volume vlm)
+    private void addDeletedMsg(ResourceName resourceName, ApiCallRcImpl apiCallRc)
     {
-        return AccessUtils.execPrivileged(() -> vlm.getFlags().isSet(workerCtx, VlmFlags.DELETE));
+        apiCallRc.addEntry(
+            ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_RSC | ApiConsts.DELETED,
+                "Resource '" +  resourceName + "' [DRBD] deleted."
+            )
+        );
     }
 
-    @Override
-    public Map<Resource, StorageException> adjustBottomUp(
-        Collection<Resource> resources,
-        Collection<Snapshot> snapshots
-    )
-        throws StorageException
+    private void addAdjustedMsg(ResourceName resourceName, ApiCallRcImpl apiCallRc)
     {
-        Map<Resource, StorageException> exceptions = new TreeMap<>();
+        apiCallRc.addEntry(
+            ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_RSC | ApiConsts.MODIFIED,
+                "Resource '" +  resourceName + "' [DRBD] adjusted."
+            )
+        );
+    }
+
+    private void processChild(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+        throws AccessDeniedException, StorageException, ResourceException, VolumeException, SQLException
+    {
+        if (!rsc.isDiskless(workerCtx))
+        {
+            resourceProcessor.process(ResourceUtils.getSingleChild(rsc, workerCtx), snapshots, apiCallRc);
+        }
+    }
+
+    /**
+     * Deletes a given DRBD resource, by calling {@code drbdadm down <resource-name>} and deleting
+     * the resource specific .res file
+     * {@link Resource#delete(AccessContext)} is also called on the given resource
+     *
+     * @param drbdRsc
+     * @throws StorageException
+     * @throws SQLException
+     * @throws AccessDeniedException
+     */
+    private void deleteDrbd(Resource drbdRsc) throws StorageException
+    {
+        ResourceName rscName = drbdRsc.getDefinition().getName();
+
         try
         {
-            updateToCurrentDrbdStates(resources);
+            errorReporter.logTrace("Shutting down drbd resource %s", rscName);
+            drbdUtils.down(rscName);
+            Path resFile = asResourceFile(rscName, false);
+            errorReporter.logTrace("Deleting res file: %s ", resFile);
+            Files.deleteIfExists(resFile);
+            notificationListener.notifyResourceDeleted(drbdRsc);
 
-            for (Resource rsc : resources)
+            // TODO: delete all drbd-volumes once the API is split into
+            // "notifyVolumeDeleted(Volume)" and "notifyStorageVolumeDeleted(Volume, long)"
+        }
+        catch (ExtCmdFailedException cmdExc)
+        {
+            throw new StorageException(
+                "Shutdown of the DRBD resource '" + rscName.displayValue + " failed",
+                getAbortMsg(rscName),
+                "The external command for stopping the DRBD resource failed",
+                "- Check whether the required software is installed\n" +
+                    "- Check whether the application's search path includes the location\n" +
+                    "  of the external software\n" +
+                    "- Check whether the application has execute permission for the external command\n",
+                    null,
+                    cmdExc
+            );
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException("IOException while removing resource file", exc);
+        }
+    }
+
+    /**
+     * Adjusts (creates or modifies) a given DRBD resource
+     * @param drbdRsc
+     * @param snapshots
+     * @param apiCallRc
+     * @throws SQLException
+     * @throws StorageException
+     * @throws AccessDeniedException
+     * @throws VolumeException
+     * @throws ResourceException
+     */
+    private void adjustDrbd(Resource drbdRsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+        throws AccessDeniedException, StorageException, SQLException,
+            ResourceException, VolumeException
+    {
+        DrbdRscDataStlt rscLinState = (DrbdRscDataStlt) drbdRsc.getLayerData(workerCtx);
+        rscLinState.requiresAdjust = isAdjustRequired(drbdRsc);
+
+        if (rscLinState.requiresAdjust)
+        {
+            /*
+             *  we have to split here into three steps:
+             *  - first we have to detach all volumes marked for deletion and delete the DRBD-volumes
+             *  - call the underlaying layer's process method
+             *  - adjust all remaining and newly created volumes
+             */
+
+            List<Volume> checkMetaData = new ArrayList<>();
+            if (!drbdRsc.isDiskless(workerCtx))
             {
-                if (rsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE))
+                Iterator<Volume> vlmsIt = drbdRsc.iterateVolumes();
+                while (vlmsIt.hasNext())
                 {
-                    // resource was already deleted in adjustTopDown - nothing to do here
-                }
-                else
-                {
-                    DrbdRscDataStlt rscState = (DrbdRscDataStlt) rsc.getLayerData(workerCtx);
-
-                    rscState.requiresAdjust = true;
-
-                    try
+                    Volume drbdVlm = vlmsIt.next();
+                    if (drbdVlm.getFlags().isSet(workerCtx, VlmFlags.DELETE))
                     {
-                        List<Volume> createMetaData = new ArrayList<>();
-
-                        Iterator<Volume> vlmsIt = rsc.iterateVolumes();
-                        while (vlmsIt.hasNext())
-                        {
-                            Volume drbdVlm = vlmsIt.next();
-                            Volume backingVlm = getBackingVolume(workerCtx, drbdVlm);
-
-                            DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) drbdVlm.getLayerData(workerCtx);
-
-                            VolumeDefinition drbdVlmDfn = drbdVlm.getVolumeDefinition();
-                            DrbdVlmDfnDataStlt vlmDfnState = drbdVlmDfn.getLayerData(
-                                workerCtx,
-                                DrbdVlmDfnDataStlt.class
-                            );
-
-                            String backingDiskPath = backingVlm.getDevicePath(workerCtx);
-                            if (backingDiskPath == null)
-                            {
-                                if (!backingVlm.getFlags().isSet(workerCtx, VlmFlags.DELETE))
-                                {
-                                    rscState.requiresAdjust = false;
-                                    rscState.failed = true;
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                drbdVlm.setBackingDiskPath(workerCtx, backingDiskPath);
-
-                                MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
-                                mdUtils.readObject(backingDiskPath);
-
-                                if (vlmState.checkMetaData)
-                                {
-                                    if (mdUtils.hasMetaData())
-                                    {
-                                        if (
-                                            !drbdUtils.hasMetaData(
-                                                backingDiskPath,
-                                                vlmDfnState.getMinorNr().value,
-                                                "internal"
-                                            )
-                                        )
-                                        {
-                                            throw new StorageException(
-                                                "Corrupted drbd-metadata",
-                                                null,
-                                                "Linstor has found existing DRBD meta data, " +
-                                                    "but drbdmeta could not read them",
-                                                "Check if the DRBD-utils version match the DRBD kernel version. ",
-                                                null
-                                            );
-                                        }
-                                    }
-                                    else
-                                    {
-                                        createMetaData.add(drbdVlm);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!rscState.failed)
-                        {
-                            if (rscState.requiresAdjust)
-                            {
-                                regenerateResFile(rsc);
-
-                                for (Volume drbdVlm : createMetaData)
-                                {
-                                    VolumeDefinition drbdVlmDfn = drbdVlm.getVolumeDefinition();
-
-                                    DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) drbdVlm.getLayerData(workerCtx);
-                                    createMetaData(rsc, drbdVlmDfn, vlmState);
-                                    vlmState.metaDataIsNew = true;
-                                }
-
-                                drbdUtils.adjust(
-                                    rsc.getDefinition().getName(),
-                                    false,
-                                    false,
-                                    false,
-                                    null
-                                );
-
-                                condInitialOrSkipSync(rsc, rscState);
-                            }
-                        }
+                        detachDrbdVolume(drbdVlm);
                     }
-                    catch (ExtCmdFailedException | IOException exc)
+                    else
                     {
-                        exceptions.put(rsc, new StorageException("External command failed", exc));
-                    }
-                    catch (StorageException exc)
-                    {
-                        exceptions.put(rsc, exc);
+                        checkMetaData.add(drbdVlm);
                     }
                 }
             }
+            processChild(drbdRsc, snapshots, apiCallRc);
+
+            updateResourceToCurrentDrbdState(drbdRsc);
+            // hasMetaData needs to be run after child-resource processed
+            List<Volume> createMetaData = new ArrayList<>();
+            for (Volume drbdVlm : checkMetaData)
+            {
+                if (!hasMetaData(drbdVlm))
+                {
+                    createMetaData.add(drbdVlm);
+                }
+            }
+
+            regenerateResFile(drbdRsc);
+
+            // createMetaData needs rendered resFile
+            for (Volume drbdVlm : createMetaData)
+            {
+                VolumeDefinition drbdVlmDfn = drbdVlm.getVolumeDefinition();
+
+                DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) drbdVlm.getLayerData(workerCtx);
+                createMetaData(drbdRsc, drbdVlmDfn, vlmState);
+                vlmState.metaDataIsNew = true;
+            }
+
+            try
+            {
+                drbdUtils.adjust(
+                    drbdRsc.getDefinition().getName(),
+                    false,
+                    false,
+                    false,
+                    null
+                );
+                rscLinState.requiresAdjust = false;
+
+                condInitialOrSkipSync(drbdRsc, rscLinState);
+            }
+            catch (ExtCmdFailedException exc)
+            {
+                throw new ResourceException(
+                    String.format("Failed to adjust DRBD resource %s", drbdRsc.getDefinition().getName()),
+                    exc
+                );
+            }
         }
-        catch (AccessDeniedException exc)
+    }
+
+    private boolean isAdjustRequired(Resource drbdRsc)
+    {
+        return true; // TODO could be improved :)
+    }
+
+    private void detachDrbdVolume(Volume drbdVlm) throws AccessDeniedException, SQLException, StorageException
+    {
+        ResourceName rscName = drbdVlm.getResourceDefinition().getName();
+        VolumeNumber vlmNr = drbdVlm.getVolumeDefinition().getVolumeNumber();
+
+        errorReporter.logTrace("Detaching volume %s/%d", rscName, vlmNr.value);
+        try
         {
-            throw new ImplementationError("DRBD-Layer has not enough privileges", exc);
+            drbdUtils.detach(rscName, vlmNr);
         }
-        catch (SQLException sqlExc)
+        catch (ExtCmdFailedException exc)
         {
-            throw new ImplementationError(sqlExc);
+            throw new StorageException(
+                String.format(
+                    "Failed to detach DRBD volume %s/%d",
+                    drbdVlm.getResourceDefinition().getName(),
+                    drbdVlm.getVolumeDefinition().getVolumeNumber().value
+                ),
+                exc
+            );
         }
-        catch (NoInitialStateException drbdStateExc)
+        drbdVlm.delete(workerCtx); // only deletes the drbd-volume, not the storage volume
+    }
+
+    private boolean hasMetaData(Volume drbdVlm)
+        throws StorageException, AccessDeniedException, SQLException, VolumeException
+    {
+        Volume backingVlm = getBackingVolume(workerCtx, drbdVlm);
+        if (backingVlm == null)
         {
-            throw new StorageException("DRBD state tracking is unavailable", drbdStateExc);
+            throw new ImplementationError(
+                // error in controller / LayeredResourceHandler
+                String.format(
+                    "DRBD volume %s/%d has no backing volume",
+                    drbdVlm.getResourceDefinition().getName(),
+                    drbdVlm.getVolumeDefinition().getVolumeNumber().value
+                )
+            );
         }
-        return exceptions;
+
+        DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) drbdVlm.getLayerData(workerCtx);
+
+        VolumeDefinition drbdVlmDfn = drbdVlm.getVolumeDefinition();
+        DrbdVlmDfnDataStlt vlmDfnState = drbdVlmDfn.getLayerData(
+            workerCtx,
+            DrbdVlmDfnDataStlt.class
+        );
+
+        String backingDiskPath = backingVlm.getDevicePath(workerCtx);
+        if (backingDiskPath == null)
+        {
+            throw new VolumeException(
+                String.format(
+                    "Drbd volume %s/%d's backing volume (%s) has no backing disk!",
+                    drbdVlm.getResourceDefinition().getName(),
+                    drbdVlm.getVolumeDefinition().getVolumeNumber().value,
+                    backingVlm.toString()
+                )
+            );
+        }
+        drbdVlm.setBackingDiskPath(workerCtx, backingDiskPath);
+
+        MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
+        try
+        {
+            mdUtils.readObject(backingDiskPath);
+        }
+        catch (IOException exc)
+        {
+            throw new VolumeException(
+                String.format(
+                    "Failed to access DRBD super-block of volume %s/%d",
+                    drbdVlm.getResourceDefinition().getName(),
+                    drbdVlm.getVolumeDefinition().getVolumeNumber().value
+                ),
+                exc
+            );
+        }
+
+        boolean hasMetaData;
+
+        if (vlmState.checkMetaData)
+        {
+            if (mdUtils.hasMetaData())
+            {
+                boolean isMetaDataCorrupt;
+                try
+                {
+                    isMetaDataCorrupt = !drbdUtils.hasMetaData(
+                        backingDiskPath,
+                        vlmDfnState.getMinorNr().value,
+                        "internal"
+                    );
+                }
+                catch (ExtCmdFailedException exc)
+                {
+                    throw new VolumeException(
+                        String.format(
+                            "Failed to check DRBD meta-data integrety of volume %s/%d",
+                            drbdVlm.getResourceDefinition().getName(),
+                            drbdVlm.getVolumeDefinition().getVolumeNumber().value
+                        ),
+                        exc
+                    );
+                }
+                if (isMetaDataCorrupt)
+                {
+                    throw new VolumeException(
+                        "Corrupted drbd-metadata",
+                        null,
+                        "Linstor has found existing DRBD meta data, " +
+                            "but drbdmeta could not read them",
+                        "Check if the DRBD-utils version match the DRBD kernel version. ",
+                        null
+                    );
+                }
+                else
+                {
+                    hasMetaData = true;
+                }
+            }
+            else
+            {
+                hasMetaData = false;
+            }
+        }
+        else
+        {
+            hasMetaData = true; // just dont create new meta-data if "checkMetaData" is disabled
+        }
+        return hasMetaData;
     }
 
     private void createMetaData(Resource rsc, VolumeDefinition drbdVlmDfn, DrbdVlmDataStlt vlmState)
-        throws ExtCmdFailedException, AccessDeniedException, StorageException, ImplementationError
+        throws AccessDeniedException, StorageException, ImplementationError, VolumeException
     {
         VolumeNumber vlmNr = drbdVlmDfn.getVolumeNumber();
-        drbdUtils.createMd(
-            rsc.getDefinition().getName(),
-            vlmNr,
-            vlmState.peerSlots
-        );
-        if (VolumeUtils.isVolumeThinlyBacked(workerCtx, rsc.getVolume(vlmNr)))
+        try
         {
-            ResourceDefinition rscDfn = rsc.getDefinition();
+            drbdUtils.createMd(
+                rsc.getDefinition().getName(),
+                vlmNr,
+                vlmState.peerSlots
+            );
+            if (VolumeUtils.isVolumeThinlyBacked(workerCtx, rsc.getVolume(vlmNr)))
+            {
+                ResourceDefinition rscDfn = rsc.getDefinition();
 
-            String currentGi = null;
-            try
-            {
-                currentGi = drbdVlmDfn.getProps(workerCtx).getProp(ApiConsts.KEY_DRBD_CURRENT_GI);
-            }
-            catch (InvalidKeyException invKeyExc)
-            {
-                throw new ImplementationError(
-                    "API constant contains an invalid key",
-                    invKeyExc
+                String currentGi = null;
+                try
+                {
+                    currentGi = drbdVlmDfn.getProps(workerCtx).getProp(ApiConsts.KEY_DRBD_CURRENT_GI);
+                }
+                catch (InvalidKeyException invKeyExc)
+                {
+                    throw new ImplementationError(
+                        "API constant contains an invalid key",
+                        invKeyExc
+                    );
+                }
+                if (currentGi == null)
+                {
+                    throw new StorageException(
+                        "Meta data creation for resource '" + rscDfn.getName().displayValue + "' volume " +
+                        vlmNr.value + " failed",
+                        getAbortMsg(rscDfn.getName(), vlmNr),
+                        "Volume " + vlmNr.value + " of the resource uses a thin provisioning storage driver,\n" +
+                        "but no initial value for the DRBD current generation is set on the volume definition",
+                        "- Ensure that the initial DRBD current generation is set on the volume definition\n" +
+                        "or\n" +
+                        "- Recreate the volume definition",
+                        "The key of the initial DRBD current generation property is:\n" +
+                        ApiConsts.KEY_DRBD_CURRENT_GI,
+                        null
+                    );
+                }
+                drbdUtils.setGi(
+                    rsc.getNodeId(),
+                    drbdVlmDfn.getMinorNr(workerCtx),
+                    rsc.getVolume(vlmNr).getBackingDiskPath(workerCtx),
+                    currentGi,
+                    null,
+                    true
                 );
             }
-            if (currentGi == null)
-            {
-                throw new StorageException(
-                    "Meta data creation for resource '" + rscDfn.getName().displayValue + "' volume " +
-                    vlmNr.value + " failed",
-                    getAbortMsg(rscDfn.getName(), vlmNr),
-                    "Volume " + vlmNr.value + " of the resource uses a thin provisioning storage driver,\n" +
-                    "but no initial value for the DRBD current generation is set on the volume definition",
-                    "- Ensure that the initial DRBD current generation is set on the volume definition\n" +
-                    "or\n" +
-                    "- Recreate the volume definition",
-                    "The key of the initial DRBD current generation property is:\n" +
-                    ApiConsts.KEY_DRBD_CURRENT_GI,
-                    null
-                );
-            }
-            drbdUtils.setGi(
-                rsc.getNodeId(),
-                drbdVlmDfn.getMinorNr(workerCtx),
-                rsc.getVolume(vlmNr).getBackingDiskPath(workerCtx),
-                currentGi,
-                null,
-                true
+        }
+        catch (ExtCmdFailedException exc)
+        {
+            throw new VolumeException(
+                String.format(
+                    "Failed to create meta-data for DRBD volume %s/%d",
+                    rsc.getDefinition().getName(),
+                    drbdVlmDfn.getVolumeNumber().value
+                ),
+                exc
             );
         }
     }
 
-    private void updateToCurrentDrbdStates(Collection<Resource> resources)
-        throws AccessDeniedException, SQLException, NoInitialStateException
+    private void updateResourceToCurrentDrbdState(Resource rsc)
+        throws AccessDeniedException, SQLException, StorageException
     {
         try
         {
-            errorReporter.logTrace("Synchronizing Linstor-state with DRBD-state");
-            for (Resource rsc : resources)
+            errorReporter.logTrace(
+                "Synchronizing Linstor-state with DRBD-state for resource %s",
+                rsc.getDefinition().getName()
+            );
+            DrbdRscDataStlt rscState  = (DrbdRscDataStlt) rsc.getLayerData(workerCtx);
+
+            DrbdResource drbdRscState = drbdState.getDrbdResource(rsc.getDefinition().getName().displayValue);
+
+            if (drbdRscState == null)
             {
-                DrbdRscDataStlt rscState  = (DrbdRscDataStlt) rsc.getLayerData(workerCtx);
+                rscState.exists = false;
+            }
+            else
+            {
+                rscState.exists = true;
 
-                DrbdResource drbdRscState = drbdState.getDrbdResource(rsc.getDefinition().getName().displayValue);
+                // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
+                //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
+                //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
+                rscState.requiresAdjust = true;
 
-                if (drbdRscState == null)
-                {
-                    rscState.exists = false;
-                }
-                else
-                {
-                    rscState.exists = true;
-
-                    // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
-                    //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
-                    //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
-                    rscState.requiresAdjust = true;
-
-                    { // check drbdRole
-                        DrbdResource.Role rscRole = drbdRscState.getRole();
-                        if (rscRole == DrbdResource.Role.UNKNOWN)
-                        {
-                            rscState.requiresAdjust = true;
-                        }
-                        else
-                        if (rscRole == DrbdResource.Role.PRIMARY)
-                        {
-                            rscState.isPrimary = true;
-                        }
+                { // check drbdRole
+                    DrbdResource.Role rscRole = drbdRscState.getRole();
+                    if (rscRole == DrbdResource.Role.UNKNOWN)
+                    {
+                        rscState.requiresAdjust = true;
                     }
+                    else
+                    if (rscRole == DrbdResource.Role.PRIMARY)
+                    {
+                        rscState.isPrimary = true;
+                    }
+                }
 
-                    { // check drbd connections
-                        rsc.getDefinition().streamResource(workerCtx)
-                            .filter(otherRsc -> !otherRsc.equals(rsc))
-                            .forEach(
-                                otherRsc ->
+                { // check drbd connections
+                    rsc.getDefinition().streamResource(workerCtx)
+                        .filter(otherRsc -> !otherRsc.equals(rsc))
+                        .forEach(
+                            otherRsc ->
+                                {
+                                    DrbdConnection drbdConn = drbdRscState.getConnection(
+                                        otherRsc.getAssignedNode().getName().displayValue
+                                    );
+                                    if (drbdConn != null)
                                     {
-                                        DrbdConnection drbdConn = drbdRscState.getConnection(
-                                            otherRsc.getAssignedNode().getName().displayValue
-                                        );
-                                        if (drbdConn != null)
+                                        DrbdConnection.State connState = drbdConn.getState();
+                                        switch (connState)
                                         {
-                                            DrbdConnection.State connState = drbdConn.getState();
-                                            switch (connState)
-                                            {
-                                                case STANDALONE:
-                                                    // fall-through
-                                                case DISCONNECTING:
-                                                    // fall-through
-                                                case UNCONNECTED:
-                                                    // fall-through
-                                                case TIMEOUT:
-                                                    // fall-through
-                                                case BROKEN_PIPE:
-                                                    // fall-through
-                                                case NETWORK_FAILURE:
-                                                    // fall-through
-                                                case PROTOCOL_ERROR:
-                                                    // fall-through
-                                                case TEAR_DOWN:
-                                                    // fall-through
-                                                case UNKNOWN:
-                                                    // fall-through
-                                                    rscState.requiresAdjust = true;
-                                                    break;
-                                                case CONNECTING:
-                                                    break;
-                                                case CONNECTED:
-                                                    break;
-                                                default:
-                                                    throw new ImplementationError(
-                                                        "Missing switch case for enumeration value '" +
-                                                        connState.name() + "'",
-                                                        null
-                                                    );
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // Missing connection
-                                            rscState.requiresAdjust = true;
+                                            case STANDALONE:
+                                                // fall-through
+                                            case DISCONNECTING:
+                                                // fall-through
+                                            case UNCONNECTED:
+                                                // fall-through
+                                            case TIMEOUT:
+                                                // fall-through
+                                            case BROKEN_PIPE:
+                                                // fall-through
+                                            case NETWORK_FAILURE:
+                                                // fall-through
+                                            case PROTOCOL_ERROR:
+                                                // fall-through
+                                            case TEAR_DOWN:
+                                                // fall-through
+                                            case UNKNOWN:
+                                                // fall-through
+                                                rscState.requiresAdjust = true;
+                                                break;
+                                            case CONNECTING:
+                                                break;
+                                            case CONNECTED:
+                                                break;
+                                            default:
+                                                throw new ImplementationError(
+                                                    "Missing switch case for enumeration value '" +
+                                                    connState.name() + "'",
+                                                    null
+                                                );
                                         }
                                     }
-                            );
-                    }
+                                    else
+                                    {
+                                        // Missing connection
+                                        rscState.requiresAdjust = true;
+                                    }
+                                }
+                        );
+                }
 
-                    String peerSlotsProp = rsc.getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
-                    // Property is checked when the API sets it; if it still throws for whatever reason, it is logged as an
-                    // unexpected exception in dispatchResource()
-                    short peerSlots = peerSlotsProp == null ?
-                        InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
+                String peerSlotsProp = rsc.getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+                // Property is checked when the API sets it; if it still throws for whatever reason, it is logged as an
+                // unexpected exception in dispatchResource()
+                short peerSlots = peerSlotsProp == null ?
+                    InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
 
-                    Map<VolumeNumber, DrbdVolume> drbdVolumes = drbdRscState.getVolumesMap();
+                Map<VolumeNumber, DrbdVolume> drbdVolumes = drbdRscState.getVolumesMap();
 
-                    Iterator<Volume> vlmIter = rsc.iterateVolumes();
-                    while (vlmIter.hasNext())
+                Iterator<Volume> vlmIter = rsc.iterateVolumes();
+                while (vlmIter.hasNext())
+                {
+                    Volume vlm = vlmIter.next();
+                    if (!vlm.getFlags().isSet(workerCtx, VlmFlags.DELETE))
                     {
-                        Volume vlm = vlmIter.next();
                         Volume backingVlm;
                         try
                         {
@@ -557,7 +686,7 @@ public class DrbdLayer implements DeviceLayer
                                     case OUTDATED:
                                         vlmState.hasMetaData = true;
                                         // No additional check for existing meta data is required
-                                        vlmState.checkMetaData = false;
+                                       vlmState.checkMetaData = false;
                                         // fall-through
                                     case ATTACHING:
                                         vlmState.hasDisk = true;
@@ -592,15 +721,14 @@ public class DrbdLayer implements DeviceLayer
                         {
                             vlmState.checkMetaData = false;
                         }
-
                         rscState.putVlmState(vlm.getVolumeDefinition().getVolumeNumber(), vlmState);
                     }
-                    if (!drbdVolumes.isEmpty())
-                    {
-                        // The DRBD resource has additional unknown volumes,
-                        // adjust the resource
-                        rscState.requiresAdjust = true;
-                    }
+                }
+                if (!drbdVolumes.isEmpty())
+                {
+                    // The DRBD resource has additional unknown volumes,
+                    // adjust the resource
+                    rscState.requiresAdjust = true;
                 }
             }
         }
@@ -612,6 +740,10 @@ public class DrbdLayer implements DeviceLayer
             MaxAlSizeException | AlStripesException | PeerCountException exc)
         {
             throw new ImplementationError(exc);
+        }
+        catch (NoInitialStateException exc)
+        {
+            throw new StorageException("Need initial DRBD state", exc);
         }
     }
 

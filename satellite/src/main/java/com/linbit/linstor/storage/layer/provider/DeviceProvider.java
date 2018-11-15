@@ -1,17 +1,25 @@
 package com.linbit.linstor.storage.layer.provider;
 
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 public interface DeviceProvider
 {
-    Map<Volume, StorageException> adjust(List<Volume> volumes)
-        throws StorageException;
+    void clearCache() throws StorageException;
+
+    void prepare(List<Volume> volumes) throws StorageException, AccessDeniedException, SQLException;
+
+    void process(List<Volume> volumes, List<SnapshotVolume> snapshots, ApiCallRcImpl apiCallRc)
+        throws AccessDeniedException, SQLException, VolumeException, StorageException;
 
     /**
      * @return the capacity of the used storage pool.

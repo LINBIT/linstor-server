@@ -258,7 +258,10 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         SyncPoint phaseLock
     )
     {
-        devHandler.dispatchResource(resourcesToDispatch, snapshotsToDispatch);
+         devHandler.dispatchResources(resourcesToDispatch, snapshotsToDispatch);
+         // // DeviceHandlerInvocation devHndInv = new DeviceHandlerInvocation(this, drbdHnd, rsc, phaseLockRef);
+         //
+         // workQ.submit(devHndInv);
     }
 
     @Override
@@ -1150,7 +1153,8 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         if (ctrlPeer != null)
         {
             Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
-                apiCallHandlerUtils.getAllSpaceInfo(false);
+//                apiCallHandlerUtils.getAllSpaceInfo(false);
+                Collections.emptyMap(); // FIXME
 
             Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
 
@@ -1194,7 +1198,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         // Remember the volume for removal after the DeviceHandler instances have finished
         synchronized (sched)
         {
-            deletedVlmSet.add(new VolumeDefinition.Key(vlm));
+            deletedVlmSet.add(new VolumeDefinition.Key(vlm.getKey()));
         }
     }
 

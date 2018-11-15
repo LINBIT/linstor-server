@@ -185,6 +185,12 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
             vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
         }
 
+        public Key(Volume.Key vlmKey)
+        {
+            rscName = vlmKey.getResourceName();
+            vlmNr = vlmKey.getVolumeNumber();
+        }
+
         @Override
         public int compareTo(Key other)
         {

@@ -15,6 +15,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.storage2.layer.data.LvmLayerData;
 import com.linbit.linstor.storage2.layer.data.LvmThinLayerData;
 import com.linbit.linstor.transaction.TransactionMgr;
 
@@ -56,7 +57,19 @@ public class LvmThinProvider extends LvmProvider
             lvmThinData.getVolumeGroup(),
             lvmThinData.getThinPool(),
             asLvmIdentifier(vlm),
-            getVlmDfnSize(vlm.getVolumeDefinition())
+            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx)
+        );
+    }
+
+    @Override
+    protected void deleteLvImpl(Volume vlm, String lvmId, String ignored, String ignored2)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        // thin does not have to zero-out everything, just simply remove the LV
+        LvmCommands.delete(
+            extCmdFactory.create(),
+            ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
+            lvmId
         );
     }
 
@@ -93,53 +106,45 @@ public class LvmThinProvider extends LvmProvider
     @Override
     public long getPoolCapacity(StorPool storPool) throws StorageException
     {
-        long capacity;
-        try
-        {
-            String vg = getVolumeGroupForLvs(storPool);
-            if (vg == null)
-            {
-                throw new StorageException("Unset volume group for " + storPool);
-            }
-            capacity = LvmUtils.getThinTotalSize(
-                extCmdFactory.create(),
-                Collections.singleton(vg)
-            ).get(vg);
-        }
-        catch (AccessDeniedException | InvalidKeyException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return capacity;
+        String vgForLvs = getVolumeGroupForLvs(storPool);
+        return LvmUtils.getThinTotalSize(
+            extCmdFactory.create(),
+            Collections.singleton(vgForLvs)
+        ).get(vgForLvs);
     }
 
     @Override
     public long getPoolFreeSpace(StorPool storPool) throws StorageException
     {
-        long freeSpace;
+        String vgForLvs = getVolumeGroupForLvs(storPool);
+        return LvmUtils.getThinFreeSize(
+            extCmdFactory.create(),
+            Collections.singleton(vgForLvs)
+        ).get(vgForLvs);
+    }
+
+    private String getVolumeGroupForLvs(StorPool storPool) throws StorageException
+    {
+        String volumeGroup;
+        String thinPool;
         try
         {
-            String vg = getVolumeGroupForLvs(storPool);
-            if (vg == null)
+            volumeGroup = getVolumeGroup(storPool);
+            if (volumeGroup == null)
             {
                 throw new StorageException("Unset volume group for " + storPool);
             }
-            freeSpace = LvmUtils.getThinFreeSize(
-                extCmdFactory.create(),
-                Collections.singleton(vg)
-            ).get(vg);
+            thinPool = getThinPool(storPool);
+            if (thinPool == null)
+            {
+                throw new StorageException("Unset thin pool for " + storPool);
+            }
         }
         catch (AccessDeniedException | InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
-        return freeSpace;
-    }
-
-    @Override
-    protected String getVolumeGroupForLvs(StorPool storPool) throws AccessDeniedException, InvalidKeyException
-    {
-        return getVolumeGroup(storPool) + File.separator + getThinPool(storPool);
+        return volumeGroup + File.separator + thinPool;
     }
 
     private String getThinPool(StorPool storPool) throws AccessDeniedException, InvalidKeyException

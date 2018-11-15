@@ -1,26 +1,24 @@
 package com.linbit.linstor.storage.layer.provider.swordfish;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.provider.DeviceProvider;
-
 import java.util.List;
-import java.util.Map;
 
 public class SwordfishTargetProvider extends AbsSwordfishProvider
 {
     public SwordfishTargetProvider(NotificationListener notificationListenerRef)
     {
-        super(notificationListenerRef);
+        super(notificationListenerRef, "SFI", "created", "deleted");
     }
 
     @Override
-    public Map<Volume, StorageException> adjust(List<Volume> volumes)
-        throws StorageException
+    public void process(List<Volume> volumes, List<SnapshotVolume> snapVolumes, ApiCallRcImpl apiCallRc)
     {
         // TODO Auto-generated method stub
         throw new ImplementationError("Not implemented yet");

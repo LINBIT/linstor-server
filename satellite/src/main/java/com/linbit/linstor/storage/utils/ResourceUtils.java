@@ -1,49 +1,23 @@
 package com.linbit.linstor.storage.utils;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.storage.VlmStorageState;
-import com.linbit.utils.ExceptionThrowingBiConsumer;
-import com.linbit.utils.ExceptionThrowingConsumer;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 
 public class ResourceUtils
 {
-    public static <EXC extends Exception> void foreachVlm(
-        Collection<Resource> rscs,
-        ExceptionThrowingConsumer<Volume, EXC> func
-    )
-        throws EXC
+    public static Resource getSingleChild(Resource rsc, AccessContext accCtx) throws AccessDeniedException
     {
-        for (final Resource rsc : rscs)
+        List<Resource> childResources = rsc.getChildResources(accCtx);
+        if (childResources.size() != 1)
         {
-            final Iterator<Volume> vlmIt = rsc.iterateVolumes();
-            while (vlmIt.hasNext())
-            {
-                func.accept(vlmIt.next());
-            }
+            throw new ImplementationError("Exactly one child-resource expected but found: " + childResources.size() +
+                "\n" + childResources);
         }
-    }
-
-    public static <EXC extends Exception> void foreachVlm(
-        Collection<Resource> rscs,
-        Map<Volume, VlmStorageState> states,
-        ExceptionThrowingBiConsumer<Volume, VlmStorageState, EXC> func
-    )
-        throws EXC
-    {
-        for (final Resource rsc : rscs)
-        {
-            final Iterator<Volume> vlmIt = rsc.iterateVolumes();
-            while (vlmIt.hasNext())
-            {
-                Volume vlm = vlmIt.next();
-                func.accept(vlm, states.get(vlm));
-            }
-        }
+        return childResources.get(0);
     }
 
 }

@@ -3,10 +3,12 @@ package com.linbit.linstor.storage.layer.provider;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -20,8 +22,11 @@ import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
 import com.linbit.linstor.storage.SwordfishTargetDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
-import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
+import com.linbit.linstor.storage.layer.exceptions.ResourceException;
+import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
@@ -30,23 +35,20 @@ import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsThinProvider;
 import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.utils.AccessUtils;
-import com.linbit.utils.Pair;
 
 import javax.inject.Provider;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class StorageLayer implements DeviceLayer
+public class StorageLayer implements ResourceLayer
 {
     private final AccessContext storDriverAccCtx;
     private final ExtCmdFactory extCmdFactory;
@@ -59,7 +61,7 @@ public class StorageLayer implements DeviceLayer
     private final SwordfishInitiatorProvider sfInitDriver;
     private final ErrorReporter errorReporter;
     private final NotificationListener notificationListener;
-
+    private final List<DeviceProvider> driverList;
 
     public StorageLayer(
         ExtCmdFactory extCmdFactoryRef,
@@ -67,7 +69,7 @@ public class StorageLayer implements DeviceLayer
         StltConfigAccessor stltConfigAccessorRef,
         ErrorReporter errorReporterRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        DeviceLayer.NotificationListener notificationListenerRef
+        NotificationListener notificationListenerRef
     )
     {
         extCmdFactory = extCmdFactoryRef;
@@ -94,11 +96,13 @@ public class StorageLayer implements DeviceLayer
             errorReporterRef
         );
         zfsDriver = new ZfsProvider(
+            errorReporterRef,
             extCmdFactoryRef,
             storDriverAccCtxRef,
             notificationListenerRef
         );
         zfsThinDriver = new ZfsThinProvider(
+            errorReporterRef,
             extCmdFactoryRef,
             storDriverAccCtxRef,
             notificationListenerRef
@@ -108,6 +112,15 @@ public class StorageLayer implements DeviceLayer
         );
         sfInitDriver = new SwordfishInitiatorProvider(
             notificationListenerRef
+        );
+
+        driverList = Arrays.asList(
+            lvmDriver,
+            lvmThinDriver,
+            zfsDriver,
+            zfsThinDriver,
+            sfTargetDriver,
+            sfInitDriver
         );
     }
 
@@ -123,122 +136,73 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public Map<Resource, StorageException> adjustTopDown(Collection<Resource> resources, Collection<Snapshot> snapshots)
-        throws StorageException
+    public String getName()
     {
-        // no-op, we only have to perform one adjust on this layer
-        return Collections.emptyMap();
+        return this.getClass().getSimpleName();
     }
 
     @Override
-    public Map<Resource, StorageException> adjustBottomUp(
-        Collection<Resource> resources,
-        Collection<Snapshot> snapshots
-    )
+    public void clearCache() throws StorageException
     {
-        Map<Volume, StorageException> exceptions = new HashMap<>();
-        Map<DeviceProvider, List<Volume>> groupedVolumes = resources.parallelStream()
+        for (DeviceProvider deviceProvider : driverList)
+        {
+            deviceProvider.clearCache();
+        }
+    }
+
+    @Override
+    public void prepare(List<Resource> resources) throws StorageException, AccessDeniedException, SQLException
+    {
+        Map<DeviceProvider, List<Volume>> groupedVolumes = resources.stream()
             .flatMap(Resource::streamVolumes)
+            .collect(Collectors.groupingBy(this::classifier));
+        for (Entry<DeviceProvider, List<Volume>> entry : groupedVolumes.entrySet())
+        {
+            List<Volume> volumes = entry.getValue();
+            if (!volumes.isEmpty())
+            {
+                entry.getKey().prepare(volumes);
+            }
+        }
+    }
+
+    @Override
+    public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
+    {
+        Map<DeviceProvider, List<Volume>> groupedVolumes = rsc.streamVolumes()
             .collect(Collectors.groupingBy(this::classifier));
 
         for (Entry<DeviceProvider, List<Volume>> entry : groupedVolumes.entrySet())
         {
-            try
+            List<Volume> volumes = entry.getValue();
+            DeviceProvider deviceProvider = entry.getKey();
+            if (!volumes.isEmpty())
             {
-                List<Volume> volumes = entry.getValue();
-                if (!volumes.isEmpty())
+                // TODO: maybe split methods into "process(volumes); handleSnapshots(filteredSnapshots);"
+                deviceProvider.process(volumes, null, apiCallRc); // FIXME
+            }
+
+            for (Volume vlm : volumes)
+            {
+                if (!vlm.isDeleted() && vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
                 {
-                    exceptions.putAll(
-                        entry.getKey().adjust(
-                            volumes
-                        )
+                    throw new ImplementationError(
+                        deviceProvider.getClass().getSimpleName() + " did not delete the volume " + vlm
                     );
                 }
             }
-            catch (StorageException exc)
-            {
-                errorReporter.reportError(exc);
-            }
         }
-
-        List<Resource> successResources = new ArrayList<>(resources);
-        for (Entry<Volume, StorageException> entry : exceptions.entrySet())
+        if (rsc.getStateFlags().isSet(storDriverAccCtx, RscFlags.DELETE))
         {
-            // Volume vlm = entry.getKey();
-            StorageException storExc = entry.getValue();
-            // TODO set FAILED state to volume?
-            // or report back to devMgr -> Controller?
-
-            errorReporter.reportError(storExc);
-            successResources.remove(entry.getKey().getResource());
+            notificationListener.notifyResourceDeleted(rsc);
+            rsc.delete(storDriverAccCtx);
         }
-
-        Map<Boolean, List<Resource>> processedResources = successResources.stream()
-            .collect(Collectors.partitioningBy(this::isDeleteFlagSet));
-        processedResources.get(false).forEach(notificationListener::notifyResourceApplied);
-        processedResources.get(true).forEach(notificationListener::notifyResourceDeleted);
-
-        return convertExceptions(exceptions);
-    }
-
-    private Map<Resource, StorageException> convertExceptions(Map<Volume, StorageException> exceptions)
-    {
-        Map<Resource, List<Pair<Volume, StorageException>>> groupedExceptions = new HashMap<>();
-        for (Entry<Volume, StorageException> entry : exceptions.entrySet())
+        else
         {
-            Volume vlm = entry.getKey();
-            groupedExceptions.computeIfAbsent(
-                vlm.getResource(),
-                ignore -> new ArrayList<>()
-            )
-                .add(new Pair<>(vlm, entry.getValue()));
+            notificationListener.notifyResourceApplied(rsc);
         }
-        Map<Resource, StorageException> returnedExceptions = new HashMap<>();
-        for (Entry<Resource, List<Pair<Volume, StorageException>>> entry : groupedExceptions.entrySet())
-        {
-            Resource rsc = entry.getKey();
-            List<Pair<Volume, StorageException>> list = entry.getValue();
 
-            List<Integer> vlmNrs = new ArrayList<>();
-            StringBuilder details = new StringBuilder();
-            for (Pair<Volume, StorageException> pair : list)
-            {
-                Volume vlm = pair.objA;
-                int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
-                vlmNrs.add(vlmNr);
-                details.append("Volume ").append(vlmNr).append(" details: \n");
-                StorageException vlmExc = pair.objB;
-                details.append("Message:       ").append(vlmExc.getMessage());
-                appendIfValueNotNull(details, "\nCause:       ", vlmExc.getCauseText());
-                appendIfValueNotNull(details, "\nDescription: ", vlmExc.getDescriptionText());
-                appendIfValueNotNull(details, "\nCorrection:  ", vlmExc.getCorrectionText());
-                appendIfValueNotNull(details, "\nDetails:     ", vlmExc.getDetailsText());
-                details.append("\n");
-            }
-            StringBuilder descr = new StringBuilder("Volumes ")
-                .append(vlmNrs.toString())
-                .append(" failed");
-
-            returnedExceptions.put(
-                rsc,
-                new StorageException(
-                    "Resource failed: " + rsc,
-                    descr.toString(),
-                    null,
-                    null,
-                    details.toString()
-                )
-            );
-        }
-        return returnedExceptions;
-    }
-
-    private void appendIfValueNotNull(StringBuilder builder, String key, String value)
-    {
-        if (value != null)
-        {
-            builder.append(key).append(value);
-        }
     }
 
     private DeviceProvider classifier(Volume vlm)
@@ -287,14 +251,6 @@ public class StorageLayer implements DeviceLayer
         return devProvider;
     }
 
-    private boolean isDeleteFlagSet(Resource rsc)
-    {
-        return AccessUtils.execPrivileged(
-            () -> rsc.getStateFlags().isSet(storDriverAccCtx, RscFlags.DELETE),
-            "Storage Layer has not enough privileges"
-        );
-    }
-
     /**
      * Only wipes linstor-known data.
      *
@@ -311,9 +267,10 @@ public class StorageLayer implements DeviceLayer
         MdSuperblockBuffer.wipe(devicePath);
     }
 
-    public void wipe(Collection<String> devicePaths, Consumer<String> wipeFinishedNotifier)
+    public void asyncWipe(String devicePath, Consumer<String> wipeFinishedNotifier)
     {
         // TODO: this step should be asynchron
+
         /*
          * for security reasons we should wipe (zero out) an lvm / zfs before actually removing it.
          *
@@ -321,22 +278,18 @@ public class StorageLayer implements DeviceLayer
          * in that case, we still need to make sure to at least wipe DRBD's signature so that
          * re-allocating the same storage does not find the data-garbage from last DRBD configuration
          */
-
-        for (String devicePath : devicePaths)
+        try
         {
-            try
-            {
-                MdSuperblockBuffer.wipe(devicePath);
-            }
-            catch (IOException exc)
-            {
-                errorReporter.reportError(exc);
-                // wipe failed, but we still need to free the allocated space
-            }
-            finally
-            {
-                wipeFinishedNotifier.accept(devicePath);
-            }
+            MdSuperblockBuffer.wipe(devicePath);
+        }
+        catch (IOException exc)
+        {
+            errorReporter.reportError(exc);
+            // wipe failed, but we still need to free the allocated space
+        }
+        finally
+        {
+            wipeFinishedNotifier.accept(devicePath);
         }
     }
 }

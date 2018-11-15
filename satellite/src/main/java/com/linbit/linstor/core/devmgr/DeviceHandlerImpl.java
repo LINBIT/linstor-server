@@ -19,22 +19,22 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LayerFactory;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.DrbdAdm;
-import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.layer.exceptions.ResourceException;
+import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.utils.Pair;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import javax.inject.Provider;
-
-import java.util.ArrayList;
+import java.sql.SQLException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class DeviceHandlerImpl implements DeviceHandler2
 {
@@ -43,8 +43,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
     private final DeviceManager deviceManager;
 
     private final LayeredResourcesHelper layeredRscHelper;
-    private final TopDownOrder strategyTopDown;
-    private final BottomUpOrder strategyBottomUp;
     private final LayerFactory layerFactory;
     private final AtomicBoolean fullSyncApplied;
 
@@ -80,120 +78,169 @@ public class DeviceHandlerImpl implements DeviceHandler2
             stltCfgAccessorRef,
             transMgrProviderRef,
             interComSerializerRef,
-            controllerPeerConnectorRef
+            controllerPeerConnectorRef,
+            this
         );
-
-        strategyTopDown = new TopDownOrder(wrkCtx);
-        strategyBottomUp = new BottomUpOrder(wrkCtx);
 
         fullSyncApplied = new AtomicBoolean(false);
     }
 
     @Override
-    public void dispatchResource(Collection<Resource> rscs, Collection<Snapshot> snapshots)
+    public void dispatchResources(Collection<Resource> rscs, Collection<Snapshot> snapshots)
     {
         Collection<Resource> origResources = rscs;
         List<Resource> allResources = convertResources(origResources);
 
-        /*
-         * Every resource is iterated twice, except the storage resources.
-         *
-         * This has to be done so that every layer can clean up resources and / or volumes
-         * (i.e. delete step) which has to be done in a top-down fashion and afterwards create
-         * the new volumes in the second phase.
-         */
-        Map<Resource, StorageException> exceptions = new TreeMap<>();
+        // call prepare for every necessary layer
+        Set<Resource> rootResources = origResources.stream().map(rsc -> getRoot(rsc)).collect(Collectors.toSet());
+        Map<ResourceLayer, List<Resource>> rscByLayer = allResources.stream()
+            .collect(
+                Collectors.groupingBy(
+                    rsc -> layerFactory.getDeviceLayer(rsc.getType().getDevLayerKind().getClass())
+                )
+            );
+        for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
+        {
+            ResourceLayer layer = entry.getKey();
+            prepare(layer, entry.getValue());
+        }
 
+        // actually process every resource
+        for (Resource rsc : rootResources)
+        {
+            ResourceName rscName = rsc.getDefinition().getName();
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            try
+            {
+                process(
+                    rsc,
+                    snapshots.stream()
+                        .filter(snap -> snap.getResourceName().equals(rscName))
+                        .collect(Collectors.toList()
+                    ),
+                    apiCallRc
+                );
+            }
+            catch (AccessDeniedException | SQLException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (StorageException | ResourceException | VolumeException exc)
+            {
+                // TODO different handling for different exceptions?
+                errorReporter.reportError(exc);
+
+                apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                    ApiCallRcImpl.entryBuilder(
+                        // TODO maybe include a ret-code into the exception
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        "An error occured while processing resource '" + rsc + "'"
+                    )
+                    .setCause(exc.getCauseText())
+                    .setCorrection(exc.getCorrectionText())
+                    .setDetails(exc.getDetailsText())
+                    .build()
+                );
+            }
+            deviceManager.notifyResourceDispatchResponse(rscName, apiCallRc);
+        }
+
+        // call clear cache for every layer where the .prepare was called
+        for (Entry<ResourceLayer, List<com.linbit.linstor.Resource>> entry : rscByLayer.entrySet())
+        {
+            ResourceLayer layer = entry.getKey();
+             try
+             {
+                 layer.clearCache();
+             }
+             catch (StorageException exc)
+             {
+                 errorReporter.reportError(exc);
+                 ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                     ApiCallRcImpl.entryBuilder(
+                         ApiConsts.FAIL_UNKNOWN_ERROR,
+                         "An error occured while cleaning up layer '" + layer.getName() + "'"
+                     )
+                     .setCause(exc.getCauseText())
+                     .setCorrection(exc.getCorrectionText())
+                     .setDetails(exc.getDetailsText())
+                     .build()
+                 );
+                 for (Resource rsc : entry.getValue())
+                 {
+                     deviceManager.notifyResourceDispatchResponse(
+                         rsc.getDefinition().getName(),
+                         apiCallRc
+                     );
+                 }
+             }
+        }
+    }
+
+    private Resource getRoot(Resource rsc)
+    {
+        Resource root = rsc;
         try
         {
-            /*
-             * TODO: review if the data from snapshots could be stored within resources
-             * so that we do not need to iterate both, resources and snapshots every time for every layer
-             */
-            if (fullSyncApplied.getAndSet(false))
+            Resource tmp = rsc.getParentResource(wrkCtx);
+            while (tmp != null)
             {
-                // on the very first run, we need an additional bottom-up run to get all data
-                // from storage upwards. The later runs can be applied to the previous data.
-                dispatchResources(exceptions, allResources, snapshots, strategyBottomUp);
+                root = tmp;
+                tmp = tmp.getParentResource(wrkCtx);
             }
-            dispatchResources(exceptions, allResources, snapshots, strategyTopDown);
-            dispatchResources(exceptions, allResources, snapshots, strategyBottomUp);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return root;
+    }
+
+    private void prepare(ResourceLayer layer, List<Resource> resources)
+    {
+        try
+        {
+            layer.prepare(resources);
         }
         catch (StorageException exc)
         {
             errorReporter.reportError(exc);
-        }
 
-        for (StorageException exc : exceptions.values())
-        {
-            errorReporter.reportError(exc);
-        }
-    }
-
-    private void dispatchResources(
-        Map<Resource, StorageException> exceptions,
-        Collection<Resource> rscList,
-        Collection<Snapshot> snapshots,
-        TraverseOrder traverseOrder
-    )
-        throws StorageException
-    {
-        ArrayList<Resource> resourcesToProcess = new ArrayList<>(rscList);
-
-        while (!resourcesToProcess.isEmpty())
-        {
-            List<Pair<DeviceLayerKind, List<Resource>>> batches = traverseOrder.getAllBatches(resourcesToProcess);
-            Collections.sort(
-                batches,
-                (batch1, batch2) ->
-                    Long.compare(
-                        // comparing 2 with 1 -> [0] should be the largest
-                        traverseOrder.getProcessableCount(batch2.objB, resourcesToProcess),
-                        traverseOrder.getProcessableCount(batch1.objB, resourcesToProcess)
-                    )
+            ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                ApiCallRcImpl.entryBuilder(
+                    // TODO maybe include a ret-code into the StorageException
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Preparing resources for layer " + layer.getName() + " failed"
+                )
+                .setCause(exc.getCauseText())
+                .setCorrection(exc.getCorrectionText())
+                .setDetails(exc.getDetailsText())
+                .build()
             );
-            Pair<DeviceLayerKind, List<Resource>> nextBatch = batches.get(0);
-
-            switch (traverseOrder.getPhase())
+            for (Resource failedResource : resources)
             {
-                case TOP_DOWN:
-                    exceptions.putAll(
-                        getDeviceLayer(nextBatch.objA)
-                            .adjustTopDown(nextBatch.objB, snapshots)
-                    );
-                    break;
-                case BOTTOM_UP:
-                    exceptions.putAll(
-                        getDeviceLayer(nextBatch.objA)
-                            .adjustBottomUp(nextBatch.objB, snapshots)
-                    );
-                    break;
-                default:
-                    throw new ImplementationError("Unknown TraverseOrder-Phase: " + traverseOrder.getPhase().name());
+                deviceManager.notifyResourceDispatchResponse(
+                    failedResource.getDefinition().getName(),
+                    apiCallRc
+                );
             }
-
-            // TODO: we need to prevent deploying resources which dependency resource failed
-            resourcesToProcess.removeAll(nextBatch.objB);
-
-            nextBatch.objB.forEach(
-                rsc ->
-                {
-                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                    ResourceName rscName = rsc.getDefinition().getName();
-                    apiCallRc.addEntry(ApiCallRcImpl
-                        .entryBuilder(ApiConsts.MODIFIED, "Resource deployed: " + rsc)
-                        .putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue)
-                        .build()
-                    );
-                    deviceManager.notifyResourceDispatchResponse(rscName, apiCallRc);
-                }
-            );
+        }
+        catch (AccessDeniedException | SQLException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
-    private DeviceLayer getDeviceLayer(DeviceLayerKind kind)
+    @Override
+    public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+        throws StorageException, ResourceException, VolumeException,
+            AccessDeniedException, SQLException
     {
-        return layerFactory.getDeviceLayer(kind.getClass());
+        layerFactory
+            .getDeviceLayer(
+                rsc.getType().getDevLayerKind().getClass()
+            )
+            .process(rsc, snapshots, apiCallRc);
     }
 
     // TODO: create delete volume / resource mehtods that (for now) only perform the actual .delete()

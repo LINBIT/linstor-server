@@ -7,8 +7,11 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.devmgr.DeviceHandlerImpl;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.exceptions.ResourceException;
+import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
 import java.util.Collection;
 import java.util.Map;
@@ -35,9 +38,12 @@ public interface DeviceLayer
     Map<Resource, StorageException> adjustBottomUp(Collection<Resource> resources, Collection<Snapshot> snapshots)
         throws StorageException;
 
+    void adjust(Resource rsc, DeviceHandlerImpl deviceHandlerImpl)
+        throws ResourceException, VolumeException, StorageException;
+
     void setLocalNodeProps(Props localNodeProps);
 
-    public interface NotificationListener
+    interface NotificationListener
     {
         void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response);
 

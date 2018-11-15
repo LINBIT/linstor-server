@@ -5,6 +5,7 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.CryptSetupDatabaseDriver;
@@ -79,8 +80,8 @@ public class LayerDataFactory
         transMgrProvider = transMgrProviderRef;
         transObjFactory = transObjFactoryRef;
 
-        drbdKind = new DrbdLayerKind();
-        cryptKind = new CryptSetupLayerKind();
+        drbdKind = (DrbdLayerKind) ResourceType.DRBD.getDevLayerKind();
+        cryptKind = (CryptSetupLayerKind) ResourceType.CRYPT.getDevLayerKind();
     }
 
     public DrbdRscDataStlt createDrbdRscData(
