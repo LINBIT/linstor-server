@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
@@ -25,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -285,7 +287,19 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         throws AccessDeniedException
     {
         checkDeleted();
-        return inCreation.get() || flags.isSet(accCtx, SnapshotDfnFlags.DELETE);
+
+        boolean anyRollbackTargets = false;
+        for (Snapshot snapshot : snapshotMap.values())
+        {
+            if (snapshot.getFlags().isSet(accCtx, Snapshot.SnapshotFlags.ROLLBACK_TARGET))
+            {
+                anyRollbackTargets = true;
+            }
+        }
+
+        return inCreation.get() ||
+            flags.isSet(accCtx, SnapshotDfnFlags.DELETE) ||
+            anyRollbackTargets;
     }
 
     @Override
@@ -313,7 +327,8 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
             objId,
             snapshotName.getDisplayName(),
             snapshotVlmDfns,
-            flags.getFlagsBits(accCtx)
+            flags.getFlagsBits(accCtx),
+            new TreeMap<>(getProps(accCtx).map())
         );
     }
 

@@ -101,6 +101,12 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
 
     StateFlags<RscDfnFlags> getFlags();
 
+    void setDown(AccessContext accCtx, boolean down)
+        throws AccessDeniedException, SQLException;
+
+    boolean isDown(AccessContext accCtx)
+        throws AccessDeniedException;
+
     void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
@@ -219,6 +225,7 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid, 
         Map<String, String> getProps();
         List<VolumeDefinition.VlmDfnApi> getVlmDfnList();
         String getTransportType();
+        boolean isDown();
     }
 
     public interface InitMaps

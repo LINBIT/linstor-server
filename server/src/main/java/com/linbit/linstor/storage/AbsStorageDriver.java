@@ -635,6 +635,33 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
+    public void rollbackVolume(
+        String volumeIdentifier,
+        String snapshotName,
+        String cryptKey,
+        Props vlmDfnProps
+    )
+        throws StorageException
+    {
+        try
+        {
+            stopVolume(volumeIdentifier, cryptKey != null, vlmDfnProps);
+        }
+        catch (StorageException ignored)
+        {
+            // TODO
+            // probably the volume was not started anyways. at least we tried
+        }
+
+        rollbackStorageVolume(
+            volumeIdentifier,
+            snapshotName
+        );
+
+        startVolume(volumeIdentifier, cryptKey, vlmDfnProps);
+    }
+
+    @Override
     public void deleteSnapshot(String volumeIdentifier, String snapshotName)
         throws StorageException
     {
@@ -648,6 +675,40 @@ public abstract class AbsStorageDriver implements StorageDriver
             getSnapshotIdentifier(volumeIdentifier, snapshotName),
             VolumeType.SNAPSHOT
         );
+    }
+
+    protected void executeRollback(String volumeIdentifier, String snapshotName, String[] command)
+        throws StorageException
+    {
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final OutputData outputData = extCommand.exec(command);
+            checkExitCode(
+                outputData,
+                command,
+                "Failed to roll back to snapshot [%s] for volume [%s]. ",
+                snapshotName,
+                volumeIdentifier
+            );
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to roll back to snapshot",
+                String.format(
+                    "Failed to roll back to snapshot [%s] for volume [%s]",
+                    snapshotName,
+                    volumeIdentifier
+                ),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
     }
 
     /**
@@ -1033,6 +1094,9 @@ public abstract class AbsStorageDriver implements StorageDriver
         String identifier,
         boolean isEncrypted
     )
+        throws StorageException;
+
+    protected abstract void rollbackStorageVolume(String volumeIdentifier, String snapshotName)
         throws StorageException;
 
     protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName);

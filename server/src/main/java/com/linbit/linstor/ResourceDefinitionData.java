@@ -80,6 +80,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private final ResourceDefinitionDataDatabaseDriver dbDriver;
 
+    private final TransactionSimpleObject<ResourceDefinitionData, Boolean> down;
+
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
     ResourceDefinitionData(
@@ -121,6 +123,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         volumeMap = transObjFactory.createTransactionMap(vlmDfnMapRef, null);
         resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
         snapshotDfnMap = transObjFactory.createTransactionMap(snapshotDfnMapRef, null);
+        down = transObjFactory.createTransactionSimpleObject(this, false, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         rscDfnProps = propsContainerFactory.getInstance(
@@ -373,6 +376,24 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public void setDown(AccessContext accCtx, boolean downRef)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        down.set(downRef);
+    }
+
+    @Override
+    public boolean isDown(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return down.get();
+    }
+
+    @Override
     public String getSecret(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
@@ -483,6 +504,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             getSecret(accCtx),
             getFlags().getFlagsBits(accCtx),
             getTransportType(accCtx).name(),
+            isDown(accCtx),
             getProps(accCtx).map(),
             vlmDfnList
         );

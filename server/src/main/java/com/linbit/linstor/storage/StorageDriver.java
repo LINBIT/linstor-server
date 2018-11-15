@@ -275,6 +275,14 @@ public interface StorageDriver
     )
         throws StorageException;
 
+    void rollbackVolume(
+        String volumeIdentifier,
+        String snapshotName,
+        String cryptKey,
+        Props vlmDfnProps
+    )
+        throws StorageException;
+
     /**
      * Deletes the given snapshot
      * @param volumeIdentifier

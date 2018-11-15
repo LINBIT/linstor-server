@@ -335,7 +335,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 // Evaluate resource & volumes state by checking the DRBD state
                 evaluateDrbdResource(localNodeName, rscDfn, rscState);
 
-                handleSnapshots(rscName, inProgressSnapshots, rscState);
+                handleSnapshots(rsc, rscDfn, inProgressSnapshots, rscState);
             }
         }
         catch (ResourceException rscExc)
@@ -1070,7 +1070,8 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 errLog.logDebug("Skipping DRBD configuration steps for empty resource '" + rscName + "'");
             }
-            else if (allVolumesMarkedForDelete(rscState))
+            else if (allVolumesMarkedForDelete(rscState) ||
+                rscDfn.isDown(wrkCtx) || rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.IN_ROLLBACK))
             {
                 deleteDrbdResource(rscName);
             }
@@ -1701,11 +1702,35 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void handleSnapshots(ResourceName rscName, Collection<Snapshot> snapshots, ResourceState rscState)
+    private void handleSnapshots(
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        Collection<Snapshot> snapshots,
+        ResourceState rscState
+    )
         throws ResourceException, AccessDeniedException, StorageException
     {
+        ResourceName rscName = rscDfn.getName();
+
         errLog.logTrace("Handle snapshots for " + rscName.getDisplayName());
 
+        if (rsc != null && rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.IN_ROLLBACK))
+        {
+            handleSnapshotRollback(rsc, rscDfn, snapshots, rscState);
+        }
+
+        handleSuspensionForSnapshot(rscName, snapshots, rscState);
+        handleSnapshotDelete(rscName, snapshots, rscState);
+        handleSnapshotTake(rscName, snapshots, rscState);
+    }
+
+    private void handleSuspensionForSnapshot(
+        ResourceName rscName,
+        Collection<Snapshot> snapshots,
+        ResourceState rscState
+    )
+        throws AccessDeniedException, ResourceException
+    {
         boolean shouldSuspend = false;
         for (Snapshot snapshot : snapshots)
         {
@@ -1728,7 +1753,11 @@ class DrbdDeviceHandler implements DeviceHandler
         boolean isSuspended = rscState.isSuspendedUser();
 
         adjustSuspended(rscName, shouldSuspend, isSuspended);
+    }
 
+    private void handleSnapshotDelete(ResourceName rscName, Collection<Snapshot> snapshots, ResourceState rscState)
+        throws ResourceException, AccessDeniedException, StorageException
+    {
         for (Snapshot snapshot : snapshots)
         {
             SnapshotName snapshotName = snapshot.getSnapshotName();
@@ -1764,35 +1793,93 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 deviceManagerProvider.get().notifySnapshotDeleted(snapshot);
             }
-            else
+        }
+    }
+
+    private void handleSnapshotTake(ResourceName rscName, Collection<Snapshot> snapshots, ResourceState rscState)
+        throws ResourceException, AccessDeniedException
+    {
+        for (Snapshot snapshot : snapshots)
+        {
+            SnapshotName snapshotName = snapshot.getSnapshotName();
+
+            if (!snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.DELETE) &&
+                snapshot.getTakeSnapshot(wrkCtx))
             {
-                if (snapshot.getTakeSnapshot(wrkCtx))
+                for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(wrkCtx))
                 {
-                    for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(wrkCtx))
+                    VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
+                        snapshotVolume.getVolumeNumber());
+
+                    try
                     {
-                        VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(
-                            snapshotVolume.getVolumeNumber());
+                        ensureStorageDriver(rscName, snapshotVolume.getStorPool(wrkCtx), vlmState);
 
-                        try
-                        {
-                            ensureStorageDriver(rscName, snapshotVolume.getStorPool(wrkCtx), vlmState);
+                        takeVolumeSnapshot(
+                            snapshot.getResourceDefinition(),
+                            snapshotName,
+                            vlmState
+                        );
+                    }
+                    catch (VolumeException vlmExc)
+                    {
+                        throw new ResourceException(
+                            "Deployment of snapshot '" + snapshotName +
+                                "' for resource '" + rscName.displayValue +
+                                "' volume " + vlmState.getVlmNr().value + " failed",
+                            null, vlmExc.getMessage(),
+                            null, null, vlmExc
+                        );
+                    }
+                }
+            }
+        }
+    }
 
-                            takeVolumeSnapshot(
-                                snapshot.getResourceDefinition(),
-                                snapshotName,
-                                vlmState
-                            );
-                        }
-                        catch (VolumeException vlmExc)
-                        {
-                            throw new ResourceException(
-                                "Deployment of snapshot '" + snapshotName +
-                                    "' for resource '" + rscName.displayValue +
-                                    "' volume " + vlmState.getVlmNr().value + " failed",
-                                null, vlmExc.getMessage(),
-                                null, null, vlmExc
-                            );
-                        }
+    private void handleSnapshotRollback(
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        Collection<Snapshot> snapshots,
+        ResourceState rscState
+    )
+        throws AccessDeniedException, ResourceException
+    {
+        for (Snapshot snapshot : snapshots)
+        {
+            boolean isRollbackTarget = snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.ROLLBACK_TARGET);
+            if (isRollbackTarget)
+            {
+                for (VolumeDefinition vlmDfn : rscDfn.streamVolumeDfn(wrkCtx).collect(Collectors.toList()))
+                {
+                    Volume vlm = rsc.getVolume(vlmDfn.getVolumeNumber());
+
+                    VolumeState vlmStateBase = rscState.getVolumeState(vlmDfn.getVolumeNumber());
+                    if (vlmStateBase == null)
+                    {
+                        throw new ImplementationError("No volume state for volume " +
+                            vlmDfn.getVolumeNumber() + " of resource '" + rscDfn.getName() + "'");
+                    }
+                    VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
+
+                    try
+                    {
+                        ensureStorageDriver(rscDfn.getName(), vlm.getStorPool(wrkCtx), vlmState);
+
+                        rollbackVolume(
+                            rscDfn,
+                            snapshot.getSnapshotName(),
+                            vlmState
+                        );
+                    }
+                    catch (VolumeException vlmExc)
+                    {
+                        throw new ResourceException(
+                            "Restoration for rollback of snapshot '" + snapshot.getSnapshotName() +
+                                "' for resource '" + rscDfn.getName() +
+                                "' volume " + vlmDfn.getVolumeNumber().value + " failed",
+                            null, vlmExc.getMessage(),
+                            null, null, vlmExc
+                        );
                     }
                 }
             }
@@ -1925,6 +2012,37 @@ class DrbdDeviceHandler implements DeviceHandler
                     storExc
                 );
             }
+        }
+    }
+
+    private void rollbackVolume(
+        ResourceDefinition rscDfn,
+        SnapshotName snapshotName,
+        VolumeStateDevManager vlmState
+    )
+        throws VolumeException, AccessDeniedException
+    {
+        try
+        {
+            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
+            vlmState.getDriver().rollbackVolume(
+                vlmState.getStorVlmName(),
+                snapshotName.displayValue,
+                vlmDfn.getKey(wrkCtx),
+                vlmDfn.getProps(wrkCtx)
+            );
+        }
+        catch (StorageException storExc)
+        {
+            throw new VolumeException(
+                "Rollback of storage volume failed for resource '" + rscDfn.getName().displayValue + "' volume " +
+                    vlmState.getVlmNr().value,
+                getAbortMsg(rscDfn.getName(), vlmState.getVlmNr()),
+                "Rollback of the storage volume failed",
+                null,
+                null,
+                storExc
+            );
         }
     }
 

@@ -73,7 +73,7 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
     boolean isDeleted();
 
     /**
-     * Is the snapshot in creation or deletion?
+     * Is the snapshot being used for a linstor action such as creation, deletion or rollback?
      * @param accCtx
      */
     boolean getInProgress(AccessContext accCtx)
@@ -147,6 +147,7 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
         UUID getUuid();
         String getSnapshotName();
         long getFlags();
+        Map<String, String> getProps();
         List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> getSnapshotVlmDfnList();
     }
 

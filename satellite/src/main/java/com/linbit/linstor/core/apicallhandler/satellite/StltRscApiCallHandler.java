@@ -218,6 +218,7 @@ class StltRscApiCallHandler
             rscDfnProps.clear();
             rscDfnProps.putAll(rscRawData.getRscDfnProps());
             rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
+            rscDfn.setDown(apiCtx, rscRawData.getRscDfnDown());
 
             // merge vlmDfns
             {

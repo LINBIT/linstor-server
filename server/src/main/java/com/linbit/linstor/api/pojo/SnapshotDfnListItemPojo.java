@@ -6,6 +6,7 @@ import com.linbit.linstor.SnapshotDefinition.SnapshotDfnApi;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class SnapshotDfnListItemPojo implements SnapshotDefinition.SnapshotDfnListItemApi
@@ -44,6 +45,12 @@ public class SnapshotDfnListItemPojo implements SnapshotDefinition.SnapshotDfnLi
     public long getFlags()
     {
         return snapshotDfnApi.getFlags();
+    }
+
+    @Override
+    public Map<String, String> getProps()
+    {
+        return snapshotDfnApi.getProps();
     }
 
     @Override

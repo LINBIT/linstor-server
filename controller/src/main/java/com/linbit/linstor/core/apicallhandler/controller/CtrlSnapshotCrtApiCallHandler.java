@@ -5,7 +5,6 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -39,7 +38,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -59,8 +57,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSatelliteUpdateCaller.notConnectedError;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotVlmDescriptionInline;
@@ -75,6 +73,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlSnapshotHelper ctrlSnapshotHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
@@ -91,6 +90,7 @@ public class CtrlSnapshotCrtApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlSnapshotHelper ctrlSnapshotHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
@@ -106,6 +106,7 @@ public class CtrlSnapshotCrtApiCallHandler
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlSnapshotHelper = ctrlSnapshotHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
@@ -211,7 +212,7 @@ public class CtrlSnapshotCrtApiCallHandler
         boolean resourceFound = false;
         if (nodeNameStrs.isEmpty())
         {
-            Iterator<Resource> rscIterator = iterateResource(rscDfn);
+            Iterator<Resource> rscIterator = ctrlSnapshotHelper.iterateResource(rscDfn);
             while (rscIterator.hasNext())
             {
                 Resource rsc = rscIterator.next();
@@ -329,7 +330,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
         for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
         {
-            setTakeSnapshotPrivileged(snapshot);
+            setTakeSnapshotPrivileged(snapshot, true);
         }
 
         ctrlTransactionHelper.commit();
@@ -391,6 +392,11 @@ public class CtrlSnapshotCrtApiCallHandler
 
         unsetInCreationPrivileged(snapshotDfn);
 
+        for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
+        {
+            setTakeSnapshotPrivileged(snapshot, false);
+        }
+
         enableFlagPrivileged(snapshotDfn, SnapshotDfnFlags.SUCCESSFUL);
 
         ctrlTransactionHelper.commit();
@@ -417,13 +423,16 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private void ensureSnapshotsViable(ResourceDefinitionData rscDfn)
     {
-        Iterator<Resource> rscIterator = iterateResource(rscDfn);
+        Iterator<Resource> rscIterator = ctrlSnapshotHelper.iterateResource(rscDfn);
         while (rscIterator.hasNext())
         {
             Resource currentRsc = rscIterator.next();
             ensureDriversSupportSnapshots(currentRsc);
             ensureInternalMetaDisks(currentRsc);
-            ensureSatelliteConnected(currentRsc);
+            ctrlSnapshotHelper.ensureSatelliteConnected(
+                currentRsc,
+                "Snapshots cannot be created when the corresponding satellites are not connected."
+            );
         }
     }
 
@@ -474,25 +483,6 @@ public class CtrlSnapshotCrtApiCallHandler
                     .build()
                 );
             }
-        }
-    }
-
-    private void ensureSatelliteConnected(Resource rsc)
-    {
-        Node node = rsc.getAssignedNode();
-        Peer currentPeer = getPeer(node);
-
-        boolean connected = currentPeer.isConnected();
-        if (!connected)
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_NOT_CONNECTED,
-                    "No active connection to satellite '" + node.getName() + "'."
-                )
-                .setDetails("Snapshots cannot be created when the corresponding satellites are not connected.")
-                .build()
-            );
         }
     }
 
@@ -779,42 +769,6 @@ public class CtrlSnapshotCrtApiCallHandler
         return metaDiskPath;
     }
 
-    private Peer getPeer(Node node)
-    {
-        Peer peer;
-        try
-        {
-            peer = node.getPeer(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "get peer of " + getNodeDescriptionInline(node),
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        return peer;
-    }
-
-    private Iterator<Resource> iterateResource(ResourceDefinitionData rscDfn)
-    {
-        Iterator<Resource> rscIter;
-        try
-        {
-            rscIter = rscDfn.iterateResource(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "iterate the resources of " + getRscDfnDescriptionInline(rscDfn),
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        return rscIter;
-    }
-
     private void markEncrypted(SnapshotVolumeDefinition snapshotVlmDfn)
     {
         try
@@ -967,11 +921,11 @@ public class CtrlSnapshotCrtApiCallHandler
         return allSnapshots;
     }
 
-    private void setTakeSnapshotPrivileged(Snapshot snapshot)
+    private void setTakeSnapshotPrivileged(Snapshot snapshot, boolean takeSnapshot)
     {
         try
         {
-            snapshot.setTakeSnapshot(apiCtx, true);
+            snapshot.setTakeSnapshot(apiCtx, takeSnapshot);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -984,14 +938,6 @@ public class CtrlSnapshotCrtApiCallHandler
         return exception.getErrors().stream()
             .flatMap(apiRcException -> apiRcException.getApiCallRc().getEntries().stream())
             .anyMatch(rcEntry -> rcEntry.getReturnCode() == ApiConsts.FAIL_NOT_CONNECTED);
-    }
-
-    private static CtrlSatelliteUpdateCaller.NotConnectedHandler notConnectedError()
-    {
-        return nodeName -> Flux.error(new ApiRcException(ApiCallRcImpl.simpleEntry(
-            ApiConsts.FAIL_NOT_CONNECTED,
-            "Connection to satellite '" + nodeName + "' lost"
-        )));
     }
 
     private static CtrlSatelliteUpdateCaller.NotConnectedHandler notConnectedCannotAbort()

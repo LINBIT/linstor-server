@@ -72,7 +72,7 @@ public class SnapshotDefinitionDataControllerFactory
 
         try
         {
-            long sequenceNumber = nextSequenceNumber(accCtx, rscDfn);
+            long sequenceNumber = maxSequenceNumber(accCtx, rscDfn) + 1L;
             snapshotDfnData.getProps(accCtx).setProp(
                 ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER, Long.toString(sequenceNumber));
         }
@@ -87,21 +87,26 @@ public class SnapshotDefinitionDataControllerFactory
         return snapshotDfnData;
     }
 
-    private long nextSequenceNumber(AccessContext accCtx, ResourceDefinition rscDfn)
-        throws AccessDeniedException, InvalidKeyException
+    public static long maxSequenceNumber(AccessContext accCtx, ResourceDefinition rscDfn)
+        throws AccessDeniedException
     {
         long maxSequenceNumber = 0L;
         for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(accCtx))
         {
-            String sequenceNumberProp =
-                snapshotDfn.getProps(accCtx).getProp(ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER);
             try
             {
+                String sequenceNumberProp =
+                    snapshotDfn.getProps(accCtx).getProp(ApiConsts.KEY_SNAPSHOT_DFN_SEQUENCE_NUMBER);
+
                 long sequenceNumber = Long.valueOf(sequenceNumberProp);
                 if (sequenceNumber > maxSequenceNumber)
                 {
                     maxSequenceNumber = sequenceNumber;
                 }
+            }
+            catch (InvalidKeyException exc)
+            {
+                throw new ImplementationError("Internal property not valid", exc);
             }
             catch (NumberFormatException exc)
             {
@@ -112,6 +117,6 @@ public class SnapshotDefinitionDataControllerFactory
                 );
             }
         }
-        return maxSequenceNumber + 1L;
+        return maxSequenceNumber;
     }
 }

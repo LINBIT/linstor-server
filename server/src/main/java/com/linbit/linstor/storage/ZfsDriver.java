@@ -285,6 +285,19 @@ public class ZfsDriver extends AbsStorageDriver
         };
     }
 
+    @Override
+    protected void rollbackStorageVolume(String volumeIdentifier, String snapshotName)
+        throws StorageException
+    {
+        final String[] command = new String[]
+            {
+                zfsCommand,
+                "rollback",
+                getQualifiedSnapshotPath(volumeIdentifier, snapshotName)
+            };
+
+        executeRollback(volumeIdentifier, snapshotName, command);
+    }
 
     @Override
     protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)

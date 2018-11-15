@@ -75,6 +75,7 @@ public class ApplyRsc implements ApiCall
             rscData.getRscDfnSecret(),
             rscData.getRscDfnFlags(),
             rscData.getRscDfnTransportType(),
+            rscData.getRscDfnDown(),
             ProtoMapUtils.asMap(rscData.getRscDfnPropsList()),
             vlmDfns);
         RscPojo rscRawData = new RscPojo(

@@ -342,6 +342,27 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
+    protected void rollbackStorageVolume(String volumeIdentifier, String snapshotName)
+        throws StorageException
+    {
+        final String[] command = new String[]
+            {
+                lvmConvertCommand,
+                "--merge",
+                volumeGroup + File.separator + getSnapshotIdentifier(volumeIdentifier, snapshotName)
+            };
+
+        executeRollback(volumeIdentifier, snapshotName, command);
+
+        // --merge removes the snapshot.
+        // For consistency with other backends, we wish to keep the snapshot.
+        // Hence we create it again here.
+        // The layers above have been stopped, so the content should be identical to the original snapshot.
+
+        createSnapshot(volumeIdentifier, snapshotName);
+    }
+
+    @Override
     protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
     {
         return getDeleteCommand(getSnapshotIdentifier(identifier, snapshotName));

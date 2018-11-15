@@ -99,13 +99,15 @@ public class ApplySnapshot implements ApiCall
                     snapshotData.getRscDfnSecret(),
                     snapshotData.getRscDfnFlags(),
                     snapshotData.getRscDfnTransportType(),
+                    snapshotData.getRscDfnDown(),
                     ProtoMapUtils.asMap(snapshotData.getRscDfnPropsList()),
                     null
                 ),
                 UUID.fromString(snapshotData.getSnapshotDfnUuid()),
                 snapshotData.getSnapshotName(),
                 snapshotVlmDfns,
-                snapshotData.getSnapshotDfnFlags()
+                snapshotData.getSnapshotDfnFlags(),
+                ProtoMapUtils.asMap(snapshotData.getSnapshotDfnPropsList())
             ),
             UUID.fromString(snapshotData.getSnapshotUuid()),
             snapshotData.getFlags(),

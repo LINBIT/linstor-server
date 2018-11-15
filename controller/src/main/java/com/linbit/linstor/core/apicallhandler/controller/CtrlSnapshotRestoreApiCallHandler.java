@@ -172,7 +172,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     private void restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinitionData toRscDfn, Node node)
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
     {
-        Snapshot snapshot = loadSnapshot(node, fromSnapshotDfn);
+        Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
 
         NodeId nodeId = ctrlRscCrtApiHelper.getNextFreeNodeId(toRscDfn);
 
@@ -231,39 +231,6 @@ public class CtrlSnapshotRestoreApiCallHandler
                     ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID, overrideId);
             }
         }
-    }
-
-    private Snapshot loadSnapshot(
-        Node node,
-        SnapshotDefinition snapshotDfn
-    )
-    {
-        Snapshot snapshot;
-        try
-        {
-            snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), node.getName());
-
-            if (snapshot == null)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT,
-                    "Snapshot '" + snapshotDfn.getName().displayValue +
-                        "' of resource '" + snapshotDfn.getResourceName().displayValue +
-                        "' on node '" + node.getName().displayValue + "' not found."
-                ));
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "load snapshot '" + snapshotDfn.getName().displayValue +
-                    "' of resource '" + snapshotDfn.getResourceName().displayValue +
-                    "' on node '" + node.getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
-            );
-        }
-        return snapshot;
     }
 
     private static String getSnapshotRestoreDescription(List<String> nodeNameStrs, String toRscNameStr)

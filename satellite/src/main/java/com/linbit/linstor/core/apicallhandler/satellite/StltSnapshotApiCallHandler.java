@@ -13,6 +13,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDataSatelliteFactory;
 import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.SnapshotDefinitionDataSatelliteFactory;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolume;
@@ -149,6 +150,7 @@ class StltSnapshotApiCallHandler
         rscDfnProps.clear();
         rscDfnProps.putAll(rscDfnApi.getProps());
         rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
+        rscDfn.setDown(apiCtx, rscDfnApi.isDown());
         return rscDfn;
     }
 
@@ -169,12 +171,18 @@ class StltSnapshotApiCallHandler
                 snapshotDfnApi.getUuid(),
                 rscDfn,
                 snapshotName,
-                new SnapshotDefinition.SnapshotDfnFlags[]{}
+                new SnapshotDfnFlags[]{}
             );
 
             rscDfn.addSnapshotDfn(apiCtx, snapshotDfn);
         }
         checkUuid(snapshotDfn, snapshotDfnApi);
+
+        Map<String, String> snapshotDfnProps = snapshotDfn.getProps(apiCtx).map();
+        snapshotDfnProps.clear();
+        snapshotDfnProps.putAll(snapshotDfnApi.getProps());
+
+        snapshotDfn.getFlags().resetFlagsTo(apiCtx, SnapshotDfnFlags.restoreFlags(snapshotDfnApi.getFlags()));
 
         // Merge satellite volume definitions
         Set<VolumeNumber> oldVolumeNumbers = snapshotDfn.getAllSnapshotVolumeDefinitions(apiCtx).stream()

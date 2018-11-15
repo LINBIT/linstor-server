@@ -380,6 +380,12 @@ public class LvmDriver extends AbsStorageDriver
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
 
+    @Override
+    protected void rollbackStorageVolume(String volumeIdentifier, String snapshotName)
+        throws StorageException
+    {
+        throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+    }
 
     @Override
     protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)

@@ -112,6 +112,18 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
+    public void rollbackVolume(
+        String volumeIdentifier,
+        String snapshotName,
+        String cryptKey,
+        Props vlmDfnProps
+    )
+        throws StorageException
+    {
+        // no-op
+    }
+
+    @Override
     public void deleteSnapshot(String volumeIdentifier, String snapshotName)
     {
         // no-op

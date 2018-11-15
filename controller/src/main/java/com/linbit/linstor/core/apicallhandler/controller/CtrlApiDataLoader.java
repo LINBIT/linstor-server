@@ -10,8 +10,11 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotDefinitionData;
 import com.linbit.linstor.SnapshotName;
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
@@ -284,6 +287,68 @@ public class CtrlApiDataLoader
             );
         }
         return snapshotDfn;
+    }
+
+    public Snapshot loadSnapshot(Node node, SnapshotDefinition snapshotDfn)
+    {
+        Snapshot snapshot;
+        try
+        {
+            snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), node.getName());
+
+            if (snapshot == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT,
+                    "Snapshot '" + snapshotDfn.getName() +
+                        "' of resource '" + snapshotDfn.getResourceName() +
+                        "' on node '" + node.getName() + "' not found."
+                ));
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "load snapshot '" + snapshotDfn.getName() +
+                    "' of resource '" + snapshotDfn.getResourceName() +
+                    "' on node '" + node.getName() + "'",
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+            );
+        }
+        return snapshot;
+    }
+
+    public SnapshotVolume loadSnapshotVlm(Snapshot snapshot, VolumeNumber vlmNr)
+    {
+        SnapshotVolume snapshotVolume;
+        try
+        {
+            snapshotVolume = snapshot.getSnapshotVolume(peerAccCtx.get(), vlmNr);
+
+            if (snapshotVolume == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT,
+                    "Volume " + vlmNr +
+                        " of snapshot '" + snapshot.getSnapshotName() +
+                        "' of resource '" + snapshot.getResourceName() +
+                        "' on node '" + snapshot.getNodeName() + "' not found."
+                ));
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "load volume " + vlmNr +
+                    " of snapshot '" + snapshot.getSnapshotName() +
+                    "' of resource '" + snapshot.getResourceName() +
+                    "' on node '" + snapshot.getNodeName() + "'",
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+            );
+        }
+        return snapshotVolume;
     }
 
     public final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)

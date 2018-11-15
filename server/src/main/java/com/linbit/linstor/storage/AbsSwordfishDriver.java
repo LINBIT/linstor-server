@@ -89,6 +89,18 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     }
 
     @Override
+    public void rollbackVolume(
+        String volumeIdentifier,
+        String snapshotName,
+        String cryptKey,
+        Props vlmDfnProps
+    )
+        throws StorageException
+    {
+        throw new StorageException("Swordfish driver cannot roll back to snapshots");
+    }
+
+    @Override
     public void deleteSnapshot(String identifier, String snapshotName) throws StorageException
     {
         throw new StorageException("Swordfish driver cannot create or delete snapshots");

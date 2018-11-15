@@ -90,7 +90,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         {
             if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.DELETE))
             {
-                fluxes.add(deleteSnapshotsOnNodesInScope(rscDfn.getName(), snapshotDfn.getName()));
+                fluxes.add(deleteSnapshotsOnNodes(rscDfn.getName(), snapshotDfn.getName()));
             }
         }
 

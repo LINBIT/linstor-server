@@ -112,6 +112,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         return rscDefinition.getProps();
     }
 
+    public boolean getRscDfnDown()
+    {
+        return rscDefinition.isDown();
+    }
+
     public UUID getLocalRscUuid()
     {
         return localRscUuid;

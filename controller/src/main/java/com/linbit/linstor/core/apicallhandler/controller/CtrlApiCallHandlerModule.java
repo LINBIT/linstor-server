@@ -22,5 +22,6 @@ public class CtrlApiCallHandlerModule extends AbstractModule
         commandsBinder.addBinding().to(CtrlVlmDfnDeleteApiCallHandler.class);
         commandsBinder.addBinding().to(CtrlVlmDfnModifyApiCallHandler.class);
         commandsBinder.addBinding().to(CtrlSnapshotDeleteApiCallHandler.class);
+        commandsBinder.addBinding().to(CtrlSnapshotRollbackApiCallHandler.class);
     }
 }

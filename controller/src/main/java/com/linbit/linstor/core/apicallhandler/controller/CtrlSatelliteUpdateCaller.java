@@ -13,6 +13,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -149,6 +150,17 @@ public class CtrlSatelliteUpdateCaller
      */
     public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(ResourceDefinition rscDfn)
     {
+        return updateSatellites(rscDfn, notConnectedWarn());
+    }
+
+    /**
+     * See {@link CtrlSatelliteUpdateCaller}.
+     */
+    public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(
+        ResourceDefinition rscDfn,
+        NotConnectedHandler notConnectedHandler
+    )
+    {
         List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();
 
         try
@@ -159,7 +171,7 @@ public class CtrlSatelliteUpdateCaller
             {
                 Resource currentRsc = rscIterator.next();
 
-                Flux<ApiCallRc> response = updateResource(currentRsc);
+                Flux<ApiCallRc> response = updateResource(currentRsc, notConnectedHandler);
 
                 responses.add(Tuples.of(currentRsc.getAssignedNode().getName(), response));
             }
@@ -241,7 +253,10 @@ public class CtrlSatelliteUpdateCaller
         return mergeExtractingApiRcExceptions(Flux.fromIterable(responses));
     }
 
-    private Flux<ApiCallRc> updateResource(Resource currentRsc)
+    private Flux<ApiCallRc> updateResource(
+        Resource currentRsc,
+        NotConnectedHandler notConnectedHandler
+    )
         throws AccessDeniedException
     {
         Node node = currentRsc.getAssignedNode();
@@ -270,8 +285,9 @@ public class CtrlSatelliteUpdateCaller
 
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
 
-                .onErrorMap(PeerNotConnectedException.class, ignored ->
-                    new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))
+                .onErrorResume(
+                    PeerNotConnectedException.class,
+                    ignored -> notConnectedHandler.handleNotConnected(nodeName)
                 );
         }
 
@@ -416,5 +432,13 @@ public class CtrlSatelliteUpdateCaller
     public static NotConnectedHandler notConnectedWarn()
     {
         return nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName)));
+    }
+
+    public static NotConnectedHandler notConnectedError()
+    {
+        return nodeName -> Flux.error(new ApiRcException(ApiCallRcImpl.simpleEntry(
+            ApiConsts.FAIL_NOT_CONNECTED,
+            "Connection to satellite '" + nodeName + "' lost"
+        )));
     }
 }

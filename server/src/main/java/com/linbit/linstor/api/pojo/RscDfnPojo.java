@@ -19,6 +19,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
     private final String secret;
     private final long flags;
     private final String transportType;
+    private final boolean down;
     private final Map<String, String> props;
     private final List<VolumeDefinition.VlmDfnApi> vlmdfns;
 
@@ -29,6 +30,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
         final String secretRef,
         final long flagsRef,
         final String transportTypeRef,
+        boolean downRef,
         final Map<String, String> propsRef,
         final List<VolumeDefinition.VlmDfnApi> vlmdfnsRef
     )
@@ -39,6 +41,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
         secret = secretRef;
         flags = flagsRef;
         transportType = transportTypeRef;
+        down = downRef;
         props = propsRef;
         vlmdfns = vlmdfnsRef;
     }
@@ -89,5 +92,11 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
     public String getTransportType()
     {
         return transportType;
+    }
+
+    @Override
+    public boolean isDown()
+    {
+        return down;
     }
 }
