@@ -1,6 +1,6 @@
 Name: linstor
 Version: 0.7.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
 %define GRADLE_TASKS installdist
@@ -120,6 +120,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Thu Nov 15 2018 Rene Peinthor <rene.peinthor@linbit.com> 0.7.2-2
+- New upstream release. Bug fixes.
+
 * Mon Nov 12 2018 Rene Peinthor <rene.peinthor@linbit.com> 0.7.2-1
 - New upstream release. Bug fixes.
 

@@ -1,3 +1,23 @@
+linstor-server (0.7.2-2) experimental; urgency=medium
+
+  [ Robert Altnoeder ]
+  * Fixed DbConnectionPool initialization in a test
+  * SQL fixes: Improved ANSI SQL compatibility
+  * Added DatabaseInfo classes, DatabaseDriverInfo for DB2
+  * Controller database fixes
+  * Fix missing import for GenericDbUtils
+  * Fix SQL migrations: resource connection flags & tcp_port column
+
+  [ Rene Peinthor ]
+  * unittest: fix db unittests
+  * fix forgetting createResourceDb warnings
+  * fix mixing implicit diskless resource with other storage types
+
+  [ Gabor Hernadi ]
+  * Swordfish: commiting setting node-name after fullSync
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 15 Nov 2018 10:42:59 +0100
+
 linstor-server (0.7.2-1) experimental; urgency=medium
 
   [ Joel Colledge ]
