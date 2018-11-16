@@ -83,6 +83,20 @@ public class WhitelistProps
         }
     }
 
+    public void overrideProperties()
+    {
+        // fix entry for resync-after, it is defined as range by drbdsetup-utils
+        rules.values().forEach(objMap ->
+            objMap.keySet().stream()
+                .filter(key -> key.startsWith("DrbdOptions") && key.endsWith("resync-after"))
+                .forEach(key ->
+                    objMap.put(key,
+                        new PropertyBuilder().name("resync-after").keyStr(key).internal("True").type("string").build()
+                    )
+                )
+        );
+    }
+
     public void appendRules(
         boolean overrideProp,
         InputStream xmlStream,

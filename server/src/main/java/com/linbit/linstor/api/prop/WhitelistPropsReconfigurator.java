@@ -75,6 +75,8 @@ public class WhitelistPropsReconfigurator
                 ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
                 LinStorObject.CONTROLLER
             );
+
+            whitelistProps.overrideProperties();
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -82,7 +84,7 @@ public class WhitelistPropsReconfigurator
                 exc,
                 null,
                 null,
-                "An exception occured while reconfiguring drbd-whitelist properties"
+                "An exception occurred while reconfiguring drbd-whitelist properties"
             );
         }
         finally
@@ -90,4 +92,5 @@ public class WhitelistPropsReconfigurator
             reconfigurationLock.writeLock().unlock();
         }
     }
+
 }

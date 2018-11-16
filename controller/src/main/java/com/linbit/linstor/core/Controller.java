@@ -25,6 +25,8 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
+import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
@@ -117,6 +119,7 @@ public final class Controller
     private final ControllerNetComInitializer controllerNetComInitializer;
 
     private final SwordfishTargetProcessManager swordfishTargetProcessManager;
+    private final WhitelistProps whitelistProps;
 
     @Inject
     public Controller(
@@ -140,7 +143,8 @@ public final class Controller
         DebugConsoleCreator debugConsoleCreatorRef,
         SatelliteConnector satelliteConnectorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
-        SwordfishTargetProcessManager swordfishTargetProcessManagerRef
+        SwordfishTargetProcessManager swordfishTargetProcessManagerRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -164,6 +168,7 @@ public final class Controller
         satelliteConnector = satelliteConnectorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
         swordfishTargetProcessManager = swordfishTargetProcessManagerRef;
+        whitelistProps = whitelistPropsRef;
     }
 
     public void start()
@@ -204,6 +209,8 @@ public final class Controller
                 errorReporter,
                 initCtx
             );
+
+            whitelistProps.overrideProperties();
 
             swordfishTargetProcessManager.initialize();
 
