@@ -107,7 +107,7 @@ public class CtrlRscCrtApiCallHandler
                         LockGuard.createDeferred(
                             nodesMapLock.writeLock(),
                             rscDfnMapLock.writeLock(),
-                            storPoolDfnMapLock.readLock()
+                            storPoolDfnMapLock.writeLock()
                         ),
                         () -> createResourceInTransaction(rscApiList, context, thinFreeCapacities)
                     )
