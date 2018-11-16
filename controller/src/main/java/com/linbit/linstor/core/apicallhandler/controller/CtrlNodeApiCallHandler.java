@@ -74,6 +74,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import reactor.core.scheduler.Scheduler;
+
 import static java.util.stream.Collectors.toList;
 
 @Singleton
@@ -99,6 +101,7 @@ public class CtrlNodeApiCallHandler
     private final DynamicNumberPool sfTargetPortPool;
     private final SwordfishTargetProcessManager sfTargetProcessMgr;
     private final ReconnectorTask reconnectorTask;
+    private final Scheduler scheduler;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -121,7 +124,8 @@ public class CtrlNodeApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @Named(NumberPoolModule.SF_TARGET_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
         SwordfishTargetProcessManager sfTargetProcessMgrRef,
-        ReconnectorTask reconnectorTaskRef
+        ReconnectorTask reconnectorTaskRef,
+        Scheduler schedulerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -144,6 +148,7 @@ public class CtrlNodeApiCallHandler
         sfTargetPortPool = sfTargetPortPoolRef;
         sfTargetProcessMgr = sfTargetProcessMgrRef;
         reconnectorTask = reconnectorTaskRef;
+        scheduler = schedulerRef;
     }
 
     /**
@@ -483,7 +488,23 @@ public class CtrlNodeApiCallHandler
             for (String nodeStr : nodes)
             {
                 NodeData node = ctrlApiDataLoader.loadNode(new NodeName(nodeStr), true);
-                node.getPeer(apiCtx).closeConnection();
+                node.getPeer(apiCtx); // check for access
+
+                // the close connection has to run in its own thread
+                // otherwise we will get re-entering scope problems (Error report)
+                scheduler.schedule(() ->
+                    {
+                        {
+                            try
+                            {
+                                node.getPeer(apiCtx).closeConnection();
+                            }
+                            catch (Exception | ImplementationError ignore)
+                            {
+                            }
+                        }
+                    }
+                );
             }
 
             responses.addEntry(ApiCallRcImpl.simpleEntry(
