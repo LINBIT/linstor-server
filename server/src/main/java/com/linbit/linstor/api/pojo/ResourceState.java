@@ -104,11 +104,6 @@ public class ResourceState
         return volumeMap.get(volumeNumber);
     }
 
-    public void putVolumeState(VolumeNumber volumeNumber, VolumeState volumeState)
-    {
-        volumeMap.put(volumeNumber, volumeState);
-    }
-
     @Override
     public String toString()
     {

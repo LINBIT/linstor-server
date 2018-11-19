@@ -21,6 +21,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -71,7 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.linbit.linstor.timer.CoreTimer;
@@ -156,27 +157,20 @@ class DrbdDeviceHandler implements DeviceHandler
         drbdMd = new MetaData();
     }
 
-    private ResourceState initializeResourceState(
-        final ResourceDefinition rscDfn,
-        final Collection<VolumeNumber> vlmNrs
-    )
+    private ResourceState initializeResourceState(final Collection<VolumeNumber> vlmNrs)
     {
         ResourceState rscState = new ResourceState();
 
-        Map<VolumeNumber, VolumeState> vlmStateMap = new TreeMap<>();
-        for (VolumeNumber vlmNr : vlmNrs)
-        {
-            VolumeStateDevManager vlmState = new VolumeStateDevManager(vlmNr);
-            vlmState.setStorVlmName(computeVlmName(rscDfn, vlmNr));
-            vlmStateMap.put(vlmNr, vlmState);
-        }
-        rscState.setVolumes(vlmStateMap);
+        rscState.setVolumes(vlmNrs.stream().collect(Collectors.toMap(
+            Function.identity(),
+            VolumeStateDevManager::new
+        )));
 
         return rscState;
     }
 
-    private ResourceState fillResourceState(final Resource rsc, final ResourceState rscState)
-        throws AccessDeniedException, InvalidKeyException, InvalidNameException
+    private void fillResourceState(final Resource rsc, final ResourceState rscState)
+        throws AccessDeniedException, InvalidKeyException
     {
         String peerSlotsProp = rsc.getProps(wrkCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
         // Property is checked when the API sets it; if it still throws for whatever reason, it is logged as an
@@ -199,26 +193,6 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 VolumeStateDevManager vlmState = (VolumeStateDevManager) rscState.getVolumeState(vlmNr);
 
-                Props props = vlm.getProps(wrkCtx);
-                String restoreFromResourceProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
-                String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
-                if (restoreFromResourceProp != null && restoreFromSnapshotProp != null)
-                {
-                    String overrideVlmIdProp = props.getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
-                    String restoreVlmName = overrideVlmIdProp != null ?
-                        overrideVlmIdProp :
-                        computeVlmName(
-                            new ResourceName(restoreFromResourceProp),
-                            vlmNr
-                        );
-
-                    // Parse into 'Name' objects in order to validate the property contents
-                    SnapshotName restoreFromSnapshotName = new SnapshotName(restoreFromSnapshotProp);
-
-                    vlmState.setRestoreVlmName(restoreVlmName);
-                    vlmState.setRestoreSnapshotName(restoreFromSnapshotName.displayValue);
-                }
-
                 vlmState.setNetSize(vlmDfn.getVolumeSize(wrkCtx));
                 vlmState.setMarkedForDelete(vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE));
                 vlmState.setMinorNr(vlmDfn.getMinorNr(wrkCtx));
@@ -233,30 +207,108 @@ class DrbdDeviceHandler implements DeviceHandler
             }
         }
 
-        return rscState;
     }
 
-    private String computeVlmName(ResourceDefinition rscDfn, VolumeNumber vlmNr)
+    private String computeRestoreVlmName(Volume vlm)
+        throws AccessDeniedException
+    {
+        String restoreVlmName;
+        try
+        {
+            Props props = vlm.getProps(wrkCtx);
+            String restoreFromResourceProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
+
+            if (restoreFromResourceProp != null)
+            {
+                String overrideVlmIdProp = props.getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+                restoreVlmName = overrideVlmIdProp != null ?
+                    overrideVlmIdProp :
+                    computeStandardVlmName(
+                        new ResourceName(restoreFromResourceProp),
+                        vlm.getVolumeDefinition().getVolumeNumber()
+                    );
+            }
+            else
+            {
+                restoreVlmName = null;
+            }
+        }
+        catch (InvalidNameException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return restoreVlmName;
+    }
+
+    private String computeRestoreSnapshotName(Volume vlm)
+        throws AccessDeniedException
+    {
+        String restoreSnapshotName;
+        try
+        {
+            Props props = vlm.getProps(wrkCtx);
+            String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
+
+            restoreSnapshotName = restoreFromSnapshotProp != null ?
+                // Parse into 'Name' objects in order to validate the property contents
+                new SnapshotName(restoreFromSnapshotProp).displayValue :
+                null;
+        }
+        catch (InvalidNameException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return restoreSnapshotName;
+    }
+
+    private String computeSnapshotVlmName(SnapshotVolumeDefinition snapshotVlmDfn)
+        throws AccessDeniedException
     {
         String identifier;
         try
         {
-            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmNr);
-            String overrideId = vlmDfn.getProps(wrkCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+            String overrideId = snapshotVlmDfn.getProps(wrkCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
 
             identifier =
                 overrideId != null ?
-                overrideId :
-                computeVlmName(rscDfn.getName(), vlmNr);
+                    overrideId :
+                    computeStandardVlmName(snapshotVlmDfn.getResourceName(), snapshotVlmDfn.getVolumeNumber());
         }
-        catch (AccessDeniedException | InvalidKeyException exc)
+        catch (InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
         return identifier;
     }
 
-    private String computeVlmName(ResourceName rscName, VolumeNumber vlmNr)
+    private String computeVlmName(ResourceDefinition rscDfn, VolumeNumber vlmNr)
+        throws AccessDeniedException
+    {
+        return computeVlmName(rscDfn.getVolumeDfn(wrkCtx, vlmNr));
+    }
+
+    private String computeVlmName(VolumeDefinition vlmDfn)
+        throws AccessDeniedException
+    {
+        String identifier;
+        try
+        {
+            String overrideId = vlmDfn.getProps(wrkCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+
+            identifier =
+                overrideId != null ?
+                overrideId :
+                computeStandardVlmName(vlmDfn.getResourceDefinition().getName(), vlmDfn.getVolumeNumber());
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return identifier;
+    }
+
+    private String computeStandardVlmName(ResourceName rscName, VolumeNumber vlmNr)
     {
         return rscName.displayValue + "_" + String.format("%05d", vlmNr.value);
     }
@@ -288,7 +340,6 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 // Volatile state information of the resource and its volumes
                 ResourceState rscState = initializeResourceState(
-                    rscDfn,
                     rscDfn.streamVolumeDfn(wrkCtx).map(VolumeDefinition::getVolumeNumber).collect(Collectors.toSet())
                 );
 
@@ -329,7 +380,6 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 // Volatile state information of the resource and its volumes
                 ResourceState rscState = initializeResourceState(
-                    rscDfn,
                     snapshotVlmNumbers
                 );
 
@@ -771,18 +821,20 @@ class DrbdDeviceHandler implements DeviceHandler
 
         try
         {
+            String vlmName = computeVlmName(rscDfn, vlmState.getVlmNr());
+
             if (!vlmState.hasDisk())
             {
                 boolean isEncrypted = vlmDfn.getFlags().isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
                 vlmState.setHasDisk(storDrv.volumeExists(
-                    vlmState.getStorVlmName(), isEncrypted, vlmDfnProps));
+                    vlmName, isEncrypted, vlmDfnProps));
 
                 if (!vlmState.hasDisk())
                 {
                     attemptVolumeStart(vlmDfn, vlmState, storDrv);
 
                     vlmState.setHasDisk(storDrv.volumeExists(
-                        vlmState.getStorVlmName(), isEncrypted, vlmDfnProps));
+                        vlmName, isEncrypted, vlmDfnProps));
                 }
             }
 
@@ -797,7 +849,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 // Check the size of the backend storage
                 StorageDriver.SizeComparison sizeComparison =
-                    storDrv.compareVolumeSize(vlmState.getStorVlmName(), requiredSize, vlmDfnProps);
+                    storDrv.compareVolumeSize(vlmName, requiredSize, vlmDfnProps);
 
                 if (sizeComparison == StorageDriver.SizeComparison.TOO_SMALL)
                 {
@@ -811,7 +863,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     throw new VolumeException(
                         "Storage volume " + vlmDfn.getVolumeNumber().value + " of resource '" +
                             rscDfn.getName().displayValue + "' too large. Expected " + requiredSize +
-                            "KiB, but was : " + storDrv.getSize(vlmState.getStorVlmName(), vlmDfnProps) + "KiB."
+                            "KiB, but was : " + storDrv.getSize(vlmName, vlmDfnProps) + "KiB."
                     );
                 }
 
@@ -840,7 +892,7 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         try
         {
-            storDrv.startVolume(vlmState.getStorVlmName(), vlmDfn.getKey(wrkCtx), vlmDfn.getProps(wrkCtx));
+            storDrv.startVolume(computeVlmName(vlmDfn), vlmDfn.getKey(wrkCtx), vlmDfn.getProps(wrkCtx));
         }
         catch (StorageException exc)
         {
@@ -851,7 +903,9 @@ class DrbdDeviceHandler implements DeviceHandler
 
     private void restoreStorageVolume(
         ResourceDefinition rscDfn,
-        VolumeStateDevManager vlmState
+        VolumeStateDevManager vlmState,
+        String restoreVlmName,
+        String restoreSnapshotName
     )
         throws VolumeException
     {
@@ -859,9 +913,9 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             vlmState.getDriver().restoreSnapshot(
-                vlmState.getRestoreVlmName(),
-                vlmState.getRestoreSnapshotName(),
-                vlmState.getStorVlmName(),
+                restoreVlmName,
+                restoreSnapshotName,
+                computeVlmName(vlmDfn),
                 vlmDfn.getKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)
             );
@@ -897,7 +951,7 @@ class DrbdDeviceHandler implements DeviceHandler
             ));
             VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             vlmState.getDriver().createVolume(
-                vlmState.getStorVlmName(),
+                computeVlmName(rscDfn, vlmState.getVlmNr()),
                 vlmState.getGrossSize(),
                 vlmDfn.getKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)
@@ -935,7 +989,7 @@ class DrbdDeviceHandler implements DeviceHandler
             ));
             VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             vlmState.getDriver().resizeVolume(
-                vlmState.getStorVlmName(),
+                computeVlmName(rscDfn, vlmState.getVlmNr()),
                 vlmState.getGrossSize(),
                 vlmDfn.getKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)
@@ -975,7 +1029,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 .getVolume(vlmState.getVlmNr());
 
             vlmState.getDriver().deleteVolume(
-                vlmState.getStorVlmName(),
+                computeVlmName(rscDfn, vlmState.getVlmNr()),
                 isEncrypted,
                 vlm.getVolumeDefinition().getProps(wrkCtx)
             );
@@ -1059,7 +1113,11 @@ class DrbdDeviceHandler implements DeviceHandler
             drbdUtils.setGi(
                 rsc.getNodeId(),
                 vlmState.getMinorNr(),
-                vlmState.getDriver().getVolumePath(vlmState.getStorVlmName(), isEncrypted, vlmDfnProps),
+                vlmState.getDriver().getVolumePath(
+                    computeVlmName(rscDfn, vlmState.getVlmNr()),
+                    isEncrypted,
+                    vlmDfnProps
+                ),
                 currentGi,
                 null,
                 true
@@ -1129,6 +1187,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     {
                         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                         Props vlmDfnProps = vlmDfn.getProps(wrkCtx);
+                        String vlmName = computeVlmName(vlmDfn);
 
                         ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
 
@@ -1154,7 +1213,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
 
                                 String vlmPath = vlmState.getDriver().getVolumePath(
-                                    vlmState.getStorVlmName(), isEncrypted, vlmDfnProps
+                                    vlmName, isEncrypted, vlmDfnProps
                                 );
 
                                 boolean hasMdFlag = false;
@@ -1200,9 +1259,11 @@ class DrbdDeviceHandler implements DeviceHandler
                         // Create backend storage if required
                         if (!vlmState.hasDisk())
                         {
-                            if (vlmState.getRestoreVlmName() != null && vlmState.getRestoreSnapshotName() != null)
+                            String restoreVlmName = computeRestoreVlmName(vlm);
+                            String restoreSnapshotName = computeRestoreSnapshotName(vlm);
+                            if (restoreVlmName != null && restoreSnapshotName != null)
                             {
-                                restoreStorageVolume(rscDfn, vlmState);
+                                restoreStorageVolume(rscDfn, vlmState, restoreVlmName, restoreSnapshotName);
                                 vlmState.setHasMetaData(true);
                             }
                             else
@@ -1229,14 +1290,13 @@ class DrbdDeviceHandler implements DeviceHandler
                             // store the real size of the volume (after applied extent size, etc)
                             vlm.setNettoSize(
                                 wrkCtx,
-                                vlmState.getDriver().getSize(vlmState.getStorVlmName(), vlmDfnProps)
+                                vlmState.getDriver().getSize(vlmName, vlmDfnProps)
                             );
 
                             boolean isEncrypted = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr()).getFlags()
                                 .isSet(wrkCtx, VlmDfnFlags.ENCRYPTED);
 
-                            String bdPath = vlmState.getDriver().getVolumePath(
-                                vlmState.getStorVlmName(), isEncrypted, vlmDfnProps);
+                            String bdPath = vlmState.getDriver().getVolumePath(vlmName, isEncrypted, vlmDfnProps);
                             vlm.setBackingDiskPath(wrkCtx, bdPath);
                             vlm.setMetaDiskPath(wrkCtx, "internal");
                         }
@@ -1945,14 +2005,14 @@ class DrbdDeviceHandler implements DeviceHandler
         SnapshotName snapshotName,
         VolumeStateDevManager vlmState
     )
-        throws VolumeException, AccessDeniedException, StorageException
+        throws VolumeException, AccessDeniedException
     {
         ResourceDefinition rscDfn = snapshotVolume.getResourceDefinition();
 
         try
         {
             vlmState.getDriver().deleteSnapshot(
-                vlmState.getStorVlmName(),
+                computeSnapshotVlmName(snapshotVolume.getSnapshotVolumeDefinition()),
                 snapshotName.displayValue
             );
         }
@@ -1975,7 +2035,7 @@ class DrbdDeviceHandler implements DeviceHandler
         SnapshotName snapshotName,
         VolumeStateDevManager vlmState
     )
-        throws VolumeException
+        throws VolumeException, AccessDeniedException
     {
         if (!DrbdVolume.DS_LABEL_UP_TO_DATE.equals(vlmState.getDiskState()))
         {
@@ -1983,11 +2043,13 @@ class DrbdDeviceHandler implements DeviceHandler
                 "resource '" + rscDfn.getName().displayValue + "' volume " + vlmState.getVlmNr().value);
         }
 
+        String vlmName = computeVlmName(rscDfn, vlmState.getVlmNr());
+
         boolean exists;
         try
         {
             exists = vlmState.getDriver().snapshotExists(
-                vlmState.getStorVlmName(),
+                vlmName,
                 snapshotName.displayValue
             );
         }
@@ -2009,7 +2071,7 @@ class DrbdDeviceHandler implements DeviceHandler
             try
             {
                 vlmState.getDriver().createSnapshot(
-                    vlmState.getStorVlmName(),
+                    vlmName,
                     snapshotName.displayValue
                 );
             }
@@ -2039,7 +2101,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             vlmState.getDriver().rollbackVolume(
-                vlmState.getStorVlmName(),
+                computeVlmName(vlmDfn),
                 snapshotName.displayValue,
                 vlmDfn.getKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)

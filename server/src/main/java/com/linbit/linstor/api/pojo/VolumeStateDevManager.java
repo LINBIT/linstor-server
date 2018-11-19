@@ -22,21 +22,6 @@ public class VolumeStateDevManager extends VolumeState
     protected StorageDriver driver = null;
 
     /**
-     * Name of the storage backend volume as known to the storage driver
-     */
-    protected String storVlmName = null;
-
-    /**
-     * Name of the backend volume to restore from
-     */
-    protected String restoreVlmName = null;
-
-    /**
-     * Name of the snapshot to restore from
-     */
-    protected String restoreSnapshotName = null;
-
-    /**
      * Number of peer slots
      */
     private short peerSlots;
@@ -81,36 +66,6 @@ public class VolumeStateDevManager extends VolumeState
         driver = driverRef;
     }
 
-    public String getStorVlmName()
-    {
-        return storVlmName;
-    }
-
-    public void setStorVlmName(String storVlmNameRef)
-    {
-        storVlmName = storVlmNameRef;
-    }
-
-    public String getRestoreVlmName()
-    {
-        return restoreVlmName;
-    }
-
-    public void setRestoreVlmName(String restoreVlmNameRef)
-    {
-        restoreVlmName = restoreVlmNameRef;
-    }
-
-    public String getRestoreSnapshotName()
-    {
-        return restoreSnapshotName;
-    }
-
-    public void setRestoreSnapshotName(String restoreSnapshotNameRef)
-    {
-        restoreSnapshotName = restoreSnapshotNameRef;
-    }
-
     public short getPeerSlots()
     {
         return peerSlots;
@@ -138,9 +93,6 @@ public class VolumeStateDevManager extends VolumeState
         vlmStateString.append(super.toString());
         vlmStateString.append("        skip            = ").append(isSkip()).append("\n");
         vlmStateString.append("        driver          = ").append(getDriver()).append("\n");
-        vlmStateString.append("        storPoolVlmName = ").append(getStorVlmName()).append("\n");
-        vlmStateString.append("        restoreVlmName  = ").append(getRestoreVlmName()).append("\n");
-        vlmStateString.append("        restoreSnapshotName = ").append(getRestoreSnapshotName()).append("\n");
         vlmStateString.append("        peerSlots       = ").append(getPeerSlots()).append("\n");
         return vlmStateString.toString();
     }
