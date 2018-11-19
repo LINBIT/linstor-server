@@ -1142,7 +1142,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 errLog.logDebug("Skipping DRBD configuration steps for empty resource '" + rscName + "'");
             }
             else if (allVolumesMarkedForDelete(rscState) ||
-                rscDfn.isDown(wrkCtx) || rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.IN_ROLLBACK))
+                rscDfn.isDown(wrkCtx) || rsc.getProps(wrkCtx).map().containsKey(ApiConsts.KEY_RSC_ROLLBACK_TARGET))
             {
                 deleteDrbdResource(rscName);
             }
@@ -1157,6 +1157,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 condInitialOrSkipSync(rscName, rsc, rscDfn, rscState);
             }
         }
+
+        handleSnapshotRollback(rsc, rscDfn, rscState);
 
         deleteResourceVolumes(rscName, rsc, rscDfn, rscState);
     }
@@ -1787,11 +1789,6 @@ class DrbdDeviceHandler implements DeviceHandler
 
         errLog.logTrace("Handle snapshots for " + rscName.getDisplayName());
 
-        if (rsc != null && rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.IN_ROLLBACK))
-        {
-            handleSnapshotRollback(rsc, rscDfn, snapshots, rscState);
-        }
-
         handleSuspensionForSnapshot(rscName, snapshots, rscState);
         handleSnapshotDelete(rscName, snapshots, rscState);
         handleSnapshotTake(rscName, snapshots, rscState);
@@ -1912,48 +1909,48 @@ class DrbdDeviceHandler implements DeviceHandler
     private void handleSnapshotRollback(
         Resource rsc,
         ResourceDefinition rscDfn,
-        Collection<Snapshot> snapshots,
         ResourceState rscState
     )
         throws AccessDeniedException, ResourceException
     {
-        for (Snapshot snapshot : snapshots)
+        String rollbackTarget = rsc.getProps(wrkCtx).map().get(ApiConsts.KEY_RSC_ROLLBACK_TARGET);
+        if (rollbackTarget != null)
         {
-            boolean isRollbackTarget = snapshot.getFlags().isSet(wrkCtx, Snapshot.SnapshotFlags.ROLLBACK_TARGET);
-            if (isRollbackTarget)
+            for (VolumeDefinition vlmDfn : rscDfn.streamVolumeDfn(wrkCtx).collect(Collectors.toList()))
             {
-                for (VolumeDefinition vlmDfn : rscDfn.streamVolumeDfn(wrkCtx).collect(Collectors.toList()))
+                Volume vlm = rsc.getVolume(vlmDfn.getVolumeNumber());
+
+                VolumeState vlmStateBase = rscState.getVolumeState(vlmDfn.getVolumeNumber());
+                if (vlmStateBase == null)
                 {
-                    Volume vlm = rsc.getVolume(vlmDfn.getVolumeNumber());
+                    throw new ImplementationError("No volume state for volume " +
+                        vlmDfn.getVolumeNumber() + " of resource '" + rscDfn.getName() + "'");
+                }
+                VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
 
-                    VolumeState vlmStateBase = rscState.getVolumeState(vlmDfn.getVolumeNumber());
-                    if (vlmStateBase == null)
-                    {
-                        throw new ImplementationError("No volume state for volume " +
-                            vlmDfn.getVolumeNumber() + " of resource '" + rscDfn.getName() + "'");
-                    }
-                    VolumeStateDevManager vlmState = (VolumeStateDevManager) vlmStateBase;
+                try
+                {
+                    ensureStorageDriver(rscDfn.getName(), vlm.getStorPool(wrkCtx), vlmState);
 
-                    try
-                    {
-                        ensureStorageDriver(rscDfn.getName(), vlm.getStorPool(wrkCtx), vlmState);
-
-                        rollbackVolume(
-                            rscDfn,
-                            snapshot.getSnapshotName(),
-                            vlmState
-                        );
-                    }
-                    catch (VolumeException vlmExc)
-                    {
-                        throw new ResourceException(
-                            "Restoration for rollback of snapshot '" + snapshot.getSnapshotName() +
-                                "' for resource '" + rscDfn.getName() +
-                                "' volume " + vlmDfn.getVolumeNumber().value + " failed",
-                            null, vlmExc.getMessage(),
-                            null, null, vlmExc
-                        );
-                    }
+                    rollbackVolume(
+                        rscDfn,
+                        new SnapshotName(rollbackTarget),
+                        vlmState
+                    );
+                }
+                catch (VolumeException vlmExc)
+                {
+                    throw new ResourceException(
+                        "Rollback of resource '" + rscDfn.getName() +
+                            "' volume " + vlmDfn.getVolumeNumber().value +
+                            " to snapshot '" + rollbackTarget + "' failed",
+                        null, vlmExc.getMessage(),
+                        null, null, vlmExc
+                    );
+                }
+                catch (InvalidNameException exc)
+                {
+                    throw new ImplementationError(exc);
                 }
             }
         }

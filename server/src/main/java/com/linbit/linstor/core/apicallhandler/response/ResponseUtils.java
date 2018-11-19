@@ -244,8 +244,8 @@ public class ResponseUtils
     public static Flux<ApiCallRc> translateDeploymentSuccess(
         Flux<Tuple2<NodeName, ApiCallRc>> responses,
         Collection<NodeName> nodeNames,
-        String messageFormatSelf,
-        String messageFormatPeer
+        String messageFormatThese,
+        String messageFormatOthers
     )
     {
         return responses.map(namedResponse ->
@@ -258,7 +258,7 @@ public class ResponseUtils
                     if (rcEntry.getReturnCode() == ApiConsts.MODIFIED)
                     {
                         String messageFormat = nodeNames.contains(responseNodeName) ?
-                            messageFormatSelf : messageFormatPeer;
+                            messageFormatThese : messageFormatOthers;
                         if (messageFormat != null)
                         {
                             transformedResponses.addEntry(ApiCallRcImpl.simpleEntry(

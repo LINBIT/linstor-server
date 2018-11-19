@@ -297,16 +297,16 @@ class StltSnapshotApiCallHandler
                 }
 
                 transMgrProvider.get().commit();
-
-                errorReporter.logInfo(
-                    "Snapshot '%s' ended.",
-                    snapshotName
-                );
-
-                deviceManager.snapshotUpdateApplied(
-                    Collections.singleton(new SnapshotDefinition.Key(rscName, snapshotName))
-                );
             }
+
+            errorReporter.logInfo(
+                "Snapshot '%s' ended.",
+                snapshotName
+            );
+
+            deviceManager.snapshotUpdateApplied(
+                Collections.singleton(new SnapshotDefinition.Key(rscName, snapshotName))
+            );
         }
         catch (Exception | ImplementationError exc)
         {

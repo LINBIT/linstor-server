@@ -288,18 +288,8 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
     {
         checkDeleted();
 
-        boolean anyRollbackTargets = false;
-        for (Snapshot snapshot : snapshotMap.values())
-        {
-            if (snapshot.getFlags().isSet(accCtx, Snapshot.SnapshotFlags.ROLLBACK_TARGET))
-            {
-                anyRollbackTargets = true;
-            }
-        }
-
         return inCreation.get() ||
-            flags.isSet(accCtx, SnapshotDfnFlags.DELETE) ||
-            anyRollbackTargets;
+            flags.isSet(accCtx, SnapshotDfnFlags.DELETE);
     }
 
     @Override

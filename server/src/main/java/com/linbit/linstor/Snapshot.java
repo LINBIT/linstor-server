@@ -92,8 +92,7 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable
 
     enum SnapshotFlags implements Flags
     {
-        DELETE(1L),
-        ROLLBACK_TARGET(2L);
+        DELETE(1L);
 
         public final long flagValue;
 
