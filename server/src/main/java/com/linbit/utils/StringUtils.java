@@ -1,8 +1,12 @@
 package com.linbit.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 
 /**
@@ -62,6 +66,13 @@ public class StringUtils
     public static boolean isEmpty(String string)
     {
         return string == null || string.isEmpty();
+    }
+
+    public static String[] concat(String[] array, Set<String> list)
+    {
+        List<String> result = new ArrayList<>(Arrays.asList(array));
+        result.addAll(list);
+        return result.toArray(new String[0]);
     }
 
     public static class ConditionalStringJoiner

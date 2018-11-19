@@ -33,6 +33,7 @@ public class StorageConstants
      * ZFS
      */
     public static final String CONFIG_ZFS_POOL_KEY = ApiConsts.KEY_STOR_POOL_ZPOOL;
+    public static final String CONFIG_ZFS_THIN_POOL_KEY = ApiConsts.KEY_STOR_POOL_ZPOOLTHIN;
     public static final String CONFIG_ZFS_COMMAND_KEY = "zfs";
 
     /*

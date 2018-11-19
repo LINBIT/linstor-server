@@ -1,15 +1,13 @@
-package com.linbit.linstor.storage.layer.provider.lvm;
+package com.linbit.linstor.storage.utils;
 
 import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
 
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.StorageUtils;
+import com.linbit.utils.StringUtils;
+
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
 public class LvmCommands
@@ -24,11 +22,11 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            concat(
+            StringUtils.concat(
                 new String[] {
                     "lvs",
                     "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv",
-                    "--separator", StorageUtils.DELIMITER,
+                    "--separator", LvmUtils.DELIMITER,
                     "--noheadings",
                     "--units", "k",
                     "--nosuffix"
@@ -44,11 +42,11 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            concat(
+            StringUtils.concat(
                 new String[] {
                     "vgs",
                     "-o", "vg_name,vg_extent_size",
-                    "--separator", StorageUtils.DELIMITER,
+                    "--separator", LvmUtils.DELIMITER,
                     "--units", "k",
                     "--noheadings",
                     "--nosuffix"
@@ -154,13 +152,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            concat(
+            StringUtils.concat(
                 new String[]
                 {
                     "vgs",
                    "-o", "vg_size",
                     "--units", "k",
-                    "--separator", StorageUtils.DELIMITER,
+                    "--separator", LvmUtils.DELIMITER,
                     "--noheadings",
                     "--nosuffix"
                 },
@@ -176,13 +174,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            concat(
+            StringUtils.concat(
                 new String[]
                 {
                     "vgs",
                     "-o", "vg_name,vg_free",
                     "--units", "k",
-                    "--separator", StorageUtils.DELIMITER,
+                    "--separator", LvmUtils.DELIMITER,
                     "--noheadings",
                     "--nosuffix"
                 },
@@ -198,13 +196,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            concat(
+            StringUtils.concat(
                 new String[]
                     {
                         "lvs",
                         "-o", "lv_size",
                         "--units", "k",
-                        "--separator", StorageUtils.DELIMITER,
+                        "--separator", LvmUtils.DELIMITER,
                         "--noheadings",
                         "--nosuffix"
                     },
@@ -212,7 +210,7 @@ public class LvmCommands
                 ),
             "Failed to query total size of volume group(s) " + volumeGroups,
             "Failed to query total size of volume group(s) " + volumeGroups
-            );
+        );
     }
 
     public static OutputData getVgThinFreeSize(ExtCmd extCmd, Set<String> volumeGroups)
@@ -220,13 +218,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            concat(
+            StringUtils.concat(
                 new String[]
                     {
                         "vgs",
                         "-o", "lv_name,lv_size,data_percent",
                         "--units", "k",
-                        "--separator", StorageUtils.DELIMITER,
+                        "--separator", LvmUtils.DELIMITER,
                         "--noheadings",
                         "--nosuffix"
                     },
@@ -235,12 +233,5 @@ public class LvmCommands
             "Failed to query free size of volume group(s) " + volumeGroups,
             "Failed to query free size of volume group(s) " + volumeGroups
             );
-    }
-
-    private static String[] concat(String[] array, Set<String> list)
-    {
-        List<String> result = new ArrayList<>(Arrays.asList(array));
-        result.addAll(list);
-        return result.toArray(new String[0]);
     }
 }

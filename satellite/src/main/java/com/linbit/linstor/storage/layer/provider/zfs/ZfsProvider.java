@@ -2,105 +2,201 @@ package com.linbit.linstor.storage.layer.provider.zfs;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.exceptions.VolumeException;
-import com.linbit.linstor.storage.layer.provider.DeviceProvider;
+import com.linbit.linstor.storage.layer.provider.AbsProvider;
+import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
+import com.linbit.linstor.storage.utils.DeviceLayerUtils;
+import com.linbit.linstor.storage.utils.ZfsCommands;
+import com.linbit.linstor.storage.utils.ZfsUtils;
+import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
+import com.linbit.linstor.storage2.layer.data.ZfsLayerData;
+import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData.Size;
 
+import java.io.File;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
-public class ZfsProvider implements DeviceProvider
+public class ZfsProvider extends AbsProvider<ZfsInfo, ZfsLayerDataStlt>
 {
-    protected final ErrorReporter errorReporter;
-    protected final ExtCmdFactory extCmdFactory;
-    protected final AccessContext storDriverAccCtx;
-    protected final NotificationListener notificationListener;
-    protected Props localNodeProps;
+    private static final String FORMAT_RSC_TO_ZFS_ID = "%s_%05d";
+    private static final String FORMAT_ZFS_ID_WIPE_IN_PROGRESS = "%s_linstor_wiping_in_progress";
+    private static final String FORMAT_ZFS_DEV_PATH = "/dev/%s/%s";
+    private static final int TOLERANCE_FACTOR = 3;
+
+    protected ZfsProvider(
+        ErrorReporter errorReporterRef,
+        ExtCmdFactory extCmdFactoryRef,
+        AccessContext storDriverAccCtxRef,
+        StltConfigAccessor stltConfigAccessorRef,
+        StorageLayer storageLayerRef,
+        NotificationListener notificationListenerRef,
+        String subTypeDescr
+    )
+    {
+        super(
+            errorReporterRef,
+            extCmdFactoryRef,
+            storDriverAccCtxRef,
+            stltConfigAccessorRef,
+            storageLayerRef,
+            notificationListenerRef,
+            subTypeDescr
+        );
+    }
 
     public ZfsProvider(
         ErrorReporter errorReporterRef,
         ExtCmdFactory extCmdFactoryRef,
         AccessContext storDriverAccCtxRef,
+        StltConfigAccessor stltConfigAccessorRef,
+        StorageLayer storageLayerRef,
         NotificationListener notificationListenerRef
     )
     {
-        errorReporter = errorReporterRef;
-        extCmdFactory = extCmdFactoryRef;
-        storDriverAccCtx = storDriverAccCtxRef;
-        notificationListener = notificationListenerRef;
+        super(
+            errorReporterRef,
+            extCmdFactoryRef,
+            storDriverAccCtxRef,
+            stltConfigAccessorRef,
+            storageLayerRef,
+            notificationListenerRef,
+            "ZFS"
+        );
     }
 
     @Override
-    public void prepare(List<Volume> volumes) throws StorageException, AccessDeniedException, SQLException
+    protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        return ZfsUtils.getZPoolFreeSize(extCmdFactory.create(), changedStoragePools);
     }
 
     @Override
-    public void clearCache() throws StorageException
+    protected Map<String, ZfsInfo> getInfoListImpl(Collection<Volume> volumes) throws StorageException
     {
-        // TODO Auto-generated method stub
-        errorReporter.logWarning("WARNING: method not implemented yet");
+        return ZfsUtils.getZfsList(extCmdFactory.create());
     }
 
     @Override
-    public void process(List<Volume> volumes, List<SnapshotVolume> snapVolumes, ApiCallRcImpl apiCallRc)
-        throws AccessDeniedException, SQLException, VolumeException, StorageException
+    protected String asLvIdentifier(Volume vlm)
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        // TODO: check for migration property
+        return String.format(
+            FORMAT_RSC_TO_ZFS_ID,
+            vlm.getResourceDefinition().getName().displayValue,
+            vlm.getVolumeDefinition().getVolumeNumber().value
+        );
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool) throws StorageException
+    protected void createLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        ZfsCommands.create(
+            extCmdFactory.create(),
+            ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
+            asLvIdentifier(vlm),
+            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx),
+            false
+        );
     }
 
     @Override
-    public long getPoolFreeSpace(StorPool storPool) throws StorageException
+    protected void resizeLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        ZfsCommands.resize(
+            extCmdFactory.create(),
+            ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
+            asLvIdentifier(vlm),
+            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx)
+        );
     }
 
     @Override
-    public void createSnapshot(Volume vlm, String snapshotName) throws StorageException
+    protected void deleteLvImpl(Volume vlm, String lvId)
+        throws StorageException, AccessDeniedException, SQLException
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        // TODO: maybe we should also wipe here?
+        ZfsCommands.delete(
+            extCmdFactory.create(),
+            ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
+            lvId
+        );
     }
 
     @Override
-    public void restoreSnapshot(Volume srcVlm, String snapshotName, Volume targetVlm) throws StorageException
+    protected String getDevicePath(String zPool, String identifier)
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        return String.format(FORMAT_ZFS_DEV_PATH, zPool, identifier);
     }
 
     @Override
-    public void deleteSnapshot(Volume vlm, String snapshotName) throws StorageException
+    protected String getIdentifier(ZfsLayerDataStlt layerData)
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        return layerData.identifier;
     }
 
     @Override
-    public boolean snapshotExists(Volume vlm, String snapshotName) throws StorageException
+    protected Size getSize(ZfsLayerDataStlt layerData)
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        return layerData.sizeState;
+    }
+
+    @Override
+    protected String getStorageName(Volume vlm) throws AccessDeniedException, SQLException
+    {
+        String volumeGroup = null;
+        ZfsLayerDataStlt layerData = (ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx);
+        if (layerData == null)
+        {
+            volumeGroup = getZPool(vlm.getStorPool(storDriverAccCtx));
+        }
+        else
+        {
+            volumeGroup = layerData.zpool;
+        }
+        return volumeGroup;
+    }
+
+    protected String getZPool(StorPool storPool) throws AccessDeniedException
+    {
+        String zPool;
+        try
+        {
+            zPool = DeviceLayerUtils.getNamespaceStorDriver(
+                storPool.getProps(storDriverAccCtx)
+            ).getProp(StorageConstants.CONFIG_ZFS_POOL_KEY);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return zPool;
+    }
+
+    private String getZPool(Volume vlm) throws AccessDeniedException, SQLException
+    {
+        String zPool = null;
+        ZfsLayerData layerData = (ZfsLayerData) vlm.getLayerData(storDriverAccCtx);
+        if (layerData == null)
+        {
+            zPool = getZPool(vlm.getStorPool(storDriverAccCtx));
+        }
+        else
+        {
+            zPool = layerData.getZPool();
+        }
+        return zPool;
     }
 
     @Override
@@ -110,8 +206,119 @@ public class ZfsProvider implements DeviceProvider
         throw new ImplementationError("Not implemented yet");
     }
 
-    public void setLocalNodeProps(Props localNodePropsRef)
+    @Override
+    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        localNodeProps = localNodePropsRef;
+        String zPool = getZPool(storPool);
+        if (zPool == null)
+        {
+            throw new StorageException("Unset zpool for " + storPool);
+        }
+        return ZfsUtils.getZPoolTotalSize(
+            extCmdFactory.create(),
+            Collections.singleton(zPool)
+        ).get(zPool);
+    }
+
+    @Override
+    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        String zPool = getZPool(storPool);
+        if (zPool == null)
+        {
+            throw new StorageException("Unset volume group for " + storPool);
+        }
+        return ZfsUtils.getZPoolFreeSize(
+            extCmdFactory.create(),
+            Collections.singleton(zPool)
+        ).get(zPool);
+    }
+
+    @Override
+    protected boolean updateDmStats()
+    {
+        return false;
+    }
+
+    @Override
+    protected void updateVolumeStates(Collection<Volume> vlms)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        for (Volume vlm : vlms)
+        {
+            final ZfsInfo info = infoListCache.get(asFullQualifiedLvIdentifier(vlm));
+            // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
+
+            ZfsLayerDataStlt state = (ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx);
+            if (info != null)
+            {
+                if (state == null)
+                {
+                    state = createLayerData(vlm, info);
+                }
+                state.exists = true;
+
+                final long expectedSize = vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx);
+                final long actualSize = info.size;
+                if (actualSize != expectedSize)
+                {
+                    if (actualSize < expectedSize)
+                    {
+                        state.sizeState = Size.TOO_SMALL;
+                    }
+                    else
+                    {
+                        long extentSize = ZfsUtils.getZfsExtentSize(
+                            extCmdFactory.create(),
+                            info.poolName,
+                            info.identifier
+                        );
+                        state.sizeState = Size.TOO_LARGE;
+                        final long toleratedSize =
+                            expectedSize + extentSize * TOLERANCE_FACTOR;
+                        if (actualSize < toleratedSize)
+                        {
+                            state.sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
+                        }
+                    }
+                }
+                vlm.setDevicePath(storDriverAccCtx, info.path);
+                ProviderUtils.updateSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+            }
+            else
+            {
+                if (state == null)
+                {
+                    state = createEmptyLayerData(vlm);
+                }
+                state.exists = false;
+                vlm.setDevicePath(storDriverAccCtx, null);
+                ProviderUtils.setSize(vlm, 0, storDriverAccCtx);
+            }
+        }
+    }
+
+    private String asFullQualifiedLvIdentifier(Volume vlm) throws AccessDeniedException, SQLException
+    {
+        return getStorageName(vlm) + File.separator + asLvIdentifier(vlm);
+    }
+
+    protected ZfsLayerDataStlt createLayerData(Volume vlm, ZfsInfo info) throws AccessDeniedException, SQLException
+    {
+        ZfsLayerDataStlt data = new ZfsLayerDataStlt(info);
+        vlm.setLayerData(storDriverAccCtx, data);
+        return data;
+    }
+
+    protected ZfsLayerDataStlt createEmptyLayerData(Volume vlm)
+        throws AccessDeniedException, SQLException
+    {
+        ZfsLayerDataStlt data = new ZfsLayerDataStlt(
+            getZPool(vlm),
+            asLvIdentifier(vlm),
+            -1
+        );
+        vlm.setLayerData(storDriverAccCtx, data);
+        return data;
     }
 }

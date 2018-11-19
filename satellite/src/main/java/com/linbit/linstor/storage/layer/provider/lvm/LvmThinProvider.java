@@ -13,14 +13,11 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.storage2.layer.data.LvmLayerData;
 import com.linbit.linstor.storage2.layer.data.LvmThinLayerData;
-import com.linbit.linstor.transaction.TransactionMgr;
-
-import javax.inject.Provider;
-
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -28,23 +25,22 @@ import java.util.Collections;
 public class LvmThinProvider extends LvmProvider
 {
     public LvmThinProvider(
-        ExtCmdFactory extCmdFactory,
-        AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        Provider<TransactionMgr> transMgrProviderRef,
-        NotificationListener notificationListenerRef,
+        ErrorReporter errorReporterRef,
+        ExtCmdFactory extCmdFactoryRef,
+        AccessContext storDriverAccCtxRef,
+        StltConfigAccessor stltConfigAccessorRef,
         StorageLayer storageLayerRef,
-        ErrorReporter errorReporterRef
+        NotificationListener notificationListenerRef
     )
     {
         super(
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            transMgrProviderRef,
-            notificationListenerRef,
+            errorReporterRef,
+            extCmdFactoryRef,
+            storDriverAccCtxRef,
+            stltConfigAccessorRef,
             storageLayerRef,
-            errorReporterRef
+            notificationListenerRef,
+            "LVM-Thin"
         );
     }
 
@@ -56,16 +52,15 @@ public class LvmThinProvider extends LvmProvider
             extCmdFactory.create(),
             lvmThinData.getVolumeGroup(),
             lvmThinData.getThinPool(),
-            asLvmIdentifier(vlm),
+            asLvIdentifier(vlm),
             vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx)
         );
     }
 
     @Override
-    protected void deleteLvImpl(Volume vlm, String lvmId, String ignored, String ignored2)
+    protected void deleteLvImpl(Volume vlm, String lvmId)
         throws StorageException, AccessDeniedException, SQLException
     {
-        // thin does not have to zero-out everything, just simply remove the LV
         LvmCommands.delete(
             extCmdFactory.create(),
             ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
@@ -91,7 +86,7 @@ public class LvmThinProvider extends LvmProvider
             data = new LvmThinLayerDataStlt(
                 getVolumeGroup(storPool),
                 getThinPool(storPool), // thin pool
-                asLvmIdentifier(vlm),
+                asLvIdentifier(vlm),
                 -1
             );
             vlm.setLayerData(storDriverAccCtx, data);

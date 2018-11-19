@@ -1,28 +1,26 @@
-package com.linbit.linstor.storage.layer.provider.lvm;
+package com.linbit.linstor.storage.layer.provider.zfs;
 
-import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
-import com.linbit.linstor.storage2.layer.data.LvmLayerData;
+import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
+import com.linbit.linstor.storage2.layer.data.ZfsLayerData;
 
-public class LvmLayerDataStlt implements LvmLayerData
+public class ZfsLayerDataStlt implements ZfsLayerData
 {
     boolean exists = false;
     boolean failed = false;
     long usableSize = -1L;
     long allocatedSize = -1L;
-    String volumeGroup = null;
-    String thinPool;
+    String zpool = null;
     String identifier = null;
     Size sizeState = null;
 
-    public LvmLayerDataStlt(LvsInfo info)
+    public ZfsLayerDataStlt(ZfsInfo info)
     {
-        this(info.volumeGroup, info.thinPool, info.identifier, info.size);
+        this(info.poolName, info.identifier, info.size);
     }
 
-    public LvmLayerDataStlt(String volumeGroupRef, String thinPoolRef, String identifierRef, long sizeRef)
+    public ZfsLayerDataStlt(String zPoolRef, String identifierRef, long sizeRef)
     {
-        volumeGroup = volumeGroupRef;
-        thinPool = thinPoolRef;
+        zpool = zPoolRef;
         identifier = identifierRef;
         usableSize = sizeRef;
         allocatedSize = sizeRef;
@@ -53,9 +51,9 @@ public class LvmLayerDataStlt implements LvmLayerData
     }
 
     @Override
-    public String getVolumeGroup()
+    public String getZPool()
     {
-        return volumeGroup;
+        return zpool;
     }
 
     @Override

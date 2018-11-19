@@ -24,14 +24,16 @@ public interface DeviceProvider
     /**
      * @return the capacity of the used storage pool.
      * @throws StorageException
+     * @throws AccessDeniedException
      */
-    long getPoolCapacity(StorPool storPool) throws StorageException;
+    long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException;
 
     /**
      * @return the free space of the used storage pool.
      * @throws StorageException
+     * @throws AccessDeniedException
      */
-    long getPoolFreeSpace(StorPool storPool) throws StorageException;
+    long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException;
 
     /**
      * Creates a snapshot of a given {@link Volume}.

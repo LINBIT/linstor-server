@@ -7,6 +7,13 @@ package com.linbit.linstor.storage2.layer.data.categories;
  */
 public interface VlmLayerData extends LayerData
 {
+    enum Size
+    {
+        TOO_SMALL,
+        TOO_LARGE,
+        TOO_LARGE_WITHIN_TOLERANCE
+    }
+
     boolean exists();
 
     boolean isFailed();

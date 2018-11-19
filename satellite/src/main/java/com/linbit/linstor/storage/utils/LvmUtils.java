@@ -12,19 +12,21 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
-import com.linbit.linstor.storage.layer.provider.lvm.LvmCommands;
 
-import static com.linbit.linstor.storage.layer.provider.lvm.LvmCommands.LVS_COL_IDENTIFIER;
-import static com.linbit.linstor.storage.layer.provider.lvm.LvmCommands.LVS_COL_PATH;
-import static com.linbit.linstor.storage.layer.provider.lvm.LvmCommands.LVS_COL_POOL_LV;
-import static com.linbit.linstor.storage.layer.provider.lvm.LvmCommands.LVS_COL_SIZE;
-import static com.linbit.linstor.storage.layer.provider.lvm.LvmCommands.LVS_COL_VG;
+import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_IDENTIFIER;
+import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_PATH;
+import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_POOL_LV;
+import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_SIZE;
+import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_VG;
 
 /**
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public class LvmUtils
 {
+    // DO NOT USE "," or "." AS DELIMITER due to localization issues
+    public static final String DELIMITER = ";";
+
     private LvmUtils()
     {
     }
@@ -63,7 +65,7 @@ public class LvmUtils
         final int expectedThinColCount = 5;
         for (final String line : lines)
         {
-            final String[] data = line.trim().split(StorageUtils.DELIMITER);
+            final String[] data = line.trim().split(DELIMITER);
             if (data.length == expectedFatColCount || data.length == expectedThinColCount)
             {
                 final String identifier = data[LVS_COL_IDENTIFIER];
@@ -114,32 +116,36 @@ public class LvmUtils
 
     public static Map<String, Long> getExtentSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
     {
-        return parseSimpleVolumeGroupTable(
+        return ParseUtils.parseSimpleTable(
             LvmCommands.getExtentSize(extCmd, volumeGroups),
+            DELIMITER,
             "extent size"
         );
     }
 
     public static Map<String, Long> getVgTotalSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
     {
-        return parseSimpleVolumeGroupTable(
+        return ParseUtils.parseSimpleTable(
             LvmCommands.getVgTotalSize(extCmd, volumeGroups),
+            DELIMITER,
             "total size"
         );
     }
 
     public static Map<String, Long> getVgFreeSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
     {
-        return parseSimpleVolumeGroupTable(
+        return ParseUtils.parseSimpleTable(
             LvmCommands.getVgFreeSize(extCmd, volumeGroups),
+            DELIMITER,
             "free size"
         );
     }
 
     public static Map<String, Long> getThinTotalSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
     {
-        return parseSimpleVolumeGroupTable(
+        return ParseUtils.parseSimpleTable(
             LvmCommands.getVgThinTotalSize(extCmd, volumeGroups),
+            DELIMITER,
             "total thin size"
         );
     }
@@ -156,7 +162,7 @@ public class LvmUtils
 
         for (final String line : lines)
         {
-            final String[] data = line.trim().split(StorageUtils.DELIMITER);
+            final String[] data = line.trim().split(DELIMITER);
             if (data.length == expectedColums)
             {
                 try
@@ -191,54 +197,6 @@ public class LvmUtils
             {
                 throw new StorageException(
                     "Unable to parse free thin sizes",
-                    "Expected " + expectedColums + " columns, but got " + data.length,
-                    "Failed to parse line: " + line,
-                    null,
-                    "External command: " + String.join(" ", output.executedCommand)
-                );
-            }
-        }
-        return result;
-    }
-
-    private static Map<String, Long> parseSimpleVolumeGroupTable(OutputData output, String descr)
-        throws StorageException
-    {
-        final int expectedColums = 2;
-
-        final Map<String, Long> result = new HashMap<>();
-
-        final String stdOut = new String(output.stdoutData);
-        final String[] lines = stdOut.split("\n");
-
-        for (final String line : lines)
-        {
-            final String[] data = line.trim().split(StorageUtils.DELIMITER);
-            if (data.length == expectedColums)
-            {
-                try
-                {
-                    result.put(
-                        data[0],
-                        StorageUtils.parseDecimalAsLong(data[1])
-                    );
-                }
-                catch (NumberFormatException nfExc)
-                {
-                    throw new StorageException(
-                        "Unable to parse " + descr,
-                        "Numeric value to parse: '" + data[1] + "'",
-                        null,
-                        null,
-                        "External command: " + String.join(" ", output.executedCommand),
-                        nfExc
-                    );
-                }
-            }
-            else
-            {
-                throw new StorageException(
-                    "Unable to parse " + descr,
                     "Expected " + expectedColums + " columns, but got " + data.length,
                     "Failed to parse line: " + line,
                     null,

@@ -78,33 +78,35 @@ public class StorageLayer implements ResourceLayer
         notificationListener = notificationListenerRef;
 
         lvmDriver = new LvmProvider(
+            errorReporterRef,
             extCmdFactoryRef,
             storDriverAccCtxRef,
             stltConfigAccessorRef,
-            transMgrProviderRef,
-            notificationListenerRef,
             this,
-            errorReporterRef
+            notificationListenerRef
         );
         lvmThinDriver = new LvmThinProvider(
+            errorReporterRef,
             extCmdFactoryRef,
             storDriverAccCtxRef,
             stltConfigAccessorRef,
-            transMgrProviderRef,
-            notificationListenerRef,
             this,
-            errorReporterRef
+            notificationListenerRef
         );
         zfsDriver = new ZfsProvider(
             errorReporterRef,
             extCmdFactoryRef,
             storDriverAccCtxRef,
+            stltConfigAccessorRef,
+            this,
             notificationListenerRef
         );
         zfsThinDriver = new ZfsThinProvider(
             errorReporterRef,
             extCmdFactoryRef,
             storDriverAccCtxRef,
+            stltConfigAccessorRef,
+            this,
             notificationListenerRef
         );
         sfTargetDriver = new SwordfishTargetProvider(
@@ -261,10 +263,17 @@ public class StorageLayer implements ResourceLayer
      * @throws StorageException
      * @throws IOException
      */
-    public void quickWipe(String devicePath) throws StorageException, IOException
+    public void quickWipe(String devicePath) throws StorageException
     {
         Commands.wipeFs(extCmdFactory.create(), devicePath);
-        MdSuperblockBuffer.wipe(devicePath);
+        try
+        {
+            MdSuperblockBuffer.wipe(devicePath);
+        }
+        catch (IOException ioExc)
+        {
+            throw new StorageException("Failed to quick-wipe devicePath " + devicePath, ioExc);
+        }
     }
 
     public void asyncWipe(String devicePath, Consumer<String> wipeFinishedNotifier)
