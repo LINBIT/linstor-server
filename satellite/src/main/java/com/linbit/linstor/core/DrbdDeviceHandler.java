@@ -48,6 +48,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.AbsSwordfishDriver;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 
@@ -379,11 +380,12 @@ class DrbdDeviceHandler implements DeviceHandler
             rsc.streamVolumes().forEach(
                 vlm ->
                 {
-                    String vlmState;
                     try
                     {
-                        vlmState = vlm.getStorPool(wrkCtx)
-                            .getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor)
+                        StorageDriver storageDriver = vlm.getStorPool(wrkCtx)
+                            .getDriver(wrkCtx, errLog, fileSystemWatch, timer, stltCfgAccessor);
+                        String volumeName = computeVlmName(rscDfn, vlm.getVolumeDefinition().getVolumeNumber());
+                        String vlmState = storageDriver
                             .getVolumeState(
                                 computeVlmName(
                                     rscDfn,
@@ -392,13 +394,24 @@ class DrbdDeviceHandler implements DeviceHandler
                             );
                         if (vlmState != null)
                         {
-                            vlmDiskStateEvent.get().triggerEvent(
-                                ObjectIdentifier.volumeDefinition(
+                            if (vlmState.equals(AbsSwordfishDriver.STATE_REMOVE))
+                            {
+                                vlmDiskStateEvent.get().closeStream(ObjectIdentifier.volumeDefinition(
                                     rscName,
                                     vlm.getVolumeDefinition().getVolumeNumber()
+                                ));
+                                storageDriver.removeVolumeState(volumeName);
+                            }
+                            else
+                            {
+                                vlmDiskStateEvent.get().triggerEvent(
+                                    ObjectIdentifier.volumeDefinition(
+                                        rscName,
+                                        vlm.getVolumeDefinition().getVolumeNumber()
                                     ),
-                                vlmState
-                            );
+                                    vlmState
+                                );
+                            }
                         }
                     }
                     catch (AccessDeniedException exc)

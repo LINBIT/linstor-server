@@ -321,7 +321,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
                     break;
             }
 
-            removeState(linstorVlmId); // deleting
+            setState(linstorVlmId, AbsSwordfishDriver.STATE_REMOVE); // internal state to send a close event to the ctrl
         }
         else
         {

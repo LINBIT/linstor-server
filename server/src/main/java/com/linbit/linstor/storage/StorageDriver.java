@@ -313,6 +313,14 @@ public interface StorageDriver
         return null;
     }
 
+    /**
+     * Deletes the volume state entry
+     * @param linstorVlmId
+     */
+    default void removeVolumeState(String linstorVlmId)
+    {
+    }
+
     enum SizeComparison
     {
         TOO_SMALL,

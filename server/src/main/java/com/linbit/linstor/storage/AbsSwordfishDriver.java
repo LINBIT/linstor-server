@@ -29,6 +29,7 @@ import java.util.function.Function;
 public abstract class AbsSwordfishDriver implements StorageDriver
 {
     private static final String STATE_FAILED = "Failed";
+    public static final String STATE_REMOVE = "INTERNAL_REMOVE";
 
     protected final ErrorReporter errorReporter;
     protected final StorageDriverKind storageDriverKind;
@@ -369,15 +370,16 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         volumeStates.put(linstorVlmId, state);
     }
 
-    protected void removeState(String linstorVlmId)
-    {
-        volumeStates.remove(linstorVlmId);
-    }
-
     @Override
     public String getVolumeState(String linstorVlmId)
     {
         return volumeStates.get(linstorVlmId);
+    }
+
+    @Override
+    public void removeVolumeState(String linstorVlmId)
+    {
+        volumeStates.remove(linstorVlmId);
     }
 
     protected String buildVlmOdataId(String storSvc, String sfVlmId)

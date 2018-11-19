@@ -32,6 +32,8 @@ import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateNotification;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.drbdstate.DrbdEventService;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -166,6 +168,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private UpdateMonitor updateMonitor;
 
+    private ResourceStateEvent resourceStateEvent;
+
 
     @Inject
     DeviceManagerImpl(
@@ -188,7 +192,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         StltSecurityObjects stltSecObjRef,
         Provider<DeviceHandlerInvocationFactory> devHandlerInvocFactoryProviderRef,
         Scheduler scheduler,
-        UpdateMonitor updateMonitorRef
+        UpdateMonitor updateMonitorRef,
+        ResourceStateEvent resourceStateEventRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -210,6 +215,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         stltSecObj = stltSecObjRef;
         devHandlerInvocFactoryProvider = devHandlerInvocFactoryProviderRef;
         updateMonitor = updateMonitorRef;
+        resourceStateEvent = resourceStateEventRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -945,6 +951,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
                 for (ResourceName curRscName : localDelRscSet)
                 {
+                    resourceStateEvent.get().closeStream(
+                        ObjectIdentifier.resource(controllerPeerConnector.getLocalNodeName(), curRscName)
+                    );
                     ResourceDefinition curRscDfn = rscDfnMap.get(curRscName);
                     if (curRscDfn != null)
                     {
