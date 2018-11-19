@@ -160,8 +160,17 @@ class CtrlVlmCrtApiHelper
         String metaDisk
     )
     {
+        /*
+         * check if StorPool is usable only if
+         * - storPool has Backing storage
+         * - storPool is Fat-provisioned or we have a map of the thin-free-spaces available
+         * - the overrideVlmId property is not set; in this case we assume the volume already
+         * exists on the storPool, which means we will not consume additional $volumeSize space
+         */
         if (storPool.getDriverKind().hasBackingStorage() &&
-            (thinFreeCapacities != null || !storPool.getDriverKind().usesThinProvisioning()))
+            (thinFreeCapacities != null || !storPool.getDriverKind().usesThinProvisioning()) &&
+            !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
+        )
         {
             if (!FreeCapacityAutoPoolSelectorUtils.isStorPoolUsable(
                 getVolumeSizePrivileged(vlmDfn),
@@ -217,6 +226,21 @@ class CtrlVlmCrtApiHelper
             throw new ApiSQLException(sqlExc);
         }
         return vlm;
+    }
+
+    private boolean isOverrideVlmIdPropertySetPrivileged(VolumeDefinition vlmDfn)
+    {
+        boolean isSet;
+        try
+        {
+            isSet = vlmDfn.getProps(apiCtx)
+                .getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID) != null;
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return isSet;
     }
 
     /**
