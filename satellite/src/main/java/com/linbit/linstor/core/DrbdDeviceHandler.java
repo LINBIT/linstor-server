@@ -336,6 +336,12 @@ class DrbdDeviceHandler implements DeviceHandler
             NodeName localNodeName = localNode.getName();
 
             rsc = rscDfn.getResource(wrkCtx, localNodeName);
+
+            {
+                ResourceState rscState = initializeSnapshotResourceState(localNodeName, rscDfn, inProgressSnapshots);
+                handleSnapshotDelete(rscDfn.getName(), inProgressSnapshots, rscState);
+            }
+
             if (rsc != null)
             {
                 // Volatile state information of the resource and its volumes
@@ -368,25 +374,8 @@ class DrbdDeviceHandler implements DeviceHandler
             }
 
             {
-                Set<VolumeNumber> snapshotVlmNumbers = new HashSet<>();
-                for (Snapshot snapshot : inProgressSnapshots)
-                {
-                    snapshotVlmNumbers.addAll(
-                        snapshot.getAllSnapshotVolumes(wrkCtx).stream()
-                            .map(SnapshotVolume::getVolumeNumber)
-                            .collect(Collectors.toSet())
-                    );
-                }
-
-                // Volatile state information of the resource and its volumes
-                ResourceState rscState = initializeResourceState(
-                    snapshotVlmNumbers
-                );
-
-                // Evaluate resource & volumes state by checking the DRBD state
-                evaluateDrbdResource(localNodeName, rscDfn, rscState);
-
-                handleSnapshots(rsc, rscDfn, inProgressSnapshots, rscState);
+                ResourceState rscState = initializeSnapshotResourceState(localNodeName, rscDfn, inProgressSnapshots);
+                handleSnapshots(rscDfn, inProgressSnapshots, rscState);
             }
         }
         catch (ResourceException rscExc)
@@ -481,36 +470,6 @@ class DrbdDeviceHandler implements DeviceHandler
         );
     }
 
-    private ApiCallRcImpl makeDeleteRc(Resource rsc, ResourceName rscName, NodeName localNodeName)
-    {
-        ApiCallRcImpl apiCallDelRc = new ApiCallRcImpl();
-
-        // objrefs
-        Map<String, String> objRefs = new HashMap<>();
-        objRefs.put(ApiConsts.KEY_RSC_DFN, rscName.displayValue);
-        objRefs.put(ApiConsts.KEY_NODE, localNodeName.displayValue);
-
-        // varRefs
-        Map<String, String> varRefs = new HashMap<>();
-        varRefs.put(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
-        objRefs.put(ApiConsts.KEY_NODE_NAME, localNodeName.displayValue);
-
-        ResponseUtils.reportSuccessStatic(
-            String.format("Resource '%s' on node '%s' successfully deleted.",
-                rscName.displayValue,
-                localNodeName.displayValue),
-            String.format("Resource '%s' on node '%s' with UUID '%s' deleted.",
-                rscName.displayValue,
-                localNodeName.displayValue,
-                rsc.getUuid().toString()),
-            ApiConsts.DELETED | ApiConsts.MASK_RSC | ApiConsts.MASK_SUCCESS,
-            apiCallDelRc,
-            objRefs,
-            errLog
-        );
-        return apiCallDelRc;
-    }
-
     private void sendRequestPrimaryResource(
         final String rscName,
         final String rscUuid,
@@ -523,6 +482,32 @@ class DrbdDeviceHandler implements DeviceHandler
             .build();
 
         controllerPeerConnector.getControllerPeer().sendMessage(data);
+    }
+
+    private ResourceState initializeSnapshotResourceState(
+        NodeName localNodeName,
+        ResourceDefinition rscDfn,
+        Collection<Snapshot> inProgressSnapshots
+    )
+        throws AccessDeniedException, NoInitialStateException
+    {
+        Set<VolumeNumber> snapshotVlmNumbers = new HashSet<>();
+        for (Snapshot snapshot : inProgressSnapshots)
+        {
+            snapshotVlmNumbers.addAll(
+                snapshot.getAllSnapshotVolumes(wrkCtx).stream()
+                    .map(SnapshotVolume::getVolumeNumber)
+                    .collect(Collectors.toSet())
+            );
+        }
+
+        // Volatile state information of the resource and its volumes
+        ResourceState rscState = initializeResourceState(snapshotVlmNumbers);
+
+        // Evaluate resource & volumes state by checking the DRBD state
+        evaluateDrbdResource(localNodeName, rscDfn, rscState);
+
+        return rscState;
     }
 
     private void evaluateDelDrbdResource(
@@ -1778,19 +1763,17 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void handleSnapshots(
-        Resource rsc,
         ResourceDefinition rscDfn,
         Collection<Snapshot> snapshots,
         ResourceState rscState
     )
-        throws ResourceException, AccessDeniedException, StorageException
+        throws ResourceException, AccessDeniedException
     {
         ResourceName rscName = rscDfn.getName();
 
         errLog.logTrace("Handle snapshots for " + rscName.getDisplayName());
 
         handleSuspensionForSnapshot(rscName, snapshots, rscState);
-        handleSnapshotDelete(rscName, snapshots, rscState);
         handleSnapshotTake(rscName, snapshots, rscState);
     }
 
