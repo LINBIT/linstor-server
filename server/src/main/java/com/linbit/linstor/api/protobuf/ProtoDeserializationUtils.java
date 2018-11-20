@@ -38,6 +38,8 @@ public class ProtoDeserializationUtils
 
         entryBuilder.putAllObjRefs(readLinStorMap(apiCallResponse.getObjRefsList()));
 
+        entryBuilder.addAllErrorIds(apiCallResponse.getErrorReportIdsList());
+
         return entryBuilder.build();
     }
 

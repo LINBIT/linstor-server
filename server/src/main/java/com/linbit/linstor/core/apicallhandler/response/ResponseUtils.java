@@ -101,7 +101,7 @@ public class ResponseUtils
         {
             throwable = new LinStorException(errorMsg);
         }
-        errorReporter.reportError(
+        String errorId = errorReporter.reportError(
             throwable,
             accCtx,
             peer,
@@ -114,6 +114,7 @@ public class ResponseUtils
             correctionMsg,
             retCode,
             objRefsRef,
+            errorId,
             apiCallRcRef
         );
     }
@@ -127,13 +128,13 @@ public class ResponseUtils
      * with the "current" object and operation masks</li>
      *  <li>The details message is not extended with the object description</li>
      * </ul>
-     *
-     * @param msg
+     *  @param msg
      * @param cause
      * @param details
      * @param correction
      * @param retCode
      * @param objRefsRef
+     * @param errorId
      */
     public static final void addAnswerStatic(
         String msg,
@@ -142,6 +143,7 @@ public class ResponseUtils
         String correction,
         long retCode,
         Map<String, String> objRefsRef,
+        String errorId,
         ApiCallRcImpl apiCallRcRef
     )
     {
@@ -156,6 +158,11 @@ public class ResponseUtils
         if (objRefsRef != null)
         {
             entry.putAllObjRef(objRefsRef);
+        }
+
+        if (errorId != null)
+        {
+            entry.addErrorId(errorId);
         }
 
         apiCallRcRef.addEntry(entry);
@@ -179,6 +186,7 @@ public class ResponseUtils
                 null,
                 retCode,
                 objsRef,
+                null, // errorId
                 apiCallRcRef
             );
         }

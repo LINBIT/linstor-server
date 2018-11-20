@@ -56,9 +56,8 @@ public class ResponseConverter
     public ApiCallRcImpl reportException(Peer peer, ResponseContext context, Throwable exc)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        apiCallRc.addEntries(exceptionToResponse(peer, context, exc));
 
-        for (ApiCallRc.RcEntry entry : apiCallRc.getEntries())
+        for (ApiCallRc.RcEntry entry : exceptionToResponse(peer, context, exc).getEntries())
         {
             final String errorId = errorReporter.reportError(
                 exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
@@ -66,7 +65,7 @@ public class ResponseConverter
                 peer,
                 entry.getMessage()
             );
-            entry.addErrorId(errorId);
+            apiCallRc.addEntry(ApiCallRcImpl.entryBuilder(entry, null, null).addErrorId(errorId).build());
         }
 
         return apiCallRc;
@@ -193,13 +192,11 @@ public class ResponseConverter
 
         return ApiCallRcImpl
             .entryBuilder(
+                sourceEntry,
                 sourceEntry.getReturnCode() | context.getOpMask() | context.getObjMask(),
-                sourceEntry.getMessage()
+                null
             )
-            .setCause(sourceEntry.getCause())
-            .setCorrection(sourceEntry.getCorrection())
             .setDetails(detailsJoiner.toString())
-            .putAllObjRefs(sourceEntry.getObjRefs())
             .putAllObjRefs(context.getObjRefs())
             .build();
     }

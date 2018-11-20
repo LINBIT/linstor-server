@@ -3,6 +3,7 @@ package com.linbit.linstor.api;
 import com.linbit.linstor.LinStorException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,20 @@ public class ApiCallRcImpl implements ApiCallRc
     public static EntryBuilder entryBuilder(long returnCodeRef, String messageRef)
     {
         return new EntryBuilder(returnCodeRef, messageRef);
+    }
+
+    public static EntryBuilder entryBuilder(RcEntry source, Long returnCodeRef, String messageRef)
+    {
+        EntryBuilder entryBuilder = new EntryBuilder(
+            returnCodeRef != null ? returnCodeRef : source.getReturnCode(),
+            messageRef != null ? messageRef : source.getMessage()
+        );
+        entryBuilder.setCause(source.getCause());
+        entryBuilder.setCorrection(source.getCorrection());
+        entryBuilder.setDetails(source.getDetails());
+        entryBuilder.putAllObjRefs(source.getObjRefs());
+        entryBuilder.addAllErrorIds(source.getErrorIds());
+        return entryBuilder;
     }
 
     public static ApiCallRcEntry simpleEntry(long returnCodeRef, String messageRef)
@@ -118,6 +133,11 @@ public class ApiCallRcImpl implements ApiCallRc
         public void addErrorId(String errorId)
         {
             errorIds.add(errorId);
+        }
+
+        public void addAllErrorIds(Set<String> errorIdsRef)
+        {
+            errorIds.addAll(errorIdsRef);
         }
 
         @Override
@@ -185,6 +205,8 @@ public class ApiCallRcImpl implements ApiCallRc
 
         private Map<String, String> objRefs = new TreeMap<>();
 
+        private Set<String> errorIds = new TreeSet<>();
+
         private EntryBuilder(long returnCodeRef, String messageRef)
         {
             returnCode = returnCodeRef;
@@ -221,6 +243,18 @@ public class ApiCallRcImpl implements ApiCallRc
             return this;
         }
 
+        public EntryBuilder addErrorId(String errorId)
+        {
+            errorIds.add(errorId);
+            return this;
+        }
+
+        public EntryBuilder addAllErrorIds(Collection<String> errorIdsRef)
+        {
+            errorIds.addAll(errorIdsRef);
+            return this;
+        }
+
         public ApiCallRcEntry build()
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
@@ -230,6 +264,7 @@ public class ApiCallRcImpl implements ApiCallRc
             entry.setCorrection(correction);
             entry.setDetails(details);
             entry.putAllObjRef(objRefs);
+            entry.addAllErrorIds(errorIds);
             return entry;
         }
     }

@@ -404,6 +404,7 @@ public class CtrlConfApiCallHandler
                 null, // correction
                 ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
                 null, // objRefs
+                null, // errorId
                 apiCallRc
             );
         }
@@ -480,6 +481,7 @@ public class CtrlConfApiCallHandler
                         "Use the crypt-modify-passphrase command instead of crypt-create-passphrase",
                         mask | ApiConsts.FAIL_EXISTS_CRYPT_PASSPHRASE,
                         new HashMap<>(),
+                        null, // errorId
                         apiCallRc
                     );
                 }
@@ -496,6 +498,7 @@ public class CtrlConfApiCallHandler
                         "Use the crypt-create-passphrase command instead of crypt-modify-passphrase",
                         mask | ApiConsts.FAIL_EXISTS_CRYPT_PASSPHRASE,
                         new HashMap<>(),
+                        null, // errorId
                         apiCallRc
                     );
                 }
@@ -641,6 +644,7 @@ public class CtrlConfApiCallHandler
                 null, // correction
                 ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                 null, // objectRefs
+                null, // errorId
                 apiCallRc
             );
         }
@@ -674,6 +678,7 @@ public class CtrlConfApiCallHandler
                     "Enter the correct passphrase", // correction
                     ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                     null, // objectRefs
+                    null, // errorId
                     apiCallRc
                 );
             }

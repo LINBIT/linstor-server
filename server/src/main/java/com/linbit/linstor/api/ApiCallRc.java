@@ -65,10 +65,5 @@ public interface ApiCallRc
          * @return List of error ids
          */
         Set<String> getErrorIds();
-
-        /**
-         * Add an error id to this api call rc
-         */
-        void addErrorId(String errorId);
     }
 }
