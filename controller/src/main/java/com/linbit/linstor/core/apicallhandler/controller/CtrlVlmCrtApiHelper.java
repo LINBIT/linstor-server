@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -22,6 +23,7 @@ import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -163,11 +165,13 @@ class CtrlVlmCrtApiHelper
         /*
          * check if StorPool is usable only if
          * - storPool has Backing storage
+         * - satellite is online
          * - storPool is Fat-provisioned or we have a map of the thin-free-spaces available
          * - the overrideVlmId property is not set; in this case we assume the volume already
          * exists on the storPool, which means we will not consume additional $volumeSize space
          */
         if (storPool.getDriverKind().hasBackingStorage() &&
+            getPeerPrivileged(rsc.getAssignedNode()).getConnectionStatus() == Peer.ConnectionStatus.ONLINE &&
             (thinFreeCapacities != null || !storPool.getDriverKind().usesThinProvisioning()) &&
             !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
         )
@@ -226,6 +230,20 @@ class CtrlVlmCrtApiHelper
             throw new ApiSQLException(sqlExc);
         }
         return vlm;
+    }
+
+    private Peer getPeerPrivileged(Node assignedNode)
+    {
+        Peer peer;
+        try
+        {
+            peer = assignedNode.getPeer(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return peer;
     }
 
     private boolean isOverrideVlmIdPropertySetPrivileged(VolumeDefinition vlmDfn)
