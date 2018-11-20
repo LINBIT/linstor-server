@@ -2145,7 +2145,7 @@ class DrbdDeviceHandler implements DeviceHandler
             deleteDrbdResource(rscName);
         }
 
-        boolean vlmDelFailed = false;
+        List<VolumeException> vlmExceptions = new ArrayList<>();
         // Delete backend storage volumes
         for (VolumeState vlmStateBase : rscState.getVolumes())
         {
@@ -2179,20 +2179,33 @@ class DrbdDeviceHandler implements DeviceHandler
             }
             catch (VolumeException vlmExc)
             {
-                vlmDelFailed = true;
-                errLog.reportProblem(Level.ERROR, vlmExc, null, null, null);
+                vlmExceptions.add(vlmExc);
             }
         }
-        if (vlmDelFailed)
+
+        if (vlmExceptions.size() == 1)
         {
             throw new ResourceException(
-                "Deletion of resource '" + rscName.displayValue + "' failed because deletion of the resource's " +
-                "volumes failed",
+                "Deletion of resource '" + rscName.displayValue + "' failed because deletion of a volume failed",
                 getAbortMsg(rscName),
-                "Deletion of at least one of the resource's volumes failed",
-                "Review the reports and/or log entries for the failed operations on the resource's volumes\n" +
-                "for more information on the cause of the error and possible correction measures",
-                null
+                null,
+                null,
+                null,
+                vlmExceptions.get(0)
+            );
+        }
+        else if (!vlmExceptions.isEmpty())
+        {
+            vlmExceptions.forEach(vlmExc -> errLog.reportProblem(Level.ERROR, vlmExc, null, null, null));
+
+            throw new ResourceException(
+                "Deletion of resource '" + rscName.displayValue + "' failed because deletion of multiple volumes " +
+                    "failed",
+                getAbortMsg(rscName),
+                null,
+                "Review the satellite error reports for details of the failures for the individual volumes",
+                null,
+                vlmExceptions.get(0)
             );
         }
 
