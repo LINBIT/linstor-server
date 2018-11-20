@@ -248,8 +248,6 @@ public class ZfsDriver extends AbsStorageDriver
         {
             zfsCommand,
             "destroy",
-            "-f",  // force
-            "-r",  // also delete snapshots of this volume
             pool + File.separator + identifier
         };
     }

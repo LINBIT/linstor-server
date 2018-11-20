@@ -888,7 +888,7 @@ public class ZfsDriverTest extends StorageTestUtils
     {
         Command command = new Command(
             zfsCommand,
-            "destroy", "-f", "-r",
+            "destroy",
             pool + "/" + identifier
         );
         OutputData outData;
