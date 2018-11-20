@@ -108,14 +108,14 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                     new VlmDfnFlags[] {}
                 );
 
+                Map<String, String> snapshotVlmDfnProps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
+                Map<String, String> vlmDfnProps = getVlmDfnProps(vlmDfn).map();
+
                 boolean isEncrypted = snapshotVlmDfn.getFlags()
                     .isSet(peerAccCtx.get(), SnapshotVolumeDefinition.SnapshotVlmDfnFlags.ENCRYPTED);
                 if (isEncrypted)
                 {
-                    Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
-                    Map<String, String> vlmDfnPropsMap = getVlmDfnProps(vlmDfn).map();
-
-                    String cryptPasswd = snapshotVlmDfnPropsMaps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+                    String cryptPasswd = snapshotVlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
                     if (cryptPasswd == null)
                     {
                         throw new ImplementationError(
@@ -123,11 +123,13 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                     }
 
                     vlmDfn.getFlags().enableFlags(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
-                    vlmDfnPropsMap.put(
+                    vlmDfnProps.put(
                         ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
                         cryptPasswd
                     );
                 }
+
+                copyProp(snapshotVlmDfnProps, vlmDfnProps, ApiConsts.KEY_DRBD_CURRENT_GI);
 
                 Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
                 while (rscIterator.hasNext())
@@ -196,6 +198,19 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
             );
         }
         return props;
+    }
+
+    private void copyProp(
+        Map<String, String> snapshotVlmDfnProps,
+        Map<String, String> vlmDfnProps,
+        String propKey
+    )
+    {
+        String propValue = snapshotVlmDfnProps.get(propKey);
+        if (propValue != null)
+        {
+            vlmDfnProps.put(propKey, propValue);
+        }
     }
 
     private Iterator<Resource> getRscIterator(ResourceDefinition rscDfn)

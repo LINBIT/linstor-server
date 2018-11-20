@@ -180,33 +180,28 @@ public class CtrlSnapshotCrtApiCallHandler
             SnapshotVolumeDefinition snapshotVlmDfn = createSnapshotVlmDfnData(snapshotDfn, vlmDfn);
             snapshotVolumeDefinitions.add(snapshotVlmDfn);
 
-            Map<String, String> snapshotVlmDfnPropsMaps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
+            Map<String, String> vlmDfnProps = getVlmDfnProps(vlmDfn).map();
+            Map<String, String> snapshotVlmDfnProps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
+
             boolean isEncrypted = isEncrypted(vlmDfn);
             if (isEncrypted)
             {
-                Map<String, String> vlmDfnPropsMap = getVlmDfnProps(vlmDfn).map();
 
-                String cryptPasswd = vlmDfnPropsMap.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
+                String cryptPasswd = vlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
                 if (cryptPasswd == null)
                 {
                     throw new ImplementationError("Encrypted volume definition without crypt passwd found");
                 }
 
                 markEncrypted(snapshotVlmDfn);
-                snapshotVlmDfnPropsMaps.put(
+                snapshotVlmDfnProps.put(
                     ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
                     cryptPasswd
                 );
             }
 
-            String overrideId = getVlmDfnProps(vlmDfn).map().get(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
-            if (overrideId != null)
-            {
-                snapshotVlmDfnPropsMaps.put(
-                    ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID,
-                    overrideId
-                );
-            }
+            copyProp(vlmDfnProps, snapshotVlmDfnProps, ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+            copyProp(vlmDfnProps, snapshotVlmDfnProps, ApiConsts.KEY_DRBD_CURRENT_GI);
         }
 
         boolean resourceFound = false;
@@ -591,6 +586,19 @@ public class CtrlSnapshotCrtApiCallHandler
             )), mdExc);
         }
         return snapshotVlmDfn;
+    }
+
+    private void copyProp(
+        Map<String, String> vlmDfnProps,
+        Map<String, String> snapshotVlmDfnProps,
+        String propKey
+    )
+    {
+        String propValue = vlmDfnProps.get(propKey);
+        if (propValue != null)
+        {
+            snapshotVlmDfnProps.put(propKey, propValue);
+        }
     }
 
     private Snapshot createSnapshotData(SnapshotDefinition snapshotDfn, Resource rsc)
