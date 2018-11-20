@@ -185,6 +185,11 @@ public interface Peer
     void closeConnection();
 
     /**
+     * Closes the connection to the peer
+     */
+    void closeConnection(boolean allowReconnect);
+
+    /**
      * Notifies the peer that the underlying connection is closing.
      */
     void connectionClosing();

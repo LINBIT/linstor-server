@@ -22,7 +22,7 @@ public interface TcpConnector extends SystemService
     /**
      * Close the connection to the peer and do not automatically reconnect.
      */
-    void closeConnection(TcpConnectorPeer peerObj);
+    void closeConnection(TcpConnectorPeer peerObj, boolean allowReconnect);
 
     /**
      * Wakes up the connector's selector

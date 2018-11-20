@@ -951,9 +951,9 @@ public class TcpConnectorService implements Runnable, TcpConnector
     }
 
     @Override
-    public void closeConnection(TcpConnectorPeer peerObj)
+    public void closeConnection(TcpConnectorPeer peerObj, boolean allowReconnect)
     {
-        closeConnection(peerObj.getSelectionKey(), false);
+        closeConnection(peerObj.getSelectionKey(), allowReconnect);
     }
 
     private void closeConnection(SelectionKey currentKey, boolean allowReconnect)

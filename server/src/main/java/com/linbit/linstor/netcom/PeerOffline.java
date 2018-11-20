@@ -143,6 +143,11 @@ public class PeerOffline implements Peer
     }
 
     @Override
+    public void closeConnection(boolean allowReconnect)
+    {
+    }
+
+    @Override
     public void connectionClosing()
     {
     }

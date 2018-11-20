@@ -497,9 +497,9 @@ public class CtrlNodeApiCallHandler
                         {
                             try
                             {
-                                node.getPeer(apiCtx).closeConnection();
+                                node.getPeer(apiCtx).closeConnection(true);
                             }
-                            catch (Exception | ImplementationError ignore)
+                            catch (Exception | ImplementationError ignored)
                             {
                             }
                         }
