@@ -861,7 +861,6 @@ public class DrbdLayer implements ResourceLayer
                 while (vlmIter.hasNext())
                 {
                     Volume vlm = vlmIter.next();
-                    VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
                     if (!VolumeUtils.isVolumeThinlyBacked(workerCtx, vlm))
                     {
                         haveFatVlm = true;

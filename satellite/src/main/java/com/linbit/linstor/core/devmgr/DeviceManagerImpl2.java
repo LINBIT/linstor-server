@@ -42,6 +42,8 @@ import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -167,8 +169,6 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
 
     private ServiceName devMgrInstName;
 
-    private final DeviceHandlerImpl devHandler;
-
     private boolean stateAvailable;
     private volatile boolean abortDevHndFlag;
     private DrbdEventService drbdEvent;
@@ -178,6 +178,9 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
 
     private UpdateMonitor updateMonitor;
+
+    private final DeviceHandlerImpl devHandler;
+    private ResourceStateEvent resourceStateEvent;
 
     @Inject
     DeviceManagerImpl2(
@@ -199,6 +202,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         StltSecurityObjects stltSecObjRef,
         Scheduler scheduler,
         UpdateMonitor updateMonitorRef,
+        ResourceStateEvent resourceStateEventRef,
         ExtCmdFactory extCmdFactory,
         StltConfigAccessor stltConfigAccessor,
         DrbdAdm drbdUtils,
@@ -224,6 +228,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
         updateMonitor = updateMonitorRef;
+        resourceStateEvent = resourceStateEventRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -978,6 +983,9 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
 
                 for (ResourceName curRscName : localDelRscSet)
                 {
+                    resourceStateEvent.get().closeStream(
+                        ObjectIdentifier.resource(controllerPeerConnector.getLocalNodeName(), curRscName)
+                    );
                     ResourceDefinition curRscDfn = rscDfnMap.get(curRscName);
                     if (curRscDfn != null)
                     {
