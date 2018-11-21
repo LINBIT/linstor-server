@@ -20,6 +20,7 @@ public class DrbdVolume
     public static final String PROP_KEY_PEER_DISK    = "peer-disk";
     public static final String PROP_KEY_REPLICATION  = "replication";
     public static final String PROP_KEY_CLIENT       = "client";
+    public static final String PROP_KEY_DONE         = "done";
 
     public static final String DS_LABEL_DISKLESS     = "Diskless";
     public static final String DS_LABEL_ATTACHING    = "Attaching";
@@ -203,6 +204,23 @@ public class DrbdVolume
             return result;
         }
 
+        public static float parseDone(String donePerc)
+            throws EventsSourceException
+        {
+            float result;
+            try
+            {
+                result = Float.parseFloat(donePerc);
+            }
+            catch (NumberFormatException ignored)
+            {
+                throw new EventsSourceException(
+                    "Done percentage is not a parsable number: " + donePerc
+                );
+            }
+            return result;
+        }
+
         @Override
         public String toString()
         {
@@ -217,6 +235,7 @@ public class DrbdVolume
     protected DrbdResource resRef;
     protected DrbdConnection connRef;
     protected Boolean client;
+    protected Float donePercentage;
 
     protected DrbdVolume(DrbdResource resource, DrbdConnection peerConn, VolumeNumber volNr)
         throws ValueOutOfRangeException
@@ -229,6 +248,7 @@ public class DrbdVolume
         resRef = resource;
         connRef = peerConn;
         client = null;
+        donePercentage = null;
     }
 
     public VolumeNumber getVolNr()
@@ -323,8 +343,10 @@ public class DrbdVolume
     protected void update(Map<String, String> props, ResourceObserver obs)
         throws EventsSourceException
     {
+        donePercentage = null;
         String minorNrStr = props.get(PROP_KEY_MINOR);
         String replLabel = props.get(PROP_KEY_REPLICATION);
+        String doneLabel = props.get(PROP_KEY_DONE);
         String diskLabel = props.get(PROP_KEY_DISK);
         String clientLabel = props.get(PROP_KEY_CLIENT);
 
@@ -385,6 +407,15 @@ public class DrbdVolume
             }
         }
 
+        if (doneLabel != null)
+        {
+            donePercentage = ReplState.parseDone(doneLabel);
+            if (volReplState == ReplState.SYNC_TARGET)
+            {
+                obs.diskStateChanged(resRef, null, this, volDiskState, volDiskState);
+            }
+        }
+
         if (replLabel != null)
         {
             ReplState prevReplState = volReplState;
@@ -404,5 +435,15 @@ public class DrbdVolume
                 obs.diskStateChanged(resRef, connRef, this, prevDiskState, volDiskState);
             }
         }
+    }
+
+    public String diskStateInfo()
+    {
+        String info = volDiskState.toString();
+        if (donePercentage != null && volReplState == ReplState.SYNC_TARGET)
+        {
+            info = String.format("SyncTarget(%.2f%%)", donePercentage);
+        }
+        return info;
     }
 }

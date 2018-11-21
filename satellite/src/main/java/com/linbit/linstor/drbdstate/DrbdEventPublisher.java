@@ -229,7 +229,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     {
         volumeDiskStateEvent.get().triggerEvent(
             ObjectIdentifier.volumeDefinition(resource.getResName(), volume.getVolNr()),
-            volume.getDiskState().toString()
+            volume.diskStateInfo()
         );
     }
 
