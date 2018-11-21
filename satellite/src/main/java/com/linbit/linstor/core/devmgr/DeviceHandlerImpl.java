@@ -13,6 +13,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
+import com.linbit.linstor.core.devmgr.helper.LayeredSnapshotHelper;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -30,7 +31,9 @@ import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import javax.inject.Provider;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -45,6 +48,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
     private final DeviceManager deviceManager;
 
     private final LayeredResourcesHelper layeredRscHelper;
+    private final LayeredSnapshotHelper layeredSnapshotHelper;
     private final LayerFactory layerFactory;
     private final StorageLayer storageLayer;
     private final AtomicBoolean fullSyncApplied;
@@ -60,6 +64,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
         DrbdStateStore drbdState,
         WhitelistProps whitelistProps,
         LayeredResourcesHelper layeredRscHelperRef,
+        LayeredSnapshotHelper layeredSnapshotHelperRef,
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef
     )
@@ -69,6 +74,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
         deviceManager = deviceManagerRef;
 
         layeredRscHelper = layeredRscHelperRef;
+        layeredSnapshotHelper = layeredSnapshotHelperRef;
 
         layerFactory = new LayerFactory(
             wrkCtxRef,
@@ -95,10 +101,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
         Collection<Resource> origResources = rscs;
         List<Resource> allResources = convertResources(origResources);
 
-        // bypass all layers and handle snapshot-deletes directly on storage layer
-        storageLayer.handleSnapshotDeletes(snapshots);
-
-        // call prepare for every necessary layer
         Set<Resource> rootResources = origResources.stream().map(rsc -> getRoot(rsc)).collect(Collectors.toSet());
         Map<ResourceLayer, List<Resource>> rscByLayer = allResources.stream()
             .collect(
@@ -106,25 +108,41 @@ public class DeviceHandlerImpl implements DeviceHandler2
                     rsc -> layerFactory.getDeviceLayer(rsc.getType().getDevLayerKind().getClass())
                 )
             );
+        Map<ResourceName, List<Snapshot>> snapshotsByRscName =
+            snapshots.stream().collect(Collectors.groupingBy(Snapshot::getResourceName));
+
+        // call prepare for every necessary layer
         for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
         {
+            List<Snapshot> affectedSnapshots = new ArrayList<>();
+            List<Resource> rscList = entry.getValue();
+            for (Resource rsc : rscList)
+            {
+                List<Snapshot> list = snapshotsByRscName.get(rsc.getDefinition().getName());
+                if (list != null)
+                {
+                    affectedSnapshots.addAll(list);
+                }
+            }
             ResourceLayer layer = entry.getKey();
-            prepare(layer, entry.getValue());
+            prepare(layer, rscList, affectedSnapshots);
         }
 
-        // actually process every resource
+        // actually process every resource and snapshots
         for (Resource rsc : rootResources)
         {
             ResourceName rscName = rsc.getDefinition().getName();
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
             try
             {
+                List<Snapshot> snapshotList = snapshotsByRscName.get(rscName);
+                if (snapshotList == null)
+                {
+                    snapshotList = Collections.emptyList();
+                }
                 process(
                     rsc,
-                    snapshots.stream()
-                        .filter(snap -> snap.getResourceName().equals(rscName))
-                        .collect(Collectors.toList()
-                    ),
+                    snapshotList,
                     apiCallRc
                 );
             }
@@ -203,11 +221,11 @@ public class DeviceHandlerImpl implements DeviceHandler2
         return root;
     }
 
-    private void prepare(ResourceLayer layer, List<Resource> resources)
+    private void prepare(ResourceLayer layer, List<Resource> resources, List<Snapshot> affectedSnapshots)
     {
         try
         {
-            layer.prepare(resources);
+            layer.prepare(resources, affectedSnapshots);
         }
         catch (StorageException exc)
         {
@@ -264,6 +282,12 @@ public class DeviceHandlerImpl implements DeviceHandler2
     {
         // convert resourceNames to resources
         return layeredRscHelper.extractLayers(resourcesToProcess);
+    }
+
+    @RemoveAfterDevMgrRework
+    private void updateSnapshotLayerData(Collection<Resource> dfltResources, Collection<Snapshot> snapshots)
+    {
+        layeredSnapshotHelper.updateSnapshotLayerData(dfltResources, snapshots);
     }
 
     public void fullSyncApplied()

@@ -39,34 +39,6 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
     }
 
     @Override
-    public void createSnapshot(Volume vlm, String snapshotName) throws StorageException
-    {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
-    }
-
-    @Override
-    public void restoreSnapshot(Volume srcVlm, String snapshotName, Volume targetVlm) throws StorageException
-    {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
-    }
-
-    @Override
-    public void deleteSnapshot(Volume vlm, String snapshotName) throws StorageException
-    {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
-    }
-
-    @Override
-    public boolean snapshotExists(Volume vlm, String snapshotName) throws StorageException
-    {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
-    }
-
-    @Override
     public void checkConfig(StorPool storPool) throws StorageException
     {
         // TODO Auto-generated method stub

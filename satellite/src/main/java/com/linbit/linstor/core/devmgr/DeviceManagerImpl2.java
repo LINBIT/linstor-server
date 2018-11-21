@@ -40,6 +40,7 @@ import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
+import com.linbit.linstor.core.devmgr.helper.LayeredSnapshotHelper;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -208,7 +209,8 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         DrbdAdm drbdUtils,
         DrbdStateStore drbdState,
         WhitelistProps whitelistProps,
-        LayeredResourcesHelper layeredResourcesHelper
+        LayeredResourcesHelper layeredResourcesHelper,
+        LayeredSnapshotHelper layeredSnapshotHelper
     )
     {
         wrkCtx = wrkCtxRef;
@@ -249,6 +251,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
             drbdState,
             whitelistProps,
             layeredResourcesHelper,
+            layeredSnapshotHelper,
             interComSerializerRef,
             controllerPeerConnectorRef
         );
@@ -826,7 +829,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
                         if (!needMasterKey)
                         {
                             resourcesToDispatch.add(rsc);
-                            snapshotsToDispatch.addAll(snapshotsToDispatch);
+                            snapshotsToDispatch.addAll(snapshots);
                             // dispatchResource(rscDfn, snapshots, phaseLock);
                         }
                         else

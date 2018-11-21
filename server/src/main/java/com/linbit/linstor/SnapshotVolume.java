@@ -2,9 +2,11 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -56,10 +58,20 @@ public interface SnapshotVolume extends TransactionObject, DbgInstanceUuid
 
     StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
 
+    VlmLayerData setLayerData(AccessContext accCtx, VlmLayerData data) throws AccessDeniedException, SQLException;
+
+    VlmLayerData getLayerData(AccessContext accCtx) throws AccessDeniedException, SQLException;
+
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
     SnapshotVlmApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
+    default Key getKey()
+    {
+        // no access or deleted check
+        return new Key(getResourceName(), getVolumeNumber(), getSnapshotName());
+    }
 
     interface SnapshotVlmApi
     {
@@ -68,5 +80,60 @@ public interface SnapshotVolume extends TransactionObject, DbgInstanceUuid
         String getStorPoolName();
         UUID getStorPoolUuid();
         int getSnapshotVlmNr();
+    }
+
+    class Key
+    {
+        private final String rscName;
+        private final int vlmNr;
+        private final String snapName;
+
+        public Key(ResourceName rscNameRef, VolumeNumber vlmNrRef, SnapshotName snapNameRef)
+        {
+            rscName = rscNameRef.displayValue;
+            vlmNr = vlmNrRef.value;
+            snapName = snapNameRef.displayValue;
+        }
+
+        public Key(String rscNameRef, int vlmNrRef, String snapNameRef)
+        {
+            Objects.requireNonNull(rscNameRef);
+            Objects.requireNonNull(snapNameRef);
+            rscName = rscNameRef;
+            vlmNr = vlmNrRef;
+            snapName = snapNameRef;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((rscName == null) ? 0 : rscName.toUpperCase().hashCode());
+            result = prime * result + ((snapName == null) ? 0 : snapName.toUpperCase().hashCode());
+            result = prime * result + vlmNr;
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            boolean eq = obj != null && obj instanceof Key;
+            if (eq)
+            {
+                Key other = (Key) obj;
+                eq &=
+                    rscName.equalsIgnoreCase(other.rscName) &&
+                    snapName.equalsIgnoreCase(other.snapName) &&
+                    vlmNr == other.vlmNr;
+            }
+            return eq;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "SnapshotVolume.Key [rscName=" + rscName + ", vlmNr=" + vlmNr + ", snapName=" + snapName + "]";
+        }
     }
 }

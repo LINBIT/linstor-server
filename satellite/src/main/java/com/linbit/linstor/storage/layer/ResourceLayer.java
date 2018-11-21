@@ -17,7 +17,8 @@ public interface ResourceLayer
 {
     String getName();
 
-    void prepare(List<Resource> value) throws StorageException, AccessDeniedException, SQLException;
+    void prepare(List<Resource> value, List<Snapshot> snapshots)
+        throws StorageException, AccessDeniedException, SQLException;
 
     void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,

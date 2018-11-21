@@ -2,8 +2,12 @@ package com.linbit.linstor.storage.layer.provider.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -12,7 +16,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.provider.AbsProvider;
+import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
@@ -29,10 +33,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class LvmProvider extends AbsProvider<LvsInfo, LvmLayerDataStlt>
+public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
 {
     private static final int TOLERANCE_FACTOR = 3;
-    private static final String FORMAT_RSC_TO_LVM_ID = "%s_%05d";
+    // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
+    public static final String FORMAT_RSC_TO_LVM_ID = "%s_%05d";
     private static final String FORMAT_LVM_ID_WIPE_IN_PROGRESS = "%s_linstor_wiping_in_progress";
     private static final String FORMAT_DEV_PATH = "/dev/%s/%s";
 
@@ -172,11 +177,25 @@ public class LvmProvider extends AbsProvider<LvsInfo, LvmLayerDataStlt>
     @Override
     protected String asLvIdentifier(Volume vlm)
     {
+        return asLvIdentifier(vlm.getVolumeDefinition());
+    }
+
+    protected String asLvIdentifier(VolumeDefinition vlmDfn)
+    {
         // TODO: check for migration property
+        return asLvIdentifier(
+            vlmDfn.getResourceDefinition().getName(),
+            vlmDfn.getVolumeNumber()
+        );
+    }
+
+    @Override
+    protected String asLvIdentifier(ResourceName resourceName, VolumeNumber volumeNumber)
+    {
         return String.format(
             FORMAT_RSC_TO_LVM_ID,
-            vlm.getResourceDefinition().getName().displayValue,
-            vlm.getVolumeDefinition().getVolumeNumber().value
+            resourceName.displayValue,
+            volumeNumber.value
         );
     }
 
@@ -287,7 +306,7 @@ public class LvmProvider extends AbsProvider<LvsInfo, LvmLayerDataStlt>
     }
 
     @Override
-    protected void updateVolumeStates(Collection<Volume> vlms)
+    protected void updateStates(Collection<Volume> vlms, Collection<SnapshotVolume> snapshots)
         throws StorageException, AccessDeniedException, SQLException
     {
         final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
@@ -341,6 +360,19 @@ public class LvmProvider extends AbsProvider<LvsInfo, LvmLayerDataStlt>
                 ProviderUtils.setSize(vlm, 0, storDriverAccCtx);
             }
         }
+
+        updateSnapshotStates(snapshots);
+    }
+
+
+    /*
+     * Expected to be overridden by LvmThinProvider
+     */
+    @SuppressWarnings("unused")
+    protected void updateSnapshotStates(Collection<SnapshotVolume> snapshots)
+        throws AccessDeniedException, SQLException
+    {
+        // no-op
     }
 
     /*

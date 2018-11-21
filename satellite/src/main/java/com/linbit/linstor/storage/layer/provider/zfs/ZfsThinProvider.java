@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -15,6 +16,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
+import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import java.sql.SQLException;
 
@@ -67,5 +69,13 @@ public class ZfsThinProvider extends ZfsProvider
             throw new ImplementationError(exc);
         }
         return zPool;
+    }
+
+    @RemoveAfterDevMgrRework // this method should stay protected. Here it is made public
+    // only to be accessible from LayeredSnapshotHelper
+    @Override
+    public String asLvIdentifier(VolumeDefinition vlmDfn)
+    {
+        return super.asLvIdentifier(vlmDfn);
     }
 }

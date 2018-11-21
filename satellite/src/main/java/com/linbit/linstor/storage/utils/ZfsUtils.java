@@ -12,6 +12,8 @@ import java.util.Set;
 
 public class ZfsUtils
 {
+    private static final int KIB = 1024;
+
     private static final String DELIMITER = "\t"; // default for all "zfs -H ..." commands
 
     private static final int ZFS_LIST_COL_IDENTIFIER = 0;
@@ -70,6 +72,7 @@ public class ZfsUtils
                     try
                     {
                         size = StorageUtils.parseDecimalAsLong(sizeStr.trim());
+                        size /= KIB; // zfs list returns size in bytes
                     }
                     catch (NumberFormatException nfExc)
                     {

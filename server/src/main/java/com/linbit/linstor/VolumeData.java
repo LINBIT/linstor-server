@@ -17,6 +17,7 @@ import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionSimpleObject<VolumeData, String> backingDiskPath;
 
+    @RemoveAfterDevMgrRework
     private final TransactionSimpleObject<VolumeData, String> metaDiskPath;
 
     private final TransactionSimpleObject<VolumeData, String> devicePath;
@@ -131,7 +133,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         allocatedSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
-        layerData = transObjFactory.createTransactionSimpleObject(this, null, null); // TODO dbDriver
+        layerData = transObjFactory.createTransactionSimpleObject(this, null, null); // FIXME: add dbDriver
 
         vlmKey = new Key(this);
 
@@ -425,7 +427,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         return volumeDfn.getVolumeSize(accCtx);
     }
-
 
     @Override
     public VlmLayerData setLayerData(AccessContext accCtx, VlmLayerData data)

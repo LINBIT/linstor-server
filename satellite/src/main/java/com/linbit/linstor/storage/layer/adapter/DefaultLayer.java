@@ -56,7 +56,8 @@ public class DefaultLayer implements ResourceLayer
     }
 
     @Override
-    public void prepare(List<Resource> volumes) throws StorageException, AccessDeniedException, SQLException
+    public void prepare(List<Resource> value, List<Snapshot> snapshots)
+        throws StorageException, AccessDeniedException, SQLException
     {
         // no-op
     }
@@ -155,10 +156,10 @@ public class DefaultLayer implements ResourceLayer
                                 );
                                 break;
                             }
-                            else
-                            {
-                                deviceManager.notifyVolumeDeleted(vlm, 100_000); // FIXME
-                            }
+//                            else
+//                            {
+//                                deviceManager.notifyVolumeDeleted(vlm, 100_000); // FIXME
+//                            }
                         }
                     }
                 }

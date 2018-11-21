@@ -21,7 +21,8 @@ public class ZfsCommands
                 "list",
                 "-H",   // no headers, single tab instead of spaces
                 "-p",   // sizes in bytes
-                "-o", "name,used,type", // columns: name, allocated space
+                "-o", "name,volsize,type", // columns: name, allocated space
+                "-t", "volume,snapshot"
             },
             "Failed to list zfs volumes",
             "Failed to query 'zfs' info"
@@ -126,6 +127,68 @@ public class ZfsCommands
             },
             "Failed to rename zfs volume from '" + fullQualifiedCurrentId + "' to '" + fullQualifiedNewId + "'",
             "Failed to rename zfs volume from '" + fullQualifiedCurrentId + "' to '" + fullQualifiedNewId + "'"
+        );
+    }
+
+
+    public static OutputData createSnapshot(ExtCmd extCmd, String zPool, String srcIdentifier, String snapName)
+        throws StorageException
+    {
+        String fullQualifiedId = zPool + File.separator + srcIdentifier + "@" + snapName;
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "zfs",
+                "snapshot",
+                fullQualifiedId
+            },
+            "Failed to create snapshot '" + fullQualifiedId + "'",
+            "Failed to create snapshot '" + fullQualifiedId + "'"
+        );
+    }
+
+    public static OutputData restoreSnapshot(
+        ExtCmd extCmd,
+        String zPool,
+        String sourceLvName,
+        String sourceSnapName,
+        String targetLvName
+    )
+        throws StorageException
+    {
+        String fullQualifiedSourceSnapId =
+            zPool + File.separator +
+            sourceLvName + "@" +
+            sourceSnapName;
+        String fullQualifiedTargetLvId =
+            zPool + File.separator +
+            targetLvName;
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "zfs",
+                "clone",
+                fullQualifiedSourceSnapId,
+                fullQualifiedTargetLvId
+            },
+            "Failed to restore snapshot '" + fullQualifiedSourceSnapId + "' into '" + fullQualifiedTargetLvId + "'",
+            "Failed to restore snapshot '" + fullQualifiedSourceSnapId + "' into '" + fullQualifiedTargetLvId + "'"
+        );
+    }
+
+    public static OutputData rollback(ExtCmd extCmd, String zPool, String vlmId, String snapName)
+        throws StorageException
+    {
+        String fullQualifiedSnapSource = zPool + File.separator + vlmId + "@" + snapName;
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "zfs",
+                "rollback",
+                fullQualifiedSnapSource
+            },
+            "Failed to rollback to snapshot '" + fullQualifiedSnapSource + "'",
+            "Failed to rollback to snapshot '" + fullQualifiedSnapSource + "'"
         );
     }
 

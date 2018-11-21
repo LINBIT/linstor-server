@@ -11,7 +11,8 @@ public interface VlmLayerData extends LayerData
     {
         TOO_SMALL,
         TOO_LARGE,
-        TOO_LARGE_WITHIN_TOLERANCE
+        TOO_LARGE_WITHIN_TOLERANCE,
+        AS_EXPECTED
     }
 
     boolean exists();

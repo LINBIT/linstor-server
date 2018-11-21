@@ -50,6 +50,8 @@ import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.utils.ResourceUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
+import com.linbit.utils.AccessUtils;
+
 import static com.linbit.linstor.storage.utils.VolumeUtils.getBackingVolume;
 
 import java.io.FileOutputStream;
@@ -68,8 +70,6 @@ import java.util.stream.Collectors;
 
 public class DrbdLayer implements ResourceLayer
 {
-    private static final boolean TO_DELETE_PARTITON = true;
-
     private static final String DRBD_CONFIG_SUFFIX = ".res";
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
 
@@ -121,7 +121,8 @@ public class DrbdLayer implements ResourceLayer
     }
 
     @Override
-    public void prepare(List<Resource> value) throws StorageException
+    public void prepare(List<Resource> value, List<Snapshot> snapshots)
+        throws StorageException, AccessDeniedException, SQLException
     {
         // no-op
     }
@@ -244,37 +245,34 @@ public class DrbdLayer implements ResourceLayer
             ResourceException, VolumeException
     {
         DrbdRscDataStlt rscLinState = (DrbdRscDataStlt) drbdRsc.getLayerData(workerCtx);
+
         rscLinState.requiresAdjust = isAdjustRequired(drbdRsc);
 
         if (rscLinState.requiresAdjust)
         {
             /*
-             *  we have to split here into three steps:
+             *  we have to split here into several steps:
              *  - first we have to detach all volumes marked for deletion and delete the DRBD-volumes
-             *  - call the underlaying layer's process method
+             *  - suspend IO if required by a snapshot
+             *  - call the underlying layer's process method
+             *  - create metaData for new volumes
+             *  -- check which volumes are new
+             *  -- render all res files
+             *  -- create-md only for new volumes (create-md needs already valid .res files)
              *  - adjust all remaining and newly created volumes
+             *  - resume IO if allowed by all snapshots
              */
 
-            List<Volume> checkMetaData = new ArrayList<>();
-            if (!drbdRsc.isDiskless(workerCtx))
-            {
-                Iterator<Volume> vlmsIt = drbdRsc.iterateVolumes();
-                while (vlmsIt.hasNext())
-                {
-                    Volume drbdVlm = vlmsIt.next();
-                    if (drbdVlm.getFlags().isSet(workerCtx, VlmFlags.DELETE))
-                    {
-                        detachDrbdVolume(drbdVlm);
-                    }
-                    else
-                    {
-                        checkMetaData.add(drbdVlm);
-                    }
-                }
-            }
+            updateResourceToCurrentDrbdState(drbdRsc);
+
+            List<Volume> checkMetaData = detachVolumesIfNecessary(drbdRsc);
+
+            adjustSuspendIo(drbdRsc, snapshots);
+
             processChild(drbdRsc, snapshots, apiCallRc);
 
             updateResourceToCurrentDrbdState(drbdRsc);
+
             // hasMetaData needs to be run after child-resource processed
             List<Volume> createMetaData = new ArrayList<>();
             for (Volume drbdVlm : checkMetaData)
@@ -325,6 +323,30 @@ public class DrbdLayer implements ResourceLayer
         return true; // TODO could be improved :)
     }
 
+    private List<Volume> detachVolumesIfNecessary(Resource drbdRsc)
+        throws AccessDeniedException, SQLException, StorageException
+    {
+        List<Volume> checkMetaData = new ArrayList<>();
+        if (!drbdRsc.isDiskless(workerCtx))
+        {
+            Iterator<Volume> vlmsIt = drbdRsc.iterateVolumes();
+            while (vlmsIt.hasNext())
+            {
+                Volume drbdVlm = vlmsIt.next();
+                if (drbdVlm.getFlags().isSet(workerCtx, VlmFlags.DELETE))
+                {
+                    detachDrbdVolume(drbdVlm);
+                }
+                else
+                {
+                    checkMetaData.add(drbdVlm);
+                }
+            }
+        }
+        return checkMetaData;
+    }
+
+
     private void detachDrbdVolume(Volume drbdVlm) throws AccessDeniedException, SQLException, StorageException
     {
         ResourceName rscName = drbdVlm.getResourceDefinition().getName();
@@ -347,6 +369,59 @@ public class DrbdLayer implements ResourceLayer
             );
         }
         drbdVlm.delete(workerCtx); // only deletes the drbd-volume, not the storage volume
+    }
+
+    private void adjustSuspendIo(Resource drbdRsc, Collection<Snapshot> snapshots)
+        throws ResourceException, AccessDeniedException
+    {
+        ResourceName rscName = drbdRsc.getDefinition().getName();
+
+        DrbdRscDataStlt rscLinState = (DrbdRscDataStlt) drbdRsc.getLayerData(workerCtx);
+
+        boolean shouldSuspend = snapshots.stream()
+            .anyMatch(snap ->
+                AccessUtils.execPrivileged(() -> snap.getSuspendResource(workerCtx))
+            );
+
+        if (!rscLinState.isSuspended && shouldSuspend)
+        {
+            try
+            {
+                errorReporter.logTrace("\n\n\n\n\nSuspending DRBD-IO for resource '%s'", rscName.displayValue);
+                drbdUtils.suspendIo(rscName);
+            }
+            catch (ExtCmdFailedException exc)
+            {
+                throw new ResourceException(
+                    "Suspend of the DRBD resource '" + rscName.displayValue + " failed",
+                    getAbortMsg(rscName),
+                    "The external command for suspending the DRBD resource failed",
+                    null,
+                    null,
+                    exc
+                );
+            }
+        }
+        else
+        if (rscLinState.isSuspended && !shouldSuspend)
+        {
+            try
+            {
+                errorReporter.logTrace("\n\n\n\n\nResuming DRBD-IO for resource '%s'", rscName.displayValue);
+                drbdUtils.resumeIo(rscName);
+            }
+            catch (ExtCmdFailedException exc)
+            {
+                throw new ResourceException(
+                    "Resume of the DRBD resource '" + rscName.displayValue + " failed",
+                    getAbortMsg(rscName),
+                    "The external command for resuming the DRBD resource failed",
+                    null,
+                    null,
+                    exc
+                );
+            }
+        }
     }
 
     private boolean hasMetaData(Volume drbdVlm)
@@ -730,6 +805,11 @@ public class DrbdLayer implements ResourceLayer
                     // adjust the resource
                     rscState.requiresAdjust = true;
                 }
+
+                rscState.isSuspended =
+                    drbdRscState.getSuspendedUser() == null ?
+                        false :
+                        drbdRscState.getSuspendedUser();
             }
         }
         catch (InvalidKeyException exc)

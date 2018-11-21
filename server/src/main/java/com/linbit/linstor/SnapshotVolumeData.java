@@ -5,6 +5,7 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -33,6 +34,8 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
 
     private final TransactionSimpleObject<SnapshotVolumeData, Boolean> deleted;
 
+    private final TransactionSimpleObject<SnapshotVolumeData, VlmLayerData> layerData;
+
     public SnapshotVolumeData(
         UUID objIdRef,
         Snapshot snapshotRef,
@@ -54,10 +57,12 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
         dbgInstanceId = UUID.randomUUID();
 
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+        layerData = transObjFactory.createTransactionSimpleObject(this, null, null); // FIXME: create db-driver
 
         transObjs = Arrays.asList(
             snapshot,
             snapshotVolumeDefinition,
+            layerData,
             deleted
         );
     }
@@ -89,6 +94,21 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
         checkDeleted();
         getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return storPool;
+    }
+
+    @Override
+    public VlmLayerData setLayerData(AccessContext accCtx, VlmLayerData data)
+        throws AccessDeniedException, SQLException
+    {
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
+        return layerData.set(data);
+    }
+
+    @Override
+    public VlmLayerData getLayerData(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return layerData.get();
     }
 
     @Override

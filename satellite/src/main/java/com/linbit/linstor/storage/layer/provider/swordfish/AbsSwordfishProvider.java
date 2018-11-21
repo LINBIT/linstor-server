@@ -5,8 +5,12 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessDeniedException;
+
+import java.sql.SQLException;
 import java.util.List;
 
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 
@@ -43,7 +47,8 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
     }
 
     @Override
-    public void prepare(List<Volume> volumes)
+    public void prepare(List<Volume> volumes, List<SnapshotVolume> snapVlms)
+        throws StorageException, AccessDeniedException, SQLException
     {
         // no-op
     }

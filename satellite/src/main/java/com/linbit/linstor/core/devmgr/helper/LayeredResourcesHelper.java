@@ -34,18 +34,15 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.LayerDataFactory;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.utils.VolumeUtils;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -79,132 +76,6 @@ public class LayeredResourcesHelper
         controllerPeerConnector = controllerPeerConnectorRef;
         rscDfnMap = rscDfnMapRef;
         errorReporter = errorReporterRef;
-    }
-
-
-    @RemoveAfterDevMgrRework
-    public List<Resource> getResourcesToDelete(
-        Collection<Resource> origResources,
-        Map<Resource, StorageException> exceptions
-    )
-    {
-        List<Resource> resourcesToDelete = new ArrayList<>();
-        /*
-         *  At this point, all layers are expected to delete their resource and notify the controller.
-         *  The only resources that are not deleted in this process are the DEFAULT resource.
-         *  That means we basically only have to perform a check if there are DEFAULT resources marked
-         *  as DELETE that have (typed) children. If so, that is an impl-error as one layer did not clean up properly.
-         *  Otherwise, remove the resource.
-         */
-        for (Resource rsc : origResources)
-        {
-            try
-            {
-                if (rsc.getStateFlags().isSet(sysCtx, RscFlags.DELETE))
-                {
-                    if (
-                        rsc.getType().equals(ResourceType.DEFAULT) &&
-                        !rsc.getChildResources(sysCtx).isEmpty() &&
-                        !exceptions.containsKey(rsc)
-                    )
-                    {
-                        throw new ImplementationError("resource not properly cleaned up: " + rsc.getKey());
-                    }
-                    resourcesToDelete.add(rsc);
-                }
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                throw new ImplementationError(accDeniedExc);
-            }
-        }
-        //  (default) remote resources are already deleted by the API layer.
-        //  So we have to find orphaned resources and also delete those
-
-        resourcesToDelete.addAll(
-            rscDfnMap.values().stream()
-                .flatMap(rscDfn -> AccessUtils.execPrivileged(() -> rscDfn.streamResource(sysCtx)))
-                .filter(rsc -> isOrphaned(rsc, exceptions))
-                .collect(Collectors.toList())
-        );
-        return resourcesToDelete;
-    }
-
-    public Set<Volume> getVolumesToDelete(
-        Collection<Resource> origResources,
-        Map<Resource, StorageException> exceptions
-    )
-    {
-        Set<Volume> volumesToDelete = new HashSet<>();
-        /*
-         *  At this point, all layers are expected to delete their volumes and notify the controller.
-         *  The only volumes that are not deleted in this process are the DEFAULT resource.
-         *  That means we basically only have to perform a check if there are DEFAULT volumes marked
-         *  as DELETE that have (typed) children. If so, that is an impl-error as one layer did not clean up properly.
-         *  Otherwise, remove the volume.
-         */
-        for (Resource rsc : origResources)
-        {
-            if (!exceptions.containsKey(rsc) && rsc.getType().equals(ResourceType.DEFAULT))
-            {
-                try
-                {
-                    for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
-                    {
-                        if (vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
-                        {
-                            Volume backingVolume = VolumeUtils.getBackingVolume(sysCtx, vlm);
-                            if (backingVolume != null && !backingVolume.isDeleted())
-                            {
-                                throw new ImplementationError("resource not properly cleaned up: " + rsc.getKey());
-                            }
-                            volumesToDelete.add(vlm);
-                        }
-                    }
-                }
-                catch (StorageException storExc)
-                {
-                    exceptions.put(rsc, storExc);
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    throw new ImplementationError(accDeniedExc);
-                }
-            }
-        }
-
-        //  (default) remote volumes are already deleted by the API layer.
-        //  So we have to find orphaned volumes and also delete those
-        volumesToDelete.addAll(
-            rscDfnMap.values().stream()
-                .flatMap(rscDfn -> AccessUtils.execPrivileged(() -> rscDfn.streamResource(sysCtx)))
-                .flatMap(Resource::streamVolumes)
-                .filter(
-                    vlm ->
-                    {
-                        boolean ret;
-                        try
-                        {
-                            ret =
-                                vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE) &&
-                                VolumeUtils.getBackingVolume(sysCtx, vlm) == null;
-                        }
-                        catch (AccessDeniedException exc)
-                        {
-                            throw new ImplementationError(exc);
-                        }
-                        catch (StorageException exc)
-                        {
-                            exceptions.put(vlm.getResource(), exc);
-                            ret = false;
-                        }
-                        return ret;
-                    }
-                )
-                .collect(Collectors.toList())
-        );
-
-        return volumesToDelete;
     }
 
     @RemoveAfterDevMgrRework
@@ -353,32 +224,6 @@ public class LayeredResourcesHelper
                     currentRsc.streamVolumes().forEach(this::initializeDrbdVlmData);
                 }
             }
-            /*
-             * remote resource get deleted in the API layer. As we are splitting default resources into the actual
-             * typed resources here (within the devicemanager), we need to check if the API layer has already removed
-             * a default resource. If so, we also have to delete all of it's (typed) children
-             */
-//            List<Resource> typedResourcesToDelete = rscDfnMap.values().stream()
-//                .flatMap(rscDfn -> AccessUtils.execPrivileged(() -> rscDfn.streamResource(sysCtx)))
-//                .filter(
-//                    rsc ->
-//                        !rsc.getType().equals(ResourceType.DEFAULT) &&
-//                        AccessUtils.execPrivileged(() -> rsc.getParentResource(sysCtx).isDeleted())
-//                    )
-//                .collect(Collectors.toList());
-//            typedResourcesToDelete.forEach(
-//                    rsc ->
-//                    {
-//                        try
-//                        {
-//                            rsc.delete(sysCtx);
-//                        }
-//                        catch (AccessDeniedException | SQLException exc)
-//                        {
-//                            throw new ImplementationError(exc);
-//                        }
-//                    }
-//            );
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -415,6 +260,11 @@ public class LayeredResourcesHelper
 
         typedRsc.getStateFlags().disableAllFlags(sysCtx);
         typedRsc.getStateFlags().enableFlags(sysCtx, origFlags);
+
+        Map<String, String> typedRscPropsMap = typedRsc.getProps(sysCtx).map();
+        typedRscPropsMap.clear();
+        typedRscPropsMap.putAll(origRsc.getProps(sysCtx).map());
+
         Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(sysCtx);
         while (vlmDfnIt.hasNext())
         {
@@ -445,6 +295,10 @@ public class LayeredResourcesHelper
             {
                 typedVlm.getFlags().disableAllFlags(sysCtx);
                 typedVlm.getFlags().enableFlags(sysCtx, origVlmFlags);
+
+                Map<String, String> typedVlmPropsMap = typedVlm.getProps(sysCtx).map();
+                typedVlmPropsMap.clear();
+                typedVlmPropsMap.putAll(origVlm.getProps(sysCtx).map());
             }
         }
         errorReporter.logTrace(
@@ -485,6 +339,11 @@ public class LayeredResourcesHelper
         typedResource.getStateFlags().disableAllFlags(sysCtx);
         typedResource.getStateFlags().enableFlags(sysCtx, origFlags);
 
+        Map<String, String> typedRscPropsMap = typedResource.getProps(sysCtx).map();
+        typedRscPropsMap.clear();
+        typedRscPropsMap.putAll(origRsc.getProps(sysCtx).map());
+
+
         if (origRsc.isCreatePrimary())
         {
             ((ResourceData) typedResource).setCreatePrimary();
@@ -524,6 +383,12 @@ public class LayeredResourcesHelper
                     {
                         typedVlm.setUsableSize(sysCtx, origVlm.getUsableSize(sysCtx));
                     }
+
+
+                    Map<String, String> typedVlmPropsMap = typedVlm.getProps(sysCtx).map();
+                    typedVlmPropsMap.clear();
+                    typedVlmPropsMap.putAll(origVlm.getProps(sysCtx).map());
+
                     // TODO: copy volume connection - maybe drbd level?
                     // TODO: copy device path? drbd?
                 }

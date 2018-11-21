@@ -2,6 +2,7 @@ package com.linbit.linstor.storage.layer.provider.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -20,10 +21,15 @@ import com.linbit.linstor.storage2.layer.data.LvmLayerData;
 import com.linbit.linstor.storage2.layer.data.LvmThinLayerData;
 import java.io.File;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 
 public class LvmThinProvider extends LvmProvider
 {
+    private static final String ID_SNAP_DELIMITER = "_";
+    public static final String FORMAT_SNAP_VLM_TO_LVM_ID = FORMAT_RSC_TO_LVM_ID + "_%s";
+
+
     public LvmThinProvider(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
@@ -41,6 +47,30 @@ public class LvmThinProvider extends LvmProvider
             wipeHandler,
             notificationListener,
             "LVM-Thin"
+        );
+    }
+
+    @Override
+    protected void updateSnapshotStates(Collection<SnapshotVolume> snapVlms)
+        throws AccessDeniedException, SQLException
+    {
+        for (SnapshotVolume snapVlm : snapVlms)
+        {
+            LvsInfo info = infoListCache.get(asFullQualifiedLvIdentifier(snapVlm));
+            // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
+
+            LvmThinLayerDataStlt state = (LvmThinLayerDataStlt) snapVlm.getLayerData(storDriverAccCtx);
+            state.exists = info != null;
+        }
+    }
+
+    private String asFullQualifiedLvIdentifier(SnapshotVolume snapVlm)
+    {
+        return String.format(
+            FORMAT_SNAP_VLM_TO_LVM_ID,
+            snapVlm.getResourceName().displayValue,
+            snapVlm.getVolumeNumber().value,
+            snapVlm.getSnapshotName().displayValue
         );
     }
 
@@ -65,6 +95,25 @@ public class LvmThinProvider extends LvmProvider
             extCmdFactory.create(),
             ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
             lvmId
+        );
+    }
+
+    @Override
+    protected void createSnapshot(Volume vlm, SnapshotVolume snapVlm)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
+    }
+
+    @Override
+    protected void deleteSnapshot(SnapshotVolume snapVlm)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        LvmCommands.delete(
+            extCmdFactory.create(),
+            ((LvmLayerData) snapVlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
+            getSnapshotIdentifier(snapVlm)
         );
     }
 
@@ -148,5 +197,12 @@ public class LvmThinProvider extends LvmProvider
             StorageConstants.CONFIG_LVM_THIN_POOL_KEY,
             StorageConstants.NAMESPACE_STOR_DRIVER
         );
+    }
+
+    private String getSnapshotIdentifier(SnapshotVolume snapVlm) throws AccessDeniedException
+    {
+        return asLvIdentifier(
+            snapVlm.getResourceDefinition().getVolumeDfn(storDriverAccCtx, snapVlm.getVolumeNumber())
+        ) + ID_SNAP_DELIMITER + snapVlm.getSnapshotName().displayValue;
     }
 }

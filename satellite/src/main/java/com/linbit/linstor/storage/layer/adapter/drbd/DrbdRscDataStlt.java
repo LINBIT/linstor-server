@@ -18,6 +18,8 @@ public class DrbdRscDataStlt implements DrbdRscData
     transient boolean exists = false;
     transient boolean requiresAdjust = false;
     transient boolean isPrimary;
+    transient boolean isSuspended = false;
+
     final transient Map<VolumeNumber, DrbdVlmDataStlt> vlmStates;
 
     public DrbdRscDataStlt(
