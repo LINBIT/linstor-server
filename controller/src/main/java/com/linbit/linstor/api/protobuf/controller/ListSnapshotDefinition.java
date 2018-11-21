@@ -12,7 +12,8 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
     name = ApiConsts.API_LST_SNAPSHOT_DFN,
-    description = "Queries the list of snapshot definitions"
+    description = "Queries the list of snapshot definitions",
+    transactional = false
 )
 public class ListSnapshotDefinition implements ApiCall
 {

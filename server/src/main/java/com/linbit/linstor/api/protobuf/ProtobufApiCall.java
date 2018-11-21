@@ -31,4 +31,15 @@ public @interface ProtobufApiCall
      *         by the PUBLIC identity
      */
     boolean requiresAuth() default true;
+
+    /**
+     * Indicates whether the API requires a database transaction. That is, whether the API writes to the persistent
+     * data structures. Read-only APIs do not require a transaction, because data is read from the in-memory cached
+     * objects and read consistency is handled by locks rather than by transactions.
+     * <p>
+     * Only applies to {@link com.linbit.linstor.api.ApiCall ApiCall}.
+     *
+     * @return True if the API requires a database transaction.
+     */
+    boolean transactional() default true;
 }

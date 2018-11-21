@@ -18,7 +18,8 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
     name = ApiConsts.API_CONTROL_CTRL,
-    description = "Send commands to the controller"
+    description = "Send commands to the controller",
+    transactional = false
 )
 public class Control implements ApiCall
 {

@@ -17,7 +17,8 @@ import com.linbit.linstor.proto.MsgReqRscConnOuterClass.MsgReqRscConn;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_REQ_RSC_CONN_LIST,
-    description = "Returns the requestes resource connections"
+    description = "Returns the requestes resource connections",
+    transactional = false
 )
 public class ReqRscConnList implements ApiCall
 {

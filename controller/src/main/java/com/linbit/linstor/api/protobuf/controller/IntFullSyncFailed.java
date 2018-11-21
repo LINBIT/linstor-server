@@ -11,7 +11,8 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_FULL_SYNC_FAILED,
-    description = "Satellite failed to apply our full sync"
+    description = "Satellite failed to apply our full sync",
+    transactional = false
 )
 public class IntFullSyncFailed implements ApiCall
 {

@@ -27,7 +27,8 @@ import java.io.InputStream;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_DSTR_DBG_CNSL,
-    description = "Detaches a debug console from a peer connection and destroys the debug console object"
+    description = "Detaches a debug console from a peer connection and destroys the debug console object",
+    transactional = false
 )
 public class DestroyDebugConsole implements ApiCall
 {

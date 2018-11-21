@@ -13,7 +13,8 @@ import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_NODE,
-    description = "Called by the satellite to request node update data"
+    description = "Called by the satellite to request node update data",
+    transactional = false
 )
 public class IntRequestNode implements ApiCall
 {

@@ -53,7 +53,7 @@ public class ScopeRunner
         return fluxInScope(lockGuard, callable, false);
     }
 
-    private <T> Flux<T> fluxInScope(
+    public <T> Flux<T> fluxInScope(
         LockGuard lockGuard,
         Callable<Flux<T>> callable,
         boolean transactional

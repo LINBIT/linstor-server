@@ -13,7 +13,8 @@ import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_IN_PROGRESS_SNAPSHOT,
-    description = "Called by the satellite to request snapshot update data"
+    description = "Called by the satellite to request snapshot update data",
+    transactional = false
 )
 public class IntRequestSnapshot implements ApiCall
 {

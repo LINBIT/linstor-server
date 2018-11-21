@@ -16,7 +16,8 @@ import java.io.InputStream;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_LST_NODE,
-    description = "Queries the list of nodes"
+    description = "Queries the list of nodes",
+    transactional = false
 )
 public class ListNode implements ApiCall
 {

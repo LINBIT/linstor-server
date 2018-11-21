@@ -21,7 +21,8 @@ import com.linbit.linstor.netcom.Peer;
 @ProtobufApiCall(
     name = ApiConsts.API_HOSTNAME,
     description = "Returns the uname -n output.",
-    requiresAuth = false
+    requiresAuth = false,
+    transactional = false
 )
 public class Hostname implements ApiCall
 {

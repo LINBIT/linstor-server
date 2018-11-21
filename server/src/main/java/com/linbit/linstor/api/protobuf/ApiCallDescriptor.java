@@ -9,6 +9,7 @@ public class ApiCallDescriptor
     private final String name;
     private final String description;
     private final boolean reqAuth;
+    private final boolean transactional;
 
     public ApiCallDescriptor(ApiType apiType, Class<? extends BaseApiCall> clazzRef)
     {
@@ -16,6 +17,7 @@ public class ApiCallDescriptor
         name = apiType.getName(clazzRef);
         description = apiType.getDescription(clazzRef);
         reqAuth = apiType.requiresAuth(clazzRef);
+        transactional = apiType.transactional(clazzRef);
     }
 
     public Class<? extends BaseApiCall> getClazz()
@@ -36,5 +38,10 @@ public class ApiCallDescriptor
     public boolean requiresAuth()
     {
         return reqAuth;
+    }
+
+    public boolean transactional()
+    {
+        return transactional;
     }
 }

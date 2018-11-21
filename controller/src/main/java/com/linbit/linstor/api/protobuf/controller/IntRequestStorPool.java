@@ -13,7 +13,8 @@ import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_STOR_POOL,
-    description = "Called by the satellite to request storage pool update data"
+    description = "Called by the satellite to request storage pool update data",
+    transactional = false
 )
 public class IntRequestStorPool implements ApiCall
 {

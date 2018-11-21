@@ -19,7 +19,8 @@ import java.util.List;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_LST_RSC,
-    description = "Queries the list of resources"
+    description = "Queries the list of resources",
+    transactional = false
 )
 public class ListResource implements ApiCall
 {

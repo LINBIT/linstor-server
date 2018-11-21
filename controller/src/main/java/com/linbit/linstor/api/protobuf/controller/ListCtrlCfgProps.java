@@ -12,7 +12,8 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
     name = ApiConsts.API_LST_CFG_VAL,
-    description = "Lists controller config properties"
+    description = "Lists controller config properties",
+    transactional = false
 )
 public class ListCtrlCfgProps implements ApiCall
 {

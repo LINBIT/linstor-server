@@ -14,7 +14,8 @@ import javax.inject.Inject;
 
 @ProtobufApiCall(
     name = ApiConsts.API_ENTER_CRYPT_PASS,
-    description = "Used to enter the passphrase used for encryption of the stored volume encryption keys"
+    description = "Used to enter the passphrase used for encryption of the stored volume encryption keys",
+    transactional = false
 )
 public class EnterCryptPassphrase implements ApiCall
 {

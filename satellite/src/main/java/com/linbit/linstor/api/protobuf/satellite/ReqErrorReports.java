@@ -20,7 +20,8 @@ import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_REQ_ERROR_REPORTS,
-    description = "Returns the requested error reports."
+    description = "Returns the requested error reports.",
+    transactional = false
 )
 public class ReqErrorReports implements ApiCall
 {

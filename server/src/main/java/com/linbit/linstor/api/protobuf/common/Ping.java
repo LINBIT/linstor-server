@@ -17,7 +17,8 @@ import java.io.InputStream;
  */
 @ProtobufApiCall(
     name = "Ping",
-    description = "Ping: Communication test. Responds with a Pong message."
+    description = "Ping: Communication test. Responds with a Pong message.",
+    transactional = false
 )
 public class Ping implements ApiCall
 {

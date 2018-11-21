@@ -13,7 +13,8 @@ import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObje
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_CONTROLLER,
-    description = "Called by the satellite to request controller update data"
+    description = "Called by the satellite to request controller update data",
+    transactional = false
 )
 public class IntRequestController implements ApiCall
 {

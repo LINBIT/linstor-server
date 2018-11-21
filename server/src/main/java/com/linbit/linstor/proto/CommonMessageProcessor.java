@@ -123,7 +123,8 @@ public class CommonMessageProcessor implements MessageProcessor
             ApiCallDescriptor apiDscr = apiCallDescriptors.get(apiName);
             if (apiDscr != null)
             {
-                apiCallMap.put(apiName, new ApiEntry(apiProv, apiDscr, apiDscr.requiresAuth()));
+                apiCallMap.put(apiName,
+                    new ApiEntry(apiProv, apiDscr, apiDscr.requiresAuth(), apiDscr.transactional()));
             }
             else
             {
@@ -377,7 +378,7 @@ public class CommonMessageProcessor implements MessageProcessor
 
                 messageFlux = scopeRunner
                     .fluxInTransactionlessScope(LockGuard.createDeferred(), () -> Flux.just(apiMapEntry.provider.get()))
-                    .flatMap(apiObj -> execute(apiObj, apiCallName, apiCallId, msgDataIn, respond))
+                    .flatMap(apiObj -> execute(apiMapEntry, apiObj, apiCallName, apiCallId, msgDataIn, respond))
                     .onErrorResume(
                         InvalidProtocolBufferException.class,
                         exc -> handleProtobufErrors(exc, apiCallName, peer, peerAccCtx, apiCallId)
@@ -460,6 +461,7 @@ public class CommonMessageProcessor implements MessageProcessor
     }
 
     private Flux<byte[]> execute(
+        ApiEntry apiMapEntry,
         BaseApiCall apiObj,
         String apiCallName,
         Long apiCallId,
@@ -470,9 +472,10 @@ public class CommonMessageProcessor implements MessageProcessor
         Flux<byte[]> flux;
         if (apiObj instanceof ApiCall)
         {
-            flux = scopeRunner.fluxInTransactionalScope(
+            flux = scopeRunner.fluxInScope(
                 LockGuard.createDeferred(),
-                () -> executeNonReactive((ApiCall) apiObj, msgDataIn)
+                () -> executeNonReactive((ApiCall) apiObj, msgDataIn),
+                apiMapEntry.transactional
             );
         }
         else if (apiObj instanceof ApiCallReactive)
@@ -682,16 +685,19 @@ public class CommonMessageProcessor implements MessageProcessor
         final Provider<BaseApiCall> provider;
         final ApiCallDescriptor descriptor;
         final boolean reqAuth;
+        final boolean transactional;
 
         ApiEntry(
             final Provider<BaseApiCall> providerRef,
             final ApiCallDescriptor descriptorRef,
-            final boolean reqAuthFlag
+            final boolean reqAuthFlag,
+            boolean transactionalRef
         )
         {
             provider = providerRef;
             descriptor = descriptorRef;
             reqAuth = reqAuthFlag;
+            transactional = transactionalRef;
         }
     }
 

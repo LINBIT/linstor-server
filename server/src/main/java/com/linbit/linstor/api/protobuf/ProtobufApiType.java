@@ -4,7 +4,6 @@ import com.linbit.linstor.api.ApiType;
 
 public class ProtobufApiType implements ApiType
 {
-
     @Override
     public String getName(Class<?> apiCall)
     {
@@ -21,5 +20,11 @@ public class ProtobufApiType implements ApiType
     public boolean requiresAuth(Class<?> apiCall)
     {
         return apiCall.getAnnotation(ProtobufApiCall.class).requiresAuth();
+    }
+
+    @Override
+    public boolean transactional(Class<?> apiCall)
+    {
+        return apiCall.getAnnotation(ProtobufApiCall.class).transactional();
     }
 }

@@ -16,7 +16,8 @@ import java.io.InputStream;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_LST_RSC_DFN,
-    description = "Queries the list of resource definitions"
+    description = "Queries the list of resource definitions",
+    transactional = false
 )
 public class ListResourceDefinition implements ApiCall
 {

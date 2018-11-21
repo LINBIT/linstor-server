@@ -16,7 +16,8 @@ import java.io.InputStream;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_LST_STOR_POOL_DFN,
-    description = "Queries the list of storage pool definitions"
+    description = "Queries the list of storage pool definitions",
+    transactional = false
 )
 public class ListStorPoolDefinition implements ApiCall
 {

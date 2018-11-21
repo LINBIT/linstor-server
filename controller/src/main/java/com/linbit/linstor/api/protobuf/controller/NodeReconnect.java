@@ -14,7 +14,8 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
     name = ApiConsts.API_NODE_RECONNECT,
-    description = "Reconnects a node"
+    description = "Reconnects a node",
+    transactional = false
 )
 public class NodeReconnect implements ApiCall
 {

@@ -13,7 +13,8 @@ import java.util.UUID;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_RSC,
-    description = "Called by the satellite to request resource update data"
+    description = "Called by the satellite to request resource update data",
+    transactional = false
 )
 public class IntRequestResource implements ApiCall
 {

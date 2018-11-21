@@ -14,7 +14,8 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
     name = ApiConsts.API_DEL_WATCH,
-    description = "Deletes a watch"
+    description = "Deletes a watch",
+    transactional = false
 )
 public class DeleteWatch implements ApiCall
 {

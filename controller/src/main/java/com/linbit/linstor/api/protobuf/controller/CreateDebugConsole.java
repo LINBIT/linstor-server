@@ -29,7 +29,8 @@ import java.io.InputStream;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_CRT_DBG_CNSL,
-    description = "Creates a debug console and attaches it to the peer connection"
+    description = "Creates a debug console and attaches it to the peer connection",
+    transactional = false
 )
 public class CreateDebugConsole implements ApiCall
 {

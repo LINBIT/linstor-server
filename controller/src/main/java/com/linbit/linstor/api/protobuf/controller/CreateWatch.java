@@ -14,7 +14,8 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
     name = ApiConsts.API_CRT_WATCH,
-    description = "Creates a watch"
+    description = "Creates a watch",
+    transactional = false
 )
 public class CreateWatch implements ApiCall
 {

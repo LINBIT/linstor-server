@@ -19,7 +19,8 @@ import com.linbit.linstor.proto.FilterOuterClass.Filter;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_LST_VLM,
-    description = "Queries the list of volumes"
+    description = "Queries the list of volumes",
+    transactional = false
 )
 public class ListVolumes implements ApiCall
 {
