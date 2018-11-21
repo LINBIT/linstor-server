@@ -91,7 +91,7 @@ public class CtrlSatelliteUpdateCaller
             for (Node nodeToContact : nodesToContact)
             {
                 Peer peer = nodeToContact.getPeer(apiCtx);
-                if (peer != null && peer.isConnected())
+                if (peer != null && peer.getConnectionStatus() == Peer.ConnectionStatus.ONLINE)
                 {
                     Flux<ApiCallRc> response = updateSatellite(nodeToContact, changedMessage);
 
@@ -124,7 +124,8 @@ public class CtrlSatelliteUpdateCaller
             response = peer
                 .apiCall(
                     InternalApiConsts.API_CHANGED_NODE,
-                    changedMessage
+                    changedMessage,
+                    true
                 )
 
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
@@ -210,7 +211,8 @@ public class CtrlSatelliteUpdateCaller
                                 storPool.getUuid(),
                                 storPool.getName().displayValue
                             )
-                            .build()
+                            .build(),
+                        true
                     )
 
                     .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
@@ -280,7 +282,8 @@ public class CtrlSatelliteUpdateCaller
                             currentRsc.getUuid(),
                             currentRsc.getDefinition().getName().displayValue
                         )
-                        .build()
+                        .build(),
+                    true
                 )
 
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
@@ -319,7 +322,8 @@ public class CtrlSatelliteUpdateCaller
                             snapshot.getUuid(),
                             snapshot.getSnapshotName().displayValue
                         )
-                        .build()
+                        .build(),
+                    true
                 )
 
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))

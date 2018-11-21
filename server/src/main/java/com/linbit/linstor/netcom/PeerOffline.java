@@ -117,7 +117,7 @@ public class PeerOffline implements Peer
     }
 
     @Override
-    public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data)
+    public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data, boolean requireOnline)
     {
         return Flux.empty();
     }

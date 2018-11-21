@@ -130,7 +130,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         Flux<ByteArrayInputStream> result = Flux.empty();
         if (peer != null)
         {
-            result = peer.apiCall(InternalApiConsts.API_REQUEST_THIN_FREE_SPACE, new byte[]{})
+            result = peer.apiCall(InternalApiConsts.API_REQUEST_THIN_FREE_SPACE, new byte[]{}, true)
                 // No data from disconnected satellites
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
         }

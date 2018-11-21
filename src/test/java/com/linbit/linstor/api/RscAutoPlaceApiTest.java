@@ -60,6 +60,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -109,7 +110,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
 
         // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be ready
-        Mockito.when(mockSatellite.apiCall(anyString(), any()))
+        Mockito.when(mockSatellite.apiCall(anyString(), any(), anyBoolean()))
             .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
         Mockito.when(mockSatellite.isConnected()).thenReturn(true);
 

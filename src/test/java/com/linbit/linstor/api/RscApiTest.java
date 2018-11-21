@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 
 @RunWith(JUnitParamsRunner.class)
@@ -100,7 +101,7 @@ public class RscApiTest extends ApiTestBase
         );
         nodesMap.put(testControllerName, testControllerNode);
 
-        Mockito.when(mockSatellite.apiCall(anyString(), any())).thenReturn(Flux.empty());
+        Mockito.when(mockSatellite.apiCall(anyString(), any(), anyBoolean())).thenReturn(Flux.empty());
         testSatelliteNode = nodeDataFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testSatelliteName,
