@@ -12,7 +12,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
@@ -25,21 +25,21 @@ import java.util.Collections;
 public class LvmThinProvider extends LvmProvider
 {
     public LvmThinProvider(
-        ErrorReporter errorReporterRef,
-        ExtCmdFactory extCmdFactoryRef,
-        AccessContext storDriverAccCtxRef,
-        StltConfigAccessor stltConfigAccessorRef,
-        StorageLayer storageLayerRef,
-        NotificationListener notificationListenerRef
+        ErrorReporter errorReporter,
+        ExtCmdFactory extCmdFactory,
+        AccessContext storDriverAccCtx,
+        StltConfigAccessor stltConfigAccessor,
+        WipeHandler wipeHandler,
+        NotificationListener notificationListener
     )
     {
         super(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            storageLayerRef,
-            notificationListenerRef,
+            errorReporter,
+            extCmdFactory,
+            storDriverAccCtx,
+            stltConfigAccessor,
+            wipeHandler,
+            notificationListener,
             "LVM-Thin"
         );
     }

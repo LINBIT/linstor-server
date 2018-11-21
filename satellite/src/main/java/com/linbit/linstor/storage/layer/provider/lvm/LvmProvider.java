@@ -13,7 +13,7 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsProvider;
-import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.LvmCommands;
@@ -37,42 +37,42 @@ public class LvmProvider extends AbsProvider<LvsInfo, LvmLayerDataStlt>
     private static final String FORMAT_DEV_PATH = "/dev/%s/%s";
 
     protected LvmProvider(
-        ErrorReporter errorReporterRef,
-        ExtCmdFactory extCmdFactoryRef,
-        AccessContext storDriverAccCtxRef,
-        StltConfigAccessor stltConfigAccessorRef,
-        StorageLayer storageLayerRef,
-        NotificationListener notificationListenerRef,
+        ErrorReporter errorReporter,
+        ExtCmdFactory extCmdFactory,
+        AccessContext storDriverAccCtx,
+        StltConfigAccessor stltConfigAccessor,
+        WipeHandler wipeHandler,
+        NotificationListener notificationListener,
         String subTypeDescr
     )
     {
         super(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            storageLayerRef,
-            notificationListenerRef,
+            errorReporter,
+            extCmdFactory,
+            storDriverAccCtx,
+            stltConfigAccessor,
+            wipeHandler,
+            notificationListener,
             subTypeDescr
         );
     }
 
     public LvmProvider(
-        ErrorReporter errorReporterRef,
-        ExtCmdFactory extCmdFactoryRef,
-        AccessContext storDriverAccCtxRef,
-        StltConfigAccessor stltConfigAccessorRef,
-        StorageLayer storageLayerRef,
-        NotificationListener notificationListenerRef
+        ErrorReporter errorReporter,
+        ExtCmdFactory extCmdFactory,
+        AccessContext storDriverAccCtx,
+        StltConfigAccessor stltConfigAccessor,
+        WipeHandler wipeHandler,
+        NotificationListener notificationListener
     )
     {
         super(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            storageLayerRef,
-            notificationListenerRef,
+            errorReporter,
+            extCmdFactory,
+            storDriverAccCtx,
+            stltConfigAccessor,
+            wipeHandler,
+            notificationListener,
             "LVM"
         );
     }
@@ -135,7 +135,7 @@ public class LvmProvider extends AbsProvider<LvsInfo, LvmLayerDataStlt>
             newLvmId
         );
 
-        storageLayer.asyncWipe(
+        wipeHandler.asyncWipe(
             devicePath,
             ignored ->
             {

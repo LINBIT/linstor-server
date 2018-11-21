@@ -13,7 +13,7 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsProvider;
-import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
@@ -36,42 +36,42 @@ public class ZfsProvider extends AbsProvider<ZfsInfo, ZfsLayerDataStlt>
     private static final int TOLERANCE_FACTOR = 3;
 
     protected ZfsProvider(
-        ErrorReporter errorReporterRef,
-        ExtCmdFactory extCmdFactoryRef,
-        AccessContext storDriverAccCtxRef,
-        StltConfigAccessor stltConfigAccessorRef,
-        StorageLayer storageLayerRef,
-        NotificationListener notificationListenerRef,
+        ErrorReporter errorReporter,
+        ExtCmdFactory extCmdFactory,
+        AccessContext storDriverAccCtx,
+        StltConfigAccessor stltConfigAccessor,
+        WipeHandler wipeHandler,
+        NotificationListener notificationListener,
         String subTypeDescr
     )
     {
         super(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            storageLayerRef,
-            notificationListenerRef,
+            errorReporter,
+            extCmdFactory,
+            storDriverAccCtx,
+            stltConfigAccessor,
+            wipeHandler,
+            notificationListener,
             subTypeDescr
         );
     }
 
     public ZfsProvider(
-        ErrorReporter errorReporterRef,
-        ExtCmdFactory extCmdFactoryRef,
-        AccessContext storDriverAccCtxRef,
-        StltConfigAccessor stltConfigAccessorRef,
-        StorageLayer storageLayerRef,
-        NotificationListener notificationListenerRef
+        ErrorReporter errorReporter,
+        ExtCmdFactory extCmdFactory,
+        AccessContext storDriverAccCtx,
+        StltConfigAccessor stltConfigAccessor,
+        WipeHandler wipeHandler,
+        NotificationListener notificationListener
     )
     {
         super(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            storageLayerRef,
-            notificationListenerRef,
+            errorReporter,
+            extCmdFactory,
+            storDriverAccCtx,
+            stltConfigAccessor,
+            wipeHandler,
+            notificationListener,
             "ZFS"
         );
     }

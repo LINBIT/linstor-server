@@ -24,34 +24,25 @@ import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.ResourceLayer;
-import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishTargetProvider;
-import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsThinProvider;
-import com.linbit.linstor.transaction.TransactionMgr;
-
-import javax.inject.Provider;
-
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class StorageLayer implements ResourceLayer
 {
     private final AccessContext storDriverAccCtx;
-    private final ExtCmdFactory extCmdFactory;
 
     private final LvmProvider lvmDriver;
     private final LvmThinProvider lvmThinDriver;
@@ -59,7 +50,6 @@ public class StorageLayer implements ResourceLayer
     private final ZfsThinProvider zfsThinDriver;
     private final SwordfishTargetProvider sfTargetDriver;
     private final SwordfishInitiatorProvider sfInitDriver;
-    private final ErrorReporter errorReporter;
     private final NotificationListener notificationListener;
     private final List<DeviceProvider> driverList;
 
@@ -68,21 +58,20 @@ public class StorageLayer implements ResourceLayer
         AccessContext storDriverAccCtxRef,
         StltConfigAccessor stltConfigAccessorRef,
         ErrorReporter errorReporterRef,
-        Provider<TransactionMgr> transMgrProviderRef,
         NotificationListener notificationListenerRef
     )
     {
-        extCmdFactory = extCmdFactoryRef;
         storDriverAccCtx = storDriverAccCtxRef;
-        errorReporter = errorReporterRef;
         notificationListener = notificationListenerRef;
+
+        WipeHandler wipeHandler = new WipeHandler(extCmdFactoryRef, errorReporterRef);
 
         lvmDriver = new LvmProvider(
             errorReporterRef,
             extCmdFactoryRef,
             storDriverAccCtxRef,
             stltConfigAccessorRef,
-            this,
+            wipeHandler,
             notificationListenerRef
         );
         lvmThinDriver = new LvmThinProvider(
@@ -90,7 +79,7 @@ public class StorageLayer implements ResourceLayer
             extCmdFactoryRef,
             storDriverAccCtxRef,
             stltConfigAccessorRef,
-            this,
+            wipeHandler,
             notificationListenerRef
         );
         zfsDriver = new ZfsProvider(
@@ -98,7 +87,7 @@ public class StorageLayer implements ResourceLayer
             extCmdFactoryRef,
             storDriverAccCtxRef,
             stltConfigAccessorRef,
-            this,
+            wipeHandler,
             notificationListenerRef
         );
         zfsThinDriver = new ZfsThinProvider(
@@ -106,7 +95,7 @@ public class StorageLayer implements ResourceLayer
             extCmdFactoryRef,
             storDriverAccCtxRef,
             stltConfigAccessorRef,
-            this,
+            wipeHandler,
             notificationListenerRef
         );
         sfTargetDriver = new SwordfishTargetProvider(
@@ -204,8 +193,14 @@ public class StorageLayer implements ResourceLayer
         {
             notificationListener.notifyResourceApplied(rsc);
         }
-
     }
+
+    public void handleSnapshotDeletes(Collection<Snapshot> snapshots)
+    {
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
+    }
+
 
     private DeviceProvider classifier(Volume vlm)
     {
@@ -251,54 +246,5 @@ public class StorageLayer implements ResourceLayer
             throw new ImplementationError(exc);
         }
         return devProvider;
-    }
-
-    /**
-     * Only wipes linstor-known data.
-     *
-     * That means, this method calls "{@code wipefs devicePath}" and cleans drbd super block (last 4k of the device)
-     *
-     * @param devicePath
-     *
-     * @throws StorageException
-     * @throws IOException
-     */
-    public void quickWipe(String devicePath) throws StorageException
-    {
-        Commands.wipeFs(extCmdFactory.create(), devicePath);
-        try
-        {
-            MdSuperblockBuffer.wipe(devicePath);
-        }
-        catch (IOException ioExc)
-        {
-            throw new StorageException("Failed to quick-wipe devicePath " + devicePath, ioExc);
-        }
-    }
-
-    public void asyncWipe(String devicePath, Consumer<String> wipeFinishedNotifier)
-    {
-        // TODO: this step should be asynchron
-
-        /*
-         * for security reasons we should wipe (zero out) an lvm / zfs before actually removing it.
-         *
-         * however, user may want to skip this step for performance reasons.
-         * in that case, we still need to make sure to at least wipe DRBD's signature so that
-         * re-allocating the same storage does not find the data-garbage from last DRBD configuration
-         */
-        try
-        {
-            MdSuperblockBuffer.wipe(devicePath);
-        }
-        catch (IOException exc)
-        {
-            errorReporter.reportError(exc);
-            // wipe failed, but we still need to free the allocated space
-        }
-        finally
-        {
-            wipeFinishedNotifier.accept(devicePath);
-        }
     }
 }

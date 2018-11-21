@@ -23,6 +23,8 @@ import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.DrbdAdm;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage2.layer.kinds.StorageLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
@@ -44,6 +46,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
 
     private final LayeredResourcesHelper layeredRscHelper;
     private final LayerFactory layerFactory;
+    private final StorageLayer storageLayer;
     private final AtomicBoolean fullSyncApplied;
 
     public DeviceHandlerImpl(
@@ -76,11 +79,12 @@ public class DeviceHandlerImpl implements DeviceHandler2
             whitelistProps,
             extCmdFactoryRef,
             stltCfgAccessorRef,
-            transMgrProviderRef,
             interComSerializerRef,
             controllerPeerConnectorRef,
             this
         );
+
+        storageLayer = (StorageLayer) layerFactory.getDeviceLayer(StorageLayerKind.class);
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -90,6 +94,9 @@ public class DeviceHandlerImpl implements DeviceHandler2
     {
         Collection<Resource> origResources = rscs;
         List<Resource> allResources = convertResources(origResources);
+
+        // bypass all layers and handle snapshot-deletes directly on storage layer
+        storageLayer.handleSnapshotDeletes(snapshots);
 
         // call prepare for every necessary layer
         Set<Resource> rootResources = origResources.stream().map(rsc -> getRoot(rsc)).collect(Collectors.toSet());

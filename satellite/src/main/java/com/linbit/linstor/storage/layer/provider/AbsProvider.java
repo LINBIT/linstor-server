@@ -35,7 +35,7 @@ public abstract class AbsProvider<INFO, LAYER_DATA extends VlmLayerData> impleme
     protected final ExtCmdFactory extCmdFactory;
     protected final AccessContext storDriverAccCtx;
     protected final NotificationListener notificationListener;
-    protected final StorageLayer storageLayer;
+    protected final WipeHandler wipeHandler;
     protected final StltConfigAccessor stltConfigAccessor;
     protected Props localNodeProps;
 
@@ -49,7 +49,7 @@ public abstract class AbsProvider<INFO, LAYER_DATA extends VlmLayerData> impleme
         ExtCmdFactory extCmdFactoryRef,
         AccessContext storDriverAccCtxRef,
         StltConfigAccessor stltConfigAccessorRef,
-        StorageLayer storageLayerRef,
+        WipeHandler wipeHandlerRef,
         NotificationListener notificationListenerRef,
         String typeDescrRef
     )
@@ -57,8 +57,8 @@ public abstract class AbsProvider<INFO, LAYER_DATA extends VlmLayerData> impleme
         errorReporter = errorReporterRef;
         extCmdFactory = extCmdFactoryRef;
         storDriverAccCtx = storDriverAccCtxRef;
+        wipeHandler = wipeHandlerRef;
         notificationListener = notificationListenerRef;
-        storageLayer = storageLayerRef;
         stltConfigAccessor = stltConfigAccessorRef;
         typeDescr = typeDescrRef;
 
@@ -208,7 +208,7 @@ public abstract class AbsProvider<INFO, LAYER_DATA extends VlmLayerData> impleme
             {
                 DmStatCommands.create(extCmdFactory.create(), devicePath);
             }
-            storageLayer.quickWipe(devicePath);
+            wipeHandler.quickWipe(devicePath);
 
             addCreatedMsg(vlm, apiCallRc);
         }

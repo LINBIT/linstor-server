@@ -19,8 +19,6 @@ import com.linbit.linstor.storage2.layer.kinds.DefaultLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.DrbdLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.StorageLayerKind;
-import com.linbit.linstor.transaction.TransactionMgr;
-import javax.inject.Provider;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +35,6 @@ public class LayerFactory
         WhitelistProps whiltelistProps,
         ExtCmdFactory extCmdFactory,
         StltConfigAccessor stltConfigAccessor,
-        Provider<TransactionMgr> transMgrProvider,
         CtrlStltSerializer interComSerializer,
         ControllerPeerConnector controllerPeerConnector,
         DeviceHandlerImpl deviceHandlerImpl
@@ -74,7 +71,6 @@ public class LayerFactory
                 workerCtx,
                 stltConfigAccessor,
                 errorReporter,
-                transMgrProvider,
                 notificationListener
             )
         );
