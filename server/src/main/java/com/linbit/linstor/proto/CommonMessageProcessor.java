@@ -29,6 +29,7 @@ import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader.MsgType;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Authentication;
 import com.linbit.linstor.security.Identity;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.MathUtils;
 import org.slf4j.event.Level;
@@ -391,6 +392,10 @@ public class CommonMessageProcessor implements MessageProcessor
                         ApiAccessDeniedException.class,
                         exc -> handleApiAccessDeniedException(exc, apiCallName, peer, peerAccCtx, apiCallId)
                     )
+                    .onErrorResume(
+                        TransactionException.class,
+                        exc -> handleTransactionException(exc, peer, peerAccCtx, apiCallId)
+                    )
                     .subscriberContext(Context.of(
                         ApiModule.API_CALL_NAME, apiCallName,
                         Peer.class, peer,
@@ -566,6 +571,29 @@ public class CommonMessageProcessor implements MessageProcessor
 
         return Flux.just(commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
             .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(entry)).build());
+    }
+
+    private Flux<byte[]> handleTransactionException(
+        TransactionException exc,
+        Peer peer,
+        AccessContext peerAccCtx,
+        Long apiCallId
+    )
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseUtils.reportStatic(
+            exc,
+            exc.getMessage(),
+            ApiConsts.FAIL_SQL,
+            null,
+            responses,
+            errorLog,
+            peerAccCtx,
+            peer
+        );
+
+        return Flux.just(commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(responses).build());
     }
 
     private Flux<byte[]> errorFallback(

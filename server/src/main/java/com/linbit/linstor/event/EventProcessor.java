@@ -3,7 +3,6 @@ package com.linbit.linstor.event;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
@@ -14,9 +13,9 @@ import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.InputStream;
@@ -34,7 +33,7 @@ public class EventProcessor
     private final ErrorReporter errorReporter;
     private final Map<String, Provider<EventHandler>> eventHandlers;
     private final LinStorScope apiCallScope;
-    private final Provider<TransactionMgr> transMgrGenerator;
+    private final TransactionMgrGenerator transactionMgrGenerator;
     private final Provider<TransactionMgr> transMgrProvider;
 
     // Synchronizes access to incomingEventStreamStore and pendingEventsPerPeer
@@ -47,14 +46,14 @@ public class EventProcessor
         ErrorReporter errorReporterRef,
         Map<String, Provider<EventHandler>> eventHandlersRef,
         LinStorScope apiCallScopeRef,
-        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> trnActProviderRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
         eventHandlers = eventHandlersRef;
         apiCallScope = apiCallScopeRef;
-        transMgrGenerator = trnActProviderRef;
+        transactionMgrGenerator = transactionMgrGeneratorRef;
         transMgrProvider = transMgrProviderRef;
 
         eventHandlingLock = new ReentrantLock();
@@ -156,7 +155,7 @@ public class EventProcessor
         Peer peer
     )
     {
-        TransactionMgr transMgr = transMgrGenerator.get();
+        TransactionMgr transMgr = transactionMgrGenerator.startTransaction();
         apiCallScope.enter();
         try
         {

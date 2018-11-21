@@ -6,6 +6,7 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,7 +21,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import javax.inject.Provider;
 
 public class DebugConsoleImpl implements DebugConsole
 {
@@ -34,7 +34,7 @@ public class DebugConsoleImpl implements DebugConsole
     private final ErrorReporter errorReporter;
     private final Map<String, CommonDebugCmd> commandMap;
     private final LinStorScope debugScope;
-    private final Provider<TransactionMgr> trnActProvider;
+    private final TransactionMgrGenerator transactionMgrGenerator;
 
     private Map<String, String> parameters;
     private Set<String> unknownParameters;
@@ -53,14 +53,14 @@ public class DebugConsoleImpl implements DebugConsole
         AccessContext debugCtxRef,
         ErrorReporter errorReporterRef,
         LinStorScope debugScopeRef,
-        Provider<TransactionMgr> trnActProviderRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef,
         Set<CommonDebugCmd> debugCommands
     )
     {
         debugCtx = debugCtxRef;
         errorReporter = errorReporterRef;
         debugScope = debugScopeRef;
-        trnActProvider = trnActProviderRef;
+        transactionMgrGenerator = transactionMgrGeneratorRef;
         commandMap = new TreeMap<>();
 
         for (CommonDebugCmd command : debugCommands)
@@ -282,15 +282,29 @@ public class DebugConsoleImpl implements DebugConsole
                         {
                             debugScope.enter();
                             scopeEntered = true;
-
-                            debugScope.seed(TransactionMgr.class, trnActProvider.get());
                         }
                         catch (Exception exc)
                         {
                             String reportId = errorReporter.reportError(exc);
                             debugErr.printf(
                                 "DebugConsole: An unhandled exception was encountered when attempting to enter " +
-                                "the injector scope (" + LinStorScope.class.getSimpleName() + ").\n" +
+                                    "the injector scope (" + LinStorScope.class.getSimpleName() + ").\n" +
+                                    "Some commands may not work as a result of this problem.\n" +
+                                    "The report ID of the error report is %s\n",
+                                reportId
+                            );
+                        }
+
+                        try
+                        {
+                            debugScope.seed(TransactionMgr.class, transactionMgrGenerator.startTransaction());
+                        }
+                        catch (Exception exc)
+                        {
+                            String reportId = errorReporter.reportError(exc);
+                            debugErr.printf(
+                                "DebugConsole: An unhandled exception was encountered when attempting to start " +
+                                "the transaction.\n" +
                                 "Some commands may not work as a result of this problem.\n" +
                                 "The report ID of the error report is %s\n",
                                 reportId

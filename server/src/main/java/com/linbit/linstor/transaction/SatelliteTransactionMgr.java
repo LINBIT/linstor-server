@@ -1,13 +1,11 @@
 package com.linbit.linstor.transaction;
 
-import javax.inject.Inject;
 import java.sql.Connection;
 
 public class SatelliteTransactionMgr implements TransactionMgr
 {
     private final TransactionObjectCollection transactionObjectCollection;
 
-    @Inject
     public SatelliteTransactionMgr()
     {
         transactionObjectCollection = new TransactionObjectCollection();

@@ -2,7 +2,6 @@ package com.linbit.linstor.transaction;
 
 import com.linbit.linstor.ControllerDatabase;
 
-import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -12,7 +11,6 @@ public class ControllerTransactionMgr implements TransactionMgr
     private final Connection dbCon;
     private final TransactionObjectCollection transactionObjectCollection;
 
-    @Inject
     public ControllerTransactionMgr(ControllerDatabase controllerDatabaseRef) throws SQLException
     {
         controllerDatabase = controllerDatabaseRef;

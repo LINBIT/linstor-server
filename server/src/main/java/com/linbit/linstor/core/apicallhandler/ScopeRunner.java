@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apicallhandler;
 
 import com.google.inject.Key;
 import com.google.inject.name.Names;
-import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
@@ -10,6 +9,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrGenerator;
 import com.linbit.locks.LockGuard;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
@@ -17,8 +17,6 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
@@ -28,18 +26,18 @@ import java.util.function.Function;
 public class ScopeRunner
 {
     private final ErrorReporter errorLog;
-    private final Provider<TransactionMgr> trnActProvider;
+    private final TransactionMgrGenerator transactionMgrGenerator;
     private final LinStorScope apiCallScope;
 
     @Inject
     public ScopeRunner(
         ErrorReporter errorLogRef,
-        @Named(LinStorModule.TRANS_MGR_GENERATOR) Provider<TransactionMgr> trnActProviderRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef,
         LinStorScope apiCallScopeRef
     )
     {
         errorLog = errorLogRef;
-        trnActProvider = trnActProviderRef;
+        transactionMgrGenerator = transactionMgrGeneratorRef;
         apiCallScope = apiCallScopeRef;
     }
 
@@ -82,7 +80,7 @@ public class ScopeRunner
 
         errorLog.logTrace("Running in scope of ApiCall '%s' from %s start", apiCallName, peer);
 
-        TransactionMgr transMgr = transactional ? trnActProvider.get() : null;
+        TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
 
         apiCallScope.enter();
         lockGuard.lock();
