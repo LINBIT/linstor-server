@@ -23,6 +23,9 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -49,6 +52,7 @@ import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
@@ -188,6 +192,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             );
         }
 
+        failIfDependentSnapshot(rsc);
+
         markDeletedWithVolumes(rsc);
 
         ctrlTransactionHelper.commit();
@@ -216,7 +222,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 () -> updateSatellitesInScope(nodeName, rscName)
             );
     }
-
     private Flux<ApiCallRc> updateSatellitesInScope(NodeName nodeName, ResourceName rscName)
     {
         ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
@@ -302,6 +307,40 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ImplementationError(accDeniedExc);
+        }
+    }
+
+    private void failIfDependentSnapshot(ResourceData rsc)
+    {
+        try
+        {
+            for (SnapshotDefinition snapshotDfn : rsc.getDefinition().getSnapshotDfns(peerAccCtx.get()))
+            {
+                Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getAssignedNode().getName());
+                if (snapshot != null)
+                {
+                    for (SnapshotVolume snapshotVlm : snapshot.getAllSnapshotVolumes(peerAccCtx.get()))
+                    {
+                        if (snapshotVlm.getStorPool(peerAccCtx.get()).getDriverKind().isSnapshotDependent())
+                        {
+                            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                                "Resource '" + rsc.getDefinition().getName() + "' cannot be deleted because volume " +
+                                    snapshotVlm.getVolumeNumber() + " has dependent snapshot '" +
+                                    snapshot.getSnapshotName() + "'"
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check for dependent snapshots of " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
         }
     }
 

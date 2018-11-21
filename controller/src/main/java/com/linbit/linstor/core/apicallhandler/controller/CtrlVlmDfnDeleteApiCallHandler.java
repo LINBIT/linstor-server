@@ -6,6 +6,9 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
@@ -154,6 +157,8 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             );
         }
 
+        failIfDependentSnapshot(vlmDfn);
+
         // mark volumes to delete or check if all a 'CLEAN'
         Iterator<Volume> itVolumes = getVolumeIteratorPriveleged(vlmDfn);
         while (itVolumes.hasNext())
@@ -265,6 +270,41 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             throw new ImplementationError(exc);
         }
         return rscInUse;
+    }
+
+    private void failIfDependentSnapshot(VolumeDefinition vlmDfn)
+    {
+        try
+        {
+            ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
+            for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
+            {
+                for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx.get()))
+                {
+                    SnapshotVolume snapshotVlm = snapshot.getSnapshotVolume(peerAccCtx.get(), vlmDfn.getVolumeNumber());
+                    if (snapshotVlm != null)
+                    {
+                        if (snapshotVlm.getStorPool(peerAccCtx.get()).getDriverKind().isSnapshotDependent())
+                        {
+                            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                                "Volume definition " + vlmDfn.getVolumeNumber() + " of '" + rscDfn.getName() +
+                                    "' cannot be deleted because dependent snapshot '" + snapshot.getSnapshotName() +
+                                    "' is present on node '" + snapshot.getNodeName() + "'"
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check for dependent snapshots of " + getVlmDfnDescriptionInline(vlmDfn),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
     }
 
     private Iterator<Volume> getVolumeIteratorPriveleged(VolumeDefinition vlmDfn)

@@ -75,6 +75,16 @@ public interface StorageDriverKind
     boolean isSnapshotSupported();
 
     /**
+     * For drivers that support snapshots, return whether the snapshots require that the actual volume is retained.
+     *
+     * @return true if and only if snapshots require that the actual volume is retained
+     */
+    default boolean isSnapshotDependent()
+    {
+        return false;
+    }
+
+    /**
      * Returns whether this driver has a backing storage. If it has, the storPool has
      * to have a non-empty NAMESPC_STORAGE_DRIVER namespace.
      *

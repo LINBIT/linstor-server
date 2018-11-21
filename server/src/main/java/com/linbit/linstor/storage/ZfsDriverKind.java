@@ -68,6 +68,12 @@ public class ZfsDriverKind implements StorageDriverKind
     }
 
     @Override
+    public boolean isSnapshotDependent()
+    {
+        return true;
+    }
+
+    @Override
     public boolean hasBackingStorage()
     {
         return true;
