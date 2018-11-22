@@ -365,18 +365,18 @@ class DrbdDeviceHandler implements DeviceHandler
                 }
 
                 deviceManagerProvider.get().notifyResourceApplied(rsc);
-
-                apiCallRc.addEntry(ApiCallRcImpl
-                    .entryBuilder(ApiConsts.MODIFIED, "Resource '" + rscName + "' deployed")
-                    .putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue)
-                    .build()
-                );
             }
 
             {
                 ResourceState rscState = initializeSnapshotResourceState(localNodeName, rscDfn, inProgressSnapshots);
                 handleSnapshots(rscDfn, inProgressSnapshots, rscState);
             }
+
+            apiCallRc.addEntry(ApiCallRcImpl
+                .entryBuilder(ApiConsts.MODIFIED, "Resource '" + rscName + "' deployed")
+                .putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue)
+                .build()
+            );
         }
         catch (ResourceException rscExc)
         {

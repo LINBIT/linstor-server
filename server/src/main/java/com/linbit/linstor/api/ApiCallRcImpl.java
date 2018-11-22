@@ -49,6 +49,14 @@ public class ApiCallRcImpl implements ApiCallRc
         return entries;
     }
 
+    @Override
+    public String toString()
+    {
+        return "ApiCallRcImpl{" +
+            "entries=" + entries +
+            '}';
+    }
+
     public static ApiCallRcImpl singletonApiCallRc(RcEntry entry)
     {
         ApiCallRcImpl apiCallRcImpl = new ApiCallRcImpl();
@@ -187,7 +195,16 @@ public class ApiCallRcImpl implements ApiCallRc
         {
             StringBuilder sb = new StringBuilder();
             ApiRcUtils.appendReadableRetCode(sb, returnCode);
-            return sb.toString();
+
+            return "ApiCallRcEntry{" +
+                "returnCode=" + sb.toString() +
+                ", objRefs=" + objRefs +
+                ", message='" + message + '\'' +
+                ", cause='" + cause + '\'' +
+                ", correction='" + correction + '\'' +
+                ", details='" + details + '\'' +
+                ", errorIds=" + errorIds +
+                '}';
         }
     }
 
