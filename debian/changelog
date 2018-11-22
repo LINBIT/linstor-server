@@ -1,3 +1,48 @@
+linstor-server (0.7.3-1) experimental; urgency=medium
+
+  [ Robert Altnoeder ]
+  * Fixed DbConnectionPool initialization in a test
+  * SQL fixes: Improved ANSI SQL compatibility
+  * Added DatabaseInfo classes, DatabaseDriverInfo for DB2
+  * Controller database fixes
+  * Fix missing import for GenericDbUtils
+  * Fix SQL migrations: resource connection flags & tcp_port column
+  * Added class DrbdVersion - Check of the DRBD kernel module version
+  * DrbdVersion: Indicate a failure to determine the DRBD version
+
+  [ Rene Peinthor ]
+  * unittest: fix db unittests
+  * fix forgetting createResourceDb warnings
+  * fix mixing implicit diskless resource with other storage types
+  * node-reconnect: fix re-entering scope exception
+  * whitelistprops: patch the resync-after property to a string prop
+  * create-resource: need write lock for storpooldfnmap
+  * swordfish: make sure resource/volume states are removed
+  * node-reconnect: make sure node doesn't get removed from reconnector
+  * drbd-event: update the current SyncTarget % status
+
+  [ Gabor Hernadi ]
+  * Swordfish: commiting setting node-name after fullSync
+  * Fix: skip storPool-size-check in case of migration
+
+  [ Joel Colledge ]
+  * Add snapshot definition sequence number so that we know which the last [...]
+  * Add snapshot rollback API
+  * Fix deletion of snapshot when the volumes on which the snapshot was ba [...]
+  * Fix rollback to snapshot when some volumes on which the snapshot was b [...]
+  * Preserve the initial generation identifier across snapshot and restore
+  * Allow resource creation on offline satellites without worrying about f [...]
+  * Do not recursively delete ZFS snapshots when deleting volumes
+  * Forward IDs of error reports from satellites
+  * Include the first volume exception in the resource exception when ther [...]
+  * Handle snapshot deletion before resource deletion
+  * Fail resource and volume definition deletion when ZFS snapshots are present
+  * Only prepare a DB transaction for the APIs that require one
+  * Produce simpler errors when the database connection is down
+  * Only send API calls when the satellite full-sync was successful
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 22 Nov 2018 11:19:50 +0100
+
 linstor-server (0.7.2-1) experimental; urgency=medium
 
   [ Joel Colledge ]
