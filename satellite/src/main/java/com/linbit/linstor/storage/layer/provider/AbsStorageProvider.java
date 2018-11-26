@@ -395,78 +395,107 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
 
     private void addCreatedMsg(Volume vlm, ApiCallRcImpl apiCallRc)
     {
+        String rscName = vlm.getResourceDefinition().getName().displayValue;
+        int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
         apiCallRc.addEntry(
-            ApiCallRcImpl.simpleEntry(
+            ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_VLM | ApiConsts.CREATED,
                 String.format(
                     "Volume number %d of resource '%s' [%s] created",
-                    vlm.getVolumeDefinition().getVolumeNumber().value,
-                    vlm.getResourceDefinition().getName().displayValue,
+                    vlmNr,
+                    rscName,
                     typeDescr
                 )
             )
+            .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
+            .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
+            .build()
         );
     }
 
     private void addResizedMsg(Volume vlm, ApiCallRcImpl apiCallRc)
     {
+        String rscName = vlm.getResourceDefinition().getName().displayValue;
+        int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
         apiCallRc.addEntry(
-            ApiCallRcImpl.simpleEntry(
+            ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_VLM | ApiConsts.MODIFIED,
                 String.format(
                     "Volume number %d of resource '%s' [%s] resized",
-                    vlm.getVolumeDefinition().getVolumeNumber().value,
-                    vlm.getResourceDefinition().getName().displayValue,
+                    vlmNr,
+                    rscName,
                     typeDescr
                 )
             )
+            .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
+            .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
+            .build()
         );
     }
 
     private void addDeletedMsg(Volume vlm, ApiCallRcImpl apiCallRc)
     {
+        String rscName = vlm.getResourceDefinition().getName().displayValue;
+        int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
         apiCallRc.addEntry(
-            ApiCallRcImpl.simpleEntry(
+            ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_VLM | ApiConsts.DELETED,
                 String.format(
                     "Volume number %d of resource '%s' [%s] deleted",
-                    vlm.getVolumeDefinition().getVolumeNumber().value,
-                    vlm.getResourceDefinition().getName().displayValue,
+                    vlmNr,
+                    rscName,
                     typeDescr
                 )
             )
+            .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
+            .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
+            .build()
         );
     }
 
     private void addSnapCreatedMsg(SnapshotVolume snapVlm, ApiCallRcImpl apiCallRc)
     {
+        String snapName = snapVlm.getSnapshotName().displayValue;
+        String rscName = snapVlm.getResourceName().displayValue;
+        int vlmNr = snapVlm.getVolumeNumber().value;
         apiCallRc.addEntry(
-            ApiCallRcImpl.simpleEntry(
+            ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_SNAPSHOT | ApiConsts.CREATED,
                 String.format(
                     "Snapshot [%s] with name '%s' of resource '%s', volume number %d created.",
                     typeDescr,
-                    snapVlm.getSnapshotName().displayValue,
-                    snapVlm.getResourceName().displayValue,
-                    snapVlm.getVolumeNumber().value
+                    snapName,
+                    rscName,
+                    vlmNr
                 )
             )
+            .putObjRef(ApiConsts.KEY_SNAPSHOT, snapName)
+            .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
+            .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
+            .build()
         );
     }
 
     private void addSnapDeletedMsg(SnapshotVolume snapVlm, ApiCallRcImpl apiCallRc)
     {
+        String snapName = snapVlm.getSnapshotName().displayValue;
+        String rscName = snapVlm.getResourceName().displayValue;
+        int vlmNr = snapVlm.getVolumeNumber().value;
         apiCallRc.addEntry(
-            ApiCallRcImpl.simpleEntry(
+            ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_SNAPSHOT | ApiConsts.DELETED,
                 String.format(
                     "Snapshot [%s] with name '%s' of resource '%s', volume number %d deleted.",
                     typeDescr,
-                    snapVlm.getSnapshotName().displayValue,
-                    snapVlm.getResourceName().displayValue,
-                    snapVlm.getVolumeNumber().value
+                    snapName,
+                    rscName,
+                    vlmNr
                 )
             )
+            .putObjRef(ApiConsts.KEY_SNAPSHOT, snapName)
+            .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
+            .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
+            .build()
         );
     }
 
