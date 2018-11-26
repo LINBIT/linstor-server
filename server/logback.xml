@@ -15,7 +15,7 @@
 
     <appender name="FILE"
         class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/linstor-${log.module}.log</file>
+        <file>${log.directory}/linstor-${log.module}.log</file>
         <append>true</append>
         <encoder
             class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">

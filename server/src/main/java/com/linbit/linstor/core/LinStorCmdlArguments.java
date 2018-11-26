@@ -11,7 +11,7 @@ public class LinStorCmdlArguments
     {
         configurationDirectory = "";
         printStacktraces = false;
-        logDirectory = "";
+        logDirectory = ".";
     }
 
     public void setConfigurationDirectory(final String workingDirectoryRef)

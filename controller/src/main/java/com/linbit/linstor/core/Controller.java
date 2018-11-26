@@ -294,9 +294,10 @@ public final class Controller
 
     public static void main(String[] args)
     {
-        System.setProperty("log.module", LinStor.CONTROLLER_MODULE);
-
         ControllerCmdlArguments cArgs = ControllerArgumentParser.parseCommandLine(args);
+
+        System.setProperty("log.module", LinStor.CONTROLLER_MODULE);
+        System.setProperty("log.directory", cArgs.getLogDirectory());
 
         System.out.printf(
             "%s, Module %s\n",

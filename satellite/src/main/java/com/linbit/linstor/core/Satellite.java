@@ -307,9 +307,10 @@ public final class Satellite
 
     public static void main(String[] args)
     {
-        System.setProperty("log.module", LinStor.SATELLITE_MODULE);
-
         SatelliteCmdlArguments cArgs = SatelliteArgumentParser.parseCommandLine(args);
+
+        System.setProperty("log.module", LinStor.SATELLITE_MODULE);
+        System.setProperty("log.directory", cArgs.getLogDirectory());
 
         System.out.printf(
             "%s, Module %s\n",
