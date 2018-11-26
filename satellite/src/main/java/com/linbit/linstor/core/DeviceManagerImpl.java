@@ -1217,17 +1217,28 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             try
             {
-                if (!devMgr.abortDevHndFlag)
+                boolean enteredScope = false;
+                try
                 {
-                    devHndInvScope.enter();
-                    devHndInvScope.seed(TransactionMgr.class, transMgr);
+                    if (!devMgr.abortDevHndFlag)
+                    {
+                        devHndInvScope.enter();
+                        enteredScope = true;
+                        devHndInvScope.seed(TransactionMgr.class, transMgr);
 
-                    handler.dispatchResource(rscDfn, snapshots);
+                        handler.dispatchResource(rscDfn, snapshots);
+                    }
+                }
+                finally
+                {
+                    if (enteredScope)
+                    {
+                        devHndInvScope.exit();
+                    }
                 }
             }
             finally
             {
-                devHndInvScope.exit();
                 phaseLock.arrive();
             }
         }
