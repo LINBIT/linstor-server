@@ -144,6 +144,8 @@ class StltSnapshotApiCallHandler
             );
 
             checkUuid(rscDfn, rscDfnApi);
+
+            rscDfnMap.put(rscName, rscDfn);
         }
         rscDfn.setPort(apiCtx, port);
         Map<String, String> rscDfnProps = rscDfn.getProps(apiCtx).map();
