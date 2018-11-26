@@ -45,6 +45,8 @@ mkdir -p %{buildroot}/%{FIREWALLD_SERVICES}
 cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/drbd.xml %{buildroot}/%{FIREWALLD_SERVICES}
 cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/linstor-controller.xml %{buildroot}/%{FIREWALLD_SERVICES}
 cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/linstor-satellite.xml %{buildroot}/%{FIREWALLD_SERVICES}
+mkdir -p %{buildroot}/%{_sysconfdir}/drbd.d/
+cp %{_builddir}/%{NAME_VERS}/scripts/linstor-resources.res %{buildroot}/%{_sysconfdir}/drbd.d/
 
 ### common
 %package common
@@ -111,6 +113,7 @@ and creates drbd resource files.
 %{_unitdir}/linstor-satellite.service
 %{FIREWALLD_SERVICES}/linstor-satellite.xml
 %{FIREWALLD_SERVICES}/drbd.xml
+%config(noreplace) %{_sysconfdir}/drbd.d/linstor-resources.res
 
 %post satellite
 %systemd_post linstor-satellite.service

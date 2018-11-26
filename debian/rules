@@ -32,6 +32,8 @@ override_dh_install:
 	cp $(CURDIR)/scripts/postinstall.sh $(CURDIR)/debian/linstor-controller.postinst
 	# satellite
 	cp $(CURDIR)/scripts/linstor-satellite.service $(CURDIR)/debian/
+	install -d $(CURDIR)/debian/linstor-satellite/etc/drbd.d/
+	install -m644  $(CURDIR)/scripts/linstor-resources.res $(CURDIR)/debian/linstor-satellite/etc/drbd.d/
 	mkdir -p $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/bin
 	mkdir -p $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
 	cp $(CURDIR)/build/install/linstor-server/bin/Satellite $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/bin
