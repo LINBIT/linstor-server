@@ -176,13 +176,18 @@ class CtrlVlmCrtApiHelper
             !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
         )
         {
-            if (!FreeCapacityAutoPoolSelectorUtils.isStorPoolUsable(
-                getVolumeSizePrivileged(vlmDfn),
-                thinFreeCapacities,
-                true,
-                storPool.getName(),
-                rsc.getAssignedNode(),
-                apiCtx))
+            if (!FreeCapacityAutoPoolSelectorUtils
+                .isStorPoolUsable(
+                    getVolumeSizePrivileged(vlmDfn),
+                    thinFreeCapacities,
+                    true,
+                    storPool.getName(),
+                    rsc.getAssignedNode(),
+                    apiCtx
+                )
+                // allow the volume to be created if the free capacity is unknown
+                .orElse(true)
+            )
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

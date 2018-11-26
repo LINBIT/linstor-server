@@ -22,7 +22,11 @@ public class FreeCapacityAutoPoolSelectorUtils
 {
     public static final double DEFAULT_MAX_OVERSUBSCRIPTION_RATIO = 20.;
 
-    public static boolean isStorPoolUsable(
+    /**
+     * Returns whether the given storage pool is usable in terms of capacity and provisioning type.
+     * If the free capacity is unknown, an empty Optional is returned.
+     */
+    public static Optional<Boolean> isStorPoolUsable(
         long rscSize,
         Map<StorPool.Key, Long> freeCapacities,
         boolean includeThin,
@@ -32,15 +36,21 @@ public class FreeCapacityAutoPoolSelectorUtils
     )
     {
         StorPool storPool = getStorPoolPrivileged(apiCtx, node, storPoolName);
-        boolean usableProvisioning = includeThin || !storPool.getDriverKind().usesThinProvisioning();
-        return usableProvisioning &&
-            getFreeCapacityCurrentEstimationPrivileged(
+
+        Optional<Boolean> usable;
+        if (storPool.getDriverKind().usesThinProvisioning() && !includeThin)
+        {
+            usable = Optional.of(false);
+        }
+        else
+        {
+            usable = getFreeCapacityCurrentEstimationPrivileged(
                 apiCtx,
                 freeCapacities,
                 storPool
-            )
-                .map(freeCapacity -> freeCapacity >= rscSize)
-                .orElse(false);
+            ).map(freeCapacity -> freeCapacity >= rscSize);
+        }
+        return usable;
     }
 
     public static Comparator<Candidate> mostFreeCapacityCandidateStrategy(

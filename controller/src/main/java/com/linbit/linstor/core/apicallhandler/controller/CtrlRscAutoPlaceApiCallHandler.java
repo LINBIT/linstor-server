@@ -377,7 +377,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 storPoolName,
                 node,
                 apiCtx
-            ))
+            ).orElse(false))
             .collect(Collectors.toList());
     }
 
