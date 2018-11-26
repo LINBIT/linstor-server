@@ -201,6 +201,8 @@ public class DeviceHandlerImpl implements DeviceHandler2
                  }
              }
         }
+
+        layeredRscHelper.cleanupResources(origResources);
     }
 
     private Resource getRoot(Resource rsc)

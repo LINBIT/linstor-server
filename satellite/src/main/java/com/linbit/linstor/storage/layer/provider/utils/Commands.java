@@ -11,6 +11,14 @@ import java.io.IOException;
 
 public class Commands
 {
+    @FunctionalInterface
+    public interface RetryHandler
+    {
+        boolean retry(OutputData outputData);
+    }
+
+    public static final RetryHandler NO_RETRY = ignored -> false;
+
     private static final int KIB = 1024;
 
     public static OutputData genericExecutor(
@@ -21,10 +29,27 @@ public class Commands
     )
         throws StorageException
     {
+        return genericExecutor(extCmd, command, failMsgExitCode, failMsgExc, NO_RETRY);
+    }
+
+    public static OutputData genericExecutor(
+        ExtCmd extCmd,
+        String[] command,
+        String failMsgExitCode,
+        String failMsgExc,
+        RetryHandler retryHandler
+    )
+        throws StorageException
+    {
         OutputData outData;
         try
         {
             outData = extCmd.exec(command);
+
+            while (outData.exitCode != ExtCmdUtils.DEFAULT_RET_CODE_OK && retryHandler.retry(outData))
+            {
+                outData = extCmd.exec(command);
+            }
 
             ExtCmdUtils.checkExitCode(
                 outData,

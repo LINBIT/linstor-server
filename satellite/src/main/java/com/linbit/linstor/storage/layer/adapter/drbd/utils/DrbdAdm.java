@@ -235,6 +235,9 @@ public class DrbdAdm
         command.add("get-gi");
         command.add("--node-id");
         command.add("0");
+        command.add("--force"); // force is needed if the drbd-resource is still in Negotiating state or earlier.
+        // in that case, drbdmeta asks "Exclusive open failed. Do it anyways?" and expects to type 'yes'.
+        // should not break anything
 
         boolean mdFlag = true;
         String[] params = command.toArray(new String[command.size()]);

@@ -32,6 +32,7 @@ import com.linbit.linstor.core.devmgr.DeviceHandler2;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
+import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.DrbdVolume.DiskState;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
@@ -43,6 +44,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.ResourceLayer;
+import com.linbit.linstor.storage.layer.adapter.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.DrbdAdm;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
@@ -72,6 +74,8 @@ public class DrbdLayer implements ResourceLayer
 {
     private static final String DRBD_CONFIG_SUFFIX = ".res";
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
+
+    private static final long HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT = 2000;
 
     private final AccessContext workerCtx;
     private final NotificationListener notificationListener;
@@ -285,8 +289,6 @@ public class DrbdLayer implements ResourceLayer
              *  - resume IO if allowed by all snapshots
              */
 
-            updateResourceToCurrentDrbdState(drbdRsc);
-
             List<Volume> checkMetaData = detachVolumesIfNecessary(drbdRsc);
 
             adjustSuspendIo(drbdRsc, snapshots);
@@ -317,7 +319,6 @@ public class DrbdLayer implements ResourceLayer
 
                 DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) drbdVlm.getLayerData(workerCtx);
                 createMetaData(drbdRsc, drbdVlmDfn, vlmState);
-                vlmState.metaDataIsNew = true;
             }
 
             try
@@ -354,23 +355,29 @@ public class DrbdLayer implements ResourceLayer
         List<Volume> checkMetaData = new ArrayList<>();
         if (!drbdRsc.isDiskless(workerCtx))
         {
+            // using a dedicated list to prevent concurrentModificationException
+            List<Volume> volumesToDetach = new ArrayList<>();
+
             Iterator<Volume> vlmsIt = drbdRsc.iterateVolumes();
             while (vlmsIt.hasNext())
             {
                 Volume drbdVlm = vlmsIt.next();
                 if (drbdVlm.getFlags().isSet(workerCtx, VlmFlags.DELETE))
                 {
-                    detachDrbdVolume(drbdVlm);
+                    volumesToDetach.add(drbdVlm);
                 }
                 else
                 {
                     checkMetaData.add(drbdVlm);
                 }
             }
+            for (Volume drbdVlm : volumesToDetach)
+            {
+                detachDrbdVolume(drbdVlm);
+            }
         }
         return checkMetaData;
     }
-
 
     private void detachDrbdVolume(Volume drbdVlm) throws AccessDeniedException, SQLException, StorageException
     {
@@ -393,7 +400,8 @@ public class DrbdLayer implements ResourceLayer
                 exc
             );
         }
-        drbdVlm.delete(workerCtx); // only deletes the drbd-volume, not the storage volume
+        // only deletes the drbd-volume, not the storage volume
+        drbdVlm.delete(workerCtx);
     }
 
     private void adjustSuspendIo(Resource drbdRsc, Collection<Snapshot> snapshots)
@@ -569,6 +577,8 @@ public class DrbdLayer implements ResourceLayer
                 vlmNr,
                 vlmState.peerSlots
             );
+            vlmState.metaDataIsNew = true;
+
             if (VolumeUtils.isVolumeThinlyBacked(workerCtx, rsc.getVolume(vlmNr)))
             {
                 ResourceDefinition rscDfn = rsc.getDefinition();
@@ -786,7 +796,7 @@ public class DrbdLayer implements ResourceLayer
                                     case OUTDATED:
                                         vlmState.hasMetaData = true;
                                         // No additional check for existing meta data is required
-                                       vlmState.checkMetaData = false;
+                                        vlmState.checkMetaData = false;
                                         // fall-through
                                     case ATTACHING:
                                         vlmState.hasDisk = true;
@@ -998,6 +1008,8 @@ public class DrbdLayer implements ResourceLayer
         ResourceName rscName = rsc.getDefinition().getName();
         try
         {
+            waitForValidStateForPrimary(rscName);
+
             drbdUtils.primary(rscName, true, false);
             // setting to secondary because of two reasons:
             // * bug in drbdsetup: cannot down a primary resource
@@ -1017,6 +1029,38 @@ public class DrbdLayer implements ResourceLayer
                 null,
                 cmdExc
             );
+        }
+    }
+
+    private void waitForValidStateForPrimary(ResourceName rscName) throws StorageException
+    {
+        try
+        {
+            final Object syncObj = new Object();
+            synchronized (syncObj)
+            {
+                ReadyForPrimaryNotifier resourceObserver = new ReadyForPrimaryNotifier(rscName.displayValue, syncObj);
+                drbdState.addObserver(resourceObserver, DrbdStateTracker.OBS_DISK);
+                if (!resourceObserver.hasValidStateForPrimary(drbdState.getDrbdResource(rscName.displayValue)))
+                {
+                    syncObj.wait(HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT);
+                }
+                if (!resourceObserver.hasValidStateForPrimary(drbdState.getDrbdResource(rscName.displayValue)))
+                {
+                    throw new StorageException(
+                        "Device did not get ready within " + HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT + "ms"
+                    );
+                }
+                drbdState.removeObserver(resourceObserver);
+            }
+        }
+        catch (NoInitialStateException exc)
+        {
+            throw new StorageException("No initial drbd state", exc);
+        }
+        catch (InterruptedException exc)
+        {
+            throw new StorageException("Interrupted", exc);
         }
     }
 

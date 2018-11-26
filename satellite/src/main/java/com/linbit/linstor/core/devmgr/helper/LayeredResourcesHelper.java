@@ -34,6 +34,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.LayerDataFactory;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnDataStlt;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnDataStlt;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -167,39 +169,48 @@ public class LayeredResourcesHelper
                 if (needsCrypt(origRsc))
                 {
                     currentRsc = nextRsc(layeredResources, origRsc, currentRsc, ResourceType.CRYPT);
-                    currentRsc.setLayerData(
-                        sysCtx,
-                        layerDataFactory.createCryptSetupData(
-                            getDrbdResourceName(rscDfn),
-                            currentRsc,
-                            getCryptPw(origRsc)
-                        )
-                    );
+                    if (currentRsc.getLayerData(sysCtx) == null)
+                    {
+                        currentRsc.setLayerData(
+                            sysCtx,
+                            layerDataFactory.createCryptSetupData(
+                                getDrbdResourceName(rscDfn),
+                                currentRsc,
+                                getCryptPw(origRsc)
+                            )
+                        );
+                    }
                 }
                 if (needsDrbd(origRsc))
                 {
                     currentRsc = nextRsc(layeredResources, origRsc, currentRsc, ResourceType.DRBD);
                     // TODO: update volume definition sizes of child resources (meta-data)
-                    currentRsc.setLayerData(
-                        sysCtx,
-                        layerDataFactory.createDrbdRscData(
-                            currentRsc,
-                            getDrbdResourceName(rscDfn),
-                            currentRsc.getNodeId(),
-                            origRsc.isDiskless(sysCtx),
-                            origRsc.disklessForPeers(sysCtx)
-                        )
-                    );
-                    rscDfn.setLayerData(
-                        sysCtx,
-                        layerDataFactory.createDrbdRscDfnData(
-                            rscDfn,
-                            getDrbdResourceName(rscDfn),
-                            rscDfn.getPort(sysCtx),
-                            rscDfn.getTransportType(sysCtx),
-                            rscDfn.getSecret(sysCtx)
-                        )
-                    );
+                    if (currentRsc.getLayerData(sysCtx) == null)
+                    {
+                        currentRsc.setLayerData(
+                            sysCtx,
+                            layerDataFactory.createDrbdRscData(
+                                currentRsc,
+                                getDrbdResourceName(rscDfn),
+                                currentRsc.getNodeId(),
+                                origRsc.isDiskless(sysCtx),
+                                origRsc.disklessForPeers(sysCtx)
+                            )
+                        );
+                    }
+                    if (rscDfn.getLayerData(sysCtx, DrbdRscDfnDataStlt.class) == null)
+                    {
+                        rscDfn.setLayerData(
+                            sysCtx,
+                            layerDataFactory.createDrbdRscDfnData(
+                                rscDfn,
+                                getDrbdResourceName(rscDfn),
+                                rscDfn.getPort(sysCtx),
+                                rscDfn.getTransportType(sysCtx),
+                                rscDfn.getSecret(sysCtx)
+                            )
+                        );
+                    }
 
                     String peerSlotsProp = origRsc.getProps(sysCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
                     // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
@@ -211,14 +222,19 @@ public class LayeredResourcesHelper
                         vlmDfn ->
                             AccessUtils.execPrivileged(
                                 () ->
-                                    vlmDfn.setLayerData(
-                                        sysCtx,
-                                        layerDataFactory.createDrbdVlmDfnData(
-                                            vlmDfn,
-                                            execPrivileged(() -> vlmDfn.getMinorNr(sysCtx)),
-                                            peerSlots
-                                        )
-                                    )
+                                {
+                                    if (vlmDfn.getLayerData(sysCtx, DrbdVlmDfnDataStlt.class) == null)
+                                    {
+                                        vlmDfn.setLayerData(
+                                            sysCtx,
+                                            layerDataFactory.createDrbdVlmDfnData(
+                                                vlmDfn,
+                                                execPrivileged(() -> vlmDfn.getMinorNr(sysCtx)),
+                                                peerSlots
+                                            )
+                                        );
+                                    }
+                                }
                             )
                     );
                     currentRsc.streamVolumes().forEach(this::initializeDrbdVlmData);
@@ -238,6 +254,34 @@ public class LayeredResourcesHelper
             throw new ImplementationError(exc);
         }
         return layeredResources;
+    }
+
+    /**
+     * This method is called to synchronize the changes performed onto a typed resource to be tracked on the
+     * default resource
+     * @param origResources
+     */
+    public void cleanupResources(Collection<Resource> origResources)
+    {
+        try
+        {
+            for (Resource origRsc : origResources)
+            {
+                Resource drbdRsc = origRsc.getDefinition().getResource(
+                    sysCtx,
+                    origRsc.getAssignedNode().getName(),
+                    ResourceType.DRBD
+                );
+                if (drbdRsc != null && !drbdRsc.isCreatePrimary() && origRsc.isCreatePrimary())
+                {
+                    ((ResourceData) origRsc).unsetCreatePrimary();
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private Resource createStorageRsc(List<Resource> layeredResources, Resource origRsc)
@@ -471,10 +515,13 @@ public class LayeredResourcesHelper
     {
         try
         {
-            vlm.setLayerData(
-                sysCtx,
-                layerDataFactory.createDrbdVlmData()
-            );
+            if (vlm.getLayerData(sysCtx) == null)
+            {
+                vlm.setLayerData(
+                    sysCtx,
+                    layerDataFactory.createDrbdVlmData()
+                );
+            }
         }
         catch (AccessDeniedException | SQLException exc)
         {

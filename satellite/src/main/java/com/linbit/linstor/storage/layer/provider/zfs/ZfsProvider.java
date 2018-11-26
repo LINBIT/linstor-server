@@ -98,12 +98,14 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
         return asLvIdentifier(vlm.getVolumeDefinition());
     }
 
+    @Override
     protected String asLvIdentifier(VolumeDefinition vlmDfn)
     {
-        // TODO: check for migration property
-        return asLvIdentifier(
-            vlmDfn.getResourceDefinition().getName(),
-            vlmDfn.getVolumeNumber()
+        return getMigrationId(vlmDfn).orElse(
+            asLvIdentifier(
+                vlmDfn.getResourceDefinition().getName(),
+                vlmDfn.getVolumeNumber()
+            )
         );
     }
 
@@ -161,7 +163,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     protected void deleteLvImpl(Volume vlm, String lvId)
         throws StorageException, AccessDeniedException, SQLException
     {
-        // TODO: maybe we should also wipe here?
         ZfsCommands.delete(
             extCmdFactory.create(),
             ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,

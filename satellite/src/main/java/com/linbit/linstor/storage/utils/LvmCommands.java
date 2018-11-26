@@ -5,6 +5,7 @@ import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericEx
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.provider.utils.RetryIfDeviceBusy;
 import com.linbit.utils.StringUtils;
 
 import java.io.File;
@@ -111,7 +112,8 @@ public class LvmCommands
                 volumeGroup + File.separator + vlmId
             },
             "Failed to delete lvm volume",
-            "Failed to delete lvm volume '" + vlmId + "' from volume group '" + volumeGroup
+            "Failed to delete lvm volume '" + vlmId + "' from volume group '" + volumeGroup,
+            new RetryIfDeviceBusy()
         );
     }
 

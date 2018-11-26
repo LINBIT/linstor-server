@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.provider.utils.RetryIfDeviceBusy;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
@@ -91,7 +92,8 @@ public class ZfsCommands
                 fullQualifiedId
             },
             "Failed to delete zfs volume",
-            "Failed to delete zfs volume '" + fullQualifiedId + "'"
+            "Failed to delete zfs volume '" + fullQualifiedId + "'",
+            new RetryIfDeviceBusy()
         );
     }
 

@@ -176,17 +176,13 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     }
 
     @Override
-    protected String asLvIdentifier(Volume vlm)
-    {
-        return asLvIdentifier(vlm.getVolumeDefinition());
-    }
-
     protected String asLvIdentifier(VolumeDefinition vlmDfn)
     {
-        // TODO: check for migration property
-        return asLvIdentifier(
-            vlmDfn.getResourceDefinition().getName(),
-            vlmDfn.getVolumeNumber()
+        return getMigrationId(vlmDfn).orElse(
+            asLvIdentifier(
+                vlmDfn.getResourceDefinition().getName(),
+                vlmDfn.getVolumeNumber()
+            )
         );
     }
 

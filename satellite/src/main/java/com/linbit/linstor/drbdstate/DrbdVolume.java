@@ -118,6 +118,20 @@ public class DrbdVolume
         {
             return diskLabel;
         }
+
+        public boolean oneOf(DiskState... states)
+        {
+            boolean oneOf = false;
+            for (DiskState state : states)
+            {
+                if (this.equals(state))
+                {
+                    oneOf = true;
+                    break;
+                }
+            }
+            return oneOf;
+        }
     }
 
     public enum ReplState

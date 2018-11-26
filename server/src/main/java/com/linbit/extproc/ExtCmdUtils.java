@@ -6,7 +6,7 @@ import com.linbit.utils.StringUtils;
 
 public class ExtCmdUtils
 {
-    private static final int DEFAULT_RET_CODE_OK = 0;
+    public static final int DEFAULT_RET_CODE_OK = 0;
 
     @FunctionalInterface
     public interface ExceptionFactory<EXC extends Exception>
