@@ -129,7 +129,7 @@ public class CtrlErrorListApiCallHandler
         {
             byte[] msg = clientComSerializer.headerlessBuilder()
                 .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
-            fluxReturn = peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg, false)
+            fluxReturn = peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg)
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
         }
         return fluxReturn;

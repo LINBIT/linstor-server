@@ -101,7 +101,7 @@ public class RscApiTest extends ApiTestBase
         );
         nodesMap.put(testControllerName, testControllerNode);
 
-        Mockito.when(mockSatellite.apiCall(anyString(), any(), anyBoolean())).thenReturn(Flux.empty());
+        Mockito.when(mockSatellite.apiCall(anyString(), any())).thenReturn(Flux.empty());
         testSatelliteNode = nodeDataFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testSatelliteName,

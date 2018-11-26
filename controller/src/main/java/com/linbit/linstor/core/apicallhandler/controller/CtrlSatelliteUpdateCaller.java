@@ -124,8 +124,7 @@ public class CtrlSatelliteUpdateCaller
             response = peer
                 .apiCall(
                     InternalApiConsts.API_CHANGED_NODE,
-                    changedMessage,
-                    true
+                    changedMessage
                 )
 
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
@@ -211,8 +210,7 @@ public class CtrlSatelliteUpdateCaller
                                 storPool.getUuid(),
                                 storPool.getName().displayValue
                             )
-                            .build(),
-                        true
+                            .build()
                     )
 
                     .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
@@ -282,8 +280,7 @@ public class CtrlSatelliteUpdateCaller
                             currentRsc.getUuid(),
                             currentRsc.getDefinition().getName().displayValue
                         )
-                        .build(),
-                    true
+                        .build()
                 )
 
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
@@ -322,8 +319,7 @@ public class CtrlSatelliteUpdateCaller
                             snapshot.getUuid(),
                             snapshot.getSnapshotName().displayValue
                         )
-                        .build(),
-                    true
+                        .build()
                 )
 
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))

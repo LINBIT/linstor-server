@@ -160,10 +160,9 @@ public interface Peer
      *
      * @param apiCallName The API call to make
      * @param data The API call data
-     * @param requireOnline Whether to require that the connection status is {@link ConnectionStatus#ONLINE ONLINE}
      * @return The stream of answers
      */
-    Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data, boolean requireOnline);
+    Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data);
 
     /**
      * Notify the peer that an API call answer has been received.

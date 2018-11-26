@@ -362,7 +362,7 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data, boolean requireOnline)
+    public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data)
     {
         return Flux
             .<ByteArrayInputStream>create(fluxSink ->
@@ -374,7 +374,7 @@ public class TcpConnectorPeer implements Peer
 
                     openRpcs.put(apiCallId, fluxSink);
 
-                    if (!authenticated || (requireOnline && connectionStatus != ConnectionStatus.ONLINE))
+                    if (!authenticated)
                     {
                         fluxSink.error(new PeerNotConnectedException());
                     }
