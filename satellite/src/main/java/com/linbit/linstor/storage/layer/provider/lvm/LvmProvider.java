@@ -25,6 +25,7 @@ import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.storage2.layer.data.LvmLayerData;
 import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData.Size;
+
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -363,7 +364,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
 
         updateSnapshotStates(snapshots);
     }
-
 
     /*
      * Expected to be overridden by LvmThinProvider

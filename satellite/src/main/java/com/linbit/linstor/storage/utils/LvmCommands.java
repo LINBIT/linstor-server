@@ -147,6 +147,70 @@ public class LvmCommands
         );
     }
 
+
+    public static OutputData createSnapshotThin(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String thinPool,
+        String identifier,
+        String snapshotIdentifier
+    )
+        throws StorageException
+    {
+        String failMsg = "Failed to create snapshot " + snapshotIdentifier + " from " + identifier +
+            " within thin volume group " + volumeGroup + File.separator + thinPool ;
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "lvcreate",
+                "--snapshot",
+                "--name", snapshotIdentifier,
+                volumeGroup + File.separator + identifier
+            },
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static OutputData restoreFromSnapshot(
+        ExtCmd extCmd,
+        String sourceLvIdWithSnapName,
+        String volumeGroup,
+        String targetId
+    )
+        throws StorageException
+    {
+        String failMsg = "Failed to restore snapshot " + sourceLvIdWithSnapName +
+            " into new volume " + volumeGroup + File.separator + targetId;
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "lvcreate",
+                "--snapshot",
+                "--name", targetId,
+                volumeGroup + File.separator + sourceLvIdWithSnapName
+            },
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static OutputData rollbackToSnapshot(ExtCmd extCmd, String volumeGroup, String sourceResource)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                "lvconvert",
+                "--merge",
+                volumeGroup + File.separator + sourceResource
+            },
+            "Failed to rollback to snapshot " + volumeGroup + File.separator + sourceResource,
+            "Failed to rollback to snapshot " + volumeGroup + File.separator + sourceResource
+        );
+    }
+
     public static OutputData getVgTotalSize(ExtCmd extCmd, Set<String> volumeGroups)
         throws StorageException
     {
@@ -232,6 +296,42 @@ public class LvmCommands
                 ),
             "Failed to query free size of volume group(s) " + volumeGroups,
             "Failed to query free size of volume group(s) " + volumeGroups
-            );
+        );
+    }
+
+    public static OutputData activateVolume(ExtCmd extCmd, String volumeGroup, String targetId)
+        throws StorageException
+    {
+        String failMsg = "Failed to activate volume " + volumeGroup + File.separator + targetId;
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                "lvchange",
+                "-ay",  // activate volume
+                "-K",   // these parameters are needed to set a
+                // snapshot to active and enabled
+                volumeGroup + File.separator + targetId
+            },
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static OutputData deactivateVolume(ExtCmd extCmd, String volumeGroup, String targetId)
+        throws StorageException
+    {
+        String failMsg = "Failed to deactivate volume " + volumeGroup + File.separator + targetId;
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                "lvchange",
+                "-an",  // deactivate volume
+                volumeGroup + File.separator + targetId
+            },
+            failMsg,
+            failMsg
+        );
     }
 }

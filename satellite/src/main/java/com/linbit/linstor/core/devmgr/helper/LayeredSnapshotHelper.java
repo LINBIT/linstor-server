@@ -105,11 +105,11 @@ public class LayeredSnapshotHelper
                 sysCtx,
                 new LvmThinLayerDataStlt(
                     storPoolProps.getProp(
-                        StorageConstants.CONFIG_LVM_THIN_POOL_KEY,
+                        StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY,
                         StorageConstants.NAMESPACE_STOR_DRIVER
                     ),
                     storPoolProps.getProp(
-                        StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY,
+                        StorageConstants.CONFIG_LVM_THIN_POOL_KEY,
                         StorageConstants.NAMESPACE_STOR_DRIVER
                     ),
                     String.format(

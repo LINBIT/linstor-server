@@ -138,7 +138,23 @@ public class DrbdLayer implements ResourceLayer
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
         ResourceName resourceName = rsc.getDefinition().getName();
-        if (rsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE))
+        if (rsc.getProps(workerCtx).map().containsKey(ApiConsts.KEY_RSC_ROLLBACK_TARGET))
+        {
+            /*
+             *  snapshot rollback:
+             *  - delete drbd
+             *  - rollback snapshot
+             *  - start drbd
+             */
+            deleteDrbd(rsc);
+            processChild(rsc, snapshots, apiCallRc);
+            adjustDrbd(rsc, snapshots, apiCallRc, true);
+        }
+        else
+        if (
+            rsc.getDefinition().isDown(workerCtx) ||
+            rsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE)
+        )
         {
             deleteDrbd(rsc);
             addDeletedMsg(resourceName, apiCallRc);
@@ -149,7 +165,7 @@ public class DrbdLayer implements ResourceLayer
         }
         else
         {
-            adjustDrbd(rsc, snapshots, apiCallRc);
+            adjustDrbd(rsc, snapshots, apiCallRc, false);
             addAdjustedMsg(resourceName, apiCallRc);
         }
     }
@@ -234,13 +250,19 @@ public class DrbdLayer implements ResourceLayer
      * @param drbdRsc
      * @param snapshots
      * @param apiCallRc
+     * @param childAlreadyProcessed
      * @throws SQLException
      * @throws StorageException
      * @throws AccessDeniedException
      * @throws VolumeException
      * @throws ResourceException
      */
-    private void adjustDrbd(Resource drbdRsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    private void adjustDrbd(
+        Resource drbdRsc,
+        Collection<Snapshot> snapshots,
+        ApiCallRcImpl apiCallRc,
+        boolean childAlreadyProcessed
+    )
         throws AccessDeniedException, StorageException, SQLException,
             ResourceException, VolumeException
     {
@@ -269,7 +291,10 @@ public class DrbdLayer implements ResourceLayer
 
             adjustSuspendIo(drbdRsc, snapshots);
 
-            processChild(drbdRsc, snapshots, apiCallRc);
+            if (!childAlreadyProcessed)
+            {
+                processChild(drbdRsc, snapshots, apiCallRc);
+            }
 
             updateResourceToCurrentDrbdState(drbdRsc);
 
@@ -387,7 +412,7 @@ public class DrbdLayer implements ResourceLayer
         {
             try
             {
-                errorReporter.logTrace("\n\n\n\n\nSuspending DRBD-IO for resource '%s'", rscName.displayValue);
+                errorReporter.logTrace("Suspending DRBD-IO for resource '%s'", rscName.displayValue);
                 drbdUtils.suspendIo(rscName);
             }
             catch (ExtCmdFailedException exc)
@@ -407,7 +432,7 @@ public class DrbdLayer implements ResourceLayer
         {
             try
             {
-                errorReporter.logTrace("\n\n\n\n\nResuming DRBD-IO for resource '%s'", rscName.displayValue);
+                errorReporter.logTrace("Resuming DRBD-IO for resource '%s'", rscName.displayValue);
                 drbdUtils.resumeIo(rscName);
             }
             catch (ExtCmdFailedException exc)

@@ -100,6 +100,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
     {
         Collection<Resource> origResources = rscs;
         List<Resource> allResources = convertResources(origResources);
+        updateSnapshotLayerData(origResources, snapshots);
 
         Set<Resource> rootResources = origResources.stream().map(rsc -> getRoot(rsc)).collect(Collectors.toSet());
         Map<ResourceLayer, List<Resource>> rscByLayer = allResources.stream()
