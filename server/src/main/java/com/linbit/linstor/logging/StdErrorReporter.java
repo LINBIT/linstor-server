@@ -72,27 +72,36 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     @Override
     public boolean isTraceEnabled()
     {
-        ch.qos.logback.classic.Logger root =
-            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(
-                ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
-        return root.getLevel() == ch.qos.logback.classic.Level.TRACE;
+        // FIXME: Trace mode is currently only implemented with a Logback backend
+        boolean traceMode = true;
+        org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(
+            ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME
+        );
+        if (crtLogger instanceof ch.qos.logback.classic.Logger)
+        {
+            ch.qos.logback.classic.Logger crtLogbackLogger = (ch.qos.logback.classic.Logger) crtLogger;
+            traceMode = crtLogbackLogger.getLevel() == ch.qos.logback.classic.Level.TRACE;
+        }
+        return traceMode;
     }
 
     @Override
-    public void setTraceEnabled(AccessContext accCtx, boolean flag)
+    public void setTraceEnabled(AccessContext accCtx, boolean traceMode)
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        ch.qos.logback.classic.Logger root =
-            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(
-                ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
-        if (flag)
+
+        // FIXME: Setting the trace mode only works with Logback as a backend,
+        // but e.g. with SLF4J's SimpleLogger, this method has no effect
+        org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(
+            ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME
+        );
+        if (crtLogger instanceof ch.qos.logback.classic.Logger)
         {
-            root.setLevel(ch.qos.logback.classic.Level.TRACE);
-        }
-        else
-        {
-            root.setLevel(ch.qos.logback.classic.Level.DEBUG);
+            ch.qos.logback.classic.Logger crtLogbackLogger = (ch.qos.logback.classic.Logger) crtLogger;
+            crtLogbackLogger.setLevel(
+                traceMode ? ch.qos.logback.classic.Level.TRACE : ch.qos.logback.classic.Level.DEBUG
+            );
         }
     }
 
