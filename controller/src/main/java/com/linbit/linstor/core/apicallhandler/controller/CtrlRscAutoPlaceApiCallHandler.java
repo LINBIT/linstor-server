@@ -126,6 +126,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Auto-place resource",
                 LockGuard.createDeferred(
                     nodesMapLock.writeLock(),
                     rscDfnMapLock.writeLock(),
@@ -277,6 +278,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
             .flatMapMany(freeCapacities -> scopeRunner
                 .fluxInTransactionalScope(
+                    "Auto-place resource including thin pools",
                     LockGuard.createDeferred(
                         nodesMapLock.writeLock(),
                         rscDfnMapLock.writeLock(),

@@ -92,6 +92,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Disable proxy",
                 LockGuard.createDeferred(
                     nodesMapLock.writeLock(),
                     rscDfnMapLock.writeLock()

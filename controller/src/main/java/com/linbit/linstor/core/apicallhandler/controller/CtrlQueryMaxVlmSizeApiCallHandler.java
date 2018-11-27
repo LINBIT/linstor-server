@@ -75,6 +75,7 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
         return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
             .flatMapMany(thinFreeCapacities -> scopeRunner
                 .fluxInTransactionlessScope(
+                    "Query max volume size",
                     LockGuard.createDeferred(
                         nodesMapLock.writeLock(),
                         storPoolDfnMapLock.writeLock()

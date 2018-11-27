@@ -108,6 +108,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete snapshot",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> deleteSnapshotInTransaction(rscNameStr, snapshotNameStr)
             )
@@ -144,6 +145,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Delete snapshots on nodes",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.readLock()),
                 () -> deleteSnapshotsOnNodesInScope(rscName, snapshotName)
             );
@@ -178,6 +180,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete snapshot data",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> deleteDataInTransaction(rscName, snapshotName)
             );

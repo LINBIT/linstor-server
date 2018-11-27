@@ -75,6 +75,7 @@ public class CtrlStorPoolListApiCallHandler
         return freeCapacityFetcher.fetchThinFreeSpaceInfo(nodesFilter)
             .flatMapMany(freeCapacityAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
+                    "Assemble storage pool list",
                     LockGuard.createDeferred(storPoolDfnMapLock.readLock()),
                     () -> assembleList(nodesFilter, storPoolsFilter, freeCapacityAnswers)
                 )

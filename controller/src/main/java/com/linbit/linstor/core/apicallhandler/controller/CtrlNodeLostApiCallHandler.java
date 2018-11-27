@@ -113,6 +113,7 @@ public class CtrlNodeLostApiCallHandler
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Remove lost node",
                 LockGuard.createDeferred(nodesMapLock.writeLock()),
                 () -> lostNodeInTransaction(nodeNameStr)
             )

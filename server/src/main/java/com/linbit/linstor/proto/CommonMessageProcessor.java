@@ -378,7 +378,11 @@ public class CommonMessageProcessor implements MessageProcessor
                 Long apiCallId = header.getApiCallId();
 
                 messageFlux = scopeRunner
-                    .fluxInTransactionlessScope(LockGuard.createDeferred(), () -> Flux.just(apiMapEntry.provider.get()))
+                    .fluxInTransactionlessScope(
+                        "Resolve API call handler",
+                        LockGuard.createDeferred(),
+                        () -> Flux.just(apiMapEntry.provider.get())
+                    )
                     .flatMap(apiObj -> execute(apiMapEntry, apiObj, apiCallName, apiCallId, msgDataIn, respond))
                     .onErrorResume(
                         InvalidProtocolBufferException.class,
@@ -478,6 +482,7 @@ public class CommonMessageProcessor implements MessageProcessor
         if (apiObj instanceof ApiCall)
         {
             flux = scopeRunner.fluxInScope(
+                "Execute single-stage API " + apiCallName,
                 LockGuard.createDeferred(),
                 () -> executeNonReactive((ApiCall) apiObj, msgDataIn),
                 apiMapEntry.transactional

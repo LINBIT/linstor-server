@@ -131,6 +131,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete node",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.readLock()),
                 () -> deleteNodeInTransaction(context, nodeNameStr)
             )
@@ -223,6 +224,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Update for node deletion",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
                 () -> updateSatellitesInScope(nodeName, rscName)
             );
@@ -269,6 +271,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Resource deleted",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
                 () -> resourceDeletedInTransaction(nodeName, rscName)
             );

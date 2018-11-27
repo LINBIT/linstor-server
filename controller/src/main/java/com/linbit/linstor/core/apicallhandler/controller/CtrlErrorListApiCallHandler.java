@@ -82,12 +82,14 @@ public class CtrlErrorListApiCallHandler
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Collect error reports",
                 LockGuard.createDeferred(nodesMapLock.readLock()),
                 () -> assembleRequests(nodes, withContent, since, to, ids)
             )
             .collect(Collectors.toList())
             .flatMapMany(errorReportAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
+                    "Assemble error report list",
                     LockGuard.createDeferred(nodesMapLock.readLock()),
                     () -> Flux.just(assembleList(nodes, withContent, since, to, ids, errorReportAnswers))
                 )

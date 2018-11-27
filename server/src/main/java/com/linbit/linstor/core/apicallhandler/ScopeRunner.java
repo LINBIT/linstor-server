@@ -41,17 +41,26 @@ public class ScopeRunner
         apiCallScope = apiCallScopeRef;
     }
 
-    public <T> Flux<T> fluxInTransactionalScope(LockGuard lockGuard, Callable<Flux<T>> callable)
+    public <T> Flux<T> fluxInTransactionalScope(
+        String scopeDescription,
+        LockGuard lockGuard,
+        Callable<Flux<T>> callable
+    )
     {
-        return fluxInScope(lockGuard, callable, true);
+        return fluxInScope(scopeDescription, lockGuard, callable, true);
     }
 
-    public <T> Flux<T> fluxInTransactionlessScope(LockGuard lockGuard, Callable<Flux<T>> callable)
+    public <T> Flux<T> fluxInTransactionlessScope(
+        String scopeDescription,
+        LockGuard lockGuard,
+        Callable<Flux<T>> callable
+    )
     {
-        return fluxInScope(lockGuard, callable, false);
+        return fluxInScope(scopeDescription, lockGuard, callable, false);
     }
 
     public <T> Flux<T> fluxInScope(
+        String scopeDescription,
         LockGuard lockGuard,
         Callable<Flux<T>> callable,
         boolean transactional
@@ -61,7 +70,8 @@ public class ScopeRunner
             .flatMapMany(subscriberContext ->
                 Mono.fromCallable(() -> doInScope(subscriberContext, callable, lockGuard, transactional))
                     .flatMapMany(Function.identity())
-            );
+            )
+            .checkpoint(scopeDescription);
     }
 
     private <T> Flux<T> doInScope(

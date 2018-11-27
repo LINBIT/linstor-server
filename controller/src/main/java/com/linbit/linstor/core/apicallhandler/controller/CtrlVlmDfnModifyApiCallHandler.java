@@ -6,7 +6,6 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume;
@@ -133,6 +132,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Modify volume definition",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> modifyVlmDfnInTransaction(
                     vlmDfnUuid,
@@ -240,6 +240,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Update for volume definition modification",
                 LockGuard.createDeferred(rscDfnMapLock.readLock()),
                 () -> updateSatellitesInScope(rscName, vlmNr, resize)
             );
@@ -283,6 +284,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Resize DRBD",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> resizeDrbdInTransaction(rscName, vlmNr)
             );
@@ -327,6 +329,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Clean up after resize",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> finishResizeInTransaction(rscName, vlmNr)
             );

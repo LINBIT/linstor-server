@@ -76,6 +76,7 @@ public class IntFullSyncSuccess implements ApiCallReactive
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Handle full sync success",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()),
                 () ->
                 {

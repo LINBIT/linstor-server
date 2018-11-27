@@ -90,6 +90,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Fetch thin capacity info",
                 LockGuard.createDeferred(nodesMapLock.readLock(), storPoolDfnMapLock.readLock()),
                 () -> assembleRequests(nodesFilter)
             )

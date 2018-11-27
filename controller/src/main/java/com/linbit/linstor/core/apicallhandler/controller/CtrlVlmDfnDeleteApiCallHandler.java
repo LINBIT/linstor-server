@@ -117,6 +117,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete volume definition",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> deleteVolumeDefinitionInTransaction(rscNameStr, vlmNrInt)
             )
@@ -191,6 +192,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Update for volume definition deletion",
                 LockGuard.createDeferred(rscDfnMapLock.readLock()),
                 () -> updateSatellitesInScope(rscName, vlmNr)
             );
@@ -224,6 +226,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete volume definition data",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> deleteDataInTransaction(rscName, vlmNr)
             );

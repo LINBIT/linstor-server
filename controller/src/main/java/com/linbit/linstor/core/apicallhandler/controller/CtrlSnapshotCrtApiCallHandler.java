@@ -137,7 +137,7 @@ public class CtrlSnapshotCrtApiCallHandler
     )
     {
         ResponseContext context = makeSnapshotContext(
-            ApiOperation.makeRegisterOperation(),
+            ApiOperation.makeCreateOperation(),
             nodeNameStrs,
             rscNameStr,
             snapshotNameStr
@@ -145,6 +145,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Create snapshot",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> createSnapshotInTransaction(nodeNameStrs, rscNameStr, snapshotNameStr)
             )
@@ -275,6 +276,7 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Abort taking snapshot",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> abortSnapshotInTransaction(rscName, snapshotName, exception)
             );
@@ -314,6 +316,7 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Take snapshot",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> takeSnapshotInTransaction(rscName, snapshotName)
             );
@@ -345,6 +348,7 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Resume resource",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> resumeResourceInTransaction(rscName, snapshotName)
             );
@@ -376,6 +380,7 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Clean up in-progress snapshots",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> removeInProgressSnapshotsInTransaction(rscName, snapshotName)
             );

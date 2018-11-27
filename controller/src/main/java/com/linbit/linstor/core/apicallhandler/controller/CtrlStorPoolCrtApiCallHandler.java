@@ -92,6 +92,7 @@ public class CtrlStorPoolCrtApiCallHandler
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Create storage pool",
                 LockGuard.createDeferred(
                     nodesMapLock.writeLock(),
                     storPoolDfnMapLock.writeLock()

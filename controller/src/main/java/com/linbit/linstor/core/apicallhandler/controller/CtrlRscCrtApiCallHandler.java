@@ -104,6 +104,7 @@ public class CtrlRscCrtApiCallHandler
                 .flatMapMany(thinFreeCapacities ->
                     scopeRunner
                     .fluxInTransactionalScope(
+                        "Create resource",
                         LockGuard.createDeferred(
                             nodesMapLock.writeLock(),
                             rscDfnMapLock.writeLock(),

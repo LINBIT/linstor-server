@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -47,6 +49,8 @@ public abstract class BaseErrorReporter
     }
 
     public static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+    public static final Pattern LIGHT_CHECKPOINT_PATTERN =
+        Pattern.compile("is identified by light checkpoint \\[([^]]*)");
 
     @SuppressWarnings("checkstyle:magicnumber")
     BaseErrorReporter(String moduleName, boolean printStackTracesRef, String nodeNameRef)
@@ -350,6 +354,26 @@ public abstract class BaseErrorReporter
         {
             output.println("Error context:");
             AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, contextInfo);
+            output.println();
+        }
+
+        Throwable[] allSuppressed = errorInfo.getSuppressed();
+        if (allSuppressed != null && allSuppressed.length > 0)
+        {
+            output.println("Asynchronous stage backtrace:");
+            for (Throwable suppressed : allSuppressed)
+            {
+                // Strip away reactor 'light checkpoint' details
+                Matcher matcher = LIGHT_CHECKPOINT_PATTERN.matcher(suppressed.getMessage());
+                if (matcher.find())
+                {
+                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, matcher.group(1));
+                }
+                else
+                {
+                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, suppressed.getMessage());
+                }
+            }
             output.println();
         }
 

@@ -151,6 +151,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Toggle disk",
                 createLockGuard(),
                 () -> toggleDiskInTransaction(nodeNameStr, rscNameStr, storPoolNameStr, removeDisk)
             )
@@ -275,6 +276,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Update for disk toggle",
                 createLockGuard(),
                 () -> updateAndAdjustDiskInTransaction(nodeName, rscName, removeDisk)
             );
@@ -361,6 +363,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Reset disk adding",
                 createLockGuard(),
                 () -> resetDiskAddingInTransaction(nodeName, rscName)
             );
@@ -391,6 +394,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Finish disk toggle",
                 createLockGuard(),
                 () -> finishOperationInTransaction(nodeName, rscName, removeDisk)
             );

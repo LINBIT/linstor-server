@@ -143,6 +143,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Rollback to snapshot",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> rollbackSnapshotInTransaction(rscNameStr, snapshotNameStr)
             )
@@ -191,6 +192,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Reactivate resources due to failed deactivation",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> reactivateRscDfnInTransaction(rscName, exception)
             );
@@ -224,6 +226,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Initiate rollback",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                 () -> startRollbackInTransaction(rscName, snapshotName)
             );
@@ -253,6 +256,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Update for rollback",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.readLock()),
                 () -> updateForRollbackInScope(rscName)
             );
@@ -308,6 +312,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         Flux<Tuple2<NodeName, ApiCallRc>> markSuccessfulFlux = responseIncludesSuccess && !responseIncludesNonSuccess ?
             scopeRunner
                 .fluxInTransactionalScope(
+                    "Handle successful rollback",
                     LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
                     () -> resourceRollbackSuccessfulInTransaction(rscName, nodeName)
                 ) :
@@ -335,6 +340,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Reactivate resources after rollback",
                 LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.readLock()),
                 () -> finishRollbackInScope(rscName)
             );

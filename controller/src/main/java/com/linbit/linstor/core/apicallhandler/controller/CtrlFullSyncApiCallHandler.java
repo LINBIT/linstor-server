@@ -67,6 +67,7 @@ public class CtrlFullSyncApiCallHandler
     public Flux<?> sendFullSync(Peer satellite, long expectedFullSyncId)
     {
         return scopeRunner.fluxInTransactionlessScope(
+            "Send full sync",
             LockGuard.createDeferred(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.readLock(),
@@ -80,6 +81,7 @@ public class CtrlFullSyncApiCallHandler
     public Flux<?> fullSyncSuccess(Peer satellite)
     {
         return scopeRunner.fluxInTransactionlessScope(
+            "Handle full sync success",
             LockGuard.createDeferred(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.readLock()

@@ -105,6 +105,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete resource definition",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> deleteResourceDefinitionInTransaction(rscNameStr)
             )
@@ -186,6 +187,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete starting with diskless resources",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> deleteDisklessInTransaction(rscName)
             );
@@ -241,6 +243,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete remaining resources",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> deleteRemainingInTransaction(rscName)
             );
@@ -287,6 +290,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete resource definition data",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> deleteDataInTransaction(rscName)
             );

@@ -132,6 +132,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete resource",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
                 () -> deleteResourceInTransaction(nodeNameStr, rscNameStr)
             )
@@ -218,6 +219,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     {
         return scopeRunner
             .fluxInTransactionlessScope(
+                "Update for resource deletion",
                 LockGuard.createDeferred(rscDfnMapLock.readLock()),
                 () -> updateSatellitesInScope(nodeName, rscName)
             );
@@ -252,6 +254,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     {
         return scopeRunner
             .fluxInTransactionalScope(
+                "Delete resource data",
                 LockGuard.createDeferred(rscDfnMapLock.writeLock()),
                 () -> deleteDataInTransaction(nodeName, rscName)
             );
