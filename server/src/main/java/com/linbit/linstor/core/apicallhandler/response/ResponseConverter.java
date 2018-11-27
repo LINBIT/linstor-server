@@ -114,11 +114,8 @@ public class ResponseConverter
                     }
 
                     apiCallRc.addEntry(ApiCallRcImpl
-                        .entryBuilder(sourceEntry.getReturnCode(), sourceEntry.getMessage())
+                        .entryBuilder(sourceEntry, null, null)
                         .setCause(causeJoiner.toString())
-                        .setCorrection(sourceEntry.getCorrection())
-                        .setDetails(sourceEntry.getDetails())
-                        .putAllObjRefs(sourceEntry.getObjRefs())
                         .build()
                     );
                 }
