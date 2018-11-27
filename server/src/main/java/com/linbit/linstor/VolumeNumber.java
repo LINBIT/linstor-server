@@ -12,12 +12,10 @@ public class VolumeNumber implements Comparable<VolumeNumber>
 {
     public static final int VOLUME_NR_MIN = 0;
 
-    // FIXME: volume numbers were supposed to be unsigned in DRBD 9.0,
-    //        but currently, there is at least one signedness bug somewhere
-    //        in the network protocol implementation that limits the usable
-    //        range to 0 - 32767
+    // Valid volume numbers in DRBD are in the range [0, 65534]
+    // 65535 is a DRBD protocol reserved value
     @SuppressWarnings("checkstyle:magicnumber")
-    public static final int VOLUME_NR_MAX = (1 << 15) - 1;
+    public static final int VOLUME_NR_MAX = (1 << 16) - 2;
 
     private static final String VOLUME_NR_EXC_FORMAT =
         "Volume number %d is out of range [%d - %d]";
