@@ -240,7 +240,15 @@ public class CommonMessageProcessor implements MessageProcessor
         Flux<?> flux = Flux.empty();
         try
         {
-            flux = handleDataMessage(msg, connector, peer);
+            flux = handleDataMessage(msg, connector, peer)
+                .doOnError(exc -> errorLog.reportError(
+                    Level.ERROR,
+                    exc,
+                    peer.getAccessContext(),
+                    peer,
+                    null
+                ))
+                .onErrorResume(ignored -> Flux.empty());
         }
         catch (Exception | ImplementationError exc)
         {
