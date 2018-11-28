@@ -89,7 +89,7 @@ public class CommonMessageProcessor implements MessageProcessor
 
         int queueSize = MathUtils.bounds(
             MIN_QUEUE_SIZE,
-            Math.max(LinStor.CPU_COUNT, MAX_THR_COUNT) * THR_QUEUE_FACTOR,
+            Math.min(LinStor.CPU_COUNT, MAX_THR_COUNT) * THR_QUEUE_FACTOR,
             MAX_QUEUE_SIZE
         );
         int thrCount = MathUtils.bounds(MIN_THR_COUNT, LinStor.CPU_COUNT, MAX_THR_COUNT);
