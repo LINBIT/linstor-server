@@ -101,9 +101,13 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
                     }
                 }
             )
-            .flatMap(objectStream -> objectStream.getT2()
-                .materialize()
-                .map(signal -> new ObjectSignal<>(objectStream.getT1(), signal))
+            .flatMap(
+                objectStream -> objectStream.getT2()
+                    .materialize()
+                    .map(signal -> new ObjectSignal<>(objectStream.getT1(), signal)),
+                // Allow the watch to subscribe to more than reactor.util.concurrent.Queues.SMALL_BUFFER_SIZE streams
+                // concurrently
+                Integer.MAX_VALUE
             );
     }
 
