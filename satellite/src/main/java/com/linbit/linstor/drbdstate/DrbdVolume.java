@@ -4,6 +4,7 @@ import com.linbit.Checks;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.utils.MathUtils;
 
 import java.util.Map;
 
@@ -210,7 +211,7 @@ public class DrbdVolume
             float result;
             try
             {
-                result = Float.parseFloat(donePerc);
+                result = MathUtils.<Float>bounds((float) 0, Float.parseFloat(donePerc), (float) 100);
             }
             catch (NumberFormatException ignored)
             {
