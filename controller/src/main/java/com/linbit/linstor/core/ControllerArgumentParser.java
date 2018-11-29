@@ -30,12 +30,6 @@ class ControllerArgumentParser
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
 
-    @CommandLine.Option(names = {"--port"}, description = "overrides the plain port")
-    private Integer plainPort = null;
-
-    @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
-    private String bindAddress = null;
-
     static ControllerCmdlArguments parseCommandLine(String[] args)
     {
         ControllerArgumentParser linArgParser = new ControllerArgumentParser();
