@@ -657,7 +657,7 @@ public class ZfsDriverTest extends StorageTestUtils
             "list",
             "-H", // no headers
             "-p", // parsable version, tab spaced, in bytes
-            "-o", "volsize", // print specified columns only
+            "-o", "volsize,used", // print specified columns only
             pool + "/" + identifier // the specified volume
         );
         OutputData outData;
@@ -665,7 +665,10 @@ public class ZfsDriverTest extends StorageTestUtils
         {
             outData = new TestOutputData(
                 command.getRawCommand(),
-                Long.toString(size * MB),
+                // volsize
+                size * MB + "\t" +
+                    // used
+                    size * MB / 2,
                 "",
                 0
             );
