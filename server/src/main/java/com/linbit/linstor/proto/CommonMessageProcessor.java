@@ -50,7 +50,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
  * Dispatcher for received messages
@@ -392,6 +392,7 @@ public class CommonMessageProcessor implements MessageProcessor
                         () -> Flux.just(apiMapEntry.provider.get())
                     )
                     .flatMap(apiObj -> execute(apiMapEntry, apiObj, apiCallName, apiCallId, msgDataIn, respond))
+                    .checkpoint("Fallback error handling wrapper")
                     .onErrorResume(
                         InvalidProtocolBufferException.class,
                         exc -> handleProtobufErrors(exc, apiCallName, peer, apiCallId)
@@ -552,7 +553,7 @@ public class CommonMessageProcessor implements MessageProcessor
             exc.getMessage()
         );
 
-        return Flux.fromStream(makeApiErrorMessages(exc, apiCallId, errorId));
+        return Flux.just(makeApiErrorMessage(exc, apiCallId, errorId));
     }
 
     private Flux<byte[]> handleApiAccessDeniedException(
@@ -655,22 +656,19 @@ public class CommonMessageProcessor implements MessageProcessor
             .build();
     }
 
-    private Stream<byte[]> makeApiErrorMessages(ApiRcException exc, Long apiCallId, String errorId)
+    private byte[] makeApiErrorMessage(ApiRcException exc, Long apiCallId, String errorId)
     {
         ApiCallRc apiCallRc = exc.getApiCallRc();
-        return apiCallRc.getEntries().stream()
-            .map(rcEntry ->
-                commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
-                    .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
-                        .entryBuilder(rcEntry.getReturnCode(), rcEntry.getMessage())
-                        .setCause(rcEntry.getCause())
-                        .setCorrection(rcEntry.getCorrection())
-                        .setDetails(rcEntry.getDetails())
+        return commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
+            .apiCallRcSeries(new ApiCallRcImpl(apiCallRc.getEntries().stream()
+                .map(rcEntry ->
+                    ApiCallRcImpl.entryBuilder(rcEntry, null, null)
                         .addErrorId(errorId)
                         .build()
-                    ))
-                    .build()
-            );
+                )
+                .collect(Collectors.toList())
+            ))
+            .build();
     }
 
     private byte[] makeUnhandledExceptionMessage(
