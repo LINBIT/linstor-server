@@ -179,75 +179,12 @@ public class LvmThinDriver extends LvmDriver
     {
         final String qualifiedPoolName = volumeGroup + File.separator + thinPoolName;
 
-        long freeSpace;
-        final String[] command = new String[]
-            {
-                lvmLvsCommand,
-                qualifiedPoolName,
-                "-o", "lv_size,data_percent",
-                "--separator", StorageUtils.DELIMITER,
-                "--units", "b",
-                "--noheadings",
-                "--nosuffix"
-            };
-        String rawOut = null;
-        try
-        {
-            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-            final OutputData output = extCommand.exec(command);
+        LvmCapacityStats lvmCapacityStats = getLvmCapacityStats(qualifiedPoolName);
 
-            checkExitCode(output, command);
+        BigDecimal freeFraction = lvmCapacityStats.getDataFraction().negate().add(BigDecimal.valueOf(1L));
+        BigInteger freeBytes = lvmCapacityStats.getThinPoolSizeBytes().multiply(freeFraction).toBigInteger();
 
-            rawOut = new String(output.stdoutData);
-            String[] data = rawOut.split(StorageUtils.DELIMITER);
-            if (data.length != 2)
-            {
-                throw new StorageException(
-                    "LVM free size output has unexpected number of entries",
-                    "Pool: " + qualifiedPoolName + "; output to parse: '" + rawOut + "'",
-                    null,
-                    null,
-                    "External command used to query free size: " + glue(command, " ")
-                );
-            }
-
-            BigDecimal thinPoolSizeBytes = StorageUtils.parseDecimal(data[0].trim());
-
-            final String rawDataPercent = data[1];
-
-            BigDecimal dataPercent = StorageUtils.parseDecimal(data[1].trim());
-            BigDecimal dataFraction = dataPercent.movePointLeft(2);
-            BigDecimal freeFraction = dataFraction.negate().add(BigDecimal.valueOf(1L));
-
-            BigInteger freeBytes = thinPoolSizeBytes.multiply(freeFraction).toBigInteger();
-            freeSpace = SizeConv.convert(freeBytes, SizeUnit.UNIT_B, SizeUnit.UNIT_KiB).longValueExact();
-        }
-        catch (NumberFormatException nfexc)
-        {
-            throw new StorageException(
-                "Unable to parse thin pool free size.",
-                "Pool: " + qualifiedPoolName + "; output to parse: '" + rawOut + "'",
-                null,
-                null,
-                "External command used to query free size: " + glue(command, " "),
-                nfexc
-            );
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            throw new StorageException(
-                "Failed to query thin pool free size",
-                String.format("Failed to query the free size of thin pool: %s", qualifiedPoolName),
-                (exc instanceof ChildProcessTimeoutException) ?
-                    "External command timed out" :
-                    "External command threw an IOException",
-                null,
-                String.format("External command: %s", glue(command, " ")),
-                exc
-            );
-        }
-
-        return freeSpace;
+        return SizeConv.convert(freeBytes, SizeUnit.UNIT_B, SizeUnit.UNIT_KiB).longValueExact();
     }
 
     @Override
@@ -261,6 +198,20 @@ public class LvmThinDriver extends LvmDriver
         traits.put(ApiConsts.KEY_STOR_POOL_ALLOCATION_UNIT, size);
 
         return traits;
+    }
+
+    @Override
+    public long getAllocated(String identifier)
+        throws StorageException
+    {
+        final String qualifiedVlmIdentifier = volumeGroup + File.separator + identifier;
+
+        LvmCapacityStats lvmCapacityStats = getLvmCapacityStats(qualifiedVlmIdentifier);
+
+        BigInteger allocatedBytes =
+            lvmCapacityStats.getThinPoolSizeBytes().multiply(lvmCapacityStats.getDataFraction()).toBigInteger();
+
+        return SizeConv.convert(allocatedBytes, SizeUnit.UNIT_B, SizeUnit.UNIT_KiB).longValueExact();
     }
 
     @Override
@@ -450,5 +401,96 @@ public class LvmThinDriver extends LvmDriver
     private String getThinPoolNameFromConfig(Map<String, String> config)
     {
         return getAsString(config, StorageConstants.CONFIG_LVM_THIN_POOL_KEY, thinPoolName);
+    }
+
+    private LvmCapacityStats getLvmCapacityStats(String qualifiedIdentifier)
+        throws StorageException
+    {
+        LvmCapacityStats lvmCapacityStats;
+        final String[] command = new String[]
+            {
+                lvmLvsCommand,
+                qualifiedIdentifier,
+                "-o", "lv_size,data_percent",
+                "--separator", StorageUtils.DELIMITER,
+                "--units", "b",
+                "--noheadings",
+                "--nosuffix"
+            };
+        String rawOut = null;
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final OutputData output = extCommand.exec(command);
+
+            checkExitCode(output, command);
+
+            rawOut = new String(output.stdoutData);
+            String[] data = rawOut.split(StorageUtils.DELIMITER);
+            if (data.length != 2)
+            {
+                throw new StorageException(
+                    "LVM capacity stats output has unexpected number of entries",
+                    "LV: " + qualifiedIdentifier + "; output to parse: '" + rawOut + "'",
+                    null,
+                    null,
+                    "External command used to query capacity stats: " + glue(command, " ")
+                );
+            }
+
+            BigDecimal thinPoolSizeBytes = StorageUtils.parseDecimal(data[0].trim());
+
+            BigDecimal dataPercent = StorageUtils.parseDecimal(data[1].trim());
+            BigDecimal dataFraction = dataPercent.movePointLeft(2);
+
+            lvmCapacityStats = new LvmCapacityStats(thinPoolSizeBytes, dataFraction);
+        }
+        catch (NumberFormatException nfexc)
+        {
+            throw new StorageException(
+                "Unable to parse LVM thin pool capacity stats.",
+                "LV: " + qualifiedIdentifier + "; output to parse: '" + rawOut + "'",
+                null,
+                null,
+                "External command used to query capacity stats: " + glue(command, " "),
+                nfexc
+            );
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to query thin pool capacity stats",
+                String.format("Failed to query the capacity stats of LV: %s", qualifiedIdentifier),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
+        return lvmCapacityStats;
+    }
+
+    private static class LvmCapacityStats
+    {
+        private final BigDecimal thinPoolSizeBytes;
+        private final BigDecimal dataFraction;
+
+        LvmCapacityStats(BigDecimal thinPoolSizeBytesRef, BigDecimal dataFractionRef)
+        {
+            thinPoolSizeBytes = thinPoolSizeBytesRef;
+            dataFraction = dataFractionRef;
+        }
+
+        public BigDecimal getThinPoolSizeBytes()
+        {
+            return thinPoolSizeBytes;
+        }
+
+        public BigDecimal getDataFraction()
+        {
+            return dataFraction;
+        }
     }
 }

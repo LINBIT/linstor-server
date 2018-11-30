@@ -7,8 +7,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
@@ -16,6 +20,7 @@ import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.FilterOuterClass;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
 import com.linbit.linstor.proto.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.MsgEventOuterClass;
@@ -308,6 +313,32 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         {
             MsgHostname msgHostname = MsgHostname.newBuilder().setHostname(hostName).build();
             msgHostname.writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder filter(
+        Set<NodeName> nodesFilter,
+        Set<StorPoolName> storPoolFilter,
+        Set<ResourceName> resourceFilter
+    )
+    {
+        try
+        {
+            FilterOuterClass.Filter.newBuilder()
+                .addAllNodeNames(
+                    nodesFilter.stream().map(NodeName::getDisplayName).collect(Collectors.toList()))
+                .addAllStorPoolNames(
+                    storPoolFilter.stream().map(StorPoolName::getDisplayName).collect(Collectors.toList()))
+                .addAllResourceNames(
+                    resourceFilter.stream().map(ResourceName::getDisplayName).collect(Collectors.toList()))
+                .build()
+                .writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -146,7 +147,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
         }
     }
 
-    VlmApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    VlmApi getApiData(Long allocated, AccessContext accCtx) throws AccessDeniedException;
 
     interface VlmApi
     {
@@ -165,6 +166,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
         UUID getStorPoolDfnUuid();
         Map<String, String> getStorPoolDfnProps();
         Map<String, String> getStorPoolProps();
+        Optional<Long> getAllocated();
     }
 
 

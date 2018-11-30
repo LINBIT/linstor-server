@@ -2,6 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.Volume;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -25,6 +26,7 @@ public class VlmPojo implements Volume.VlmApi
     private final UUID storPoolDfnUuid;
     private Map<String, String> storPoolDfnProps;
     private Map<String, String> storPoolProps;
+    private final Optional<Long> allocated;
 
     public VlmPojo(
         final String storagePoolNameRef,
@@ -41,7 +43,8 @@ public class VlmPojo implements Volume.VlmApi
         final String storDriverNameRef,
         final UUID storPoolDfnUuidRef,
         final Map<String, String> storPoolDfnPropsRef,
-        final Map<String, String> storPoolPropsRef
+        final Map<String, String> storPoolPropsRef,
+        final Optional<Long> allocatedRef
     )
     {
         storagePoolName = storagePoolNameRef;
@@ -59,6 +62,7 @@ public class VlmPojo implements Volume.VlmApi
         storPoolDfnUuid = storPoolDfnUuidRef;
         storPoolDfnProps = storPoolDfnPropsRef;
         storPoolProps = storPoolPropsRef;
+        allocated = allocatedRef;
     }
 
     @Override
@@ -151,4 +155,9 @@ public class VlmPojo implements Volume.VlmApi
         return storPoolProps;
     }
 
+    @Override
+    public Optional<Long> getAllocated()
+    {
+        return allocated;
+    }
 }

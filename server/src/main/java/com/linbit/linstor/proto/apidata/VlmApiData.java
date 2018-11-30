@@ -1,7 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.Volume;
-import java.util.HashMap;
 import java.util.Map;
 
 import com.linbit.linstor.Volume.VlmApi;
@@ -10,6 +9,7 @@ import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -125,6 +125,12 @@ public class VlmApiData implements VlmApi
             .collect(Collectors.toMap(LinStorMapEntry::getKey, LinStorMapEntry::getValue));
     }
 
+    @Override
+    public Optional<Long> getAllocated()
+    {
+        return Optional.empty();
+    }
+
     public static Vlm toVlmProto(final VlmApi vlmApi)
     {
         Vlm.Builder builder = Vlm.newBuilder();
@@ -148,6 +154,7 @@ public class VlmApiData implements VlmApi
         }
         builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
         builder.addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()));
+        vlmApi.getAllocated().ifPresent(builder::setAllocated);
 
         return builder.build();
     }

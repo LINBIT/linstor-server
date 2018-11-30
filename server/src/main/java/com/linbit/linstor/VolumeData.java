@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.inject.Provider;
@@ -464,7 +465,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public Volume.VlmApi getApiData(AccessContext accCtx) throws AccessDeniedException
+    public Volume.VlmApi getApiData(Long allocated, AccessContext accCtx) throws AccessDeniedException
     {
         return new VlmPojo(
             getStorPool(accCtx).getName().getDisplayName(),
@@ -481,7 +482,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
             getStorPool(accCtx).getDriverName(),
             getStorPool(accCtx).getDefinition(accCtx).getUuid(),
             getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
-            getStorPool(accCtx).getProps(accCtx).map()
+            getStorPool(accCtx).getProps(accCtx).map(),
+            Optional.ofNullable(allocated)
         );
     }
 

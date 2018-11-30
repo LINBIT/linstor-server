@@ -71,6 +71,12 @@ public abstract class AbsSwordfishDriver implements StorageDriver
     }
 
     @Override
+    public long getAllocated(String identifier)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void createSnapshot(String ignore, String snapshotName) throws StorageException
     {
         throw new StorageException("Swordfish driver cannot create snapshots");

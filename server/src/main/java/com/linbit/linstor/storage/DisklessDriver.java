@@ -76,6 +76,12 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
+    public long getAllocated(String identifier)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Map<String, String> getTraits(final String identifier)
     {
         return Collections.emptyMap();

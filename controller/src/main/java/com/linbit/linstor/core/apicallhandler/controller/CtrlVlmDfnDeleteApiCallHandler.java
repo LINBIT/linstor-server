@@ -45,7 +45,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler.getVlmDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.utils.StringUtils.firstLetterCaps;

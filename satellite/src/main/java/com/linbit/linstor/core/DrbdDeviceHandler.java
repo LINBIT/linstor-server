@@ -65,7 +65,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -92,6 +91,7 @@ import javax.inject.Singleton;
  * vlmState should probably know whether the volume is a LINSTOR volume or a volume only seen by DRBD
  */
 @Singleton
+public
 class DrbdDeviceHandler implements DeviceHandler
 {
     private final ErrorReporter errLog;
@@ -285,16 +285,16 @@ class DrbdDeviceHandler implements DeviceHandler
     private String computeVlmName(ResourceDefinition rscDfn, VolumeNumber vlmNr)
         throws AccessDeniedException
     {
-        return computeVlmName(rscDfn.getVolumeDfn(wrkCtx, vlmNr));
+        return computeVlmName(wrkCtx, rscDfn.getVolumeDfn(wrkCtx, vlmNr));
     }
 
-    private String computeVlmName(VolumeDefinition vlmDfn)
+    public static String computeVlmName(AccessContext accCtx, VolumeDefinition vlmDfn)
         throws AccessDeniedException
     {
         String identifier;
         try
         {
-            String overrideId = vlmDfn.getProps(wrkCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+            String overrideId = vlmDfn.getProps(accCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
 
             identifier =
                 overrideId != null ?
@@ -308,7 +308,7 @@ class DrbdDeviceHandler implements DeviceHandler
         return identifier;
     }
 
-    private String computeStandardVlmName(ResourceName rscName, VolumeNumber vlmNr)
+    private static String computeStandardVlmName(ResourceName rscName, VolumeNumber vlmNr)
     {
         return rscName.displayValue + "_" + String.format("%05d", vlmNr.value);
     }
@@ -878,7 +878,7 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         try
         {
-            storDrv.startVolume(computeVlmName(vlmDfn), vlmDfn.getKey(wrkCtx), vlmDfn.getProps(wrkCtx));
+            storDrv.startVolume(computeVlmName(wrkCtx, vlmDfn), vlmDfn.getKey(wrkCtx), vlmDfn.getProps(wrkCtx));
         }
         catch (StorageException exc)
         {
@@ -901,7 +901,7 @@ class DrbdDeviceHandler implements DeviceHandler
             vlmState.getDriver().restoreSnapshot(
                 restoreVlmName,
                 restoreSnapshotName,
-                computeVlmName(vlmDfn),
+                computeVlmName(wrkCtx, vlmDfn),
                 vlmDfn.getKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)
             );
@@ -1175,7 +1175,7 @@ class DrbdDeviceHandler implements DeviceHandler
                     {
                         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                         Props vlmDfnProps = vlmDfn.getProps(wrkCtx);
-                        String vlmName = computeVlmName(vlmDfn);
+                        String vlmName = computeVlmName(wrkCtx, vlmDfn);
 
                         ensureStorageDriver(rscName, vlm.getStorPool(wrkCtx), vlmState);
 
@@ -2082,7 +2082,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.getVlmNr());
             vlmState.getDriver().rollbackVolume(
-                computeVlmName(vlmDfn),
+                computeVlmName(wrkCtx, vlmDfn),
                 snapshotName.displayValue,
                 vlmDfn.getKey(wrkCtx),
                 vlmDfn.getProps(wrkCtx)

@@ -352,7 +352,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         ArrayList<Volume.VlmApi> vlms = new ArrayList<>();
         for (Volume vlm : getVolumes(accCtx))
         {
-            vlms.add(vlm.getApiData(accCtx));
+            vlms.add(vlm.getApiData(null, accCtx));
         }
         return new StorPoolPojo(
             getUuid(),

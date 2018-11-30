@@ -35,7 +35,7 @@ import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler.getVlmDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
 import javax.inject.Inject;
 import javax.inject.Named;

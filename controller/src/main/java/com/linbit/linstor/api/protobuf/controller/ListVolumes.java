@@ -1,17 +1,17 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import com.linbit.linstor.api.ApiCallReactive;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
+import com.linbit.linstor.proto.FilterOuterClass.Filter;
+import reactor.core.publisher.Flux;
+
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.FilterOuterClass.Filter;
 
 /**
  *
@@ -19,23 +19,20 @@ import com.linbit.linstor.proto.FilterOuterClass.Filter;
  */
 @ProtobufApiCall(
     name = ApiConsts.API_LST_VLM,
-    description = "Queries the list of volumes",
-    transactional = false
+    description = "Queries the list of volumes"
 )
-public class ListVolumes implements ApiCall
+public class ListVolumes implements ApiCallReactive
 {
-    private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;
 
     @Inject
-    public ListVolumes(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ListVolumes(CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef)
     {
-        apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
         List<String> nodeNames = new ArrayList<>();
@@ -49,9 +46,7 @@ public class ListVolumes implements ApiCall
             storPoolNames = filter.getStorPoolNamesList();
             resourceNames = filter.getResourceNamesList();
         }
-        client.sendMessage(
-            apiCallHandler
-                .listVolumes(nodeNames, storPoolNames, resourceNames)
-        );
+
+        return ctrlVlmListApiCallHandler.listVlms(nodeNames, storPoolNames, resourceNames);
     }
 }

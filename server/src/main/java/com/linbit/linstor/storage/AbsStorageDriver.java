@@ -527,6 +527,13 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
+    public long getAllocated(String identifier)
+        throws StorageException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public final void setConfiguration(
         final String storPoolNameStr,
         final Map<String, String> storPoolNamespace,

@@ -194,6 +194,17 @@ public interface StorageDriver
     long getSize(String identifier, Props vlmDfnStorageProps) throws StorageException;
 
     /**
+     * Returns the allocated capacity for a volume
+     *
+     * @param identifier Unique name of the volume
+     *
+     * @return Allocated capacity for the volume in KiB
+     * @throws StorageException If determining the allocated capacity for the volume fails
+     */
+    long getAllocated(String identifier)
+        throws StorageException;
+
+    /**
      * Returns the total space of the pool.
      *
      * @return Size of storage pool.

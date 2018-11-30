@@ -96,14 +96,7 @@ public class ZfsDriver extends AbsStorageDriver
                 null,
                 String.format(
                     "External command: %s",
-                    glue(
-                        ZfsVolumeInfo.getZfsVolumeInfoCommand(
-                            zfsCommand,
-                            pool,
-                            identifier
-                        ),
-                        " "
-                    )
+                    glue(command, " ")
                 ),
                 exc
             );
@@ -116,35 +109,7 @@ public class ZfsDriver extends AbsStorageDriver
     protected VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException
     {
         final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-        VolumeInfo vlmInfo;
-        try
-        {
-            vlmInfo = ZfsVolumeInfo.getInfo(extCommand, zfsCommand, pool, identifier);
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            throw new StorageException(
-                "Failed to get volume information",
-                String.format("Failed to get information for volume: %s", identifier),
-                (exc instanceof ChildProcessTimeoutException) ?
-                    "External command timed out" :
-                    "External command threw an IOException",
-                null,
-                String.format(
-                    "External command: %s",
-                    glue(
-                        ZfsVolumeInfo.getZfsVolumeInfoCommand(
-                            zfsCommand,
-                            pool,
-                            identifier
-                        ),
-                        " "
-                    )
-                ),
-                exc
-            );
-        }
-        return vlmInfo;
+        return ZfsVolumeInfo.getInfo(extCommand, zfsCommand, pool, identifier);
     }
 
     @Override

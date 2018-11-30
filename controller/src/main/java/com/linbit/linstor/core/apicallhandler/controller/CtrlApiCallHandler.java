@@ -33,7 +33,7 @@ public class CtrlApiCallHandler
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
     private final CtrlRscApiCallHandler rscApiCallHandler;
-    private final CtrlVlmApiCallHandler vlmApiCallHandler;
+    private final CtrlVlmListApiCallHandler vlmApiCallHandler;
     private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
     private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
     private final CtrlNodeConnectionApiCallHandler nodeConnApiCallHandler;
@@ -61,7 +61,7 @@ public class CtrlApiCallHandler
         CtrlRscDfnApiCallHandler rscDfnApiCallHandlerRef,
         CtrlVlmDfnApiCallHandler vlmDfnApiCallHandlerRef,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
-        CtrlVlmApiCallHandler vlmApiCallHandlerRef,
+        CtrlVlmListApiCallHandler vlmApiCallHandlerRef,
         CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandlerRef,
         CtrlStorPoolApiCallHandler storPoolApiCallHandlerRef,
         CtrlNodeConnectionApiCallHandler nodeConnApiCallHandlerRef,
@@ -393,28 +393,6 @@ public class CtrlApiCallHandler
             );
         }
         return listResources;
-    }
-
-    public byte[] listVolumes(List<String> filterNodes, List<String> filterStorPools, List<String> filterResources)
-    {
-        byte[] listVolumes;
-        try
-        {
-            nodesMapLock.readLock().lock();
-            rscDfnMapLock.readLock().lock();
-            listVolumes = vlmApiCallHandler.listVolumes(
-                apiCallId.get(),
-                filterNodes,
-                filterStorPools,
-                filterResources
-            );
-        }
-        finally
-        {
-            rscDfnMapLock.readLock().unlock();
-            nodesMapLock.readLock().unlock();
-        }
-        return listVolumes;
     }
 
     public byte[] listResourceConnections(String rscName)

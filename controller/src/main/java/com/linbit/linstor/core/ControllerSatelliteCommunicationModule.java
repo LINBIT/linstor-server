@@ -6,6 +6,8 @@ import com.linbit.linstor.annotation.SatelliteConnectorContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcherProto;
+import com.linbit.linstor.core.apicallhandler.controller.VlmAllocatedFetcher;
+import com.linbit.linstor.core.apicallhandler.controller.VlmAllocatedFetcherProto;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -20,6 +22,7 @@ public class ControllerSatelliteCommunicationModule extends AbstractModule
     {
         bind(SatelliteConnector.class).to(SatelliteConnectorImpl.class);
         bind(FreeCapacityFetcher.class).to(FreeCapacityFetcherProto.class);
+        bind(VlmAllocatedFetcher.class).to(VlmAllocatedFetcherProto.class);
     }
 
     @Provides

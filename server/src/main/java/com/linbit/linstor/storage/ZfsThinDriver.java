@@ -3,6 +3,7 @@ package com.linbit.linstor.storage;
 import java.io.File;
 import java.util.Map;
 
+import com.linbit.extproc.ExtCmd;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -22,6 +23,15 @@ public class ZfsThinDriver extends ZfsDriver
     )
     {
         super(errorReporter, fileSystemWatch, timer, storageDriverKind, stltCfgAccessor, crypt);
+    }
+
+    @Override
+    public long getAllocated(String identifier)
+        throws StorageException
+    {
+        final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+        ZfsVolumeInfo volumeInfo = ZfsVolumeInfo.getInfo(extCommand, zfsCommand, pool, identifier);
+        return volumeInfo.getUsed();
     }
 
     @Override

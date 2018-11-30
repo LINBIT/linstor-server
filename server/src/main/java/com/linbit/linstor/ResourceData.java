@@ -405,7 +405,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Iterator<Volume> itVolumes = iterateVolumes();
         while (itVolumes.hasNext())
         {
-            volumes.add(itVolumes.next().getApiData(accCtx));
+            volumes.add(itVolumes.next().getApiData(null, accCtx));
         }
         List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
         for (ResourceConnection rscConn : streamResourceConnections(accCtx).collect(Collectors.toList()))

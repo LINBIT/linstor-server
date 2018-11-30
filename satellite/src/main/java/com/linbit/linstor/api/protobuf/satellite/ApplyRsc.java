@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -136,7 +137,8 @@ public class ApplyRsc implements ApiCall
                     vol.getStorPoolDriverName(),
                     UUID.fromString(vol.getStorPoolDfnUuid()),
                     ProtoMapUtils.asMap(vol.getStorPoolDfnPropsList()),
-                    ProtoMapUtils.asMap(vol.getStorPoolPropsList())
+                    ProtoMapUtils.asMap(vol.getStorPoolPropsList()),
+                    Optional.empty()
                 )
             );
         }
