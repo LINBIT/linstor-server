@@ -52,6 +52,7 @@ public class InternalApiConsts
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
 
     public static final int EXIT_CODE_NETCOM_ERROR = 20;
+    public static final int EXIT_CODE_DRBD_ERROR = 21;
 
     // Number of peer slots for DRBD meta data if not specified in the corresponding property for the resource
     // definition or system-wide

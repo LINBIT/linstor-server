@@ -6,6 +6,7 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
 {
     private Pattern keepResPattern;
     private boolean skipHostnameCheck;
+    private boolean skipDrbdCheck;
 
     private Integer plainPortOverride;
     private String bindAddress;
@@ -37,6 +38,16 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
     public boolean isSkipHostnameCheck()
     {
         return skipHostnameCheck;
+    }
+
+    public void setSkipDrbdCheck(boolean checkFlag)
+    {
+        skipDrbdCheck = checkFlag;
+    }
+
+    public boolean isSkipDrbdCheck()
+    {
+        return skipDrbdCheck;
     }
 
     public void setOverridePlainPort(Integer plainPortRef)

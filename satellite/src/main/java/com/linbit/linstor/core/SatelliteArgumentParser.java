@@ -39,6 +39,10 @@ class SatelliteArgumentParser
         "satellite when a controller assigns the nodename")
     private boolean skipHostNameCheck = false;
 
+    @CommandLine.Option(names = {"--skip-drbd-check"},
+                        description = "skips the check for a supported DRBD installation")
+    private boolean skipDrbdCheck = false;
+
     @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
     private String bindAddress = null;
 
@@ -93,6 +97,7 @@ class SatelliteArgumentParser
         }
         cArgs.setOverridePlainPort(linArgParser.plainPort);
         cArgs.setSkipHostnameCheck(linArgParser.skipHostNameCheck);
+        cArgs.setSkipDrbdCheck(linArgParser.skipDrbdCheck);
         cArgs.setBindAddress(linArgParser.bindAddress);
         if (linArgParser.nodeName != null)
         {
