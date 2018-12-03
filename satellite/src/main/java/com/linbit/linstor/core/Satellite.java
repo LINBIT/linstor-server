@@ -422,7 +422,7 @@ public final class Satellite
         catch (Throwable error)
         {
             errorLog.reportError(error);
-            System.exit(1);
+            System.exit(InternalApiConsts.EXIT_CODE_IMPL_ERROR);
         }
 
         System.out.println();

@@ -52,8 +52,22 @@ public class InternalApiConsts
 
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
 
+    // Normal module shutdown, no error
+    public static final int EXIT_CODE_SHUTDOWN = 0;
+
+    // Incorrect parameters on the command line
+    public static final int EXIT_CODE_CMDLINE_ERROR = 1;
+
+    // Startup failed because the default NetCom service could not be initialized
     public static final int EXIT_CODE_NETCOM_ERROR = 20;
+
+    // Startup failed because DRBD is not usable / not installed
+    // FIXME: This will probably not be a shutdown reason in future releases.
+    //        In this case, the constant can be removed.
     public static final int EXIT_CODE_DRBD_ERROR = 21;
+
+    // Shutdown caused by an unexpected exception, some unrecoverable error, or an implementation error
+    public static final int EXIT_CODE_IMPL_ERROR = 199;
 
     // Number of peer slots for DRBD meta data if not specified in the corresponding property for the resource
     // definition or system-wide

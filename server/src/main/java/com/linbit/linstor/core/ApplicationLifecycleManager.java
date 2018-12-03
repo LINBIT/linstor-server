@@ -4,6 +4,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -144,7 +145,7 @@ public class ApplicationLifecycleManager
         );
 
         // The executeShutdown() method is invoked by ModuleShutdownHook
-        System.exit(0);
+        System.exit(InternalApiConsts.EXIT_CODE_SHUTDOWN);
     }
 
     private void executeShutdown()

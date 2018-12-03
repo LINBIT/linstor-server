@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import com.linbit.linstor.InternalApiConsts;
 import java.io.File;
 
 import picocli.CommandLine;
@@ -44,25 +45,25 @@ class ControllerArgumentParser
         {
             System.err.println(exc.getMessage());
             cmd.usage(System.err);
-            System.exit(2);
+            System.exit(InternalApiConsts.EXIT_CODE_CMDLINE_ERROR);
         }
 
         if (cmd.isUsageHelpRequested())
         {
             cmd.usage(System.out);
-            System.exit(0);
+            System.exit(InternalApiConsts.EXIT_CODE_SHUTDOWN);
         }
 
         ControllerCmdlArguments cArgs = new ControllerCmdlArguments();
         if (linArgParser.configurationDirectory != null)
         {
-                cArgs.setConfigurationDirectory(linArgParser.configurationDirectory + "/");
-                File workingDir = new File(cArgs.getConfigurationDirectory());
-                if (workingDir.exists() && !workingDir.isDirectory())
-                {
-                    System.err.println("Error: Given configuration directory is no directory");
-                    System.exit(2);
-                }
+            cArgs.setConfigurationDirectory(linArgParser.configurationDirectory + "/");
+            File workingDir = new File(cArgs.getConfigurationDirectory());
+            if (workingDir.exists() && !workingDir.isDirectory())
+            {
+                System.err.println("Error: Given configuration directory is no directory");
+                System.exit(InternalApiConsts.EXIT_CODE_CMDLINE_ERROR);
+            }
         }
 
         if (linArgParser.logDirectory != null)

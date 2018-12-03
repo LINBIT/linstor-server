@@ -19,6 +19,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerLinstorModule;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.annotation.SystemContext;
@@ -391,7 +392,7 @@ public final class Controller
         catch (Throwable error)
         {
             errorLog.reportError(error);
-            System.exit(1);
+            System.exit(InternalApiConsts.EXIT_CODE_IMPL_ERROR);
         }
 
         System.out.println();
