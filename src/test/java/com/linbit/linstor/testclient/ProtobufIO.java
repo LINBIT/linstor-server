@@ -389,7 +389,6 @@ public class ProtobufIO
                         read = inputStream.read(header, offset, header.length - offset);
                         if (read == -1)
                         {
-                            println("End of stream.");
                             return; // not very clean, but enough for this prototype
                         }
                         offset += read;
@@ -407,7 +406,6 @@ public class ProtobufIO
                         read = inputStream.read(data, offset, protoLen - offset);
                         if (read == -1)
                         {
-                            println("End of stream.");
                             return; // not very clean, but enough for this prototype
                         }
                         offset += read;
