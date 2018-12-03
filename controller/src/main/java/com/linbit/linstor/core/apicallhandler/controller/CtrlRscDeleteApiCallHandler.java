@@ -153,21 +153,14 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             ));
         }
 
-        SatelliteState stltState;
+        Boolean inUse;
         Peer peer = getPeerPriveleged(rsc.getAssignedNode());
-        Lock readLock = peer.getSatelliteStateLock().readLock();
-        readLock.lock();
-        try
+        try (LockGuard ignored = LockGuard.createLocked(peer.getSatelliteStateLock().readLock()))
         {
-            stltState = peer.getSatelliteState();
+            inUse = peer.getSatelliteState().getFromResource(rscName, SatelliteResourceState::isInUse);
         }
-        finally
-        {
-            readLock.unlock();
-        }
-        SatelliteResourceState rscState = stltState == null ? null : stltState.getResourceStates().get(rscName);
 
-        if (rscState != null && rscState.isInUse() != null && rscState.isInUse())
+        if (inUse != null && inUse)
         {
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(

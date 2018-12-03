@@ -11,7 +11,6 @@ import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
-import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -22,6 +21,7 @@ import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+import com.linbit.locks.LockGuard;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -523,9 +523,12 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             Peer nodePeer = rsc.getAssignedNode().getPeer(accCtx);
             if (nodePeer != null)
             {
-                SatelliteState stltState = nodePeer.getSatelliteState();
-                SatelliteResourceState rscState = stltState.getResourceStates().get(getName());
-                if (rscState != null && rscState.isInUse() != null && rscState.isInUse())
+                Boolean inUse;
+                try (LockGuard ignored = LockGuard.createLocked(nodePeer.getSatelliteStateLock().readLock()))
+                {
+                    inUse = nodePeer.getSatelliteState().getFromResource(resourceName, SatelliteResourceState::isInUse);
+                }
+                if (inUse != null && inUse)
                 {
                     rscInUse = rsc;
                 }
