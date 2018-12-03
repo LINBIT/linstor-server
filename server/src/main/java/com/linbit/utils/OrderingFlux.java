@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-import java.util.function.Function;
 
 /**
  * Transforms a flux by ordering the emissions based on a sequence number.
@@ -29,10 +28,8 @@ public class OrderingFlux<T>
     {
         out = flux
             // buffer values if necessary to ensure that the output is ordered,
-            // emitting groups of values when they are ready
-            .<List<T>>handle((indexedValue, sink) -> sink.next(handleNext(indexedValue)))
-            // flatten the value groups
-            .flatMapIterable(Function.identity());
+            // emitting groups of values when they are ready and flattening the value groups
+            .flatMapIterable(this::handleNext);
     }
 
     public Flux<T> get()
