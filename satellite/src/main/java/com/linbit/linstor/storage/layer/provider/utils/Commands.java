@@ -11,13 +11,14 @@ import java.io.IOException;
 
 public class Commands
 {
-    @FunctionalInterface
     public interface RetryHandler
     {
         boolean retry(OutputData outputData);
+
+        boolean skip(OutputData outData);
     }
 
-    public static final RetryHandler NO_RETRY = ignored -> false;
+    public static final RetryHandler NO_RETRY = new NoRetryHandler();
 
     private static final int KIB = 1024;
 
@@ -46,17 +47,33 @@ public class Commands
         {
             outData = extCmd.exec(command);
 
-            while (outData.exitCode != ExtCmdUtils.DEFAULT_RET_CODE_OK && retryHandler.retry(outData))
+            boolean skipExitCodeCheck = false;
+            while (outData.exitCode != ExtCmdUtils.DEFAULT_RET_CODE_OK)
             {
-                outData = extCmd.exec(command);
+                if (retryHandler.skip(outData))
+                {
+                    skipExitCodeCheck = true;
+                    break;
+                }
+                if (retryHandler.retry(outData))
+                {
+                    outData = extCmd.exec(command);
+                }
+                else
+                {
+                    break;
+                }
             }
 
-            ExtCmdUtils.checkExitCode(
-                outData,
-                command,
-                StorageException::new,
-                failMsgExitCode
-            );
+            if (!skipExitCodeCheck)
+            {
+                ExtCmdUtils.checkExitCode(
+                    outData,
+                    command,
+                    StorageException::new,
+                    failMsgExitCode
+                );
+            }
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
@@ -114,4 +131,20 @@ public class Commands
         return Long.parseLong(outRaw.trim()) / KIB;
     }
 
+    public static class NoRetryHandler implements RetryHandler
+    {
+
+        @Override
+        public boolean retry(OutputData outputData)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean skip(OutputData outData)
+        {
+            return false;
+        }
+
+    }
 }

@@ -44,4 +44,10 @@ public class RetryIfDeviceBusy implements Commands.RetryHandler
         }
         return retry;
     }
+
+    @Override
+    public boolean skip(OutputData outData)
+    {
+        return false;
+    }
 }

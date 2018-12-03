@@ -113,6 +113,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
             snapshots.stream().collect(Collectors.groupingBy(Snapshot::getResourceName));
 
         // call prepare for every necessary layer
+        boolean prepareSuccess = true;
         for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
         {
             List<Snapshot> affectedSnapshots = new ArrayList<>();
@@ -126,83 +127,90 @@ public class DeviceHandlerImpl implements DeviceHandler2
                 }
             }
             ResourceLayer layer = entry.getKey();
-            prepare(layer, rscList, affectedSnapshots);
+            if (!prepare(layer, rscList, affectedSnapshots))
+            {
+                prepareSuccess = false;
+                break;
+            }
         }
 
-        // actually process every resource and snapshots
-        for (Resource rsc : rootResources)
+        if (prepareSuccess)
         {
-            ResourceName rscName = rsc.getDefinition().getName();
-            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-            try
+            // actually process every resource and snapshots
+            for (Resource rsc : rootResources)
             {
-                List<Snapshot> snapshotList = snapshotsByRscName.get(rscName);
-                if (snapshotList == null)
+                ResourceName rscName = rsc.getDefinition().getName();
+                ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                try
                 {
-                    snapshotList = Collections.emptyList();
+                    List<Snapshot> snapshotList = snapshotsByRscName.get(rscName);
+                    if (snapshotList == null)
+                    {
+                        snapshotList = Collections.emptyList();
+                    }
+                    process(
+                        rsc,
+                        snapshotList,
+                        apiCallRc
+                    );
                 }
-                process(
-                    rsc,
-                    snapshotList,
-                    apiCallRc
-                );
-            }
-            catch (AccessDeniedException | SQLException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            catch (StorageException | ResourceException | VolumeException exc)
-            {
-                // TODO different handling for different exceptions?
-                errorReporter.reportError(exc);
+                catch (AccessDeniedException | SQLException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+                catch (StorageException | ResourceException | VolumeException exc)
+                {
+                    // TODO different handling for different exceptions?
+                    errorReporter.reportError(exc);
 
-                apiCallRc = ApiCallRcImpl.singletonApiCallRc(
-                    ApiCallRcImpl.entryBuilder(
-                        // TODO maybe include a ret-code into the exception
-                        ApiConsts.FAIL_UNKNOWN_ERROR,
-                        "An error occured while processing resource '" + rsc + "'"
-                    )
-                    .setCause(exc.getCauseText())
-                    .setCorrection(exc.getCorrectionText())
-                    .setDetails(exc.getDetailsText())
-                    .build()
-                );
+                    apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                        ApiCallRcImpl.entryBuilder(
+                            // TODO maybe include a ret-code into the exception
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            "An error occured while processing resource '" + rsc + "'"
+                        )
+                        .setCause(exc.getCauseText())
+                        .setCorrection(exc.getCorrectionText())
+                        .setDetails(exc.getDetailsText())
+                        .build()
+                    );
+                }
+                deviceManager.notifyResourceDispatchResponse(rscName, apiCallRc);
             }
-            deviceManager.notifyResourceDispatchResponse(rscName, apiCallRc);
-        }
 
-        // call clear cache for every layer where the .prepare was called
-        for (Entry<ResourceLayer, List<com.linbit.linstor.Resource>> entry : rscByLayer.entrySet())
-        {
-            ResourceLayer layer = entry.getKey();
-             try
-             {
-                 layer.clearCache();
-             }
-             catch (StorageException exc)
-             {
-                 errorReporter.reportError(exc);
-                 ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
-                     ApiCallRcImpl.entryBuilder(
-                         ApiConsts.FAIL_UNKNOWN_ERROR,
-                         "An error occured while cleaning up layer '" + layer.getName() + "'"
-                     )
-                     .setCause(exc.getCauseText())
-                     .setCorrection(exc.getCorrectionText())
-                     .setDetails(exc.getDetailsText())
-                     .build()
-                 );
-                 for (Resource rsc : entry.getValue())
+            // call clear cache for every layer where the .prepare was called
+            for (Entry<ResourceLayer, List<com.linbit.linstor.Resource>> entry : rscByLayer.entrySet())
+            {
+                ResourceLayer layer = entry.getKey();
+                 try
                  {
-                     deviceManager.notifyResourceDispatchResponse(
-                         rsc.getDefinition().getName(),
-                         apiCallRc
-                     );
+                     layer.clearCache();
                  }
-             }
-        }
+                 catch (StorageException exc)
+                 {
+                     errorReporter.reportError(exc);
+                     ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                         ApiCallRcImpl.entryBuilder(
+                             ApiConsts.FAIL_UNKNOWN_ERROR,
+                             "An error occured while cleaning up layer '" + layer.getName() + "'"
+                         )
+                         .setCause(exc.getCauseText())
+                         .setCorrection(exc.getCorrectionText())
+                         .setDetails(exc.getDetailsText())
+                         .build()
+                     );
+                     for (Resource rsc : entry.getValue())
+                     {
+                         deviceManager.notifyResourceDispatchResponse(
+                             rsc.getDefinition().getName(),
+                             apiCallRc
+                         );
+                     }
+                 }
+            }
 
-        layeredRscHelper.cleanupResources(origResources);
+            layeredRscHelper.cleanupResources(origResources);
+        }
     }
 
     private Resource getRoot(Resource rsc)
@@ -224,14 +232,17 @@ public class DeviceHandlerImpl implements DeviceHandler2
         return root;
     }
 
-    private void prepare(ResourceLayer layer, List<Resource> resources, List<Snapshot> affectedSnapshots)
+    private boolean prepare(ResourceLayer layer, List<Resource> resources, List<Snapshot> affectedSnapshots)
     {
+        boolean success;
         try
         {
             layer.prepare(resources, affectedSnapshots);
+            success = true;
         }
         catch (StorageException exc)
         {
+            success = false;
             errorReporter.reportError(exc);
 
             ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
@@ -257,6 +268,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
         {
             throw new ImplementationError(exc);
         }
+        return success;
     }
 
     @Override

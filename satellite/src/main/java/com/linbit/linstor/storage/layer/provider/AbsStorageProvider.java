@@ -99,9 +99,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
     @Override
     public void clearCache() throws StorageException
     {
+        clearCache(true);
+    }
+
+    private void clearCache(boolean processPostRunVolumeNotifications) throws StorageException
+    {
         infoListCache.clear();
 
-        if (!changedStoragePools.isEmpty())
+        if (processPostRunVolumeNotifications && !changedStoragePools.isEmpty())
         {
             Map<String, Long> vgFreeSizes = getFreeSpacesImpl();
             postRunVolumeNotifications.forEach(consumer -> consumer.accept(vgFreeSizes));
@@ -115,7 +120,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
     public void prepare(List<Volume> volumes, List<SnapshotVolume> snapVlms)
         throws StorageException, AccessDeniedException, SQLException
     {
-        clearCache();
+        clearCache(false);
 
         infoListCache.putAll(getInfoListImpl(volumes));
         updateStates(volumes, snapVlms);

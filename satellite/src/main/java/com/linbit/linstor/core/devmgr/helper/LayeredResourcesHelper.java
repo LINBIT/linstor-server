@@ -317,23 +317,23 @@ public class LayeredResourcesHelper
             VlmFlags[] origVlmFlags =
                 FlagsHelper.toFlagsArray(Volume.VlmFlags.class, origVlm.getFlags(), sysCtx);
             Volume typedVlm;
-            if (origVlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
-            {
-                typedVlm = typedRsc.getVolume(vlmDfn.getVolumeNumber());
-            }
-            else
-            {
-                typedVlm = vlmFactory.getInstanceSatellite(
-                    sysCtx,
-                    UUID.randomUUID(),
-                    typedRsc,
-                    vlmDfn,
-                    origVlm.getStorPool(sysCtx),
-                    null,
-                    null,
-                    origVlmFlags
-                );
-            }
+            // if (origVlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
+            // {
+            //     typedVlm = typedRsc.getVolume(vlmDfn.getVolumeNumber());
+            // }
+            // else
+            // {
+            typedVlm = vlmFactory.getInstanceSatellite(
+                sysCtx,
+                UUID.randomUUID(),
+                typedRsc,
+                vlmDfn,
+                origVlm.getStorPool(sysCtx),
+                null,
+                null,
+                origVlmFlags
+            );
+            // }
 
             if (typedVlm != null)
             {
@@ -401,23 +401,23 @@ public class LayeredResourcesHelper
                 VolumeDefinition vlmDfn = vlmDfnIt.next();
                 Volume origVlm = origRsc.getVolume(vlmDfn.getVolumeNumber());
                 Volume typedVlm;
-                if (origVlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
-                {
-                    typedVlm = typedResource.getVolume(vlmDfn.getVolumeNumber());
-                }
-                else
-                {
-                    typedVlm = vlmFactory.getInstanceSatellite(
-                        sysCtx,
-                        UUID.randomUUID(),
-                        typedResource,
-                        vlmDfn,
-                        origVlm.getStorPool(sysCtx),
-                        null,
-                        null,
-                        FlagsHelper.toFlagsArray(Volume.VlmFlags.class, origVlm.getFlags(), sysCtx)
-                    );
-                }
+                // if (origVlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
+                // {
+                //    typedVlm = typedResource.getVolume(vlmDfn.getVolumeNumber());
+                // }
+                // else
+                // {
+                typedVlm = vlmFactory.getInstanceSatellite(
+                    sysCtx,
+                    UUID.randomUUID(),
+                    typedResource,
+                    vlmDfn,
+                    origVlm.getStorPool(sysCtx),
+                    null,
+                    null,
+                    FlagsHelper.toFlagsArray(Volume.VlmFlags.class, origVlm.getFlags(), sysCtx)
+                );
+                // }
                 if (typedVlm != null)
                 {
                     typedVlm.setAllocatedSize(sysCtx, origVlm.getAllocatedSize(sysCtx));

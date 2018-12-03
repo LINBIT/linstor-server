@@ -5,6 +5,7 @@ import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericEx
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.provider.utils.Commands.RetryHandler;
 import com.linbit.linstor.storage.layer.provider.utils.RetryIfDeviceBusy;
 import com.linbit.utils.StringUtils;
 
@@ -145,7 +146,29 @@ public class LvmCommands
                 vlmNewId
             },
             "Failed to rename lvm volume from '" + vlmCurrentId + "' to '" + vlmNewId + "'",
-            "Failed to rename lvm volume from '" + vlmCurrentId + "' to '" + vlmNewId + "'"
+            "Failed to rename lvm volume from '" + vlmCurrentId + "' to '" + vlmNewId + "'",
+            new RetryHandler()
+            {
+                @Override
+                public boolean retry(OutputData outputData)
+                {
+                    return false;
+                }
+
+                @Override
+                public boolean skip(OutputData outData)
+                {
+                    boolean skip = false;
+
+                    String err = new String(outData.stderrData);
+                    if (err.contains("Volume group \"" + volumeGroup + "\" not found"))
+                    {
+                        // well - resource is gone... with the whole volume-group
+                        skip = true;
+                    }
+                    return skip;
+                }
+            }
         );
     }
 

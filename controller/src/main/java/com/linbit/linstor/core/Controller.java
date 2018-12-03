@@ -27,7 +27,6 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
