@@ -206,4 +206,24 @@ public class LvmUtils
         }
         return result;
     }
+
+    public static void checkVgExists(ExtCmd extCmd, String volumeGroup) throws StorageException
+    {
+        OutputData output = LvmCommands.listExistingVolumeGroups(extCmd);
+        final String stdOut = new String(output.stdoutData);
+        final String[] volumeGroups = stdOut.split("\n");
+        boolean found = false;
+        for (String vg : volumeGroups)
+        {
+            if (vg.trim().equals(volumeGroup.trim()))
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            throw new StorageException("Volume group '" + volumeGroup + "' not found");
+        }
+    }
 }

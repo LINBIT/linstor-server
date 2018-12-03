@@ -11,6 +11,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
@@ -18,6 +19,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
+import com.linbit.linstor.storage.layer.provider.utils.StorageConfigReader;
 import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.LvmCommands;
@@ -279,10 +281,13 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
      * Expected to be overridden by LvmThinProvider (maybe additionally called)
      */
     @Override
-    public void checkConfig(StorPool storPool) throws StorageException
+    public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        Props props = DeviceLayerUtils.getNamespaceStorDriver(
+            storPool.getProps(storDriverAccCtx)
+        );
+        StorageConfigReader.checkVolumeGroupEntry(extCmdFactory.create(), props);
+        StorageConfigReader.checkToleranceFactor(props);
     }
 
     private Set<String> getAffectedVolumeGroups(Collection<Volume> vlms)

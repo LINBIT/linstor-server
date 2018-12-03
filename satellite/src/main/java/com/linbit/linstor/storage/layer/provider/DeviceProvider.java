@@ -39,7 +39,8 @@ public interface DeviceProvider
      *
      * @param config
      * @throws StorageException
+     * @throws AccessDeniedException
      */
-    void checkConfig(StorPool storPool) throws StorageException;
+    void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
 
 }

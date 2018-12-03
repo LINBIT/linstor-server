@@ -606,7 +606,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
     }
 
     @Override
-    public abstract void checkConfig(StorPool storPool) throws StorageException;
+    public abstract void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
 
     @Override
     public abstract long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException;

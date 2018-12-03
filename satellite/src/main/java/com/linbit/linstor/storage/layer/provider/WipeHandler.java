@@ -17,7 +17,7 @@ public class WipeHandler
     public WipeHandler(
         ExtCmdFactory extCmdFactoryRef,
         ErrorReporter errorReporterRef
-        )
+    )
     {
         extCmdFactory = extCmdFactoryRef;
         errorReporter = errorReporterRef;

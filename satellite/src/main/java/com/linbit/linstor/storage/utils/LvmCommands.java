@@ -359,4 +359,20 @@ public class LvmCommands
             failMsg
         );
     }
+
+    public static OutputData listExistingVolumeGroups(ExtCmd extCmd) throws StorageException
+    {
+        String failMsg = "Failed to query list of volume groups";
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                "vgs",
+                "-o", "vg_name",
+                "--noheadings"
+            },
+            failMsg,
+            failMsg
+        );
+    }
 }
