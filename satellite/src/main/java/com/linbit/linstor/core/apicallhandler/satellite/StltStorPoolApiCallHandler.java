@@ -34,6 +34,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -207,10 +208,12 @@ class StltStorPoolApiCallHandler
             SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool);
             if (spaceInfo != null && !storPool.getDriverKind().usesThinProvisioning())
             {
+                Map<StorPool, SpaceInfo> tmpMap = new HashMap<>();
+                tmpMap.put(storPool, spaceInfo);
                 controllerPeerConnector.getControllerPeer().sendMessage(
                     ctrlStltSerializer
                         .onewayBuilder(InternalApiConsts.API_UPDATE_FREE_CAPACITY)
-                        .updateFreeCapacity(storPool.getUuid(), storPoolName.getDisplayName(), spaceInfo)
+                        .updateFreeCapacities(tmpMap)
                         .build()
                 );
             }

@@ -1,15 +1,24 @@
 package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
 import com.linbit.linstor.core.devmgr.helper.LayeredSnapshotHelper;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LayerFactory;
@@ -18,6 +27,8 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.utils.Either;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import javax.inject.Inject;
@@ -32,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -42,28 +54,40 @@ public class DeviceHandlerImpl implements DeviceHandler2
     private final ErrorReporter errorReporter;
     private final Provider<NotificationListener> notificationListener;
 
+    private final ControllerPeerConnector controllerPeerConnector;
+    private final CtrlStltSerializer interComSerializer;
+
+
     private final LayeredResourcesHelper layeredRscHelper;
     private final LayeredSnapshotHelper layeredSnapshotHelper;
     private final LayerFactory layerFactory;
     private final AtomicBoolean fullSyncApplied;
+    private final StorageLayer storageLayer;
+
 
     @Inject
     public DeviceHandlerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
         ErrorReporter errorReporterRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
+        CtrlStltSerializer interComSerializerRef,
         Provider<NotificationListener> notificationListenerRef,
         LayeredResourcesHelper layeredRscHelperRef,
         LayeredSnapshotHelper layeredSnapshotHelperRef,
-        LayerFactory layerFactoryRef
+        LayerFactory layerFactoryRef,
+        StorageLayer storageLayerRef
     )
     {
         wrkCtx = wrkCtxRef;
         errorReporter = errorReporterRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+        interComSerializer = interComSerializerRef;
         notificationListener = notificationListenerRef;
 
         layeredRscHelper = layeredRscHelperRef;
         layeredSnapshotHelper = layeredSnapshotHelperRef;
         layerFactory = layerFactoryRef;
+        storageLayer = storageLayerRef;
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -109,6 +133,10 @@ public class DeviceHandlerImpl implements DeviceHandler2
 
         if (prepareSuccess)
         {
+            List<Resource> rscListNotifyApplied = new ArrayList<>();
+            List<Resource> rscListNotifyDelete = new ArrayList<>();
+            List<Snapshot> snapListNotifyDelete = new ArrayList<>();
+
             // actually process every resource and snapshots
             for (Resource rsc : rootResources)
             {
@@ -126,6 +154,35 @@ public class DeviceHandlerImpl implements DeviceHandler2
                         snapshotList,
                         apiCallRc
                     );
+                    /*
+                     * old device manager reported changes of free space after every
+                     * resource operation. As this could require to query the same
+                     * VG or zpool multiple times within the same device manager run,
+                     * we only query the free space after the whole run.
+                     * This also means that we only send the resourceApplied messages
+                     * at the very end
+                     */
+                    if (rsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE))
+                    {
+                        rscListNotifyDelete.add(rsc);
+                        notificationListener.get().notifyResourceDeleted(rsc);
+                        // rsc.delete is done by the deviceManager
+                    }
+                    else
+                    {
+                        rscListNotifyApplied.add(rsc);
+                        notificationListener.get().notifyResourceApplied(rsc);
+                    }
+
+                    for (Snapshot snapshot : snapshots)
+                    {
+                        if (snapshot.getFlags().isSet(wrkCtx, SnapshotFlags.DELETE))
+                        {
+                            snapListNotifyDelete.add(snapshot);
+                            notificationListener.get().notifySnapshotDeleted(snapshot);
+                            // snapshot.delete is done by the deviceManager
+                        }
+                    }
                 }
                 catch (AccessDeniedException | SQLException exc)
                 {
@@ -151,35 +208,87 @@ public class DeviceHandlerImpl implements DeviceHandler2
                 notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
             }
 
+            // query changed storage pools and send out all notifications
+            Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+System.out.println("\n\n\n\n\n");
+System.out.println("updating free spaces...");
+            if (ctrlPeer != null)
+            {
+                try
+                {
+                    Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
+                        storageLayer.getFreeSpaceOfAccessedStoagePools();
+
+                    Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
+
+                    spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
+                        spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
+                        apiRcException -> errorReporter.reportError(apiRcException.getCause())
+                    ));
+
+System.out.println("storPool count: " + spaceInfoMap.size());
+spaceInfoMap.forEach(
+    (storPool, space) ->
+        System.out.println(storPool.getName() + " " + space.freeCapacity)
+);
+
+                    // TODO: rework API answer
+                    /*
+                     * Instead of sending single change, request and applied / deleted messages per
+                     * resource, the controller and satellite should use one message containing
+                     * multiple resources.
+                     * The final message regarding applied and/or deleted resource can so also contain
+                     * the new free spaces of the affected storage pools
+                     */
+
+
+                    for (Resource rsc : rscListNotifyApplied)
+                    {
+                        ctrlPeer.sendMessage(
+                            interComSerializer
+                                .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
+                                .notifyResourceApplied(rsc, spaceInfoMap)
+                                .build()
+                        );
+                    }
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    throw new ImplementationError(accDeniedExc);
+                }
+            }
+
+
+
             // call clear cache for every layer where the .prepare was called
-            for (Entry<ResourceLayer, List<com.linbit.linstor.Resource>> entry : rscByLayer.entrySet())
+            for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
             {
                 ResourceLayer layer = entry.getKey();
-                 try
-                 {
-                     layer.clearCache();
-                 }
-                 catch (StorageException exc)
-                 {
-                     errorReporter.reportError(exc);
-                     ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
-                         ApiCallRcImpl.entryBuilder(
-                             ApiConsts.FAIL_UNKNOWN_ERROR,
-                             "An error occured while cleaning up layer '" + layer.getName() + "'"
-                         )
-                         .setCause(exc.getCauseText())
-                         .setCorrection(exc.getCorrectionText())
-                         .setDetails(exc.getDetailsText())
-                         .build()
-                     );
-                     for (Resource rsc : entry.getValue())
-                     {
-                         notificationListener.get().notifyResourceDispatchResponse(
-                             rsc.getDefinition().getName(),
-                             apiCallRc
-                         );
-                     }
-                 }
+                try
+                {
+                    layer.clearCache();
+                }
+                catch (StorageException exc)
+                {
+                    errorReporter.reportError(exc);
+                    ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                        ApiCallRcImpl.entryBuilder(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            "An error occured while cleaning up layer '" + layer.getName() + "'"
+                        )
+                        .setCause(exc.getCauseText())
+                        .setCorrection(exc.getCorrectionText())
+                        .setDetails(exc.getDetailsText())
+                        .build()
+                    );
+                    for (Resource rsc : entry.getValue())
+                    {
+                        notificationListener.get().notifyResourceDispatchResponse(
+                            rsc.getDefinition().getName(),
+                            apiCallRc
+                        );
+                    }
+                }
             }
 
             layeredRscHelper.cleanupResources(origResources);

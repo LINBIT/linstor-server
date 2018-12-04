@@ -245,7 +245,7 @@ public class LvmCommands
                 new String[]
                 {
                     "vgs",
-                   "-o", "vg_size",
+                   "-o", "vg_name,vg_size",
                     "--units", "k",
                     "--separator", LvmUtils.DELIMITER,
                     "--noheadings",

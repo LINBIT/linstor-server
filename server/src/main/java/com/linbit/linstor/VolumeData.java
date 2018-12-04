@@ -481,6 +481,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         if (deleted.get())
         {
+System.out.println("\n\n\n\nvlm checkDeleted: " + getKey());
             throw new AccessToDeletedDataException("Access to deleted volume");
         }
     }

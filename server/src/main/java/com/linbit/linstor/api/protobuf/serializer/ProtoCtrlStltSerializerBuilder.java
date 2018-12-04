@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,10 +39,10 @@ import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
+import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData;
 import com.linbit.linstor.proto.javainternal.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
@@ -61,6 +62,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass.MsgInt
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
+import com.linbit.linstor.proto.javainternal.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -594,20 +596,30 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public CtrlStltSerializer.CtrlStltSerializerBuilder updateFreeCapacity(
-        UUID storPoolUuid, String storPoolName, SpaceInfo spaceInfo
+    public CtrlStltSerializer.CtrlStltSerializerBuilder updateFreeCapacities(
+        Map<StorPool, SpaceInfo> spaceInfoMap
     )
     {
         try
         {
-            MsgIntApplyStorPoolSuccess.newBuilder()
-                .setFreeSpace(StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder()
-                    .setStorPoolUuid(storPoolUuid.toString())
-                    .setStorPoolName(storPoolName)
-                    .setFreeCapacity(spaceInfo.freeCapacity)
-                    .setTotalCapacity(spaceInfo.totalCapacity)
-                    .build()
-                )
+            List<StorPoolFreeSpace> freeSpaces = new ArrayList<>();
+            for (Entry<StorPool, SpaceInfo> entry : spaceInfoMap.entrySet())
+            {
+                StorPool storPool = entry.getKey();
+                SpaceInfo spaceInfo = entry.getValue();
+                freeSpaces.add(
+                    StorPoolFreeSpaceOuterClass.StorPoolFreeSpace.newBuilder()
+                        .setStorPoolUuid(storPool.getUuid().toString())
+                        .setStorPoolName(storPool.getName().displayValue)
+                        .setFreeCapacity(spaceInfo.freeCapacity)
+                        .setTotalCapacity(spaceInfo.totalCapacity)
+                        .build()
+                );
+            }
+
+
+            MsgIntUpdateFreeSpace.newBuilder()
+                .addAllFreeSpace(freeSpaces)
                 .build()
                 .writeDelimitedTo(baos);
         }

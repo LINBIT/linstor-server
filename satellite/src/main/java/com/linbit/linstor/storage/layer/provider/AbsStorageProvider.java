@@ -65,9 +65,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
 
     protected final HashMap<String, INFO> infoListCache;
     protected final List<Consumer<Map<String, Long>>> postRunVolumeNotifications = new ArrayList<>();
-    protected final Set<String> changedStoragePools = new HashSet<>();
+    protected final Set<String> changedStoragePoolStrings = new HashSet<>();
     private final String typeDescr;
     private final FileSystemWatch fsWatch;
+
+    private final Set<StorPool> changedStorPools = new HashSet<>();
 
     public AbsStorageProvider(
         ErrorReporter errorReporterRef,
@@ -108,13 +110,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
     {
         infoListCache.clear();
 
-        if (processPostRunVolumeNotifications && !changedStoragePools.isEmpty())
+        if (processPostRunVolumeNotifications && !changedStoragePoolStrings.isEmpty())
         {
             Map<String, Long> vgFreeSizes = getFreeSpacesImpl();
             postRunVolumeNotifications.forEach(consumer -> consumer.accept(vgFreeSizes));
         }
 
-        changedStoragePools.clear();
+        changedStoragePoolStrings.clear();
         postRunVolumeNotifications.clear();
     }
 
@@ -201,6 +203,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                     String storageName = getStorageName(vlm);
                     addPostRunNotification(
                         storageName,
+                        vlm.getStorPool(storDriverAccCtx),
                         freeSpaces -> notificationListenerProvider.get()
                             .notifyVolumeDeleted(vlm, freeSpaces.get(storageName))
                     );
@@ -236,6 +239,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         handleRollbacks(vlmsToCheckForRollback, apiCallRc);
     }
 
+    @Override
     public void setLocalNodeProps(Props localNodePropsRef)
     {
         localNodeProps = localNodePropsRef;
@@ -253,6 +257,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
             throw new ImplementationError(exc);
         }
         return Optional.ofNullable(overrideId);
+    }
+
+    @Override
+    public Collection<StorPool> getAndForgetChangedStorPools()
+    {
+        Set<StorPool> copy = new HashSet<>(changedStorPools);
+        changedStorPools.clear();
+        return copy;
     }
 
     private void createVolumes(List<Volume> vlms, List<SnapshotVolume> snapVlms, ApiCallRcImpl apiCallRc)
@@ -275,6 +287,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
             {
                 createLvImpl(vlm);
             }
+
             String storageName = getStorageName(vlm);
             String lvId = asLvIdentifier(vlm);
 
@@ -293,6 +306,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                 wipeHandler.quickWipe(devicePath);
             }
 
+            changedStorPools.add(vlm.getStorPool(storDriverAccCtx));
+
             addCreatedMsg(vlm, apiCallRc);
         }
     }
@@ -305,6 +320,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
             resizeLvImpl(vlm);
 
             ProviderUtils.updateSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+
+            changedStorPools.add(vlm.getStorPool(storDriverAccCtx));
 
             addResizedMsg(vlm, apiCallRc);
         }
@@ -324,8 +341,24 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                 DmStatCommands.delete(extCmdFactory.create(), vlm.getDevicePath(storDriverAccCtx));
             }
 
+            changedStorPools.add(vlm.getStorPool(storDriverAccCtx));
+
             addDeletedMsg(vlm, apiCallRc);
 
+            String storageName = getStorageName(vlm);
+            addPostRunNotification(
+                storageName,
+                vlm.getStorPool(storDriverAccCtx),
+                freeSpaces ->
+                {
+System.out.println("running post run notifier for deleted vlm: " + vlm );
+System.out.println("  setting freeSpace: " + freeSpaces.get(storageName));
+                    notificationListenerProvider.get().notifyVolumeDeleted(
+                        vlm,
+                        freeSpaces.get(storageName)
+                        );
+                }
+            );
             vlm.delete(storDriverAccCtx);
         }
     }
@@ -337,6 +370,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         {
             errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
             deleteSnapshot(snapVlm);
+
+            changedStorPools.add(snapVlm.getStorPool(storDriverAccCtx));
+
             addSnapDeletedMsg(snapVlm, apiCallRc);
             snapVlm.delete(storDriverAccCtx);
         }
@@ -367,6 +403,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                 errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
                 createSnapshot(vlm, snapVlm);
 
+                changedStorPools.add(snapVlm.getStorPool(storDriverAccCtx));
+
                 addSnapCreatedMsg(snapVlm, apiCallRc);
             }
         }
@@ -383,13 +421,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
             if (rollbackTargetSnapshotName != null)
             {
                 rollbackImpl(vlm, rollbackTargetSnapshotName);
+                changedStorPools.add(vlm.getStorPool(storDriverAccCtx));
             }
         }
     }
 
-    protected void addPostRunNotification(String storageName, Consumer<Map<String, Long>> consumer)
+    protected void addPostRunNotification(
+        String storageName,
+        StorPool storPool,
+        Consumer<Map<String, Long>> consumer
+    )
     {
-        changedStoragePools.add(storageName);
+        changedStoragePoolStrings.add(storageName);
+        changedStorPools.add(storPool);
         postRunVolumeNotifications.add(consumer);
     }
 

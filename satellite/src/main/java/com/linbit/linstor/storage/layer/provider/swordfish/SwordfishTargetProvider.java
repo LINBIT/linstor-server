@@ -13,6 +13,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Singleton
@@ -58,5 +60,11 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
     public void setLocalNodeProps(Props localNodePropsRef)
     {
         localNodeProps = localNodePropsRef;
+    }
+
+    @Override
+    public Collection<StorPool> getAndForgetChangedStorPools()
+    {
+        return Collections.emptySet(); // FIXME
     }
 }

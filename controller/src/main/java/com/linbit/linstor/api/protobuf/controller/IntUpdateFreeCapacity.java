@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
@@ -9,12 +7,15 @@ import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
-import com.linbit.linstor.proto.javainternal.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
+import com.linbit.linstor.proto.javainternal.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_UPDATE_FREE_CAPACITY,
@@ -37,19 +38,18 @@ public class IntUpdateFreeCapacity implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntApplyStorPoolSuccess successMsg = MsgIntApplyStorPoolSuccess.parseDelimitedFrom(msgDataIn);
+        MsgIntUpdateFreeSpace updateMsg = MsgIntUpdateFreeSpace.parseDelimitedFrom(msgDataIn);
 
-        StorPoolFreeSpace freeSpaceProto = successMsg.getFreeSpace();
+        List<StorPoolFreeSpace> freeSpaceProto = updateMsg.getFreeSpaceList();
         apiCallHandler.updateRealFreeSpace(
-            Arrays.asList(
-                new CapacityInfoPojo(
-                    UUID.fromString(freeSpaceProto.getStorPoolUuid()),
-                    freeSpaceProto.getStorPoolName(),
-                    freeSpaceProto.getFreeCapacity(),
-                    freeSpaceProto.getTotalCapacity()
+            freeSpaceProto.stream().map(
+                proto -> new CapacityInfoPojo(
+                    UUID.fromString(proto.getStorPoolUuid()),
+                    proto.getStorPoolName(),
+                    proto.getFreeCapacity(),
+                    proto.getTotalCapacity()
                 )
-            )
+            ).collect(Collectors.toList())
         );
     }
-
 }

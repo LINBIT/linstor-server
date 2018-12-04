@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.ResourceName;
@@ -22,20 +24,20 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Either;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-
-import static java.util.stream.Collectors.toList;
 
 public class StltApiCallHandlerUtils
 {
@@ -49,6 +51,7 @@ public class StltApiCallHandlerUtils
     private final ControllerPeerConnector controllerPeerConnector;
     private final ReadWriteLock rscDfnMapLock;
     private final StltConfigAccessor stltCfgAccessor;
+    private final StorageLayer storageLayer;
 
     @Inject
     public StltApiCallHandlerUtils(
@@ -60,7 +63,8 @@ public class StltApiCallHandlerUtils
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        StltConfigAccessor stltCfgAccessorRef
+        StltConfigAccessor stltCfgAccessorRef,
+        StorageLayer storageLayerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -72,6 +76,7 @@ public class StltApiCallHandlerUtils
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         stltCfgAccessor = stltCfgAccessorRef;
+        storageLayer = storageLayerRef;
     }
 
     public Map<Volume.Key, Either<Long, ApiRcException>> getVlmAllocatedCapacities(
@@ -220,38 +225,9 @@ public class StltApiCallHandlerUtils
     public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
         throws AccessDeniedException, StorageException
     {
-        SpaceInfo spaceInfo;
-        StorageDriver storageDriver = storPool.getDriver(
-            apiCtx,
-            errorReporter,
-            fileSystemWatch,
-            timer,
-            stltCfgAccessor
+        return new SpaceInfo(
+            storageLayer.getCapacity(storPool),
+            storageLayer.getFreeSpace(storPool)
         );
-        if (storageDriver == null)
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_UNKNOWN_ERROR,
-                    "Storage driver for pool '" + storPool.getName() + "' not found"
-                )
-                .build()
-            );
-        }
-        else
-        {
-            Optional<Props> nodeProps = storPool.getNode().getProps(apiCtx)
-                .getNamespace(ApiConsts.NAMESPC_STORAGE_DRIVER);
-            ReadOnlyProps nodeROProps = nodeProps.map(ReadOnlyProps::new).orElseGet(ReadOnlyProps::emptyRoProps);
-            storPool.reconfigureStorageDriver(
-                storageDriver,
-                nodeROProps,
-                stltCfgAccessor.getReadonlyProps(ApiConsts.NAMESPC_STORAGE_DRIVER)
-            );
-            Long freeSpace = storageDriver.getFreeSpace();
-            Long totalSpace = storageDriver.getTotalSpace();
-            spaceInfo = new SpaceInfo(totalSpace, freeSpace);
-        }
-        return spaceInfo;
     }
 }

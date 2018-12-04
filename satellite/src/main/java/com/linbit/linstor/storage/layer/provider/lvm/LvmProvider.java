@@ -95,7 +95,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        return LvmUtils.getVgFreeSize(extCmdFactory.create(), changedStoragePools);
+        return LvmUtils.getVgFreeSize(extCmdFactory.create(), changedStoragePoolStrings);
     }
 
     @Override
@@ -141,7 +141,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         int lastIndexOf = devicePath.lastIndexOf(oldLvmId);
         devicePath = devicePath.substring(0, lastIndexOf) + newLvmId;
 
-
         String volumeGroup = ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup();
         LvmCommands.rename(
             extCmdFactory.create(),
@@ -167,14 +166,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
                     errorReporter.reportError(exc);
                 }
             }
-        );
-        addPostRunNotification(
-            volumeGroup,
-            freeSpaces ->
-                notificationListenerProvider.get().notifyVolumeDeleted(
-                    vlm,
-                    freeSpaces.get(volumeGroup)
-                )
         );
     }
 

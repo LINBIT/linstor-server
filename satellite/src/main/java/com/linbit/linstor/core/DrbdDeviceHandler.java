@@ -52,6 +52,7 @@ import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
+import com.linbit.linstor.storage.layer.provider.StorageLayer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -121,6 +122,7 @@ class DrbdDeviceHandler implements DeviceHandler
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
     private StltConfigAccessor stltCfgAccessor;
     private VolumeDiskStateEvent vlmDiskStateEvent;
+    private final StorageLayer storageLayer;
 
     @Inject
     DrbdDeviceHandler(
@@ -137,7 +139,8 @@ class DrbdDeviceHandler implements DeviceHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         WhitelistProps whitelistPropsRef,
         StltConfigAccessor stltCfgAccessorRef,
-        VolumeDiskStateEvent vlmDiskStateEventRef
+        VolumeDiskStateEvent vlmDiskStateEventRef,
+        StorageLayer storageLayerRef
     )
     {
         errLog = errLogRef;
@@ -154,6 +157,8 @@ class DrbdDeviceHandler implements DeviceHandler
         whitelistProps = whitelistPropsRef;
         stltCfgAccessor = stltCfgAccessorRef;
         vlmDiskStateEvent = vlmDiskStateEventRef;
+        storageLayer = storageLayerRef;
+
         drbdMd = new MetaData();
     }
 
@@ -1025,7 +1030,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 // Notify the controller of successful deletion of the resource
                 deviceManagerProvider.get().notifyVolumeDeleted(
                     vlm,
-                    vlmState.getDriver().getFreeSpace()
+                    storageLayer.getFreeSpace(vlm.getStorPool(wrkCtx))
                 );
             }
         }

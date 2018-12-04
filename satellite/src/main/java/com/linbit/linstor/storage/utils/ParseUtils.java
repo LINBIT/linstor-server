@@ -57,7 +57,7 @@ public class ParseUtils
                 catch (NumberFormatException nfExc)
                 {
                     throw new StorageException(
-                        "Unable to parse " + descr,
+                        "Unable to parse '" + descr + "'",
                         "Numeric value to parse: '" + data[1] + "'",
                         null,
                         null,
@@ -69,9 +69,9 @@ public class ParseUtils
             else
             {
                 throw new StorageException(
-                    "Unable to parse " + descr,
+                    "Unable to parse '" + descr + "'",
                     "Expected " + expectedColums + " columns, but got " + data.length,
-                    "Failed to parse line: " + line,
+                    "Failed to parse line: '" + line + "'",
                     null,
                     "External command: " + String.join(" ", output.executedCommand)
                 );

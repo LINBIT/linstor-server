@@ -90,7 +90,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        return ZfsUtils.getZPoolFreeSize(extCmdFactory.create(), changedStoragePools);
+        return ZfsUtils.getZPoolFreeSize(extCmdFactory.create(), changedStoragePoolStrings);
     }
 
     @Override

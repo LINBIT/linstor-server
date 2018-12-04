@@ -2,18 +2,20 @@ package com.linbit.linstor.storage.layer.provider;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
 import com.linbit.linstor.storage.LvmThinDriverKind;
 import com.linbit.linstor.storage.StorageDriverKind;
@@ -26,6 +28,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.storage.layer.provider.diskless.DisklessProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
@@ -33,6 +36,7 @@ import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishTargetProvid
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsThinProvider;
 import com.linbit.utils.AccessUtils;
+import com.linbit.utils.Either;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -42,9 +46,12 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -58,8 +65,11 @@ public class StorageLayer implements ResourceLayer
     private final ZfsThinProvider zfsThinProvider;
     private final SwordfishTargetProvider sfTargetProvider;
     private final SwordfishInitiatorProvider sfInitProvider;
+    private final DisklessProvider disklessProvider;
     private final Provider<NotificationListener> notificationListener;
     private final List<DeviceProvider> driverList;
+
+    private final Set<StorPool> changedStorPools = new HashSet<>();
 
     @Inject
     public StorageLayer(
@@ -70,7 +80,8 @@ public class StorageLayer implements ResourceLayer
         ZfsProvider zfsProviderRef,
         ZfsThinProvider zfsThinProviderRef,
         SwordfishTargetProvider sfTargetProviderRef,
-        SwordfishInitiatorProvider sfInitProviderRef
+        SwordfishInitiatorProvider sfInitProviderRef,
+        DisklessProvider disklessProviderRef
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;
@@ -82,6 +93,7 @@ public class StorageLayer implements ResourceLayer
         zfsThinProvider = zfsThinProviderRef;
         sfTargetProvider = sfTargetProviderRef;
         sfInitProvider = sfInitProviderRef;
+        disklessProvider = disklessProviderRef;
 
         driverList = Arrays.asList(
             lvmProvider,
@@ -89,19 +101,18 @@ public class StorageLayer implements ResourceLayer
             zfsProvider,
             zfsThinProvider,
             sfTargetProvider,
-            sfInitProvider
+            sfInitProvider,
+            disklessProvider
         );
     }
 
     @Override
     public void setLocalNodeProps(Props localNodeProps)
     {
-        lvmProvider.setLocalNodeProps(localNodeProps);
-        lvmThinProvider.setLocalNodeProps(localNodeProps);
-        zfsProvider.setLocalNodeProps(localNodeProps);
-        zfsThinProvider.setLocalNodeProps(localNodeProps);
-        sfTargetProvider.setLocalNodeProps(localNodeProps);
-        sfInitProvider.setLocalNodeProps(localNodeProps);
+        for (DeviceProvider devProvider : driverList)
+        {
+            devProvider.setLocalNodeProps(localNodeProps);
+        }
     }
 
     @Override
@@ -115,6 +126,7 @@ public class StorageLayer implements ResourceLayer
     {
         for (DeviceProvider deviceProvider : driverList)
         {
+            changedStorPools.addAll(deviceProvider.getAndForgetChangedStorPools());
             deviceProvider.clearCache();
         }
     }
@@ -186,24 +198,28 @@ public class StorageLayer implements ResourceLayer
                 }
             }
         }
-        if (rsc.getStateFlags().isSet(storDriverAccCtx, RscFlags.DELETE))
-        {
-            notificationListener.get().notifyResourceDeleted(rsc);
-            // rsc.delete is done by the deviceManager
-        }
-        else
-        {
-            notificationListener.get().notifyResourceApplied(rsc);
-        }
+    }
 
-        for (Snapshot snapshot : snapshots)
+    public long getFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        return classifier(storPool).getPoolFreeSpace(storPool);
+    }
+
+    public long getCapacity(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        return classifier(storPool).getPoolCapacity(storPool);
+    }
+
+    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getFreeSpaceOfAccessedStoagePools()
+        throws AccessDeniedException
+    {
+        Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
+        for (StorPool storPool : changedStorPools)
         {
-            if (snapshot.getFlags().isSet(storDriverAccCtx, SnapshotFlags.DELETE))
-            {
-                notificationListener.get().notifySnapshotDeleted(snapshot);
-                // snapshot.delete is done by the deviceManager
-            }
+            spaceMap.put(storPool, getStoragePoolSpaceInfoOrError(storPool));
         }
+        changedStorPools.clear();
+        return spaceMap;
     }
 
     private DeviceProvider classifier(Volume vlm)
@@ -263,6 +279,10 @@ public class StorageLayer implements ResourceLayer
         {
             devProvider = sfInitProvider;
         }
+        else if (driverKind instanceof DisklessDriverKind)
+        {
+            devProvider = disklessProvider;
+        }
         else
         {
             throw new ImplementationError("Unknown storagerProvider found: " +
@@ -270,5 +290,34 @@ public class StorageLayer implements ResourceLayer
             );
         }
         return devProvider;
+    }
+
+    private Either<SpaceInfo, ApiRcException> getStoragePoolSpaceInfoOrError(StorPool storPool)
+        throws AccessDeniedException
+    {
+        Either<SpaceInfo, ApiRcException> result;
+        try
+        {
+            result = Either.left(getStoragePoolSpaceInfo(storPool));
+        }
+        catch (StorageException storageExc)
+        {
+            result = Either.right(new ApiRcException(ApiCallRcImpl
+                .entryBuilder(ApiConsts.FAIL_UNKNOWN_ERROR, "Failed to query free space from storage pool")
+                .setCause(storageExc.getMessage())
+                .build(),
+                storageExc
+            ));
+        }
+        return result;
+    }
+
+    public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
+        throws AccessDeniedException, StorageException
+    {
+        return new SpaceInfo(
+            getCapacity(storPool),
+            getFreeSpace(storPool)
+        );
     }
 }

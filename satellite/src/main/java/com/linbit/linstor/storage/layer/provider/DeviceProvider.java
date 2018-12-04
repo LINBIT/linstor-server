@@ -4,10 +4,12 @@ import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 
 public interface DeviceProvider
@@ -43,4 +45,7 @@ public interface DeviceProvider
      */
     void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
 
+    void setLocalNodeProps(Props localNodePropsRef);
+
+    Collection<StorPool> getAndForgetChangedStorPools();
 }

@@ -35,6 +35,7 @@ import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateBundle;
 import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateNotification;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -170,6 +171,8 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
 
     private UpdateMonitor updateMonitor;
 
+    private final StltApiCallHandlerUtils apiCallHandlerUtils;
+
     private final DeviceHandlerImpl devHandler;
     private ResourceStateEvent resourceStateEvent;
 
@@ -187,6 +190,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         ControllerPeerConnector controllerPeerConnectorRef,
         CtrlStltSerializer interComSerializerRef,
         DrbdEventService drbdEventRef,
+        StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         LinStorScope deviceMgrScopeRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
@@ -208,6 +212,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         controllerPeerConnector = controllerPeerConnectorRef;
         interComSerializer = interComSerializerRef;
         drbdEvent = drbdEventRef;
+        apiCallHandlerUtils = apiCallHandlerUtilsRef;
         deviceMgrScope = deviceMgrScopeRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
@@ -1132,8 +1137,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         if (ctrlPeer != null)
         {
             Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
-//                apiCallHandlerUtils.getAllSpaceInfo(false);
-                Collections.emptyMap(); // FIXME
+                apiCallHandlerUtils.getAllSpaceInfo(false);
 
             Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
 

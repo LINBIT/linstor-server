@@ -12,6 +12,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Singleton
@@ -51,5 +53,11 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
     {
         // TODO Auto-generated method stub
         throw new ImplementationError("Not implemented yet");
+    }
+
+    @Override
+    public Collection<StorPool> getAndForgetChangedStorPools()
+    {
+        return Collections.emptySet(); // initiator does not change storPool's free space (target-provider does)
     }
 }

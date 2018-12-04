@@ -171,6 +171,8 @@ public class DrbdLayer implements ResourceLayer
 
             processChild(rsc, snapshots, apiCallRc);
 
+            //TODO: remove this .delete call once not only default-resources are
+            // iterated in the deviceHandler but also (drbd-) typed
             rsc.delete(workerCtx);
         }
         else
