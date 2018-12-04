@@ -49,6 +49,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -64,7 +65,16 @@ public class CommonMessageProcessor implements MessageProcessor
     private final ScopeRunner scopeRunner;
     private final CommonSerializer commonSerializer;
 
+    // Limit the number of messages that can be submitted for processing
+    // concurrently.
+    // In the absence of any backpressure mechanism in the communications
+    // protocol, we resort to blocking when too many messages are received and
+    // letting the TCP buffer fill up.
+    // Many messages from a single peer will still be queued in an unbounded
+    // fashion as part of the message re-ordering.
+    private final Semaphore workerPoolSemaphore;
     private final FluxSink<Runnable> workerPool;
+
     private final Map<String, ApiEntry> apiCallMap;
 
     public static final int MIN_THR_COUNT = 4;
@@ -94,14 +104,8 @@ public class CommonMessageProcessor implements MessageProcessor
         );
         int thrCount = MathUtils.bounds(MIN_THR_COUNT, LinStor.CPU_COUNT, MAX_THR_COUNT);
 
-        MsgProcQueue runQueue = new MsgProcQueue(queueSize, true);
-        UnicastProcessor<Runnable> processor = UnicastProcessor.create(
-            runQueue,
-            // On overflow, block submissions until an active task is complete
-            task -> runQueue.put(task),
-            // On terminate, clear the queue
-            () -> runQueue.clear()
-        );
+        workerPoolSemaphore = new Semaphore(queueSize);
+        UnicastProcessor<Runnable> processor = UnicastProcessor.create(new ArrayBlockingQueue<>(queueSize, true));
         workerPool = processor.sink();
         processor
             .parallel(thrCount)
@@ -169,7 +173,7 @@ public class CommonMessageProcessor implements MessageProcessor
             {
                 case MessageTypes.DATA:
                     long peerSeq = peer.getNextIncomingMessageSeq();
-                    workerPool.next(() -> this.doProcessMessage(msg, connector, peer, peerSeq));
+                    processDataMessage(msg, connector, peer, peerSeq);
                     break;
                 case MessageTypes.PING:
                     peer.sendPong();
@@ -215,6 +219,34 @@ public class CommonMessageProcessor implements MessageProcessor
                 peer,
                 null
             );
+        }
+    }
+
+    private void processDataMessage(Message msg, TcpConnector connector, Peer peer, long peerSeq)
+    {
+        while (true)
+        {
+            try
+            {
+                workerPoolSemaphore.acquire();
+                workerPool.next(() ->
+                    {
+                        try
+                        {
+                            this.doProcessMessage(msg, connector, peer, peerSeq);
+                        }
+                        finally
+                        {
+                            workerPoolSemaphore.release();
+                        }
+                    }
+                );
+                break;
+            }
+            catch (InterruptedException ignored)
+            {
+                // retry acquiring the semaphore
+            }
         }
     }
 
@@ -751,31 +783,6 @@ public class CommonMessageProcessor implements MessageProcessor
         InvalidHeaderException(String message)
         {
             super(message);
-        }
-    }
-
-    private static class MsgProcQueue extends ArrayBlockingQueue<Runnable>
-    {
-        MsgProcQueue(int capacity, boolean fair)
-        {
-            super(capacity, fair);
-        }
-
-        @Override
-        public void put(Runnable task)
-        {
-            // Retry put() if it had blocked and the thread was interrupted while waiting
-            while (true)
-            {
-                try
-                {
-                    super.put(task);
-                    break;
-                }
-                catch (InterruptedException ignored)
-                {
-                }
-            }
         }
     }
 }
