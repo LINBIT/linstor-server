@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -18,17 +19,23 @@ import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.sql.SQLException;
 
+@Singleton
 public class ZfsThinProvider extends ZfsProvider
 {
+    @Inject
     public ZfsThinProvider(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
-        AccessContext storDriverAccCtx,
+        @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        NotificationListener notificationListener
+        Provider<NotificationListener> notificationListenerProvider
     )
     {
         super(
@@ -37,7 +44,7 @@ public class ZfsThinProvider extends ZfsProvider
             storDriverAccCtx,
             stltConfigAccessor,
             wipeHandler,
-            notificationListener,
+            notificationListenerProvider,
             "ZFS-Thin"
         );
     }

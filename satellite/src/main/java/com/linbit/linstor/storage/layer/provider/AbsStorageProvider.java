@@ -34,6 +34,8 @@ import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData.Size;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Pair;
 
+import javax.inject.Provider;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -56,7 +58,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
     protected final ErrorReporter errorReporter;
     protected final ExtCmdFactory extCmdFactory;
     protected final AccessContext storDriverAccCtx;
-    protected final NotificationListener notificationListener;
+    protected final Provider<NotificationListener> notificationListenerProvider;
     protected final WipeHandler wipeHandler;
     protected final StltConfigAccessor stltConfigAccessor;
     protected Props localNodeProps;
@@ -73,7 +75,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         AccessContext storDriverAccCtxRef,
         StltConfigAccessor stltConfigAccessorRef,
         WipeHandler wipeHandlerRef,
-        NotificationListener notificationListenerRef,
+        Provider<NotificationListener> notificationListenerProviderRef,
         String typeDescrRef
     )
     {
@@ -81,7 +83,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         extCmdFactory = extCmdFactoryRef;
         storDriverAccCtx = storDriverAccCtxRef;
         wipeHandler = wipeHandlerRef;
-        notificationListener = notificationListenerRef;
+        notificationListenerProvider = notificationListenerProviderRef;
         stltConfigAccessor = stltConfigAccessorRef;
         typeDescr = typeDescrRef;
 
@@ -199,7 +201,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                     String storageName = getStorageName(vlm);
                     addPostRunNotification(
                         storageName,
-                        freeSpaces -> notificationListener.notifyVolumeDeleted(vlm, freeSpaces.get(storageName))
+                        freeSpaces -> notificationListenerProvider.get()
+                            .notifyVolumeDeleted(vlm, freeSpaces.get(storageName))
                     );
                 }
             }

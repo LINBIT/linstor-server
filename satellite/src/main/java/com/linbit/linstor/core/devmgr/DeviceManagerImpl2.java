@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
-import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
@@ -25,11 +24,9 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.StltUpdateRequester;
 import com.linbit.linstor.core.StltUpdateTracker;
@@ -38,11 +35,7 @@ import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateBundle;
 import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateNotification;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
-import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
-import com.linbit.linstor.core.devmgr.helper.LayeredSnapshotHelper;
 import com.linbit.linstor.drbdstate.DrbdEventService;
-import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -53,7 +46,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.adapter.drbd.utils.DrbdAdm;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.AtomicSyncPoint;
@@ -176,8 +168,6 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
 
     private long cycleNr = 0;
 
-    private final StltApiCallHandlerUtils apiCallHandlerUtils;
-
     private UpdateMonitor updateMonitor;
 
     private final DeviceHandlerImpl devHandler;
@@ -197,20 +187,13 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         ControllerPeerConnector controllerPeerConnectorRef,
         CtrlStltSerializer interComSerializerRef,
         DrbdEventService drbdEventRef,
-        StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         LinStorScope deviceMgrScopeRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
         Scheduler scheduler,
         UpdateMonitor updateMonitorRef,
         ResourceStateEvent resourceStateEventRef,
-        ExtCmdFactory extCmdFactory,
-        StltConfigAccessor stltConfigAccessor,
-        DrbdAdm drbdUtils,
-        DrbdStateStore drbdState,
-        WhitelistProps whitelistProps,
-        LayeredResourcesHelper layeredResourcesHelper,
-        LayeredSnapshotHelper layeredSnapshotHelper
+        DeviceHandlerImpl deviceHandlerRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -225,7 +208,6 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         controllerPeerConnector = controllerPeerConnectorRef;
         interComSerializer = interComSerializerRef;
         drbdEvent = drbdEventRef;
-        apiCallHandlerUtils = apiCallHandlerUtilsRef;
         deviceMgrScope = deviceMgrScopeRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
@@ -240,21 +222,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         stateAvailable = drbdEvent.isDrbdStateAvailable();
         abortDevHndFlag = false;
 
-        devHandler = new DeviceHandlerImpl(
-            wrkCtxRef,
-            errorReporterRef,
-            this,
-            extCmdFactory,
-            stltConfigAccessor,
-            transMgrProviderRef,
-            drbdUtils,
-            drbdState,
-            whitelistProps,
-            layeredResourcesHelper,
-            layeredSnapshotHelper,
-            interComSerializerRef,
-            controllerPeerConnectorRef
-        );
+        devHandler = deviceHandlerRef;
     }
 
     /**

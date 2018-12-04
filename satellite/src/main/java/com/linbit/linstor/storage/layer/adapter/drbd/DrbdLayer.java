@@ -21,7 +21,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -56,6 +56,10 @@ import com.linbit.utils.AccessUtils;
 
 import static com.linbit.linstor.storage.utils.VolumeUtils.getBackingVolume;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -70,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Singleton
 public class DrbdLayer implements ResourceLayer
 {
     private static final String DRBD_CONFIG_SUFFIX = ".res";
@@ -78,7 +83,7 @@ public class DrbdLayer implements ResourceLayer
     private static final long HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT = 2000;
 
     private final AccessContext workerCtx;
-    private final NotificationListener notificationListener;
+    private final Provider<NotificationListener> notificationListenerProvider;
     private final DrbdAdm drbdUtils;
     private final DrbdStateStore drbdState;
     private final ErrorReporter errorReporter;
@@ -93,29 +98,30 @@ public class DrbdLayer implements ResourceLayer
     // Number of activity log stripes; this should be replaced with a property of the resource definition,
     // a property of the volume definition, or or otherwise a system-wide default
     private static final long FIXME_AL_STRIPE_SIZE = 32;
-    private DeviceHandler2 resourceProcessor;
+    private Provider<DeviceHandler2> resourceProcessorProvider;
 
+    @Inject
     public DrbdLayer(
-        @SystemContext AccessContext workerCtxRef,
-        NotificationListener notificationListenerRef,
+        @DeviceManagerContext AccessContext workerCtxRef,
+        Provider<NotificationListener> notificationListenerProviderRef,
         DrbdAdm drbdUtilsRef,
         DrbdStateStore drbdStateRef,
         ErrorReporter errorReporterRef,
         WhitelistProps whiltelistPropsRef,
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        DeviceHandler2 resourceProcessorRef
+        Provider<DeviceHandler2> resourceProcessorRef
     )
     {
         workerCtx = workerCtxRef;
-        notificationListener = notificationListenerRef;
+        notificationListenerProvider = notificationListenerProviderRef;
         drbdUtils = drbdUtilsRef;
         drbdState = drbdStateRef;
         errorReporter = errorReporterRef;
         whitelistProps = whiltelistPropsRef;
         interComSerializer = interComSerializerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
-        resourceProcessor = resourceProcessorRef;
+        resourceProcessorProvider = resourceProcessorRef;
     }
 
     @Override
@@ -199,7 +205,7 @@ public class DrbdLayer implements ResourceLayer
     {
         if (!rsc.isDiskless(workerCtx))
         {
-            resourceProcessor.process(ResourceUtils.getSingleChild(rsc, workerCtx), snapshots, apiCallRc);
+            resourceProcessorProvider.get().process(ResourceUtils.getSingleChild(rsc, workerCtx), snapshots, apiCallRc);
         }
     }
 
@@ -224,7 +230,7 @@ public class DrbdLayer implements ResourceLayer
             Path resFile = asResourceFile(rscName, false);
             errorReporter.logTrace("Deleting res file: %s ", resFile);
             Files.deleteIfExists(resFile);
-            notificationListener.notifyResourceDeleted(drbdRsc);
+            notificationListenerProvider.get().notifyResourceDeleted(drbdRsc);
 
             // TODO: delete all drbd-volumes once the API is split into
             // "notifyVolumeDeleted(Volume)" and "notifyStorageVolumeDeleted(Volume, long)"

@@ -6,14 +6,19 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.util.function.Consumer;
 
+@Singleton
 public class WipeHandler
 {
     private final ExtCmdFactory extCmdFactory;
     private final ErrorReporter errorReporter;
 
+    @Inject
     public WipeHandler(
         ExtCmdFactory extCmdFactoryRef,
         ErrorReporter errorReporterRef

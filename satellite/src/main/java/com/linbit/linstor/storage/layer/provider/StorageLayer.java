@@ -1,7 +1,6 @@
 package com.linbit.linstor.storage.layer.provider;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot;
@@ -10,9 +9,8 @@ import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -36,6 +34,10 @@ import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsThinProvider;
 import com.linbit.utils.AccessUtils;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,90 +47,61 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+@Singleton
 public class StorageLayer implements ResourceLayer
 {
     private final AccessContext storDriverAccCtx;
 
-    private final LvmProvider lvmDriver;
-    private final LvmThinProvider lvmThinDriver;
-    private final ZfsProvider zfsDriver;
-    private final ZfsThinProvider zfsThinDriver;
-    private final SwordfishTargetProvider sfTargetDriver;
-    private final SwordfishInitiatorProvider sfInitDriver;
-    private final NotificationListener notificationListener;
+    private final LvmProvider lvmProvider;
+    private final LvmThinProvider lvmThinProvider;
+    private final ZfsProvider zfsProvider;
+    private final ZfsThinProvider zfsThinProvider;
+    private final SwordfishTargetProvider sfTargetProvider;
+    private final SwordfishInitiatorProvider sfInitProvider;
+    private final Provider<NotificationListener> notificationListener;
     private final List<DeviceProvider> driverList;
 
+    @Inject
     public StorageLayer(
-        ExtCmdFactory extCmdFactoryRef,
-        AccessContext storDriverAccCtxRef,
-        StltConfigAccessor stltConfigAccessorRef,
-        ErrorReporter errorReporterRef,
-        NotificationListener notificationListenerRef
+        @DeviceManagerContext AccessContext storDriverAccCtxRef,
+        Provider<NotificationListener> notificationListenerRef,
+        LvmProvider lvmProviderRef,
+        LvmThinProvider lvmThinProviderRef,
+        ZfsProvider zfsProviderRef,
+        ZfsThinProvider zfsThinProviderRef,
+        SwordfishTargetProvider sfTargetProviderRef,
+        SwordfishInitiatorProvider sfInitProviderRef
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;
         notificationListener = notificationListenerRef;
 
-        WipeHandler wipeHandler = new WipeHandler(extCmdFactoryRef, errorReporterRef);
-
-        lvmDriver = new LvmProvider(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            wipeHandler,
-            notificationListenerRef
-        );
-        lvmThinDriver = new LvmThinProvider(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            wipeHandler,
-            notificationListenerRef
-        );
-        zfsDriver = new ZfsProvider(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            wipeHandler,
-            notificationListenerRef
-        );
-        zfsThinDriver = new ZfsThinProvider(
-            errorReporterRef,
-            extCmdFactoryRef,
-            storDriverAccCtxRef,
-            stltConfigAccessorRef,
-            wipeHandler,
-            notificationListenerRef
-        );
-        sfTargetDriver = new SwordfishTargetProvider(
-            notificationListenerRef
-        );
-        sfInitDriver = new SwordfishInitiatorProvider(
-            notificationListenerRef
-        );
+        lvmProvider = lvmProviderRef;
+        lvmThinProvider = lvmThinProviderRef;
+        zfsProvider = zfsProviderRef;
+        zfsThinProvider = zfsThinProviderRef;
+        sfTargetProvider = sfTargetProviderRef;
+        sfInitProvider = sfInitProviderRef;
 
         driverList = Arrays.asList(
-            lvmDriver,
-            lvmThinDriver,
-            zfsDriver,
-            zfsThinDriver,
-            sfTargetDriver,
-            sfInitDriver
+            lvmProvider,
+            lvmThinProvider,
+            zfsProvider,
+            zfsThinProvider,
+            sfTargetProvider,
+            sfInitProvider
         );
     }
 
     @Override
     public void setLocalNodeProps(Props localNodeProps)
     {
-        lvmDriver.setLocalNodeProps(localNodeProps);
-        lvmThinDriver.setLocalNodeProps(localNodeProps);
-        zfsDriver.setLocalNodeProps(localNodeProps);
-        zfsThinDriver.setLocalNodeProps(localNodeProps);
-        sfTargetDriver.setLocalNodeProps(localNodeProps);
-        sfInitDriver.setLocalNodeProps(localNodeProps);
+        lvmProvider.setLocalNodeProps(localNodeProps);
+        lvmThinProvider.setLocalNodeProps(localNodeProps);
+        zfsProvider.setLocalNodeProps(localNodeProps);
+        zfsThinProvider.setLocalNodeProps(localNodeProps);
+        sfTargetProvider.setLocalNodeProps(localNodeProps);
+        sfInitProvider.setLocalNodeProps(localNodeProps);
     }
 
     @Override
@@ -215,19 +188,19 @@ public class StorageLayer implements ResourceLayer
         }
         if (rsc.getStateFlags().isSet(storDriverAccCtx, RscFlags.DELETE))
         {
-            notificationListener.notifyResourceDeleted(rsc);
+            notificationListener.get().notifyResourceDeleted(rsc);
             // rsc.delete is done by the deviceManager
         }
         else
         {
-            notificationListener.notifyResourceApplied(rsc);
+            notificationListener.get().notifyResourceApplied(rsc);
         }
 
         for (Snapshot snapshot : snapshots)
         {
             if (snapshot.getFlags().isSet(storDriverAccCtx, SnapshotFlags.DELETE))
             {
-                notificationListener.notifySnapshotDeleted(snapshot);
+                notificationListener.get().notifySnapshotDeleted(snapshot);
                 // snapshot.delete is done by the deviceManager
             }
         }
@@ -268,27 +241,27 @@ public class StorageLayer implements ResourceLayer
         DeviceProvider devProvider;
         if (driverKind instanceof LvmDriverKind)
         {
-            devProvider = lvmDriver;
+            devProvider = lvmProvider;
         }
         else if (driverKind instanceof LvmThinDriverKind)
         {
-            devProvider = lvmThinDriver;
+            devProvider = lvmThinProvider;
         }
         else if (driverKind instanceof ZfsDriverKind)
         {
-            devProvider = zfsDriver;
+            devProvider = zfsProvider;
         }
         else if (driverKind instanceof ZfsThinDriverKind)
         {
-            devProvider = zfsThinDriver;
+            devProvider = zfsThinProvider;
         }
         else if (driverKind instanceof SwordfishTargetDriverKind)
         {
-            devProvider = sfTargetDriver;
+            devProvider = sfTargetProvider;
         }
         else if (driverKind instanceof SwordfishInitiatorDriverKind)
         {
-            devProvider = sfInitDriver;
+            devProvider = sfInitProvider;
         }
         else
         {

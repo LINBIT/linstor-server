@@ -6,20 +6,25 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.devmgr.DeviceHandler2;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.utils.ResourceUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.utils.RemoveAfterDevMgrRework;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -30,23 +35,25 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RemoveAfterDevMgrRework
+@Singleton
 public class DefaultLayer implements ResourceLayer
 {
     private final AccessContext sysCtx;
-    private final DeviceManager deviceManager;
-    private final DeviceHandler2 resourceProcessor;
+    private final Provider<NotificationListener> notificationListener;
+    private final Provider<DeviceHandler2> resourceProcessor;
 
     private Props localNodeProps;
 
+    @Inject
     public DefaultLayer(
-        AccessContext sysCtxRef,
-        DeviceManager deviceManagerRef,
-        DeviceHandler2 resourceProcessorRef
+        @DeviceManagerContext AccessContext sysCtxRef,
+        Provider<NotificationListener> notificationListenerProviderRef,
+        Provider<DeviceHandler2> resourceProcessorProviderRef
     )
     {
         sysCtx = sysCtxRef;
-        deviceManager = deviceManagerRef;
-        resourceProcessor = resourceProcessorRef;
+        notificationListener = notificationListenerProviderRef;
+        resourceProcessor = resourceProcessorProviderRef;
     }
 
     @Override
@@ -72,7 +79,7 @@ public class DefaultLayer implements ResourceLayer
     public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
-        resourceProcessor.process(ResourceUtils.getSingleChild(rsc, sysCtx), snapshots, apiCallRc);
+        resourceProcessor.get().process(ResourceUtils.getSingleChild(rsc, sysCtx), snapshots, apiCallRc);
 
         // delete the resource / volume if all went well (that means, no exception from the previous .process call)
 
@@ -96,7 +103,7 @@ public class DefaultLayer implements ResourceLayer
                 )
             );
 
-            deviceManager.notifyResourceDeleted(rsc);
+            notificationListener.get().notifyResourceDeleted(rsc);
         }
         else
         {
@@ -106,7 +113,7 @@ public class DefaultLayer implements ResourceLayer
                     "Resource '" + rsc.getDefinition().getName() + "' [DEFAULT] applied"
                 )
             );
-            deviceManager.notifyResourceApplied(rsc);
+            notificationListener.get().notifyResourceApplied(rsc);
         }
 
     }
@@ -135,7 +142,7 @@ public class DefaultLayer implements ResourceLayer
                     }
                     else
                     {
-                        deviceManager.notifyResourceDeleted(rsc);
+                        notificationListener.get().notifyResourceDeleted(rsc);
                     }
                 }
                 else
@@ -177,5 +184,4 @@ public class DefaultLayer implements ResourceLayer
     {
         localNodeProps = localNodePropsRef;
     }
-
 }

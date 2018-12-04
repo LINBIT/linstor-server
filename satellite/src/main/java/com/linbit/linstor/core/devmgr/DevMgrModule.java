@@ -11,6 +11,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
+import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 
 import javax.inject.Singleton;
 
@@ -37,6 +38,8 @@ public class DevMgrModule extends AbstractModule
         //         DeviceManagerImpl.DeviceHandlerInvocation.class)
         //     .build(DeviceManagerImpl.DeviceHandlerInvocationFactory.class));
         bind(DeviceManager.class).to(DeviceManagerImpl2.class);
+        bind(NotificationListener.class).to(DeviceManagerImpl2.class);
+        bind(DeviceHandler2.class).to(DeviceHandlerImpl.class);
     }
 
     @Provides

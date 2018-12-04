@@ -1,35 +1,29 @@
 package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.core.ControllerPeerConnector;
-import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
 import com.linbit.linstor.core.devmgr.helper.LayeredSnapshotHelper;
-import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LayerFactory;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.ResourceLayer;
-import com.linbit.linstor.storage.layer.adapter.drbd.utils.DrbdAdm;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
-import com.linbit.linstor.storage.layer.provider.StorageLayer;
-import com.linbit.linstor.storage2.layer.kinds.StorageLayerKind;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
+import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,56 +35,35 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+@Singleton
 public class DeviceHandlerImpl implements DeviceHandler2
 {
     private final AccessContext wrkCtx;
     private final ErrorReporter errorReporter;
-    private final DeviceManager deviceManager;
+    private final Provider<NotificationListener> notificationListener;
 
     private final LayeredResourcesHelper layeredRscHelper;
     private final LayeredSnapshotHelper layeredSnapshotHelper;
     private final LayerFactory layerFactory;
-    private final StorageLayer storageLayer;
     private final AtomicBoolean fullSyncApplied;
 
+    @Inject
     public DeviceHandlerImpl(
-        AccessContext wrkCtxRef,
+        @DeviceManagerContext AccessContext wrkCtxRef,
         ErrorReporter errorReporterRef,
-        DeviceManager deviceManagerRef,
-        ExtCmdFactory extCmdFactoryRef,
-        StltConfigAccessor stltCfgAccessorRef,
-        Provider<TransactionMgr> transMgrProviderRef,
-        DrbdAdm drbdUtils,
-        DrbdStateStore drbdState,
-        WhitelistProps whitelistProps,
+        Provider<NotificationListener> notificationListenerRef,
         LayeredResourcesHelper layeredRscHelperRef,
         LayeredSnapshotHelper layeredSnapshotHelperRef,
-        CtrlStltSerializer interComSerializerRef,
-        ControllerPeerConnector controllerPeerConnectorRef
+        LayerFactory layerFactoryRef
     )
     {
         wrkCtx = wrkCtxRef;
         errorReporter = errorReporterRef;
-        deviceManager = deviceManagerRef;
+        notificationListener = notificationListenerRef;
 
         layeredRscHelper = layeredRscHelperRef;
         layeredSnapshotHelper = layeredSnapshotHelperRef;
-
-        layerFactory = new LayerFactory(
-            wrkCtxRef,
-            deviceManagerRef,
-            drbdUtils,
-            drbdState,
-            errorReporterRef,
-            whitelistProps,
-            extCmdFactoryRef,
-            stltCfgAccessorRef,
-            interComSerializerRef,
-            controllerPeerConnectorRef,
-            this
-        );
-
-        storageLayer = (StorageLayer) layerFactory.getDeviceLayer(StorageLayerKind.class);
+        layerFactory = layerFactoryRef;
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -175,7 +148,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
                         .build()
                     );
                 }
-                deviceManager.notifyResourceDispatchResponse(rscName, apiCallRc);
+                notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
             }
 
             // call clear cache for every layer where the .prepare was called
@@ -201,7 +174,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
                      );
                      for (Resource rsc : entry.getValue())
                      {
-                         deviceManager.notifyResourceDispatchResponse(
+                         notificationListener.get().notifyResourceDispatchResponse(
                              rsc.getDefinition().getName(),
                              apiCallRc
                          );
@@ -258,7 +231,7 @@ public class DeviceHandlerImpl implements DeviceHandler2
             );
             for (Resource failedResource : resources)
             {
-                deviceManager.notifyResourceDispatchResponse(
+                notificationListener.get().notifyResourceDispatchResponse(
                     failedResource.getDefinition().getName(),
                     apiCallRc
                 );

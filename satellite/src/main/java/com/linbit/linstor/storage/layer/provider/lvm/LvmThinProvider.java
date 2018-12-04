@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -19,24 +20,30 @@ import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.storage2.layer.data.LvmLayerData;
 import com.linbit.linstor.storage2.layer.data.LvmThinLayerData;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 
+@Singleton
 public class LvmThinProvider extends LvmProvider
 {
     private static final String ID_SNAP_DELIMITER = "_";
     public static final String FORMAT_SNAP_VLM_TO_LVM_ID = FORMAT_RSC_TO_LVM_ID + "_%s";
 
-
+    @Inject
     public LvmThinProvider(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
-        AccessContext storDriverAccCtx,
+        @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        NotificationListener notificationListener
+        Provider<NotificationListener> notificationListenerProvider
     )
     {
         super(
@@ -45,7 +52,7 @@ public class LvmThinProvider extends LvmProvider
             storDriverAccCtx,
             stltConfigAccessor,
             wipeHandler,
-            notificationListener,
+            notificationListenerProvider,
             "LVM-Thin"
         );
     }

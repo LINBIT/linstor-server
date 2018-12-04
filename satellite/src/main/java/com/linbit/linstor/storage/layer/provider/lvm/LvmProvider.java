@@ -8,6 +8,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -28,6 +29,10 @@ import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.storage2.layer.data.LvmLayerData;
 import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData.Size;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+@Singleton
 public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
 {
     private static final int TOLERANCE_FACTOR = 3;
@@ -50,7 +56,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        NotificationListener notificationListener,
+        Provider<NotificationListener> notificationListenerProvider,
         String subTypeDescr
     )
     {
@@ -60,18 +66,19 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             storDriverAccCtx,
             stltConfigAccessor,
             wipeHandler,
-            notificationListener,
+            notificationListenerProvider,
             subTypeDescr
         );
     }
 
+    @Inject
     public LvmProvider(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
-        AccessContext storDriverAccCtx,
+        @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        NotificationListener notificationListener
+        Provider<NotificationListener> notificationListenerProvider
     )
     {
         super(
@@ -80,7 +87,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             storDriverAccCtx,
             stltConfigAccessor,
             wipeHandler,
-            notificationListener,
+            notificationListenerProvider,
             "LVM"
         );
     }
@@ -164,7 +171,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         addPostRunNotification(
             volumeGroup,
             freeSpaces ->
-                notificationListener.notifyVolumeDeleted(
+                notificationListenerProvider.get().notifyVolumeDeleted(
                     vlm,
                     freeSpaces.get(volumeGroup)
                 )

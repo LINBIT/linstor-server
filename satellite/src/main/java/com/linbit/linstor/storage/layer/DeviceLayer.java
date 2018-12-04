@@ -43,7 +43,7 @@ public interface DeviceLayer
 
     void setLocalNodeProps(Props localNodeProps);
 
-    interface NotificationListener
+    public interface NotificationListener
     {
         void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response);
 

@@ -8,6 +8,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -26,12 +27,17 @@ import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
 import com.linbit.linstor.storage2.layer.data.ZfsLayerData;
 import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData.Size;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+@Singleton
 public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
 {
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
@@ -45,7 +51,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
         AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        NotificationListener notificationListener,
+        Provider<NotificationListener> notificationListenerProvider,
         String subTypeDescr
     )
     {
@@ -55,18 +61,19 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             storDriverAccCtx,
             stltConfigAccessor,
             wipeHandler,
-            notificationListener,
+            notificationListenerProvider,
             subTypeDescr
         );
     }
 
+    @Inject
     public ZfsProvider(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
-        AccessContext storDriverAccCtx,
+        @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        NotificationListener notificationListener
+        Provider<NotificationListener> notificationListenerProvider
     )
     {
         super(
@@ -75,7 +82,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             storDriverAccCtx,
             stltConfigAccessor,
             wipeHandler,
-            notificationListener,
+            notificationListenerProvider,
             "ZFS"
         );
     }

@@ -8,13 +8,22 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.util.List;
 
+@Singleton
 public class SwordfishTargetProvider extends AbsSwordfishProvider
 {
-    public SwordfishTargetProvider(NotificationListener notificationListenerRef)
+    @Inject
+    public SwordfishTargetProvider(
+        Provider<NotificationListener> notificationListenerProvider
+    )
     {
-        super(notificationListenerRef, "SFI", "created", "deleted");
+        super(notificationListenerProvider, "SFI", "created", "deleted");
     }
 
     @Override

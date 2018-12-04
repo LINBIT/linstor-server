@@ -14,22 +14,24 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 
+import javax.inject.Provider;
+
 public abstract class AbsSwordfishProvider implements DeviceProvider
 {
-    protected final NotificationListener notificationListener;
+    protected final Provider<NotificationListener> notificationListenerProvider;
     protected final String driverName;
     protected final String createdMsg;
     protected final String deletedMsg;
     protected Props localNodeProps;
 
     public AbsSwordfishProvider(
-        NotificationListener notificationListenerRef,
+        Provider<NotificationListener> notificationListenerProviderRef,
         String driverNameRef,
         String createdMsgRef,
         String deletedMsgRef
     )
     {
-        notificationListener = notificationListenerRef;
+        notificationListenerProvider = notificationListenerProviderRef;
         driverName = driverNameRef;
         createdMsg = createdMsgRef;
         deletedMsg = deletedMsgRef;
