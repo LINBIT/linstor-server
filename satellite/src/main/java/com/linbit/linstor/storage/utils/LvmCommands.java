@@ -312,7 +312,7 @@ public class LvmCommands
                     {
                         "vgs",
                         "-o", "lv_name,lv_size,data_percent",
-                        "--units", "k",
+                        "--units", "b", // intentionally not "k" as usual
                         "--separator", LvmUtils.DELIMITER,
                         "--noheadings",
                         "--nosuffix"

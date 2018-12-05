@@ -248,7 +248,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool) throws StorageException
+    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
     {
         String vg = getVolumeGroup(storPool);
         if (vg == null)
@@ -262,7 +262,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     }
 
     @Override
-    public long getPoolFreeSpace(StorPool storPool) throws StorageException
+    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
     {
         String vg = getVolumeGroup(storPool);
         if (vg == null)
