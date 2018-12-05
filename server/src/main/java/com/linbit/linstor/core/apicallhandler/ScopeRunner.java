@@ -67,17 +67,18 @@ public class ScopeRunner
     )
     {
         return Mono.subscriberContext()
-            .flatMapMany(subscriberContext ->
-                Mono.fromCallable(() -> doInScope(subscriberContext, callable, lockGuard, transactional))
-                    .flatMapMany(Function.identity())
+            .flatMapMany(subscriberContext -> Mono
+                .fromCallable(() -> doInScope(subscriberContext, scopeDescription, lockGuard, callable, transactional))
+                .flatMapMany(Function.identity())
             )
             .checkpoint(scopeDescription);
     }
 
     private <T> Flux<T> doInScope(
         Context subscriberContext,
-        Callable<Flux<T>> callable,
+        String scopeDescription,
         LockGuard lockGuard,
+        Callable<Flux<T>> callable,
         boolean transactional
     )
         throws Exception
@@ -89,7 +90,8 @@ public class ScopeRunner
         Flux<T> ret;
 
         String apiCallDescription = apiCallId != 0L ? "API call " + apiCallId : "oneway call";
-        errorLog.logTrace("Peer %s, %s '%s' scope start", peer, apiCallDescription, apiCallName);
+        errorLog.logTrace(
+            "Peer %s, %s '%s' scope '%s' start", peer, apiCallDescription, apiCallName, scopeDescription);
 
         TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
 
@@ -133,7 +135,8 @@ public class ScopeRunner
                 }
                 transMgr.returnConnection();
             }
-            errorLog.logTrace("Peer %s, %s '%s' scope end", peer, apiCallDescription, apiCallName);
+            errorLog.logTrace(
+                "Peer %s, %s '%s' scope '%s' end", peer, apiCallDescription, apiCallName, scopeDescription);
         }
 
         return ret;
