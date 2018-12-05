@@ -257,7 +257,7 @@ public class CommonMessageProcessor implements MessageProcessor
     {
         peer.processInOrder(peerSeq, Flux.defer(() ->
             peer.isConnected(false) ?
-                this.doProcessInOrderMessage(msg, connector, peer) :
+                this.doProcessInOrderMessage(msg, connector, peer, peerSeq) :
                 Flux.empty()
         ));
     }
@@ -267,12 +267,12 @@ public class CommonMessageProcessor implements MessageProcessor
      * The messages from each peer are guaranteed to be delivered in the same order as in the incoming stream.
      * In particular, no two messages from a given peer will be processed at the same time.
      */
-    private Flux<?> doProcessInOrderMessage(Message msg, TcpConnector connector, Peer peer)
+    private Flux<?> doProcessInOrderMessage(Message msg, TcpConnector connector, Peer peer, long peerSeq)
     {
         Flux<?> flux = Flux.empty();
         try
         {
-            flux = handleDataMessage(msg, connector, peer)
+            flux = handleDataMessage(msg, connector, peer, peerSeq)
                 .doOnError(exc -> errorLog.reportError(
                     Level.ERROR,
                     exc,
@@ -298,7 +298,8 @@ public class CommonMessageProcessor implements MessageProcessor
     private Flux<?> handleDataMessage(
         final Message msg,
         final TcpConnector connector,
-        final Peer peer
+        final Peer peer,
+        long peerSeq
     )
         throws IllegalMessageStateException, IOException
     {
@@ -317,13 +318,13 @@ public class CommonMessageProcessor implements MessageProcessor
                 case ONEWAY:
                     // fall-through
                 case API_CALL:
-                    flux = callApi(connector, peer, header, msgDataIn, msgType == MsgType.API_CALL);
+                    flux = callApi(connector, peer, header, msgDataIn, msgType == MsgType.API_CALL, peerSeq);
                     break;
                 case ANSWER:
-                    handleAnswer(peer, header, msgDataIn);
+                    handleAnswer(peer, header, msgDataIn, peerSeq);
                     break;
                 case COMPLETE:
-                    peer.apiCallComplete(getApiCallId(header));
+                    handleComplete(peer, header, peerSeq);
                     break;
                 default:
                     errorLog.logError(
@@ -354,10 +355,14 @@ public class CommonMessageProcessor implements MessageProcessor
     private void handleAnswer(
         Peer peer,
         MsgHeaderOuterClass.MsgHeader header,
-        ByteArrayInputStream msgDataIn
+        ByteArrayInputStream msgDataIn,
+        long peerSeq
     )
         throws IOException
     {
+        long apiCallId = getApiCallId(header);
+        errorLog.logTrace("Peer %s, API call %d answer received (seq %d)", peer, apiCallId, peerSeq);
+
         ApiRcException error = null;
         if (header.getMsgContent().equals(ApiConsts.API_REPLY))
         {
@@ -381,13 +386,21 @@ public class CommonMessageProcessor implements MessageProcessor
         {
             if (error != null)
             {
-                peer.apiCallError(getApiCallId(header), error);
+                peer.apiCallError(apiCallId, error);
             }
             else
             {
-                peer.apiCallAnswer(getApiCallId(header), msgDataIn);
+                peer.apiCallAnswer(apiCallId, msgDataIn);
             }
         }
+    }
+
+    private void handleComplete(Peer peer, MsgHeaderOuterClass.MsgHeader header, long peerSeq)
+    {
+        long apiCallId = getApiCallId(header);
+        errorLog.logTrace("Peer %s, API call %d complete received (seq %d)", peer, apiCallId, peerSeq);
+
+        peer.apiCallComplete(apiCallId);
     }
 
     private Flux<?> callApi(
@@ -395,13 +408,15 @@ public class CommonMessageProcessor implements MessageProcessor
         Peer peer,
         MsgHeaderOuterClass.MsgHeader header,
         ByteArrayInputStream msgDataIn,
-        boolean respond
+        boolean respond,
+        long peerSeq
     )
     {
         Flux<byte[]> messageFlux;
         String apiCallName = header.getMsgContent();
 
-        errorLog.logDebug("Start handling " + (respond ? "API call" : "oneway call") + " " + apiCallName);
+        String apiCallDescription = respond ? "API call " + getApiCallId(header) : "oneway call";
+        errorLog.logDebug("Peer %s, %s '%s' start (seq %d)", peer, apiCallDescription, apiCallName, peerSeq);
 
         ApiEntry apiMapEntry = apiCallMap.get(apiCallName);
 
@@ -415,7 +430,7 @@ public class CommonMessageProcessor implements MessageProcessor
             if (!(apiMapEntry.reqAuth && Authentication.isRequired()) ||
                 peerAccCtx.subjectId != Identity.PUBLIC_ID)
             {
-                Long apiCallId = header.getApiCallId();
+                Long apiCallId = respond ? getApiCallId(header) : 0L;
 
                 messageFlux = scopeRunner
                     .fluxInTransactionlessScope(
@@ -490,7 +505,7 @@ public class CommonMessageProcessor implements MessageProcessor
             }
         }
 
-        return respond ?
+        Flux<byte[]> flux = respond ?
             Flux
                 .merge(
                     messageFlux,
@@ -502,12 +517,13 @@ public class CommonMessageProcessor implements MessageProcessor
                 )
                 .onErrorResume(exc -> errorFallback(exc, peer, header))
                 .concatWith(Flux.just(commonSerializer.completionBuilder(getApiCallId(header)).build()))
-                .doOnNext(peer::sendMessage)
-                .doOnTerminate(() -> errorLog.logDebug("Finish handling API call " + apiCallName)) :
+                .doOnNext(peer::sendMessage) :
             messageFlux
                 .doOnNext(ignored ->
-                    errorLog.logDebug("Dropping message generated for oneway call '" + apiCallName + "'"))
-                .doOnTerminate(() -> errorLog.logDebug("Finish handling oneway call " + apiCallName));
+                    errorLog.logDebug("Dropping message generated for oneway call '" + apiCallName + "'"));
+
+        return flux.doOnTerminate(() ->
+            errorLog.logDebug("Peer %s, %s '%s' end", peer, apiCallDescription, apiCallName));
     }
 
     private Flux<byte[]> execute(

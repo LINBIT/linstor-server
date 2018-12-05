@@ -123,9 +123,8 @@ public class EventProcessor
 
                 incomingEventStreamStore.addEventStreamIfNew(eventIdentifier);
 
-                errorReporter.logTrace("Handling event '%s %s' start", eventAction, eventIdentifier);
+                errorReporter.logTrace("Peer %s, event '%s' %s", peer, eventIdentifier, eventAction);
                 eventHandlerProvider.get().execute(eventAction, eventIdentifier, eventDataIn);
-                errorReporter.logTrace("Handling event '%s %s' end", eventAction, eventIdentifier);
 
                 if (eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
                 {

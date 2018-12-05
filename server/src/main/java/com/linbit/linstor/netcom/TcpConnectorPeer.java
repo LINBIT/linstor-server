@@ -380,6 +380,7 @@ public class TcpConnectorPeer implements Peer
                     }
                     else
                     {
+                        errorReporter.logTrace("Peer %s, API call %d '%s' send", this, apiCallId, apiCallName);
                         boolean isConnected = sendMessage(messageBytes);
                         if (!isConnected)
                         {

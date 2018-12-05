@@ -88,7 +88,8 @@ public class ScopeRunner
 
         Flux<T> ret;
 
-        errorLog.logTrace("Running in scope of ApiCall '%s' from %s start", apiCallName, peer);
+        String apiCallDescription = apiCallId != 0L ? "API call " + apiCallId : "oneway call";
+        errorLog.logTrace("Peer %s, %s '%s' scope start", peer, apiCallDescription, apiCallName);
 
         TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
 
@@ -132,7 +133,7 @@ public class ScopeRunner
                 }
                 transMgr.returnConnection();
             }
-            errorLog.logTrace("Running in scope of ApiCall '%s' from %s finished", apiCallName, peer);
+            errorLog.logTrace("Peer %s, %s '%s' scope end", peer, apiCallDescription, apiCallName);
         }
 
         return ret;
