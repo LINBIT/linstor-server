@@ -64,7 +64,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
     private final AtomicBoolean fullSyncApplied;
     private final StorageLayer storageLayer;
 
-
     @Inject
     public DeviceHandlerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
@@ -249,8 +248,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
                     throw new ImplementationError(accDeniedExc);
                 }
             }
-
-
 
             // call clear cache for every layer where the .prepare was called
             for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())

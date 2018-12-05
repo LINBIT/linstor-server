@@ -99,7 +99,6 @@ public class LayeredSnapshotHelper
         {
             Props storPoolProps = snapVlm.getStorPool(sysCtx)
                 .getProps(sysCtx);
-            VolumeDefinition vlmDfn = snapVlm.getResourceDefinition().getVolumeDfn(sysCtx, snapVlm.getVolumeNumber());
 
             snapVlm.setLayerData(
                 sysCtx,
@@ -114,10 +113,10 @@ public class LayeredSnapshotHelper
                     ),
                     String.format(
                         LvmProvider.FORMAT_RSC_TO_LVM_ID,
-                        vlmDfn.getResourceDefinition().getName().displayValue,
-                        vlmDfn.getVolumeNumber().value
+                        snapVlm.getSnapshot().getResourceName().displayValue,
+                        snapVlm.getVolumeNumber().value
                     ),
-                    vlmDfn.getVolumeSize(sysCtx)
+                    snapVlm.getSnapshotVolumeDefinition().getVolumeSize(sysCtx)
                 )
             );
         }

@@ -801,7 +801,12 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
                         }
                         if (!needMasterKey)
                         {
-                            resourcesToDispatch.add(rsc);
+                            if (rsc != null)
+                            {
+                                // rsc can be null if it was deleted but a snapshot still exists
+                                // such that the resource name was looked up
+                                resourcesToDispatch.add(rsc);
+                            }
                             snapshotsToDispatch.addAll(snapshots);
                             // dispatchResource(rscDfn, snapshots, phaseLock);
                         }

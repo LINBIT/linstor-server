@@ -12,6 +12,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
@@ -259,6 +260,20 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         return Optional.ofNullable(overrideId);
     }
 
+    protected Optional<String> getMigrationId(SnapshotVolumeDefinition snapVlmDfn)
+    {
+        String overrideId;
+        try
+        {
+            overrideId = snapVlmDfn.getProps(storDriverAccCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return Optional.ofNullable(overrideId);
+    }
+
     @Override
     public Collection<StorPool> getAndForgetChangedStorPools()
     {
@@ -351,8 +366,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                 vlm.getStorPool(storDriverAccCtx),
                 freeSpaces ->
                 {
-System.out.println("running post run notifier for deleted vlm: " + vlm );
-System.out.println("  setting freeSpace: " + freeSpaces.get(storageName));
                     notificationListenerProvider.get().notifyVolumeDeleted(
                         vlm,
                         freeSpaces.get(storageName)
@@ -719,7 +732,26 @@ System.out.println("  setting freeSpace: " + freeSpaces.get(storageName));
         return asLvIdentifier(vlm.getVolumeDefinition());
     }
 
-    protected abstract String asLvIdentifier(VolumeDefinition volumeDefinition);
+    protected String asLvIdentifier(VolumeDefinition vlmDfn)
+    {
+        return getMigrationId(vlmDfn).orElse(
+            asLvIdentifier(
+                vlmDfn.getResourceDefinition().getName(),
+                vlmDfn.getVolumeNumber()
+            )
+        );
+    }
+
+    protected String asLvIdentifier(SnapshotVolumeDefinition snapVlmDfn)
+    {
+        return getMigrationId(snapVlmDfn).orElse(
+            asLvIdentifier(
+                snapVlmDfn.getResourceName(),
+                snapVlmDfn.getVolumeNumber()
+            )
+        );
+    }
+
 
     protected abstract String asLvIdentifier(ResourceName resourceName, VolumeNumber volumeNumber);
 
@@ -731,5 +763,4 @@ System.out.println("  setting freeSpace: " + freeSpaces.get(storageName));
 
     protected abstract String getStorageName(Volume vlm)
         throws AccessDeniedException, SQLException;
-
 }

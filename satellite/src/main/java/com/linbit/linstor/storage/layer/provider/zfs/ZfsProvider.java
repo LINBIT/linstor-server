@@ -6,7 +6,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -106,17 +105,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     }
 
     @Override
-    protected String asLvIdentifier(VolumeDefinition vlmDfn)
-    {
-        return getMigrationId(vlmDfn).orElse(
-            asLvIdentifier(
-                vlmDfn.getResourceDefinition().getName(),
-                vlmDfn.getVolumeNumber()
-            )
-        );
-    }
-
-    @Override
     protected String asLvIdentifier(ResourceName resourceName, VolumeNumber volumeNumber)
     {
         return String.format(
@@ -132,13 +120,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
         return getStorageName(snapVlm) + File.separator + asLvIdentifier(snapVlm);
     }
 
-    private String asLvIdentifier(SnapshotVolume snapVlm) throws AccessDeniedException
+    private String asLvIdentifier(SnapshotVolume snapVlm)
     {
-        // TODO: check for migration property
         return
-            asLvIdentifier(
-                snapVlm.getResourceDefinition().getVolumeDfn(storDriverAccCtx, snapVlm.getVolumeNumber())
-            ) + "@" +
+            asLvIdentifier(snapVlm.getSnapshotVolumeDefinition()) + "@" +
             snapVlm.getSnapshotName().displayValue;
     }
 

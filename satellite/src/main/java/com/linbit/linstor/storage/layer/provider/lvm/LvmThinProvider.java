@@ -302,12 +302,10 @@ public class LvmThinProvider extends LvmProvider
      * @return "rscName_vlmNr" + "_" + "snapshotName"
      * @throws AccessDeniedException
      */
-    private String getSnapshotIdentifier(SnapshotVolume snapVlm) throws AccessDeniedException
+    private String getSnapshotIdentifier(SnapshotVolume snapVlm)
     {
         return getSnapshotIdentifier(
-            asLvIdentifier(
-                snapVlm.getResourceDefinition().getVolumeDfn(storDriverAccCtx, snapVlm.getVolumeNumber())
-            ),
+            asLvIdentifier(snapVlm.getSnapshotVolumeDefinition()),
             snapVlm.getSnapshotName().displayValue
         );
     }

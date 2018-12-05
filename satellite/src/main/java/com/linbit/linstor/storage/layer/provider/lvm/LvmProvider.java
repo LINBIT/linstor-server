@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -173,17 +174,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     protected String getDevicePath(String storageName, String lvId)
     {
         return String.format(FORMAT_DEV_PATH, storageName, lvId);
-    }
-
-    @Override
-    protected String asLvIdentifier(VolumeDefinition vlmDfn)
-    {
-        return getMigrationId(vlmDfn).orElse(
-            asLvIdentifier(
-                vlmDfn.getResourceDefinition().getName(),
-                vlmDfn.getVolumeNumber()
-            )
-        );
     }
 
     @Override
