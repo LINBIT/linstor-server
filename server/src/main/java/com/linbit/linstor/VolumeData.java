@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.inject.Provider;
 
@@ -192,6 +193,15 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         checkDeleted();
         return volumeDfn;
+    }
+
+    @Override
+    public Stream<VolumeConnection> streamVolumeConnections(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return volumeConnections.values().stream();
     }
 
     @Override

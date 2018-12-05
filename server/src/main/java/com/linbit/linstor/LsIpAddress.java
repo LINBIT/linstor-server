@@ -21,9 +21,9 @@ public class LsIpAddress
      */
     public LsIpAddress(String address) throws InvalidIpAddressException
     {
-        Checks.ipAddrCheck(address);
+        Checks.ipAddrCheck(address.trim());
 
-        addr = address.toUpperCase();
+        addr = address.trim().toUpperCase();
     }
 
     public String getAddress()

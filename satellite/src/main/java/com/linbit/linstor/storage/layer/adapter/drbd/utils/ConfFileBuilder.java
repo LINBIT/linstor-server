@@ -209,8 +209,8 @@ public class ConfFileBuilder
 
                         if (rscConn != null)
                         {
-                            if (rscConn.getProps(accCtx)
-                                .getNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS).isPresent())
+                            Props rscConnProps = rscConn.getProps(accCtx);
+                            if (rscConnProps.getNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS).isPresent())
                             {
                                 appendLine("");
                                 appendLine("net");
@@ -218,15 +218,13 @@ public class ConfFileBuilder
                                 {
                                     appendDrbdOptions(
                                         LinStorObject.CONTROLLER,
-                                        rscConn.getProps(accCtx),
+                                        rscConnProps,
                                         ApiConsts.NAMESPC_DRBD_NET_OPTIONS
                                     );
                                 }
                             }
 
-                            if (rscConn.getProps(accCtx)
-                                .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
-                                )
+                            if (rscConnProps.getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent())
                             {
                                 appendLine("");
                                 appendLine("disk");
@@ -236,7 +234,7 @@ public class ConfFileBuilder
                                         LinStorObject.CONTROLLER,
                                         "resource-definition",
                                         rscDfn.getProps(accCtx),
-                                        rscConn.getProps(accCtx),
+                                        rscConnProps,
                                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
                                     );
                                 }

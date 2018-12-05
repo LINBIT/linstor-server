@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  *
@@ -34,6 +35,9 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
     Props getProps(AccessContext accCtx) throws AccessDeniedException;
 
     StateFlags<VlmFlags> getFlags();
+
+    Stream<VolumeConnection> streamVolumeConnections(AccessContext accCtx)
+        throws AccessDeniedException;
 
     VolumeConnection getVolumeConnection(AccessContext dbCtx, Volume otherVol)
         throws AccessDeniedException;

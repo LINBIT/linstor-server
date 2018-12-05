@@ -17,9 +17,14 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.VolumeConnection;
+import com.linbit.linstor.VolumeConnectionDataFactory;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.ResourceConnection;
+import com.linbit.linstor.ResourceConnection.RscConnFlags;
+import com.linbit.linstor.ResourceConnectionDataSatelliteFactory;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
@@ -55,6 +60,8 @@ public class LayeredResourcesHelper
     private final AccessContext sysCtx;
     private final ResourceDataFactory rscFactory;
     private final VolumeDataFactory vlmFactory;
+    private final ResourceConnectionDataSatelliteFactory rscConnFactory;
+    private final VolumeConnectionDataFactory vlmConnFactory;
     private final LayerDataFactory layerDataFactory;
     private final ControllerPeerConnector controllerPeerConnector;
     private final ResourceDefinitionMap rscDfnMap;
@@ -65,6 +72,8 @@ public class LayeredResourcesHelper
         @SystemContext AccessContext sysCtxRef,
         ResourceDataFactory rscFactoryRef,
         VolumeDataFactory vlmFactoryRef,
+        ResourceConnectionDataSatelliteFactory rscConnFactoryRef,
+        VolumeConnectionDataFactory vlmConnFactoryRef,
         LayerDataFactory layerDataFactoryRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -74,6 +83,8 @@ public class LayeredResourcesHelper
         sysCtx = sysCtxRef;
         rscFactory = rscFactoryRef;
         vlmFactory = vlmFactoryRef;
+        rscConnFactory = rscConnFactoryRef;
+        vlmConnFactory = vlmConnFactoryRef;
         layerDataFactory = layerDataFactoryRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         rscDfnMap = rscDfnMapRef;
@@ -387,12 +398,14 @@ public class LayeredResourcesHelper
         typedRscPropsMap.clear();
         typedRscPropsMap.putAll(origRsc.getProps(sysCtx).map());
 
+        origRsc.streamResourceConnections(sysCtx).forEach(
+            rscCon -> convertRscCon(origRsc, type, typedResource, rscCon)
+        );
 
         if (origRsc.isCreatePrimary())
         {
             ((ResourceData) typedResource).setCreatePrimary();
         }
-        // TODO: copy resource connections - maybe drbd level?
         try
         {
             Iterator<VolumeDefinition> vlmDfnIt = origRscDfn.iterateVolumeDfn(sysCtx);
@@ -433,6 +446,11 @@ public class LayeredResourcesHelper
                     typedVlmPropsMap.clear();
                     typedVlmPropsMap.putAll(origVlm.getProps(sysCtx).map());
 
+
+                    origVlm.streamVolumeConnections(sysCtx).forEach(
+                        vlmCon -> convertVlmCon(typedVlm, origVlm, vlmCon)
+                    );
+
                     // TODO: copy volume connection - maybe drbd level?
                     // TODO: copy device path? drbd?
                 }
@@ -458,6 +476,7 @@ public class LayeredResourcesHelper
 
         return typedResource;
     }
+
 
     private void add(List<Resource> returnedResources, Resource rsc)
     {
@@ -612,5 +631,132 @@ public class LayeredResourcesHelper
             throw new ImplementationError(accDeniedExc);
         }
         return orphaned;
+    }
+
+    private void convertRscCon(
+        Resource origRsc,
+        ResourceType type,
+        Resource typedResource,
+        ResourceConnection rscCon
+    )
+        throws ImplementationError
+    {
+        try
+        {
+            Resource other = rscCon.getSourceResource(sysCtx);
+            if (origRsc.equals(other))
+            {
+                other = rscCon.getTargetResource(sysCtx);
+            }
+
+            RscFlags[] otherFlags = FlagsHelper.toFlagsArray(
+                RscFlags.class,
+                other.getStateFlags(),
+                sysCtx
+            );
+            Resource otherTyped = rscFactory.getTypedInstanceSatellite(
+                sysCtx,
+                UUID.randomUUID(),
+                other.getAssignedNode(),
+                other.getDefinition(),
+                other.getNodeId(),
+                otherFlags,
+                type,
+                null
+            );
+
+            ResourceConnection typedCon = typedResource.getResourceConnection(sysCtx, otherTyped);
+            RscConnFlags[] rscConFlags = FlagsHelper.toFlagsArray(
+                RscConnFlags.class,
+                rscCon.getStateFlags(),
+                sysCtx
+            );
+            if (typedCon == null)
+            {
+                typedCon = rscConnFactory.getInstanceSatellite(
+                    sysCtx,
+                    UUID.randomUUID(),
+                    typedResource,
+                    otherTyped,
+                    rscConFlags,
+                    rscCon.getPort(sysCtx)
+                );
+            }
+            else
+            {
+                typedCon.getStateFlags().resetFlagsTo(sysCtx, rscConFlags);
+            }
+            Map<String, String> typedPropsMap = typedCon.getProps(sysCtx).map();
+            typedPropsMap.clear();
+            typedPropsMap.putAll(rscCon.getProps(sysCtx).map());
+        }
+        catch (AccessDeniedException | SQLException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private void convertVlmCon(Volume typedVlm, Volume origVlm, VolumeConnection vlmCon)
+    {
+        try
+        {
+            ResourceDefinition rscDfn = origVlm.getResourceDefinition();
+            Resource origRsc = origVlm.getResource();
+
+            Volume other = vlmCon.getSourceVolume(sysCtx);
+            if (origVlm.equals(other))
+            {
+                other = vlmCon.getTargetVolume(sysCtx);
+            }
+
+            RscFlags[] origRscFlags = FlagsHelper.toFlagsArray(
+                RscFlags.class,
+                origRsc.getStateFlags(),
+                sysCtx
+            );
+            Resource otherTypedRsc = rscFactory.getTypedInstanceSatellite(
+                sysCtx,
+                UUID.randomUUID(),
+                origRsc.getAssignedNode(),
+                rscDfn,
+                origRsc.getNodeId(),
+                origRscFlags,
+                typedVlm.getResource().getType(),
+                null
+            );
+            VlmFlags[] otherFlags = FlagsHelper.toFlagsArray(
+                VlmFlags.class,
+                other.getFlags(),
+                sysCtx
+            );
+            Volume otherTyped = vlmFactory.getInstanceSatellite(
+                sysCtx,
+                UUID.randomUUID(),
+                otherTypedRsc,
+                origVlm.getVolumeDefinition(),
+                origVlm.getStorPool(sysCtx),
+                origVlm.getBackingDiskPath(sysCtx),
+                origVlm.getMetaDiskPath(sysCtx),
+                otherFlags
+            );
+
+            VolumeConnection typedCon = typedVlm.getVolumeConnection(sysCtx, otherTyped);
+            if (typedCon == null)
+            {
+                typedCon = vlmConnFactory.getInstanceSatellite(
+                    sysCtx,
+                    UUID.randomUUID(),
+                    typedVlm,
+                    otherTyped
+                );
+            }
+            Map<String, String> typedPropsMap = typedCon.getProps(sysCtx).map();
+            typedPropsMap.clear();
+            typedPropsMap.putAll(vlmCon.getProps(sysCtx).map());
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 }

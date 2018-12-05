@@ -210,8 +210,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
 
             // query changed storage pools and send out all notifications
             Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-System.out.println("\n\n\n\n\n");
-System.out.println("updating free spaces...");
             if (ctrlPeer != null)
             {
                 try
@@ -225,12 +223,6 @@ System.out.println("updating free spaces...");
                         spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
                         apiRcException -> errorReporter.reportError(apiRcException.getCause())
                     ));
-
-System.out.println("storPool count: " + spaceInfoMap.size());
-spaceInfoMap.forEach(
-    (storPool, space) ->
-        System.out.println(storPool.getName() + " " + space.freeCapacity)
-);
 
                     // TODO: rework API answer
                     /*
