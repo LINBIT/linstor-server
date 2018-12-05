@@ -289,7 +289,7 @@ public class LvmCommands
                 new String[]
                     {
                         "lvs",
-                        "-o", "lv_size",
+                        "-o", "lv_name,lv_size",
                         "--units", "k",
                         "--separator", LvmUtils.DELIMITER,
                         "--noheadings",
