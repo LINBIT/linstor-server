@@ -974,7 +974,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     }
                 },
                 disklessOnRemaining
-            ).subscriberContext(subscriberContext).toStream().forEach(apiCallRc::addEntries);
+            ).subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
 

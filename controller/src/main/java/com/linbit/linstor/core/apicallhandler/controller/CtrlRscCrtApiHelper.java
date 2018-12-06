@@ -42,6 +42,7 @@ import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -288,6 +289,9 @@ public class CtrlRscCrtApiHelper
                         .skipUntil(UsageState::getResourceReady)
                         .next()
                         .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
+                        .onErrorResume(PeerNotConnectedException.class, ignored -> Mono.just(
+                            ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
+                        ))
                     );
                 }
             }

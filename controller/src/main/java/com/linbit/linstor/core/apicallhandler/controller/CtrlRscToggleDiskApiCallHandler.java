@@ -8,6 +8,8 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -17,6 +19,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -27,12 +30,18 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.event.EventWaiter;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -47,6 +56,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescription;
 
@@ -72,12 +82,16 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 {
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
+    private final BackgroundRunner backgroundRunner;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
+    private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
+    private final ResourceStateEvent resourceStateEvent;
+    private final EventWaiter eventWaiter;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
@@ -86,12 +100,15 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     public CtrlRscToggleDiskApiCallHandler(
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
-        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        BackgroundRunner backgroundRunnerRef, CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
+        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
+        ResourceStateEvent resourceStateEventRef,
+        EventWaiter eventWaiterRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
@@ -99,12 +116,16 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
+        backgroundRunner = backgroundRunnerRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
+        ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
+        resourceStateEvent = resourceStateEventRef;
+        eventWaiter = eventWaiterRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         peerAccCtx = peerAccCtxRef;
@@ -136,10 +157,29 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return fluxes;
     }
 
+    @Override
+    public Collection<Flux<ApiCallRc>> resourceConnected(Resource rsc)
+        throws AccessDeniedException
+    {
+        String migrateFromNodeNameStr = getPropsPrivileged(rsc).map().get(ApiConsts.KEY_RSC_MIGRATE_FROM);
+
+        // Only restart the migration watch if adding the disk is complete
+        boolean diskAddRequested = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_ADD_REQUESTED);
+
+        return migrateFromNodeNameStr == null && !diskAddRequested ?
+            Collections.emptySet() :
+            Collections.singleton(Flux.from(waitForMigration(
+                rsc.getAssignedNode().getName(),
+                rsc.getDefinition().getName(),
+                ctrlApiDataLoader.loadNode(migrateFromNodeNameStr, true).getName()
+            )));
+    }
+
     public Flux<ApiCallRc> resourceToggleDisk(
         String nodeNameStr,
         String rscNameStr,
         String storPoolNameStr,
+        String migrateFromNodeNameStr,
         boolean removeDisk
     )
     {
@@ -153,7 +193,13 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .fluxInTransactionalScope(
                 "Toggle disk",
                 createLockGuard(),
-                () -> toggleDiskInTransaction(nodeNameStr, rscNameStr, storPoolNameStr, removeDisk)
+                () -> toggleDiskInTransaction(
+                    nodeNameStr,
+                    rscNameStr,
+                    storPoolNameStr,
+                    migrateFromNodeNameStr,
+                    removeDisk
+                )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -162,6 +208,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String nodeNameStr,
         String rscNameStr,
         String storPoolNameStr,
+        String migrateFromNodeNameStr,
         boolean removeDisk
     )
     {
@@ -255,6 +302,17 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         else
         {
             markDiskAddRequested(rsc);
+
+            if (migrateFromNodeNameStr != null && !migrateFromNodeNameStr.isEmpty())
+            {
+                Resource migrateFromRsc = ctrlApiDataLoader.loadRsc(migrateFromNodeNameStr, rscNameStr, true);
+
+                ensureNoSnapshots(migrateFromRsc);
+
+                setMigrateFrom(rsc, migrateFromRsc.getAssignedNode().getName());
+
+                ctrlRscDeleteApiHelper.ensureNotInUse(migrateFromRsc);
+            }
         }
 
         ctrlTransactionHelper.commit();
@@ -443,9 +501,77 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 actionPeer
             ));
 
+        Publisher<ApiCallRc> migrationFlux;
+        Props rscProps = getPropsPrivileged(rsc);
+        String migrateFromNodeNameStr = rscProps.map().get(ApiConsts.KEY_RSC_MIGRATE_FROM);
+        if (migrateFromNodeNameStr == null)
+        {
+            migrationFlux = Flux.empty();
+        }
+        else
+        {
+            migrationFlux = waitForMigration(
+                nodeName,
+                rscName,
+                ctrlApiDataLoader.loadNode(migrateFromNodeNameStr, true).getName()
+            );
+        }
+
         return Flux
             .<ApiCallRc>just(responses)
-            .concatWith(satelliteUpdateResponses);
+            .concatWith(satelliteUpdateResponses)
+            .concatWith(migrationFlux);
+    }
+
+    private Publisher<ApiCallRc> waitForMigration(
+        NodeName nodeName,
+        ResourceName rscName,
+        NodeName migrateFromNodeName
+    )
+    {
+        return Mono.fromRunnable(() -> backgroundRunner.runInBackground(
+            "Migrate '" + rscName + "' from '" + migrateFromNodeName + "' to '" + nodeName + "'",
+            eventWaiter
+                .waitForStream(
+                    resourceStateEvent.get(),
+                    ObjectIdentifier.resource(nodeName, rscName)
+                )
+                .skipUntil(usageState -> usageState.getUpToDate() != null && usageState.getUpToDate())
+                .next()
+                .thenMany(scopeRunner.fluxInTransactionalScope(
+                    "Delete after migrate",
+                    LockGuard.createDeferred(rscDfnMapLock.writeLock()),
+                    () -> startDeletionInTransaction(nodeName, rscName, migrateFromNodeName)
+                ))
+                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
+        ));
+    }
+
+    private Flux<ApiCallRc> startDeletionInTransaction(
+        NodeName nodeName,
+        ResourceName rscName,
+        NodeName migrateFromNodeName
+    )
+    {
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
+        Resource migrateFromRsc = ctrlApiDataLoader.loadRsc(migrateFromNodeName, rscName, false);
+
+        getPropsPrivileged(rsc).map().remove(ApiConsts.KEY_RSC_MIGRATE_FROM);
+
+        Flux<ApiCallRc> deleteFlux;
+        if (migrateFromRsc == null)
+        {
+            deleteFlux = Flux.empty();
+        }
+        else
+        {
+            ctrlRscDeleteApiHelper.markDeletedWithVolumes(migrateFromRsc);
+            deleteFlux = ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(migrateFromNodeName, rscName);
+        }
+
+        ctrlTransactionHelper.commit();
+
+        return deleteFlux;
     }
 
     private int countDisks(ResourceDefinition rscDfn)
@@ -527,6 +653,50 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         catch (SQLException sqlExc)
         {
             throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    private void ensureNoSnapshots(Resource rsc)
+    {
+        try
+        {
+            for (SnapshotDefinition snapshotDfn : rsc.getDefinition().getSnapshotDfns(peerAccCtx.get()))
+            {
+                Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getAssignedNode().getName());
+                if (snapshot != null)
+                {
+                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                        "Cannot migrate '" + rsc.getDefinition().getName() + "' " +
+                            "from '" + rsc.getAssignedNode().getName() + "' because snapshots are present " +
+                            "and snapshots cannot be migrated"
+                    ));
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check for snapshots of " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
+            );
+        }
+    }
+
+    private void setMigrateFrom(ResourceData rsc, NodeName migrateFromNodeName)
+    {
+        try
+        {
+            rsc.getProps(peerAccCtx.get()).map().put(ApiConsts.KEY_RSC_MIGRATE_FROM, migrateFromNodeName.value);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "set migration source for " + getRscDescription(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
         }
     }
 
@@ -633,6 +803,20 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private Props getPropsPrivileged(Resource rsc)
+    {
+        Props props;
+        try
+        {
+            props = rsc.getProps(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return props;
     }
 
     private LockGuard createLockGuard()

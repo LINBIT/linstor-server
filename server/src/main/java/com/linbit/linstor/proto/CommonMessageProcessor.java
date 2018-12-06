@@ -428,6 +428,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     )
                     .subscriberContext(Context.of(
                         ApiModule.API_CALL_NAME, apiCallName,
+                        AccessContext.class, peerAccCtx,
                         Peer.class, peer,
                         ApiModule.API_CALL_ID, apiCallId
                     ));

@@ -181,7 +181,7 @@ public class RscApiTest extends ApiTestBase
                     .addAllProps(ProtoMapUtils.fromMap(rscPropsMap))
                     .addAllVlms(VlmApiData.toVlmProtoList(vlmApiDataList))
                     .build()
-            ))).subscriberContext(subscriberContext).toStream().forEach(apiCallRc::addEntries);
+            ))).subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
 

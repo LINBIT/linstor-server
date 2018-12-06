@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -16,6 +15,7 @@ import reactor.core.publisher.Flux;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +39,19 @@ public class CtrlSatelliteConnectionNotifier
         satelliteConnectionListeners = satelliteConnectionListenersRef;
     }
 
+    public Flux<?> resourceConnected(Resource rsc)
+    {
+        ResourceDefinition rscDfn = rsc.getDefinition();
+
+        return Flux.merge(
+            checkResourceDefinitionConnected(rsc.getDefinition()),
+            notifyListeners(
+                "connecting to node '" + rsc.getAssignedNode().getName() + "' for resource '" + rscDfn.getName() + "'",
+                connectionListener -> connectionListener.resourceConnected(rsc)
+            )
+        );
+    }
+
     public Flux<?> checkResourceDefinitionConnected(ResourceDefinition rscDfn)
     {
         boolean allOnline = true;
@@ -60,17 +73,19 @@ public class CtrlSatelliteConnectionNotifier
             throw new ImplementationError(accExc);
         }
 
-        Flux<?> flux = allOnline ?
-            notifyResourceDefinitionConnected(rscDfn) :
+        return allOnline ?
+            notifyListeners(
+                "connecting to all nodes for resource '" + rscDfn.getName() + "'",
+                connectionListener -> connectionListener.resourceDefinitionConnected(rscDfn)
+            ) :
             Flux.empty();
-
-        return flux;
     }
 
-    private Flux<?> notifyResourceDefinitionConnected(ResourceDefinition rscDfn)
+    private Flux<?> notifyListeners(
+        String actionMessage,
+        ConnectionListenerCallable callable
+    )
     {
-        ResourceName rscName = rscDfn.getName();
-
         List<Flux<ApiCallRc>> connectionListenerResponses = new ArrayList<>();
 
         for (CtrlSatelliteConnectionListener connectionListener : satelliteConnectionListeners)
@@ -78,7 +93,7 @@ public class CtrlSatelliteConnectionNotifier
             try
             {
                 connectionListenerResponses.addAll(
-                    connectionListener.resourceDefinitionConnected(rscDfn)
+                    callable.call(connectionListener)
                 );
             }
             catch (Exception | ImplementationError exc)
@@ -87,24 +102,33 @@ public class CtrlSatelliteConnectionNotifier
                     exc,
                     null,
                     null,
-                    "Error determining operations to perform after connecting to all nodes for resource " +
-                        "'" + rscName + "'"
+                    "Error determining operations to perform after " + actionMessage
                 );
             }
         }
 
         return Flux.fromIterable(connectionListenerResponses)
-            .flatMap(listenerFlux -> listenerFlux.onErrorResume(exc -> handleListenerError(rscName, exc)));
+            .flatMap(listenerFlux -> listenerFlux.onErrorResume(exc -> handleListenerError(actionMessage, exc)));
     }
 
-    private Publisher<? extends ApiCallRc> handleListenerError(ResourceName rscName, Throwable exc)
+    private Publisher<? extends ApiCallRc> handleListenerError(
+        String actionMessage,
+        Throwable exc
+    )
     {
         errorReporter.reportError(
             exc,
             null,
             null,
-            "Error emitted performing operations after connecting to all nodes for resource " + "'" + rscName + "'"
+            "Error emitted performing operations after " + actionMessage
         );
         return Flux.empty();
+    }
+
+    @FunctionalInterface
+    private interface ConnectionListenerCallable
+    {
+        Collection<Flux<ApiCallRc>> call(CtrlSatelliteConnectionListener connectionListener)
+            throws AccessDeniedException;
     }
 }

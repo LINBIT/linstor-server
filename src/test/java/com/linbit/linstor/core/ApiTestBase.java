@@ -85,8 +85,6 @@ public abstract class ApiTestBase extends GenericDbBase
     @Inject
     protected Provider<TransactionMgr> transMgrProvider;
 
-    protected Context subscriberContext;
-
     @Before
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void setUp() throws Exception
@@ -96,12 +94,6 @@ public abstract class ApiTestBase extends GenericDbBase
             new CtrlApiCallHandlerModule(),
             new ConfigModule()
         ));
-
-        subscriberContext = Context.of(
-            ApiModule.API_CALL_NAME, "TestApiCallName",
-            Peer.class, mockPeer,
-            ApiModule.API_CALL_ID, 1L
-        );
 
         testScope.enter();
 
@@ -171,6 +163,16 @@ public abstract class ApiTestBase extends GenericDbBase
             testScope.seed(Key.get(AccessContext.class, PeerContext.class), BOB_ACC_CTX);
             testScope.seed(Peer.class, mockPeer);
         }
+    }
+
+    protected Context subscriberContext()
+    {
+        return Context.of(
+            ApiModule.API_CALL_NAME, "TestApiCallName",
+            AccessContext.class, mockPeer.getAccessContext(),
+            Peer.class, mockPeer,
+            ApiModule.API_CALL_ID, 1L
+        );
     }
 
     protected static NetInterfaceApi createNetInterfaceApi(String name, String address)

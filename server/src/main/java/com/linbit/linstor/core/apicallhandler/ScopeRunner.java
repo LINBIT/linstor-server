@@ -84,14 +84,38 @@ public class ScopeRunner
         throws Exception
     {
         String apiCallName = subscriberContext.get(ApiModule.API_CALL_NAME);
-        Peer peer = subscriberContext.get(Peer.class);
-        Long apiCallId = subscriberContext.get(ApiModule.API_CALL_ID);
+        AccessContext accCtx = subscriberContext.get(AccessContext.class);
+        Peer peer = subscriberContext.getOrDefault(Peer.class, null);
+        Long apiCallId = subscriberContext.getOrDefault(ApiModule.API_CALL_ID, null);
 
         Flux<T> ret;
 
-        String apiCallDescription = apiCallId != 0L ? "API call " + apiCallId : "oneway call";
+        String peerDescription;
+        if (peer == null)
+        {
+            peerDescription = "";
+        }
+        else
+        {
+            peerDescription = "Peer " + peer + ", ";
+        }
+
+        String apiCallDescription;
+        if (apiCallId == null)
+        {
+            apiCallDescription = "Background operation";
+        }
+        else if (apiCallId != 0L)
+        {
+            apiCallDescription = "API call " + apiCallId;
+        }
+        else
+        {
+            apiCallDescription = "oneway call";
+        }
+
         errorLog.logTrace(
-            "Peer %s, %s '%s' scope '%s' start", peer, apiCallDescription, apiCallName, scopeDescription);
+            "%s%s '%s' scope '%s' start", peerDescription, apiCallDescription, apiCallName, scopeDescription);
 
         TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
 
@@ -99,9 +123,15 @@ public class ScopeRunner
         lockGuard.lock();
         try
         {
-            apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), peer.getAccessContext());
-            apiCallScope.seed(Peer.class, peer);
-            apiCallScope.seed(Key.get(Long.class, Names.named(ApiModule.API_CALL_ID)), apiCallId);
+            apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);
+            if (peer != null)
+            {
+                apiCallScope.seed(Peer.class, peer);
+            }
+            if (apiCallId != null)
+            {
+                apiCallScope.seed(Key.get(Long.class, Names.named(ApiModule.API_CALL_ID)), apiCallId);
+            }
 
             if (transMgr != null)
             {
@@ -127,7 +157,7 @@ public class ScopeRunner
                         errorLog.reportError(
                             Level.ERROR,
                             sqlExc,
-                            peer.getAccessContext(),
+                            accCtx,
                             peer,
                             "A database error occured while trying to rollback '" + apiCallName + "'"
                         );
@@ -136,7 +166,7 @@ public class ScopeRunner
                 transMgr.returnConnection();
             }
             errorLog.logTrace(
-                "Peer %s, %s '%s' scope '%s' end", peer, apiCallDescription, apiCallName, scopeDescription);
+                "%s%s '%s' scope '%s' end", peerDescription, apiCallDescription, apiCallName, scopeDescription);
         }
 
         return ret;

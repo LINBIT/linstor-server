@@ -5,14 +5,11 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.event.EventBroker;
-import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.event.common.UsageState;
-import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -37,7 +34,6 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         DrbdVolume.ReplState.SYNC_TARGET
     );
 
-    private final ErrorReporter errorReporter;
     private final DrbdEventService drbdEventService;
     private final ResourceStateEvent resourceStateEvent;
     private final VolumeDiskStateEvent volumeDiskStateEvent;
@@ -59,14 +55,12 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
 
     @Inject
     public DrbdEventPublisher(
-        ErrorReporter errorReporterRef,
         DrbdEventService drbdEventServiceRef,
         EventBroker eventBrokerRef,
         ResourceStateEvent resourceStateEventRef,
         VolumeDiskStateEvent volumeDiskStateEventRef
     )
     {
-        errorReporter = errorReporterRef;
         drbdEventService = drbdEventServiceRef;
         resourceStateEvent = resourceStateEventRef;
         volumeDiskStateEvent = volumeDiskStateEventRef;
@@ -239,7 +233,8 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
 
         return new UsageState(
             !volumesMap.isEmpty() && volumesMap.values().stream().allMatch(this::volumeReady),
-            drbdResource.getRole() == DrbdResource.Role.PRIMARY
+            drbdResource.getRole() == DrbdResource.Role.PRIMARY,
+            volumesMap.values().stream().map(DrbdVolume::getDiskState).allMatch(DrbdVolume.DiskState.UP_TO_DATE::equals)
         );
     }
 

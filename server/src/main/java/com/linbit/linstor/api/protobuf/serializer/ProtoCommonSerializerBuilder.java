@@ -240,6 +240,10 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setInUse(usageState.getInUse());
             }
+            if (usageState.getUpToDate() != null)
+            {
+                builder.setUpToDate(usageState.getUpToDate());
+            }
 
             builder.build().writeDelimitedTo(baos);
         }

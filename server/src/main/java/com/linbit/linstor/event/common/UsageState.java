@@ -4,11 +4,13 @@ public class UsageState
 {
     private final Boolean resourceReady;
     private final Boolean inUse;
+    private final Boolean upToDate;
 
-    public UsageState(Boolean resourceReadyRef, Boolean inUseRef)
+    public UsageState(Boolean resourceReadyRef, Boolean inUseRef, Boolean upToDateRef)
     {
         resourceReady = resourceReadyRef;
         inUse = inUseRef;
+        upToDate = upToDateRef;
     }
 
     public Boolean getResourceReady()
@@ -19,5 +21,10 @@ public class UsageState
     public Boolean getInUse()
     {
         return inUse;
+    }
+
+    public Boolean getUpToDate()
+    {
+        return upToDate;
     }
 }

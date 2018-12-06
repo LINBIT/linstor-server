@@ -159,9 +159,7 @@ public class CtrlFullSyncApiCallHandler
             while (localRscIter.hasNext())
             {
                 Resource localRsc = localRscIter.next();
-                ResourceDefinition rscDfn = localRsc.getDefinition();
-
-                fluxes.add(ctrlSatelliteConnectionNotifier.checkResourceDefinitionConnected(rscDfn));
+                fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc));
             }
         }
         catch (AccessDeniedException exc)

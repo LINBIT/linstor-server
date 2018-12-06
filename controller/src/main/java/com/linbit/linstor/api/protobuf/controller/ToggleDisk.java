@@ -45,6 +45,7 @@ public class ToggleDisk implements ApiCallReactive
         String nodeName = msgToggleDisk.getNodeName();
         String rscName = msgToggleDisk.getRscName();
         String storPoolName = msgToggleDisk.getStorPoolName();
+        String migrateFromNodeName = msgToggleDisk.getMigrateFrom();
         boolean removeDisk = msgToggleDisk.getDiskless();
 
         return ctrlRscToggleDiskApiCallHandler
@@ -52,6 +53,7 @@ public class ToggleDisk implements ApiCallReactive
                 nodeName,
                 rscName,
                 storPoolName,
+                migrateFromNodeName,
                 removeDisk
             )
             .transform(responseSerializer::transform);

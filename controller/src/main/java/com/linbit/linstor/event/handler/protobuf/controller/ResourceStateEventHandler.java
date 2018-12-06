@@ -54,7 +54,11 @@ public class ResourceStateEventHandler implements EventHandler
                 )
             );
 
-            usageState = new UsageState(eventRscState.getReady(), eventRscState.getInUse());
+            usageState = new UsageState(
+                eventRscState.getReady(),
+                eventRscState.getInUse(),
+                eventRscState.getUpToDate()
+            );
         }
         else
         {
