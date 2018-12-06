@@ -33,10 +33,11 @@ import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.MathUtils;
 import org.slf4j.event.Level;
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxProcessor;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.UnicastProcessor;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.context.Context;
 
@@ -48,8 +49,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -65,14 +64,6 @@ public class CommonMessageProcessor implements MessageProcessor
     private final ScopeRunner scopeRunner;
     private final CommonSerializer commonSerializer;
 
-    // Limit the number of messages that can be submitted for processing
-    // concurrently.
-    // In the absence of any backpressure mechanism in the communications
-    // protocol, we resort to blocking when too many messages are received and
-    // letting the TCP buffer fill up.
-    // Many messages from a single peer will still be queued in an unbounded
-    // fashion as part of the message re-ordering.
-    private final Semaphore workerPoolSemaphore;
     private final FluxSink<Runnable> workerPool;
 
     private final Map<String, ApiEntry> apiCallMap;
@@ -104,11 +95,18 @@ public class CommonMessageProcessor implements MessageProcessor
         );
         int thrCount = MathUtils.bounds(MIN_THR_COUNT, LinStor.CPU_COUNT, MAX_THR_COUNT);
 
-        workerPoolSemaphore = new Semaphore(queueSize);
-        UnicastProcessor<Runnable> processor = UnicastProcessor.create(new ArrayBlockingQueue<>(queueSize, true));
+        // Limit the number of messages that can be submitted for processing
+        // concurrently by setting the processor's buffer size.
+        // In the absence of any backpressure mechanism in the communications
+        // protocol, we resort to blocking when too many messages are received and
+        // letting the TCP buffer fill up.
+        // Many messages from a single peer will still be queued in an unbounded
+        // fashion as part of the message re-ordering.
+        FluxProcessor<Runnable, Runnable> processor = EmitterProcessor.create(queueSize);
         workerPool = processor.sink();
         processor
-            .parallel(thrCount)
+            // minimal prefetch because we control queueing via queueSize
+            .parallel(thrCount, 1)
             // minimal prefetch for low latency
             .runOn(scheduler, 1)
             .doOnNext(Runnable::run)
@@ -173,7 +171,7 @@ public class CommonMessageProcessor implements MessageProcessor
             {
                 case MessageTypes.DATA:
                     long peerSeq = peer.getNextIncomingMessageSeq();
-                    processDataMessage(msg, connector, peer, peerSeq);
+                    workerPool.next(() -> this.doProcessMessage(msg, connector, peer, peerSeq));
                     break;
                 case MessageTypes.PING:
                     peer.sendPong();
@@ -219,34 +217,6 @@ public class CommonMessageProcessor implements MessageProcessor
                 peer,
                 null
             );
-        }
-    }
-
-    private void processDataMessage(Message msg, TcpConnector connector, Peer peer, long peerSeq)
-    {
-        while (true)
-        {
-            try
-            {
-                workerPoolSemaphore.acquire();
-                workerPool.next(() ->
-                    {
-                        try
-                        {
-                            this.doProcessMessage(msg, connector, peer, peerSeq);
-                        }
-                        finally
-                        {
-                            workerPoolSemaphore.release();
-                        }
-                    }
-                );
-                break;
-            }
-            catch (InterruptedException ignored)
-            {
-                // retry acquiring the semaphore
-            }
         }
     }
 
