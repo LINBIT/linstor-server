@@ -1,12 +1,13 @@
 package com.linbit.linstor.api.protobuf.common;
 
-import javax.inject.Inject;
-import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
+import com.linbit.linstor.api.ApiCallReactive;
+import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.netcom.Peer;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.io.ByteArrayOutputStream;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -17,27 +18,28 @@ import java.io.InputStream;
  */
 @ProtobufApiCall(
     name = "Ping",
-    description = "Ping: Communication test. Responds with a Pong message.",
-    transactional = false
+    description = "Ping: Communication test. Responds with a Pong message."
 )
-public class Ping implements ApiCall
+public class Ping implements ApiCallReactive
 {
-    private final ApiCallAnswerer apiCallAnswerer;
-    private final Peer peer;
+    private final CommonSerializer commonSerializer;
 
     @Inject
-    public Ping(ApiCallAnswerer apiCallAnswererRef, Peer peerRef)
+    public Ping(CommonSerializer commonSerializerRef)
     {
-        apiCallAnswerer = apiCallAnswererRef;
-        peer = peerRef;
+        commonSerializer = commonSerializerRef;
     }
 
     @Override
-    public void execute(InputStream msgDataIn)
+    public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        ByteArrayOutputStream dataOut = new ByteArrayOutputStream();
-        apiCallAnswerer.writeAnswerHeader(dataOut, "Pong");
-        peer.sendMessage(dataOut.toByteArray());
+        return Mono.subscriberContext()
+            .flatMapMany(subscriberContext ->
+                Flux.just(commonSerializer.answerBuilder(
+                    "Pong",
+                    subscriberContext.get(ApiModule.API_CALL_ID)
+                ).build())
+            );
     }
 }
