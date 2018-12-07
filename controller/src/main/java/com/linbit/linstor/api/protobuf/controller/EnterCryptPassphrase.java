@@ -11,12 +11,14 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 @ProtobufApiCall(
     name = ApiConsts.API_ENTER_CRYPT_PASS,
     description = "Used to enter the passphrase used for encryption of the stored volume encryption keys",
     transactional = false
 )
+@Singleton
 public class EnterCryptPassphrase implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

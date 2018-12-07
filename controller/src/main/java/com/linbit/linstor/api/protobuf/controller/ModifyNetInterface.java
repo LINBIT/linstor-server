@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -18,6 +20,7 @@ import java.util.UUID;
     name = ApiConsts.API_MOD_NET_IF,
     description = "Modifies a network interface of a given node"
 )
+@Singleton
 public class ModifyNetInterface implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

@@ -8,6 +8,7 @@ import com.linbit.linstor.proto.FilterOuterClass.Filter;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.List;
     name = ApiConsts.API_LST_VLM,
     description = "Queries the list of volumes"
 )
+@Singleton
 public class ListVolumes implements ApiCallReactive
 {
     private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;

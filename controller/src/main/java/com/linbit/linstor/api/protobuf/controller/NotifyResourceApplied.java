@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
     description = "Called by the satellite to notify the controller of successful " +
                   "resource creation, modification or deletion"
 )
+@Singleton
 public class NotifyResourceApplied implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

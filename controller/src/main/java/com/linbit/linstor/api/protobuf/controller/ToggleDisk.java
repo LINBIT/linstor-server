@@ -9,6 +9,7 @@ import com.linbit.linstor.proto.MsgToggleDiskOuterClass.MsgToggleDisk;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import java.util.UUID;
     name = ApiConsts.API_TOGGLE_DISK,
     description = "Toggles a resource between diskless and having a disk"
 )
+@Singleton
 public class ToggleDisk implements ApiCallReactive
 {
     private final CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandler;

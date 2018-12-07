@@ -42,7 +42,6 @@ import reactor.core.scheduler.Scheduler;
 import reactor.util.context.Context;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -80,7 +79,7 @@ public class CommonMessageProcessor implements MessageProcessor
         Scheduler scheduler,
         ScopeRunner scopeRunnerRef,
         CommonSerializer commonSerializerRef,
-        Map<String, Provider<BaseApiCall>> apiCallProviders,
+        Map<String, BaseApiCall> apiCalls,
         Map<String, ApiCallDescriptor> apiCallDescriptors
     )
     {
@@ -119,15 +118,15 @@ public class CommonMessageProcessor implements MessageProcessor
             );
 
         apiCallMap = new TreeMap<>();
-        for (Map.Entry<String, Provider<BaseApiCall>> providerEntry : apiCallProviders.entrySet())
+        for (Map.Entry<String, BaseApiCall> entry : apiCalls.entrySet())
         {
-            String apiName = providerEntry.getKey();
-            Provider<BaseApiCall> apiProv = providerEntry.getValue();
+            String apiName = entry.getKey();
+            BaseApiCall apiCall = entry.getValue();
             ApiCallDescriptor apiDscr = apiCallDescriptors.get(apiName);
             if (apiDscr != null)
             {
                 apiCallMap.put(apiName,
-                    new ApiEntry(apiProv, apiDscr, apiDscr.requiresAuth(), apiDscr.transactional()));
+                    new ApiEntry(apiCall, apiDscr, apiDscr.requiresAuth(), apiDscr.transactional()));
             }
             else
             {
@@ -141,18 +140,6 @@ public class CommonMessageProcessor implements MessageProcessor
                 );
             }
         }
-    }
-
-    public Map<String, ApiCallDescriptor> getApiCallDescriptors()
-    {
-        Map<String, ApiCallDescriptor> objMap = new TreeMap<>();
-
-        for (Map.Entry<String, ApiEntry> entry : apiCallMap.entrySet())
-        {
-            objMap.put(entry.getKey(), entry.getValue().descriptor);
-        }
-
-        return objMap;
     }
 
     /**
@@ -402,13 +389,7 @@ public class CommonMessageProcessor implements MessageProcessor
             {
                 Long apiCallId = respond ? getApiCallId(header) : 0L;
 
-                messageFlux = scopeRunner
-                    .fluxInTransactionlessScope(
-                        "Resolve API call handler",
-                        LockGuard.createDeferred(),
-                        () -> Flux.just(apiMapEntry.provider.get())
-                    )
-                    .flatMap(apiObj -> execute(apiMapEntry, apiObj, apiCallName, apiCallId, msgDataIn, respond))
+                messageFlux = execute(apiMapEntry, apiCallName, apiCallId, msgDataIn, respond)
                     .checkpoint("Fallback error handling wrapper")
                     .onErrorResume(
                         InvalidProtocolBufferException.class,
@@ -499,7 +480,6 @@ public class CommonMessageProcessor implements MessageProcessor
 
     private Flux<byte[]> execute(
         ApiEntry apiMapEntry,
-        BaseApiCall apiObj,
         String apiCallName,
         Long apiCallId,
         ByteArrayInputStream msgDataIn,
@@ -507,6 +487,7 @@ public class CommonMessageProcessor implements MessageProcessor
     )
     {
         Flux<byte[]> flux;
+        BaseApiCall apiObj = apiMapEntry.apiCall;
         if (apiObj instanceof ApiCall)
         {
             flux = scopeRunner.fluxInScope(
@@ -746,19 +727,19 @@ public class CommonMessageProcessor implements MessageProcessor
 
     private static class ApiEntry
     {
-        final Provider<BaseApiCall> provider;
+        final BaseApiCall apiCall;
         final ApiCallDescriptor descriptor;
         final boolean reqAuth;
         final boolean transactional;
 
         ApiEntry(
-            final Provider<BaseApiCall> providerRef,
+            final BaseApiCall apiCallRef,
             final ApiCallDescriptor descriptorRef,
             final boolean reqAuthFlag,
             boolean transactionalRef
         )
         {
-            provider = providerRef;
+            apiCall = apiCallRef;
             descriptor = descriptorRef;
             reqAuth = reqAuthFlag;
             transactional = transactionalRef;

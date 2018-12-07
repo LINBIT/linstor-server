@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -18,6 +20,7 @@ import com.linbit.linstor.proto.StorPoolDfnOuterClass.StorPoolDfn;
     name = ApiConsts.API_CRT_STOR_POOL_DFN,
     description = "Creates a storage pool definition"
 )
+@Singleton
 public class CreateStorPoolDfn implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

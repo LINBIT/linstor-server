@@ -9,17 +9,13 @@ import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass.MsgIntSnapshotData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -30,31 +26,17 @@ import java.util.stream.Collectors;
     name = InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT,
     description = "Applies snapshot update data"
 )
+@Singleton
 public class ApplySnapshot implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
-    private final StltApiCallHandlerUtils apiCallHandlerUtils;
-    private final ApiCallAnswerer apiCallAnswerer;
-    private final ControllerPeerConnector controllerPeerConnector;
-    private final Peer controllerPeer;
-    private final ErrorReporter errorReporter;
 
     @Inject
     public ApplySnapshot(
-        StltApiCallHandler apiCallHandlerRef,
-        StltApiCallHandlerUtils apiCallHandlerUtilsRef,
-        ApiCallAnswerer apiCallAnswererRef,
-        ControllerPeerConnector controllerPeerConnectorRef,
-        Peer controllerPeerRef,
-        ErrorReporter errorReporterRef
+        StltApiCallHandler apiCallHandlerRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
-        apiCallHandlerUtils = apiCallHandlerUtilsRef;
-        apiCallAnswerer = apiCallAnswererRef;
-        controllerPeerConnector = controllerPeerConnectorRef;
-        controllerPeer = controllerPeerRef;
-        errorReporter = errorReporterRef;
     }
 
     @Override

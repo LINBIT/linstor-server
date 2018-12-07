@@ -9,6 +9,7 @@ import com.linbit.linstor.proto.MsgEnableDrbdProxyOuterClass.MsgEnableDrbdProxy;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import java.util.UUID;
     name = ApiConsts.API_ENABLE_DRBD_PROXY,
     description = "Enables proxy on a resource connection"
 )
+@Singleton
 public class EnableDrbdProxy implements ApiCallReactive
 {
     private final CtrlDrbdProxyEnableApiCallHandler ctrlDrbdProxyEnableApiCallHandler;

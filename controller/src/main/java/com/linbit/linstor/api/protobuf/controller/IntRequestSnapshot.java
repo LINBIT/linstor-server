@@ -7,6 +7,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.UUID;
     description = "Called by the satellite to request snapshot update data",
     transactional = false
 )
+@Singleton
 public class IntRequestSnapshot implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

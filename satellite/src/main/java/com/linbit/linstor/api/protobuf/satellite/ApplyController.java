@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -15,6 +16,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgI
     name = InternalApiConsts.API_APPLY_CONTROLLER,
     description = "Applies controller update data"
 )
+@Singleton
 public class ApplyController implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;

@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -14,21 +17,22 @@ import java.io.InputStream;
     description = "Satellite failed to apply our full sync",
     transactional = false
 )
+@Singleton
 public class IntFullSyncFailed implements ApiCall
 {
-    private final Peer satellite;
+    private final Provider<Peer> satelliteProvider;
 
     @Inject
-    public IntFullSyncFailed(Peer satelliteRef)
+    public IntFullSyncFailed(Provider<Peer> satelliteProviderRef)
     {
-        satellite = satelliteRef;
+        satelliteProvider = satelliteProviderRef;
     }
 
     @Override
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        satellite.fullSyncFailed();
+        satelliteProvider.get().fullSyncFailed();
     }
 
 }

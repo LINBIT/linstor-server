@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -21,6 +23,7 @@ import java.util.UUID;
     name = ApiConsts.API_MOD_RSC_CONN,
     description = "Modifies a resource connection"
 )
+@Singleton
 public class ModifyResourceConn implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

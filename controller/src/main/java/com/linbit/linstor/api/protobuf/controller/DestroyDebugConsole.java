@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCall;
@@ -30,28 +33,29 @@ import java.io.InputStream;
     description = "Detaches a debug console from a peer connection and destroys the debug console object",
     transactional = false
 )
+@Singleton
 public class DestroyDebugConsole implements ApiCall
 {
     private final ErrorReporter errorReporter;
     private final ApiCallAnswerer apiCallAnswerer;
     private final DebugConsoleCreator debugConsoleCreator;
-    private final Peer client;
-    private final AccessContext accCtx;
+    private final Provider<Peer> clientProvider;
+    private final Provider<AccessContext> accCtxProvider;
 
     @Inject
     public DestroyDebugConsole(
         ErrorReporter errorReporterRef,
         ApiCallAnswerer apiCallAnswererRef,
         DebugConsoleCreator debugConsoleCreatorRef,
-        Peer clientRef,
-        @PeerContext AccessContext accCtxRef
+        Provider<Peer> clientProviderRef,
+        @PeerContext Provider<AccessContext> accCtxProviderRef
     )
     {
         errorReporter = errorReporterRef;
         apiCallAnswerer = apiCallAnswererRef;
         debugConsoleCreator = debugConsoleCreatorRef;
-        client = clientRef;
-        accCtx = accCtxRef;
+        clientProvider = clientProviderRef;
+        accCtxProvider = accCtxProviderRef;
     }
 
     @Override
@@ -60,6 +64,7 @@ public class DestroyDebugConsole implements ApiCall
     {
         try
         {
+            Peer client = clientProvider.get();
             Message reply = client.createMessage();
             ByteArrayOutputStream replyOut = new ByteArrayOutputStream();
             apiCallAnswerer.writeAnswerHeader(replyOut, "DebugReply");
@@ -67,7 +72,7 @@ public class DestroyDebugConsole implements ApiCall
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
             try
             {
-                debugConsoleCreator.destroyDebugConsole(accCtx, client);
+                debugConsoleCreator.destroyDebugConsole(accCtxProvider.get(), client);
 
                 msgDbgReplyBld.addDebugOut("Debug console destroyed");
             }

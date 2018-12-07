@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCall;
@@ -32,28 +35,29 @@ import java.io.InputStream;
     description = "Creates a debug console and attaches it to the peer connection",
     transactional = false
 )
+@Singleton
 public class CreateDebugConsole implements ApiCall
 {
     private final ErrorReporter errorReporter;
     private final ApiCallAnswerer apiCallAnswerer;
     private final DebugConsoleCreator debugConsoleCreator;
-    private final Peer client;
-    private final AccessContext accCtx;
+    private final Provider<Peer> clientProvider;
+    private final Provider<AccessContext> accCtxProvider;
 
     @Inject
     public CreateDebugConsole(
         ErrorReporter errorReporterRef,
         ApiCallAnswerer apiCallAnswererRef,
         DebugConsoleCreator debugConsoleCreatorRef,
-        Peer clientRef,
-        @PeerContext AccessContext accCtxRef
+        Provider<Peer> clientProviderRef,
+        @PeerContext Provider<AccessContext> accCtxProviderRef
     )
     {
         errorReporter = errorReporterRef;
         apiCallAnswerer = apiCallAnswererRef;
         debugConsoleCreator = debugConsoleCreatorRef;
-        client = clientRef;
-        accCtx = accCtxRef;
+        clientProvider = clientProviderRef;
+        accCtxProvider = accCtxProviderRef;
     }
 
     @Override
@@ -62,6 +66,7 @@ public class CreateDebugConsole implements ApiCall
     {
         try
         {
+            Peer client = clientProvider.get();
             Message reply = client.createMessage();
             ByteArrayOutputStream replyOut = new ByteArrayOutputStream();
             apiCallAnswerer.writeAnswerHeader(replyOut, "DebugReply");
@@ -71,7 +76,7 @@ public class CreateDebugConsole implements ApiCall
             {
                 // Create the debug console
                 {
-                    AccessContext privCtx = accCtx.clone();
+                    AccessContext privCtx = accCtxProvider.get().clone();
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
                     debugConsoleCreator.createDebugConsole(privCtx, privCtx, client);
                 }

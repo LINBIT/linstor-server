@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -16,6 +18,7 @@ import java.io.InputStream;
     name = ApiConsts.API_DEL_NET_IF,
     description = "Deletes a network interface from a given node"
 )
+@Singleton
 public class DeleteNetInterface implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

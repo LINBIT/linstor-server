@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlFullSyncApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -15,10 +16,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.tasks.ReconnectorTask;
+import com.linbit.locks.LockGuard;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -27,26 +31,30 @@ import java.io.InputStream;
     description = "Called by the satellite to indicate that controller authentication succeeded",
     requiresAuth = false
 )
+@Singleton
 public class IntAuthAccept implements ApiCallReactive
 {
     private final ErrorReporter errorReporter;
+    private final ScopeRunner scopeRunner;
     private final CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandler;
-    private final Peer peer;
+    private final Provider<Peer> peerProvider;
     private final AccessContext sysCtx;
     private final ReconnectorTask reconnectorTask;
 
     @Inject
     public IntAuthAccept(
         ErrorReporter errorReporterRef,
+        ScopeRunner scopeRunnerRef,
         CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandlerRef,
-        Peer peerRef,
+        Provider<Peer> peerProviderRef,
         ReconnectorTask reconnectorTaskRef,
         @SystemContext AccessContext sysCtxRef
     )
     {
         errorReporter = errorReporterRef;
+        scopeRunner = scopeRunnerRef;
         ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
-        peer = peerRef;
+        peerProvider = peerProviderRef;
         sysCtx = sysCtxRef;
         reconnectorTask = reconnectorTaskRef;
     }
@@ -55,10 +63,21 @@ public class IntAuthAccept implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
+        return scopeRunner.fluxInTransactionlessScope(
+            "Accept auth",
+            LockGuard.createDeferred(),
+            () -> executeInScope(msgDataIn)
+        );
+    }
+
+    private Flux<byte[]> executeInScope(InputStream msgDataIn)
+        throws IOException
+    {
         Flux<?> flux;
         MsgIntAuthSuccess msgIntAuthSuccess = MsgIntAuthSuccess.parseDelimitedFrom(msgDataIn);
         long expectedFullSyncId = msgIntAuthSuccess.getExpectedFullSyncId();
 
+        Peer peer = peerProvider.get();
         if (LinStor.VERSION_INFO_PROVIDER.equalsVersion(
             msgIntAuthSuccess.getVersionMajor(),
             msgIntAuthSuccess.getVersionMinor(),

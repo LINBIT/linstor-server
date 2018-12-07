@@ -7,6 +7,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -15,23 +17,24 @@ import java.io.InputStream;
     description = "Queries the list of snapshot definitions",
     transactional = false
 )
+@Singleton
 public class ListSnapshotDefinition implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final Provider<Peer> clientProvider;
 
     @Inject
-    public ListSnapshotDefinition(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ListSnapshotDefinition(CtrlApiCallHandler apiCallHandlerRef, Provider<Peer> clientProviderRef)
     {
         apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        clientProvider = clientProviderRef;
     }
 
     @Override
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        client.sendMessage(
+        clientProvider.get().sendMessage(
             apiCallHandler
                 .listSnapshotDefinition()
         );

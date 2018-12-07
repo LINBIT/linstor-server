@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -24,13 +27,14 @@ import java.util.UUID;
     description = "Called by the controller to authenticate the controller to the satellite",
     requiresAuth = false
 )
+@Singleton
 public class CtrlAuth implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
     private final ApiCallAnswerer apiCallAnswerer;
     private final CommonSerializer commonSerializer;
     private final UpdateMonitor updateMonitor;
-    private final Peer controllerPeer;
+    private final Provider<Peer> controllerPeerProvider;
 
     @Inject
     public CtrlAuth(
@@ -38,14 +42,14 @@ public class CtrlAuth implements ApiCall
         ApiCallAnswerer apiCallAnswererRef,
         CommonSerializer commonSerializerRef,
         UpdateMonitor updateMonitorRef,
-        Peer controllerPeerRef
+        Provider<Peer> controllerPeerProviderRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
         apiCallAnswerer = apiCallAnswererRef;
         commonSerializer = commonSerializerRef;
         updateMonitor = updateMonitorRef;
-        controllerPeer = controllerPeerRef;
+        controllerPeerProvider = controllerPeerProviderRef;
     }
 
     @Override
@@ -57,6 +61,7 @@ public class CtrlAuth implements ApiCall
         String nodeName = auth.getNodeName();
         UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
 
+        Peer controllerPeer = controllerPeerProvider.get();
         ApiCallRcImpl apiCallRc = apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer);
 
         if (apiCallRc == null)

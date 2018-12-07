@@ -9,6 +9,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntCryptKeyOuterClass.MsgIntCryp
 import java.io.IOException;
 import java.io.InputStream;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import com.google.protobuf.ByteString;
 
@@ -16,6 +17,7 @@ import com.google.protobuf.ByteString;
     name = InternalApiConsts.API_CRYPT_KEY,
     description = "Sets the crypt key"
 )
+@Singleton
 public class CryptKey implements ApiCall
 {
 

@@ -8,6 +8,7 @@ import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -15,6 +16,7 @@ import java.io.InputStream;
     name = InternalApiConsts.API_CHANGED_CONTROLLER,
     description = "Called by the controller to indicate that a controller properties changed."
 )
+@Singleton
 public class ChangedController implements ApiCallReactive
 {
     private final DeviceManager deviceManager;

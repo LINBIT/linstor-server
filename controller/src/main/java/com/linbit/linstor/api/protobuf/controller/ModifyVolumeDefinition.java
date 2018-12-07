@@ -10,6 +10,7 @@ import com.linbit.linstor.proto.MsgModVlmDfnOuterClass.MsgModVlmDfn;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import java.util.UUID;
     name = ApiConsts.API_MOD_VLM_DFN,
     description = "Modifies a volume definition"
 )
+@Singleton
 public class ModifyVolumeDefinition implements ApiCallReactive
 {
     private final CtrlVlmDfnModifyApiCallHandler ctrlVlmDfnModifyApiCallHandler;

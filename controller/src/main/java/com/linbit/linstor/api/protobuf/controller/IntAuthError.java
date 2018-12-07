@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -21,15 +24,16 @@ import java.io.InputStream;
     requiresAuth = false,
     transactional = false
 )
+@Singleton
 public class IntAuthError implements ApiCall
 {
-    private final Peer client;
+    private final Provider<Peer> clientProvider;
     private final ErrorReporter errorReporter;
 
     @Inject
-    public IntAuthError(Peer clientRef, ErrorReporter errorReporterRef)
+    public IntAuthError(Provider<Peer> clientProviderRef, ErrorReporter errorReporterRef)
     {
-        client = clientRef;
+        clientProvider = clientProviderRef;
         errorReporter = errorReporterRef;
     }
 
@@ -37,6 +41,7 @@ public class IntAuthError implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
+        Peer client = clientProvider.get();
         client.setAuthenticated(false);
         client.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
         MsgApiCallResponse msgApiCallRc = MsgApiCallResponse.parseDelimitedFrom(msgDataIn);

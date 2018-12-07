@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
@@ -18,6 +20,7 @@ import java.util.UUID;
     name = InternalApiConsts.API_UPDATE_FREE_CAPACITY,
     description = "Satellite successfully applied a storage pool"
 )
+@Singleton
 public class IntUpdateFreeCapacity implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

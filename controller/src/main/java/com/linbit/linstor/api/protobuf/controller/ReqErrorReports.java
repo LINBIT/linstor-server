@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -11,7 +12,6 @@ import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import reactor.core.publisher.Flux;
 
@@ -23,16 +23,15 @@ import reactor.core.publisher.Flux;
     name = ApiConsts.API_REQ_ERROR_REPORTS,
     description = "Returns the requested error reports."
 )
+@Singleton
 public class ReqErrorReports implements ApiCallReactive
 {
     private final CtrlErrorListApiCallHandler errorListApiCallHandler;
-    private final Peer client;
 
     @Inject
-    public ReqErrorReports(CtrlErrorListApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ReqErrorReports(CtrlErrorListApiCallHandler apiCallHandlerRef)
     {
         errorListApiCallHandler = apiCallHandlerRef;
-        client = clientRef;
     }
 
     @Override

@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgModDrbdProxyOuterClass.MsgModDrbdProxy;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import java.util.UUID;
     name = ApiConsts.API_MOD_DRBD_PROXY,
     description = "Modifies DRBD Proxy configuration for a resource definition"
 )
+@Singleton
 public class ModifyDrbdProxy implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
@@ -23,6 +25,7 @@ import java.util.List;
     name = ApiConsts.API_CRT_NODE,
     description = "Creates a node"
 )
+@Singleton
 public class CreateNode implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

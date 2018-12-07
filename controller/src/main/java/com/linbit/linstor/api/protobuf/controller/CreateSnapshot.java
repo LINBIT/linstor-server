@@ -11,6 +11,7 @@ import com.linbit.linstor.proto.SnapshotDfnOuterClass.SnapshotDfn;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
     name = ApiConsts.API_CRT_SNAPSHOT,
     description = "Creates a snapshot"
 )
+@Singleton
 public class CreateSnapshot implements ApiCallReactive
 {
     private final CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandler;

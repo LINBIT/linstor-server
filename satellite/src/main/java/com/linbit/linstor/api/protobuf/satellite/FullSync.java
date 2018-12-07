@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
@@ -44,13 +47,14 @@ import java.util.Map.Entry;
     name = InternalApiConsts.API_FULL_SYNC_DATA,
     description = "Transfers initial data for all objects to a satellite"
 )
+@Singleton
 public class FullSync implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
     private final ApiCallAnswerer apiCallAnswerer;
     private final ControllerPeerConnector controllerPeerConnector;
-    private final Peer controllerPeer;
+    private final Provider<Peer> controllerPeerProvider;
     private final ErrorReporter errorReporter;
 
     @Inject
@@ -59,7 +63,7 @@ public class FullSync implements ApiCall
         StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         ApiCallAnswerer apiCallAnswererRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        Peer controllerPeerRef,
+        Provider<Peer> controllerPeerProviderRef,
         ErrorReporter errorReporterRef
     )
     {
@@ -67,7 +71,7 @@ public class FullSync implements ApiCall
         apiCallHandlerUtils = apiCallHandlerUtilsRef;
         apiCallAnswerer = apiCallAnswererRef;
         controllerPeerConnector = controllerPeerConnectorRef;
-        controllerPeer = controllerPeerRef;
+        controllerPeerProvider = controllerPeerProviderRef;
         errorReporter = errorReporterRef;
     }
 
@@ -118,7 +122,7 @@ public class FullSync implements ApiCall
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         builder.build().writeDelimitedTo(baos);
-        controllerPeer.sendMessage(
+        controllerPeerProvider.get().sendMessage(
             apiCallAnswerer.prepareOnewayMessage(
                 baos.toByteArray(),
                 InternalApiConsts.API_FULL_SYNC_SUCCESS

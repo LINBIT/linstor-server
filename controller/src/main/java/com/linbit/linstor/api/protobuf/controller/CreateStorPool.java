@@ -11,6 +11,7 @@ import com.linbit.linstor.proto.StorPoolOuterClass.StorPool;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -18,6 +19,7 @@ import java.io.InputStream;
     name = ApiConsts.API_CRT_STOR_POOL,
     description = "Creates a storage pool name registration"
 )
+@Singleton
 public class CreateStorPool implements ApiCallReactive
 {
     private final CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtApiCallHandler;

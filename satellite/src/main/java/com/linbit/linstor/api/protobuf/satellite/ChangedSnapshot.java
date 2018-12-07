@@ -13,6 +13,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObje
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -21,6 +22,7 @@ import java.util.UUID;
     name = InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT,
     description = "Called by the controller to indicate that a snapshot was modified"
 )
+@Singleton
 public class ChangedSnapshot implements ApiCallReactive
 {
     private final DeviceManager deviceManager;

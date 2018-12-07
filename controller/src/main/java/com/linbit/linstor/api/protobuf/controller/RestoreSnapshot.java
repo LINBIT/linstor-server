@@ -10,6 +10,7 @@ import com.linbit.linstor.proto.MsgRestoreSnapshotRscOuterClass;
 import com.linbit.linstor.proto.MsgRestoreSnapshotRscOuterClass.MsgRestoreSnapshotRsc;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
     name = ApiConsts.API_RESTORE_SNAPSHOT,
     description = "Restores a snapshot"
 )
+@Singleton
 public class RestoreSnapshot implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

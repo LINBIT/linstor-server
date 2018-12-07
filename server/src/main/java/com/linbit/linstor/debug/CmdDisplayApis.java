@@ -16,11 +16,10 @@ import java.util.Map;
  */
 public class CmdDisplayApis extends BaseDebugCmd
 {
-    private static final int DEFAULT_INDENTATION_LEVEL = 4;
-    private final CommonMessageProcessor commonMessageProcessor;
+    private final Map<String, ApiCallDescriptor> apiCallDescriptors;
 
     @Inject
-    public CmdDisplayApis(CommonMessageProcessor commonMessageProcessorRef)
+    public CmdDisplayApis(Map<String, ApiCallDescriptor> apiCallDescriptorsRef)
     {
         super(
             new String[]
@@ -34,7 +33,7 @@ public class CmdDisplayApis extends BaseDebugCmd
             null
         );
 
-        commonMessageProcessor = commonMessageProcessorRef;
+        apiCallDescriptors = apiCallDescriptorsRef;
     }
 
     @Override
@@ -47,7 +46,7 @@ public class CmdDisplayApis extends BaseDebugCmd
         throws Exception
     {
         int count = 0;
-        for (ApiCallDescriptor apiObj : commonMessageProcessor.getApiCallDescriptors().values())
+        for (ApiCallDescriptor apiObj : apiCallDescriptors.values())
         {
             debugOut.printf("\u001b[1;37m%s\u001b[0m\n", apiObj.getName());
             String description = apiObj.getDescription();

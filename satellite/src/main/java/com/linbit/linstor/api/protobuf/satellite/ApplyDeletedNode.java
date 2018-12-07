@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -14,6 +16,7 @@ import java.io.InputStream;
     name = InternalApiConsts.API_APPLY_NODE_DELETED,
     description = "Applies an update of a deleted node (ensuring the node is deleted)"
 )
+@Singleton
 public class ApplyDeletedNode implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;

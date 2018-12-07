@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -16,6 +18,7 @@ import java.io.InputStream;
     name = ApiConsts.API_DEL_CFG_VAL,
     description = "Deletes a controller config property (if it exists)"
 )
+@Singleton
 public class DeleteCtrlCfgProp implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

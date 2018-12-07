@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -23,16 +25,17 @@ import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
     description = "Returns the requested error reports.",
     transactional = false
 )
+@Singleton
 public class ReqErrorReports implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final Provider<Peer> peerProvider;
 
     @Inject
-    public ReqErrorReports(StltApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ReqErrorReports(StltApiCallHandler apiCallHandlerRef, Provider<Peer> peerProviderRef)
     {
         apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        peerProvider = peerProviderRef;
     }
 
     @Override
@@ -44,7 +47,7 @@ public class ReqErrorReports implements ApiCall
             reqErrorReport.hasSince() ? new Date(reqErrorReport.getSince()) : null);
         Optional<Date> to = Optional.ofNullable(reqErrorReport.hasTo() ? new Date(reqErrorReport.getTo()) : null);
 
-        client.sendMessage(
+        peerProvider.get().sendMessage(
             apiCallHandler
                 .listErrorReports(
                     new HashSet<>(reqErrorReport.getNodeNamesList()),

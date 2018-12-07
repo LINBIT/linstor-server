@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgCrtSfTargetNodeOuterClass.MsgCrtSfTargetNode;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +19,7 @@ import java.io.InputStream;
     name = ApiConsts.API_CRT_SF_TARGET_NODE,
     description = "Creates a swordfish target node"
 )
+@Singleton
 public class CreateSwordfishTargetNode implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

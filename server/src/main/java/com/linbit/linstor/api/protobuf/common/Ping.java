@@ -8,6 +8,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -20,6 +21,7 @@ import java.io.InputStream;
     name = "Ping",
     description = "Ping: Communication test. Responds with a Pong message."
 )
+@Singleton
 public class Ping implements ApiCallReactive
 {
     private final CommonSerializer commonSerializer;

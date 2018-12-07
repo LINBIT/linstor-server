@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -15,23 +18,24 @@ import java.io.InputStream;
     description = "Lists controller config properties",
     transactional = false
 )
+@Singleton
 public class ListCtrlCfgProps implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final Provider<Peer> clientProvider;
 
     @Inject
-    public ListCtrlCfgProps(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ListCtrlCfgProps(CtrlApiCallHandler apiCallHandlerRef, Provider<Peer> clientProviderRef)
     {
         apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        clientProvider = clientProviderRef;
     }
 
     @Override
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        client.sendMessage(
+        clientProvider.get().sendMessage(
             apiCallHandler.listCtrlCfg(
             )
         );

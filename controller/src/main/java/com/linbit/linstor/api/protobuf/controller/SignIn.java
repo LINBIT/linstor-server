@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.PeerContext;
@@ -30,14 +33,15 @@ import java.io.InputStream;
     requiresAuth = false,
     transactional = false
 )
+@Singleton
 public class SignIn implements ApiCall
 {
     private final ErrorReporter errorReporter;
     private final Authentication idAuthentication;
     private final ApiCallAnswerer apiCallAnswerer;
     private final AccessContext sysCtx;
-    private final AccessContext clientCtx;
-    private final Peer client;
+    private final Provider<AccessContext> clientCtxProvider;
+    private final Provider<Peer> clientProvider;
 
     @Inject
     public SignIn(
@@ -45,16 +49,16 @@ public class SignIn implements ApiCall
         Authentication idAuthenticationRef,
         ApiCallAnswerer apiCallAnswererRef,
         @SystemContext AccessContext sysCtxRef,
-        @PeerContext AccessContext clientCtxRef,
-        Peer clientRef
+        @PeerContext Provider<AccessContext> clientCtxProviderRef,
+        Provider<Peer> clientProviderRef
     )
     {
         errorReporter = errorReporterRef;
         idAuthentication = idAuthenticationRef;
         apiCallAnswerer = apiCallAnswererRef;
         sysCtx = sysCtxRef;
-        clientCtx = clientCtxRef;
-        client = clientRef;
+        clientCtxProvider = clientCtxProviderRef;
+        clientProvider = clientProviderRef;
     }
 
     @Override
@@ -62,6 +66,7 @@ public class SignIn implements ApiCall
     {
         ApiCallRcImpl reply = new ApiCallRcImpl();
         String idNameText = null;
+        AccessContext clientCtx = clientCtxProvider.get();
         try
         {
             MsgSignInOuterClass.MsgSignIn signInData = MsgSignInOuterClass.MsgSignIn.parseDelimitedFrom(msgDataIn);
@@ -81,7 +86,7 @@ public class SignIn implements ApiCall
         }
         catch (IOException ioExc)
         {
-            String reportId = errorReporter.reportError(ioExc, clientCtx, client, "Sign-in");
+            String reportId = errorReporter.reportError(ioExc, clientCtx, clientProvider.get(), "Sign-in");
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
             rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
             rcEntry.setMessage("Sgn-in failed");
@@ -137,7 +142,7 @@ public class SignIn implements ApiCall
         {
             AccessContext privCtx = sysCtx.clone();
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-            client.setAccessContext(privCtx, peerSignInCtx);
+            clientProvider.get().setAccessContext(privCtx, peerSignInCtx);
         }
         catch (AccessDeniedException accExc)
         {

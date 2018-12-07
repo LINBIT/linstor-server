@@ -9,6 +9,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgRestoreSnapshotVlmDfnOuterClass.MsgRestoreSnapshotVlmDfn;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -16,6 +17,7 @@ import java.io.InputStream;
     name = ApiConsts.API_RESTORE_VLM_DFN,
     description = "Creates volume definitions from a snapshot"
 )
+@Singleton
 public class RestoreVolumeDefinition implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

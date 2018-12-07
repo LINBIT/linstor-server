@@ -10,11 +10,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 @ProtobufApiCall(
     name = ApiConsts.API_CRT_CRYPT_PASS,
     description = "Enables encryption of the stored volume encryption keys"
 )
+@Singleton
 public class CreateCryptPassphrase implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

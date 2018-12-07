@@ -26,6 +26,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnecti
 import com.linbit.linstor.stateflags.FlagsHelper;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
     name = InternalApiConsts.API_APPLY_RSC,
     description = "Applies resource update data"
 )
+@Singleton
 public class ApplyRsc implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;

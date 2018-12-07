@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -19,23 +22,24 @@ import java.io.InputStream;
     description = "Queries the list of storage pool definitions",
     transactional = false
 )
+@Singleton
 public class ListStorPoolDefinition implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final Provider<Peer> clientProvider;
 
     @Inject
-    public ListStorPoolDefinition(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ListStorPoolDefinition(CtrlApiCallHandler apiCallHandlerRef, Provider<Peer> clientProviderRef)
     {
         apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        clientProvider = clientProviderRef;
     }
 
     @Override
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        client.sendMessage(
+        clientProvider.get().sendMessage(
             apiCallHandler
                 .listStorPoolDefinition()
         );

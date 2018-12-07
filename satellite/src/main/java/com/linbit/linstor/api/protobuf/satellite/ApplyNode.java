@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.api.ApiCall;
@@ -25,6 +27,7 @@ import java.util.UUID;
     name = InternalApiConsts.API_APPLY_NODE,
     description = "Applies node update data"
 )
+@Singleton
 public class ApplyNode implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;

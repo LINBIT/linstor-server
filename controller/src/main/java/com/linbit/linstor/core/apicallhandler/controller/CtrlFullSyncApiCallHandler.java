@@ -20,6 +20,7 @@ import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -41,6 +42,7 @@ public class CtrlFullSyncApiCallHandler
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
+    private final Provider<Peer> satelliteProvider;
 
     @Inject
     CtrlFullSyncApiCallHandler(
@@ -51,7 +53,8 @@ public class CtrlFullSyncApiCallHandler
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        Provider<Peer> satelliteProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -62,6 +65,7 @@ public class CtrlFullSyncApiCallHandler
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
+        satelliteProvider = satelliteProviderRef;
     }
 
     public Flux<?> sendFullSync(Peer satellite, long expectedFullSyncId)
@@ -78,7 +82,7 @@ public class CtrlFullSyncApiCallHandler
         );
     }
 
-    public Flux<?> fullSyncSuccess(Peer satellite)
+    public Flux<?> fullSyncSuccess()
     {
         return scopeRunner.fluxInTransactionlessScope(
             "Handle full sync success",
@@ -86,7 +90,7 @@ public class CtrlFullSyncApiCallHandler
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.readLock()
             ),
-            () -> fullSyncSuccessInScope(satellite)
+            this::fullSyncSuccessInScope
         );
     }
 
@@ -145,8 +149,10 @@ public class CtrlFullSyncApiCallHandler
         return Flux.empty();
     }
 
-    private Flux<?> fullSyncSuccessInScope(Peer satellite)
+    private Flux<?> fullSyncSuccessInScope()
     {
+        Peer satellite = satelliteProvider.get();
+
         satellite.setConnectionStatus(Peer.ConnectionStatus.ONLINE);
 
         Node localNode = satellite.getNode();

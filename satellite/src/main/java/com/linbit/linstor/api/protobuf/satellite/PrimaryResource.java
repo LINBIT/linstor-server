@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -19,6 +21,7 @@ import java.util.UUID;
     name = InternalApiConsts.API_PRIMARY_RSC,
     description = "Controller notifies the satellite that one of his resources should become primary"
 )
+@Singleton
 public class PrimaryResource implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;

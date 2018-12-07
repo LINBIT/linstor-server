@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -21,20 +24,21 @@ import java.io.InputStream;
     description = "Send commands to the controller",
     transactional = false
 )
+@Singleton
 public class Control implements ApiCall
 {
-    private final AccessContext accCtx;
+    private final Provider<AccessContext> accCtxProvider;
     private final ApplicationLifecycleManager applicationLifecycleManager;
     private final ApiCallAnswerer apiCallAnswerer;
 
     @Inject
     public Control(
-        @PeerContext AccessContext accCtxRef,
+        @PeerContext Provider<AccessContext> accCtxProviderRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
         ApiCallAnswerer apiCallAnswererRef
     )
     {
-        accCtx = accCtxRef;
+        accCtxProvider = accCtxProviderRef;
         applicationLifecycleManager = applicationLifecycleManagerRef;
         apiCallAnswerer = apiCallAnswererRef;
     }
@@ -48,6 +52,7 @@ public class Control implements ApiCall
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
+        AccessContext accCtx = accCtxProvider.get();
         try
         {
             AccessContext privCtx = accCtx.clone();

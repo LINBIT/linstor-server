@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -16,6 +18,7 @@ import java.util.UUID;
     description = "Called by the satellite to request storage pool update data",
     transactional = false
 )
+@Singleton
 public class IntRequestStorPool implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

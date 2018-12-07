@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.api.ApiCall;
@@ -33,22 +36,23 @@ import java.util.LinkedList;
     description = "Submits a debug command to an active debug console attached to the peer.\n" +
         "The debug console typically answers with a DebugReply message.\n"
 )
+@Singleton
 public class DebugCommand implements ApiCall
 {
     private final ErrorReporter errorReporter;
     private final ApiCallAnswerer apiCallAnswerer;
-    private final Peer client;
+    private final Provider<Peer> clientProvider;
 
     @Inject
     public DebugCommand(
         ErrorReporter errorReporterRef,
         ApiCallAnswerer apiCallAnswererRef,
-        Peer clientRef
+        Provider<Peer> clientProviderRef
     )
     {
         errorReporter = errorReporterRef;
         apiCallAnswerer = apiCallAnswererRef;
-        client = clientRef;
+        clientProvider = clientProviderRef;
     }
 
     @Override
@@ -62,6 +66,7 @@ public class DebugCommand implements ApiCall
             ByteArrayOutputStream debugErr = new ByteArrayOutputStream();
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
 
+            Peer client = clientProvider.get();
             ControllerPeerCtx peerContext = (ControllerPeerCtx) client.getAttachment();
             DebugConsole dbgConsole = peerContext.getDebugConsole();
             if (dbgConsole != null)

@@ -9,6 +9,7 @@ import com.linbit.linstor.proto.apidata.AutoSelectFilterApiData;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -16,6 +17,7 @@ import java.io.InputStream;
     name = ApiConsts.API_QRY_MAX_VLM_SIZE,
     description = "Queries the maximum volume size by given replica-count"
 )
+@Singleton
 public class MaxVlmSize implements ApiCallReactive
 {
     private final CtrlQueryMaxVlmSizeApiCallHandler ctrlQueryMaxVlmSizeApiCallHandler;

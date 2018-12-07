@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
@@ -21,6 +23,7 @@ import java.util.List;
     name = ApiConsts.API_CRT_VLM_DFN,
     description = "Creates a volume definition"
 )
+@Singleton
 public class CreateVolumeDefinition implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

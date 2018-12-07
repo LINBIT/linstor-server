@@ -11,8 +11,10 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Set;
 
+@Singleton
 public class DebugConsoleCreator
 {
     private final ErrorReporter errorReporter;

@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -20,16 +22,17 @@ import com.linbit.linstor.proto.MsgReqRscConnOuterClass.MsgReqRscConn;
     description = "Returns the requestes resource connections",
     transactional = false
 )
+@Singleton
 public class ReqRscConnList implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final Provider<Peer> clientProvider;
 
     @Inject
-    public ReqRscConnList(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ReqRscConnList(CtrlApiCallHandler apiCallHandlerRef, Provider<Peer> clientProviderRef)
     {
         apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        clientProvider = clientProviderRef;
     }
 
     @Override
@@ -38,7 +41,7 @@ public class ReqRscConnList implements ApiCall
     {
         MsgReqRscConn reqRscConn = MsgReqRscConn.parseDelimitedFrom(msgDataIn);
 
-        client.sendMessage(
+        clientProvider.get().sendMessage(
             apiCallHandler.listResourceConnections(reqRscConn.getRscName())
         );
     }

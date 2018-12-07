@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
@@ -23,6 +25,7 @@ import java.util.List;
     name = ApiConsts.API_CRT_RSC_DFN,
     description = "Creates a resource definition"
 )
+@Singleton
 public class CreateResourceDefinition implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

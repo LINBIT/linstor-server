@@ -9,16 +9,20 @@ import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.proto.FilterOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntVlmAllocatedOuterClass.MsgIntVlmAllocated;
 import com.linbit.linstor.proto.javainternal.MsgIntVlmAllocatedOuterClass.VlmAllocated;
+import com.linbit.locks.LockGuard;
 import com.linbit.utils.Either;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,26 +36,39 @@ import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBu
     name = InternalApiConsts.API_REQUEST_VLM_ALLOCATED,
     description = "Returns volume allocated"
 )
+@Singleton
 public class ReqVlmAllocated implements ApiCallReactive
 {
+    private final ScopeRunner scopeRunner;
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
     private final CommonSerializer commonSerializer;
-    private final long apiCallId;
+    private final Provider<Long> apiCallIdProvider;
 
     @Inject
     public ReqVlmAllocated(
+        ScopeRunner scopeRunnerRef,
         StltApiCallHandlerUtils apiCallHandlerUtilsRef,
         CommonSerializer commonSerializerRef,
-        @Named(ApiModule.API_CALL_ID) Long apiCallIdRef
+        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdProviderRef
     )
     {
+        scopeRunner = scopeRunnerRef;
         apiCallHandlerUtils = apiCallHandlerUtilsRef;
         commonSerializer = commonSerializerRef;
-        apiCallId = apiCallIdRef;
+        apiCallIdProvider = apiCallIdProviderRef;
     }
 
     @Override
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
+    {
+        return scopeRunner.fluxInTransactionlessScope(
+            "Query volume allocated capacity",
+            LockGuard.createDeferred(),
+            () -> executeInScope(msgDataIn)
+        );
+    }
+
+    private Flux<byte[]> executeInScope(InputStream msgDataIn)
         throws IOException
     {
         FilterOuterClass.Filter filter = FilterOuterClass.Filter.parseDelimitedFrom(msgDataIn);
@@ -85,7 +102,7 @@ public class ReqVlmAllocated implements ApiCallReactive
         builder.build().writeDelimitedTo(baos);
 
         return Flux.just(commonSerializer
-            .answerBuilder(InternalApiConsts.API_REQUEST_THIN_FREE_SPACE, apiCallId)
+            .answerBuilder(InternalApiConsts.API_REQUEST_THIN_FREE_SPACE, apiCallIdProvider.get())
             .bytes(baos.toByteArray())
             .build()
         );

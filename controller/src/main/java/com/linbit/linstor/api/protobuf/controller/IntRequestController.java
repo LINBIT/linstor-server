@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObje
     description = "Called by the satellite to request controller update data",
     transactional = false
 )
+@Singleton
 public class IntRequestController implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

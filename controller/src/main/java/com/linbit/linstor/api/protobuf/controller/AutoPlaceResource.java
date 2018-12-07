@@ -11,6 +11,7 @@ import com.linbit.linstor.proto.apidata.AutoSelectFilterApiData;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -18,6 +19,7 @@ import java.io.InputStream;
     name = ApiConsts.API_AUTO_PLACE_RSC,
     description = "Creates a resource from a resource definition and assigns it to a node"
 )
+@Singleton
 public class AutoPlaceResource implements ApiCallReactive
 {
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;

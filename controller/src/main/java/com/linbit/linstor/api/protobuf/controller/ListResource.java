@@ -1,6 +1,9 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -22,16 +25,17 @@ import java.util.List;
     description = "Queries the list of resources",
     transactional = false
 )
+@Singleton
 public class ListResource implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final Provider<Peer> clientProvider;
 
     @Inject
-    public ListResource(CtrlApiCallHandler apiCallHandlerRef, Peer clientRef)
+    public ListResource(CtrlApiCallHandler apiCallHandlerRef, Provider<Peer> clientProviderRef)
     {
         apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        clientProvider = clientProviderRef;
     }
 
     @Override
@@ -47,7 +51,7 @@ public class ListResource implements ApiCall
             nodeNames = filter.getNodeNamesList();
             resourceNames = filter.getResourceNamesList();
         }
-        client.sendMessage(
+        clientProvider.get().sendMessage(
             apiCallHandler
                 .listResource(nodeNames, resourceNames)
         );

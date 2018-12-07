@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.satellite;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -24,10 +25,11 @@ import com.linbit.linstor.netcom.Peer;
     requiresAuth = false,
     transactional = false
 )
+@Singleton
 public class Hostname implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
-    private final Peer client;
+    private final Provider<Peer> peerProvider;
     private final CommonSerializer commonSerializer;
 
     private Provider<Long> apiCallId;
@@ -35,12 +37,12 @@ public class Hostname implements ApiCall
     @Inject
     public Hostname(
         StltApiCallHandler apiCallHandlerRef,
-        Peer clientRef,
-        CommonSerializer commonSerializerRef,
-        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef)
+        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
+        Provider<Peer> peerProviderRef, CommonSerializer commonSerializerRef
+    )
     {
         apiCallHandler = apiCallHandlerRef;
-        client = clientRef;
+        peerProvider = peerProviderRef;
         commonSerializer = commonSerializerRef;
         apiCallId = apiCallIdRef;
     }
@@ -49,7 +51,7 @@ public class Hostname implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        client.sendMessage(commonSerializer.answerBuilder(ApiConsts.API_HOSTNAME, apiCallId.get())
+        peerProvider.get().sendMessage(commonSerializer.answerBuilder(ApiConsts.API_HOSTNAME, apiCallId.get())
             .hostName(apiCallHandler.getHostname())
             .build()
         );

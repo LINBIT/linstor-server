@@ -7,6 +7,7 @@ import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass.MsgIntSnapshotEndedData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -14,6 +15,7 @@ import java.io.InputStream;
     name = InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED,
     description = "Applies an update of a snapshot that is no longer in progress"
 )
+@Singleton
 public class ApplyEndedSnapshot implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;

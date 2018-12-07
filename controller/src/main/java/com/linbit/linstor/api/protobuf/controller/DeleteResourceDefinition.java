@@ -9,6 +9,7 @@ import com.linbit.linstor.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -16,6 +17,7 @@ import java.io.InputStream;
     name = ApiConsts.API_DEL_RSC_DFN,
     description = "Deletes a resource definition"
 )
+@Singleton
 public class DeleteResourceDefinition implements ApiCallReactive
 {
     private final CtrlRscDfnDeleteApiCallHandler ctrlRscDfnDeleteApiCallHandler;

@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -17,6 +19,7 @@ import java.io.InputStream;
     name = ApiConsts.API_CRT_NET_IF,
     description = "Creates a new network interface for a given node"
 )
+@Singleton
 public class CreateNetInterface implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;

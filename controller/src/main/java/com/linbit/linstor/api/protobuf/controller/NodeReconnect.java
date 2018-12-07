@@ -9,6 +9,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.MsgNodeReconnectOuterClass.MsgNodeReconnect;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -17,6 +18,7 @@ import java.io.InputStream;
     description = "Reconnects a node",
     transactional = false
 )
+@Singleton
 public class NodeReconnect implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
