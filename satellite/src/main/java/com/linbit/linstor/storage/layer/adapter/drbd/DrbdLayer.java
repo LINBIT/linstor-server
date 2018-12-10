@@ -825,19 +825,22 @@ public class DrbdLayer implements ResourceLayer
                         }
 
                         vlmState.metaDataIsNew = false;
-                        vlmState.allocatedSize = backingVlm.getUsableSize(workerCtx);
-                        vlmState.peerSlots = peerSlots;
-                        vlmState.alStripes =  FIXME_AL_STRIPES;
-                        vlmState.alStripeSize =  FIXME_AL_STRIPE_SIZE;
-                        vlmState.usableSize = new MetaData().getNetSize(
-                            vlmState.allocatedSize,
-                            vlmState.peerSlots,
-                            vlmState.alStripes,
-                            vlmState.alStripeSize
-                        );
                         if (rsc.getStateFlags().isSet(workerCtx, RscFlags.DISKLESS))
                         {
                             vlmState.checkMetaData = false;
+                        }
+                        else
+                        {
+                            vlmState.allocatedSize = backingVlm.getUsableSize(workerCtx);
+                            vlmState.peerSlots = peerSlots;
+                            vlmState.alStripes =  FIXME_AL_STRIPES;
+                            vlmState.alStripeSize =  FIXME_AL_STRIPE_SIZE;
+                            vlmState.usableSize = new MetaData().getNetSize(
+                                vlmState.allocatedSize,
+                                vlmState.peerSlots,
+                                vlmState.alStripes,
+                                vlmState.alStripeSize
+                            );
                         }
                         rscState.putVlmState(vlm.getVolumeDefinition().getVolumeNumber(), vlmState);
                     }
