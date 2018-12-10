@@ -9,6 +9,13 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbd.md.AlStripesException;
+import com.linbit.drbd.md.MaxAlSizeException;
+import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MetaData;
+import com.linbit.drbd.md.MinAlSizeException;
+import com.linbit.drbd.md.MinSizeException;
+import com.linbit.drbd.md.PeerCountException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDataFactory;
@@ -39,6 +46,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.LayerDataFactory;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnDataStlt;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnDataStlt;
 
@@ -244,6 +252,37 @@ public class LayeredResourcesHelper
                                                 peerSlots
                                             )
                                         );
+                                    }
+                                    long grossSize;
+                                    try
+                                    {
+                                        grossSize = new MetaData().getGrossSize(
+                                            vlmDfn.getVolumeSize(sysCtx),
+                                            peerSlots,
+                                            DrbdLayer.FIXME_AL_STRIPES,
+                                            DrbdLayer.FIXME_AL_STRIPE_SIZE
+                                        );
+
+                                        /*
+                                         * FIXME: the controller has to make sure to specify the gross
+                                         * size in the volume definition.
+                                         *
+                                         * there are two cases:
+                                         * 1)a) user creates manually storage resource first, with 100G
+                                         *   b) user creates a drbd-resource on top of storage resource
+                                         *      drbd(-layer) has no other chance as consider the 100G as gross size
+                                         * 2)a) user creates resource from policy (DRBD on top of LVM) with 100G
+                                         *   b) the controller now  has to modify vlmDfn.size to 100G + metaData.
+                                         */
+                                        vlmDfn.setVolumeSize(sysCtx, grossSize);
+                                    }
+                                    catch (
+                                        IllegalArgumentException | MinSizeException | MaxSizeException |
+                                        MinAlSizeException | MaxAlSizeException | AlStripesException |
+                                        PeerCountException | SQLException exc
+                                    )
+                                    {
+                                        throw new ImplementationError(exc);
                                     }
                                 }
                             )

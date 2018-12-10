@@ -93,11 +93,11 @@ public class DrbdLayer implements ResourceLayer
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
-    private static final int FIXME_AL_STRIPES = 1;
+    public static final int FIXME_AL_STRIPES = 1;
 
     // Number of activity log stripes; this should be replaced with a property of the resource definition,
     // a property of the volume definition, or or otherwise a system-wide default
-    private static final long FIXME_AL_STRIPE_SIZE = 32;
+    public static final long FIXME_AL_STRIPE_SIZE = 32;
     private Provider<DeviceHandler2> resourceProcessorProvider;
 
     @Inject
@@ -833,8 +833,8 @@ public class DrbdLayer implements ResourceLayer
                         {
                             vlmState.allocatedSize = backingVlm.getUsableSize(workerCtx);
                             vlmState.peerSlots = peerSlots;
-                            vlmState.alStripes =  FIXME_AL_STRIPES;
-                            vlmState.alStripeSize =  FIXME_AL_STRIPE_SIZE;
+                            vlmState.alStripes = FIXME_AL_STRIPES;
+                            vlmState.alStripeSize = FIXME_AL_STRIPE_SIZE;
                             vlmState.usableSize = new MetaData().getNetSize(
                                 vlmState.allocatedSize,
                                 vlmState.peerSlots,
