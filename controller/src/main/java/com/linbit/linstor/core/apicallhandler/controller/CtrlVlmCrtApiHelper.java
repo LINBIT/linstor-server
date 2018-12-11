@@ -7,7 +7,6 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
@@ -15,7 +14,6 @@ import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
@@ -73,11 +71,10 @@ class CtrlVlmCrtApiHelper
     public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Map<StorPool.Key, Long> thinFreeCapacities,
-        StorageDriverKind allowedKind
+        Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
-        return createVolumeResolvingStorPool(rsc, vlmDfn, thinFreeCapacities, null, null, allowedKind);
+        return createVolumeResolvingStorPool(rsc, vlmDfn, thinFreeCapacities, null, null);
     }
 
     public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
@@ -85,30 +82,12 @@ class CtrlVlmCrtApiHelper
         VolumeDefinition vlmDfn,
         Map<StorPool.Key, Long> thinFreeCapacities,
         String blockDevice,
-        String metaDisk,
-        StorageDriverKind allowedKind
+        String metaDisk
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        boolean isDless = isDiskless(rsc);
-        StorPool storPool = resolveStorPool(rsc, vlmDfn, isDless).extractApiCallRc(apiCallRc);
-        isDless = isDiskless(rsc);  // recheck diskless, resolveStorPool might mark resource diskless if dless storage
-
-        if (allowedKind != null && !isDless && storPool.getDriverKind() != allowedKind)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.entryBuilder(
-                    ApiConsts.FAIL_INVLD_STOR_DRIVER,
-                    String.format(
-                        "Storage driver '%s' not allowed for volume.",
-                        storPool.getDriverKind().getDriverName()))
-                    .setDetails("It is not supported to use storage pools with different" +
-                        "storage drivers on the same volume definition.")
-                    .setCorrection(
-                        String.format("Use a storage pool with the driver kind '%s'", allowedKind.getDriverName()))
-                    .build()
-            );
-        }
+        boolean isDiskless = isDiskless(rsc);
+        StorPool storPool = resolveStorPool(rsc, vlmDfn, isDiskless).extractApiCallRc(apiCallRc);
 
         return new ApiCallRcWith<>(apiCallRc, createVolume(
             rsc,
@@ -118,39 +97,6 @@ class CtrlVlmCrtApiHelper
             blockDevice,
             metaDisk
         ));
-    }
-
-    public static StorageDriverKind firstStorageDriverKind(
-        final ResourceDefinition rscDfn,
-        final VolumeDefinition vlmDfn,
-        final AccessContext apiCtx
-    )
-    {
-        StorageDriverKind allowedDriverKind = null;
-        try
-        {
-            for (Resource rsc : rscDfn.streamResource(apiCtx).collect(Collectors.toList()))
-            {
-                if (!rsc.isDiskless(apiCtx))
-                {
-                    if (rsc.streamVolumes().findFirst().isPresent())
-                    {
-                        Volume vlm = rsc.getVolume(vlmDfn.getVolumeNumber());
-                        if (vlm != null)
-                        {
-                            StorPool storPool = vlm.getStorPool(apiCtx);
-                            allowedDriverKind = storPool.getDriverKind();
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return allowedDriverKind;
     }
 
     public VolumeData createVolume(
@@ -319,7 +265,19 @@ class CtrlVlmCrtApiHelper
                     LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                 );
 
-                responses.addEntries(warnAndFlagDiskless(rsc, storPool));
+                if (storPool != null)
+                {
+                    if (storPool.getDriverKind().hasBackingStorage())
+                    {
+                        // If the storage pool has backing storage, check that it is of the same kind as the peers
+                        checkSameKindAsPeers(vlmDfn, storPool);
+                    }
+                    else
+                    {
+                        responses.addEntry(makeFlaggedDisklessWarning(storPool));
+                        rsc.getStateFlags().enableFlags(apiCtx, Resource.RscFlags.DISKLESS);
+                    }
+                }
             }
 
             checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
@@ -327,6 +285,10 @@ class CtrlVlmCrtApiHelper
         catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
+        }
+        catch (SQLException exc)
+        {
+            throw new ApiSQLException(exc);
         }
 
         return new ApiCallRcWith<>(responses, storPool);
@@ -387,6 +349,50 @@ class CtrlVlmCrtApiHelper
         }
     }
 
+    private void checkSameKindAsPeers(VolumeDefinition vlmDfn, StorPool storPool)
+        throws AccessDeniedException
+    {
+        StorageDriverKind peerKind = firstStorageDriverKind(vlmDfn);
+
+        if (peerKind != null && storPool.getDriverKind() != peerKind)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_INVLD_STOR_DRIVER,
+                    String.format(
+                        "Storage driver '%s' not allowed for volume.",
+                        storPool.getDriverKind().getDriverName()))
+                    .setDetails("It is not supported to use storage pools with different " +
+                        "storage drivers on the same volume definition.")
+                    .setCorrection(
+                        String.format("Use a storage pool with the driver kind '%s'", peerKind.getDriverName()))
+                    .build()
+            );
+        }
+    }
+
+    public StorageDriverKind firstStorageDriverKind(final VolumeDefinition vlmDfn)
+        throws AccessDeniedException
+    {
+        StorageDriverKind allowedDriverKind = null;
+
+        for (Resource rsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
+        {
+            if (!rsc.isDiskless(apiCtx))
+            {
+                Volume vlm = rsc.getVolume(vlmDfn.getVolumeNumber());
+                if (vlm != null)
+                {
+                    StorPool storPool = vlm.getStorPool(apiCtx);
+                    allowedDriverKind = storPool.getDriverKind();
+                    break;
+                }
+            }
+        }
+
+        return allowedDriverKind;
+    }
+
     private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
     {
         if (storPool != null && storPool.getDriverKind().hasBackingStorage())
@@ -405,35 +411,15 @@ class CtrlVlmCrtApiHelper
         }
     }
 
-    private ApiCallRc warnAndFlagDiskless(Resource rsc, final StorPool storPool)
+    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedDisklessWarning(StorPool storPool)
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        if (storPool != null && !storPool.getDriverKind().hasBackingStorage())
-        {
-            responses.addEntry(ApiCallRcImpl
-                .entryBuilder(
-                    MASK_WARN | MASK_STOR_POOL,
-                    "Resource will be automatically flagged diskless."
-                )
-                .setCause(String.format("Used storage pool '%s' is diskless, " +
-                    "but resource was not flagged diskless", storPool.getName().displayValue))
-                .build()
-            );
-            try
-            {
-                rsc.getStateFlags().enableFlags(apiCtx, Resource.RscFlags.DISKLESS);
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            catch (SQLException exc)
-            {
-                throw new ApiSQLException(exc);
-            }
-        }
-
-        return responses;
+        return ApiCallRcImpl
+            .entryBuilder(
+                MASK_WARN | MASK_STOR_POOL,
+                "Resource will be automatically flagged diskless."
+            )
+            .setCause(String.format("Used storage pool '%s' is diskless, " +
+                "but resource was not flagged diskless", storPool.getName()))
+            .build();
     }
 }

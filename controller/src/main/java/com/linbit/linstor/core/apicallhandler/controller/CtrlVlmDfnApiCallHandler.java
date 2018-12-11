@@ -143,8 +143,7 @@ class CtrlVlmDfnApiCallHandler
                     ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                         rsc,
                         vlmDfn,
-                        null,
-                        CtrlVlmCrtApiHelper.firstStorageDriverKind(rscDfn, vlmDfn, apiCtx)
+                        null
                     );
                 }
             }

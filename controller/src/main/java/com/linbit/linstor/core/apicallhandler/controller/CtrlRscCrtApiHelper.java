@@ -177,8 +177,7 @@ public class CtrlRscCrtApiHelper
                 vlmDfn,
                 thinFreeCapacities,
                 vlmApi.getBlockDevice(),
-                vlmApi.getMetaDisk(),
-                CtrlVlmCrtApiHelper.firstStorageDriverKind(rscDfn, vlmDfn, apiCtx)
+                vlmApi.getMetaDisk()
             ).extractApiCallRc(responses);
             createdVolumes.add(vlmData);
 
@@ -201,8 +200,7 @@ public class CtrlRscCrtApiHelper
                 VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                     rsc,
                     vlmDfn,
-                    thinFreeCapacities,
-                    CtrlVlmCrtApiHelper.firstStorageDriverKind(rscDfn, vlmDfn, apiCtx)
+                    thinFreeCapacities
                 ).extractApiCallRc(responses);
                 createdVolumes.add(vlm);
             }
