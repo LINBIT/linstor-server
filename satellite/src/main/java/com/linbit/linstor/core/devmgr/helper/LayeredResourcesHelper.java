@@ -203,7 +203,6 @@ public class LayeredResourcesHelper
                 if (needsDrbd(origRsc))
                 {
                     currentRsc = nextRsc(layeredResources, origRsc, currentRsc, ResourceType.DRBD);
-                    // TODO: update volume definition sizes of child resources (meta-data)
                     if (currentRsc.getLayerData(sysCtx) == null)
                     {
                         currentRsc.setLayerData(
@@ -490,7 +489,6 @@ public class LayeredResourcesHelper
                         vlmCon -> convertVlmCon(typedVlm, origVlm, vlmCon)
                     );
 
-                    // TODO: copy volume connection - maybe drbd level?
                     // TODO: copy device path? drbd?
                 }
             }

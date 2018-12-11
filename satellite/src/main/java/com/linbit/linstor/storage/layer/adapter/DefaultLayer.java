@@ -163,10 +163,6 @@ public class DefaultLayer implements ResourceLayer
                                 );
                                 break;
                             }
-//                            else
-//                            {
-//                                deviceManager.notifyVolumeDeleted(vlm, 100_000); // FIXME
-//                            }
                         }
                     }
                 }
