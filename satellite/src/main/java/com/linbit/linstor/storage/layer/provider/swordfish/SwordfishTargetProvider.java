@@ -7,8 +7,10 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -18,6 +20,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.utils.HttpHeader;
 import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
+import com.linbit.linstor.storage.utils.SwordfishConsts;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOCATED_BYTES;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY_BYTES;
@@ -59,6 +62,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
         @DeviceManagerContext AccessContext sysCtx,
         ErrorReporter errorReporter,
         Provider<NotificationListener> notificationListenerProvider,
+        VolumeDiskStateEvent vlmDiskStateEvent,
         StltConfigAccessor stltConfigAccessor
     )
     {
@@ -68,6 +72,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
             new RestHttpClient(errorReporter), // TODO: maybe use guice here?
             notificationListenerProvider,
             stltConfigAccessor,
+            vlmDiskStateEvent,
             "SFT",
             "created",
             "deleted"
@@ -92,7 +97,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
             {
                 errorReporter.logTrace("volume found with @odata.id: %s", vlmDfnData.vlmOdata);
             }
-            clearAndSet((SfVlmDataStlt) vlm.getLayerData(sysCtx), SfVlmDataStlt.CREATED);
+            clearAndSet(vlm, SfVlmDataStlt.CREATED);
             // volume exists
         }
         catch (InvalidKeyException exc)
@@ -105,7 +110,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
         }
         catch (IOException ioExc)
         {
-            clearAndSet((SfVlmDataStlt) vlm.getLayerData(sysCtx), SfVlmDataStlt.IO_EXC);
+            clearAndSet(vlm, SfVlmDataStlt.IO_EXC);
             throw new StorageException("IO Exception", ioExc);
         }
     }
@@ -132,11 +137,11 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
                     Arrays.asList(HttpHeader.HTTP_ACCEPTED, HttpHeader.HTTP_NOT_FOUND)
                 );
             }
-            clearAndSet(vlmData, SfVlmDataStlt.INTERNAL_REMOVE); // internal state to send a close event to the ctrl
+            clearAndSet(vlm, SfVlmDataStlt.INTERNAL_REMOVE); // internal state to send a close event to the ctrl
         }
         catch (IOException ioExc)
         {
-            clearAndSet(vlmData, SfVlmDataStlt.IO_EXC);
+            clearAndSet(vlm, SfVlmDataStlt.IO_EXC);
             throw new StorageException("IO Exception", ioExc);
         }
     }
@@ -206,7 +211,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
                 .build(),
             Arrays.asList(HttpHeader.HTTP_ACCEPTED)
         );
-        clearAndSet(vlmData, SfVlmDataStlt.CREATING);
+        clearAndSet(vlm, SfVlmDataStlt.CREATING);
         // volume should be now in "creating" state. we have to wait for the taskMonitor to return HTTP_CREATED
 
         String taskMonitorLocation = crtVlmResp.getHeaders().get(HttpHeader.LOCATION_KEY);
@@ -285,7 +290,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
             }
             if (pollVlmCrtTries >= pollVlmCrtMaxTries && vlmLocation == null)
             {
-                clearAndSet(vlmData, SfVlmDataStlt.CREATING_TIMEOUT);
+                clearAndSet(vlm, SfVlmDataStlt.CREATING_TIMEOUT);
                 throw new StorageException(
                     String.format(
                         "Volume creation not finished after %d x %dms. \n" +
@@ -297,9 +302,18 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
                 );
             }
         }
-        clearAndSet(vlmData, SfVlmDataStlt.CREATED);
+        clearAndSet(vlm, SfVlmDataStlt.CREATED);
 
         vlmDfn.getLayerData(sysCtx, SfVlmDfnDataStlt.class).vlmOdata = vlmLocation;
+        // FIXME: next command is only for compatibilty... remove once rework is completed
+        try
+        {
+            vlmDfn.getProps(sysCtx).setProp(SwordfishConsts.ODATA, vlmLocation, ApiConsts.NAMESPC_STORAGE_DRIVER);
+        }
+        catch (InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private RestResponse<Map<String, Object>> getSwordfishPool(StorPool storPool)

@@ -13,7 +13,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Singleton
 public class LayerFactory
@@ -37,5 +39,15 @@ public class LayerFactory
     public ResourceLayer getDeviceLayer(Class<? extends DeviceLayerKind> kindClass)
     {
         return devLayerLookupTable.get(kindClass);
+    }
+
+    public Stream<ResourceLayer> streamDeviceHandlers()
+    {
+        return devLayerLookupTable.values().stream();
+    }
+
+    public Iterator<ResourceLayer> iterateDeviceHandlers()
+    {
+        return devLayerLookupTable.values().iterator();
     }
 }

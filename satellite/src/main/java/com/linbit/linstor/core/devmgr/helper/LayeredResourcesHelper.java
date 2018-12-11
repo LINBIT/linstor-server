@@ -6,6 +6,7 @@ import com.linbit.utils.RemoveAfterDevMgrRework;
 import static com.linbit.utils.AccessUtils.execPrivileged;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import com.linbit.ImplementationError;
@@ -46,9 +47,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.LayerDataFactory;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnDataStlt;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnDataStlt;
+import com.linbit.linstor.storage.layer.provider.swordfish.SfVlmDfnDataStlt;
+import com.linbit.linstor.storage.utils.SwordfishConsts;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -74,6 +79,7 @@ public class LayeredResourcesHelper
     private final ControllerPeerConnector controllerPeerConnector;
     private final ResourceDefinitionMap rscDfnMap;
     private final ErrorReporter errorReporter;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public LayeredResourcesHelper(
@@ -85,7 +91,8 @@ public class LayeredResourcesHelper
         LayerDataFactory layerDataFactoryRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         sysCtx = sysCtxRef;
@@ -97,6 +104,7 @@ public class LayeredResourcesHelper
         controllerPeerConnector = controllerPeerConnectorRef;
         rscDfnMap = rscDfnMapRef;
         errorReporter = errorReporterRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     @RemoveAfterDevMgrRework
@@ -180,7 +188,11 @@ public class LayeredResourcesHelper
                 // additionally, we do not need extra layer-specific data.
 
                 // however, we do have to set the ResourceType, thus we need to create a new resource
-                if (!origRsc.getStateFlags().isSet(sysCtx, RscFlags.DISKLESS))
+                if (!origRsc.getStateFlags().isSet(sysCtx, RscFlags.DISKLESS) ||
+                    origRsc.streamVolumes().anyMatch(
+                        vlm ->
+                            AccessUtils.execPrivileged(() ->
+                                vlm.getStorPool(sysCtx).getDriverKind() instanceof SwordfishInitiatorDriverKind)))
                 {
                     currentRsc = createStorageRsc(layeredResources, origRsc);
                 }
@@ -334,7 +346,7 @@ public class LayeredResourcesHelper
     }
 
     private Resource createStorageRsc(List<Resource> layeredResources, Resource origRsc)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, InvalidKeyException
     {
         Resource typedRsc;
         ResourceDefinition rscDfn = origRsc.getDefinition();
@@ -392,6 +404,30 @@ public class LayeredResourcesHelper
                 Map<String, String> typedVlmPropsMap = typedVlm.getProps(sysCtx).map();
                 typedVlmPropsMap.clear();
                 typedVlmPropsMap.putAll(origVlm.getProps(sysCtx).map());
+
+                // maybe not needed. Will be removed anyways if the rework is completed
+                SfVlmDfnDataStlt vlmDfnData = vlmDfn.getLayerData(sysCtx, SfVlmDfnDataStlt.class);
+                if (vlmDfnData == null)
+                {
+                    String vlmOdata = vlmDfn.getProps(sysCtx)
+                        .getProp(SwordfishConsts.ODATA, ApiConsts.NAMESPC_STORAGE_DRIVER);
+                    if (vlmOdata != null)
+                    {
+                        vlmDfnData = new SfVlmDfnDataStlt(
+                            transMgrProvider,
+                            true,
+                            new ArrayList<>(),
+                            vlmDfn.getVolumeSize(sysCtx),
+                            vlmOdata,
+                            false // TODO: be careful with this
+                        );
+                    }
+                    else
+                    {
+                        vlmDfnData = new SfVlmDfnDataStlt(transMgrProvider);
+                    }
+                    vlmDfn.setLayerData(sysCtx, vlmDfnData);
+                }
             }
         }
         errorReporter.logTrace(
@@ -795,5 +831,21 @@ public class LayeredResourcesHelper
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    public void copyUpData(Resource origRsc)
+    {
+        // we have to copy the resulting device-path to the origVlm
+        origRsc.streamVolumes().forEach(origVlm ->
+            AccessUtils.execPrivileged(() ->
+            origVlm.setDevicePath(
+                sysCtx,
+                origRsc.getChildResources(sysCtx)
+                    .get(0) // TODO: for now we assume only one child
+                    .getVolume(origVlm.getVolumeDefinition().getVolumeNumber())
+                    .getDevicePath(sysCtx)
+                )
+            )
+        );
     }
 }

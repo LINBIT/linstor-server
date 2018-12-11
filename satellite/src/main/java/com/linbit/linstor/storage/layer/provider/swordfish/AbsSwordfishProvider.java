@@ -10,6 +10,8 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -27,14 +29,11 @@ import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
 import com.linbit.linstor.storage2.layer.data.State;
+import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
 
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DATA;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_BASE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_SERVICES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
-
 import javax.inject.Provider;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -61,6 +60,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
     protected final String createdMsg;
     protected final String deletedMsg;
     protected final Collection<StorPool> changedStorPools;
+    protected final VolumeDiskStateEvent vlmDiskStateEvent;
 
 
     /*
@@ -80,6 +80,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         RestClient restClientRef,
         Provider<NotificationListener> notificationListenerProviderRef,
         StltConfigAccessor stltConfigAccessorRef,
+        VolumeDiskStateEvent vlmDiskStateEventRef,
         String typeDescrRef,
         String createdMsgRef,
         String deletedMsgRef
@@ -90,6 +91,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         restClient = restClientRef;
         notificationListenerProvider = notificationListenerProviderRef;
         stltConfigAccessor = stltConfigAccessorRef;
+        vlmDiskStateEvent = vlmDiskStateEventRef;
         typeDescr = typeDescrRef;
         createdMsg = createdMsgRef;
         deletedMsg = deletedMsgRef;
@@ -106,7 +108,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
             if (vlm != null)
             {
                 // could be null if we were requesting free space or total capacity (no vlm involved)
-                clearAndSet((SfVlmDataStlt) vlm.getLayerData(sysCtx), SfVlmDataStlt.FAILED);
+                clearAndSet(vlm, SfVlmDataStlt.FAILED);
             }
         }
         catch (AccessDeniedException | SQLException exc)
@@ -250,6 +252,8 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
     {
         for (Volume vlm : volmes)
         {
+            ensureVlmLayerDataExists(vlm);
+
             createImpl(vlm);
             changedStorPools.add(vlm.getStorPool(sysCtx));
             addCreatedMsg(vlm, apiCallRc);
@@ -261,11 +265,25 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
     {
         for (Volume vlm : volmes)
         {
+            ensureVlmLayerDataExists(vlm);
+
             deleteImpl(vlm);
             changedStorPools.add(vlm.getStorPool(sysCtx));
             addDeletedMsg(vlm, apiCallRc);
+            vlm.delete(sysCtx);
         }
     }
+
+    private void ensureVlmLayerDataExists(Volume vlm) throws AccessDeniedException, SQLException
+    {
+        VlmLayerData layerData = vlm.getLayerData(sysCtx);
+        if (layerData == null)
+        {
+            layerData = new SfVlmDataStlt(vlm.getVolumeDefinition().getLayerData(sysCtx, SfVlmDfnDataStlt.class));
+            vlm.setLayerData(sysCtx, layerData);
+        }
+    }
+
 
     protected RestResponse<Map<String, Object>> getSwordfishResource(
         Volume vlm,
@@ -310,12 +328,6 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         }
         return httpHeaderBuilder;
     }
-
-    private String buildStorSvcVolumesOdata(String storSvc)
-    {
-        return SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES;
-    }
-
 
     private void addCreatedMsg(Volume vlm, ApiCallRcImpl apiCallRc)
     {
@@ -364,13 +376,11 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
             DeviceLayerUtils.getNamespaceStorDriver(
                 storPool.getProps(sysCtx)
             ),
-            stltConfigAccessor.getReadonlyProps()
+            stltConfigAccessor.getReadonlyProps(StorageConstants.NAMESPACE_STOR_DRIVER)
         );
 
         try
         {
-
-
             String tmpUrl = prioProps.getProp(StorageConstants.CONFIG_SF_URL_KEY);
             String tmpUserName = prioProps.getProp(StorageConstants.CONFIG_SF_USER_NAME_KEY);
             String tmpUserPw = prioProps.getProp(StorageConstants.CONFIG_SF_USER_PW_KEY);
@@ -437,7 +447,6 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
                 }
             }
 
-
             restClient.setRetryCountOnStatusCode(HttpHeader.HTTP_SERVICE_UNAVAILABLE, tmpRetryCount);
             restClient.setRetryDelayOnStatusCode(HttpHeader.HTTP_SERVICE_UNAVAILABLE, tmpRetryDelay);
 
@@ -448,13 +457,31 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         }
     }
 
-    protected void clearAndSet(SfVlmDataStlt vlmData, State state)
+    protected void clearAndSet(Volume vlm, State state) throws AccessDeniedException, SQLException
     {
+        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
         List<State> states = vlmData.states;
         states.clear();
-        states.add(state);
-    }
 
+        if (state.equals(SfVlmDataStlt.INTERNAL_REMOVE))
+        {
+            vlmDiskStateEvent.get().closeStream(ObjectIdentifier.volumeDefinition(
+                vlm.getResourceDefinition().getName(),
+                vlm.getVolumeDefinition().getVolumeNumber()
+            ));
+        }
+        else
+        {
+            vlmDiskStateEvent.get().triggerEvent(
+                ObjectIdentifier.volumeDefinition(
+                    vlm.getResourceDefinition().getName(),
+                    vlm.getVolumeDefinition().getVolumeNumber()
+                ),
+                state.toString()
+            );
+            states.add(state);
+        }
+    }
 
     protected long prioStorDriverPropsAsLong(String key, Long dfltValue, Props... props) throws InvalidKeyException
     {

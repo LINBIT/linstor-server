@@ -16,6 +16,7 @@ import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -45,6 +46,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
@@ -99,6 +101,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
@@ -182,6 +185,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         ErrorReporter errorReporterRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
@@ -204,6 +208,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
         errLog = errorReporterRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
+        storPoolDfnMap = storPoolDfnMapRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
@@ -459,7 +464,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
     }
 
     @Override
-    public void fullSyncApplied()
+    public void fullSyncApplied(Node localNode) throws StorageException
     {
         synchronized (sched)
         {
@@ -470,6 +475,24 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
             fullSyncFlag.set(true);
             svcCondFlag.set(true);
             sched.notify();
+            try
+            {
+                devHandler.localNodePropsChanged(localNode.getProps(wrkCtx));
+                NodeName localNodeName = localNode.getName();
+                for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
+                {
+                    StorPool storPool = storPoolDfn.getStorPool(wrkCtx, localNodeName);
+                    if (storPool != null)
+                    {
+                        // FIXME check how this can happen...
+                        devHandler.checkConfig(storPool);
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
         }
     }
 
@@ -542,7 +565,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
                         pendingDispatchRscs.clear();
                         pendingDispatchRscs.putAll(dispatchRscs);
                     }
-                    devHandler.fullSyncApplied();
+                    devHandler.fullSyncApplied(controllerPeerConnector.getLocalNode());
                 }
                 else
                 {

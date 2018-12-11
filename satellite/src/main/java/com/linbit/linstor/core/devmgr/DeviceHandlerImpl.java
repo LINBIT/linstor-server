@@ -2,6 +2,7 @@ package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
@@ -19,6 +20,7 @@ import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
 import com.linbit.linstor.core.devmgr.helper.LayeredSnapshotHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LayerFactory;
@@ -56,7 +58,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
 
     private final ControllerPeerConnector controllerPeerConnector;
     private final CtrlStltSerializer interComSerializer;
-
 
     private final LayeredResourcesHelper layeredRscHelper;
     private final LayeredSnapshotHelper layeredSnapshotHelper;
@@ -174,6 +175,9 @@ public class DeviceHandlerImpl implements DeviceHandler2
                     }
                     else
                     {
+                        // TODO: delete next command after rework is completed
+                        layeredRscHelper.copyUpData(rsc);
+
                         rscListNotifyApplied.add(rsc);
                         notificationListener.get().notifyResourceApplied(rsc);
                     }
@@ -428,8 +432,31 @@ public class DeviceHandlerImpl implements DeviceHandler2
         layeredSnapshotHelper.updateSnapshotLayerData(dfltResources, snapshots);
     }
 
-    public void fullSyncApplied()
+    public void fullSyncApplied(Node localNode)
     {
         fullSyncApplied.set(true);
+        try
+        {
+            Props localNodeProps = localNode.getProps(wrkCtx);
+            localNodePropsChanged(localNodeProps);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    // FIXME: this method also needs to be called when the localnode's properties change, not just
+    // (as currently) when a fullSync was applied
+    public void localNodePropsChanged(Props localNodeProps)
+    {
+        layerFactory.streamDeviceHandlers().forEach(
+            rscLayer ->
+                rscLayer.setLocalNodeProps(localNodeProps));
+    }
+
+    public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        storageLayer.checkStorPool(storPool);
     }
 }

@@ -1,11 +1,13 @@
 package com.linbit.linstor.core;
 
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 
 import java.util.Set;
@@ -21,7 +23,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void markResourceForDispatch(ResourceName name);
     void markMultipleResourcesForDispatch(Set<ResourceName> rscSet);
 
-    void fullSyncApplied();
+    void fullSyncApplied(Node localNode) throws StorageException;
 
     void abortDeviceHandlers();
 

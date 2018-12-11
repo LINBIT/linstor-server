@@ -51,7 +51,6 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.Satellite;
-import com.linbit.linstor.core.SatelliteCoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
@@ -368,7 +367,7 @@ public class StltApiCallHandler
                 {
                     if (deviceManager != null)
                     {
-                        deviceManager.fullSyncApplied();
+                        deviceManager.fullSyncApplied(localNode);
                     }
                 }
                 else

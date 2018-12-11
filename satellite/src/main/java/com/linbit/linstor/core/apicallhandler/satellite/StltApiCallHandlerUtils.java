@@ -225,6 +225,7 @@ public class StltApiCallHandlerUtils
     public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
         throws AccessDeniedException, StorageException
     {
+        storageLayer.checkStorPool(storPool);
         return new SpaceInfo(
             storageLayer.getCapacity(storPool),
             storageLayer.getFreeSpace(storPool)

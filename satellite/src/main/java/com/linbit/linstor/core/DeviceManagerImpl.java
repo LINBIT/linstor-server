@@ -462,7 +462,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     }
 
     @Override
-    public void fullSyncApplied()
+    public void fullSyncApplied(Node ignoredLocalNode)
     {
         synchronized (sched)
         {

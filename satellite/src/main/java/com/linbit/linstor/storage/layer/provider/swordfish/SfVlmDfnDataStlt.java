@@ -7,6 +7,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class SfVlmDfnDataStlt extends BaseTransactionObject implements SfVlmDfnLayerData
@@ -32,17 +33,18 @@ public class SfVlmDfnDataStlt extends BaseTransactionObject implements SfVlmDfnL
         boolean isAttachedRef
     )
     {
-        super(transMgrProvider);
-        this.exists = existsRef;
-        this.states = statesRef;
-        this.size = sizeRef;
-        this.vlmOdata = vlmOdataRef;
-        this.isAttached = isAttachedRef;
+        this(transMgrProvider);
+        exists = existsRef;
+        states = statesRef;
+        size = sizeRef;
+        vlmOdata = vlmOdataRef;
+        isAttached = isAttachedRef;
     }
 
     public SfVlmDfnDataStlt(Provider<TransactionMgr> transMgrProvider)
     {
         super(transMgrProvider);
+        transObjs = Collections.emptyList();
     }
 
     @Override

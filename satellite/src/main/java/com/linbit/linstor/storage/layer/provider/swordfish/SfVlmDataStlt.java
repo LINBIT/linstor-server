@@ -24,6 +24,7 @@ public class SfVlmDataStlt implements SfVlmLayerData
 
     public static final State ATTACHED = new State(true, true, "Attached");
 
+    public static final State DETACHING = new State(true, false, "Detaching");
 
     // common states
     public static final State INTERNAL_REMOVE = new State(true, true, "Removing"); // should never be seen by user, as

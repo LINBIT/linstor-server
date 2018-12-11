@@ -143,16 +143,25 @@ public class StorageLayer implements ResourceLayer
 
         for (Entry<DeviceProvider, List<Volume>> entry : groupedVolumes.entrySet())
         {
+            DeviceProvider deviceProvider = entry.getKey();
             List<Volume> volumes = entry.getValue();
             if (!volumes.isEmpty())
             {
-                DeviceProvider deviceProvider = entry.getKey();
                 List<SnapshotVolume> snapVlms = groupedSnapshotVolumes.get(deviceProvider);
                 if (snapVlms == null)
                 {
                     snapVlms = Collections.emptyList();
                 }
                 deviceProvider.prepare(volumes, snapVlms);
+            }
+
+            // FIXME: this should only be done once on fullSync and whenever a storpool changes
+            Set<StorPool> affectedStorPools = volumes.stream()
+                .map(vlm -> AccessUtils.execPrivileged(() -> vlm.getStorPool(storDriverAccCtx)))
+                .collect(Collectors.toSet());
+            for (StorPool storPool : affectedStorPools)
+            {
+                deviceProvider.checkConfig(storPool);
             }
         }
     }
@@ -332,5 +341,12 @@ public class StorageLayer implements ResourceLayer
             getCapacity(storPool),
             getFreeSpace(storPool)
         );
+    }
+
+    public void checkStorPool(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        DeviceProvider deviceProvider = classifier(storPool);
+        deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
+        deviceProvider.checkConfig(storPool);
     }
 }

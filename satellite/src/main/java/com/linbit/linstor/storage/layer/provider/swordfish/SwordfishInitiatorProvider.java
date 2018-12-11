@@ -9,6 +9,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -44,6 +45,7 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ACTIONS;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ATTACH_RESOURCE_ACTION_INFO;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_BASE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_COMPOSED_NODE_ATTACH_RESOURCE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_COMPOSED_NODE_DETACH_RESOURCE;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_NODES;
 
 import javax.inject.Inject;
@@ -77,6 +79,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
         ErrorReporter errorReporter,
         Provider<NotificationListener> notificationListenerProvider,
         StltConfigAccessor stltConfigAccessor,
+        VolumeDiskStateEvent vlmDiskStateEvent,
         ExtCmdFactory extCmdFactoryRef
     )
     {
@@ -86,6 +89,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
             new RestHttpClient(errorReporter), // TODO: maybe use guice here?
             notificationListenerProvider,
             stltConfigAccessor,
+            vlmDiskStateEvent,
             "SFI",
             "attached",
             "detached"
@@ -105,7 +109,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
             }
             else
             {
-                clearAndSet((SfVlmDataStlt) vlm.getLayerData(sysCtx), SfVlmDataStlt.ATTACHABLE);
+                clearAndSet(vlm, SfVlmDataStlt.ATTACHABLE);
             }
 
             // TODO implement health check on composed node
@@ -125,7 +129,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
         }
         catch (IOException exc)
         {
-            clearAndSet((SfVlmDataStlt) vlm.getLayerData(sysCtx), SfVlmDataStlt.IO_EXC);
+            clearAndSet(vlm, SfVlmDataStlt.IO_EXC);
             throw new StorageException("IO Exception", exc);
         }
     }
@@ -133,8 +137,16 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
     @Override
     protected void deleteImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        try
+        {
+            detatchSfVlm(vlm);
+
+            // TODO health check on composed node
+        }
+        catch (IOException ioExc)
+        {
+            throw new StorageException("IO Exception", ioExc);
+        }
     }
 
     @Override
@@ -236,7 +248,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
             SF_ATTACH_RESOURCE_ACTION_INFO;
         boolean attachable = false;
 
-        clearAndSet(vlmData, SfVlmDataStlt.WAITING_ATTACHABLE);
+        clearAndSet(vlm, SfVlmDataStlt.WAITING_ATTACHABLE);
 
         ReadOnlyProps stltRoProps = stltConfigAccessor.getReadonlyProps();
         long pollAttachVlmTimeout = prioStorDriverPropsAsLong(
@@ -300,7 +312,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
 
             if (++pollAttachRscTries >= pollAttachVlmMaxTries)
             {
-                clearAndSet(vlmData, SfVlmDataStlt.WAITING_ATTACHABLE_TIMEOUT);
+                clearAndSet(vlm, SfVlmDataStlt.WAITING_ATTACHABLE_TIMEOUT);
                 throw new StorageException(
                     String.format(
                         "Volume could not be attached after %d x %dms. \n" +
@@ -314,7 +326,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
                 );
             }
         }
-        clearAndSet(vlmData, SfVlmDataStlt.ATTACHABLE);
+        clearAndSet(vlm, SfVlmDataStlt.ATTACHABLE);
     }
 
     private void attachSfVolume(Volume vlm) throws IOException, StorageException, AccessDeniedException, SQLException
@@ -339,14 +351,12 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
                 .build(),
             Arrays.asList(HttpHeader.HTTP_NO_CONTENT)
         );
-        clearAndSet(vlmData, SfVlmDataStlt.ATTACHING);
+        clearAndSet(vlm, SfVlmDataStlt.ATTACHING);
     }
 
     public String getVolumePath(Volume vlm)
         throws StorageException, AccessDeniedException, InvalidKeyException, SQLException
     {
-        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
-
         ReadOnlyProps stltRoProps = stltConfigAccessor.getReadonlyProps();
         long pollGrepNvmeUuidTimeout = prioStorDriverPropsAsLong(
             StorageConstants.CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY,
@@ -398,13 +408,13 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
                             path = "/dev/nvme" + matcher.group(1) + "n1";
                             grepFound = true;
 
-                            clearAndSet(vlmData, SfVlmDataStlt.ATTACHED);
+                            clearAndSet(vlm, SfVlmDataStlt.ATTACHED);
                         }
                     }
 
                     if (++grepTries >= pollGrepNvmeUuidMaxTries)
                     {
-                        clearAndSet(vlmData, SfVlmDataStlt.WAITING_ATTACHING_TIMEOUT);
+                        clearAndSet(vlm, SfVlmDataStlt.WAITING_ATTACHING_TIMEOUT);
                         grepFailed = true;
                     }
                     else
@@ -435,6 +445,88 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
             throw new StorageException("IO exception occured", ioExc);
         }
         return path;
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private String detatchSfVlm(Volume vlm)
+        throws IOException, StorageException, AccessDeniedException, SQLException
+    {
+//        String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
+//        String sfVlmId = getSfVlmId(vlmDfnProps, true);
+
+        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
+        String vlmOdataId = vlmData.vlmDfnData.vlmOdata;
+
+        if (vlmOdataId != null)
+        {
+            // detach volume from node
+            String detachAction = SF_BASE + SF_NODES + "/" + getComposedNodeId() + SF_ACTIONS +
+                SF_COMPOSED_NODE_DETACH_RESOURCE;
+            // POST to Node/$id/Action/ComposedNode.DetachResource
+            RestResponse<Map<String, Object>> detachVlmResp = restClient.execute(
+                null,
+                vlm,
+                RestOp.POST,
+                sfUrl + detachAction,
+                getDefaultHeader().build(),
+                MapBuilder.defaultImpl().start()
+                    .put(
+                        JSON_KEY_RESOURCE,
+                        MapBuilder.defaultImpl().start()
+                            .put(JSON_KEY_ODATA_ID, vlmOdataId)
+                            .build()
+                    )
+                    .build(),
+                Arrays.asList(HttpHeader.HTTP_NO_CONTENT, HttpHeader.HTTP_NOT_FOUND, HttpHeader.HTTP_BAD_REQUEST)
+            );
+            clearAndSet(vlm, SfVlmDataStlt.DETACHING);
+
+            switch (detachVlmResp.getStatusCode())
+            {
+                case HttpHeader.HTTP_BAD_REQUEST:
+                    Map<String, Object> errorMap = (Map<String, Object>) detachVlmResp.getData().get("error");
+                    List<Map<String, Object>> extInfo = (List<Map<String, Object>>) errorMap
+                        .get("@Message.ExtendedInfo");
+                    boolean found = false;
+                    for (Map<String, Object> sfErrMsgEntry : extInfo)
+                    {
+                        String errMsg = (String) sfErrMsgEntry.get("Message");
+                        if (errMsg.contains("not attached"))
+                        {
+                            errorReporter.logWarning(
+                                String.format(
+                                    "Bad request to detach swordfish volume '%s' (not attached).",
+                                    vlmOdataId
+                                )
+                            );
+                            found = true;
+                        }
+                    }
+                    if (!found)
+                    {
+                        throw new StorageException(
+                            "Unexpected status code",
+                            "A REST call returned the unexpected status code " + detachVlmResp.getStatusCode(),
+                            null,
+                            null,
+                            detachVlmResp.toString(HttpHeader.HTTP_BAD_REQUEST)
+                        );
+                    }
+                    break;
+                case HttpHeader.HTTP_NO_CONTENT:
+                case HttpHeader.HTTP_NOT_FOUND:
+                default:
+                    break;
+            }
+
+            clearAndSet(vlm, SfVlmDataStlt.INTERNAL_REMOVE); // internal state to send a close event to the ctrl
+        }
+        else
+        {
+            errorReporter.logError("Swordfish volume id is null");
+        }
+        return vlmOdataId;
     }
 
     private String getComposedNodeId()

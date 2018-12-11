@@ -14,8 +14,8 @@ public class ResourceUtils
         List<Resource> childResources = rsc.getChildResources(accCtx);
         if (childResources.size() != 1)
         {
-            throw new ImplementationError("Exactly one child-resource expected but found: " + childResources.size() +
-                "\n" + childResources);
+            throw new ImplementationError("Exactly one child-resource expected but found: " +
+                childResources.size() + "\n" + childResources);
         }
         return childResources.get(0);
     }
