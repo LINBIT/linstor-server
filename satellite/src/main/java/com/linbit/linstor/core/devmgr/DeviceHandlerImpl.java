@@ -130,8 +130,11 @@ public class DeviceHandlerImpl implements DeviceHandler2
             }
         }
 
+
         if (prepareSuccess)
         {
+            List<Snapshot> unprocessedSnapshots = new ArrayList<>(snapshots);
+
             List<Resource> rscListNotifyApplied = new ArrayList<>();
             List<Resource> rscListNotifyDelete = new ArrayList<>();
             List<Snapshot> snapListNotifyDelete = new ArrayList<>();
@@ -153,6 +156,8 @@ public class DeviceHandlerImpl implements DeviceHandler2
                         snapshotList,
                         apiCallRc
                     );
+                    unprocessedSnapshots.removeAll(snapshotList);
+
                     /*
                      * old device manager reported changes of free space after every
                      * resource operation. As this could require to query the same
@@ -205,6 +210,53 @@ public class DeviceHandlerImpl implements DeviceHandler2
                     );
                 }
                 notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
+            }
+
+            // process unprocessed snapshots
+            {
+                Map<ResourceName, List<Snapshot>> snapshotsByResourceName = unprocessedSnapshots.stream()
+                    .collect(Collectors.groupingBy(Snapshot::getResourceName));
+
+                /*
+                 *  We cannot use the .process(Resource, List<Snapshot>, ApiCallRc) method as we do not have a
+                 *  resource. The resource is used for determining which DeviceLayer to use, thus would result in
+                 *  a NPE.
+                 *  However, actually we know that there are no resources "based" on these snapshots (else the
+                 *  DeviceManager would have found them and called the previous case, such that those snapshots
+                 *  would have been processed already).
+                 *  That means, we can skip all layers and go directoy to the StorageLayer, which, fortunately,
+                 *  does not need a resource for processing snapshots.
+                 */
+                for (Entry<ResourceName, List<Snapshot>> entry : snapshotsByResourceName.entrySet())
+                {
+                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                    try
+                    {
+                        storageLayer.process(null, entry.getValue(), apiCallRc);
+                    }
+                    catch (AccessDeniedException | SQLException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                    catch (StorageException | ResourceException | VolumeException exc)
+                    {
+                        // TODO different handling for different exceptions?
+                        errorReporter.reportError(exc);
+
+                        apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                            ApiCallRcImpl.entryBuilder(
+                                // TODO maybe include a ret-code into the exception
+                                ApiConsts.FAIL_UNKNOWN_ERROR,
+                                "An error occured while processing resource '" + entry.getKey() + "'"
+                            )
+                            .setCause(exc.getCauseText())
+                            .setCorrection(exc.getCorrectionText())
+                            .setDetails(exc.getDetailsText())
+                            .build()
+                        );
+                    }
+                    notificationListener.get().notifyResourceDispatchResponse(entry.getKey(), apiCallRc);
+                }
             }
 
             // query changed storage pools and send out all notifications

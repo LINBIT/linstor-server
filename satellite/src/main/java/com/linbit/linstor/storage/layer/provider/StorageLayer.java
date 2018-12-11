@@ -24,13 +24,13 @@ import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
 import com.linbit.linstor.storage.SwordfishTargetDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
-import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.diskless.DisklessProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
+import com.linbit.linstor.storage.layer.provider.swordfish.AbsSwordfishProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishTargetProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
@@ -39,7 +39,6 @@ import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.sql.SQLException;
@@ -63,10 +62,9 @@ public class StorageLayer implements ResourceLayer
     private final LvmThinProvider lvmThinProvider;
     private final ZfsProvider zfsProvider;
     private final ZfsThinProvider zfsThinProvider;
-    private final SwordfishTargetProvider sfTargetProvider;
+    private final AbsSwordfishProvider sfTargetProvider;
     private final SwordfishInitiatorProvider sfInitProvider;
     private final DisklessProvider disklessProvider;
-    private final Provider<NotificationListener> notificationListener;
     private final List<DeviceProvider> driverList;
 
     private final Set<StorPool> changedStorPools = new HashSet<>();
@@ -74,7 +72,6 @@ public class StorageLayer implements ResourceLayer
     @Inject
     public StorageLayer(
         @DeviceManagerContext AccessContext storDriverAccCtxRef,
-        Provider<NotificationListener> notificationListenerRef,
         LvmProvider lvmProviderRef,
         LvmThinProvider lvmThinProviderRef,
         ZfsProvider zfsProviderRef,
@@ -85,7 +82,6 @@ public class StorageLayer implements ResourceLayer
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;
-        notificationListener = notificationListenerRef;
 
         lvmProvider = lvmProviderRef;
         lvmThinProvider = lvmThinProviderRef;
@@ -165,8 +161,10 @@ public class StorageLayer implements ResourceLayer
     public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
-        Map<DeviceProvider, List<Volume>> groupedVolumes = rsc.streamVolumes()
-            .collect(Collectors.groupingBy(this::classifier));
+        Map<DeviceProvider, List<Volume>> groupedVolumes =
+            rsc == null ?
+                Collections.emptyMap() :
+                    rsc.streamVolumes().collect(Collectors.groupingBy(this::classifier));
 
         Map<DeviceProvider, List<SnapshotVolume>> groupedSnapshotVolumes = snapshots.stream()
             .flatMap(snapshot ->
@@ -174,26 +172,41 @@ public class StorageLayer implements ResourceLayer
             )
             .collect(Collectors.groupingBy(this::classifier));
 
-        for (Entry<DeviceProvider, List<Volume>> entry : groupedVolumes.entrySet())
-        {
-            List<Volume> volumes = entry.getValue();
-            DeviceProvider deviceProvider = entry.getKey();
-            if (!volumes.isEmpty())
-            {
-                List<SnapshotVolume> snapVlmList = groupedSnapshotVolumes.get(deviceProvider);
-                if (snapVlmList == null)
-                {
-                    snapVlmList = Collections.emptyList();
-                }
-                deviceProvider.process(volumes, snapVlmList, apiCallRc);
-            }
+        Set<DeviceProvider> deviceProviders = new HashSet<>();
+        deviceProviders.addAll(
+            groupedVolumes.entrySet().stream()
+                .filter(entry -> !entry.getValue().isEmpty())
+                .map(entry -> entry.getKey())
+                .collect(Collectors.toSet())
+        );
+        deviceProviders.addAll(
+            groupedSnapshotVolumes.entrySet().stream()
+                .filter(entry -> !entry.getValue().isEmpty())
+                .map(entry -> entry.getKey())
+                .collect(Collectors.toSet())
+        );
 
-            for (Volume vlm : volumes)
+        for (DeviceProvider devProvider : deviceProviders)
+        {
+            List<Volume> vlmList = groupedVolumes.get(devProvider);
+            List<SnapshotVolume> snapVlmList = groupedSnapshotVolumes.get(devProvider);
+
+            if (vlmList == null)
+            {
+                vlmList = Collections.emptyList();
+            }
+            if (snapVlmList == null)
+            {
+                snapVlmList = Collections.emptyList();
+            }
+            devProvider.process(vlmList, snapVlmList, apiCallRc);
+
+            for (Volume vlm : vlmList)
             {
                 if (!vlm.isDeleted() && vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
                 {
                     throw new ImplementationError(
-                        deviceProvider.getClass().getSimpleName() + " did not delete the volume " + vlm
+                        devProvider.getClass().getSimpleName() + " did not delete the volume " + vlm
                     );
                 }
             }
