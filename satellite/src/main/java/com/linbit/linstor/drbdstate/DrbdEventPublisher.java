@@ -13,8 +13,6 @@ import com.linbit.linstor.event.common.UsageState;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,11 +26,6 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     private static final String INSTANCE_PREFIX = "DrbdEventPublisher-";
     private static final String SERVICE_INFO = "DrbdEventPublisher";
     private static final AtomicInteger INSTANCE_COUNT = new AtomicInteger(0);
-
-    private static final List<DrbdVolume.ReplState> USABLE_REPLICATING_STATES = Arrays.asList(
-        DrbdVolume.ReplState.ESTABLISHED,
-        DrbdVolume.ReplState.SYNC_TARGET
-    );
 
     private final DrbdEventService drbdEventService;
     private final ResourceStateEvent resourceStateEvent;
@@ -240,24 +233,27 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
 
     private boolean volumeReady(DrbdVolume volume)
     {
-        boolean ready;
+        boolean accessUpToDateData;
 
         if (volume.getDiskState() == DrbdVolume.DiskState.UP_TO_DATE)
         {
-            ready = true;
+            accessUpToDateData = true;
         }
         else
         {
-            ready = volume.getResource().getConnectionsMap().values().stream()
-                .anyMatch(drbdConnection -> peerVolumeUsable(drbdConnection, volume.getVolNr()));
+            accessUpToDateData = volume.getResource().getConnectionsMap().values().stream()
+                .anyMatch(drbdConnection -> peerVolumeUpToDate(drbdConnection, volume.getVolNr()));
         }
 
-        return ready;
+        boolean connectionsEstablished = volume.getResource().getConnectionsMap().values().stream()
+            .allMatch(drbdConnection -> drbdConnection.getState() == DrbdConnection.State.CONNECTED);
+
+        return accessUpToDateData && connectionsEstablished;
     }
 
-    private boolean peerVolumeUsable(DrbdConnection connection, VolumeNumber volumeNumber)
+    private boolean peerVolumeUpToDate(DrbdConnection connection, VolumeNumber volumeNumber)
     {
         DrbdVolume peerVolume = connection.getVolume(volumeNumber);
-        return peerVolume != null && USABLE_REPLICATING_STATES.contains(peerVolume.getReplState());
+        return peerVolume != null && peerVolume.getDiskState() == DrbdVolume.DiskState.UP_TO_DATE;
     }
 }
