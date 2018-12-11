@@ -181,6 +181,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
         String volumeCollUrl = sfUrl + SF_BASE + SF_STORAGE_SERVICES + "/" + storSvc + SF_VOLUMES;
         RestResponse<Map<String, Object>> crtVlmResp = restClient.execute(
             linstorVlmId,
+            null, // compatibility only...
             RestOp.POST,
             volumeCollUrl,
             getDefaultHeader().build(),
@@ -249,6 +250,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
 
             RestResponse<Map<String, Object>> crtVlmTaskResp = restClient.execute(
                 linstorVlmId,
+                null, // compatibility only...
                 RestOp.GET,
                 sfUrl  + taskMonitorLocation,
                 getDefaultHeader().noContentType().build(),
@@ -328,6 +330,7 @@ public class SwordfishTargetDriver extends AbsSwordfishDriver
                 // DELETE to volumes collection
                 restClient.execute(
                     linstorVlmId,
+                    null, // compatibility only...
                     RestOp.DELETE,
                     sfUrl + vlmOdataId,
                     getDefaultHeader().noContentType().build(),

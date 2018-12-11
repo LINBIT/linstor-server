@@ -152,6 +152,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             SF_COMPOSED_NODE_ATTACH_RESOURCE;
         restClient.execute(
             linstorVlmId,
+            null, // compatibility only...
             RestOp.POST,
             sfUrl + attachAction,
             getDefaultHeader().build(),
@@ -187,6 +188,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
 
             RestResponse<Map<String, Object>> attachRscInfoResp = restClient.execute(
                 linstorVlmId,
+                null, // compatibility only...
                 RestOp.GET,
                 sfUrl  + attachInfoAction,
                 getDefaultHeader().noContentType().build(),
@@ -268,6 +270,7 @@ public class SwordfishInitiatorDriver extends AbsSwordfishDriver
             // POST to Node/$id/Action/ComposedNode.DetachResource
             RestResponse<Map<String, Object>> detachVlmResp = restClient.execute(
                 linstorVlmId,
+                null, // compatibility only...
                 RestOp.POST,
                 sfUrl + detachAction,
                 getDefaultHeader().build(),

@@ -1,6 +1,9 @@
 package com.linbit.linstor.storage.utils;
 
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.RemoveAfterDevMgrRework;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +20,8 @@ public interface RestClient
     void addFailHandler(UnexpectedReturnCodeHandler handler);
 
     default RestResponse<Map<String, Object>> execute(
-        String linstorVlmId,
+        @RemoveAfterDevMgrRework String linstorVlmId,
+        Volume vlm,
         RestOp op,
         String restURL,
         Map<String, String> httpHeaders,
@@ -27,12 +31,13 @@ public interface RestClient
         throws IOException, StorageException
     {
         return execute(
-            new RestHttpRequest(linstorVlmId, op, restURL, httpHeaders, JSON.std.asString(jsonMap), expectedRcs)
+            new RestHttpRequest(linstorVlmId, vlm,  op, restURL, httpHeaders, JSON.std.asString(jsonMap), expectedRcs)
         );
     }
 
     default RestResponse<Map<String, Object>> execute(
-        String linstorVlmId,
+        @RemoveAfterDevMgrRework String linstorVlmId,
+        Volume vlm,
         RestOp op,
         String restURL,
         Map<String, String> httpHeaders,
@@ -42,7 +47,7 @@ public interface RestClient
         throws IOException, StorageException
     {
         return execute(
-            new RestHttpRequest(linstorVlmId, op, restURL, httpHeaders, jsonString, expectedRcs)
+            new RestHttpRequest(linstorVlmId, vlm, op, restURL, httpHeaders, jsonString, expectedRcs)
         );
     }
 
@@ -50,6 +55,7 @@ public interface RestClient
 
     class RestHttpRequest
     {
+        @RemoveAfterDevMgrRework
         final String linstorVlmId;
 
         final RestOp op;
@@ -58,8 +64,11 @@ public interface RestClient
         final String payload;
         final List<Integer> expectedRcs;
 
+        final Volume volume;
+
         RestHttpRequest(
-            String linstorVlmIdRef,
+            @RemoveAfterDevMgrRework String linstorVlmIdRef,
+            Volume vlmRef,
             RestOp opRef,
             String restURLRef,
             Map<String, String> httpHeadersRef,
@@ -68,6 +77,7 @@ public interface RestClient
         )
         {
             linstorVlmId = linstorVlmIdRef;
+            volume = vlmRef;
             op = opRef;
             restURL = restURLRef;
             httpHeaders = httpHeadersRef;

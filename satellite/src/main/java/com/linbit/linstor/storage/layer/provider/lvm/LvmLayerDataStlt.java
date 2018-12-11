@@ -2,9 +2,16 @@ package com.linbit.linstor.storage.layer.provider.lvm;
 
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.storage2.layer.data.LvmLayerData;
+import com.linbit.linstor.storage2.layer.data.State;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LvmLayerDataStlt implements LvmLayerData
 {
+    public static final State CREATED = new State(true, true, "Created");
+    public static final State FAILED = new State(false, true, "Failed");
+
     boolean exists = false;
     boolean failed = false;
     long usableSize = -1L;
@@ -13,6 +20,7 @@ public class LvmLayerDataStlt implements LvmLayerData
     String thinPool;
     String identifier = null;
     Size sizeState = null;
+    List<State> states = new ArrayList<>();
 
     public LvmLayerDataStlt(LvsInfo info)
     {
@@ -62,5 +70,11 @@ public class LvmLayerDataStlt implements LvmLayerData
     public String getIdentifier()
     {
         return identifier;
+    }
+
+    @Override
+    public List<State> getStates()
+    {
+        return states;
     }
 }

@@ -1,5 +1,9 @@
 package com.linbit.linstor.storage2.layer.data.categories;
 
+import com.linbit.linstor.storage2.layer.data.State;
+
+import java.util.List;
+
 /**
  * Marker interface to ensure type safety
  *
@@ -22,4 +26,6 @@ public interface VlmLayerData extends LayerData
     long getUsableSize();
 
     long getAllocatedSize();
+
+    List<? extends State> getStates();
 }

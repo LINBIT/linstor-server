@@ -2,6 +2,10 @@ package com.linbit.linstor.storage.layer.adapter.drbd;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.storage2.layer.data.DrbdVlmData;
+import com.linbit.linstor.storage2.layer.data.State;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DrbdVlmDataStlt implements DrbdVlmData
 {
@@ -19,6 +23,8 @@ public class DrbdVlmDataStlt implements DrbdVlmData
     transient boolean checkMetaData;
     transient boolean metaDataIsNew;
     transient boolean hasDisk;
+
+    List<State> state = new ArrayList<>();
 
     public DrbdVlmDataStlt()
     {
@@ -70,5 +76,11 @@ public class DrbdVlmDataStlt implements DrbdVlmData
     public String getDiskState()
     {
         return diskState;
+    }
+
+    @Override
+    public List<? extends State> getStates()
+    {
+        return state;
     }
 }

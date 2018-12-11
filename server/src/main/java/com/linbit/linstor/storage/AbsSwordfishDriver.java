@@ -327,7 +327,6 @@ public abstract class AbsSwordfishDriver implements StorageDriver
         return exists;
     }
 
-
     protected RestResponse<Map<String, Object>> getSwordfishResource(
         String linstorVlmId,
         String odataId,
@@ -346,6 +345,7 @@ public abstract class AbsSwordfishDriver implements StorageDriver
             }
             rscInfo = restClient.execute(
                 linstorVlmId,
+                null, // compatibility only...
                 RestOp.GET,
                 sfUrl + odataId,
                 getDefaultHeader().build(),

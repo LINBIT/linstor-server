@@ -38,6 +38,11 @@ public class PriorityProps
         }
     }
 
+    /**
+     * First Props is queried first in case of getProp(String, String)
+     *
+     * @param props
+     */
     public PriorityProps(Props... props)
     {
         for (Props prop : props)

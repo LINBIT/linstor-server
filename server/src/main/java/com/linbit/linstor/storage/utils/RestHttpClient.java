@@ -1,8 +1,10 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -267,9 +269,16 @@ public class RestHttpClient implements RestClient
         }
 
         @Override
+        @RemoveAfterDevMgrRework
         public String getLinstorVlmId()
         {
             return request.linstorVlmId;
+        }
+
+        @Override
+        public Volume getVolume()
+        {
+            return request.volume;
         }
 
         @Override
