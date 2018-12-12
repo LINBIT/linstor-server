@@ -212,7 +212,7 @@ public class ZfsCommands
                 "zpool",
                 "list",
                 "-o", "name",
-                "-Hp"
+                "-H"
             },
             "Failed to query list of zpools",
             "Failed to query list of zpools"
