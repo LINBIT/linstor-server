@@ -32,7 +32,15 @@ public class ZfsCommands
 
     public static OutputData getExtentSize(ExtCmd extCmd, String zpool, String identifier) throws StorageException
     {
-        String fullQualifiedId = zpool + File.separator + identifier;
+        String fullQualifiedId;
+        if (identifier == null || identifier.trim().equals(""))
+        {
+            fullQualifiedId = zpool;
+        }
+        else
+        {
+            fullQualifiedId = zpool + File.separator + identifier;
+        }
         return genericExecutor(
             extCmd,
             new String[] {
@@ -194,6 +202,23 @@ public class ZfsCommands
         );
     }
 
+    public static OutputData listZpools(ExtCmd extCmd)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                "zpool",
+                "list",
+                "-o", "name",
+                "-Hp"
+            },
+            "Failed to query list of zpools",
+            "Failed to query list of zpools"
+        );
+    }
+
     public static OutputData getZPoolTotalSize(ExtCmd extCmd, Set<String> zpools)
         throws StorageException
     {
@@ -205,7 +230,8 @@ public class ZfsCommands
                     "zpool",
                     "get",
                     "size",
-                    "-Hp"
+                    "-Hp",
+                    "-o", "name,value"
                 },
                 zpools
             ),

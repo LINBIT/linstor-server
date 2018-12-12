@@ -38,8 +38,10 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 @Singleton
 public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
@@ -48,6 +50,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     public static final String FORMAT_RSC_TO_ZFS_ID = "%s_%05d";
     private static final String FORMAT_ZFS_DEV_PATH = "/dev/%s/%s";
     private static final int TOLERANCE_FACTOR = 3;
+
+    private static final int DEFAULT_ZFS_EXTENT_SIZE = 8; // 8K
+
+    private Map<StorPool, Long> extentSizes = new TreeMap<>();
 
     protected ZfsProvider(
         ErrorReporter errorReporter,
@@ -89,6 +95,13 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             notificationListenerProvider,
             "ZFS"
         );
+    }
+
+    @Override
+    public void clearCache() throws StorageException
+    {
+        super.clearCache();
+        extentSizes.clear();
     }
 
     @Override
@@ -136,11 +149,25 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     @Override
     protected void createLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
     {
+        long volumeSize = vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx);
+        if (volumeSize % DEFAULT_ZFS_EXTENT_SIZE != 0)
+        {
+            long origSize = volumeSize;
+            volumeSize = ((volumeSize / DEFAULT_ZFS_EXTENT_SIZE) + 1) * DEFAULT_ZFS_EXTENT_SIZE;
+            errorReporter.logInfo(
+                String.format(
+                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    origSize,
+                    volumeSize,
+                    DEFAULT_ZFS_EXTENT_SIZE
+                )
+            );
+        }
         ZfsCommands.create(
             extCmdFactory.create(),
             ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
             asLvIdentifier(vlm),
-            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx),
+            volumeSize,
             false
         );
     }
@@ -351,8 +378,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
                 );
             }
 
-            HashMap<String, ZfsInfo> zfsList = ZfsUtils.getZfsList(extCmdFactory.create());
-            if (zfsList.get(zpoolName) == null)
+            Set<String> zpoolList = ZfsUtils.getZPoolList(extCmdFactory.create());
+            if (!zpoolList.contains(zpoolName))
             {
                 throw new StorageException("no zpool found with name '" + zpoolName + "'");
             }
@@ -401,11 +428,14 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     protected void updateStates(Collection<Volume> vlms, Collection<SnapshotVolume> snapVlms)
         throws StorageException, AccessDeniedException, SQLException
     {
+        Set<StorPool> storPools = new TreeSet<>();
         /*
          *  updating volume states
          */
         for (Volume vlm : vlms)
         {
+            storPools.add(vlm.getStorPool(storDriverAccCtx));
+
             ZfsInfo info = infoListCache.get(asFullQualifiedLvIdentifier(vlm));
 
             ZfsLayerDataStlt state = (ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx);

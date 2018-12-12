@@ -6,9 +6,11 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class ZfsUtils
 {
@@ -101,6 +103,18 @@ public class ZfsUtils
         }
         return infoByIdentifier;
     }
+
+    public static Set<String> getZPoolList(ExtCmd extCmd) throws StorageException
+    {
+        final OutputData output = ZfsCommands.listZpools(extCmd);
+        final String stdOut = new String(output.stdoutData);
+        final Set<String> ret = new TreeSet<>();
+
+        ret.addAll(Arrays.asList(stdOut.split("\n")));
+
+        return ret;
+    }
+
 
     private static String buildZfsPath(String identifier)
     {

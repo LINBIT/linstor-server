@@ -838,14 +838,20 @@ public class LayeredResourcesHelper
         // we have to copy the resulting device-path to the origVlm
         origRsc.streamVolumes().forEach(origVlm ->
             AccessUtils.execPrivileged(() ->
-            origVlm.setDevicePath(
-                sysCtx,
-                origRsc.getChildResources(sysCtx)
-                    .get(0) // TODO: for now we assume only one child
-                    .getVolume(origVlm.getVolumeDefinition().getVolumeNumber())
-                    .getDevicePath(sysCtx)
-                )
-            )
-        );
+            {
+                // TODO: for now we assume only one child
+                Resource origChild = origRsc.getChildResources(sysCtx).get(0);
+
+                if (origChild != null && !origChild.isDeleted())
+                {
+                    Volume origChildVlm = origChild.getVolume(origVlm.getVolumeDefinition().getVolumeNumber());
+                    if (origChildVlm != null && !origChildVlm.isDeleted())
+                    {
+                        // could be null in case of snapshot-action of a deleted resource
+                        origVlm.setDevicePath(sysCtx, origChildVlm.getDevicePath(sysCtx));
+                    }
+                }
+            }
+        ));
     }
 }
