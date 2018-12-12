@@ -230,8 +230,7 @@ public class ZfsCommands
                     "zpool",
                     "get",
                     "size",
-                    "-Hp",
-                    "-o", "name,value"
+                    "-Hp"
                 },
                 zpools
             ),

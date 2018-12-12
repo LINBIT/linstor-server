@@ -35,7 +35,19 @@ public class ParseUtils
     public static Map<String, Long> parseSimpleTable(OutputData output, String delimiter, String descr)
         throws StorageException
     {
-        final int expectedColums = 2;
+        return parseSimpleTable(output, delimiter, descr, 0, 1);
+    }
+
+    public static Map<String, Long> parseSimpleTable(
+        OutputData output,
+        String delimiter,
+        String descr,
+        int keyColumnIndex,
+        int valueColumnIndex
+    )
+        throws StorageException
+    {
+        final int requiredColumns = Math.max(keyColumnIndex, valueColumnIndex) + 1;
 
         final Map<String, Long> result = new HashMap<>();
 
@@ -45,13 +57,13 @@ public class ParseUtils
         for (final String line : lines)
         {
             final String[] data = line.trim().split(delimiter);
-            if (data.length == expectedColums)
+            if (data.length >= requiredColumns)
             {
                 try
                 {
                     result.put(
-                        data[0],
-                        StorageUtils.parseDecimalAsLong(data[1])
+                        data[keyColumnIndex],
+                        StorageUtils.parseDecimalAsLong(data[valueColumnIndex])
                     );
                 }
                 catch (NumberFormatException nfExc)
@@ -70,7 +82,7 @@ public class ParseUtils
             {
                 throw new StorageException(
                     "Unable to parse '" + descr + "'",
-                    "Expected " + expectedColums + " columns, but got " + data.length,
+                    "Expected " + requiredColumns + " columns, but got " + data.length,
                     "Failed to parse line: '" + line + "'",
                     null,
                     "External command: " + String.join(" ", output.executedCommand)

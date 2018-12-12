@@ -147,7 +147,9 @@ public class ZfsUtils
         return ParseUtils.parseSimpleTable(
             ZfsCommands.getZPoolTotalSize(extCmd, zPools),
             DELIMITER,
-            "free size"
+            "free size",
+            0, // field for name
+            2 // field for value
         );
     }
 }
