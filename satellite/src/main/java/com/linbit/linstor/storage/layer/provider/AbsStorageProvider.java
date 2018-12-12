@@ -208,6 +208,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                         freeSpaces -> notificationListenerProvider.get()
                             .notifyVolumeDeleted(vlm, freeSpaces.get(storageName))
                     );
+                    vlm.delete(storDriverAccCtx);
                 }
             }
         }
