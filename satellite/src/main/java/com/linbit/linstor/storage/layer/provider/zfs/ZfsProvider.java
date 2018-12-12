@@ -1,16 +1,20 @@
 package com.linbit.linstor.storage.layer.provider.zfs;
 
+import com.linbit.Checks;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
@@ -34,6 +38,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @Singleton
@@ -312,10 +317,50 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     }
 
     @Override
-    public void checkConfig(StorPool storPool) throws StorageException
+    public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        try
+        {
+            Props storPoolProps = DeviceLayerUtils.getNamespaceStorDriver(storPool.getProps(storDriverAccCtx));
+
+            String zpoolName = storPoolProps.getProp(StorageConstants.CONFIG_ZFS_POOL_KEY).trim();
+            if (zpoolName == null)
+            {
+                throw new StorageException("zPool name not given");
+            }
+
+            try
+            {
+                Checks.nameCheck(
+                    zpoolName,
+                    1,
+                    Integer.MAX_VALUE,
+                    StorPoolName.VALID_CHARS,
+                    StorPoolName.VALID_INNER_CHARS
+                );
+            }
+            catch (InvalidNameException ine)
+            {
+                final String cause = String.format("Invalid pool name: %s", zpoolName);
+                throw new StorageException(
+                    "Invalid configuration, " + cause,
+                    null,
+                    cause,
+                    "Specify a valid and existing pool name",
+                    null
+                );
+            }
+
+            HashMap<String, ZfsInfo> zfsList = ZfsUtils.getZfsList(extCmdFactory.create());
+            if (zfsList.get(zpoolName) == null)
+            {
+                throw new StorageException("no zpool found with name '" + zpoolName + "'");
+            }
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override

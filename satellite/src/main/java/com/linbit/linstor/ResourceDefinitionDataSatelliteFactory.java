@@ -15,7 +15,6 @@ import com.linbit.utils.ComparatorUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import java.util.Comparator;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -91,16 +90,6 @@ public class ResourceDefinitionDataSatelliteFactory
                 exc
             );
         }
-        new Comparator<Class<?>>()
-        {
-
-            @Override
-            public int compare(Class<?> o1, Class<?> o2)
-            {
-                // TODO Auto-generated method stub
-                throw new ImplementationError("Not implemented yet");
-            }
-        };
         return rscDfn;
     }
 }
