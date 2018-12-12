@@ -165,15 +165,13 @@ public class CtrlNodeLostApiCallHandler
             {
                 for (Resource peerRsc : getRscStreamPrivileged(rscDfn).collect(toList()))
                 {
-                    Node peerNode = peerRsc.getAssignedNode();
-                    if (peerNode.getName() != nodeName)
-                    {
-                        nodesToContact.put(peerNode.getName(), peerNode);
-                    }
+                    nodesToContact.put(peerRsc.getAssignedNode().getName(), peerRsc.getAssignedNode());
                 }
             }
             deletePrivileged(rsc);
         }
+        // make sure that the just "lost" node is not contacted
+        nodesToContact.remove(nodeName);
 
         // set node mark deleted for updates to other satellites
         markDeleted(nodeData);
