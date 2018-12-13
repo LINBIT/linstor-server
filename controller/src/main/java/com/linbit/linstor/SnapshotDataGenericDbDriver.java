@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
@@ -36,17 +37,19 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
     private static final String S_NODE_NAME = DbConstants.NODE_NAME;
     private static final String S_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String S_NAME = DbConstants.SNAPSHOT_NAME;
+    private static final String S_NODE_ID = DbConstants.NODE_ID;
     private static final String S_FLAGS = DbConstants.SNAPSHOT_FLAGS;
 
     private static final String S_SELECT_ALL =
-        " SELECT " + S_UUID + ", " + S_NODE_NAME + ", " + S_RES_NAME + ", " + S_NAME + ", " + S_FLAGS +
+        " SELECT " + S_UUID + ", " + S_NODE_NAME + ", " + S_RES_NAME + ", " + S_NAME + ", " +
+            S_NODE_ID + ", " + S_FLAGS +
         " FROM " + TBL_SNAPSHOT;
 
     private static final String S_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT +
         " (" +
-            S_UUID + ", " + S_NODE_NAME + ", " + S_RES_NAME + ", " + S_NAME + ", " + S_FLAGS +
-        ") VALUES (?, ?, ?, ?, ?)";
+            S_UUID + ", " + S_NODE_NAME + ", " + S_RES_NAME + ", " + S_NAME + ", " + S_NODE_ID + ", " + S_FLAGS +
+        ") VALUES (?, ?, ?, ?, ?, ?)";
     private static final String S_UPDATE_FLAGS =
         " UPDATE " + TBL_SNAPSHOT +
         " SET " + S_FLAGS + " = ? " +
@@ -93,7 +96,8 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             stmt.setString(2, snapshot.getNodeName().value);
             stmt.setString(3, snapshot.getResourceName().value);
             stmt.setString(4, snapshot.getSnapshotName().value);
-            stmt.setLong(5, snapshot.getFlags().getFlagsBits(dbCtx));
+            stmt.setInt(5, snapshot.getNodeId().value);
+            stmt.setLong(6, snapshot.getFlags().getFlagsBits(dbCtx));
 
             stmt.executeUpdate();
 
@@ -117,10 +121,12 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
 
         Map<VolumeNumber, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
+        NodeId nodeId = getNodeId(resultSet, node, snapshotDefinition);
         snapshot = new SnapshotData(
             java.util.UUID.fromString(resultSet.getString(S_UUID)),
             snapshotDefinition,
             node,
+            nodeId,
             resultSet.getLong(S_FLAGS),
             this, transObjFactory, transMgrProvider,
             snapshotVlmMap
@@ -131,6 +137,31 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         return new Pair<>(snapshot, new SnapshotInitMaps(snapshotVlmMap));
     }
 
+    private NodeId getNodeId(ResultSet resultSet, Node node, SnapshotDefinition snapshotDefinition)
+        throws SQLException
+    {
+        NodeId nodeId;
+        try
+        {
+            nodeId = new NodeId(resultSet.getInt(S_NODE_ID));
+        }
+        catch (ValueOutOfRangeException valueOutOfRangeExc)
+        {
+            throw new LinStorSqlRuntimeException(
+                String.format(
+                    "A NodeId of a stored Snapshot in the table %s could not be restored. " +
+                        "(NodeName=%s, ResName=%s, SnapshotName=%s, invalid NodeId=%d)",
+                    TBL_SNAPSHOT,
+                    node.getName(),
+                    snapshotDefinition.getResourceName(),
+                    snapshotDefinition.getName(),
+                    resultSet.getInt(S_NODE_ID)
+                ),
+                valueOutOfRangeExc
+            );
+        }
+        return nodeId;
+    }
 
     public Map<Snapshot, Snapshot.InitMaps> loadAll(
         Map<NodeName, ? extends Node> nodeMap,

@@ -36,6 +36,7 @@ public class SnapshotDataControllerFactory
         AccessContext accCtx,
         Node node,
         SnapshotDefinition snapshotDfn,
+        NodeId nodeId,
         Snapshot.SnapshotFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
@@ -53,6 +54,7 @@ public class SnapshotDataControllerFactory
             UUID.randomUUID(),
             snapshotDfn,
             node,
+            nodeId,
             StateFlagsBits.getMask(initFlags),
             driver, transObjFactory, transMgrProvider,
             new TreeMap<>()

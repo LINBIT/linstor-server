@@ -619,6 +619,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 peerAccCtx.get(),
                 rsc.getAssignedNode(),
                 snapshotDfn,
+                rsc.getNodeId(),
                 new Snapshot.SnapshotFlags[]{}
             );
         }

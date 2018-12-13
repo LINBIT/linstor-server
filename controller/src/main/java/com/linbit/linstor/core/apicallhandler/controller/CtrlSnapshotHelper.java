@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -20,6 +21,7 @@ import java.util.Iterator;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
 
 @Singleton
 public class CtrlSnapshotHelper
@@ -70,6 +72,28 @@ public class CtrlSnapshotHelper
                 )
                 .setDetails(details)
                 .build()
+            );
+        }
+    }
+
+    public void ensureSnapshotSuccessful(SnapshotDefinition snapshotDfn)
+    {
+        try
+        {
+            if (!snapshotDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.SnapshotDfnFlags.SUCCESSFUL))
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Unable to use failed snapshot"
+                ));
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check success state of " + getSnapshotDfnDescriptionInline(snapshotDfn),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
             );
         }
     }

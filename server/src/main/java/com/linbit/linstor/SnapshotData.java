@@ -37,6 +37,9 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
     private final SnapshotDataDatabaseDriver dbDriver;
 
+    // DRBD node ID for resource from which this snapshot is derived
+    private final NodeId nodeId;
+
     private final TransactionMap<VolumeNumber, SnapshotVolume> snapshotVlmMap;
 
     // State flags
@@ -54,6 +57,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
         Node nodeRef,
+        NodeId nodeIdRef,
         long initFlags,
         SnapshotDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
@@ -67,6 +71,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         snapshotDfn = snapshotDfnRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
+        nodeId = nodeIdRef;
 
         dbgInstanceId = UUID.randomUUID();
 
@@ -115,6 +120,13 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     {
         checkDeleted();
         return node;
+    }
+
+    @Override
+    public NodeId getNodeId()
+    {
+        checkDeleted();
+        return nodeId;
     }
 
     @Override

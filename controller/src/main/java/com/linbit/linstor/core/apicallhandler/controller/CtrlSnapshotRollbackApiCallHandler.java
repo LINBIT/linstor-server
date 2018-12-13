@@ -156,7 +156,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
         ensureMostRecentSnapshot(rscDfn, snapshotDfn);
-        ensureSnapshotSuccessful(snapshotDfn);
+        ctrlSnapshotHelper.ensureSnapshotSuccessful(snapshotDfn);
         ensureSnapshotsForAllVolumes(rscDfn, snapshotDfn);
         ensureAllSatellitesConnected(rscDfn);
         ensureNoResourcesInUse(rscDfn);
@@ -373,28 +373,6 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                 ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN,
                 "Rollback is only allowed with the most recent snapshot"
             ));
-        }
-    }
-
-    private void ensureSnapshotSuccessful(SnapshotDefinition snapshotDfn)
-    {
-        try
-        {
-            if (!snapshotDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.SnapshotDfnFlags.SUCCESSFUL))
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_UNKNOWN_ERROR,
-                    "Unable to roll back to failed snapshot"
-                ));
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "check success state of " + getSnapshotDfnDescriptionInline(snapshotDfn),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_DFN
-            );
         }
     }
 

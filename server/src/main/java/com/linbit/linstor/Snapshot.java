@@ -42,6 +42,8 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable
         return getNode().getName();
     }
 
+    NodeId getNodeId();
+
     void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
         throws AccessDeniedException;
 

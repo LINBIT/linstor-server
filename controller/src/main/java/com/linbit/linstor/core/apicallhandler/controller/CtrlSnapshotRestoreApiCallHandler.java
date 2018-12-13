@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -21,7 +20,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
@@ -50,6 +48,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 public class CtrlSnapshotRestoreApiCallHandler
 {
     private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlSnapshotHelper ctrlSnapshotHelper;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -61,6 +60,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
         CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlSnapshotHelper ctrlSnapshotHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
@@ -71,6 +71,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     )
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlSnapshotHelper = ctrlSnapshotHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
@@ -112,6 +113,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                     "Cannot restore to resource defintion which already has resources"
                 ));
             }
+
+            ctrlSnapshotHelper.ensureSnapshotSuccessful(fromSnapshotDfn);
 
             if (nodeNameStrs.isEmpty())
             {
@@ -174,9 +177,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
 
-        NodeId nodeId = ctrlRscCrtApiHelper.getNextFreeNodeId(toRscDfn);
-
-        ResourceData rsc = ctrlRscCrtApiHelper.createResource(toRscDfn, node, nodeId, 0L);
+        ResourceData rsc = ctrlRscCrtApiHelper.createResource(toRscDfn, node, snapshot.getNodeId(), 0L);
 
         Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(toRscDfn);
         while (toVlmDfnIter.hasNext())

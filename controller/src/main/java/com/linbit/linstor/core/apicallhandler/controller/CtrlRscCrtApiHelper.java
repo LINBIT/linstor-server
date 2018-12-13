@@ -315,7 +315,7 @@ public class CtrlRscCrtApiHelper
         ), context, true));
     }
 
-    NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
+    private NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
     {
         NodeId freeNodeId;
         try

@@ -49,6 +49,8 @@ public class SnapshotDataSatelliteFactory
                     snapshotUuid,
                     snapshotDfn,
                     node,
+                    // Snapshot node ID is not relevant for the satellite
+                    null,
                     StateFlagsBits.getMask(flags),
                     driver, transObjFactory, transMgrProvider,
                     new TreeMap<>()
