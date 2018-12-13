@@ -51,9 +51,9 @@ public class DrbdVersion
     }
 
     /**
-     * Verifies the DRBD version of the program and assigns values to the corresponding variables
-     *  majorVsn,
-     *  majorVsn and
+     * Initializes the version variables
+     *  majorVsn
+     *  majorVsn
      *  patchLvl
      *
      * If the instance was unable to determine the DRBD version, an error will be raised,
@@ -92,6 +92,8 @@ public class DrbdVersion
                 }
                 else
                 {
+                    restoreDefaults();
+
                     if (isDrbd9()) {
                         errorLogRef.reportProblem(
                                 Level.ERROR,
@@ -112,6 +114,8 @@ public class DrbdVersion
         }
         catch (NumberFormatException nfExc)
         {
+            restoreDefaults();
+
             if (isDrbd9())
             {
                 errorLogRef.reportProblem(
@@ -131,6 +135,7 @@ public class DrbdVersion
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
+            restoreDefaults();
             errorLogRef.reportError(Level.ERROR, exc);
         }
     }
@@ -215,5 +220,17 @@ public class DrbdVersion
     public boolean isDrbd9()
     {
         return majorVsn >= DRBD9_MAJOR_VSN;
+    }
+
+    /**
+     * Assigns the default value UNDETERMINED_VERSION to the version variables
+     *  majorVsn
+     *  majorVsn
+     *  patchLvl
+     */
+    private void restoreDefaults() {
+        majorVsn = UNDETERMINED_VERSION;
+        minorVsn = UNDETERMINED_VERSION;
+        patchLvl = UNDETERMINED_VERSION;
     }
 }
