@@ -48,7 +48,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
 {
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_ZFS_ID = "%s_%05d";
-    private static final String FORMAT_ZFS_DEV_PATH = "/dev/%s/%s";
+    private static final String FORMAT_ZFS_DEV_PATH = "/dev/zvol/%s/%s";
     private static final int TOLERANCE_FACTOR = 3;
 
     private static final int DEFAULT_ZFS_EXTENT_SIZE = 8; // 8K
