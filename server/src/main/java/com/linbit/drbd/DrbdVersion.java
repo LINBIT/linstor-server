@@ -1,7 +1,6 @@
 package com.linbit.drbd;
 
 import com.linbit.ChildProcessTimeoutException;
-import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.LinStorException;
@@ -42,8 +41,25 @@ public class DrbdVersion
     private short minorVsn = UNDETERMINED_VERSION;
     private short patchLvl = UNDETERMINED_VERSION;
 
+    private CoreTimer timerRef;
+    private ErrorReporter errorLogRef;
+
     @Inject
-    public DrbdVersion(CoreTimer timerRef, ErrorReporter errorLogRef)
+    public DrbdVersion(CoreTimer timerRef, ErrorReporter errorLogRef) {
+        this.timerRef = timerRef;
+        this.errorLogRef = errorLogRef;
+    }
+
+    /**
+     * Verifies the DRBD version of the program and assigns values to the corresponding variables
+     *  majorVsn,
+     *  majorVsn and
+     *  patchLvl
+     *
+     * If the instance was unable to determine the DRBD version, an error will be raised,
+     * but only if DRBD is installed.
+     */
+    public void checkVersion()
     {
         ExtCmd cmd = new ExtCmd(timerRef, errorLogRef);
         String value = null;
@@ -51,9 +67,7 @@ public class DrbdVersion
         {
             OutputData cmdData = cmd.exec(VSN_QUERY_COMMAND);
             try
-            (
-                BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdData.getStdoutStream()))
-            )
+                    (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdData.getStdoutStream())))
             {
                 String key = KEY_VSN_CODE + "=";
                 for (String vsnLine = vsnReader.readLine(); vsnLine != null; vsnLine = vsnReader.readLine())
@@ -78,42 +92,42 @@ public class DrbdVersion
                 }
                 else
                 {
-                    errorLogRef.reportProblem(
-                        Level.ERROR,
-                        new LinStorException(
-                            LOG_TXT_CHECK_FAILED,
-                            ERR_DSC_CHECK_FAILED,
-                            "The " + KEY_VSN_CODE + " constant is not present in the output of the " +
-                            DRBD_UTILS_CMD + " utility",
-                            ERR_CORR_TXT,
-                            "DRBD version 9 is required to run " + LinStor.PROGRAM + ".\n" +
-                            "DRBD version 8 is not supported."
-                        ),
-                        null, null, null
-                    );
+                    if (isDrbd9()) {
+                        errorLogRef.reportProblem(
+                                Level.ERROR,
+                                new LinStorException(
+                                        LOG_TXT_CHECK_FAILED,
+                                        ERR_DSC_CHECK_FAILED,
+                                        "The " + KEY_VSN_CODE + " constant is not present in the output of the " +
+                                                DRBD_UTILS_CMD + " utility",
+                                        ERR_CORR_TXT,
+                                        "DRBD version 9 is required to run " + LinStor.PROGRAM + ".\n" +
+                                                "DRBD version 8 is not supported."
+                                ),
+                                null, null, null
+                        );
+                    }
                 }
             }
         }
         catch (NumberFormatException nfExc)
         {
-            if (value == null)
+            if (isDrbd9())
             {
-                throw new ImplementationError(DrbdVersion.class.getSimpleName() + ": Attempt to parse a null value");
+                errorLogRef.reportProblem(
+                        Level.ERROR,
+                        new LinStorException(
+                                LOG_TXT_CHECK_FAILED,
+                                ERR_DSC_CHECK_FAILED,
+                                "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
+                                        "utility is unparsable",
+                                ERR_CORR_TXT,
+                                "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
+                                nfExc
+                        ),
+                        null, null, null
+                );
             }
-
-            errorLogRef.reportProblem(
-                Level.ERROR,
-                new LinStorException(
-                    LOG_TXT_CHECK_FAILED,
-                    ERR_DSC_CHECK_FAILED,
-                    "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
-                    "utility is unparsable",
-                    ERR_CORR_TXT,
-                    "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
-                    nfExc
-                ),
-                null, null, null
-            );
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
