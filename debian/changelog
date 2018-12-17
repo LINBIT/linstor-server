@@ -1,3 +1,58 @@
+linstor-server (0.7.4-1) experimental; urgency=medium
+
+  [ Robert Altnoeder ]
+  * Added DB migration to fix SNAPSHOT_VOLUMES column
+  * DeviceManager service: Fixed scope enter/exit bug
+  * Fixed trace mode methods (fixes DeviceManager restarts)
+  * Set valid volume number range [0, 65534]
+  * Fixed worker queue size calculation
+  * Limit resync percentage to a [0, 100] range
+  * Satellite: Added check for a supported DRBD version
+  * Fix STOR_POOL_NAME database column type
+  * Unified exit codes
+
+  [ Joel Colledge ]
+  * Send response for snapshot change even when the resource is no longer  [...]
+  * Update volume disk state inside try-catch block so that the response i [...]
+  * Write logs to directory configured on the command line when writing to [...]
+  * Add resource definition created for snapshot processing to global map
+  * Only require the peer to be authenticated before sending API calls
+  * Allow volumes to be created when the free capacity is not yet known ev [...]
+  * Include error IDs in responses from fallback error handlers
+  * Include asynchronous stage trace in error reports
+  * Add low level fallback error handler so that uncaught errors do not st [...]
+  * Let watches subscribe to more than 256 streams concurrently
+  * Include thin volume allocated capacity in the volume list
+  * Do not suppress existing error IDs in fallback error handler
+  * Fix ZfsDriverTest to expect inclusion of 'used' column
+  * Make access of in-use state of resources thread-safe
+  * Simplify the API call handler ordering logic
+  * Fix failure when the controller is under load from many peers
+  * Tidy up message logging
+  * Event handling no longer needs a scope
+  * Add scope description to trace logging
+  * Use an EmitterProcessor instead of limiting queue size directly with a [...]
+  * Convert the Ping API to reactive style
+  * Add option to migrate disk from another node when adding disk to diskl [...]
+  * Make API calls singletons
+  * Ensure that the storage pool kind is the same as on the peers when add [...]
+  * Wait for connections to be established before treating a resource as ready
+  * Save and restore node ID with snapshot
+
+  [ Rene Peinthor ]
+  * satellite: only generate linstor-resources.res if it doesn't exist
+
+  [ Roland Kammerer ]
+  * build,pkg: /etc/drbd.d/linstor-resources.res
+  * packaging: bump drbd-utils to >= 9.7.0
+
+  [ Gabor Hernadi ]
+  * Removed unused controller arguments
+  * Fixed missplaced == for comparing names
+  * Fixed possible resource-leak
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 17 Dec 2018 11:17:59 +0100
+
 linstor-server (0.7.3-1) experimental; urgency=medium
 
   [ Robert Altnoeder ]
