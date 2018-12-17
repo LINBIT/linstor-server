@@ -151,7 +151,7 @@ public final class Satellite
             if (!satelliteCmdlArguments.isSkipDrbdCheck())
             {
                 DrbdVersion vsnCheck = new DrbdVersion(timerEventSvc, errorReporter);
-                if (!vsnCheck.isDrbd9())
+                if (!vsnCheck.hasDrbd9())
                 {
                     errorReporter.reportProblem(
                         Level.ERROR,
@@ -161,7 +161,7 @@ public final class Satellite
                             LinStor.PROGRAM + " could not verify that a supported version of DRBD is installed\n" +
                             "on this system",
                             "- Ensure that DRBD is installed and accessible by " + LinStor.PROGRAM + "\n" +
-                            "- " + LinStor.PROGRAM + " requires DRBD version 9. DRBD version 8 is NOT supported.\n" +
+                            "- " + LinStor.PROGRAM + " requires DRBD version 9 (or higher). DRBD version 8 is NOT supported.\n" +
                             "- If you intend to run " + LinStor.PROGRAM + " without using DRBD, refer to\n" +
                             "  product documentation or command line options help for information on how\n" +
                             "  to skip the check for a supported DRBD installation",

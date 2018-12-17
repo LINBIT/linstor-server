@@ -16,7 +16,7 @@ import org.slf4j.event.Level;
 public class DrbdVersion
 {
     public static final String DRBD_UTILS_CMD = "drbdadm";
-    public static final String[] VSN_QUERY_COMMAND = { "drbdadm", "--version" };
+    public static final String[] VSN_QUERY_COMMAND = {"drbdadm", "--version"};
 
     public static final String LOG_TXT_CHECK_FAILED = "DRBD kernel module version check failed";
     public static final String ERR_DSC_CHECK_FAILED =
@@ -29,6 +29,7 @@ public class DrbdVersion
 
     public static final String KEY_VSN_CODE = "DRBD_KERNEL_VERSION_CODE";
 
+    private static final int HEXADECIMAL = 16;
     public static final int SHIFT_MAJOR_VSN = 16;
     public static final int SHIFT_MINOR_VSN = 8;
     public static final int MASK_VSN_ELEM = 0xFF;
@@ -45,9 +46,10 @@ public class DrbdVersion
     private ErrorReporter errorLogRef;
 
     @Inject
-    public DrbdVersion(CoreTimer timerRef, ErrorReporter errorLogRef) {
-        this.timerRef = timerRef;
-        this.errorLogRef = errorLogRef;
+    public DrbdVersion(CoreTimer coreTimer, ErrorReporter errorReporter)
+    {
+        this.timerRef = coreTimer;
+        this.errorLogRef = errorReporter;
     }
 
     /**
@@ -65,6 +67,7 @@ public class DrbdVersion
         String value = null;
         try
         {
+            restoreDefaults();
             OutputData cmdData = cmd.exec(VSN_QUERY_COMMAND);
             try
                     (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdData.getStdoutStream())))
@@ -85,7 +88,7 @@ public class DrbdVersion
                     {
                         value = value.substring(2);
                     }
-                    int vsnCode = Integer.parseInt(value, 16);
+                    int vsnCode = Integer.parseInt(value, HEXADECIMAL);
                     majorVsn = (short) ((vsnCode >>> SHIFT_MAJOR_VSN) & MASK_VSN_ELEM);
                     minorVsn = (short) ((vsnCode >>> SHIFT_MINOR_VSN) & MASK_VSN_ELEM);
                     patchLvl = (short) (vsnCode & MASK_VSN_ELEM);
@@ -93,45 +96,25 @@ public class DrbdVersion
                 else
                 {
                     restoreDefaults();
-
-                    if (isDrbd9()) {
-                        errorLogRef.reportProblem(
-                                Level.ERROR,
-                                new LinStorException(
-                                        LOG_TXT_CHECK_FAILED,
-                                        ERR_DSC_CHECK_FAILED,
-                                        "The " + KEY_VSN_CODE + " constant is not present in the output of the " +
-                                                DRBD_UTILS_CMD + " utility",
-                                        ERR_CORR_TXT,
-                                        "DRBD version 9 is required to run " + LinStor.PROGRAM + ".\n" +
-                                                "DRBD version 8 is not supported."
-                                ),
-                                null, null, null
-                        );
-                    }
                 }
             }
         }
         catch (NumberFormatException nfExc)
         {
             restoreDefaults();
-
-            if (isDrbd9())
-            {
-                errorLogRef.reportProblem(
-                        Level.ERROR,
-                        new LinStorException(
-                                LOG_TXT_CHECK_FAILED,
-                                ERR_DSC_CHECK_FAILED,
-                                "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
-                                        "utility is unparsable",
-                                ERR_CORR_TXT,
-                                "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
-                                nfExc
-                        ),
-                        null, null, null
-                );
-            }
+            errorLogRef.reportProblem(
+                    Level.ERROR,
+                    new LinStorException(
+                            LOG_TXT_CHECK_FAILED,
+                            ERR_DSC_CHECK_FAILED,
+                            "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
+                                    "utility is unparsable",
+                            ERR_CORR_TXT,
+                            "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
+                            nfExc
+                    ),
+                    null, null, null
+            );
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
@@ -207,7 +190,7 @@ public class DrbdVersion
      */
     public short[] getVsn()
     {
-        return new short[] { majorVsn, minorVsn, patchLvl };
+        return new short[] {majorVsn, minorVsn, patchLvl};
     }
 
     /**
@@ -217,7 +200,7 @@ public class DrbdVersion
      *
      * @return true if the DRBD major version is equal to or greater than 9, false otherwise
      */
-    public boolean isDrbd9()
+    public boolean hasDrbd9()
     {
         return majorVsn >= DRBD9_MAJOR_VSN;
     }
@@ -228,7 +211,8 @@ public class DrbdVersion
      *  majorVsn
      *  patchLvl
      */
-    private void restoreDefaults() {
+    private void restoreDefaults()
+    {
         majorVsn = UNDETERMINED_VERSION;
         minorVsn = UNDETERMINED_VERSION;
         patchLvl = UNDETERMINED_VERSION;
