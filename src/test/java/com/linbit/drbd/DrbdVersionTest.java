@@ -208,7 +208,6 @@ public class DrbdVersionTest
     {
         expectReturnVersionBehavior(PROVOKE_IO_EXCEPTION);
         drbdVersion.checkVersion();
-        drbdVersion.
         assertEquals(UNDETERMINED_VERSION, drbdVersion.getMajorVsn());
         assertEquals(UNDETERMINED_VERSION, drbdVersion.getMinorVsn());
         assertEquals(UNDETERMINED_VERSION, drbdVersion.getPatchLvl());
