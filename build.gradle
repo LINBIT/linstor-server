@@ -316,8 +316,12 @@ dependencies {
     compile project(':controller'), project(':satellite')
     testCompile project(':controller'), project(':satellite')
 
+    def powerMockVersion = '2.0.0-RC.4'
     testCompile group: 'junit', name: 'junit', version: '4.+'
-    testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
+    testCompile group: 'org.powermock', name: 'powermock-core', version: powerMockVersion
+    testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: powerMockVersion
+    testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: powerMockVersion
 
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
     testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'

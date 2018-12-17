@@ -27,8 +27,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static com.linbit.linstor.testutils.VarArgEq.varArgEq;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -83,7 +83,7 @@ public class ConfFileBuilderTest
             errorReporter,
             accessContext,
             makeMockResource(101, "testNode","1.2.3.4", false, false, false),
-            Collections.singletonList(makeMockResource(202, "testNode","5.6.7.8", false, false, false)),
+            Collections.singletonList(makeMockResource(202, "testNode2","5.6.7.8", false, false, false)),
             whitelistProps
         ).build();
 
@@ -241,12 +241,7 @@ public class ConfFileBuilderTest
         when(
             volumeFlags.isUnset(
                 any(AccessContext.class),
-                varArgEq(
-                    new Volume.VlmFlags[]
-                    {
-                        Volume.VlmFlags.DELETE
-                    }
-                )
+                eq(Volume.VlmFlags.DELETE)
             )
         ).thenReturn(!volumeDeleted);
 
@@ -264,13 +259,13 @@ public class ConfFileBuilderTest
         when(assignedNode.streamNetInterfaces(any(AccessContext.class)))
             .thenAnswer(makeStreamAnswer(netInterface));
 
-        when(stateFlags.isUnset(any(AccessContext.class), varArgEq(new Resource.RscFlags[]{Resource.RscFlags.DELETE})))
+        when(stateFlags.isUnset(any(AccessContext.class), eq(Resource.RscFlags.DELETE)))
             .thenReturn(!resourceDeleted);
         when(
-            stateFlags.isUnset(any(AccessContext.class), varArgEq(new Resource.RscFlags[]{Resource.RscFlags.DISKLESS})))
+            stateFlags.isUnset(any(AccessContext.class), eq(Resource.RscFlags.DISKLESS)))
             .thenReturn(!diskless);
         when(
-            stateFlags.isSet(any(AccessContext.class), varArgEq(new Resource.RscFlags[]{Resource.RscFlags.DISKLESS})))
+            stateFlags.isSet(any(AccessContext.class), eq(Resource.RscFlags.DISKLESS)))
             .thenReturn(diskless);
 
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
