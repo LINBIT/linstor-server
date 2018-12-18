@@ -53,7 +53,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.DisklessDriver;
 import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
@@ -287,7 +286,7 @@ public class CtrlNodeApiCallHandler
                 storPoolHelper.createStorPool(
                     nodeNameStr,
                     LinStor.DISKLESS_STOR_POOL_NAME,
-                    DisklessDriver.class.getSimpleName(),
+                    "DisklessDriver",
                     (String) null
                 );
             }

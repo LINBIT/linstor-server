@@ -18,7 +18,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
-import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
@@ -496,9 +495,8 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
 
     private String prioStorDriverProps(String key, Props... props) throws InvalidKeyException
     {
-        return new PriorityProps(props).getProp(key, StorageDriver.STORAGE_NAMESPACE);
+        return new PriorityProps(props).getProp(key, STORAGE_NAMESPACE);
     }
-
 
     protected abstract void createImpl(Volume vlm)
         throws StorageException, AccessDeniedException, SQLException;

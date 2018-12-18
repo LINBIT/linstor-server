@@ -1,12 +1,6 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.timer.CoreTimer;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
 import java.util.Map;
 import java.util.Set;
 
@@ -21,20 +15,6 @@ public interface StorageDriverKind
      * @return The driver name
      */
     String getDriverName();
-
-    /**
-     * Constructs a storage driver.
-     * @param stltCfgAccessor
-     *
-     * @return The new storage driver instance
-     */
-    @RemoveAfterDevMgrRework
-    StorageDriver makeStorageDriver(
-        ErrorReporter errorReporter,
-        FileSystemWatch fileSystemWatch,
-        CoreTimer timer,
-        StltConfigAccessor stltCfgAccessor
-    );
 
     /**
      * Returns a map of the general characteristics of this type of driver.

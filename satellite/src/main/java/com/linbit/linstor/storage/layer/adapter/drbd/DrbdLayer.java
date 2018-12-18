@@ -77,7 +77,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class DrbdLayer implements ResourceLayer
 {
-    private static final String DRBD_DEVICE_PATH_FORMAT = "/dev/drbd%d";
+    public static final String DRBD_DEVICE_PATH_FORMAT = "/dev/drbd%d";
     private static final String DRBD_CONFIG_SUFFIX = ".res";
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
 

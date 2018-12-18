@@ -6,8 +6,7 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.GenericDbBase;
-import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.linstor.storage.LvmDriverKind;
+import com.linbit.linstor.storage.StorageDriverLoader;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +80,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            new LvmDriverKind(),
+            StorageDriverLoader.getKind("LvmDriver"),
             fsm,
             false,
             driver,
@@ -99,7 +98,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         assertEquals(uuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(spName.value, resultSet.getString(POOL_NAME));
-        assertEquals(LvmDriver.class.getSimpleName(), resultSet.getString(DRIVER_NAME));
+        assertEquals("LvmDriver", resultSet.getString(DRIVER_NAME));
         assertFalse("Database persisted too many storPools", resultSet.next());
 
         resultSet.close();
@@ -113,7 +112,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            "LvmDriver",
             fsm
         );
         commit();
@@ -126,7 +125,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         assertEquals(pool.getUuid(), java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(pool.getName().value, resultSet.getString(POOL_NAME));
-        assertEquals(LvmDriver.class.getSimpleName(), resultSet.getString(DRIVER_NAME));
+        assertEquals("LvmDriver", resultSet.getString(DRIVER_NAME));
         assertFalse("Database persisted too many storPools", resultSet.next());
 
         resultSet.close();
@@ -140,7 +139,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            new LvmDriverKind(),
+            StorageDriverLoader.getKind("LvmDriver"),
             fsm,
             false,
             driver,
@@ -183,8 +182,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         StorPoolDefinition spDfn = storPoolData.getDefinition(SYS_CTX);
         assertNotNull(spDfn);
         assertEquals(spName, spDfn.getName());
-        assertNull(storPoolData.getDriver(SYS_CTX, null, null, null, null));
-        assertEquals(LvmDriver.class.getSimpleName(), storPoolData.getDriverName());
+        assertNull(storPoolData.getDriverKind());
+        assertEquals("LvmDriver", storPoolData.getDriverName());
         assertEquals(spName, storPoolData.getName());
     }
 
@@ -195,7 +194,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            "LvmDriver",
             fsm
         );
 
@@ -215,7 +214,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            new LvmDriverKind(),
+            StorageDriverLoader.getKind("LvmDriver"),
             fsm,
             false,
             driver,
@@ -233,8 +232,8 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(SYS_CTX));
-        assertNull(loadedStorPool.getDriver(SYS_CTX, null, null, null, null));
-        assertEquals(LvmDriver.class.getSimpleName(), loadedStorPool.getDriverName());
+        assertNull(loadedStorPool.getDriverKind());
+        assertEquals("LvmDriver", loadedStorPool.getDriverName());
         assertEquals(spName, loadedStorPool.getName());
     }
 
@@ -245,7 +244,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            "LvmDriver",
             fsm
         );
         commit();
@@ -274,7 +273,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            new LvmDriverKind(),
+            StorageDriverLoader.getKind("LvmDriver"),
             fsm,
             false,
             driver,
@@ -312,7 +311,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             uuid,
             node,
             spdd,
-            new LvmDriverKind(),
+            StorageDriverLoader.getKind("LvmDriver"),
             fsm,
             false,
             driver,
@@ -329,7 +328,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             spdd,
-            LvmDriver.class.getSimpleName(),
+            "LvmDriver",
             fsm
         );
     }

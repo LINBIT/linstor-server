@@ -5,12 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.storage.utils.CryptSetup;
-import com.linbit.linstor.timer.CoreTimer;
 
 public class ZfsThinDriverKind implements StorageDriverKind
 {
@@ -18,24 +13,6 @@ public class ZfsThinDriverKind implements StorageDriverKind
     public String getDriverName()
     {
         return "ZfsThinDriver";
-    }
-
-    @Override
-    public StorageDriver makeStorageDriver(
-        ErrorReporter errorReporter,
-        FileSystemWatch fileSystemWatch,
-        CoreTimer timer,
-        StltConfigAccessor stltCfgAccessor
-    )
-    {
-        return new ZfsThinDriver(
-            errorReporter,
-            fileSystemWatch,
-            timer,
-            this,
-            stltCfgAccessor,
-            new CryptSetup(timer, errorReporter)
-        );
     }
 
     @Override

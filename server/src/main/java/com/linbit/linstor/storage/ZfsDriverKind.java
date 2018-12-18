@@ -1,12 +1,6 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.storage.utils.CryptSetup;
-import com.linbit.linstor.timer.CoreTimer;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,24 +12,6 @@ public class ZfsDriverKind implements StorageDriverKind
     public String getDriverName()
     {
         return "ZfsDriver";
-    }
-
-    @Override
-    public StorageDriver makeStorageDriver(
-        ErrorReporter errorReporter,
-        FileSystemWatch fileSystemWatch,
-        CoreTimer timer,
-        StltConfigAccessor stltCfgAccessor
-    )
-    {
-        return new ZfsDriver(
-            errorReporter,
-            fileSystemWatch,
-            timer,
-            this,
-            stltCfgAccessor,
-            new CryptSetup(timer, errorReporter)
-        );
     }
 
     @Override

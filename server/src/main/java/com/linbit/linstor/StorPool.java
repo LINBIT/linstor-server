@@ -6,17 +6,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.util.List;
@@ -47,20 +40,6 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
      * Returns the {@link com.linbit.linstor.StorPoolDefinition}.
      */
     StorPoolDefinition getDefinition(AccessContext accCtx)
-        throws AccessDeniedException;
-
-    /**
-     * Returns the {@link StorageDriver}.
-     * Will return null on Controller, and non-null on Satellite.
-     * @param stltCfgAccessor
-     */
-    StorageDriver getDriver(
-        AccessContext accCtx,
-        ErrorReporter errorReporter,
-        FileSystemWatch fileSystemWatch,
-        CoreTimer timer,
-        StltConfigAccessor stltCfgAccessor
-    )
         throws AccessDeniedException;
 
     StorageDriverKind getDriverKind();
@@ -99,19 +78,6 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
      */
     Collection<Volume> getVolumes(AccessContext accCtx)
         throws AccessDeniedException;
-
-    /**
-     * Takes all entries of the reserved namespace for the {@link StorageDriver}
-     * from the config {@link Props} and calls
-     * {@link StorageDriver#setConfiguration(String, Map)}
-     * @throws StorageException
-     */
-    void reconfigureStorageDriver(
-        StorageDriver storageDriver,
-        ReadOnlyProps nodeStorageDriverNamespace,
-        ReadOnlyProps stltStorageDriverNamespace
-    )
-        throws StorageException;
 
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;

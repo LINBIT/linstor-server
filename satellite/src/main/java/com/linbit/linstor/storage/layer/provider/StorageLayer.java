@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.layer.provider;
 
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotVolume;
@@ -20,6 +21,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
 
@@ -41,19 +43,21 @@ import java.util.stream.Collectors;
 public class StorageLayer implements ResourceLayer
 {
     private final AccessContext storDriverAccCtx;
-
     private final DeviceProviderMapper deviceProviderMapper;
+    private final ExtCmdFactory extCmdFactory;
 
     private final Set<StorPool> changedStorPools = new HashSet<>();
 
     @Inject
     public StorageLayer(
         @DeviceManagerContext AccessContext storDriverAccCtxRef,
-        DeviceProviderMapper deviceProviderMapperRef
+        DeviceProviderMapper deviceProviderMapperRef,
+        ExtCmdFactory extCmdFactoryRef
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;
         deviceProviderMapper = deviceProviderMapperRef;
+        extCmdFactory = extCmdFactoryRef;
     }
 
     @Override
@@ -267,5 +271,11 @@ public class StorageLayer implements ResourceLayer
         DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
         deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
         deviceProvider.checkConfig(storPool);
+    }
+
+    public long getAllocatedSize(Volume vlm, AccessContext accCtx)
+        throws StorageException, AccessDeniedException
+    {
+        return ProviderUtils.getAllocatedSize(vlm, extCmdFactory.create(), accCtx);
     }
 }

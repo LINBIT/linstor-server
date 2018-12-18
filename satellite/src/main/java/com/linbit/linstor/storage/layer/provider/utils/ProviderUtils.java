@@ -19,4 +19,10 @@ public class ProviderUtils
             )
         );
     }
+
+    public static long getAllocatedSize(Volume vlm, ExtCmd extCmd, AccessContext accCtx)
+        throws StorageException, AccessDeniedException
+    {
+        return Commands.getBlockSizeInKib(extCmd, vlm.getDevicePath(accCtx));
+    }
 }

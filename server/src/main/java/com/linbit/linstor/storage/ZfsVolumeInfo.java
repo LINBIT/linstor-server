@@ -1,13 +1,13 @@
 package com.linbit.linstor.storage;
 
+import static com.linbit.utils.StringUtils.join;
+
 import java.io.File;
 import java.io.IOException;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
-
-import static com.linbit.linstor.storage.AbsStorageDriver.glue;
 
 public class ZfsVolumeInfo extends VolumeInfo
 {
@@ -65,7 +65,7 @@ public class ZfsVolumeInfo extends VolumeInfo
                     "Pool: " + pool + ", zvol: " + identifier + "; output to parse: '" + rawOut + "'",
                     null,
                     null,
-                    "External command used: " + glue(command, " ")
+                    "External command used: " + join(" ", command)
                 );
             }
             long size = Long.parseLong(parts[0]) >> 10; // convert to  KiB
@@ -87,7 +87,7 @@ public class ZfsVolumeInfo extends VolumeInfo
                 null,
                 String.format(
                     "External command: %s",
-                    glue(command, " ")
+                    join(" ", command)
                 ),
                 exc
             );

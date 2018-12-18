@@ -121,7 +121,7 @@ public class DefaultLayer implements ResourceLayer
                 }
                 else
                 {
-                    if (!child.isDeleted()  && child.getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+                    if (!child.isDeleted() && !child.getStateFlags().isSet(sysCtx, RscFlags.DELETE))
                     {
                         // copy the topmost (typed) volume's device paths
                         Volume childVlm = child.getVolume(vlm.getVolumeDefinition().getVolumeNumber());

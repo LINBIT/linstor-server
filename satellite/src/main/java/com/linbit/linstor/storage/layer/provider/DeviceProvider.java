@@ -1,9 +1,11 @@
 package com.linbit.linstor.storage.layer.provider;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -14,6 +16,8 @@ import java.util.List;
 
 public interface DeviceProvider
 {
+    String STORAGE_NAMESPACE = InternalApiConsts.NAMESPC_INTERNAL + "/" + ApiConsts.NAMESPC_STORAGE_DRIVER;
+
     void clearCache() throws StorageException;
 
     void prepare(List<Volume> volumes, List<SnapshotVolume> snapVlms)

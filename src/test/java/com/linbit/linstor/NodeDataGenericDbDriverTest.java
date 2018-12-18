@@ -21,8 +21,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.linstor.storage.StorageDriver;
 
 import javax.inject.Inject;
 
@@ -280,12 +278,12 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         StorPoolName poolName = new StorPoolName("TestPoolName");
 
         // storPool
-        String storPoolDriver1 = LvmDriver.class.getSimpleName();
+        String storPoolDriver1 = "LvmDriver";
         String storPool1TestKey = "storPool1TestKey";
         String storPool1TestValue = "storPool1TestValue";
 
         // storPool
-        String storPoolDriver2 = LvmDriver.class.getSimpleName();
+        String storPoolDriver2 = "LvmDriver";
         String storPool2TestKey = "storPool2TestKey";
         String storPool2TestValue = "storPool2TestValue";
 
@@ -618,8 +616,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 assertEquals(storPoolDfnUuid, storPoolDefinition.getUuid());
             }
             {
-                StorageDriver storageDriver = storPool.getDriver(SYS_CTX, null, null, null, null);
-                assertNull(storageDriver);
+                assertNull(storPool.getDriverKind());
                 // in controller storDriver HAS to be null (as we are testing database, we
                 // have to be testing the controller)
             }

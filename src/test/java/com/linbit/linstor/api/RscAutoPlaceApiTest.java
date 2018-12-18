@@ -29,9 +29,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
-import com.linbit.linstor.storage.DisklessDriver;
-import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.linstor.storage.LvmThinDriver;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -60,7 +57,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -1008,7 +1004,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 BOB_ACC_CTX,
                 stlt,
                 dfltDisklessStorPoolDfn,
-                DisklessDriver.class.getSimpleName(),
+                "DisklessDriver",
                 fsm
             );
 
@@ -1140,7 +1136,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiTestBase.BOB_ACC_CTX,
                 stlt,
                 storPoolDfn,
-                (thin ? LvmThinDriver.class : LvmDriver.class).getSimpleName(),
+                (thin ? "LvmThinDriver" : "LvmDriver"),
                 fsm
             );
 

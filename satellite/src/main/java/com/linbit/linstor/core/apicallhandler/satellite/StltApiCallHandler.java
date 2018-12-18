@@ -72,8 +72,10 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
+import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
@@ -116,6 +118,7 @@ public class StltApiCallHandler
     private final StltVlmDfnApiCallHandler vlmDfnHandler;
     private final Props stltConf;
     private final EventBroker eventBroker;
+    private final DeviceProviderMapper deviceProviderMapper;
 
     private WhitelistPropsReconfigurator whiteListPropsReconfigurator;
     private WhitelistProps whitelistProps;
@@ -157,7 +160,8 @@ public class StltApiCallHandler
         WhitelistPropsReconfigurator whiteListPropsReconfiguratorRef,
         @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
         DrbdStateTracker drbdStateTrackerRef,
-        DrbdEventPublisher drbdEventPublisherRef
+        DrbdEventPublisher drbdEventPublisherRef,
+        DeviceProviderMapper deviceProviderMapperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -192,6 +196,7 @@ public class StltApiCallHandler
         apiCallId = apiCallIdRef;
         drbdStateTracker = drbdStateTrackerRef;
         drbdEventPublisher = drbdEventPublisherRef;
+        deviceProviderMapper = deviceProviderMapperRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -632,17 +637,8 @@ public class StltApiCallHandler
                     try
                     {
                         StorPool sp = spd.getStorPool(apiCtx, controllerPeerConnector.getLocalNodeName());
-                        sp.reconfigureStorageDriver(
-                            sp.getDriver(
-                                apiCtx,
-                                errorReporter,
-                                fileSystemWatch,
-                                timer,
-                                stltConfAccessor
-                            ),
-                            nodeNamespace,
-                            stltConfAccessor.getReadonlyProps(ApiConsts.NAMESPC_STORAGE_DRIVER)
-                        );
+                        DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(sp);
+                        deviceProvider.checkConfig(sp);
                     }
                     catch (StorageException exc)
                     {

@@ -753,7 +753,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         );
     }
 
-
     protected abstract String asLvIdentifier(ResourceName resourceName, VolumeNumber volumeNumber);
 
     protected abstract String getDevicePath(String storageName, String lvId);

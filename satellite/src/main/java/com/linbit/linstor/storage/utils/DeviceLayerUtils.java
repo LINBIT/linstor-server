@@ -4,10 +4,10 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
-import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.VlmStorageState;
 import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.utils.ExceptionThrowingBiConsumer;
 import com.linbit.utils.ExceptionThrowingConsumer;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -107,6 +107,6 @@ public class DeviceLayerUtils
 
     public static Props getInternalNamespaceStorDriver(Props props)
     {
-        return props.getNamespace(StorageDriver.STORAGE_NAMESPACE).orElse(ReadOnlyProps.emptyRoProps());
+        return props.getNamespace(DeviceProvider.STORAGE_NAMESPACE).orElse(ReadOnlyProps.emptyRoProps());
     }
 }

@@ -1,11 +1,5 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.storage.utils.RestHttpClient;
-import com.linbit.linstor.timer.CoreTimer;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -16,23 +10,7 @@ public class SwordfishTargetDriverKind implements StorageDriverKind
     @Override
     public String getDriverName()
     {
-        return  SwordfishTargetDriver.class.getSimpleName();
-    }
-
-    @Override
-    public StorageDriver makeStorageDriver(
-        ErrorReporter errorReporter,
-        FileSystemWatch fileSystemWatch,
-        CoreTimer timer,
-        StltConfigAccessor stltCfgAccessor
-    )
-    {
-        return new SwordfishTargetDriver(
-            errorReporter,
-            this,
-            new RestHttpClient(errorReporter),
-            stltCfgAccessor
-        );
+        return "SwordfishTargetDriver";
     }
 
     @Override

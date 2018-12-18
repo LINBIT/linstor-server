@@ -17,7 +17,6 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.timer.CoreTimer;
@@ -59,8 +58,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final TransactionMap<String, Volume> volumeMap;
 
     private final TransactionSimpleObject<StorPoolData, Boolean> deleted;
-
-    private transient StorageDriver storageDriver;
 
     private final transient Object syncObj = new Object();
 
@@ -142,39 +139,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public StorageDriver getDriver(
-        AccessContext accCtx,
-        ErrorReporter errorReporter,
-        FileSystemWatch fileSystemWatch,
-        CoreTimer timer,
-        StltConfigAccessor stltCfgAccessor
-    )
-        throws AccessDeniedException
-    {
-        if (allowStorageDriverCreation)
-        {
-            checkDeleted();
-            node.getObjProt().requireAccess(accCtx, AccessType.USE);
-            if (storageDriver == null)
-            {
-                synchronized (syncObj)
-                {
-                    if (storageDriver == null)
-                    {
-                        storageDriver = storageDriverKind.makeStorageDriver(
-                            errorReporter,
-                            fileSystemWatch,
-                            timer,
-                            stltCfgAccessor
-                        );
-                    }
-                }
-            }
-        }
-        return storageDriver;
-    }
-
-    @Override
     public StorageDriverKind getDriverKind()
     {
         return storageDriverKind;
@@ -185,42 +149,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtx, node.getObjProt(), storPoolDef.getObjProt(), props);
-    }
-
-    @Override
-    public void reconfigureStorageDriver(
-        StorageDriver storageDriverRef,
-        ReadOnlyProps nodeStorageDriverNamespace,
-        ReadOnlyProps stltStorageDriverNamespace
-    )
-        throws StorageException
-    {
-        checkDeleted();
-        if (storageDriverRef.getKind().needsConfiguration())
-        {
-            Optional<Props> namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
-            Map<String, String> storPoolNamespace = namespace.map(Props::map).orElse(Collections.emptyMap());
-            Map<String, String> nodeNamespace = nodeStorageDriverNamespace.map();
-            Map<String, String> stltNamespace = stltStorageDriverNamespace.map();
-
-            // TODO: this is only a workaround. ReadOnlyProps.map() renders all keys to their absolute path
-            // this workaround will simply cut the NAMESPC_STORAGE_DRIVER prefix from the keys
-
-            // one way of properly fix this would involve implementing ReadOnlyPropsConMap-accessor classes
-            // just like PropsContainer#PropsconMap inner class (but with exceptions on modification-methods)
-
-            // unfortunately this cannot be extended easily as ReadOnlyProps does not extend PropsContainer.
-            int prefixLen = (NAMESPC_STORAGE_DRIVER + "/").length();
-            nodeNamespace = cutKeyPrefix(nodeNamespace, prefixLen);
-            stltNamespace = cutKeyPrefix(stltNamespace, prefixLen);
-
-            storageDriverRef.setConfiguration(
-                storPoolDef.getName().value,
-                storPoolNamespace,
-                nodeNamespace,
-                stltNamespace
-            );
-        }
     }
 
     private Map<String, String> cutKeyPrefix(Map<String, String> map, int prefixLen)

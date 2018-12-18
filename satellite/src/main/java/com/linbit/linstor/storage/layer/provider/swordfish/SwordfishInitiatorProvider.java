@@ -266,7 +266,6 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
             stltRoProps
         );
 
-
         int pollAttachRscTries = 0;
         while (!attachable)
         {
