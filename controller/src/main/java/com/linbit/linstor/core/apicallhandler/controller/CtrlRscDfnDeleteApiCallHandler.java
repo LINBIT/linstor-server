@@ -7,6 +7,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -34,6 +35,7 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -422,6 +424,12 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         try
         {
             rsc.markDeleted(apiCtx);
+            Iterator<Volume> volumesIterator = rsc.iterateVolumes();
+            while (volumesIterator.hasNext())
+            {
+                Volume vlm = volumesIterator.next();
+                vlm.markDeleted(apiCtx);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
