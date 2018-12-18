@@ -9,7 +9,7 @@ import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.devmgr.DeviceHandler2;
+import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -36,7 +36,7 @@ public class DefaultLayer implements ResourceLayer
 {
     private final AccessContext sysCtx;
     private final Provider<NotificationListener> notificationListener;
-    private final Provider<DeviceHandler2> resourceProcessor;
+    private final Provider<DeviceHandler> resourceProcessor;
 
     private Props localNodeProps;
 
@@ -44,7 +44,7 @@ public class DefaultLayer implements ResourceLayer
     public DefaultLayer(
         @DeviceManagerContext AccessContext sysCtxRef,
         Provider<NotificationListener> notificationListenerProviderRef,
-        Provider<DeviceHandler2> resourceProcessorProviderRef
+        Provider<DeviceHandler> resourceProcessorProviderRef
     )
     {
         sysCtx = sysCtxRef;

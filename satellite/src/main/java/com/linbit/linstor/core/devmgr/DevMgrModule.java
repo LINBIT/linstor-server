@@ -37,9 +37,9 @@ public class DevMgrModule extends AbstractModule
         //     .implement(DeviceManagerImpl.DeviceHandlerInvocation.class,
         //         DeviceManagerImpl.DeviceHandlerInvocation.class)
         //     .build(DeviceManagerImpl.DeviceHandlerInvocationFactory.class));
-        bind(DeviceManager.class).to(DeviceManagerImpl2.class);
-        bind(NotificationListener.class).to(DeviceManagerImpl2.class);
-        bind(DeviceHandler2.class).to(DeviceHandlerImpl.class);
+        bind(DeviceManager.class).to(DeviceManagerImpl.class);
+        bind(NotificationListener.class).to(DeviceManagerImpl.class);
+        bind(DeviceHandler.class).to(DeviceHandlerImpl.class);
     }
 
     @Provides

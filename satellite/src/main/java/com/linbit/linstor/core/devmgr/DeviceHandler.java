@@ -11,7 +11,7 @@ import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import java.sql.SQLException;
 import java.util.Collection;
 
-public interface DeviceHandler2
+public interface DeviceHandler
 {
     void dispatchResources(
         Collection<Resource> rscs,

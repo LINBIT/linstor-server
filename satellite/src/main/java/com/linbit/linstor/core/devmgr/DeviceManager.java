@@ -3,7 +3,7 @@ package com.linbit.linstor.core.devmgr;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.core.StltUpdateTracker;
 
-public interface DeviceManager2
+public interface DeviceManager
 {
     void setLocalNode(Node localNodeRef);
 

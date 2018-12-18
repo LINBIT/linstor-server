@@ -85,7 +85,7 @@ import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Scheduler;
 
 @Singleton
-class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, DeviceLayer.NotificationListener
+class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, DeviceLayer.NotificationListener
 {
     // CAUTION! Avoid locking the sched lock and satellite locks like the reconfigurationLock, rscDfnMapLock, etc.
     //          at the same time (nesting locks).
@@ -180,7 +180,7 @@ class DeviceManagerImpl2 implements Runnable, SystemService, DeviceManager, Devi
     private ResourceStateEvent resourceStateEvent;
 
     @Inject
-    DeviceManagerImpl2(
+    DeviceManagerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
         ErrorReporter errorReporterRef,
         CoreModule.NodesMap nodesMapRef,

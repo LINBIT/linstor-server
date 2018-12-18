@@ -10,7 +10,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.core.devmgr.DeviceHandler2;
+import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -42,7 +42,7 @@ public class CryptSetupLayer implements ResourceLayer
 
     private final AccessContext sysCtx;
     private final CryptSetup cryptSetup;
-    private final Provider<DeviceHandler2> resourceProcessorProvider;
+    private final Provider<DeviceHandler> resourceProcessorProvider;
     private final ExtCmdFactory extCmdFactory;
     private final ErrorReporter errorReporter;
 
@@ -51,7 +51,7 @@ public class CryptSetupLayer implements ResourceLayer
         @DeviceManagerContext AccessContext sysCtxRef,
         CryptSetup cryptSetupRef,
         ExtCmdFactory extCmdFactoryRef,
-        Provider<DeviceHandler2> resourceProcessorRef,
+        Provider<DeviceHandler> resourceProcessorRef,
         ErrorReporter errorReporterRef
     )
     {

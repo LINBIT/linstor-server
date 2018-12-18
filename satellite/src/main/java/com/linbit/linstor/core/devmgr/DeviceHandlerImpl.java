@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Singleton
-public class DeviceHandlerImpl implements DeviceHandler2
+public class DeviceHandlerImpl implements DeviceHandler
 {
     private final AccessContext wrkCtx;
     private final ErrorReporter errorReporter;

@@ -28,7 +28,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.devmgr.DeviceHandler2;
+import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
@@ -91,7 +91,7 @@ public class DrbdLayer implements ResourceLayer
     private final WhitelistProps whitelistProps;
     private final CtrlStltSerializer interComSerializer;
     private final ControllerPeerConnector controllerPeerConnector;
-    private final Provider<DeviceHandler2> resourceProcessorProvider;
+    private final Provider<DeviceHandler> resourceProcessorProvider;
     private final Provider<TransactionMgr> transMgrProvider;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
@@ -112,7 +112,7 @@ public class DrbdLayer implements ResourceLayer
         WhitelistProps whiltelistPropsRef,
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        Provider<DeviceHandler2> resourceProcessorRef,
+        Provider<DeviceHandler> resourceProcessorRef,
         Provider<TransactionMgr> transactionMgrProviderRef
     )
     {
