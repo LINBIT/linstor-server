@@ -182,7 +182,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         StorPoolDefinition spDfn = storPoolData.getDefinition(SYS_CTX);
         assertNotNull(spDfn);
         assertEquals(spName, spDfn.getName());
-        assertNull(storPoolData.getDriverKind());
+        assertNotNull(storPoolData.getDriverKind());
         assertEquals("LvmDriver", storPoolData.getDriverName());
         assertEquals(spName, storPoolData.getName());
     }
@@ -232,7 +232,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(SYS_CTX));
-        assertNull(loadedStorPool.getDriverKind());
+        assertNotNull(loadedStorPool.getDriverKind());
         assertEquals("LvmDriver", loadedStorPool.getDriverName());
         assertEquals(spName, loadedStorPool.getName());
     }

@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.linbit.linstor.NetInterface.EncryptionType;
@@ -616,7 +615,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 assertEquals(storPoolDfnUuid, storPoolDefinition.getUuid());
             }
             {
-                assertNull(storPool.getDriverKind());
+                assertNotNull(storPool.getDriverKind());
                 // in controller storDriver HAS to be null (as we are testing database, we
                 // have to be testing the controller)
             }
