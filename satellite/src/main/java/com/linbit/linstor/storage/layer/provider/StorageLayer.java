@@ -15,26 +15,11 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.DisklessDriverKind;
-import com.linbit.linstor.storage.LvmDriverKind;
-import com.linbit.linstor.storage.LvmThinDriverKind;
-import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
-import com.linbit.linstor.storage.SwordfishTargetDriverKind;
-import com.linbit.linstor.storage.ZfsDriverKind;
-import com.linbit.linstor.storage.ZfsThinDriverKind;
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
-import com.linbit.linstor.storage.layer.provider.diskless.DrbdDisklessProvider;
-import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
-import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
-import com.linbit.linstor.storage.layer.provider.swordfish.AbsSwordfishProvider;
-import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
-import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishTargetProvider;
-import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
-import com.linbit.linstor.storage.layer.provider.zfs.ZfsThinProvider;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
 
@@ -42,7 +27,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,54 +42,24 @@ public class StorageLayer implements ResourceLayer
 {
     private final AccessContext storDriverAccCtx;
 
-    private final LvmProvider lvmProvider;
-    private final LvmThinProvider lvmThinProvider;
-    private final ZfsProvider zfsProvider;
-    private final ZfsThinProvider zfsThinProvider;
-    private final AbsSwordfishProvider sfTargetProvider;
-    private final SwordfishInitiatorProvider sfInitProvider;
-    private final DrbdDisklessProvider disklessProvider;
-    private final List<DeviceProvider> driverList;
+    private final DeviceProviderMapper deviceProviderMapper;
 
     private final Set<StorPool> changedStorPools = new HashSet<>();
 
     @Inject
     public StorageLayer(
         @DeviceManagerContext AccessContext storDriverAccCtxRef,
-        LvmProvider lvmProviderRef,
-        LvmThinProvider lvmThinProviderRef,
-        ZfsProvider zfsProviderRef,
-        ZfsThinProvider zfsThinProviderRef,
-        SwordfishTargetProvider sfTargetProviderRef,
-        SwordfishInitiatorProvider sfInitProviderRef,
-        DrbdDisklessProvider disklessProviderRef
+        DeviceProviderMapper deviceProviderMapperRef
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;
-
-        lvmProvider = lvmProviderRef;
-        lvmThinProvider = lvmThinProviderRef;
-        zfsProvider = zfsProviderRef;
-        zfsThinProvider = zfsThinProviderRef;
-        sfTargetProvider = sfTargetProviderRef;
-        sfInitProvider = sfInitProviderRef;
-        disklessProvider = disklessProviderRef;
-
-        driverList = Arrays.asList(
-            lvmProvider,
-            lvmThinProvider,
-            zfsProvider,
-            zfsThinProvider,
-            sfTargetProvider,
-            sfInitProvider,
-            disklessProvider
-        );
+        deviceProviderMapper = deviceProviderMapperRef;
     }
 
     @Override
     public void setLocalNodeProps(Props localNodeProps)
     {
-        for (DeviceProvider devProvider : driverList)
+        for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())
         {
             devProvider.setLocalNodeProps(localNodeProps);
         }
@@ -120,7 +74,7 @@ public class StorageLayer implements ResourceLayer
     @Override
     public void clearCache() throws StorageException
     {
-        for (DeviceProvider deviceProvider : driverList)
+        for (DeviceProvider deviceProvider : deviceProviderMapper.getDriverList())
         {
             changedStorPools.addAll(deviceProvider.getAndForgetChangedStorPools());
             deviceProvider.clearCache();
@@ -231,12 +185,12 @@ public class StorageLayer implements ResourceLayer
 
     public long getFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        return getDeviceProvierByStorPool(storPool).getPoolFreeSpace(storPool);
+        return deviceProviderMapper.getDeviceProviderByStorPool(storPool).getPoolFreeSpace(storPool);
     }
 
     public long getCapacity(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        return getDeviceProvierByStorPool(storPool).getPoolCapacity(storPool);
+        return deviceProviderMapper.getDeviceProviderByStorPool(storPool).getPoolCapacity(storPool);
     }
 
     public Map<StorPool, Either<SpaceInfo, ApiRcException>> getFreeSpaceOfAccessedStoagePools()
@@ -256,7 +210,7 @@ public class StorageLayer implements ResourceLayer
         DeviceProvider devProvider = null;
         try
         {
-            devProvider = getDeviceProvierByStorPool(vlm.getStorPool(storDriverAccCtx));
+            devProvider = deviceProviderMapper.getDeviceProviderByStorPool(vlm.getStorPool(storDriverAccCtx));
         }
         catch (AccessDeniedException exc)
         {
@@ -270,53 +224,11 @@ public class StorageLayer implements ResourceLayer
         DeviceProvider devProvider = null;
         try
         {
-            devProvider = getDeviceProvierByStorPool(snapVlm.getStorPool(storDriverAccCtx));
+            devProvider = deviceProviderMapper.getDeviceProviderByStorPool(snapVlm.getStorPool(storDriverAccCtx));
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
-        }
-        return devProvider;
-    }
-
-    public DeviceProvider getDeviceProvierByStorPool(StorPool storPool)
-    {
-        StorageDriverKind driverKind = storPool.getDriverKind();
-
-        DeviceProvider devProvider;
-        if (driverKind instanceof LvmDriverKind)
-        {
-            devProvider = lvmProvider;
-        }
-        else if (driverKind instanceof LvmThinDriverKind)
-        {
-            devProvider = lvmThinProvider;
-        }
-        else if (driverKind instanceof ZfsDriverKind)
-        {
-            devProvider = zfsProvider;
-        }
-        else if (driverKind instanceof ZfsThinDriverKind)
-        {
-            devProvider = zfsThinProvider;
-        }
-        else if (driverKind instanceof SwordfishTargetDriverKind)
-        {
-            devProvider = sfTargetProvider;
-        }
-        else if (driverKind instanceof SwordfishInitiatorDriverKind)
-        {
-            devProvider = sfInitProvider;
-        }
-        else if (driverKind instanceof DisklessDriverKind)
-        {
-            devProvider = disklessProvider;
-        }
-        else
-        {
-            throw new ImplementationError("Unknown storagerProvider found: " +
-                driverKind.getDriverName() + " " + driverKind.getClass().getSimpleName()
-            );
         }
         return devProvider;
     }
@@ -352,7 +264,7 @@ public class StorageLayer implements ResourceLayer
 
     public void checkStorPool(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        DeviceProvider deviceProvider = getDeviceProvierByStorPool(storPool);
+        DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
         deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
         deviceProvider.checkConfig(storPool);
     }
