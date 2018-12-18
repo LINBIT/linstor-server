@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import com.linbit.InvalidNameException;
 import com.linbit.Checks;
 import com.linbit.ImplementationError;
-import com.linbit.InvalidIpAddressException;
 import com.linbit.ValueOutOfRangeException;
 
 import org.junit.After;
@@ -196,75 +195,5 @@ public class ChecksTest
     {
         // minValue > maxValue
         Checks.rangeCheck(0, 1, -1);
-    }
-
-    @Test
-    public void testIpV4() throws Exception
-    {
-        Checks.ipAddrCheck("127.0.0.1");
-        Checks.ipAddrCheck("0.0.0.0");
-        Checks.ipAddrCheck("255.255.255.255");
-    }
-
-    @Test(expected = InvalidIpAddressException.class)
-    public void testIpV4Invalid1() throws Exception
-    {
-        Checks.ipAddrCheck("0.0.0.0.0");
-    }
-
-    @Test(expected = InvalidIpAddressException.class)
-    public void testIpV4Invalid2() throws Exception
-    {
-        Checks.ipAddrCheck("0.0.0.a");
-    }
-
-    @Test(expected = InvalidIpAddressException.class)
-    public void testIpV4Invalid3() throws Exception
-    {
-        Checks.ipAddrCheck("256.0.0.0");
-    }
-
-    @Test
-    public void testIpV6() throws Exception
-    {
-        Checks.ipAddrCheck("::0");
-        Checks.ipAddrCheck("2001:0db8:0000:0042:0000:8a2e:0370:7334");
-        Checks.ipAddrCheck("0000:0000:0000:0000:0000:0000:0000:0000");
-        Checks.ipAddrCheck("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
-        Checks.ipAddrCheck("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF");
-        Checks.ipAddrCheck("2001::4930:203f");
-        Checks.ipAddrCheck("2001::");
-
-        Checks.ipAddrCheck("2001:db8:aaaa:bbbb:cccc:dddd::1");
-        Checks.ipAddrCheck("2001:db8:aaaa:bbbb:cccc:dddd:0:1");
-
-        Checks.ipAddrCheck("2001:db8:0:0:0::1");
-        Checks.ipAddrCheck("2001:db8:0:0::1");
-        Checks.ipAddrCheck("2001:db8:0::1");
-        Checks.ipAddrCheck("2001:db8::1");
-    }
-
-    @Test
-    public void testIpV6Mapped4() throws Exception
-    {
-        Checks.ipAddrCheck("ABCD:ABCD:ABCD:ABCD:ABCD:ABCD:192.168.158.190");
-    }
-
-    @Test(expected = InvalidIpAddressException.class)
-    public void testIpV6Invalid1() throws Exception
-    {
-        Checks.ipAddrCheck("abcde:0000:0000::0");
-    }
-
-    @Test(expected = InvalidIpAddressException.class)
-    public void testIpV6Invalid2() throws Exception
-    {
-        Checks.ipAddrCheck("1234::4312::0");
-    }
-
-    @Test(expected = InvalidIpAddressException.class)
-    public void testIpV6Invalid3() throws Exception
-    {
-        Checks.ipAddrCheck("1234::4312:");
     }
 }

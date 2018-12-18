@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
-import com.linbit.Checks;
-import com.linbit.InvalidIpAddressException;
+import static com.google.common.net.InetAddresses.isInetAddress;
 
 public class LsIpAddress
 {
@@ -17,11 +16,10 @@ public class LsIpAddress
 
     /**
      * addr has to be IPv4 or IPv6
-     * @throws InvalidIpAddressException
      */
-    public LsIpAddress(String address) throws InvalidIpAddressException
+    public LsIpAddress(String address)
     {
-        Checks.ipAddrCheck(address.trim());
+        isInetAddress(address.trim());
 
         addr = address.trim().toUpperCase();
     }
