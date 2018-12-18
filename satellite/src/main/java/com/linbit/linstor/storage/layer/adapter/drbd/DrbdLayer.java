@@ -77,6 +77,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class DrbdLayer implements ResourceLayer
 {
+    private static final String DRBD_DEVICE_PATH_FORMAT = "/dev/drbd%d";
     private static final String DRBD_CONFIG_SUFFIX = ".res";
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
 
@@ -263,11 +264,13 @@ public class DrbdLayer implements ResourceLayer
     }
 
     @Override
-    public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    public void process(Resource drbdRsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
-        ResourceName resourceName = rsc.getDefinition().getName();
-        if (rsc.getProps(workerCtx).map().containsKey(ApiConsts.KEY_RSC_ROLLBACK_TARGET))
+        ResourceName resourceName = drbdRsc.getDefinition().getName();
+        Resource childRsc = ResourceUtils.getSingleChild(drbdRsc, workerCtx);
+
+        if (drbdRsc.getProps(workerCtx).map().containsKey(ApiConsts.KEY_RSC_ROLLBACK_TARGET))
         {
             /*
              *  snapshot rollback:
@@ -275,28 +278,28 @@ public class DrbdLayer implements ResourceLayer
              *  - rollback snapshot
              *  - start drbd
              */
-            deleteDrbd(rsc);
-            processChild(rsc, snapshots, apiCallRc);
-            adjustDrbd(rsc, snapshots, apiCallRc, true);
+            deleteDrbd(drbdRsc);
+            processChild(drbdRsc, childRsc, snapshots, apiCallRc);
+            adjustDrbd(drbdRsc, childRsc, snapshots, apiCallRc, true);
         }
         else
         if (
-            rsc.getDefinition().isDown(workerCtx) ||
-            rsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE)
+            drbdRsc.getDefinition().isDown(workerCtx) ||
+            drbdRsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE)
         )
         {
-            deleteDrbd(rsc);
+            deleteDrbd(drbdRsc);
             addDeletedMsg(resourceName, apiCallRc);
 
-            processChild(rsc, snapshots, apiCallRc);
+            processChild(drbdRsc, childRsc, snapshots, apiCallRc);
 
             //TODO: remove this .delete call once not only default-resources are
             // iterated in the deviceHandler but also (drbd-) typed
-            rsc.delete(workerCtx);
+            drbdRsc.delete(workerCtx);
         }
         else
         {
-            adjustDrbd(rsc, snapshots, apiCallRc, false);
+            adjustDrbd(drbdRsc, childRsc, snapshots, apiCallRc, false);
             addAdjustedMsg(resourceName, apiCallRc);
         }
     }
@@ -321,12 +324,17 @@ public class DrbdLayer implements ResourceLayer
         );
     }
 
-    private void processChild(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    private void processChild(
+        Resource drbdRsc,
+        Resource childRsc,
+        Collection<Snapshot> snapshots,
+        ApiCallRcImpl apiCallRc
+    )
         throws AccessDeniedException, StorageException, ResourceException, VolumeException, SQLException
     {
-        if (!rsc.isDiskless(workerCtx))
+        if (!drbdRsc.isDiskless(workerCtx))
         {
-            resourceProcessorProvider.get().process(ResourceUtils.getSingleChild(rsc, workerCtx), snapshots, apiCallRc);
+            resourceProcessorProvider.get().process(childRsc, snapshots, apiCallRc);
         }
     }
 
@@ -379,6 +387,7 @@ public class DrbdLayer implements ResourceLayer
     /**
      * Adjusts (creates or modifies) a given DRBD resource
      * @param drbdRsc
+     * @param childRsc
      * @param snapshots
      * @param apiCallRc
      * @param childAlreadyProcessed
@@ -390,6 +399,7 @@ public class DrbdLayer implements ResourceLayer
      */
     private void adjustDrbd(
         Resource drbdRsc,
+        Resource childRsc,
         Collection<Snapshot> snapshots,
         ApiCallRcImpl apiCallRc,
         boolean childAlreadyProcessed
@@ -422,7 +432,7 @@ public class DrbdLayer implements ResourceLayer
 
             if (!childAlreadyProcessed)
             {
-                processChild(drbdRsc, snapshots, apiCallRc);
+                processChild(drbdRsc, childRsc, snapshots, apiCallRc);
             }
 
             updateResourceToCurrentDrbdState(drbdRsc);
@@ -459,6 +469,16 @@ public class DrbdLayer implements ResourceLayer
                 );
                 rscLinState.requiresAdjust = false;
 
+                // set device paths
+                for (Volume drbdVlm : drbdRsc.streamVolumes().collect(Collectors.toList()))
+                {
+                    VolumeDefinition vlmDfn = drbdVlm.getVolumeDefinition();
+                    Volume childVlm = childRsc.getVolume(vlmDfn.getVolumeNumber());
+
+                    drbdVlm.setBackingDiskPath(workerCtx, childVlm.getDevicePath(workerCtx));
+                    drbdVlm.setDevicePath(workerCtx, getDevicePath(vlmDfn));
+                }
+
                 condInitialOrSkipSync(drbdRsc, rscLinState);
             }
             catch (ExtCmdFailedException exc)
@@ -469,6 +489,11 @@ public class DrbdLayer implements ResourceLayer
                 );
             }
         }
+    }
+
+    private String getDevicePath(VolumeDefinition vlmDfn) throws AccessDeniedException
+    {
+        return String.format(DRBD_DEVICE_PATH_FORMAT, vlmDfn.getMinorNr(workerCtx).value);
     }
 
     private boolean isAdjustRequired(Resource drbdRsc)
