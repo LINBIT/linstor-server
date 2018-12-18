@@ -21,12 +21,12 @@ import java.util.Collections;
 import java.util.List;
 
 @Singleton
-public class DisklessProvider implements DeviceProvider
+public class DrbdDisklessProvider implements DeviceProvider
 {
     private AccessContext sysCtx;
 
     @Inject
-    public DisklessProvider(
+    public DrbdDisklessProvider(
         @DeviceManagerContext AccessContext sysCtxRef
     )
     {

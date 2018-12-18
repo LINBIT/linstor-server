@@ -540,7 +540,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         }
 
         String devicePath = vlm.getDevicePath(serializerCtx);
-System.out.println("Serializing devicePath of " + vlm.getKey() + ": " + devicePath);
         if (devicePath != null)
         {
             builder.setDevicePath(devicePath);

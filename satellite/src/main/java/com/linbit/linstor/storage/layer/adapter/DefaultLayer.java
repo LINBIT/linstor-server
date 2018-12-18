@@ -96,31 +96,6 @@ public class DefaultLayer implements ResourceLayer
 
         // delete the resource / volume if all went well (that means, no exception from the previous .process call)
 
-        for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
-        {
-            if (vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
-            {
-                /*
-                 * TODO: call the following method once the API is split into
-                 * notifyVolumeDeleted(volume); // deletion of typed volume / no change in FreeSpace
-                 * notifyStorageVolumeDeleted(volume, newFreeSpace);
-                 */
-            }
-            else
-            {
-                // copy the topmost (typed) volume's device paths
-                Volume childVlm = child.getVolume(vlm.getVolumeDefinition().getVolumeNumber());
-                vlm.setDevicePath(
-                    sysCtx,
-                    childVlm.getDevicePath(sysCtx)
-                );
-                vlm.setUsableSize(
-                    sysCtx,
-                    childVlm.getUsableSize(sysCtx)
-                );
-System.out.println("DfltLayer: setting devicePath: " + vlm.getKey() + ", " + vlm.getDevicePath(sysCtx));
-            }
-        }
         if (rsc.getStateFlags().isSet(sysCtx, RscFlags.DELETE))
         {
             apiCallRc.addEntry(
@@ -134,7 +109,33 @@ System.out.println("DfltLayer: setting devicePath: " + vlm.getKey() + ", " + vlm
         }
         else
         {
-
+            for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
+            {
+                if (vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
+                {
+                    /*
+                     * TODO: call the following method once the API is split into
+                     * notifyVolumeDeleted(volume); // deletion of typed volume / no change in FreeSpace
+                     * notifyStorageVolumeDeleted(volume, newFreeSpace);
+                     */
+                }
+                else
+                {
+                    if (!child.isDeleted()  && child.getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+                    {
+                        // copy the topmost (typed) volume's device paths
+                        Volume childVlm = child.getVolume(vlm.getVolumeDefinition().getVolumeNumber());
+                        vlm.setDevicePath(
+                            sysCtx,
+                            childVlm.getDevicePath(sysCtx)
+                        );
+                        vlm.setUsableSize(
+                            sysCtx,
+                            childVlm.getUsableSize(sysCtx)
+                        );
+                    }
+                }
+            }
 
             apiCallRc.addEntry(
                 ApiCallRcImpl.simpleEntry(

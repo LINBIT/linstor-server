@@ -89,7 +89,6 @@ public class CryptSetupLayer implements ResourceLayer
                         )
                     )
                 );
-System.out.println("created CryptSetupData for " + vlm.getKey());
             }
         }
         // ignore snapshots
@@ -145,11 +144,9 @@ System.out.println("created CryptSetupData for " + vlm.getKey());
             CryptSetupStltData data = (CryptSetupStltData) vlm.getLayerData(sysCtx);
             String identifier = getIdentifier(vlm, data);
 
-System.out.println("checkig if '" + identifier + "' is open... ");
 
             if (cryptSetup.isOpen(identifier))
             {
-System.out.println("  open");
                 cryptSetup.closeCryptDevice(identifier);
                 data.opened = false;
             }

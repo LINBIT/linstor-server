@@ -111,6 +111,19 @@ public class DeviceHandlerImpl implements DeviceHandler2
         Map<ResourceName, List<Snapshot>> snapshotsByRscName =
             snapshots.stream().collect(Collectors.groupingBy(Snapshot::getResourceName));
 
+        // calculate gross sizes
+        for (Resource rsc : rootResources)
+        {
+            try
+            {
+                updateGrossSizeForChildren(rsc);
+            }
+            catch (AccessDeniedException | SQLException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+
         // call prepare for every necessary layer
         boolean prepareSuccess = true;
         for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
@@ -132,20 +145,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
                 break;
             }
         }
-
-        // calculate gross sizes
-        for (Resource rsc : rootResources)
-        {
-            try
-            {
-                updateGrossSizeForChildren(rsc);
-            }
-            catch (AccessDeniedException | SQLException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-        }
-
 
         if (prepareSuccess)
         {

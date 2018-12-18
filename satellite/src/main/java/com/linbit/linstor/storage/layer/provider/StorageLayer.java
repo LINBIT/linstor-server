@@ -27,7 +27,7 @@ import com.linbit.linstor.storage.ZfsThinDriverKind;
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
-import com.linbit.linstor.storage.layer.provider.diskless.DisklessProvider;
+import com.linbit.linstor.storage.layer.provider.diskless.DrbdDisklessProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.AbsSwordfishProvider;
@@ -64,7 +64,7 @@ public class StorageLayer implements ResourceLayer
     private final ZfsThinProvider zfsThinProvider;
     private final AbsSwordfishProvider sfTargetProvider;
     private final SwordfishInitiatorProvider sfInitProvider;
-    private final DisklessProvider disklessProvider;
+    private final DrbdDisklessProvider disklessProvider;
     private final List<DeviceProvider> driverList;
 
     private final Set<StorPool> changedStorPools = new HashSet<>();
@@ -78,7 +78,7 @@ public class StorageLayer implements ResourceLayer
         ZfsThinProvider zfsThinProviderRef,
         SwordfishTargetProvider sfTargetProviderRef,
         SwordfishInitiatorProvider sfInitProviderRef,
-        DisklessProvider disklessProviderRef
+        DrbdDisklessProvider disklessProviderRef
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;

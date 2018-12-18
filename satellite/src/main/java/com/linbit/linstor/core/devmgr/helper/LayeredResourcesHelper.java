@@ -188,8 +188,9 @@ public class LayeredResourcesHelper
                 // additionally, we do not need extra layer-specific data.
 
                 // however, we do have to set the ResourceType, thus we need to create a new resource
-                if (!origRsc.getStateFlags().isSet(sysCtx, RscFlags.DISKLESS) ||
-                    origRsc.streamVolumes().anyMatch(
+                if (!origRsc.getStateFlags().isSet(sysCtx, RscFlags.DISKLESS) || // {Lvm,Zfs}{,Thin}
+                    needsDrbd(origRsc) || // DrbdDisklessProvider
+                    origRsc.streamVolumes().anyMatch( // SwordfishInitiatorProvider
                         vlm ->
                             AccessUtils.execPrivileged(() ->
                                 vlm.getStorPool(sysCtx).getDriverKind() instanceof SwordfishInitiatorDriverKind)))
