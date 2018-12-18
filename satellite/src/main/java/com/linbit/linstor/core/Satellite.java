@@ -151,6 +151,7 @@ public final class Satellite
             if (!satelliteCmdlArguments.isSkipDrbdCheck())
             {
                 DrbdVersion vsnCheck = new DrbdVersion(timerEventSvc, errorReporter);
+                vsnCheck.checkVersion();
                 if (!vsnCheck.hasDrbd9())
                 {
                     errorReporter.reportProblem(
