@@ -49,7 +49,6 @@ import com.linbit.linstor.storage.LayerDataFactory;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnDataStlt;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnDataStlt;
 import com.linbit.linstor.storage.layer.provider.swordfish.SfVlmDfnDataStlt;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
@@ -70,6 +69,9 @@ import java.util.stream.Collectors;
 @Singleton
 public class LayeredResourcesHelper
 {
+    // linstor calculates in KiB
+    private static final int MIB = 1024;
+
     private final AccessContext sysCtx;
     private final ResourceDataFactory rscFactory;
     private final VolumeDataFactory vlmFactory;
@@ -146,8 +148,6 @@ public class LayeredResourcesHelper
             );
         }
 
-
-
         List<Resource> layeredResources = new ArrayList<>();
         try
         {
@@ -200,47 +200,10 @@ public class LayeredResourcesHelper
                 if (needsCrypt(origRsc))
                 {
                     currentRsc = nextRsc(layeredResources, origRsc, currentRsc, ResourceType.CRYPT);
-                    if (currentRsc.getLayerData(sysCtx) == null)
-                    {
-                        currentRsc.setLayerData(
-                            sysCtx,
-                            layerDataFactory.createCryptSetupData(
-                                getDrbdResourceName(rscDfn),
-                                currentRsc,
-                                getCryptPw(origRsc)
-                            )
-                        );
-                    }
                 }
                 if (needsDrbd(origRsc))
                 {
                     currentRsc = nextRsc(layeredResources, origRsc, currentRsc, ResourceType.DRBD);
-                    if (currentRsc.getLayerData(sysCtx) == null)
-                    {
-                        currentRsc.setLayerData(
-                            sysCtx,
-                            layerDataFactory.createDrbdRscData(
-                                currentRsc,
-                                getDrbdResourceName(rscDfn),
-                                currentRsc.getNodeId(),
-                                origRsc.isDiskless(sysCtx),
-                                origRsc.disklessForPeers(sysCtx)
-                            )
-                        );
-                    }
-                    if (rscDfn.getLayerData(sysCtx, DrbdRscDfnDataStlt.class) == null)
-                    {
-                        rscDfn.setLayerData(
-                            sysCtx,
-                            layerDataFactory.createDrbdRscDfnData(
-                                rscDfn,
-                                getDrbdResourceName(rscDfn),
-                                rscDfn.getPort(sysCtx),
-                                rscDfn.getTransportType(sysCtx),
-                                rscDfn.getSecret(sysCtx)
-                            )
-                        );
-                    }
 
                     String peerSlotsProp = origRsc.getProps(sysCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
                     // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
@@ -377,14 +340,7 @@ public class LayeredResourcesHelper
             Volume origVlm = origRsc.getVolume(vlmDfn.getVolumeNumber());
             VlmFlags[] origVlmFlags =
                 FlagsHelper.toFlagsArray(Volume.VlmFlags.class, origVlm.getFlags(), sysCtx);
-            Volume typedVlm;
-            // if (origVlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
-            // {
-            //     typedVlm = typedRsc.getVolume(vlmDfn.getVolumeNumber());
-            // }
-            // else
-            // {
-            typedVlm = vlmFactory.getInstanceSatellite(
+            Volume typedVlm = vlmFactory.getInstanceSatellite(
                 sysCtx,
                 UUID.randomUUID(),
                 typedRsc,
@@ -394,7 +350,6 @@ public class LayeredResourcesHelper
                 null,
                 origVlmFlags
             );
-            // }
 
             if (typedVlm != null)
             {
@@ -439,7 +394,6 @@ public class LayeredResourcesHelper
         add(layeredResources, typedRsc);
         return typedRsc;
     }
-
 
     private Resource nextRsc(
         List<Resource> layeredResources,
@@ -590,14 +544,13 @@ public class LayeredResourcesHelper
         return ret;
     }
 
-    private char[] getCryptPw(Resource rsc) throws AccessDeniedException
+    private byte[] getCryptPw(VolumeDefinition vlmDfn) throws AccessDeniedException
     {
         // we use the same password for all volumes of this resource
-        VolumeDefinition firstVlmDfn = rsc.getDefinition().streamVolumeDfn(sysCtx).findFirst().orElse(null);
-        char[] passwd = null;
-        if (firstVlmDfn != null)
+        byte[] passwd = null;
+        if (vlmDfn != null)
         {
-            passwd = firstVlmDfn.getCryptKey(sysCtx).toCharArray();
+            passwd = vlmDfn.getCryptKey(sysCtx).getBytes();
         }
 
         return passwd;

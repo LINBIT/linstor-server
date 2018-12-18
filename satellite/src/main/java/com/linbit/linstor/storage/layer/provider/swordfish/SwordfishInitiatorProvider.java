@@ -117,7 +117,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
             String volumePath = getVolumePath(vlm);
 
             vlm.setDevicePath(sysCtx, volumePath);
-            ProviderUtils.updateSize(vlm, extCmdFactory.create(), sysCtx);
+            ProviderUtils.updateAllocatedSize(vlm, extCmdFactory.create(), sysCtx);
         }
         catch (InvalidKeyException exc)
         {

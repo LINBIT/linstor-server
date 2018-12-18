@@ -19,7 +19,6 @@ import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.utils.ResourceUtils;
-import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import javax.inject.Inject;
@@ -28,10 +27,7 @@ import javax.inject.Singleton;
 
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RemoveAfterDevMgrRework
@@ -70,6 +66,22 @@ public class DefaultLayer implements ResourceLayer
     }
 
     @Override
+    public void updateGrossSize(Volume dfltVlm, Volume parentVolume) throws AccessDeniedException, SQLException
+    {
+        if (parentVolume != null)
+        {
+            throw new ImplementationError(
+                "Default volume should not have a parent. \ndefault volume: " + dfltVlm +
+                    "\nparent volume: " + parentVolume
+            );
+        }
+        long size = dfltVlm.getVolumeDefinition().getVolumeSize(sysCtx);
+
+        dfltVlm.setAllocatedSize(sysCtx, size);
+        dfltVlm.setUsableSize(sysCtx, size);
+    }
+
+    @Override
     public void clearCache() throws StorageException
     {
         // no-op
@@ -79,7 +91,8 @@ public class DefaultLayer implements ResourceLayer
     public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
-        resourceProcessor.get().process(ResourceUtils.getSingleChild(rsc, sysCtx), snapshots, apiCallRc);
+        Resource child = ResourceUtils.getSingleChild(rsc, sysCtx);
+        resourceProcessor.get().process(child, snapshots, apiCallRc);
 
         // delete the resource / volume if all went well (that means, no exception from the previous .process call)
 
@@ -92,6 +105,20 @@ public class DefaultLayer implements ResourceLayer
                  * notifyVolumeDeleted(volume); // deletion of typed volume / no change in FreeSpace
                  * notifyStorageVolumeDeleted(volume, newFreeSpace);
                  */
+            }
+            else
+            {
+                // copy the topmost (typed) volume's device paths
+                Volume childVlm = child.getVolume(vlm.getVolumeDefinition().getVolumeNumber());
+                vlm.setDevicePath(
+                    sysCtx,
+                    childVlm.getDevicePath(sysCtx)
+                );
+                vlm.setUsableSize(
+                    sysCtx,
+                    childVlm.getUsableSize(sysCtx)
+                );
+System.out.println("DfltLayer: setting devicePath: " + vlm.getKey() + ", " + vlm.getDevicePath(sysCtx));
             }
         }
         if (rsc.getStateFlags().isSet(sysCtx, RscFlags.DELETE))
@@ -107,6 +134,8 @@ public class DefaultLayer implements ResourceLayer
         }
         else
         {
+
+
             apiCallRc.addEntry(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.DELETED | ApiConsts.MASK_RSC,
@@ -115,64 +144,6 @@ public class DefaultLayer implements ResourceLayer
             );
             notificationListener.get().notifyResourceApplied(rsc);
         }
-
-    }
-
-    public Map<Resource, StorageException> adjustBottomUp(
-        Collection<Resource> resources,
-        Collection<Snapshot> snapshots
-    )
-        throws StorageException
-    {
-        Map<Resource, StorageException> exceptions = new HashMap<>();
-        try
-        {
-            for (Resource rsc : resources)
-            {
-                if (rsc.getStateFlags().isSet(sysCtx, RscFlags.DELETE))
-                {
-                    if (!rsc.getChildResources(sysCtx).isEmpty())
-                    {
-                        exceptions.put(
-                            rsc,
-                            new StorageException(
-                                "Resource marked for deletion could not be deleted as it still has children"
-                            )
-                        );
-                    }
-                    else
-                    {
-                        notificationListener.get().notifyResourceDeleted(rsc);
-                    }
-                }
-                else
-                {
-                    Iterator<Volume> vlmIt = rsc.iterateVolumes();
-                    while (vlmIt.hasNext())
-                    {
-                        Volume vlm = vlmIt.next();
-                        if (vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
-                        {
-                            if (VolumeUtils.getBackingVolume(sysCtx, vlm) != null)
-                            {
-                                exceptions.put(
-                                    rsc,
-                                    new StorageException(
-                                        "Resource marked for deletion could not be deleted as it still has children"
-                                    )
-                                );
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return exceptions;
     }
 
     @Override

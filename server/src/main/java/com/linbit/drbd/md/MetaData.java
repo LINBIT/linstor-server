@@ -113,7 +113,6 @@ public class MetaData extends MdCommon implements MetaDataApi
         return netSize;
     }
 
-
     @Override
     public long getGrossSize(final long netSize, final short peers, final int alStripes, final long alStripeSize)
         throws IllegalArgumentException, MinSizeException, MaxSizeException,

@@ -23,9 +23,5 @@ public interface VlmLayerData extends LayerData
 
     boolean isFailed();
 
-    long getUsableSize();
-
-    long getAllocatedSize();
-
     List<? extends State> getStates();
 }

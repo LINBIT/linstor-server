@@ -169,8 +169,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
         InterruptedException, InvalidKeyException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        long sizeInKiB = vlmDfn.getVolumeSize(sysCtx);
-        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
+        long sizeInKiB = vlm.getUsableSize(sysCtx);
         StorPool storPool = vlm.getStorPool(sysCtx);
         Props storPoolProps = storPool.getProps(sysCtx);
 

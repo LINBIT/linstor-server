@@ -2,8 +2,10 @@ package com.linbit.linstor.storage;
 
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.adapter.DefaultLayer;
+import com.linbit.linstor.storage.layer.adapter.cryptsetup.CryptSetupLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage2.layer.kinds.CryptSetupLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.DefaultLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage2.layer.kinds.DrbdLayerKind;
@@ -26,7 +28,8 @@ public class LayerFactory
     public LayerFactory(
         DefaultLayer dfltLayer,
         DrbdLayer drbdLayer,
-        StorageLayer storageLayer
+        StorageLayer storageLayer,
+        CryptSetupLayer cryptSetupLayer
     )
     {
         devLayerLookupTable = new HashMap<>();
@@ -34,6 +37,7 @@ public class LayerFactory
         devLayerLookupTable.put(DefaultLayerKind.class, dfltLayer);
         devLayerLookupTable.put(DrbdLayerKind.class, drbdLayer);
         devLayerLookupTable.put(StorageLayerKind.class, storageLayer);
+        devLayerLookupTable.put(CryptSetupLayerKind.class, cryptSetupLayer);
     }
 
     public ResourceLayer getDeviceLayer(Class<? extends DeviceLayerKind> kindClass)

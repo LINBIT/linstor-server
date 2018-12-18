@@ -46,12 +46,12 @@ import java.util.TreeSet;
 @Singleton
 public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
 {
+    protected static final int DEFAULT_ZFS_EXTENT_SIZE = 8; // 8K
+
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_ZFS_ID = "%s_%05d";
     private static final String FORMAT_ZFS_DEV_PATH = "/dev/zvol/%s/%s";
     private static final int TOLERANCE_FACTOR = 3;
-
-    private static final int DEFAULT_ZFS_EXTENT_SIZE = 8; // 8K
 
     private Map<StorPool, Long> extentSizes = new TreeMap<>();
 
@@ -149,7 +149,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     @Override
     protected void createLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
     {
-        long volumeSize = vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx);
+        long volumeSize = vlm.getUsableSize(storDriverAccCtx);
         if (volumeSize % DEFAULT_ZFS_EXTENT_SIZE != 0)
         {
             long origSize = volumeSize;
@@ -162,6 +162,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
                     DEFAULT_ZFS_EXTENT_SIZE
                 )
             );
+            vlm.setAllocatedSize(storDriverAccCtx, volumeSize);
         }
         ZfsCommands.create(
             extCmdFactory.create(),
@@ -179,7 +180,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             extCmdFactory.create(),
             ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
             asLvIdentifier(vlm),
-            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx)
+            vlm.getUsableSize(storDriverAccCtx)
         );
     }
 
@@ -353,7 +354,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             String zpoolName = storPoolProps.getProp(StorageConstants.CONFIG_ZFS_POOL_KEY).trim();
             if (zpoolName == null)
             {
-                throw new StorageException("zPool name not given");
+                throw new StorageException(
+                    "zPool name not given for storPool '" +
+                        storPool.getName().displayValue + "'"
+                    );
             }
 
             try
@@ -447,7 +451,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
                 }
                 state.exists = true;
 
-                final long expectedSize = vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx);
+                final long expectedSize = vlm.getUsableSize(storDriverAccCtx);
                 final long actualSize = info.size;
                 if (actualSize != expectedSize)
                 {
@@ -479,7 +483,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
                     }
                 }
                 vlm.setDevicePath(storDriverAccCtx, info.path);
-                ProviderUtils.updateSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+                ProviderUtils.updateAllocatedSize(vlm, extCmdFactory.create(), storDriverAccCtx);
             }
             else
             {
@@ -489,7 +493,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
                 }
                 state.exists = false;
                 vlm.setDevicePath(storDriverAccCtx, null);
-                ProviderUtils.setSize(vlm, 0, storDriverAccCtx);
+                vlm.setAllocatedSize(storDriverAccCtx, -1);
             }
         }
 
@@ -542,8 +546,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     {
         ZfsLayerDataStlt data = new ZfsLayerDataStlt(
             getZPool(vlm),
-            asLvIdentifier(vlm),
-            -1
+            asLvIdentifier(vlm)
         );
         vlm.setLayerData(storDriverAccCtx, data);
         return data;
@@ -554,8 +557,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     {
         ZfsLayerDataStlt data = new ZfsLayerDataStlt(
             getZPool(snapVlm),
-            asLvIdentifier(snapVlm.getResourceDefinition().getVolumeDfn(storDriverAccCtx, snapVlm.getVolumeNumber())),
-            -1
+            asLvIdentifier(snapVlm.getResourceDefinition().getVolumeDfn(storDriverAccCtx, snapVlm.getVolumeNumber()))
         );
         snapVlm.setLayerData(storDriverAccCtx, data);
         return data;

@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage2.layer.data;
 
-import com.linbit.linstor.storage2.layer.data.categories.RscLayerData;
+import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
 
-public interface CryptSetupData extends RscLayerData
+public interface CryptSetupData extends VlmLayerData
 {
-    char[] getPassword();
+    byte[] getPassword();
 }

@@ -139,7 +139,6 @@ public abstract class AbsStorageDriver implements StorageDriver
                 volumePath = crypt.createCryptDevice(
                     volumePath,
                     cryptKey.getBytes(),
-                    AbsStorageDriver::checkExitCode,
                     identifier
                 );
             }

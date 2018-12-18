@@ -8,23 +8,15 @@ import com.linbit.linstor.storage.StorageException;
 
 public class ProviderUtils
 {
-    public static void updateSize(Volume vlm, ExtCmd extCmd, AccessContext accCtx)
+    public static void updateAllocatedSize(Volume vlm, ExtCmd extCmd, AccessContext accCtx)
         throws StorageException, AccessDeniedException
     {
-        setSize(
-            vlm,
+        vlm.setAllocatedSize(
+            accCtx,
             Commands.getBlockSizeInKib(
                 extCmd,
                 vlm.getDevicePath(accCtx)
-            ),
-            accCtx
+            )
         );
-    }
-
-    public static void setSize(Volume vlm, long blockSizeInKib, AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        vlm.setAllocatedSize(accCtx, blockSizeInKib);
-        vlm.setUsableSize(accCtx, blockSizeInKib);
     }
 }

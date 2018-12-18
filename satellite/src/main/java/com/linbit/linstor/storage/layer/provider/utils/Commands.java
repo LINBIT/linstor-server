@@ -69,7 +69,6 @@ public class Commands
             {
                 ExtCmdUtils.checkExitCode(
                     outData,
-                    command,
                     StorageException::new,
                     failMsgExitCode
                 );

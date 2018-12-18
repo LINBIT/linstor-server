@@ -2,25 +2,48 @@ package com.linbit.linstor.storage.utils;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.timer.Action;
-import com.linbit.timer.Timer;
+import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.utils.RemoveAfterDevMgrRework;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+@Singleton
 public class CryptSetup implements Crypt
 {
     private static final String CRYPTSETUP = "cryptsetup";
 
-    private Timer<String, Action<String>> timer;
-    private ErrorReporter errorReporter;
+    private final ErrorReporter errorReporter;
+    private final ExtCmdFactory extCmdFactory;
 
-    public CryptSetup(Timer<String, Action<String>> timerRef, ErrorReporter errorReporterRef)
+
+    @Inject
+    public CryptSetup(
+        ExtCmdFactory extCmdFactoryRef,
+        ErrorReporter errorReporterRef
+    )
     {
-        timer = timerRef;
+        extCmdFactory = extCmdFactoryRef;
+        errorReporter = errorReporterRef;
+    }
+
+    @RemoveAfterDevMgrRework
+    public CryptSetup(
+        CoreTimer timer,
+        ErrorReporter errorReporterRef
+    )
+    {
+        extCmdFactory = new ExtCmdFactory(timer, errorReporterRef);
         errorReporter = errorReporterRef;
     }
 
@@ -28,14 +51,13 @@ public class CryptSetup implements Crypt
     public String createCryptDevice(
         String dev,
         byte[] cryptKey,
-        OutputDataVerifier outVerifier,
         String identifier
     )
         throws StorageException
     {
         try
         {
-            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final ExtCmd extCommand = extCmdFactory.create();
 
             // init
             String[] command = new String[] {
@@ -55,7 +77,11 @@ public class CryptSetup implements Crypt
             OutputData output = extCommand.syncProcess();
             outputStream.close(); // just to be sure and get rid of the java warning
 
-            outVerifier.verifyOutput(output, command);
+            ExtCmdUtils.checkExitCode(
+                output,
+                StorageException::new,
+                "LuksFormat failed"
+            );
         }
         catch (IOException ioExc)
         {
@@ -79,12 +105,12 @@ public class CryptSetup implements Crypt
     {
         try
         {
-            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final ExtCmd extCommand = extCmdFactory.create();
 
             // open cryptsetup
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
-                CRYPTSETUP, "luksOpen", dev, CRYPT_PREFIX + targetIdentifier
+                CRYPTSETUP, "open", dev, CRYPT_PREFIX + targetIdentifier
             );
             outputStream.write(cryptKey);
             outputStream.write('\n');
@@ -114,9 +140,14 @@ public class CryptSetup implements Crypt
     {
         try
         {
-            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
+            final ExtCmd extCommand = extCmdFactory.create();
 
-            extCommand.exec(CRYPTSETUP, "close", CRYPT_PREFIX + identifier);
+            OutputData outputData = extCommand.exec(CRYPTSETUP, "close", CRYPT_PREFIX + identifier);
+            ExtCmdUtils.checkExitCode(
+                outputData,
+                StorageException::new,
+                "Failed to close dm-crypt device '" + CRYPT_PREFIX + identifier + "'"
+            );
         }
         catch (IOException ioExc)
         {
@@ -132,6 +163,74 @@ public class CryptSetup implements Crypt
                 exc
             );
         }
+    }
+
+    public boolean hasLuksFormat(String backingDevice) throws StorageException
+    {
+        boolean hasLuks = false;
+
+        ExtCmd extCmd = extCmdFactory.create();
+        try
+        {
+            OutputData outputData = extCmd.exec(CRYPTSETUP, "isLuks", backingDevice);
+
+            hasLuks = outputData.exitCode == 0;
+        }
+        catch (ChildProcessTimeoutException exc)
+        {
+            throw new StorageException(
+                "Check if device is already luks-formatted timed out",
+                exc
+            );
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException(
+                "Failed to check if device is already luks-formatted",
+                exc
+            );
+        }
+
+        return hasLuks;
+    }
+
+    public boolean isOpen(String identifier) throws StorageException
+    {
+        boolean open = false;
+        ExtCmd extCmd = extCmdFactory.create();
+        try
+        {
+            OutputData outputData = extCmd.exec("dmsetup", "ls", "--target", "crypt");
+            ExtCmdUtils.checkExitCode(
+                outputData,
+                StorageException::new,
+                "Failed to list dm-crypt devices"
+            );
+
+            // just to make sure that "foo" does not match "foobar"
+            Pattern pattern = Pattern.compile(
+                "^" + Pattern.quote(CRYPT_PREFIX + identifier) + "\\s+"
+            );
+
+            String stdOut = new String(outputData.stdoutData);
+            Matcher matcher = pattern.matcher(stdOut.trim());
+            open = matcher.find();
+        }
+        catch (ChildProcessTimeoutException exc)
+        {
+            throw new StorageException(
+                "Listing open dm-crypt devices timed out",
+                exc
+            );
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException(
+                "Failed to list dm-crypt devices",
+                exc
+            );
+        }
+        return open;
     }
 
     @Override

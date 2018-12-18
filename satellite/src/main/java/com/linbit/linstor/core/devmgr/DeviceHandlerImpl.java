@@ -7,6 +7,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -41,6 +42,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -131,6 +133,19 @@ public class DeviceHandlerImpl implements DeviceHandler2
             }
         }
 
+        // calculate gross sizes
+        for (Resource rsc : rootResources)
+        {
+            try
+            {
+                updateGrossSizeForChildren(rsc);
+            }
+            catch (AccessDeniedException | SQLException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+
 
         if (prepareSuccess)
         {
@@ -175,9 +190,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
                     }
                     else
                     {
-                        // TODO: delete next command after rework is completed
-                        layeredRscHelper.copyUpData(rsc);
-
                         rscListNotifyApplied.add(rsc);
                         notificationListener.get().notifyResourceApplied(rsc);
                     }
@@ -288,7 +300,6 @@ public class DeviceHandlerImpl implements DeviceHandler2
                      * the new free spaces of the affected storage pools
                      */
 
-
                     for (Resource rsc : rscListNotifyApplied)
                     {
                         ctrlPeer.sendMessage(
@@ -364,7 +375,17 @@ public class DeviceHandlerImpl implements DeviceHandler2
         boolean success;
         try
         {
+            errorReporter.logTrace(
+                "Layer '%s' preparing %d resources",
+                layer.getName(),
+                resources.size()
+            );
             layer.prepare(resources, affectedSnapshots);
+            errorReporter.logTrace(
+                "Layer '%s' finished preparing %d resources",
+                layer.getName(),
+                resources.size()
+            );
             success = true;
         }
         catch (StorageException exc)
@@ -403,11 +424,42 @@ public class DeviceHandlerImpl implements DeviceHandler2
         throws StorageException, ResourceException, VolumeException,
             AccessDeniedException, SQLException
     {
-        layerFactory
-            .getDeviceLayer(
-                rsc.getType().getDevLayerKind().getClass()
-            )
-            .process(rsc, snapshots, apiCallRc);
+        ResourceLayer devLayer = layerFactory.getDeviceLayer(rsc.getType().getDevLayerKind().getClass());
+        errorReporter.logTrace(
+            "Layer '%s' processing resource '%s'",
+            devLayer.getName(),
+            rsc.getKey().toString()
+        );
+        devLayer.process(rsc, snapshots, apiCallRc);
+        errorReporter.logTrace(
+            "Layer '%s' finished processing resource '%s'",
+            devLayer.getName(),
+            rsc.getKey().toString()
+        );
+    }
+
+    public void updateGrossSizeForChildren(Resource dfltRsc) throws AccessDeniedException, SQLException
+    {
+        LinkedList<Resource> resources = new LinkedList<>();
+        resources.add(dfltRsc);
+        while (!resources.isEmpty())
+        {
+            Resource parent = resources.pollFirst();
+            for (Resource child : parent.getChildResources(wrkCtx))
+            {
+                ResourceLayer devLayer = layerFactory.getDeviceLayer(child.getType().getDevLayerKind().getClass());
+
+                for (Volume childVlm : child.streamVolumes().collect(Collectors.toList()))
+                {
+                    devLayer.updateGrossSize(
+                        childVlm,
+                        parent.getVolume(childVlm.getVolumeDefinition().getVolumeNumber())
+                    );
+                }
+
+                resources.add(child);
+            }
+        }
     }
 
     // TODO: create delete volume / resource mehtods that (for now) only perform the actual .delete()

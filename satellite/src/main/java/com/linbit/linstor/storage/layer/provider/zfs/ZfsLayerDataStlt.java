@@ -14,8 +14,6 @@ public class ZfsLayerDataStlt implements ZfsLayerData
 
     boolean exists = false;
     boolean failed = false;
-    long usableSize = -1L;
-    long allocatedSize = -1L;
     String zpool = null;
     String identifier = null;
     Size sizeState = null;
@@ -24,15 +22,13 @@ public class ZfsLayerDataStlt implements ZfsLayerData
 
     public ZfsLayerDataStlt(ZfsInfo info)
     {
-        this(info.poolName, info.identifier, info.size);
+        this(info.poolName, info.identifier);
     }
 
-    public ZfsLayerDataStlt(String zPoolRef, String identifierRef, long sizeRef)
+    public ZfsLayerDataStlt(String zPoolRef, String identifierRef)
     {
         zpool = zPoolRef;
         identifier = identifierRef;
-        usableSize = sizeRef;
-        allocatedSize = sizeRef;
     }
 
     @Override
@@ -45,18 +41,6 @@ public class ZfsLayerDataStlt implements ZfsLayerData
     public boolean isFailed()
     {
         return failed;
-    }
-
-    @Override
-    public long getUsableSize()
-    {
-        return usableSize;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize;
     }
 
     @Override

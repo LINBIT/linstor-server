@@ -310,7 +310,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
             String devicePath = getDevicePath(storageName, lvId);
             vlm.setDevicePath(storDriverAccCtx, devicePath);
             waitUntilDeviceCreated(devicePath);
-            ProviderUtils.updateSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+            ProviderUtils.updateAllocatedSize(vlm, extCmdFactory.create(), storDriverAccCtx);
 
             if (stltConfigAccessor.useDmStats() && updateDmStats())
             {
@@ -335,7 +335,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         {
             resizeLvImpl(vlm);
 
-            ProviderUtils.updateSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+            ProviderUtils.updateAllocatedSize(vlm, extCmdFactory.create(), storDriverAccCtx);
 
             changedStorPools.add(vlm.getStorPool(storDriverAccCtx));
 

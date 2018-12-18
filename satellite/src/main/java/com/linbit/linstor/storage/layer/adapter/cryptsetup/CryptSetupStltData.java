@@ -1,19 +1,29 @@
 package com.linbit.linstor.storage.layer.adapter.cryptsetup;
 
 import com.linbit.linstor.storage2.layer.data.CryptSetupData;
+import com.linbit.linstor.storage2.layer.data.State;
+
+import java.util.Collections;
+import java.util.List;
 
 public class CryptSetupStltData implements CryptSetupData
 {
-    char[] password;
+    byte[] password;
     boolean failed;
+    String identifier;
+    boolean opened;
 
-    public CryptSetupStltData(char[] passwordRef)
+    // TODO maybe introduce "OPEN", "CLOSED", "UNINITIALIZED" or something...
+    List<State> states = Collections.emptyList();
+
+    public CryptSetupStltData(byte[] passwordRef, String identifierRef)
     {
         password = passwordRef;
+        identifier = identifierRef;
     }
 
     @Override
-    public char[] getPassword()
+    public byte[] getPassword()
     {
         return password;
     }
@@ -22,5 +32,17 @@ public class CryptSetupStltData implements CryptSetupData
     public boolean isFailed()
     {
         return failed;
+    }
+
+    @Override
+    public boolean exists()
+    {
+        return opened;
+    }
+
+    @Override
+    public List<? extends State> getStates()
+    {
+        return states;
     }
 }

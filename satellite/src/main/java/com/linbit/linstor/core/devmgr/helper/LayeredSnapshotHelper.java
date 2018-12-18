@@ -115,8 +115,7 @@ public class LayeredSnapshotHelper
                         LvmProvider.FORMAT_RSC_TO_LVM_ID,
                         snapVlm.getSnapshot().getResourceName().displayValue,
                         snapVlm.getVolumeNumber().value
-                    ),
-                    snapVlm.getSnapshotVolumeDefinition().getVolumeSize(sysCtx)
+                    )
                 )
             );
         }
@@ -142,8 +141,7 @@ public class LayeredSnapshotHelper
                         ZfsProvider.FORMAT_RSC_TO_ZFS_ID,
                         vlmDfn.getResourceDefinition().getName().displayValue,
                         vlmDfn.getVolumeNumber().value
-                    ),
-                    vlmDfn.getVolumeSize(sysCtx)
+                    )
                 )
             );
         }

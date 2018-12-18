@@ -56,7 +56,6 @@ public class DmStatCommands
 
             ExtCmdUtils.checkExitCode(
                 output,
-                command,
                 StorageException::new,
                 failMsgExitCode
             );

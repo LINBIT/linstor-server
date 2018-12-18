@@ -7,12 +7,12 @@ public class LvmThinLayerDataStlt extends LvmLayerDataStlt implements LvmThinLay
 {
     public LvmThinLayerDataStlt(LvsInfo info)
     {
-        super(info.volumeGroup, info.thinPool, info.identifier, info.size);
+        super(info.volumeGroup, info.thinPool, info.identifier);
     }
 
-    public LvmThinLayerDataStlt(String volumeGroupRef, String thinPoolRef, String identifierRef, long sizeRef)
+    public LvmThinLayerDataStlt(String volumeGroupRef, String thinPoolRef, String identifierRef)
     {
-        super(volumeGroupRef, thinPoolRef, identifierRef, sizeRef);
+        super(volumeGroupRef, thinPoolRef, identifierRef);
     }
 
     @Override

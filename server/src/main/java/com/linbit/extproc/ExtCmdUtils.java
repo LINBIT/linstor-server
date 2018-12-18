@@ -22,14 +22,13 @@ public class ExtCmdUtils
 
     public static <EXC extends Exception> void checkExitCode(
         OutputData output,
-        String[] command,
         ExceptionFactory<EXC> excFactory,
         String format,
         Object... args
     )
         throws EXC
     {
-        checkExitCode(output, command, DEFAULT_RET_CODE_OK, excFactory, format, args);
+        checkExitCode(output, DEFAULT_RET_CODE_OK, excFactory, format, args);
     }
 
     /**
@@ -55,7 +54,6 @@ public class ExtCmdUtils
      */
     public static <EXC extends Exception> void checkExitCode(
         OutputData output,
-        String[] command,
         int expectedRetCode,
         ExceptionFactory<EXC> excFactory,
         String format,
@@ -80,7 +78,7 @@ public class ExtCmdUtils
                         "Error message: %n" +
                         "%s" +
                         "%n",
-                    StringUtils.join(" ", command),
+                    StringUtils.join(" ", output.executedCommand),
                     output.exitCode,
                     new String(output.stdoutData),
                     new String(output.stderrData)

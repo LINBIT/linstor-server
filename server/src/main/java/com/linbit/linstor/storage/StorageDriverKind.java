@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,7 @@ public interface StorageDriverKind
      *
      * @return The new storage driver instance
      */
+    @RemoveAfterDevMgrRework
     StorageDriver makeStorageDriver(
         ErrorReporter errorReporter,
         FileSystemWatch fileSystemWatch,

@@ -167,6 +167,13 @@ public class StorageLayer implements ResourceLayer
     }
 
     @Override
+    public void updateGrossSize(Volume childVlm, Volume parentVolume) throws AccessDeniedException, SQLException
+    {
+        childVlm.setUsableSize(storDriverAccCtx, parentVolume.getAllocatedSize(storDriverAccCtx));
+        // the childvlm.setAllocateSize method is called from the corresponding DeviceProvider
+    }
+
+    @Override
     public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
@@ -224,12 +231,12 @@ public class StorageLayer implements ResourceLayer
 
     public long getFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        return classifier(storPool).getPoolFreeSpace(storPool);
+        return getDeviceProvierByStorPool(storPool).getPoolFreeSpace(storPool);
     }
 
     public long getCapacity(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        return classifier(storPool).getPoolCapacity(storPool);
+        return getDeviceProvierByStorPool(storPool).getPoolCapacity(storPool);
     }
 
     public Map<StorPool, Either<SpaceInfo, ApiRcException>> getFreeSpaceOfAccessedStoagePools()
@@ -249,7 +256,7 @@ public class StorageLayer implements ResourceLayer
         DeviceProvider devProvider = null;
         try
         {
-            devProvider = classifier(vlm.getStorPool(storDriverAccCtx));
+            devProvider = getDeviceProvierByStorPool(vlm.getStorPool(storDriverAccCtx));
         }
         catch (AccessDeniedException exc)
         {
@@ -263,7 +270,7 @@ public class StorageLayer implements ResourceLayer
         DeviceProvider devProvider = null;
         try
         {
-            devProvider = classifier(snapVlm.getStorPool(storDriverAccCtx));
+            devProvider = getDeviceProvierByStorPool(snapVlm.getStorPool(storDriverAccCtx));
         }
         catch (AccessDeniedException exc)
         {
@@ -272,7 +279,7 @@ public class StorageLayer implements ResourceLayer
         return devProvider;
     }
 
-    private DeviceProvider classifier(StorPool storPool)
+    public DeviceProvider getDeviceProvierByStorPool(StorPool storPool)
     {
         StorageDriverKind driverKind = storPool.getDriverKind();
 
@@ -345,7 +352,7 @@ public class StorageLayer implements ResourceLayer
 
     public void checkStorPool(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        DeviceProvider deviceProvider = classifier(storPool);
+        DeviceProvider deviceProvider = getDeviceProvierByStorPool(storPool);
         deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
         deviceProvider.checkConfig(storPool);
     }

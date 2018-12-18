@@ -133,10 +133,11 @@ public class LayerDataFactory
         return new DrbdVlmDataStlt();
     }
 
-    public CryptSetupData createCryptSetupData(String identifier, Resource rsc, char[] password)
+    public CryptSetupData createCryptSetupData(String identifier, byte[] password)
     {
         return new CryptSetupStltData(
-            password
+            password,
+            identifier
         );
     }
 

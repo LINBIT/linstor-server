@@ -92,7 +92,7 @@ public class LvmThinProvider extends LvmProvider
             volumeGroup,
             lvmThinData.getThinPool(),
             lvId,
-            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx)
+            vlm.getUsableSize(storDriverAccCtx)
         );
         LvmCommands.activateVolume(
             extCmdFactory.create(),
@@ -227,8 +227,7 @@ public class LvmThinProvider extends LvmProvider
         LvmThinLayerDataStlt data = new LvmThinLayerDataStlt(
             getVolumeGroup(storPool),
             getThinPool(storPool), // thin pool
-            asLvIdentifier(vlm),
-            -1
+            asLvIdentifier(vlm)
         );
         vlm.setLayerData(storDriverAccCtx, data);
         return data;

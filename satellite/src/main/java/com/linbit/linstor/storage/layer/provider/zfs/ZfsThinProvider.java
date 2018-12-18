@@ -52,11 +52,26 @@ public class ZfsThinProvider extends ZfsProvider
     @Override
     protected void createLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
     {
+        long volumeSize = vlm.getUsableSize(storDriverAccCtx);
+        if (volumeSize % DEFAULT_ZFS_EXTENT_SIZE != 0)
+        {
+            long origSize = volumeSize;
+            volumeSize = ((volumeSize / DEFAULT_ZFS_EXTENT_SIZE) + 1) * DEFAULT_ZFS_EXTENT_SIZE;
+            errorReporter.logInfo(
+                String.format(
+                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    origSize,
+                    volumeSize,
+                    DEFAULT_ZFS_EXTENT_SIZE
+                )
+            );
+            vlm.setAllocatedSize(storDriverAccCtx, volumeSize);
+        }
         ZfsCommands.create(
             extCmdFactory.create(),
             ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
             asLvIdentifier(vlm),
-            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx),
+            volumeSize,
             true
         );
     }

@@ -14,8 +14,6 @@ public class LvmLayerDataStlt implements LvmLayerData
 
     boolean exists = false;
     boolean failed = false;
-    long usableSize = -1L;
-    long allocatedSize = -1L;
     String volumeGroup = null;
     String thinPool;
     String identifier = null;
@@ -24,16 +22,14 @@ public class LvmLayerDataStlt implements LvmLayerData
 
     public LvmLayerDataStlt(LvsInfo info)
     {
-        this(info.volumeGroup, info.thinPool, info.identifier, info.size);
+        this(info.volumeGroup, info.thinPool, info.identifier);
     }
 
-    public LvmLayerDataStlt(String volumeGroupRef, String thinPoolRef, String identifierRef, long sizeRef)
+    public LvmLayerDataStlt(String volumeGroupRef, String thinPoolRef, String identifierRef)
     {
         volumeGroup = volumeGroupRef;
         thinPool = thinPoolRef;
         identifier = identifierRef;
-        usableSize = sizeRef;
-        allocatedSize = sizeRef;
     }
 
     @Override
@@ -48,17 +44,6 @@ public class LvmLayerDataStlt implements LvmLayerData
         return failed;
     }
 
-    @Override
-    public long getUsableSize()
-    {
-        return usableSize;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize;
-    }
 
     @Override
     public String getVolumeGroup()

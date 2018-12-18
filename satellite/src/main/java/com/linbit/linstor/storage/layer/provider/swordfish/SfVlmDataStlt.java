@@ -36,8 +36,6 @@ public class SfVlmDataStlt implements SfVlmLayerData
     SfVlmDfnDataStlt vlmDfnData;
 
     boolean isFailed = false;
-    long usableSize;
-    long allocatedSize;
     List<State> states = new ArrayList<>();
 
     SfVlmDataStlt(SfVlmDfnDataStlt vlmDfnDataRef)
@@ -55,18 +53,6 @@ public class SfVlmDataStlt implements SfVlmLayerData
     public boolean isFailed()
     {
         return isFailed;
-    }
-
-    @Override
-    public long getUsableSize()
-    {
-        return usableSize;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize;
     }
 
     @Override

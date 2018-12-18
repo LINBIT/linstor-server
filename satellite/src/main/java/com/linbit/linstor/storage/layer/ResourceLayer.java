@@ -2,6 +2,7 @@ package com.linbit.linstor.storage.layer;
 
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -20,6 +21,9 @@ public interface ResourceLayer
     void prepare(List<Resource> value, List<Snapshot> snapshots)
         throws StorageException, AccessDeniedException, SQLException;
 
+    void updateGrossSize(Volume childVlm, Volume parentVolume)
+        throws AccessDeniedException, SQLException;
+
     void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,
             SQLException;
@@ -27,4 +31,5 @@ public interface ResourceLayer
     void clearCache() throws StorageException;
 
     void setLocalNodeProps(Props localNodeProps);
+
 }

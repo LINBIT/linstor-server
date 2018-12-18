@@ -14,8 +14,6 @@ public class DrbdVlmDataStlt implements DrbdVlmData
     String metaDiskPath;
     String diskState;
 
-    transient long allocatedSize;
-    transient long usableSize;
     transient short peerSlots;
     transient int alStripes;
     transient long alStripeSize;
@@ -32,8 +30,6 @@ public class DrbdVlmDataStlt implements DrbdVlmData
         failed = false;
         metaDiskPath = null;
 
-        allocatedSize = -1;
-        usableSize = -1;
         peerSlots = InternalApiConsts.DEFAULT_PEER_SLOTS;
         alStripes = -1;
         alStripeSize = -1L;
@@ -42,17 +38,6 @@ public class DrbdVlmDataStlt implements DrbdVlmData
         metaDataIsNew = false;
     }
 
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize;
-    }
-
-    @Override
-    public long getUsableSize()
-    {
-        return usableSize;
-    }
 
     @Override
     public boolean exists()

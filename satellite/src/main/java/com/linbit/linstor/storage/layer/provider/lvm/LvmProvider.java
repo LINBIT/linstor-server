@@ -4,10 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
-import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -94,15 +92,73 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     }
 
     @Override
-    protected Map<String, Long> getFreeSpacesImpl() throws StorageException
+    protected void updateStates(Collection<Volume> vlms, Collection<SnapshotVolume> snapshots)
+        throws StorageException, AccessDeniedException, SQLException
     {
-        return LvmUtils.getVgFreeSize(extCmdFactory.create(), changedStoragePoolStrings);
+        final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
+            extCmdFactory.create(),
+            getAffectedVolumeGroups(vlms)
+        );
+        for (Volume vlm : vlms)
+        {
+            final LvsInfo info = infoListCache.get(asLvIdentifier(vlm));
+            // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
+
+            LvmLayerDataStlt state = (LvmLayerDataStlt) vlm.getLayerData(storDriverAccCtx);
+            if (info != null)
+            {
+                if (state == null)
+                {
+                    state = createLayerData(vlm, info);
+                }
+                state.exists = true;
+
+                final long expectedSize = vlm.getUsableSize(storDriverAccCtx);
+                final long actualSize = info.size;
+                if (actualSize != expectedSize)
+                {
+                    if (actualSize < expectedSize)
+                    {
+                        state.sizeState = Size.TOO_SMALL;
+                    }
+                    else
+                    {
+                        state.sizeState = Size.TOO_LARGE;
+                        final long toleratedSize =
+                            expectedSize + extentSizes.get(info.volumeGroup) * TOLERANCE_FACTOR;
+                        if (actualSize < toleratedSize)
+                        {
+                            state.sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
+                        }
+                    }
+                }
+                vlm.setDevicePath(storDriverAccCtx, info.path);
+                ProviderUtils.updateAllocatedSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+                // vlm.setUsableSize already set in StorageLayer#updateGrossSize
+            }
+            else
+            {
+                if (state == null)
+                {
+                    state = createEmptyLayerData(vlm);
+                }
+                state.exists = false;
+                vlm.setDevicePath(storDriverAccCtx, null);
+                vlm.setAllocatedSize(storDriverAccCtx, -1);
+            }
+        }
+
+        updateSnapshotStates(snapshots);
     }
 
-    @Override
-    protected Map<String, LvsInfo> getInfoListImpl(Collection<Volume> volumes) throws StorageException
+    /*
+     * Expected to be overridden by LvmThinProvider
+     */
+    @SuppressWarnings("unused")
+    protected void updateSnapshotStates(Collection<SnapshotVolume> snapshots)
+        throws AccessDeniedException, SQLException
     {
-        return LvmUtils.getLvsInfo(extCmdFactory.create(), getAffectedVolumeGroups(volumes));
+        // no-op
     }
 
     @Override
@@ -113,7 +169,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             extCmdFactory.create(),
             ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
             asLvIdentifier(vlm),
-            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx)
+            vlm.getUsableSize(storDriverAccCtx)
         );
     }
 
@@ -125,7 +181,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             extCmdFactory.create(),
             ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
             asLvIdentifier(vlm),
-            vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx)
+            vlm.getUsableSize(storDriverAccCtx)
         );
     }
 
@@ -168,6 +224,18 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
                 }
             }
         );
+    }
+
+    @Override
+    protected Map<String, Long> getFreeSpacesImpl() throws StorageException
+    {
+        return LvmUtils.getVgFreeSize(extCmdFactory.create(), changedStoragePoolStrings);
+    }
+
+    @Override
+    protected Map<String, LvsInfo> getInfoListImpl(Collection<Volume> volumes) throws StorageException
+    {
+        return LvmUtils.getLvsInfo(extCmdFactory.create(), getAffectedVolumeGroups(volumes));
     }
 
     @Override
@@ -295,75 +363,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         return volumeGroups;
     }
 
-    @Override
-    protected void updateStates(Collection<Volume> vlms, Collection<SnapshotVolume> snapshots)
-        throws StorageException, AccessDeniedException, SQLException
-    {
-        final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
-            extCmdFactory.create(),
-            getAffectedVolumeGroups(vlms)
-        );
-        for (Volume vlm : vlms)
-        {
-            final LvsInfo info = infoListCache.get(asLvIdentifier(vlm));
-            // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
-
-            LvmLayerDataStlt state = (LvmLayerDataStlt) vlm.getLayerData(storDriverAccCtx);
-            if (info != null)
-            {
-                if (state == null)
-                {
-                    state = createLayerData(vlm, info);
-                }
-                state.exists = true;
-
-                final long expectedSize = vlm.getVolumeDefinition().getVolumeSize(storDriverAccCtx);
-                final long actualSize = info.size;
-                if (actualSize != expectedSize)
-                {
-                    if (actualSize < expectedSize)
-                    {
-                        state.sizeState = Size.TOO_SMALL;
-                    }
-                    else
-                    {
-                        state.sizeState = Size.TOO_LARGE;
-                        final long toleratedSize =
-                            expectedSize + extentSizes.get(info.volumeGroup) * TOLERANCE_FACTOR;
-                        if (actualSize < toleratedSize)
-                        {
-                            state.sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
-                        }
-                    }
-                }
-                vlm.setDevicePath(storDriverAccCtx, info.path);
-                ProviderUtils.updateSize(vlm, extCmdFactory.create(), storDriverAccCtx);
-            }
-            else
-            {
-                if (state == null)
-                {
-                    state = createEmptyLayerData(vlm);
-                }
-                state.exists = false;
-                vlm.setDevicePath(storDriverAccCtx, null);
-                ProviderUtils.setSize(vlm, 0, storDriverAccCtx);
-            }
-        }
-
-        updateSnapshotStates(snapshots);
-    }
-
-    /*
-     * Expected to be overridden by LvmThinProvider
-     */
-    @SuppressWarnings("unused")
-    protected void updateSnapshotStates(Collection<SnapshotVolume> snapshots)
-        throws AccessDeniedException, SQLException
-    {
-        // no-op
-    }
-
     /*
      * Expected to be overridden by LvmThinProvider
      */
@@ -384,8 +383,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         LvmLayerDataStlt data = new LvmLayerDataStlt(
             getStorageName(vlm),
             null, // thin pool
-            asLvIdentifier(vlm),
-            -1
+            asLvIdentifier(vlm)
         );
         vlm.setLayerData(storDriverAccCtx, data);
         return data;

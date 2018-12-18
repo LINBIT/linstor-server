@@ -52,10 +52,10 @@ import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.utils.ResourceUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
+import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.AccessUtils;
 
 import static com.linbit.linstor.storage.utils.VolumeUtils.getBackingVolume;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -90,6 +90,8 @@ public class DrbdLayer implements ResourceLayer
     private final WhitelistProps whitelistProps;
     private final CtrlStltSerializer interComSerializer;
     private final ControllerPeerConnector controllerPeerConnector;
+    private final Provider<DeviceHandler2> resourceProcessorProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -98,7 +100,6 @@ public class DrbdLayer implements ResourceLayer
     // Number of activity log stripes; this should be replaced with a property of the resource definition,
     // a property of the volume definition, or or otherwise a system-wide default
     public static final long FIXME_AL_STRIPE_SIZE = 32;
-    private Provider<DeviceHandler2> resourceProcessorProvider;
 
     @Inject
     public DrbdLayer(
@@ -110,7 +111,8 @@ public class DrbdLayer implements ResourceLayer
         WhitelistProps whiltelistPropsRef,
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        Provider<DeviceHandler2> resourceProcessorRef
+        Provider<DeviceHandler2> resourceProcessorRef,
+        Provider<TransactionMgr> transactionMgrProviderRef
     )
     {
         workerCtx = workerCtxRef;
@@ -122,6 +124,7 @@ public class DrbdLayer implements ResourceLayer
         interComSerializer = interComSerializerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         resourceProcessorProvider = resourceProcessorRef;
+        transMgrProvider = transactionMgrProviderRef;
     }
 
     @Override
@@ -131,10 +134,126 @@ public class DrbdLayer implements ResourceLayer
     }
 
     @Override
-    public void prepare(List<Resource> value, List<Snapshot> snapshots)
+    public void prepare(List<Resource> rscs, List<Snapshot> snapshots)
         throws StorageException, AccessDeniedException, SQLException
     {
-        // no-op
+        try
+        {
+            for (Resource rsc : rscs)
+            {
+                Resource parent = rsc.getParentResource(workerCtx);
+                Resource defaultRsc = getDefaultResource(parent);
+
+                if (defaultRsc.isCreatePrimary())
+                {
+                    ((ResourceData) rsc).setCreatePrimary();
+                }
+
+                // update resource's layer data
+                if (rsc.getLayerData(workerCtx) == null)
+                {
+                    rsc.setLayerData(
+                        workerCtx,
+                        new DrbdRscDataStlt(
+                            rsc.getNodeId(),
+                            defaultRsc.isDiskless(workerCtx),
+                            defaultRsc.disklessForPeers(workerCtx)
+                        )
+                    );
+                }
+
+                String peerSlotsProp = rsc.getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+                // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
+                // as an unexpected exception in dispatchResource()
+                short peerSlots = peerSlotsProp == null ?
+                    InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
+                ResourceDefinition rscDfn = rsc.getDefinition();
+
+                // currently there are no drbdVolumeLayerData to update
+
+                // update resource definition's layer data
+                if (rscDfn.getLayerData(workerCtx, DrbdRscDfnDataStlt.class) == null)
+                {
+                    rscDfn.setLayerData(
+                        workerCtx,
+                        new DrbdRscDfnDataStlt(
+                            rscDfn.getPort(workerCtx),
+                            rscDfn.getTransportType(workerCtx),
+                            rscDfn.getSecret(workerCtx),
+                            transMgrProvider
+                        )
+                    );
+                }
+
+                // update volume definitions' layer data
+                rscDfn.streamVolumeDfn(workerCtx).forEach(
+                    vlmDfn ->
+                    {
+                        try
+                        {
+                            if (vlmDfn.getLayerData(workerCtx, DrbdVlmDfnDataStlt.class) == null)
+                            {
+                                vlmDfn.setLayerData(
+                                    workerCtx,
+                                    new DrbdVlmDfnDataStlt(
+                                        vlmDfn.getMinorNr(workerCtx),
+                                        peerSlots,
+                                        transMgrProvider
+                                    )
+                                );
+                            }
+                        }
+                        catch (AccessDeniedException exc)
+                        {
+                            throw new ImplementationError(exc);
+                        }
+                    }
+                );
+
+            }
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private Resource getDefaultResource(Resource defaultRsc) throws AccessDeniedException
+    {
+        while (defaultRsc.getType() != ResourceType.DEFAULT)
+        {
+            defaultRsc = defaultRsc.getParentResource(workerCtx);
+        }
+        return defaultRsc;
+    }
+
+    @Override
+    public void updateGrossSize(Volume drbdVlm, Volume parentVlm) throws AccessDeniedException, SQLException
+    {
+        try
+        {
+            String peerSlotsProp = drbdVlm.getResource().getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+            // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
+            // as an unexpected exception in dispatchResource()
+            short peerSlots = peerSlotsProp == null ?
+                InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
+
+            long netSize = parentVlm.getAllocatedSize(workerCtx);
+            long grossSize = new MetaData().getGrossSize(
+                netSize,
+                peerSlots,
+                DrbdLayer.FIXME_AL_STRIPES,
+                DrbdLayer.FIXME_AL_STRIPE_SIZE
+            );
+
+            drbdVlm.setUsableSize(workerCtx, netSize);
+            drbdVlm.setAllocatedSize(workerCtx, grossSize);
+        }
+        catch (InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |
+            MinAlSizeException | MaxAlSizeException | AlStripesException | PeerCountException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override
@@ -831,16 +950,9 @@ public class DrbdLayer implements ResourceLayer
                         }
                         else
                         {
-                            vlmState.allocatedSize = backingVlm.getUsableSize(workerCtx);
                             vlmState.peerSlots = peerSlots;
                             vlmState.alStripes = FIXME_AL_STRIPES;
                             vlmState.alStripeSize = FIXME_AL_STRIPE_SIZE;
-                            vlmState.usableSize = new MetaData().getNetSize(
-                                vlmState.allocatedSize,
-                                vlmState.peerSlots,
-                                vlmState.alStripes,
-                                vlmState.alStripeSize
-                            );
                         }
                         rscState.putVlmState(vlm.getVolumeDefinition().getVolumeNumber(), vlmState);
                     }
@@ -862,8 +974,7 @@ public class DrbdLayer implements ResourceLayer
         {
             throw new ImplementationError("Invalid hardcoded key", exc);
         }
-        catch (IllegalArgumentException | MinSizeException | MaxSizeException | MinAlSizeException |
-            MaxAlSizeException | AlStripesException | PeerCountException exc)
+        catch (IllegalArgumentException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -964,6 +1075,7 @@ public class DrbdLayer implements ResourceLayer
         {
             ResourceDefinition rscDfn = rsc.getDefinition();
             ResourceName rscName = rscDfn.getName();
+
             if (rscDfn.getProps(workerCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
                 rsc.getStateFlags().isUnset(workerCtx, Resource.RscFlags.DISKLESS))
             {
@@ -996,6 +1108,7 @@ public class DrbdLayer implements ResourceLayer
                 // Set the resource primary (--force) to trigger an initial sync of all
                 // fat provisioned volumes
                 ((ResourceData) rsc).unsetCreatePrimary();
+                ((ResourceData) getDefaultResource(rsc)).unsetCreatePrimary();
                 if (haveFatVlm)
                 {
                     errorReporter.logTrace("Setting resource primary on %s", rscName.getDisplayName());
