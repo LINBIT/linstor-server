@@ -93,15 +93,10 @@ public class DrbdVersion
                     minorVsn = (short) ((vsnCode >>> SHIFT_MINOR_VSN) & MASK_VSN_ELEM);
                     patchLvl = (short) (vsnCode & MASK_VSN_ELEM);
                 }
-                else
-                {
-                    restoreDefaults();
-                }
             }
         }
         catch (NumberFormatException nfExc)
         {
-            restoreDefaults();
             errorLogRef.reportProblem(
                     Level.ERROR,
                     new LinStorException(
@@ -118,7 +113,6 @@ public class DrbdVersion
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
-            restoreDefaults();
             errorLogRef.reportError(Level.ERROR, exc);
         }
     }
