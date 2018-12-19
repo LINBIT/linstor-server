@@ -43,11 +43,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Stream;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -308,32 +306,14 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         NodeName nodeName = nodeResponse.getT1();
 
         return nodeResponse.mapT2(responses -> responses
-            .collectList()
-            .flatMapMany(responseList ->
-                {
-                    boolean responseIncludesSuccess = streamAllEntries(responseList)
-                        .anyMatch(rcEntry -> rcEntry.getReturnCode() == ApiConsts.MODIFIED);
-                    boolean responseIncludesNonSuccess = streamAllEntries(responseList)
-                        .anyMatch(rcEntry -> rcEntry.getReturnCode() != ApiConsts.MODIFIED);
-
-                    Flux<ApiCallRc> markSuccessfulFlux = responseIncludesSuccess && !responseIncludesNonSuccess ?
-                        scopeRunner
-                            .fluxInTransactionalScope(
-                                "Handle successful rollback",
-                                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
-                                () -> resourceRollbackSuccessfulInTransaction(rscName, nodeName)
-                            ) :
-                        Flux.empty();
-
-                    return markSuccessfulFlux
-                        .concatWith(Flux.fromIterable(responseList));
-                }
-            ));
-    }
-
-    private Stream<ApiCallRc.RcEntry> streamAllEntries(List<ApiCallRc> responseList)
-    {
-        return responseList.stream().map(ApiCallRc::getEntries).flatMap(List::stream);
+            .concatWith(scopeRunner
+                .fluxInTransactionalScope(
+                    "Handle successful rollback",
+                    LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                    () -> resourceRollbackSuccessfulInTransaction(rscName, nodeName)
+                )
+            )
+        );
     }
 
     private <T> Flux<T> resourceRollbackSuccessfulInTransaction(
