@@ -96,7 +96,6 @@ public class LinstorParsingUtils
      * Returns the given String as a {@link LsIpAddress} if possible. If the String is not a valid
      * {@link LsIpAddress} an exception is thrown.
      *
-     * @param ipAddrStr
      * @return
      */
     public static TcpPortNumber asTcpPortNumber(int port)

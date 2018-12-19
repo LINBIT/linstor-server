@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.InvalidNameException;
 import com.linbit.Checks;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
 import com.linbit.ValueOutOfRangeException;
 
 import org.junit.After;
@@ -195,5 +196,75 @@ public class ChecksTest
     {
         // minValue > maxValue
         Checks.rangeCheck(0, 1, -1);
+    }
+
+    @Test
+    public void testIpV4() throws Exception
+    {
+        new LsIpAddress("127.0.0.1");
+        new LsIpAddress("0.0.0.0");
+        new LsIpAddress("255.255.255.255");
+    }
+
+    @Test(expected = InvalidIpAddressException.class)
+    public void testIpV4Invalid1() throws Exception
+    {
+        new LsIpAddress("0.0.0.0.0");
+    }
+
+    @Test(expected = InvalidIpAddressException.class)
+    public void testIpV4Invalid2() throws Exception
+    {
+        new LsIpAddress("0.0.0.a");
+    }
+
+    @Test(expected = InvalidIpAddressException.class)
+    public void testIpV4Invalid3() throws Exception
+    {
+        new LsIpAddress("256.0.0.0");
+    }
+
+    @Test
+    public void testIpV6() throws Exception
+    {
+        new LsIpAddress("::0");
+        new LsIpAddress("2001:0db8:0000:0042:0000:8a2e:0370:7334");
+        new LsIpAddress("0000:0000:0000:0000:0000:0000:0000:0000");
+        new LsIpAddress("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+        new LsIpAddress("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF");
+        new LsIpAddress("2001::4930:203f");
+        new LsIpAddress("2001::");
+
+        new LsIpAddress("2001:db8:aaaa:bbbb:cccc:dddd::1");
+        new LsIpAddress("2001:db8:aaaa:bbbb:cccc:dddd:0:1");
+
+        new LsIpAddress("2001:db8:0:0:0::1");
+        new LsIpAddress("2001:db8:0:0::1");
+        new LsIpAddress("2001:db8:0::1");
+        new LsIpAddress("2001:db8::1");
+    }
+
+    @Test
+    public void testIpV6Mapped4() throws Exception
+    {
+        new LsIpAddress("ABCD:ABCD:ABCD:ABCD:ABCD:ABCD:192.168.158.190");
+    }
+
+    @Test(expected = InvalidIpAddressException.class)
+    public void testIpV6Invalid1() throws Exception
+    {
+        new LsIpAddress("abcde:0000:0000::0");
+    }
+
+    @Test(expected = InvalidIpAddressException.class)
+    public void testIpV6Invalid2() throws Exception
+    {
+        new LsIpAddress("1234::4312::0");
+    }
+
+    @Test(expected = InvalidIpAddressException.class)
+    public void testIpV6Invalid3() throws Exception
+    {
+        new LsIpAddress("1234::4312:");
     }
 }
