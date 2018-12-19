@@ -17,6 +17,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -24,9 +25,8 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import org.reactivestreams.Publisher;
+
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Signal;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
@@ -37,15 +37,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * Notifies satellites of updates, returning the responses from the deployment of these changes.
- * When failures occur (either due to connection problems or deployment failures) they are converted into responses
- * and a {@link DelayedApiRcException} is emitted after all the updates have terminated.
  */
 @Singleton
 public class CtrlSatelliteUpdateCaller
@@ -71,7 +68,7 @@ public class CtrlSatelliteUpdateCaller
      * @param nodeName Name of changed node
      * @param nodesToContact Nodes to update
      */
-    public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
         UUID uuid,
         NodeName nodeName,
         Collection<Node> nodesToContact
@@ -104,7 +101,7 @@ public class CtrlSatelliteUpdateCaller
             throw new ImplementationError(implError);
         }
 
-        return mergeExtractingApiRcExceptions(Flux.fromIterable(responses));
+        return Flux.fromIterable(responses);
     }
 
     private Flux<ApiCallRc> updateSatellite(Node satelliteToUpdate, byte[] changedMessage)
@@ -140,7 +137,7 @@ public class CtrlSatelliteUpdateCaller
     /**
      * See {@link CtrlSatelliteUpdateCaller}.
      */
-    public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(Resource rsc)
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(Resource rsc)
     {
         return updateSatellites(rsc.getDefinition());
     }
@@ -148,7 +145,7 @@ public class CtrlSatelliteUpdateCaller
     /**
      * See {@link CtrlSatelliteUpdateCaller}.
      */
-    public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(ResourceDefinition rscDfn)
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(ResourceDefinition rscDfn)
     {
         return updateSatellites(rscDfn, notConnectedWarn());
     }
@@ -156,7 +153,7 @@ public class CtrlSatelliteUpdateCaller
     /**
      * See {@link CtrlSatelliteUpdateCaller}.
      */
-    public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
         ResourceDefinition rscDfn,
         NotConnectedHandler notConnectedHandler
     )
@@ -181,7 +178,7 @@ public class CtrlSatelliteUpdateCaller
             throw new ImplementationError(implError);
         }
 
-        return mergeExtractingApiRcExceptions(Flux.fromIterable(responses));
+        return Flux.fromIterable(responses);
     }
 
     public Flux<ApiCallRc> updateSatellite(final StorPool storPool)
@@ -228,7 +225,7 @@ public class CtrlSatelliteUpdateCaller
         return response;
     }
 
-    public Flux<Tuple2<NodeName, ApiCallRc>> updateSatellites(
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
         SnapshotDefinition snapshotDfn,
         NotConnectedHandler notConnectedHandler
     )
@@ -250,7 +247,7 @@ public class CtrlSatelliteUpdateCaller
             throw new ImplementationError(implError);
         }
 
-        return mergeExtractingApiRcExceptions(Flux.fromIterable(responses));
+        return Flux.fromIterable(responses);
     }
 
     private Flux<ApiCallRc> updateResource(
@@ -354,73 +351,6 @@ public class CtrlSatelliteUpdateCaller
         }
 
         return deploymentState;
-    }
-
-    /**
-     * Merge the sources, delaying failure.
-     * Any {@link ApiRcException} errors are suppressed and converted into normal responses.
-     * If any errors were suppressed, a token {@link DelayedApiRcException} error is emitted when all sources complete.
-     */
-    private static Flux<Tuple2<NodeName, ApiCallRc>> mergeExtractingApiRcExceptions(
-        Publisher<Tuple2<NodeName, ? extends Publisher<ApiCallRc>>> sources)
-    {
-        return Flux
-            .merge(
-                Flux.from(sources)
-                    .map(source ->
-                        Flux.from(source.getT2())
-                            .map(Signal::next)
-                            .onErrorResume(ApiRcException.class, error -> Flux.just(Signal.error(error)))
-                            .map(signal -> Tuples.of(source.getT1(), signal))
-                    )
-            )
-            .compose(signalFlux ->
-                {
-                    List<ApiRcException> errors = Collections.synchronizedList(new ArrayList<>());
-                    return signalFlux
-                        .map(namedSignal ->
-                            {
-                                Signal<ApiCallRc> signal = namedSignal.getT2();
-                                ApiCallRc apiCallRc;
-                                if (signal.isOnError())
-                                {
-                                    ApiRcException apiRcException = (ApiRcException) signal.getThrowable();
-                                    errors.add(apiRcException);
-                                    apiCallRc = apiRcException.getApiCallRc();
-                                }
-                                else
-                                {
-                                    apiCallRc = signal.get();
-                                }
-                                return Tuples.of(namedSignal.getT1(), apiCallRc);
-                            }
-                        )
-                        .concatWith(Flux.defer(() ->
-                            errors.isEmpty() ?
-                                Flux.empty() :
-                                Flux.error(new DelayedApiRcException(errors))
-                        ));
-                }
-            );
-    }
-
-    /**
-     * See {@link CtrlSatelliteUpdateCaller}.
-     */
-    public static class DelayedApiRcException extends RuntimeException
-    {
-        private final List<ApiRcException> errors;
-
-        public DelayedApiRcException(List<ApiRcException> errorsRef)
-        {
-            super("Exceptions have been converted to responses");
-            errors = errorsRef;
-        }
-
-        public List<ApiRcException> getErrors()
-        {
-            return errors;
-        }
     }
 
     @FunctionalInterface

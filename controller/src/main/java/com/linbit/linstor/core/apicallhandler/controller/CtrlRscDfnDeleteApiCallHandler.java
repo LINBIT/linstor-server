@@ -19,9 +19,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -223,8 +223,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             if (hasDisklessResources)
             {
                 satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
-                    .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                    .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
+                        rscName,
                         "Notified {0} that diskless resources of {1} are being deleted"
                     ));
             }
@@ -235,7 +236,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
             flux = satelliteUpdateResponses
                 .concatWith(deleteRemaining(rscName))
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
         return flux;
@@ -277,12 +278,13 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             ctrlTransactionHelper.commit();
 
             flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
-                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
+                    rscName,
                     "Resource {1} on {0} deleted"
                 ))
                 .concatWith(deleteData(rscName))
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
         return flux;

@@ -52,7 +52,7 @@ subprojects {
             compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
             compile 'info.picocli:picocli:3.6.0'
-            compile group: 'io.projectreactor', name: 'reactor-core', version: '3.1.8.RELEASE'
+            compile group: 'io.projectreactor', name: 'reactor-core', version: '3.2.3.RELEASE'
             compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
             compile 'org.apache.httpcomponents:httpclient:4.5.5'

@@ -27,6 +27,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
@@ -390,8 +391,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             String actionSelf = removeDisk ? "Removed disk on {0}" : null;
             String actionPeer = removeDisk ? null : "Prepared {0} to expect disk on ''" + nodeName.displayValue + "''";
             Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
+                    rscName,
                     Collections.singleton(nodeName),
                     actionSelf,
                     actionPeer
@@ -411,7 +413,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                         )
                 )
                 .concatWith(finishOperation(nodeName, rscName, removeDisk))
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
         return responses;
@@ -439,13 +441,14 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-            .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+            .transform(responses -> CtrlResponseUtils.combineResponses(
                 responses,
+                rscName,
                 "Diskless state temporarily reset on {0}"
             ));
 
         return satelliteUpdateResponses
-            .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
     }
 
     private Flux<ApiCallRc> finishOperation(NodeName nodeName, ResourceName rscName, boolean removeDisk)
@@ -494,8 +497,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String actionPeer = removeDisk ?
             "Notified {0} that disk has been removed on ''" + nodeName.displayValue + "''" : null;
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-            .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+            .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                 updateResponses,
+                rscName,
                 Collections.singleton(nodeName),
                 actionSelf,
                 actionPeer

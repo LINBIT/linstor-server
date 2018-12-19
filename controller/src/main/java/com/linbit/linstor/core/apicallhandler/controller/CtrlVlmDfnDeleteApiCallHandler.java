@@ -24,9 +24,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -211,12 +211,13 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         else
         {
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
-                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
+                    rscName,
                     "Deleted volume " + vlmNr + " of {1} on {0}"
                 ))
                 .concatWith(deleteData(rscName, vlmNr))
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
         return flux;

@@ -8,12 +8,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
 
-import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 public class ResponseUtils
@@ -239,53 +234,5 @@ public class ResponseUtils
                     "receive this update."
             )
             .build();
-    }
-
-    public static Flux<ApiCallRc> translateDeploymentSuccess(
-        Flux<Tuple2<NodeName, ApiCallRc>> responses,
-        String messageFormat
-    )
-    {
-        return translateDeploymentSuccess(responses, Collections.emptySet(), messageFormat, messageFormat);
-    }
-
-    public static Flux<ApiCallRc> translateDeploymentSuccess(
-        Flux<Tuple2<NodeName, ApiCallRc>> responses,
-        Collection<NodeName> nodeNames,
-        String messageFormatThese,
-        String messageFormatOthers
-    )
-    {
-        return responses.map(namedResponse ->
-            {
-                NodeName responseNodeName = namedResponse.getT1();
-                ApiCallRc response = namedResponse.getT2();
-                ApiCallRcImpl transformedResponses = new ApiCallRcImpl();
-                for (ApiCallRc.RcEntry rcEntry : response.getEntries())
-                {
-                    if (rcEntry.getReturnCode() == ApiConsts.MODIFIED)
-                    {
-                        String messageFormat = nodeNames.contains(responseNodeName) ?
-                            messageFormatThese : messageFormatOthers;
-                        if (messageFormat != null)
-                        {
-                            transformedResponses.addEntry(ApiCallRcImpl.simpleEntry(
-                                ApiConsts.MODIFIED,
-                                MessageFormat.format(
-                                    messageFormat,
-                                    "'" + responseNodeName.displayValue + "'",
-                                    "'" + rcEntry.getObjRefs().get(ApiConsts.KEY_RSC_DFN) + "'"
-                                )
-                            ));
-                        }
-                    }
-                    else
-                    {
-                        transformedResponses.addEntry(rcEntry);
-                    }
-                }
-                return transformedResponses;
-            }
-        );
     }
 }

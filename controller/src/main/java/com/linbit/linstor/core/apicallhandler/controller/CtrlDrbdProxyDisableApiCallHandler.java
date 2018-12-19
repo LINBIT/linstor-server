@@ -15,10 +15,10 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -127,8 +127,9 @@ public class CtrlDrbdProxyDisableApiCallHandler
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
-            .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+            .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                 updateResponses,
+                rscDfn.getName(),
                 "Notified {0} of removed proxy connection for {1}"
             ));
 
@@ -140,7 +141,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(satelliteUpdateResponses)
-            .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
     }
 
     private void disableLocalProxyFlag(ResourceConnection rscConn)

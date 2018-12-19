@@ -26,9 +26,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -269,12 +269,13 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             }
 
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
-                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
+                    rscName,
                     "Updated volume " + vlmNr + " of {1} on {0}"
                 ))
                 .concatWith(nextStep)
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
         return flux;
@@ -311,8 +312,9 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
             Flux<ApiCallRc> satelliteUpdateResponses =
                 ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
-                    .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                    .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
+                        rscName,
                         getNodeNames(drbdResizeVlm),
                         "Resized DRBD resource {1} on {0}",
                         null

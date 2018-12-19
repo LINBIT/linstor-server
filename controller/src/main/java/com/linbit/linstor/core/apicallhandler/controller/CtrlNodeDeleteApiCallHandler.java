@@ -23,6 +23,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
@@ -243,14 +244,15 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         else
         {
             responseFlux = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
+                    rscName,
                     Collections.singleton(nodeName),
                     "Deleted resource {1} on {0}",
                     "Notified {0} that resource {1} on ''" + nodeName + "'' is being deleted"
                 ))
                 .concatWith(resourceDeleted(nodeName, rscName))
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty())
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
                 // Suppress offline warnings because they were already generated in the first step
                 .map(this::removeOfflineWarnings);
         }

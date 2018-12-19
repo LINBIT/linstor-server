@@ -35,6 +35,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
@@ -253,8 +254,9 @@ public class CtrlRscCrtApiHelper
             .collect(Collectors.joining(", "));
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
-            .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+            .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                 updateResponses,
+                rscName,
                 nodeNames,
                 "Created resource {1} on {0}",
                 "Added peer(s) " + nodeNamesStr + " to resource {1} on {0}"

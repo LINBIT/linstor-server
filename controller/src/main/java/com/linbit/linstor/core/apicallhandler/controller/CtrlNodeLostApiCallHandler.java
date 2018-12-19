@@ -23,9 +23,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -234,11 +234,12 @@ public class CtrlNodeLostApiCallHandler
         // inform other satellites that the node is gone
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(nodeUuid, nodeName, nodesToContact.values())
-                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
-                    "Notified {0} that resource {1} of ''" + nodeName + "'' has been lost"
+                    null,
+                    "Notified {0} that ''" + nodeName + "'' has been lost"
                 ))
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
 
         return Flux
             .just(responses)

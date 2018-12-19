@@ -27,6 +27,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelecto
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.event.EventStreamClosedException;
@@ -259,7 +260,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
-            .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty())
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
             .onErrorResume(EventStreamClosedException.class,

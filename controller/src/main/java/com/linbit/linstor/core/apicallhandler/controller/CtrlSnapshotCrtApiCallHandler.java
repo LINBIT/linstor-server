@@ -35,9 +35,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -255,8 +255,9 @@ public class CtrlSnapshotCrtApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
-                .transform(updateResponses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
+                    rscName,
                     "Suspended IO of {1} on {0} for snapshot"
                 ));
 
@@ -265,7 +266,7 @@ public class CtrlSnapshotCrtApiCallHandler
             .concatWith(satelliteUpdateResponses)
             .concatWith(takeSnapshot(rscName, snapshotName))
             .onErrorResume(exception -> abortSnapshot(rscName, snapshotName, exception))
-            .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
     }
 
     private Flux<ApiCallRc> abortSnapshot(
@@ -290,8 +291,8 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
-        SnapshotDfnFlags flag = exception instanceof CtrlSatelliteUpdateCaller.DelayedApiRcException &&
-            isFailNotConnected((CtrlSatelliteUpdateCaller.DelayedApiRcException) exception) ?
+        SnapshotDfnFlags flag = exception instanceof CtrlResponseUtils.DelayedApiRcException &&
+            isFailNotConnected((CtrlResponseUtils.DelayedApiRcException) exception) ?
             SnapshotDfnFlags.FAILED_DISCONNECT :
             SnapshotDfnFlags.FAILED_DEPLOYMENT;
 
@@ -302,11 +303,12 @@ public class CtrlSnapshotCrtApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedCannotAbort())
-                .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(responses -> CtrlResponseUtils.combineResponses(
                     responses,
+                    rscName,
                     "Aborted snapshot of {1} on {0}"
                 ))
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
 
         return satelliteUpdateResponses
             .concatWith(Flux.error(exception));
@@ -335,8 +337,9 @@ public class CtrlSnapshotCrtApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
-                .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(responses -> CtrlResponseUtils.combineResponses(
                     responses,
+                    rscName,
                     "Took snapshot of {1} on {0}"
                 ));
 
@@ -367,8 +370,9 @@ public class CtrlSnapshotCrtApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
-                .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+                .transform(responses -> CtrlResponseUtils.combineResponses(
                     responses,
+                    rscName,
                     "Resumed IO of {1} on {0} after snapshot"
                 ));
 
@@ -947,7 +951,7 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
-    private static boolean isFailNotConnected(CtrlSatelliteUpdateCaller.DelayedApiRcException exception)
+    private static boolean isFailNotConnected(CtrlResponseUtils.DelayedApiRcException exception)
     {
         return exception.getErrors().stream()
             .flatMap(apiRcException -> apiRcException.getApiCallRc().getEntries().stream())

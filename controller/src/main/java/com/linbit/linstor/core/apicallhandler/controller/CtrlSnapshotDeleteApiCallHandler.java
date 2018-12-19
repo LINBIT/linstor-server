@@ -18,9 +18,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -164,14 +164,15 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         {
             Flux<ApiCallRc> satelliteUpdateResponses =
                 ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
-                    .transform(responses -> ResponseUtils.translateDeploymentSuccess(
+                    .transform(responses -> CtrlResponseUtils.combineResponses(
                         responses,
+                        rscName,
                         "Deleted snapshot ''" + snapshotName + "'' of {1} on {0}"
                     ));
 
             flux = satelliteUpdateResponses
                 .concatWith(deleteData(rscName, snapshotName))
-                .onErrorResume(CtrlSatelliteUpdateCaller.DelayedApiRcException.class, ignored -> Flux.empty());
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
         return flux;
     }
