@@ -5,6 +5,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
@@ -270,7 +271,7 @@ class CtrlVlmCrtApiHelper
                     if (storPool.getDriverKind().hasBackingStorage())
                     {
                         // If the storage pool has backing storage, check that it is of the same kind as the peers
-                        checkSameKindAsPeers(vlmDfn, storPool);
+                        checkSameKindAsPeers(vlmDfn, rsc.getAssignedNode().getName(), storPool);
                     }
                     else
                     {
@@ -349,48 +350,27 @@ class CtrlVlmCrtApiHelper
         }
     }
 
-    private void checkSameKindAsPeers(VolumeDefinition vlmDfn, StorPool storPool)
+    private void checkSameKindAsPeers(VolumeDefinition vlmDfn, NodeName nodeName, StorPool storPool)
         throws AccessDeniedException
     {
-        StorageDriverKind peerKind = firstStorageDriverKind(vlmDfn);
-
-        if (peerKind != null && storPool.getDriverKind() != peerKind)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.entryBuilder(
-                    ApiConsts.FAIL_INVLD_STOR_DRIVER,
-                    String.format(
-                        "Storage driver '%s' not allowed for volume.",
-                        storPool.getDriverKind().getDriverName()))
-                    .setDetails("It is not supported to use storage pools with different " +
-                        "storage drivers on the same volume definition.")
-                    .setCorrection(
-                        String.format("Use a storage pool with the driver kind '%s'", peerKind.getDriverName()))
-                    .build()
-            );
-        }
-    }
-
-    public StorageDriverKind firstStorageDriverKind(final VolumeDefinition vlmDfn)
-        throws AccessDeniedException
-    {
-        StorageDriverKind allowedDriverKind = null;
+        StorageDriverKind driverKind = storPool.getDriverKind();
 
         for (Resource rsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
-            if (!rsc.isDiskless(apiCtx))
+            if (!rsc.isDiskless(apiCtx) && !rsc.getAssignedNode().getName().equals(nodeName))
             {
                 Volume vlm = rsc.getVolume(vlmDfn.getVolumeNumber());
                 if (vlm != null)
                 {
-                    StorPool storPool = vlm.getStorPool(apiCtx);
-                    allowedDriverKind = storPool.getDriverKind();
-                    break;
+                    StorPool peerStorPool = vlm.getStorPool(apiCtx);
+                    StorageDriverKind peerKind = peerStorPool.getDriverKind();
+                    if (!driverKind.getClass().equals(peerKind.getClass()))
+                    {
+                        throw new ApiRcException(makeInvalidDriverKindError(driverKind, peerKind));
+                    }
                 }
             }
         }
-
-        return allowedDriverKind;
     }
 
     private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
@@ -420,6 +400,22 @@ class CtrlVlmCrtApiHelper
             )
             .setCause(String.format("Used storage pool '%s' is diskless, " +
                 "but resource was not flagged diskless", storPool.getName()))
+            .build();
+    }
+
+    private ApiCallRcImpl.ApiCallRcEntry makeInvalidDriverKindError(
+        StorageDriverKind driverKind,
+        StorageDriverKind peerKind
+    )
+    {
+        return ApiCallRcImpl
+            .entryBuilder(
+                ApiConsts.FAIL_INVLD_STOR_DRIVER,
+                String.format("Storage driver '%s' not allowed for volume.", driverKind.getDriverName())
+            )
+            .setDetails("Using storage pools with different storage drivers on the same volume definition " +
+                "is not supported.")
+            .setCorrection(String.format("Use a storage pool with the driver '%s'", peerKind.getDriverName()))
             .build();
     }
 }
