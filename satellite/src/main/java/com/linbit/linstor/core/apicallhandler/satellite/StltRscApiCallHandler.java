@@ -574,11 +574,12 @@ class StltRscApiCallHandler
                 }
                 // all resources have been created, updated or deleted
 
-                if (!removedList.isEmpty())
+                if (removedList.stream().filter(rsc -> rsc.getType().equals(ResourceType.DEFAULT)).count() != 0)
                 {
                     errorReporter.logDebug(
                         "We know at least one resource the controller does not:\n   " +
                             removedList.stream()
+                                .filter(rsc -> rsc.getType().equals(ResourceType.DEFAULT))
                                 .map(Resource::toString)
                                 .collect(Collectors.joining(",\n   ")) +
                             "\nThe controller is not be aware of typed resources or we have missed a resource deletion."
