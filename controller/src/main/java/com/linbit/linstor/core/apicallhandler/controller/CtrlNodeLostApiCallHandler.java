@@ -200,7 +200,7 @@ public class CtrlNodeLostApiCallHandler
             }
         }
 
-        Collection<Snapshot> snapshots = getSnapshotsPrivileged(nodeData);
+        Collection<Snapshot> snapshots = new ArrayList<>(getSnapshotsPrivileged(nodeData));
         for (Snapshot snapshot : snapshots)
         {
             deletePrivileged(snapshot);
