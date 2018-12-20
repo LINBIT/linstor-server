@@ -211,6 +211,26 @@ public class DrbdLayer implements ResourceLayer
                     }
                 );
 
+                rsc.streamVolumes().forEach(
+                    vlm ->
+                    {
+                        try
+                        {
+                            if (vlm.getLayerData(workerCtx) == null)
+                            {
+                                vlm.setLayerData(
+                                    workerCtx,
+                                    new DrbdVlmDataStlt()
+                                );
+                            }
+                        }
+                        catch (SQLException | AccessDeniedException exc)
+                        {
+                            throw new ImplementationError(exc);
+                        }
+                    }
+                );
+
             }
         }
         catch (InvalidKeyException exc)

@@ -10,18 +10,9 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import com.linbit.ImplementationError;
-import com.linbit.drbd.md.AlStripesException;
-import com.linbit.drbd.md.MaxAlSizeException;
-import com.linbit.drbd.md.MaxSizeException;
-import com.linbit.drbd.md.MetaData;
-import com.linbit.drbd.md.MinAlSizeException;
-import com.linbit.drbd.md.MinSizeException;
-import com.linbit.drbd.md.PeerCountException;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDataFactory;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
@@ -47,9 +38,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.LayerDataFactory;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnDataStlt;
 import com.linbit.linstor.storage.layer.provider.swordfish.SfVlmDfnDataStlt;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -61,17 +49,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RemoveAfterDevMgrRework
 @Singleton
 public class LayeredResourcesHelper
 {
-    // linstor calculates in KiB
-    private static final int MIB = 1024;
-
     private final AccessContext sysCtx;
     private final ResourceDataFactory rscFactory;
     private final VolumeDataFactory vlmFactory;
@@ -181,22 +164,9 @@ public class LayeredResourcesHelper
 
                 errorReporter.logTrace("Creating typed resources for %s", origRsc.toString());
 
-                ResourceDefinition rscDfn = origRsc.getDefinition();
                 Resource currentRsc = null;
 
-                // for the lowest resource, we only need volume-based data
-                // additionally, we do not need extra layer-specific data.
-
-                // however, we do have to set the ResourceType, thus we need to create a new resource
-                if (!origRsc.getStateFlags().isSet(sysCtx, RscFlags.DISKLESS) || // {Lvm,Zfs}{,Thin}
-                    needsDrbd(origRsc) || // DrbdDisklessProvider
-                    origRsc.streamVolumes().anyMatch( // SwordfishInitiatorProvider
-                        vlm ->
-                            AccessUtils.execPrivileged(() ->
-                                vlm.getStorPool(sysCtx).getDriverKind() instanceof SwordfishInitiatorDriverKind)))
-                {
-                    currentRsc = createStorageRsc(layeredResources, origRsc);
-                }
+                currentRsc = createStorageRsc(layeredResources, origRsc);
 
                 if (needsCrypt(origRsc))
                 {
@@ -205,64 +175,6 @@ public class LayeredResourcesHelper
                 if (needsDrbd(origRsc))
                 {
                     currentRsc = nextRsc(layeredResources, origRsc, currentRsc, ResourceType.DRBD);
-
-                    String peerSlotsProp = origRsc.getProps(sysCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
-                    // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
-                    // as an unexpected exception in dispatchResource()
-                    short peerSlots = peerSlotsProp == null ?
-                        InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
-
-                    rscDfn.streamVolumeDfn(sysCtx).forEach(
-                        vlmDfn ->
-                            AccessUtils.execPrivileged(
-                                () ->
-                                {
-                                    if (vlmDfn.getLayerData(sysCtx, DrbdVlmDfnDataStlt.class) == null)
-                                    {
-                                        vlmDfn.setLayerData(
-                                            sysCtx,
-                                            layerDataFactory.createDrbdVlmDfnData(
-                                                vlmDfn,
-                                                execPrivileged(() -> vlmDfn.getMinorNr(sysCtx)),
-                                                peerSlots
-                                            )
-                                        );
-                                    }
-                                    long grossSize;
-                                    try
-                                    {
-                                        grossSize = new MetaData().getGrossSize(
-                                            vlmDfn.getVolumeSize(sysCtx),
-                                            peerSlots,
-                                            DrbdLayer.FIXME_AL_STRIPES,
-                                            DrbdLayer.FIXME_AL_STRIPE_SIZE
-                                        );
-
-                                        /*
-                                         * FIXME: the controller has to make sure to specify the gross
-                                         * size in the volume definition.
-                                         *
-                                         * there are two cases:
-                                         * 1)a) user creates manually storage resource first, with 100G
-                                         *   b) user creates a drbd-resource on top of storage resource
-                                         *      drbd(-layer) has no other chance as consider the 100G as gross size
-                                         * 2)a) user creates resource from policy (DRBD on top of LVM) with 100G
-                                         *   b) the controller now  has to modify vlmDfn.size to 100G + metaData.
-                                         */
-                                        vlmDfn.setVolumeSize(sysCtx, grossSize);
-                                    }
-                                    catch (
-                                        IllegalArgumentException | MinSizeException | MaxSizeException |
-                                        MinAlSizeException | MaxAlSizeException | AlStripesException |
-                                        PeerCountException | SQLException exc
-                                    )
-                                    {
-                                        throw new ImplementationError(exc);
-                                    }
-                                }
-                            )
-                    );
-                    currentRsc.streamVolumes().forEach(this::initializeDrbdVlmData);
                 }
             }
         }
@@ -444,14 +356,7 @@ public class LayeredResourcesHelper
             {
                 VolumeDefinition vlmDfn = vlmDfnIt.next();
                 Volume origVlm = origRsc.getVolume(vlmDfn.getVolumeNumber());
-                Volume typedVlm;
-                // if (origVlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
-                // {
-                //    typedVlm = typedResource.getVolume(vlmDfn.getVolumeNumber());
-                // }
-                // else
-                // {
-                typedVlm = vlmFactory.getInstanceSatellite(
+                Volume typedVlm = vlmFactory.getInstanceSatellite(
                     sysCtx,
                     UUID.randomUUID(),
                     typedResource,
@@ -461,29 +366,24 @@ public class LayeredResourcesHelper
                     null,
                     FlagsHelper.toFlagsArray(Volume.VlmFlags.class, origVlm.getFlags(), sysCtx)
                 );
-                // }
-                if (typedVlm != null)
+                typedVlm.setAllocatedSize(sysCtx, origVlm.getAllocatedSize(sysCtx));
+                typedVlm.setBackingDiskPath(sysCtx, origVlm.getBackingDiskPath(sysCtx));
+                typedVlm.setMetaDiskPath(sysCtx, origVlm.getMetaDiskPath(sysCtx));
+                if (origVlm.isUsableSizeSet(sysCtx))
                 {
-                    typedVlm.setAllocatedSize(sysCtx, origVlm.getAllocatedSize(sysCtx));
-                    typedVlm.setBackingDiskPath(sysCtx, origVlm.getBackingDiskPath(sysCtx));
-                    typedVlm.setMetaDiskPath(sysCtx, origVlm.getMetaDiskPath(sysCtx));
-                    if (origVlm.isUsableSizeSet(sysCtx))
-                    {
-                        typedVlm.setUsableSize(sysCtx, origVlm.getUsableSize(sysCtx));
-                    }
-
-
-                    Map<String, String> typedVlmPropsMap = typedVlm.getProps(sysCtx).map();
-                    typedVlmPropsMap.clear();
-                    typedVlmPropsMap.putAll(origVlm.getProps(sysCtx).map());
-
-
-                    origVlm.streamVolumeConnections(sysCtx).forEach(
-                        vlmCon -> convertVlmCon(typedVlm, origVlm, vlmCon)
-                    );
-
-                    // TODO: copy device path? drbd?
+                    typedVlm.setUsableSize(sysCtx, origVlm.getUsableSize(sysCtx));
                 }
+
+                Map<String, String> typedVlmPropsMap = typedVlm.getProps(sysCtx).map();
+                typedVlmPropsMap.clear();
+                typedVlmPropsMap.putAll(origVlm.getProps(sysCtx).map());
+
+
+                origVlm.streamVolumeConnections(sysCtx).forEach(
+                    vlmCon -> convertVlmCon(typedVlm, origVlm, vlmCon)
+                );
+
+                // TODO: copy device path? drbd?
             }
             errorReporter.logTrace(
                 "%s %s resource: %s",
@@ -516,11 +416,6 @@ public class LayeredResourcesHelper
         }
     }
 
-    private String getDrbdResourceName(ResourceDefinition rscDfn)
-    {
-        return rscDfn.getName().displayValue; // TODO: find a better naming for this
-    }
-
     private boolean needsDrbd(Resource rsc)
     {
         boolean ret;
@@ -545,93 +440,6 @@ public class LayeredResourcesHelper
                 vlm -> execPrivileged(() -> vlm.getVolumeDefinition().getFlags().isSet(sysCtx, VlmDfnFlags.ENCRYPTED))
         );
         return ret;
-    }
-
-    private byte[] getCryptPw(VolumeDefinition vlmDfn) throws AccessDeniedException
-    {
-        // we use the same password for all volumes of this resource
-        byte[] passwd = null;
-        if (vlmDfn != null)
-        {
-            passwd = vlmDfn.getCryptKey(sysCtx).getBytes();
-        }
-
-        return passwd;
-    }
-
-    private void initializeDrbdVlmData(Volume vlm)
-    {
-        try
-        {
-            if (vlm.getLayerData(sysCtx) == null)
-            {
-                vlm.setLayerData(
-                    sysCtx,
-                    layerDataFactory.createDrbdVlmData()
-                );
-            }
-        }
-        catch (AccessDeniedException | SQLException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
-    public void printCurrentResourcesWithVolumes()
-    {
-        printCurrentResourcesWithVolumes(rscDfnMap, sysCtx);
-    }
-
-    public static void printCurrentResourcesWithVolumes(
-        ResourceDefinitionMap rscDfnMap,
-        AccessContext sysCtx
-    )
-    {
-        System.out.println("current resources with volumes:");
-        try
-        {
-            for (Entry<ResourceName, ResourceDefinition> entry : rscDfnMap.entrySet())
-            {
-                System.out.println("RscDfn: " + entry.getKey());
-                for (Resource rsc : entry.getValue().streamResource(sysCtx).collect(Collectors.toList()))
-                {
-                    if (!rsc.isDeleted())
-                    {
-                        System.out.println(
-                            "   " + rsc.getKey() +
-                            " " + FlagsHelper.toStringList(RscFlags.class, rsc.getStateFlags().getFlagsBits(sysCtx)) +
-                            " " + (rsc.isDeleted() ? "DELETED" : "")
-                        );
-                        for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
-                        {
-                            if (!vlm.isDeleted())
-                            {
-                                System.out.println(
-                                    "      " + vlm.getKey() +
-                                    " " + FlagsHelper.toStringList(VlmFlags.class, vlm.getFlags().getFlagsBits(sysCtx))
-                                );
-                                if (vlm.getVolumeDefinition().isDeleted())
-                                {
-                                    System.out.println("ERROR: vlmDfn DELETED");
-                                }
-                            }
-                            else
-                            {
-                                System.out.println("ERROR: " + vlm.getKey() + " DELETED");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        System.out.println("ERROR: " + rsc.getKey() + " DELETED");
-                    }
-                }
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
     }
 
     private boolean isOrphaned(Resource rsc, Map<Resource, StorageException> exceptions)
@@ -787,27 +595,5 @@ public class LayeredResourcesHelper
         {
             throw new ImplementationError(exc);
         }
-    }
-
-    public void copyUpData(Resource origRsc)
-    {
-        // we have to copy the resulting device-path to the origVlm
-        origRsc.streamVolumes().forEach(origVlm ->
-            AccessUtils.execPrivileged(() ->
-            {
-                // TODO: for now we assume only one child
-                Resource origChild = origRsc.getChildResources(sysCtx).get(0);
-
-                if (origChild != null && !origChild.isDeleted())
-                {
-                    Volume origChildVlm = origChild.getVolume(origVlm.getVolumeDefinition().getVolumeNumber());
-                    if (origChildVlm != null && !origChildVlm.isDeleted())
-                    {
-                        // could be null in case of snapshot-action of a deleted resource
-                        origVlm.setDevicePath(sysCtx, origChildVlm.getDevicePath(sysCtx));
-                    }
-                }
-            }
-        ));
     }
 }
