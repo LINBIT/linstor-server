@@ -262,17 +262,23 @@ public class DeviceHandlerImpl implements DeviceHandler
                     catch (StorageException | ResourceException | VolumeException exc)
                     {
                         // TODO different handling for different exceptions?
-                        errorReporter.reportError(exc);
+                        String errorId = errorReporter.reportError(
+                            exc,
+                            null,
+                            null,
+                            "An error occurred while processing resource '" + entry.getKey() + "'"
+                        );
 
-                        apiCallRc = ApiCallRcImpl.singletonApiCallRc(
-                            ApiCallRcImpl.entryBuilder(
+                        apiCallRc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                            .entryBuilder(
                                 // TODO maybe include a ret-code into the exception
                                 ApiConsts.FAIL_UNKNOWN_ERROR,
-                                "An error occured while processing resource '" + entry.getKey() + "'"
+                                exc.getMessage()
                             )
                             .setCause(exc.getCauseText())
                             .setCorrection(exc.getCorrectionText())
                             .setDetails(exc.getDetailsText())
+                            .addErrorId(errorId)
                             .build()
                         );
                     }
