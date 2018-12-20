@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -243,25 +244,28 @@ public final class Satellite
                 errorReporter.logInfo("Removing all res files from " + varDrbdPath);
                 keepFunc = (path) -> false;
             }
-            Files.list(varDrbdPath).filter(path -> path.toString().endsWith(".res")).forEach(
-                filteredPathName ->
-                {
-                    try
+            try (Stream<Path> files = Files.list(varDrbdPath))
+            {
+                files.filter(path -> path.toString().endsWith(".res")).forEach(
+                    filteredPathName ->
                     {
-                        if (!keepFunc.apply(filteredPathName))
+                        try
                         {
-                            Files.delete(filteredPathName);
+                            if (!keepFunc.apply(filteredPathName))
+                            {
+                                Files.delete(filteredPathName);
+                            }
+                        }
+                        catch (IOException ioExc)
+                        {
+                            throw new ImplementationError(
+                                "Unable to delete drbd resource file: " + filteredPathName,
+                                ioExc
+                            );
                         }
                     }
-                    catch (IOException ioExc)
-                    {
-                        throw new ImplementationError(
-                            "Unable to delete drbd resource file: " + filteredPathName,
-                            ioExc
-                        );
-                    }
-                }
-            );
+                );
+            }
         }
         catch (IOException ioExc)
         {

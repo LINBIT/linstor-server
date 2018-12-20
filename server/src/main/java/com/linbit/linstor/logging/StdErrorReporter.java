@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Standard error report generator
@@ -441,10 +442,9 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             fileIds.add("ErrorReport-");
         }
 
-        try
+        try (Stream<Path> files = Files.list(logDirectory))
         {
-            Files.list(logDirectory)
-                .filter(file -> file.getFileName().toString().startsWith("ErrorReport"))
+            files.filter(file -> file.getFileName().toString().startsWith("ErrorReport"))
                 .filter(
                     file ->
                     {
