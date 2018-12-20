@@ -361,6 +361,8 @@ public class LayeredResourcesHelper
                 typedVlmPropsMap.clear();
                 typedVlmPropsMap.putAll(origVlm.getProps(sysCtx).map());
 
+                typedVlm.setStorPool(sysCtx, origVlm.getStorPool(sysCtx));
+
                 // maybe not needed. Will be removed anyways if the rework is completed
                 SfVlmDfnDataStlt vlmDfnData = vlmDfn.getLayerData(sysCtx, SfVlmDfnDataStlt.class);
                 if (vlmDfnData == null)

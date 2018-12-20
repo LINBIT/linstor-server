@@ -666,7 +666,9 @@ public class DrbdLayer implements ResourceLayer
 
         boolean hasMetaData;
 
-        if (vlmState.checkMetaData)
+        if (vlmState.checkMetaData ||
+            // when adding a disk, DRBD believes that it is diskless but we still need to create metadata
+            !vlmState.hasDisk)
         {
             if (mdUtils.hasMetaData())
             {
