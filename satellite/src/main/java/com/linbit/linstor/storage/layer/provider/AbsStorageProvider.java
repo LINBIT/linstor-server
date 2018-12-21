@@ -230,13 +230,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
 
         createVolumes(
             vlmsToCreate,
-            groupedSnapshotVolumesByDeletingFlag.get(false),
             apiCallRc
         );
         resizeVolumes(vlmsToResize, apiCallRc);
         deleteVolumes(vlmsToDelete, apiCallRc);
 
-        createOrRestoreSnapshots(
+        takeSnapshots(
             volumesLut,
             groupedSnapshotVolumesByDeletingFlag.get(false),
             apiCallRc
@@ -287,7 +286,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         return copy;
     }
 
-    private void createVolumes(List<Volume> vlms, List<SnapshotVolume> snapVlms, ApiCallRcImpl apiCallRc)
+    private void createVolumes(List<Volume> vlms, ApiCallRcImpl apiCallRc)
         throws StorageException, AccessDeniedException, SQLException
     {
         for (Volume vlm : vlms)
@@ -399,9 +398,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         }
     }
 
-    private void createOrRestoreSnapshots(
-        Map<Pair<ResourceName, VolumeNumber>,
-        Volume> volumesLut,
+    private void takeSnapshots(
+        Map<Pair<ResourceName, VolumeNumber>, Volume> volumesLut,
         List<SnapshotVolume> snapVlms,
         ApiCallRcImpl apiCallRc
     )
@@ -409,24 +407,27 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
     {
         for (SnapshotVolume snapVlm : snapVlms)
         {
-            Volume vlm = volumesLut.get(new Pair<>(snapVlm.getResourceName(), snapVlm.getVolumeNumber()));
-            if (vlm == null)
+            if (snapVlm.getSnapshot().getTakeSnapshot(storDriverAccCtx))
             {
-                throw new StorageException(
-                    String.format(
-                        "Could not create or restore snapshot '%s' as there is no corresponding volume.",
-                        snapVlm.toString()
-                    )
-                );
-            }
-            if (!snapshotExists(snapVlm))
-            {
-                errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
-                createSnapshot(vlm, snapVlm);
+                Volume vlm = volumesLut.get(new Pair<>(snapVlm.getResourceName(), snapVlm.getVolumeNumber()));
+                if (vlm == null)
+                {
+                    throw new StorageException(
+                        String.format(
+                            "Could not create snapshot '%s' as there is no corresponding volume.",
+                            snapVlm.toString()
+                        )
+                    );
+                }
+                if (!snapshotExists(snapVlm))
+                {
+                    errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
+                    createSnapshot(vlm, snapVlm);
 
-                changedStorPools.add(snapVlm.getStorPool(storDriverAccCtx));
+                    changedStorPools.add(snapVlm.getStorPool(storDriverAccCtx));
 
-                addSnapCreatedMsg(snapVlm, apiCallRc);
+                    addSnapCreatedMsg(snapVlm, apiCallRc);
+                }
             }
         }
     }
