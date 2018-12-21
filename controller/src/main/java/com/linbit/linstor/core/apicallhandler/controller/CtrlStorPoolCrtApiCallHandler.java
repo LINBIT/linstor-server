@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
@@ -141,7 +142,12 @@ public class CtrlStorPoolCrtApiCallHandler
 
         ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> updateResponses = ctrlSatelliteUpdateCaller.updateSatellite(storPool);
+        Flux<ApiCallRc> updateResponses = ctrlSatelliteUpdateCaller
+                .updateSatellite(storPool)
+                .onErrorResume(
+                        ApiRcException.class,
+                        apiRcException -> Flux.just(apiRcException.getApiCallRc())
+                );
 
         responseConverter.addWithOp(responses, context,
             ApiSuccessUtils.defaultRegisteredEntry(storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
