@@ -43,6 +43,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -406,8 +407,8 @@ public class CtrlSnapshotCrtApiCallHandler
         ctrlTransactionHelper.commit();
 
         return ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
-            // Ignore responses from cleanup
-            .thenMany(Flux.empty());
+            // ensure that the individual node update fluxes are subscribed to, but ignore responses from cleanup
+            .flatMap(Tuple2::getT2).thenMany(Flux.empty());
     }
 
     private void createSnapshotOnNode(

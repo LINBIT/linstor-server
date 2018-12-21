@@ -212,7 +212,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
-                .thenMany(Flux.<ApiCallRc>empty())
+                // ensure that the individual node update fluxes are subscribed to, but ignore the responses
+                .flatMap(Tuple2::getT2).thenMany(Flux.<ApiCallRc>empty())
                 .concatWith(Flux.just(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
                     ApiConsts.MODIFIED,
                     "Rollback of '" + rscName + "' aborted due to error deactivating"
