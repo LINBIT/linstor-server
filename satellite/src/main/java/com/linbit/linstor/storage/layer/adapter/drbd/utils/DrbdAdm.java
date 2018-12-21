@@ -204,10 +204,19 @@ public class DrbdAdm
 
     /**
      * Detaches a volume from its disk
+     *
+     * @param diskless If true, convert to a diskless client volume
      */
-    public void detach(ResourceName resourceName, VolumeNumber volNum) throws ExtCmdFailedException
+    public void detach(ResourceName resourceName, VolumeNumber volNum, boolean diskless) throws ExtCmdFailedException
     {
-        simpleAdmCommand(resourceName, volNum, "detach");
+        if (diskless)
+        {
+            simpleAdmCommand(resourceName, volNum, "detach", "--diskless");
+        }
+        else
+        {
+            simpleAdmCommand(resourceName, volNum, "detach");
+        }
     }
 
     /**

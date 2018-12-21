@@ -332,7 +332,7 @@ public class DrbdLayer implements ResourceLayer
     )
         throws AccessDeniedException, StorageException, ResourceException, VolumeException, SQLException
     {
-        if (!drbdRsc.isDiskless(workerCtx))
+        if (!drbdRsc.isDiskless(workerCtx) || drbdRsc.getStateFlags().isSet(workerCtx, RscFlags.DISK_REMOVING))
         {
             resourceProcessorProvider.get().process(childRsc, snapshots, apiCallRc);
         }
@@ -505,10 +505,12 @@ public class DrbdLayer implements ResourceLayer
         throws AccessDeniedException, SQLException, StorageException
     {
         List<Volume> checkMetaData = new ArrayList<>();
-        if (!drbdRsc.isDiskless(workerCtx))
+        if (!drbdRsc.isDiskless(workerCtx) ||
+            drbdRsc.getStateFlags().isSet(workerCtx, RscFlags.DISK_REMOVING))
         {
             // using a dedicated list to prevent concurrentModificationException
-            List<Volume> volumesToDetach = new ArrayList<>();
+            List<Volume> volumesToDelete = new ArrayList<>();
+            List<Volume> volumesToMakeDiskless = new ArrayList<>();
 
             Iterator<Volume> vlmsIt = drbdRsc.iterateVolumes();
             while (vlmsIt.hasNext())
@@ -516,22 +518,32 @@ public class DrbdLayer implements ResourceLayer
                 Volume drbdVlm = vlmsIt.next();
                 if (drbdVlm.getFlags().isSet(workerCtx, VlmFlags.DELETE))
                 {
-                    volumesToDetach.add(drbdVlm);
+                    volumesToDelete.add(drbdVlm);
+                }
+                else if (drbdRsc.getStateFlags().isSet(workerCtx, RscFlags.DISK_REMOVING))
+                {
+                    volumesToMakeDiskless.add(drbdVlm);
                 }
                 else
                 {
                     checkMetaData.add(drbdVlm);
                 }
             }
-            for (Volume drbdVlm : volumesToDetach)
+            for (Volume drbdVlm : volumesToDelete)
             {
-                detachDrbdVolume(drbdVlm);
+                detachDrbdVolume(drbdVlm, false);
+                // only deletes the drbd-volume, not the storage volume
+                drbdVlm.delete(workerCtx);
+            }
+            for (Volume drbdVlm : volumesToMakeDiskless)
+            {
+                detachDrbdVolume(drbdVlm, true);
             }
         }
         return checkMetaData;
     }
 
-    private void detachDrbdVolume(Volume drbdVlm) throws AccessDeniedException, SQLException, StorageException
+    private void detachDrbdVolume(Volume drbdVlm, boolean diskless) throws StorageException
     {
         ResourceName rscName = drbdVlm.getResourceDefinition().getName();
         VolumeNumber vlmNr = drbdVlm.getVolumeDefinition().getVolumeNumber();
@@ -539,7 +551,7 @@ public class DrbdLayer implements ResourceLayer
         errorReporter.logTrace("Detaching volume %s/%d", rscName, vlmNr.value);
         try
         {
-            drbdUtils.detach(rscName, vlmNr);
+            drbdUtils.detach(rscName, vlmNr, diskless);
         }
         catch (ExtCmdFailedException exc)
         {
@@ -552,8 +564,6 @@ public class DrbdLayer implements ResourceLayer
                 exc
             );
         }
-        // only deletes the drbd-volume, not the storage volume
-        drbdVlm.delete(workerCtx);
     }
 
     private void adjustSuspendIo(Resource drbdRsc, Collection<Snapshot> snapshots)

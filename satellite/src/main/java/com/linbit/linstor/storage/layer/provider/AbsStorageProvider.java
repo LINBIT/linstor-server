@@ -8,6 +8,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
@@ -167,12 +168,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
 
             LAYER_DATA state = (LAYER_DATA) vlm.getLayerData(storDriverAccCtx);
 
+            boolean vlmShouldExist = !vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE) &&
+                !vlm.getResource().getStateFlags().isSet(storDriverAccCtx, Resource.RscFlags.DISK_REMOVING);
+
             String lvId = getIdentifier(state);
             if (state.exists())
             {
                 Size lvSize = getSize(state);
                 errorReporter.logTrace("Lv %s found", lvId);
-                if (vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
+                if (!vlmShouldExist)
                 {
                     errorReporter.logTrace("Lv %s will be deleted", lvId);
                     vlmsToDelete.add(vlm);
@@ -192,7 +196,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
             }
             else
             {
-                if (!vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
+                if (vlmShouldExist)
                 {
                     errorReporter.logTrace("Lv %s will be created", lvId);
                     vlmsToCreate.add(vlm);
@@ -359,21 +363,24 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
 
             changedStorPools.add(vlm.getStorPool(storDriverAccCtx));
 
-            addDeletedMsg(vlm, apiCallRc);
+            if (!vlm.getResource().getStateFlags().isSet(storDriverAccCtx, Resource.RscFlags.DISK_REMOVING))
+            {
+                addDeletedMsg(vlm, apiCallRc);
 
-            String storageName = getStorageName(vlm);
-            addPostRunNotification(
-                storageName,
-                vlm.getStorPool(storDriverAccCtx),
-                freeSpaces ->
-                {
-                    notificationListenerProvider.get().notifyVolumeDeleted(
-                        vlm,
-                        freeSpaces.get(storageName)
-                        );
-                }
-            );
-            vlm.delete(storDriverAccCtx);
+                String storageName = getStorageName(vlm);
+                addPostRunNotification(
+                    storageName,
+                    vlm.getStorPool(storDriverAccCtx),
+                    freeSpaces ->
+                    {
+                        notificationListenerProvider.get().notifyVolumeDeleted(
+                            vlm,
+                            freeSpaces.get(storageName)
+                            );
+                    }
+                );
+                vlm.delete(storDriverAccCtx);
+            }
         }
     }
 
