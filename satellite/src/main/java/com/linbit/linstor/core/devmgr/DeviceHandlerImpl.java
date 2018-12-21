@@ -158,20 +158,18 @@ public class DeviceHandlerImpl implements DeviceHandler
             for (Resource rsc : rootResources)
             {
                 ResourceName rscName = rsc.getDefinition().getName();
+
+                List<Snapshot> snapshotList = snapshotsByRscName.getOrDefault(rscName, Collections.emptyList());
+                unprocessedSnapshots.removeAll(snapshotList);
+
                 ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
                 try
                 {
-                    List<Snapshot> snapshotList = snapshotsByRscName.get(rscName);
-                    if (snapshotList == null)
-                    {
-                        snapshotList = Collections.emptyList();
-                    }
                     process(
                         rsc,
                         snapshotList,
                         apiCallRc
                     );
-                    unprocessedSnapshots.removeAll(snapshotList);
 
                     /*
                      * old device manager reported changes of free space after every
