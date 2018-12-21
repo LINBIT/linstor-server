@@ -22,10 +22,6 @@ public class ResponseUtils
      * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the given
      * {@link ApiCallRcImpl}.
      * Cause, details and correction messages are left empty.
-     *  @param throwable
-     * @param objRefs,
-     * @param apiCallRc,
-     * @param controller,
      * @param accCtx,
      * @param errorMsg
      * @param retCode
@@ -62,10 +58,7 @@ public class ResponseUtils
      * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the given
      * {@link ApiCallRcImpl}.
      * This method also calls
-     * {@link #addAnswerStatic(String, String, String, String, long, Map} for
-     * adding an answer to the {@link ApiCallRcImpl}.
      *
-     * @param throwable
      * @param errorMsg
      * @param causeMsg
      * @param detailsMsg
@@ -73,7 +66,6 @@ public class ResponseUtils
      * @param retCode
      * @param objRefsRef
      * @param apiCallRcRef
-     * @param controller
      * @param accCtx
      * @param peer
      */
