@@ -576,12 +576,12 @@ class StltRscApiCallHandler
 
                 if (!removedList.isEmpty())
                 {
-                    errorReporter.logWarning(
+                    errorReporter.logDebug(
                         "We know at least one resource the controller does not:\n   " +
                             removedList.stream()
                                 .map(Resource::toString)
                                 .collect(Collectors.joining(",\n   ")) +
-                            "\nThis could only happened if we missed a delete resource event."
+                            "\nThe controller is not be aware of typed resources or we have missed a resource deletion."
                     );
                 }
             }
