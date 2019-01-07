@@ -10,28 +10,25 @@ import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.RetryResourcesTask;
 
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -49,18 +46,18 @@ public class CtrlSatelliteUpdateCaller
 {
     private final AccessContext apiCtx;
     private final CtrlStltSerializer internalComSerializer;
+    private RetryResourcesTask retryResourceTask;
 
     @Inject
     private CtrlSatelliteUpdateCaller(
-        ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         CtrlStltSerializer serializerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<Peer> peerRef
+        RetryResourcesTask retryResourceTaskRef
     )
     {
         apiCtx = apiCtxRef;
         internalComSerializer = serializerRef;
+        retryResourceTask = retryResourceTaskRef;
     }
 
     /**
@@ -285,7 +282,9 @@ public class CtrlSatelliteUpdateCaller
                 .onErrorResume(
                     PeerNotConnectedException.class,
                     ignored -> notConnectedHandler.handleNotConnected(nodeName)
-                );
+                )
+                .doOnError(ignored -> retryResourceTask.add(currentRsc))
+                .doOnComplete(() -> retryResourceTask.remove(currentRsc));
         }
 
         return response;

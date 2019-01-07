@@ -62,6 +62,7 @@ import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.tasks.GarbageCollectorTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
+import com.linbit.linstor.tasks.RetryResourcesTask;
 import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
@@ -121,6 +122,8 @@ public final class Controller
     private final SwordfishTargetProcessManager swordfishTargetProcessManager;
     private final WhitelistProps whitelistProps;
 
+    private RetryResourcesTask retryResourcesTask;
+
     @Inject
     public Controller(
         ErrorReporter errorReporterRef,
@@ -140,6 +143,7 @@ public final class Controller
         TaskScheduleService taskScheduleServiceRef,
         PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef,
+        RetryResourcesTask retryResourcesTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         SatelliteConnector satelliteConnectorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
@@ -164,6 +168,7 @@ public final class Controller
         taskScheduleService = taskScheduleServiceRef;
         pingTask = pingTaskRef;
         reconnectorTask = reconnectorTaskRef;
+        retryResourcesTask = retryResourcesTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         satelliteConnector = satelliteConnectorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
@@ -186,6 +191,7 @@ public final class Controller
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
             taskScheduleService.addTask(new GarbageCollectorTask());
+            taskScheduleService.addTask(retryResourcesTask);
 
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
