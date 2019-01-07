@@ -187,10 +187,21 @@ public class ResponseConverter
             detailsJoiner.add(context.getObjectDescription());
         }
 
+        long retCode = sourceEntry.getReturnCode();
+        // do not override already set masks
+        if ((retCode & ApiConsts.MASK_BITS_OP) == 0)
+        {
+            retCode |= context.getOpMask();
+        }
+        if ((retCode & ApiConsts.MASK_BITS_OBJ) == 0)
+        {
+            retCode |= context.getObjMask();
+        }
+
         return ApiCallRcImpl
             .entryBuilder(
                 sourceEntry,
-                sourceEntry.getReturnCode() | context.getOpMask() | context.getObjMask(),
+                retCode,
                 null
             )
             .setDetails(detailsJoiner.toString())
