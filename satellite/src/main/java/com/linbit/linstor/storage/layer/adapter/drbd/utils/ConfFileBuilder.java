@@ -534,9 +534,8 @@ public class ConfFileBuilder
 
             PriorityProps prioProps;
             prioProps = new PriorityProps(
-                firstVlm.getStorPool(accCtx).getProps(accCtx),
-                firstVlm.getProps(accCtx),
                 rsc.getProps(accCtx),
+                firstVlm.getStorPool(accCtx).getProps(accCtx),
                 rsc.getAssignedNode().getProps(accCtx)
             );
 
