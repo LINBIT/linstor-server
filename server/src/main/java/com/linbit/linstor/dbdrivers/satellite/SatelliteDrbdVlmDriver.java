@@ -2,7 +2,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdVlmDatabaseDriver;
-import com.linbit.linstor.storage2.layer.data.DrbdVlmData;
+import com.linbit.linstor.storage.layer.data.DrbdVlmData;
 
 import javax.inject.Inject;
 

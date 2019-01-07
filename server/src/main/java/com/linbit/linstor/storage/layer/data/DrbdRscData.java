@@ -1,7 +1,7 @@
-package com.linbit.linstor.storage2.layer.data;
+package com.linbit.linstor.storage.layer.data;
 
 import com.linbit.linstor.NodeId;
-import com.linbit.linstor.storage2.layer.data.categories.RscLayerData;
+import com.linbit.linstor.storage.layer.data.categories.RscLayerData;
 
 public interface DrbdRscData extends RscLayerData
 {

@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.layer.provider.swordfish;
 
-import com.linbit.linstor.storage2.layer.data.SfVlmDfnLayerData;
+import com.linbit.linstor.storage.layer.data.SfVlmDfnLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 

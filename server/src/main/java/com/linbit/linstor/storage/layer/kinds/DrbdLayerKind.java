@@ -1,4 +1,4 @@
-package com.linbit.linstor.storage2.layer.kinds;
+package com.linbit.linstor.storage.layer.kinds;
 
 public class DrbdLayerKind implements DeviceLayerKind
 {

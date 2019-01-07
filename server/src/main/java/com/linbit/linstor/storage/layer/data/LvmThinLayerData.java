@@ -1,4 +1,4 @@
-package com.linbit.linstor.storage2.layer.data;
+package com.linbit.linstor.storage.layer.data;
 
 public interface LvmThinLayerData extends LvmLayerData
 {

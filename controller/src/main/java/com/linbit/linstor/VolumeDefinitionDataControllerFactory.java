@@ -13,7 +13,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.storage2.layer.data.categories.VlmDfnLayerData;
+import com.linbit.linstor.storage.layer.data.categories.VlmDfnLayerData;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;

@@ -29,10 +29,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
+import com.linbit.linstor.storage.layer.data.categories.VlmLayerData.Size;
 import com.linbit.linstor.storage.layer.provider.utils.DmStatCommands;
 import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
-import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
-import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData.Size;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Pair;
 

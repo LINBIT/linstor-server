@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage.layer.provider.lvm;
 
+import com.linbit.linstor.storage.layer.data.LvmLayerData;
+import com.linbit.linstor.storage.layer.data.State;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
-import com.linbit.linstor.storage2.layer.data.LvmLayerData;
-import com.linbit.linstor.storage2.layer.data.State;
 
 import java.util.ArrayList;
 import java.util.List;

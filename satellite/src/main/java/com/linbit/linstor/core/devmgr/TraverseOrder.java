@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.devmgr;
 
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DeviceLayerKind;
 import com.linbit.utils.Pair;
 
 import java.util.Collection;

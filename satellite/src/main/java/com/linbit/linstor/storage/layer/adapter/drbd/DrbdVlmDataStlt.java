@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage.layer.adapter.drbd;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.storage2.layer.data.DrbdVlmData;
-import com.linbit.linstor.storage2.layer.data.State;
+import com.linbit.linstor.storage.layer.data.DrbdVlmData;
+import com.linbit.linstor.storage.layer.data.State;
 
 import java.util.ArrayList;
 import java.util.List;

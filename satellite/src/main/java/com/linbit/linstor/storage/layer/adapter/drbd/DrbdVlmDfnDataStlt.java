@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.layer.adapter.drbd;
 
 import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.storage2.layer.data.DrbdVlmDfnData;
+import com.linbit.linstor.storage.layer.data.DrbdVlmDfnData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 

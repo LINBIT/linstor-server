@@ -1,6 +1,6 @@
-package com.linbit.linstor.storage2.layer.data.categories;
+package com.linbit.linstor.storage.layer.data.categories;
 
-import com.linbit.linstor.storage2.layer.data.State;
+import com.linbit.linstor.storage.layer.data.State;
 
 import java.util.List;
 

@@ -6,7 +6,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
+import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;

@@ -1,8 +1,8 @@
-package com.linbit.linstor.storage2.layer.data;
+package com.linbit.linstor.storage.layer.data;
 
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.storage.layer.data.categories.RscDfnLayerData;
 import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.storage2.layer.data.categories.RscDfnLayerData;
 
 public interface DrbdRscDfnData extends RscDfnLayerData
 {

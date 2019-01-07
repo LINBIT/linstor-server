@@ -4,8 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKindFactory;
+import com.linbit.linstor.storage.layer.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DeviceLayerKindFactory;
 import com.linbit.utils.Pair;
 
 import java.util.ArrayList;

@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.layer.adapter.cryptsetup;
 
-import com.linbit.linstor.storage2.layer.data.CryptSetupData;
-import com.linbit.linstor.storage2.layer.data.State;
+import com.linbit.linstor.storage.layer.data.CryptSetupData;
+import com.linbit.linstor.storage.layer.data.State;
 
 import java.util.Collections;
 import java.util.List;

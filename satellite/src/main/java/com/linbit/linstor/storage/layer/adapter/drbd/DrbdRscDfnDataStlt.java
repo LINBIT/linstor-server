@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage.layer.adapter.drbd;
 
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.storage.layer.data.DrbdRscDfnData;
 import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.storage2.layer.data.DrbdRscDfnData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 

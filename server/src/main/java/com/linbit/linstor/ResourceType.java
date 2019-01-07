@@ -1,11 +1,11 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.storage2.layer.kinds.CryptSetupLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.DefaultLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.DrbdLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.StorageLayerKind;
+import com.linbit.linstor.storage.layer.kinds.CryptSetupLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DefaultLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DrbdLayerKind;
+import com.linbit.linstor.storage.layer.kinds.StorageLayerKind;
 
 public enum ResourceType
 {

@@ -17,11 +17,11 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
+import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinLayerDataStlt;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsLayerDataStlt;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
-import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

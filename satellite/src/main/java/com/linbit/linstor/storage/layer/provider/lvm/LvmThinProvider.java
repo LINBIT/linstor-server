@@ -14,12 +14,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.storage.layer.data.LvmLayerData;
+import com.linbit.linstor.storage.layer.data.LvmThinLayerData;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
-import com.linbit.linstor.storage2.layer.data.LvmLayerData;
-import com.linbit.linstor.storage2.layer.data.LvmThinLayerData;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

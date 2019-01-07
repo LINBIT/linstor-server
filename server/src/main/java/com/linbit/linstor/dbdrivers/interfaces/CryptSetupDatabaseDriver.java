@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.storage2.layer.data.CryptSetupData;
+import com.linbit.linstor.storage.layer.data.CryptSetupData;
 
 public interface CryptSetupDatabaseDriver
 {

@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.layer.provider.swordfish;
 
-import com.linbit.linstor.storage2.layer.data.SfVlmLayerData;
-import com.linbit.linstor.storage2.layer.data.State;
+import com.linbit.linstor.storage.layer.data.SfVlmLayerData;
+import com.linbit.linstor.storage.layer.data.State;
 
 import java.util.ArrayList;
 import java.util.List;

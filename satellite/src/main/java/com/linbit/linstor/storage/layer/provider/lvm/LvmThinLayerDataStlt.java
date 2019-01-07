@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.layer.provider.lvm;
 
+import com.linbit.linstor.storage.layer.data.LvmThinLayerData;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
-import com.linbit.linstor.storage2.layer.data.LvmThinLayerData;
 
 public class LvmThinLayerDataStlt extends LvmLayerDataStlt implements LvmThinLayerData
 {

@@ -3,7 +3,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdVlmDfnDatabaseDriver;
-import com.linbit.linstor.storage2.layer.data.DrbdVlmDfnData;
+import com.linbit.linstor.storage.layer.data.DrbdVlmDfnData;
 
 import javax.inject.Inject;
 

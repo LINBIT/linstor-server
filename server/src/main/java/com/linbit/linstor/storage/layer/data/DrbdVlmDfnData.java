@@ -1,7 +1,7 @@
-package com.linbit.linstor.storage2.layer.data;
+package com.linbit.linstor.storage.layer.data;
 
 import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.storage2.layer.data.categories.VlmDfnLayerData;
+import com.linbit.linstor.storage.layer.data.categories.VlmDfnLayerData;
 
 public interface DrbdVlmDfnData extends VlmDfnLayerData
 {

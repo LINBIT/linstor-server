@@ -20,6 +20,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.storage.layer.data.State;
+import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.HttpHeader;
@@ -27,8 +29,6 @@ import com.linbit.linstor.storage.utils.RestClient;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
-import com.linbit.linstor.storage2.layer.data.State;
-import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData;
 
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY;
 import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DATA;

@@ -4,12 +4,12 @@ import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.adapter.DefaultLayer;
 import com.linbit.linstor.storage.layer.adapter.cryptsetup.CryptSetupLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
+import com.linbit.linstor.storage.layer.kinds.CryptSetupLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DefaultLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DrbdLayerKind;
+import com.linbit.linstor.storage.layer.kinds.StorageLayerKind;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
-import com.linbit.linstor.storage2.layer.kinds.CryptSetupLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.DefaultLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.DrbdLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.StorageLayerKind;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

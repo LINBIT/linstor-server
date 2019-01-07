@@ -4,7 +4,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdRscDfnDatabaseDriver;
-import com.linbit.linstor.storage2.layer.data.DrbdRscDfnData;
+import com.linbit.linstor.storage.layer.data.DrbdRscDfnData;
 
 import javax.inject.Inject;
 

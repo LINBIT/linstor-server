@@ -2,7 +2,7 @@ package com.linbit.linstor.storage.layer.adapter.drbd;
 
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.storage2.layer.data.DrbdRscData;
+import com.linbit.linstor.storage.layer.data.DrbdRscData;
 
 import java.util.Map;
 import java.util.TreeMap;

@@ -17,9 +17,9 @@ import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnDataStlt;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDataStlt;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDataStlt;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnDataStlt;
-import com.linbit.linstor.storage2.layer.data.CryptSetupData;
-import com.linbit.linstor.storage2.layer.kinds.CryptSetupLayerKind;
-import com.linbit.linstor.storage2.layer.kinds.DrbdLayerKind;
+import com.linbit.linstor.storage.layer.data.CryptSetupData;
+import com.linbit.linstor.storage.layer.kinds.CryptSetupLayerKind;
+import com.linbit.linstor.storage.layer.kinds.DrbdLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 

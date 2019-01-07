@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage.layer.provider.zfs;
 
+import com.linbit.linstor.storage.layer.data.State;
+import com.linbit.linstor.storage.layer.data.ZfsLayerData;
 import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
-import com.linbit.linstor.storage2.layer.data.State;
-import com.linbit.linstor.storage2.layer.data.ZfsLayerData;
 
 import java.util.ArrayList;
 import java.util.List;

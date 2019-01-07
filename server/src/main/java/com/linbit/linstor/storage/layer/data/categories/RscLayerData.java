@@ -1,4 +1,4 @@
-package com.linbit.linstor.storage2.layer.data.categories;
+package com.linbit.linstor.storage.layer.data.categories;
 
 /**
  * Marker interface to ensure type safety

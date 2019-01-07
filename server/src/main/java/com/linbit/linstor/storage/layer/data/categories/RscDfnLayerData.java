@@ -1,4 +1,4 @@
-package com.linbit.linstor.storage2.layer.data.categories;
+package com.linbit.linstor.storage.layer.data.categories;
 
 import com.linbit.linstor.transaction.TransactionObject;
 
@@ -7,7 +7,6 @@ import com.linbit.linstor.transaction.TransactionObject;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-
-public interface VlmDfnLayerData extends LayerData, TransactionObject
+public interface RscDfnLayerData extends LayerData, TransactionObject
 {
 }

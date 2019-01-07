@@ -20,6 +20,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.storage.layer.data.ZfsLayerData;
+import com.linbit.linstor.storage.layer.data.categories.VlmLayerData.Size;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
@@ -27,8 +29,6 @@ import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
 import com.linbit.linstor.storage.utils.ZfsUtils;
 import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
-import com.linbit.linstor.storage2.layer.data.ZfsLayerData;
-import com.linbit.linstor.storage2.layer.data.categories.VlmLayerData.Size;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
