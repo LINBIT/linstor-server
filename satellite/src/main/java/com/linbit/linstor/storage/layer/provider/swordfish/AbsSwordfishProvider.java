@@ -21,7 +21,6 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.data.State;
-import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.HttpHeader;
@@ -274,7 +273,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
 
     private void ensureVlmLayerDataExists(Volume vlm) throws AccessDeniedException, SQLException
     {
-        VlmLayerData layerData = vlm.getLayerData(sysCtx);
+        SfVlmDataStlt layerData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
         if (layerData == null)
         {
             layerData = new SfVlmDataStlt(vlm.getVolumeDefinition().getLayerData(sysCtx, SfVlmDfnDataStlt.class));
@@ -457,7 +456,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
 
     protected void clearAndSet(Volume vlm, State state) throws AccessDeniedException, SQLException
     {
-        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
+        SfVlmDataStlt vlmData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
         List<State> states = vlmData.states;
         states.clear();
 

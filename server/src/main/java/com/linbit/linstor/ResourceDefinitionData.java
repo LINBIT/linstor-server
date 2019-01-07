@@ -16,6 +16,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.layer.LayerDataStorage;
 import com.linbit.linstor.storage.layer.data.categories.RscDfnLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -89,7 +90,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // TODO: should be moved to DrbdRscData once controller knows about it
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> down;
 
-    private final TransactionMap<Class<? extends RscDfnLayerData>, RscDfnLayerData> layerDataMap;
+    private final LayerDataStorage<RscDfnLayerData> layerStorage;
 
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
@@ -153,7 +154,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             this.dbDriver.getTransportTypeDriver()
         );
 
-        layerDataMap = transObjFactory.createTransactionMap(layerDataMapRef, null); // TODO: create dbdriver
+        layerStorage = new LayerDataStorage<>(layerDataMapRef);
 
         transObjs = Arrays.asList(
             flags,
@@ -163,7 +164,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             rscDfnProps,
             port,
             transportType,
-            layerDataMap,
             deleted
         );
     }
@@ -452,29 +452,22 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         getFlags().enableFlags(accCtx, RscDfnFlags.DELETE);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends RscDfnLayerData> T setLayerData(AccessContext accCtx, T rscDfnLayerData)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        Class<? extends RscDfnLayerData> clazz = rscDfnLayerData.getClass();
-        T ret = (T) layerDataMap.get(clazz);
-        layerDataMap.put(clazz, rscDfnLayerData);
-        return ret;
+        return layerStorage.put(rscDfnLayerData);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <T extends RscDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> clazz)
+    public <T extends RscDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> dataClass)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        RscDfnLayerData obj = layerDataMap.get(clazz);
-        clazz.cast(obj);
-        return (T) obj;
+        return layerStorage.get(dataClass);
     }
 
     @Override

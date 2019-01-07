@@ -9,7 +9,6 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.storage.layer.data.categories.RscLayerData;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.RemoveAfterDevMgrRework;
@@ -19,6 +18,7 @@ import javax.inject.Provider;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -63,8 +63,7 @@ public class ResourceDataFactory
             node,
             nodeId,
             initFlags,
-            ResourceType.DEFAULT, // this state will be remove when rework is finished
-            null // layerData... for now..
+            ResourceType.DEFAULT // this state will be remove when rework is finished
         );
     }
 
@@ -74,8 +73,7 @@ public class ResourceDataFactory
         Node node,
         NodeId nodeId,
         Resource.RscFlags[] initFlags,
-        ResourceType type,
-        RscLayerData layerData
+        ResourceType type
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -109,7 +107,7 @@ public class ResourceDataFactory
             transMgrProvider,
             new TreeMap<>(),
             new TreeMap<>(),
-            layerData
+            new HashMap<>() // LayerDataStorage uses Class as key, which is not comparable -> no TreeMap
         );
         dbDriver.create(rscData);
         ((NodeData) node).addResource(accCtx, rscData);
@@ -174,7 +172,7 @@ public class ResourceDataFactory
                     transMgrProvider,
                     new TreeMap<>(),
                     new TreeMap<>(),
-                    null
+                    new HashMap<>() // LayerDataStorage uses Class as key, which is not comparable -> no TreeMap
                 );
                 ((NodeData) node).addResource(accCtx, rscData);
                 ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);

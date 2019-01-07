@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -71,7 +72,8 @@ public class VolumeDataFactory
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            new HashMap<>() // LayerDataStorage uses Class as key, which is not comparable -> no TreeMap
         );
         driver.create(volData);
         ((ResourceData) rsc).putVolume(accCtx, volData);
@@ -110,7 +112,8 @@ public class VolumeDataFactory
                     propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
-                    new TreeMap<>()
+                    new TreeMap<>(),
+                    new HashMap<>() // LayerDataStorage uses Class as key, which is not comparable -> no TreeMap
                 );
                 ((ResourceData) rsc).putVolume(accCtx, vlmData);
                 storPoolRef.putVolume(accCtx, vlmData);

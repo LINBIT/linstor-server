@@ -20,6 +20,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.layer.LayerDataStorage;
 import com.linbit.linstor.storage.layer.data.categories.VlmDfnLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -42,7 +43,6 @@ import javax.inject.Provider;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-@SuppressWarnings("unchecked")
 public class VolumeDefinitionData extends BaseTransactionObject implements VolumeDefinition
 {
     // Object identifier
@@ -79,7 +79,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     private transient TransactionSimpleObject<VolumeDefinitionData, String> cryptKey;
 
-    private final TransactionMap<Class<? extends VlmDfnLayerData>, VlmDfnLayerData> layerDataMap;
+    private final LayerDataStorage<VlmDfnLayerData> layerStorage;
 
     VolumeDefinitionData(
         UUID uuid,
@@ -128,7 +128,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             PropsContainer.buildPath(resDfnRef.getName(), volumeNr)
         );
 
-        layerDataMap = transObjFactory.createTransactionMap(layerDataMapRef, null); // TODO: create database driver
+        layerStorage = new LayerDataStorage<>(layerDataMapRef);
 
         volumes = transObjFactory.createTransactionMap(vlmMapRef, null);
 
@@ -150,8 +150,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             volumeSize,
             flags,
             deleted,
-            cryptKey,
-            layerDataMap
+            cryptKey
         );
     }
 
@@ -311,27 +310,22 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends VlmDfnLayerData> T setLayerData(AccessContext accCtx, T vlmDfnLayerData)
         throws AccessDeniedException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        Class<? extends VlmDfnLayerData> clazz = vlmDfnLayerData.getClass();
-        T ret = (T) layerDataMap.get(clazz);
-        layerDataMap.put(clazz, vlmDfnLayerData);
-        return ret;
+        return layerStorage.put(vlmDfnLayerData);
     }
 
     @Override
-    public <T extends VlmDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> clazz) throws AccessDeniedException
+    public <T extends VlmDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> dataClass)
+        throws AccessDeniedException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        VlmDfnLayerData obj = layerDataMap.get(clazz);
-        clazz.cast(obj);
-        return (T) obj;
+        return layerStorage.get(dataClass);
     }
 
     @Override

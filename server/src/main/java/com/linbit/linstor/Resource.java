@@ -95,10 +95,10 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
 
     ResourceType getType();
 
-    RscLayerData setLayerData(AccessContext accCtx, RscLayerData rscLayerData)
+    <T extends RscLayerData> T setLayerData(AccessContext accCtx, T rscLayerData)
         throws AccessDeniedException, SQLException;
 
-    RscLayerData getLayerData(AccessContext accCtx)
+    <T extends RscLayerData> T getLayerData(AccessContext accCtx, Class<T> dataClass)
         throws AccessDeniedException;
 
     @Nullable Resource getParentResource(AccessContext accCtx)

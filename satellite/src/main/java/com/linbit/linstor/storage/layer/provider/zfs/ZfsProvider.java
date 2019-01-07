@@ -62,7 +62,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
-        String subTypeDescr
+        String subTypeDescr,
+        Class<? extends ZfsLayerDataStlt> layerDataClass
     )
     {
         super(
@@ -72,7 +73,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
-            subTypeDescr
+            subTypeDescr,
+            layerDataClass
         );
     }
 
@@ -93,7 +95,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
-            "ZFS"
+            "ZFS",
+            ZfsLayerDataStlt.class
         );
     }
 
@@ -166,7 +169,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
         }
         ZfsCommands.create(
             extCmdFactory.create(),
-            ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
+            vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class).zpool,
             asLvIdentifier(vlm),
             volumeSize,
             false
@@ -178,7 +181,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     {
         ZfsCommands.resize(
             extCmdFactory.create(),
-            ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
+            vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class).zpool,
             asLvIdentifier(vlm),
             vlm.getUsableSize(storDriverAccCtx)
         );
@@ -190,7 +193,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     {
         ZfsCommands.delete(
             extCmdFactory.create(),
-            ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
+            vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class).zpool,
             lvId
         );
     }
@@ -271,7 +274,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     protected String getStorageName(Volume vlm) throws AccessDeniedException, SQLException
     {
         String volumeGroup = null;
-        ZfsLayerDataStlt layerData = (ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx);
+        ZfsLayerDataStlt layerData = vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class);
         if (layerData == null)
         {
             volumeGroup = getZPool(vlm.getStorPool(storDriverAccCtx));
@@ -317,7 +320,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     private String getZPool(Volume vlm) throws AccessDeniedException, SQLException
     {
         String zPool = null;
-        ZfsLayerData layerData = (ZfsLayerData) vlm.getLayerData(storDriverAccCtx);
+        ZfsLayerData layerData = vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class);
         if (layerData == null)
         {
             zPool = getZPool(vlm.getStorPool(storDriverAccCtx));
@@ -442,7 +445,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
 
             ZfsInfo info = infoListCache.get(asFullQualifiedLvIdentifier(vlm));
 
-            ZfsLayerDataStlt state = (ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx);
+            ZfsLayerDataStlt state = vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class);
             if (info != null)
             {
                 if (state == null)

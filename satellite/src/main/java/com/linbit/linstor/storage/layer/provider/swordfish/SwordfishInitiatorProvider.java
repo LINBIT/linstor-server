@@ -242,7 +242,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
         throws InterruptedException, IOException, StorageException, AccessDeniedException,
         InvalidKeyException, SQLException
     {
-        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
+        SfVlmDataStlt vlmData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
 
         String attachInfoAction = SF_BASE + SF_NODES + "/" + getComposedNodeId() + SF_ACTIONS +
             SF_ATTACH_RESOURCE_ACTION_INFO;
@@ -332,7 +332,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
     {
         String attachAction = SF_BASE + SF_NODES + "/" + getComposedNodeId() + SF_ACTIONS +
             SF_COMPOSED_NODE_ATTACH_RESOURCE;
-        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
+        SfVlmDataStlt vlmData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
 
         restClient.execute(
             null,
@@ -454,7 +454,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
 //        String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
 //        String sfVlmId = getSfVlmId(vlmDfnProps, true);
 
-        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
+        SfVlmDataStlt vlmData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
         String vlmOdataId = vlmData.vlmDfnData.vlmOdata;
 
         if (vlmOdataId != null)
@@ -536,7 +536,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider
     private RestResponse<Map<String, Object>> getSfVlm(Volume vlm)
         throws StorageException, AccessDeniedException, SQLException
     {
-        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
+        SfVlmDataStlt vlmData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
 
         return getSwordfishResource(
             vlm,

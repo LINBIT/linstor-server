@@ -13,6 +13,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.layer.LayerDataStorage;
 import com.linbit.linstor.storage.layer.data.categories.RscLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
@@ -83,7 +84,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     private final TransactionList<ResourceData, Resource> children;
 
-    private final TransactionSimpleObject<ResourceData, RscLayerData> layerData;
+    private final LayerDataStorage<RscLayerData> layerStorage;
 
     private final TransactionSimpleObject<ResourceData, Resource> parent;
 
@@ -102,7 +103,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Provider<TransactionMgr> transMgrProviderRef,
         Map<Resource.Key, ResourceConnection> rscConnMapRef,
         Map<VolumeNumber, Volume> vlmMapRef,
-        RscLayerData layerDataRef
+        Map<Class<? extends RscLayerData>, RscLayerData> layerStorageMapRef
     )
         throws SQLException
     {
@@ -149,8 +150,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
             null,
             null // TODO: create actual database driver
         );
-        layerData = transObjFactory.createTransactionSimpleObject(this, layerDataRef, null);
-        // TODO: create actual database driver
+        layerStorage = new LayerDataStorage<>(layerStorageMapRef);
 
         transObjs = Arrays.asList(
             resourceDfn,
@@ -161,7 +161,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
             volumeMap,
             resourceProps,
             children,
-            layerData,
             deleted
         );
     }
@@ -340,22 +339,21 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public RscLayerData setLayerData(AccessContext accCtx, RscLayerData rscLayerData)
+    public <T extends RscLayerData> T setLayerData(AccessContext accCtx, T rscLayerData)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        RscLayerData ret = layerData.get();
-        layerData.set(rscLayerData);
-        return ret;
+        return layerStorage.put(rscLayerData);
     }
 
     @Override
-    public RscLayerData getLayerData(AccessContext accCtx) throws AccessDeniedException
+    public <T extends RscLayerData> T getLayerData(AccessContext accCtx, Class<T> dataClass)
+        throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        return layerData.get();
+        return layerStorage.get(dataClass);
     }
 
     @Override

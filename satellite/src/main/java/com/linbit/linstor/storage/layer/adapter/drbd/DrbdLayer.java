@@ -151,7 +151,7 @@ public class DrbdLayer implements ResourceLayer
                 }
 
                 // update resource's layer data
-                if (rsc.getLayerData(workerCtx) == null)
+                if (rsc.getLayerData(workerCtx, DrbdRscDataStlt.class) == null)
                 {
                     rsc.setLayerData(
                         workerCtx,
@@ -216,7 +216,7 @@ public class DrbdLayer implements ResourceLayer
                     {
                         try
                         {
-                            if (vlm.getLayerData(workerCtx) == null)
+                            if (vlm.getLayerData(workerCtx, DrbdVlmDataStlt.class) == null)
                             {
                                 vlm.setLayerData(
                                     workerCtx,
@@ -428,7 +428,7 @@ public class DrbdLayer implements ResourceLayer
         throws AccessDeniedException, StorageException, SQLException,
             ResourceException, VolumeException
     {
-        DrbdRscDataStlt rscLinState = (DrbdRscDataStlt) drbdRsc.getLayerData(workerCtx);
+        DrbdRscDataStlt rscLinState = drbdRsc.getLayerData(workerCtx, DrbdRscDataStlt.class);
 
         rscLinState.requiresAdjust = isAdjustRequired(drbdRsc);
 
@@ -475,7 +475,7 @@ public class DrbdLayer implements ResourceLayer
             {
                 VolumeDefinition drbdVlmDfn = drbdVlm.getVolumeDefinition();
 
-                DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) drbdVlm.getLayerData(workerCtx);
+                DrbdVlmDataStlt vlmState = drbdVlm.getLayerData(workerCtx, DrbdVlmDataStlt.class);
                 createMetaData(drbdRsc, drbdVlmDfn, vlmState);
             }
 
@@ -610,7 +610,7 @@ public class DrbdLayer implements ResourceLayer
     {
         ResourceName rscName = drbdRsc.getDefinition().getName();
 
-        DrbdRscDataStlt rscLinState = (DrbdRscDataStlt) drbdRsc.getLayerData(workerCtx);
+        DrbdRscDataStlt rscLinState = drbdRsc.getLayerData(workerCtx, DrbdRscDataStlt.class);
 
         boolean shouldSuspend = snapshots.stream()
             .anyMatch(snap ->
@@ -674,7 +674,7 @@ public class DrbdLayer implements ResourceLayer
             );
         }
 
-        DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) drbdVlm.getLayerData(workerCtx);
+        DrbdVlmDataStlt vlmState = drbdVlm.getLayerData(workerCtx, DrbdVlmDataStlt.class);
 
         VolumeDefinition drbdVlmDfn = drbdVlm.getVolumeDefinition();
         DrbdVlmDfnDataStlt vlmDfnState = drbdVlmDfn.getLayerData(
@@ -846,7 +846,7 @@ public class DrbdLayer implements ResourceLayer
                 "Synchronizing Linstor-state with DRBD-state for resource %s",
                 rsc.getDefinition().getName()
             );
-            DrbdRscDataStlt rscState  = (DrbdRscDataStlt) rsc.getLayerData(workerCtx);
+            DrbdRscDataStlt rscState  = rsc.getLayerData(workerCtx, DrbdRscDataStlt.class);
 
             fillResourceState(rsc, rscState);
 
@@ -945,7 +945,7 @@ public class DrbdLayer implements ResourceLayer
                             throw new ImplementationError(exc);
                         }
 
-                        DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) vlm.getLayerData(workerCtx);
+                        DrbdVlmDataStlt vlmState = vlm.getLayerData(workerCtx, DrbdVlmDataStlt.class);
 
                         { // check drbd-volume
                             DrbdVolume drbdVlmState = drbdVolumes.remove(vlm.getVolumeDefinition().getVolumeNumber());
@@ -1059,7 +1059,7 @@ public class DrbdLayer implements ResourceLayer
         {
             Volume vlm = vlmIter.next();
 
-            DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) vlm.getLayerData(workerCtx);
+            DrbdVlmDataStlt vlmState = vlm.getLayerData(workerCtx, DrbdVlmDataStlt.class);
             vlmState.peerSlots = peerSlots;
 
             if (rsc.getStateFlags().isSet(workerCtx, Resource.RscFlags.DISKLESS))

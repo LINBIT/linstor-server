@@ -11,6 +11,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.layer.LayerDataStorage;
 import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -78,7 +79,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final Key vlmKey;
 
-    private final TransactionSimpleObject<VolumeData, VlmLayerData> layerData;
+    private final LayerDataStorage<VlmLayerData> layerStorage;
 
     VolumeData(
         UUID uuid,
@@ -92,7 +93,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
-        Map<Volume.Key, VolumeConnection> vlmConnsMapRef
+        Map<Volume.Key, VolumeConnection> vlmConnsMapRef,
+        Map<Class<? extends VlmLayerData>, VlmLayerData> layerDataMapRef
     )
         throws SQLException
     {
@@ -133,8 +135,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         usableSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         allocatedSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-
-        layerData = transObjFactory.createTransactionSimpleObject(this, null, null); // FIXME: add dbDriver
+        layerStorage = new LayerDataStorage<>(layerDataMapRef);
 
         vlmKey = new Key(this);
 
@@ -148,7 +149,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
             flags,
             backingDiskPath,
             metaDiskPath,
-            layerData,
             deleted
         );
     }
@@ -439,18 +439,19 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public VlmLayerData setLayerData(AccessContext accCtx, VlmLayerData data)
+    public <T extends VlmLayerData> T setLayerData(AccessContext accCtx, T data)
         throws AccessDeniedException, SQLException
     {
         resource.getObjProt().requireAccess(accCtx, AccessType.USE);
-        return layerData.set(data);
+        return layerStorage.put(data);
     }
 
     @Override
-    public VlmLayerData getLayerData(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public <T extends VlmLayerData> T getLayerData(AccessContext accCtx, Class<T> dataClass)
+        throws AccessDeniedException, SQLException
     {
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return layerData.get();
+        return layerStorage.get(dataClass);
     }
 
     @Override

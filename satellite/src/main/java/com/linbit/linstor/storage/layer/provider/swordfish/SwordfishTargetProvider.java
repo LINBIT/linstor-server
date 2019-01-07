@@ -118,7 +118,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider
     @Override
     protected void deleteImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
     {
-        SfVlmDataStlt vlmData = (SfVlmDataStlt) vlm.getLayerData(sysCtx);
+        SfVlmDataStlt vlmData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
         try
         {
             String vlmOdataId = vlmData.vlmDfnData.vlmOdata;

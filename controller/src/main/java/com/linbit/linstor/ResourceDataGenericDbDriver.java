@@ -17,6 +17,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.storage.layer.data.categories.RscLayerData;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
@@ -31,6 +32,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -205,6 +207,9 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
         ResourceInitMaps initMaps = new ResourceInitMaps(rscConnMap, vlmMap);
 
+        Map<Class<? extends RscLayerData>, RscLayerData> layerDataMap = new HashMap<>();
+        // TODO: restore actual layer data
+
         ResourceData rscData = new ResourceData(
             java.util.UUID.fromString(resultSet.getString(RES_UUID)),
             getObjectProection(node, rscDfn.getName()),
@@ -220,7 +225,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             transMgrProvider,
             rscConnMap,
             vlmMap,
-            null // TODO: restore actual layer data
+            layerDataMap
         );
         return new Pair<ResourceData, InitMaps>(rscData, initMaps);
     }

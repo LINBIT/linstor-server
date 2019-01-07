@@ -45,7 +45,8 @@ public class ZfsThinProvider extends ZfsProvider
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
-            "ZFS-Thin"
+            "ZFS-Thin",
+            ZfsLayerDataStlt.class
         );
     }
 
@@ -69,7 +70,7 @@ public class ZfsThinProvider extends ZfsProvider
         }
         ZfsCommands.create(
             extCmdFactory.create(),
-            ((ZfsLayerDataStlt) vlm.getLayerData(storDriverAccCtx)).zpool,
+            vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class).zpool,
             asLvIdentifier(vlm),
             volumeSize,
             true

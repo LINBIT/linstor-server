@@ -56,7 +56,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
-        String subTypeDescr
+        String subTypeDescr,
+        Class<? extends LvmLayerDataStlt> layerDataClass
     )
     {
         super(
@@ -66,7 +67,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
-            subTypeDescr
+            subTypeDescr,
+            layerDataClass
         );
     }
 
@@ -87,7 +89,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
-            "LVM"
+            "LVM",
+            LvmLayerDataStlt.class
         );
     }
 
@@ -104,7 +107,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             final LvsInfo info = infoListCache.get(asLvIdentifier(vlm));
             // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
 
-            LvmLayerDataStlt state = (LvmLayerDataStlt) vlm.getLayerData(storDriverAccCtx);
+            LvmLayerDataStlt state = vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class);
             if (info != null)
             {
                 if (state == null)
@@ -167,7 +170,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     {
         LvmCommands.createFat(
             extCmdFactory.create(),
-            ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
+            vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class).getVolumeGroup(),
             asLvIdentifier(vlm),
             vlm.getUsableSize(storDriverAccCtx)
         );
@@ -179,7 +182,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     {
         LvmCommands.resize(
             extCmdFactory.create(),
-            ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
+            vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class).getVolumeGroup(),
             asLvIdentifier(vlm),
             vlm.getUsableSize(storDriverAccCtx)
         );
@@ -198,7 +201,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         int lastIndexOf = devicePath.lastIndexOf(oldLvmId);
         devicePath = devicePath.substring(0, lastIndexOf) + newLvmId;
 
-        String volumeGroup = ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup();
+        String volumeGroup = vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class).getVolumeGroup();
         LvmCommands.rename(
             extCmdFactory.create(),
             volumeGroup,
@@ -270,7 +273,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     protected String getStorageName(Volume vlm) throws AccessDeniedException, SQLException
     {
         String volumeGroup = null;
-        LvmLayerData layerData = (LvmLayerData) vlm.getLayerData(storDriverAccCtx);
+        LvmLayerData layerData = vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class);
         if (layerData == null)
         {
             volumeGroup = getVolumeGroup(vlm.getStorPool(storDriverAccCtx));

@@ -53,7 +53,8 @@ public class LvmThinProvider extends LvmProvider
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
-            "LVM-Thin"
+            "LVM-Thin",
+            LvmThinLayerDataStlt.class
         );
     }
 
@@ -84,7 +85,7 @@ public class LvmThinProvider extends LvmProvider
     @Override
     protected void createLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
     {
-        LvmThinLayerData lvmThinData = (LvmThinLayerData) vlm.getLayerData(storDriverAccCtx);
+        LvmThinLayerData lvmThinData = vlm.getLayerData(storDriverAccCtx, LvmThinLayerData.class);
         String volumeGroup = lvmThinData.getVolumeGroup();
         String lvId = asLvIdentifier(vlm);
         LvmCommands.createThin(
@@ -107,7 +108,7 @@ public class LvmThinProvider extends LvmProvider
     {
         LvmCommands.delete(
             extCmdFactory.create(),
-            ((LvmLayerData) vlm.getLayerData(storDriverAccCtx)).getVolumeGroup(),
+            vlm.getLayerData(storDriverAccCtx, LvmThinLayerData.class).getVolumeGroup(),
             lvmId
         );
     }
@@ -173,7 +174,7 @@ public class LvmThinProvider extends LvmProvider
     protected void rollbackImpl(Volume vlm, String rollbackTargetSnapshotName)
         throws StorageException, AccessDeniedException, SQLException
     {
-        LvmThinLayerData lvmThinLayerData = (LvmThinLayerData) vlm.getLayerData(storDriverAccCtx);
+        LvmThinLayerData lvmThinLayerData = vlm.getLayerData(storDriverAccCtx, LvmThinLayerData.class);
 
         String volumeGroup = lvmThinLayerData.getVolumeGroup();
         String thinPool = lvmThinLayerData.getThinPool();

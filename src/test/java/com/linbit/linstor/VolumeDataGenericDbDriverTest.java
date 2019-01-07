@@ -140,7 +140,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            new HashMap<>()
         );
         driver.create(vol);
         commit();
@@ -220,7 +221,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            new HashMap<>()
         );
         driver.create(vol);
 
@@ -255,7 +257,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            new HashMap<>()
         );
         driver.create(vol);
         volDfn.putVolume(SYS_CTX, vol);
@@ -298,7 +301,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            new HashMap<>()
         );
         driver.create(vol);
         commit();
@@ -337,7 +341,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            new HashMap<>()
         );
         driver.create(vol);
         commit();
@@ -367,7 +372,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            new HashMap<>()
         );
         driver.create(vol);
 
@@ -425,7 +431,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            new HashMap<>()
         );
         driver.create(vol);
         volDfn.putVolume(SYS_CTX, vol);

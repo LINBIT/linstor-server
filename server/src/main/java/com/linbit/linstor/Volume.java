@@ -81,10 +81,10 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException;
 
-    VlmLayerData setLayerData(AccessContext storDriverAccCtx, VlmLayerData data)
+    <T extends VlmLayerData> T setLayerData(AccessContext storDriverAccCtx, T data)
         throws AccessDeniedException, SQLException;
 
-    VlmLayerData getLayerData(AccessContext storDriverAccCtx)
+    <T extends VlmLayerData> T getLayerData(AccessContext storDriverAccCtx, Class<T> dataClass)
         throws AccessDeniedException, SQLException;
 
     boolean isDeleted();

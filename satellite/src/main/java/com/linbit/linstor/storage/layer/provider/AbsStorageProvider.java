@@ -70,8 +70,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
     protected final Set<String> changedStoragePoolStrings = new HashSet<>();
     private final String typeDescr;
     private final FileSystemWatch fsWatch;
+    private final Class<? extends LAYER_DATA> layerDataClass;
 
     private final Set<StorPool> changedStorPools = new HashSet<>();
+
 
     public AbsStorageProvider(
         ErrorReporter errorReporterRef,
@@ -80,7 +82,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         StltConfigAccessor stltConfigAccessorRef,
         WipeHandler wipeHandlerRef,
         Provider<NotificationListener> notificationListenerProviderRef,
-        String typeDescrRef
+        String typeDescrRef,
+        Class<? extends LAYER_DATA> layerDataClassRef
     )
     {
         errorReporter = errorReporterRef;
@@ -90,6 +93,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         notificationListenerProvider = notificationListenerProviderRef;
         stltConfigAccessor = stltConfigAccessorRef;
         typeDescr = typeDescrRef;
+        layerDataClass = layerDataClassRef;
 
         infoListCache = new HashMap<>();
         try
@@ -132,7 +136,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         updateStates(volumes, snapVlms);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void process(
         List<Volume> volumes,
@@ -166,7 +169,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                 vlm
             );
 
-            LAYER_DATA state = (LAYER_DATA) vlm.getLayerData(storDriverAccCtx);
+            LAYER_DATA state = vlm.getLayerData(storDriverAccCtx, layerDataClass);
 
             boolean vlmShouldExist = !vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE) &&
                 !vlm.getResource().getStateFlags().isSet(storDriverAccCtx, Resource.RscFlags.DISK_REMOVING);

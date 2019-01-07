@@ -74,7 +74,7 @@ public class CryptSetupLayer implements ResourceLayer
     {
         for (Volume vlm : rscs.stream().flatMap(Resource::streamVolumes).collect(Collectors.toList()))
         {
-            CryptSetupStltData data = (CryptSetupStltData) vlm.getLayerData(sysCtx);
+            CryptSetupStltData data = vlm.getLayerData(sysCtx, CryptSetupStltData.class);
             if (data == null)
             {
                 VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
@@ -141,7 +141,7 @@ public class CryptSetupLayer implements ResourceLayer
 
         for (Volume vlm : groupedByDeleteFlag.get(true))
         {
-            CryptSetupStltData data = (CryptSetupStltData) vlm.getLayerData(sysCtx);
+            CryptSetupStltData data = vlm.getLayerData(sysCtx, CryptSetupStltData.class);
             String identifier = getIdentifier(vlm, data);
 
 
@@ -160,7 +160,7 @@ public class CryptSetupLayer implements ResourceLayer
 
         for (Volume vlm : groupedByDeleteFlag.get(false))
         {
-            CryptSetupStltData data = (CryptSetupStltData) vlm.getLayerData(sysCtx);
+            CryptSetupStltData data = vlm.getLayerData(sysCtx, CryptSetupStltData.class);
 
             String identifier = getIdentifier(vlm, data);
 
