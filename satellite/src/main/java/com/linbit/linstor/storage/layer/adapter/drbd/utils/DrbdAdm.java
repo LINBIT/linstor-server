@@ -408,7 +408,13 @@ public class DrbdAdm
     )
         throws ExtCmdFailedException
     {
-        execute(DRBDSETUP_UTIL, commandRef, "--wait-after-sb=yes", "--wfc-timeout=" + timeout, resourceName.value);
+        execute(
+            DRBDSETUP_UTIL,
+            commandRef,
+            "--wait-after-sb=yes",
+            "--wfc-timeout=" + timeout,
+            resourceName.displayValue
+        );
     }
 
     // Using -c disables /etc/drbd.d/global_common.conf
