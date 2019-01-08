@@ -501,7 +501,8 @@ System.out.println("\n\n\n\nvlm checkDeleted: " + getKey());
     {
         return "Node: '" + resource.getAssignedNode().getName() + "', " +
                "Rsc: '" + resource.getDefinition().getName() + "', " +
-               "VlmNr: '" + volumeDfn.getVolumeNumber() + "'";
+               "VlmNr: '" + volumeDfn.getVolumeNumber() + "', " +
+               "Type: '"  + resource.getType().name() + "'";
     }
 
     @Override

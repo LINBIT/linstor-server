@@ -174,7 +174,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
             String lvId = getIdentifier(state);
             if (state.exists())
             {
-                Size lvSize = getSize(state);
                 errorReporter.logTrace("Lv %s found", lvId);
                 if (!vlmShouldExist)
                 {
@@ -183,10 +182,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
                 }
                 else
                 {
-                    if (
-                        lvSize == Size.TOO_SMALL ||
-                            lvSize == Size.TOO_LARGE // not within tolerance
-                    )
+                    if (vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.RESIZE))
                     {
                         errorReporter.logTrace("Lv %s will be resized", lvId);
                         vlmsToResize.add(vlm);
@@ -338,7 +334,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
         {
             resizeLvImpl(vlm);
 
-            ProviderUtils.updateAllocatedSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+            long allocatedSize = ProviderUtils.getAllocatedSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+            vlm.setAllocatedSize(storDriverAccCtx, allocatedSize);
+            vlm.setUsableSize(storDriverAccCtx, allocatedSize);
 
             changedStorPools.add(vlm.getStorPool(storDriverAccCtx));
 

@@ -72,7 +72,7 @@ public class DefaultLayer implements ResourceLayer
         {
             throw new ImplementationError(
                 "Default volume should not have a parent. \ndefault volume: " + dfltVlm +
-                    "\nparent volume: " + parentVolume
+                    "\nparent volume:  " + parentVolume
             );
         }
         long size = dfltVlm.getVolumeDefinition().getVolumeSize(sysCtx);

@@ -322,20 +322,20 @@ public class LayeredResourcesHelper
         UUID uuid = UUID.randomUUID();
 
         ResourceDefinition origRscDfn = origRsc.getDefinition();
-        RscFlags[] origFlags = FlagsHelper.toFlagsArray(RscFlags.class, origRsc.getStateFlags(), sysCtx);
+        RscFlags[] origRscFlags = FlagsHelper.toFlagsArray(RscFlags.class, origRsc.getStateFlags(), sysCtx);
         typedResource = rscFactory.getTypedInstanceSatellite(
             sysCtx,
             uuid,
             origRsc.getAssignedNode(),
             origRscDfn,
             origRsc.getNodeId(),
-            origFlags,
+            origRscFlags,
             type,
             null
         );
 
         typedResource.getStateFlags().disableAllFlags(sysCtx);
-        typedResource.getStateFlags().enableFlags(sysCtx, origFlags);
+        typedResource.getStateFlags().enableFlags(sysCtx, origRscFlags);
 
         Map<String, String> typedRscPropsMap = typedResource.getProps(sysCtx).map();
         typedRscPropsMap.clear();
@@ -356,6 +356,7 @@ public class LayeredResourcesHelper
             {
                 VolumeDefinition vlmDfn = vlmDfnIt.next();
                 Volume origVlm = origRsc.getVolume(vlmDfn.getVolumeNumber());
+                VlmFlags[] origVlmFlags = FlagsHelper.toFlagsArray(Volume.VlmFlags.class, origVlm.getFlags(), sysCtx);
                 Volume typedVlm = vlmFactory.getInstanceSatellite(
                     sysCtx,
                     UUID.randomUUID(),
@@ -364,7 +365,7 @@ public class LayeredResourcesHelper
                     origVlm.getStorPool(sysCtx),
                     null,
                     null,
-                    FlagsHelper.toFlagsArray(Volume.VlmFlags.class, origVlm.getFlags(), sysCtx)
+                    origVlmFlags
                 );
                 typedVlm.setAllocatedSize(sysCtx, origVlm.getAllocatedSize(sysCtx));
                 typedVlm.setBackingDiskPath(sysCtx, origVlm.getBackingDiskPath(sysCtx));
@@ -373,6 +374,7 @@ public class LayeredResourcesHelper
                 {
                     typedVlm.setUsableSize(sysCtx, origVlm.getUsableSize(sysCtx));
                 }
+                typedVlm.getFlags().resetFlagsTo(sysCtx, origVlmFlags);
 
                 Map<String, String> typedVlmPropsMap = typedVlm.getProps(sysCtx).map();
                 typedVlmPropsMap.clear();

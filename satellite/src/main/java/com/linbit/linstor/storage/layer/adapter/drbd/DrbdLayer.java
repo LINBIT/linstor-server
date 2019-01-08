@@ -241,11 +241,12 @@ public class DrbdLayer implements ResourceLayer
 
     private Resource getDefaultResource(Resource defaultRsc) throws AccessDeniedException
     {
-        while (defaultRsc.getType() != ResourceType.DEFAULT)
+        Resource dfltRsc = defaultRsc;
+        while (dfltRsc.getType() != ResourceType.DEFAULT)
         {
-            defaultRsc = defaultRsc.getParentResource(workerCtx);
+            dfltRsc = dfltRsc.getParentResource(workerCtx);
         }
-        return defaultRsc;
+        return dfltRsc;
     }
 
     @Override
@@ -480,6 +481,19 @@ public class DrbdLayer implements ResourceLayer
 
             try
             {
+                for (Volume drbdVlm : drbdRsc.streamVolumes().collect(Collectors.toList()))
+                {
+                    VolumeNumber vlmNr = drbdVlm.getVolumeDefinition().getVolumeNumber();
+                    if (needsResize(drbdVlm, childRsc.getVolume(vlmNr)))
+                    {
+                        drbdUtils.resize(
+                            drbdRsc.getDefinition().getName(),
+                            vlmNr,
+                            VolumeUtils.isVolumeThinlyBacked(workerCtx, drbdVlm)
+                        );
+                    }
+                }
+
                 drbdUtils.adjust(
                     drbdRsc.getDefinition().getName(),
                     false,
@@ -509,6 +523,11 @@ public class DrbdLayer implements ResourceLayer
                 );
             }
         }
+    }
+
+    private boolean needsResize(Volume drbdVlm, Volume backingVlm) throws AccessDeniedException
+    {
+        return drbdVlm.getFlags().isSet(workerCtx, VlmFlags.DRBD_RESIZE);
     }
 
     private String getDevicePath(VolumeDefinition vlmDfn) throws AccessDeniedException

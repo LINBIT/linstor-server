@@ -30,6 +30,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.ResourceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.storage.layer.kinds.DefaultLayerKind;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.utils.Either;
 import com.linbit.utils.RemoveAfterDevMgrRework;
@@ -451,6 +452,14 @@ public class DeviceHandlerImpl implements DeviceHandler
     {
         LinkedList<Resource> resources = new LinkedList<>();
         resources.add(dfltRsc);
+
+        // special case: defaultLayer has no parent
+        ResourceLayer dfltLayer = layerFactory.getDeviceLayer(DefaultLayerKind.class);
+        for (Volume dfltVlm : dfltRsc.streamVolumes().collect(Collectors.toList()))
+        {
+            dfltLayer.updateGrossSize(dfltVlm, null);
+        }
+
         while (!resources.isEmpty())
         {
             Resource parent = resources.pollFirst();
