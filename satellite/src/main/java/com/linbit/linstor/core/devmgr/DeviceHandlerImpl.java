@@ -2,6 +2,7 @@ package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
@@ -103,16 +104,56 @@ public class DeviceHandlerImpl implements DeviceHandler
         updateSnapshotLayerData(origResources, snapshots);
 
         Set<Resource> rootResources = origResources.stream().map(rsc -> getRoot(rsc)).collect(Collectors.toSet());
-        Map<ResourceLayer, List<Resource>> rscByLayer = allResources.stream()
+        Map<ResourceLayer, List<Resource>> rscByLayer = groupResourcesByLayer(allResources);
+        Map<ResourceName, List<Snapshot>> snapshotsByRscName = groupSnapshotsByResourceName(snapshots);
+
+        calculateGrossSizes(rootResources);
+
+        boolean prepareSuccess = prepareLayers(rscByLayer, snapshotsByRscName);
+
+        if (prepareSuccess)
+        {
+            List<Snapshot> unprocessedSnapshots = new ArrayList<>(snapshots);
+
+            List<Resource> rscListNotifyApplied = new ArrayList<>();
+            List<Resource> rscListNotifyDelete = new ArrayList<>();
+            List<Snapshot> snapListNotifyDelete = new ArrayList<>();
+
+            processResourcesAndTheirSnapshots(
+                snapshots,
+                rootResources,
+                snapshotsByRscName,
+                unprocessedSnapshots,
+                rscListNotifyApplied,
+                rscListNotifyDelete,
+                snapListNotifyDelete
+            );
+            processUnprocessedSnapshots(unprocessedSnapshots);
+
+            notifyResourcesApplied(rscListNotifyApplied);
+
+            clearLayerCaches(rscByLayer);
+            layeredRscHelper.cleanupResources(origResources);
+        }
+    }
+
+    private Map<ResourceLayer, List<Resource>> groupResourcesByLayer(List<Resource> allResources)
+    {
+        return allResources.stream()
             .collect(
                 Collectors.groupingBy(
                     rsc -> layerFactory.getDeviceLayer(rsc.getType().getDevLayerKind().getClass())
                 )
             );
-        Map<ResourceName, List<Snapshot>> snapshotsByRscName =
-            snapshots.stream().collect(Collectors.groupingBy(Snapshot::getResourceName));
+    }
 
-        // calculate gross sizes
+    private Map<ResourceName, List<Snapshot>> groupSnapshotsByResourceName(Collection<Snapshot> snapshots)
+    {
+        return snapshots.stream().collect(Collectors.groupingBy(Snapshot::getResourceName));
+    }
+
+    private void calculateGrossSizes(Set<Resource> rootResources) throws ImplementationError
+    {
         for (Resource rsc : rootResources)
         {
             try
@@ -124,8 +165,13 @@ public class DeviceHandlerImpl implements DeviceHandler
                 throw new ImplementationError(exc);
             }
         }
+    }
 
-        // call prepare for every necessary layer
+    private boolean prepareLayers(
+        Map<ResourceLayer, List<Resource>> rscByLayer,
+        Map<ResourceName, List<Snapshot>> snapshotsByRscName
+    )
+    {
         boolean prepareSuccess = true;
         for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
         {
@@ -146,218 +192,245 @@ public class DeviceHandlerImpl implements DeviceHandler
                 break;
             }
         }
+        return prepareSuccess;
+    }
 
-        if (prepareSuccess)
+    private void processResourcesAndTheirSnapshots(
+        Collection<Snapshot> snapshots,
+        Set<Resource> rootResources,
+        Map<ResourceName, List<Snapshot>> snapshotsByRscName,
+        List<Snapshot> unprocessedSnapshots,
+        List<Resource> rscListNotifyApplied,
+        List<Resource> rscListNotifyDelete,
+        List<Snapshot> snapListNotifyDelete
+    )
+        throws ImplementationError
+    {
+        for (Resource rsc : rootResources)
         {
-            List<Snapshot> unprocessedSnapshots = new ArrayList<>(snapshots);
+            ResourceName rscName = rsc.getDefinition().getName();
 
-            List<Resource> rscListNotifyApplied = new ArrayList<>();
-            List<Resource> rscListNotifyDelete = new ArrayList<>();
-            List<Snapshot> snapListNotifyDelete = new ArrayList<>();
+            List<Snapshot> snapshotList = snapshotsByRscName.getOrDefault(rscName, Collections.emptyList());
+            unprocessedSnapshots.removeAll(snapshotList);
 
-            // actually process every resource and snapshots
-            for (Resource rsc : rootResources)
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            try
             {
-                ResourceName rscName = rsc.getDefinition().getName();
-
-                List<Snapshot> snapshotList = snapshotsByRscName.getOrDefault(rscName, Collections.emptyList());
-                unprocessedSnapshots.removeAll(snapshotList);
-
-                ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                try
-                {
-                    process(
-                        rsc,
-                        snapshotList,
-                        apiCallRc
-                    );
-
-                    /*
-                     * old device manager reported changes of free space after every
-                     * resource operation. As this could require to query the same
-                     * VG or zpool multiple times within the same device manager run,
-                     * we only query the free space after the whole run.
-                     * This also means that we only send the resourceApplied messages
-                     * at the very end
-                     */
-                    if (rsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE))
-                    {
-                        rscListNotifyDelete.add(rsc);
-                        notificationListener.get().notifyResourceDeleted(rsc);
-                        // rsc.delete is done by the deviceManager
-                    }
-                    else
-                    {
-                        rscListNotifyApplied.add(rsc);
-                        notificationListener.get().notifyResourceApplied(rsc);
-                    }
-
-                    for (Snapshot snapshot : snapshots)
-                    {
-                        if (snapshot.getFlags().isSet(wrkCtx, SnapshotFlags.DELETE))
-                        {
-                            snapListNotifyDelete.add(snapshot);
-                            notificationListener.get().notifySnapshotDeleted(snapshot);
-                            // snapshot.delete is done by the deviceManager
-                        }
-                    }
-                }
-                catch (AccessDeniedException | SQLException exc)
-                {
-                    throw new ImplementationError(exc);
-                }
-                catch (StorageException | ResourceException | VolumeException exc)
-                {
-                    // TODO different handling for different exceptions?
-                    String errorId = errorReporter.reportError(
-                        exc,
-                        null,
-                        null,
-                        "An error occurred while processing resource '" + rsc + "'"
-                    );
-
-                    apiCallRc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
-                        .entryBuilder(
-                            // TODO maybe include a ret-code into the exception
-                            ApiConsts.FAIL_UNKNOWN_ERROR,
-                            exc.getMessage()
-                        )
-                        .setCause(exc.getCauseText())
-                        .setCorrection(exc.getCorrectionText())
-                        .setDetails(exc.getDetailsText())
-                        .addErrorId(errorId)
-                        .build()
-                    );
-                }
-                notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
-            }
-
-            // process unprocessed snapshots
-            {
-                Map<ResourceName, List<Snapshot>> snapshotsByResourceName = unprocessedSnapshots.stream()
-                    .collect(Collectors.groupingBy(Snapshot::getResourceName));
+                process(rsc, snapshotList, apiCallRc);
 
                 /*
-                 *  We cannot use the .process(Resource, List<Snapshot>, ApiCallRc) method as we do not have a
-                 *  resource. The resource is used for determining which DeviceLayer to use, thus would result in
-                 *  a NPE.
-                 *  However, actually we know that there are no resources "based" on these snapshots (else the
-                 *  DeviceManager would have found them and called the previous case, such that those snapshots
-                 *  would have been processed already).
-                 *  That means, we can skip all layers and go directoy to the StorageLayer, which, fortunately,
-                 *  does not need a resource for processing snapshots.
+                 * old device manager reported changes of free space after every
+                 * resource operation. As this could require to query the same
+                 * VG or zpool multiple times within the same device manager run,
+                 * we only query the free space after the whole run.
+                 * This also means that we only send the resourceApplied messages
+                 * at the very end
                  */
-                for (Entry<ResourceName, List<Snapshot>> entry : snapshotsByResourceName.entrySet())
+                if (rsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE))
                 {
-                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                    try
-                    {
-                        storageLayer.process(null, entry.getValue(), apiCallRc);
-                    }
-                    catch (AccessDeniedException | SQLException exc)
-                    {
-                        throw new ImplementationError(exc);
-                    }
-                    catch (StorageException | ResourceException | VolumeException exc)
-                    {
-                        // TODO different handling for different exceptions?
-                        String errorId = errorReporter.reportError(
-                            exc,
-                            null,
-                            null,
-                            "An error occurred while processing resource '" + entry.getKey() + "'"
-                        );
+                    rscListNotifyDelete.add(rsc);
+                    notificationListener.get().notifyResourceDeleted(rsc);
+                    // rsc.delete is done by the deviceManager
+                }
+                else
+                {
+                    rscListNotifyApplied.add(rsc);
+                    notificationListener.get().notifyResourceApplied(rsc);
+                }
 
-                        apiCallRc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
-                            .entryBuilder(
-                                // TODO maybe include a ret-code into the exception
-                                ApiConsts.FAIL_UNKNOWN_ERROR,
-                                exc.getMessage()
-                            )
-                            .setCause(exc.getCauseText())
-                            .setCorrection(exc.getCorrectionText())
-                            .setDetails(exc.getDetailsText())
-                            .addErrorId(errorId)
+                for (Snapshot snapshot : snapshots)
+                {
+                    if (snapshot.getFlags().isSet(wrkCtx, SnapshotFlags.DELETE))
+                    {
+                        snapListNotifyDelete.add(snapshot);
+                        notificationListener.get().notifySnapshotDeleted(snapshot);
+                        // snapshot.delete is done by the deviceManager
+                    }
+                }
+            }
+            catch (AccessDeniedException | SQLException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (Exception | ImplementationError exc)
+            {
+                String errorId = errorReporter.reportError(
+                    exc,
+                    null,
+                    null,
+                    "An error occurred while processing resource '" + rsc + "'"
+                );
+
+                long rc;
+                String errMsg;
+                String cause;
+                String correction;
+                String details;
+                if (exc instanceof StorageException ||
+                    exc instanceof ResourceException ||
+                    exc instanceof VolumeException
+                )
+                {
+                    LinStorException linExc = (LinStorException) exc;
+                    // TODO add returnCode and message to the classes StorageException, ResourceException and
+                    // VolumeException and include them here
+
+                    rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+                    errMsg = exc.getMessage();
+
+                    cause = linExc.getCauseText();
+                    correction = linExc.getCorrectionText();
+                    details = linExc.getDetailsText();
+                }
+                else
+                {
+                    rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+                    errMsg = exc.getMessage();
+
+                    cause = null;
+                    correction = null;
+                    details = null;
+                }
+
+                apiCallRc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                    .entryBuilder(rc, errMsg)
+                    .setCause(cause)
+                    .setCorrection(correction)
+                    .setDetails(details)
+                    .addErrorId(errorId)
+                    .build()
+                );
+            }
+            notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
+        }
+    }
+
+    private void processUnprocessedSnapshots(List<Snapshot> unprocessedSnapshots) throws ImplementationError
+    {
+        Map<ResourceName, List<Snapshot>> snapshotsByResourceName = unprocessedSnapshots.stream()
+            .collect(Collectors.groupingBy(Snapshot::getResourceName));
+
+        /*
+         *  We cannot use the .process(Resource, List<Snapshot>, ApiCallRc) method as we do not have a
+         *  resource. The resource is used for determining which DeviceLayer to use, thus would result in
+         *  a NPE.
+         *  However, actually we know that there are no resources "based" on these snapshots (else the
+         *  DeviceManager would have found them and called the previous case, such that those snapshots
+         *  would have been processed already).
+         *  That means, we can skip all layers and go directoy to the StorageLayer, which, fortunately,
+         *  does not need a resource for processing snapshots.
+         */
+        for (Entry<ResourceName, List<Snapshot>> entry : snapshotsByResourceName.entrySet())
+        {
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            try
+            {
+                storageLayer.process(null, entry.getValue(), apiCallRc);
+            }
+            catch (AccessDeniedException | SQLException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (StorageException | ResourceException | VolumeException exc)
+            {
+                // TODO different handling for different exceptions?
+                String errorId = errorReporter.reportError(
+                    exc,
+                    null,
+                    null,
+                    "An error occurred while processing resource '" + entry.getKey() + "'"
+                );
+
+                apiCallRc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+                    .entryBuilder(
+                        // TODO maybe include a ret-code into the exception
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        exc.getMessage()
+                    )
+                    .setCause(exc.getCauseText())
+                    .setCorrection(exc.getCorrectionText())
+                    .setDetails(exc.getDetailsText())
+                    .addErrorId(errorId)
+                    .build()
+                );
+            }
+            notificationListener.get().notifyResourceDispatchResponse(entry.getKey(), apiCallRc);
+        }
+    }
+
+    private void notifyResourcesApplied(List<Resource> rscListNotifyApplied) throws ImplementationError
+    {
+        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+        if (ctrlPeer != null)
+        {
+            try
+            {
+                Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
+                    storageLayer.getFreeSpaceOfAccessedStoagePools();
+
+                Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
+
+                spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
+                    spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
+                    apiRcException -> errorReporter.reportError(apiRcException.getCause())
+                ));
+
+                // TODO: rework API answer
+                /*
+                 * Instead of sending single change, request and applied / deleted messages per
+                 * resource, the controller and satellite should use one message containing
+                 * multiple resources.
+                 * The final message regarding applied and/or deleted resource can so also contain
+                 * the new free spaces of the affected storage pools
+                 */
+
+                for (Resource rsc : rscListNotifyApplied)
+                {
+                    ctrlPeer.sendMessage(
+                        interComSerializer
+                            .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
+                            .notifyResourceApplied(rsc, spaceInfoMap)
                             .build()
-                        );
-                    }
-                    notificationListener.get().notifyResourceDispatchResponse(entry.getKey(), apiCallRc);
-                }
-            }
-
-            // query changed storage pools and send out all notifications
-            Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-            if (ctrlPeer != null)
-            {
-                try
-                {
-                    Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
-                        storageLayer.getFreeSpaceOfAccessedStoagePools();
-
-                    Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
-
-                    spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
-                        spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
-                        apiRcException -> errorReporter.reportError(apiRcException.getCause())
-                    ));
-
-                    // TODO: rework API answer
-                    /*
-                     * Instead of sending single change, request and applied / deleted messages per
-                     * resource, the controller and satellite should use one message containing
-                     * multiple resources.
-                     * The final message regarding applied and/or deleted resource can so also contain
-                     * the new free spaces of the affected storage pools
-                     */
-
-                    for (Resource rsc : rscListNotifyApplied)
-                    {
-                        ctrlPeer.sendMessage(
-                            interComSerializer
-                                .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
-                                .notifyResourceApplied(rsc, spaceInfoMap)
-                                .build()
-                        );
-                    }
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    throw new ImplementationError(accDeniedExc);
-                }
-            }
-
-            // call clear cache for every layer where the .prepare was called
-            for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
-            {
-                ResourceLayer layer = entry.getKey();
-                try
-                {
-                    layer.clearCache();
-                }
-                catch (StorageException exc)
-                {
-                    errorReporter.reportError(exc);
-                    ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
-                        ApiCallRcImpl.entryBuilder(
-                            ApiConsts.FAIL_UNKNOWN_ERROR,
-                            "An error occured while cleaning up layer '" + layer.getName() + "'"
-                        )
-                        .setCause(exc.getCauseText())
-                        .setCorrection(exc.getCorrectionText())
-                        .setDetails(exc.getDetailsText())
-                        .build()
                     );
-                    for (Resource rsc : entry.getValue())
-                    {
-                        notificationListener.get().notifyResourceDispatchResponse(
-                            rsc.getDefinition().getName(),
-                            apiCallRc
-                        );
-                    }
                 }
             }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ImplementationError(accDeniedExc);
+            }
+        }
+    }
 
-            layeredRscHelper.cleanupResources(origResources);
+    private void clearLayerCaches(Map<ResourceLayer, List<Resource>> rscByLayer)
+    {
+        for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
+        {
+            ResourceLayer layer = entry.getKey();
+            try
+            {
+                layer.clearCache();
+            }
+            catch (StorageException exc)
+            {
+                errorReporter.reportError(exc);
+                ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        "An error occured while cleaning up layer '" + layer.getName() + "'"
+                    )
+                    .setCause(exc.getCauseText())
+                    .setCorrection(exc.getCorrectionText())
+                    .setDetails(exc.getDetailsText())
+                    .build()
+                );
+                for (Resource rsc : entry.getValue())
+                {
+                    notificationListener.get().notifyResourceDispatchResponse(
+                        rsc.getDefinition().getName(),
+                        apiCallRc
+                    );
+                }
+            }
         }
     }
 
