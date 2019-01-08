@@ -34,7 +34,8 @@ public interface Peer
         VERSION_MISMATCH(ApiConsts.CONN_STATUS_VERSION_MISMATCH), // Version mismatch between satellite and controller
         FULL_SYNC_FAILED(ApiConsts.CONN_STATUS_FULL_SYNC_FAILED), // FullSync failed
         AUTHENTICATION_ERROR(ApiConsts.CONN_STATUS_AUTHENTICATION_ERROR),
-        UNKNOWN(ApiConsts.CONN_STATUS_UNKNOWN);
+        UNKNOWN(ApiConsts.CONN_STATUS_UNKNOWN),
+        HOSTNAME_MISMATCH(ApiConsts.CONN_STATUS_HOSTNAME_MISMATCH); // Hostname set by controller does not match local `uname -n`
 
         private int status;
         ConnectionStatus(int statusRef)

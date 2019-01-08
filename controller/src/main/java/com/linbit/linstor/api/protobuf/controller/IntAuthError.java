@@ -43,8 +43,15 @@ public class IntAuthError implements ApiCall
     {
         Peer client = clientProvider.get();
         client.setAuthenticated(false);
-        client.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
         MsgApiCallResponse msgApiCallRc = MsgApiCallResponse.parseDelimitedFrom(msgDataIn);
+        if (msgApiCallRc.getRetCode() == InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH)
+        {
+            client.setConnectionStatus(Peer.ConnectionStatus.HOSTNAME_MISMATCH);
+        }
+        else
+        {
+            client.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
+        }
 
         errorReporter.logError("Satellite authentication error: " + msgApiCallRc.getCause());
     }
