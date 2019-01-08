@@ -848,8 +848,9 @@ public class DrbdLayer implements ResourceLayer
             );
             DrbdRscDataStlt rscState  = (DrbdRscDataStlt) rsc.getLayerData(workerCtx);
 
-            DrbdResource drbdRscState = drbdState.getDrbdResource(rsc.getDefinition().getName().displayValue);
+            fillResourceState(rsc, rscState);
 
+            DrbdResource drbdRscState = drbdState.getDrbdResource(rsc.getDefinition().getName().displayValue);
             if (drbdRscState == null)
             {
                 rscState.exists = false;
@@ -857,11 +858,6 @@ public class DrbdLayer implements ResourceLayer
             else
             {
                 rscState.exists = true;
-
-                // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
-                //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
-                //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
-                rscState.requiresAdjust = true;
 
                 { // check drbdRole
                     DrbdResource.Role rscRole = drbdRscState.getRole();
@@ -930,12 +926,6 @@ public class DrbdLayer implements ResourceLayer
                                 }
                         );
                 }
-
-                String peerSlotsProp = rsc.getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
-                // Property is checked when the API sets it; if it still throws for whatever reason, it is logged as an
-                // unexpected exception in dispatchResource()
-                short peerSlots = peerSlotsProp == null ?
-                    InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
 
                 Map<VolumeNumber, DrbdVolume> drbdVolumes = drbdRscState.getVolumesMap();
 
@@ -1020,16 +1010,6 @@ public class DrbdLayer implements ResourceLayer
                         }
 
                         vlmState.metaDataIsNew = false;
-                        if (rsc.getStateFlags().isSet(workerCtx, RscFlags.DISKLESS))
-                        {
-                            vlmState.checkMetaData = false;
-                        }
-                        else
-                        {
-                            vlmState.peerSlots = peerSlots;
-                            vlmState.alStripes = FIXME_AL_STRIPES;
-                            vlmState.alStripeSize = FIXME_AL_STRIPE_SIZE;
-                        }
                         rscState.putVlmState(vlm.getVolumeDefinition().getVolumeNumber(), vlmState);
                     }
                 }
@@ -1057,6 +1037,38 @@ public class DrbdLayer implements ResourceLayer
         catch (NoInitialStateException exc)
         {
             throw new StorageException("Need initial DRBD state", exc);
+        }
+    }
+
+    private void fillResourceState(Resource rsc, DrbdRscDataStlt rscState)
+        throws AccessDeniedException, InvalidKeyException, SQLException
+    {
+        String peerSlotsProp = rsc.getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+
+        // Property is checked when the API sets it; if it still throws for whatever reason, it is logged as an
+        // unexpected exception in dispatchResource()
+        short peerSlots = peerSlotsProp == null ?
+            InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
+
+        // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
+        //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
+        //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
+        rscState.requiresAdjust = true;
+        Iterator<Volume> vlmIter = rsc.iterateVolumes();
+        while (vlmIter.hasNext())
+        {
+            Volume vlm = vlmIter.next();
+
+            DrbdVlmDataStlt vlmState = (DrbdVlmDataStlt) vlm.getLayerData(workerCtx);
+            vlmState.peerSlots = peerSlots;
+
+            if (rsc.getStateFlags().isSet(workerCtx, Resource.RscFlags.DISKLESS))
+            {
+                vlmState.checkMetaData = false;
+            }
+
+            vlmState.alStripes = FIXME_AL_STRIPES;
+            vlmState.alStripeSize = FIXME_AL_STRIPE_SIZE;
         }
     }
 
