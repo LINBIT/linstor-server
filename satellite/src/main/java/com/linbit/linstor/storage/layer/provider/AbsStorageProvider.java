@@ -275,10 +275,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmLayerData> 
     }
 
     @Override
-    public Collection<StorPool> getAndForgetChangedStorPools()
+    public Collection<StorPool> getChangedStorPools()
     {
         Set<StorPool> copy = new HashSet<>(changedStorPools);
-        changedStorPools.clear();
         return copy;
     }
 

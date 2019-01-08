@@ -123,10 +123,9 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
     }
 
     @Override
-    public Collection<StorPool> getAndForgetChangedStorPools()
+    public Collection<StorPool> getChangedStorPools()
     {
         Set<StorPool> copy = new HashSet<>(changedStorPools);
-        changedStorPools.clear();
         return copy;
     }
 

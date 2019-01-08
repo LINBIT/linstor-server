@@ -84,7 +84,7 @@ public class DrbdDisklessProvider implements DeviceProvider
     }
 
     @Override
-    public Collection<StorPool> getAndForgetChangedStorPools()
+    public Collection<StorPool> getChangedStorPools()
     {
         return Collections.emptyList();
     }

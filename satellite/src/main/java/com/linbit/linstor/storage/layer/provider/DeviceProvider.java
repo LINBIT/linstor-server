@@ -51,5 +51,5 @@ public interface DeviceProvider
 
     void setLocalNodeProps(Props localNodePropsRef);
 
-    Collection<StorPool> getAndForgetChangedStorPools();
+    Collection<StorPool> getChangedStorPools();
 }

@@ -46,7 +46,6 @@ public class StorageLayer implements ResourceLayer
     private final DeviceProviderMapper deviceProviderMapper;
     private final ExtCmdFactory extCmdFactory;
 
-    private final Set<StorPool> changedStorPools = new HashSet<>();
 
     @Inject
     public StorageLayer(
@@ -80,7 +79,6 @@ public class StorageLayer implements ResourceLayer
     {
         for (DeviceProvider deviceProvider : deviceProviderMapper.getDriverList())
         {
-            changedStorPools.addAll(deviceProvider.getAndForgetChangedStorPools());
             deviceProvider.clearCache();
         }
     }
@@ -201,11 +199,15 @@ public class StorageLayer implements ResourceLayer
         throws AccessDeniedException
     {
         Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
+        Set<StorPool> changedStorPools = new HashSet<>();
+        for (DeviceProvider deviceProvider : deviceProviderMapper.getDriverList())
+        {
+            changedStorPools.addAll(deviceProvider.getChangedStorPools());
+        }
         for (StorPool storPool : changedStorPools)
         {
             spaceMap.put(storPool, getStoragePoolSpaceInfoOrError(storPool));
         }
-        changedStorPools.clear();
         return spaceMap;
     }
 
