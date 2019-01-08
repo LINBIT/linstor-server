@@ -227,4 +227,10 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
             }
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "TransactionMap " + map.toString();
+    }
 }

@@ -240,4 +240,10 @@ public class TransactionList<PARENT, VALUE extends TransactionObject>
             }
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "TransactionList " + backingList.toString();
+    }
 }

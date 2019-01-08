@@ -83,4 +83,10 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     {
         return !Objects.equals(object, cachedObject);
     }
+
+    @Override
+    public String toString()
+    {
+        return "TransactionSimpleObject [" + object.toString() + "]";
+    }
 }

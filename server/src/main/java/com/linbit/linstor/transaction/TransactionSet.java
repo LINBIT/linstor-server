@@ -200,4 +200,10 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
             remove(val);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "TransactionSet " + backingSet.toString();
+    }
 }
