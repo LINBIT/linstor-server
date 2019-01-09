@@ -3,8 +3,6 @@ package com.linbit.linstor.storage.layer.provider.zfs;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -13,12 +11,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
+import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -35,7 +33,8 @@ public class ZfsThinProvider extends ZfsProvider
         @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider
+        Provider<NotificationListener> notificationListenerProvider,
+        Provider<TransactionMgr> transMgrProvider
     )
     {
         super(
@@ -45,33 +44,22 @@ public class ZfsThinProvider extends ZfsProvider
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
+            transMgrProvider,
             "ZFS-Thin",
-            ZfsLayerDataStlt.class
+            DeviceProviderKind.ZFS_THIN
         );
     }
 
     @Override
-    protected void createLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
+    protected void createLvImpl(ZfsData vlmData)
+        throws StorageException, AccessDeniedException, SQLException
     {
-        long volumeSize = vlm.getUsableSize(storDriverAccCtx);
-        if (volumeSize % DEFAULT_ZFS_EXTENT_SIZE != 0)
-        {
-            long origSize = volumeSize;
-            volumeSize = ((volumeSize / DEFAULT_ZFS_EXTENT_SIZE) + 1) * DEFAULT_ZFS_EXTENT_SIZE;
-            errorReporter.logInfo(
-                String.format(
-                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
-                    origSize,
-                    volumeSize,
-                    DEFAULT_ZFS_EXTENT_SIZE
-                )
-            );
-            vlm.setAllocatedSize(storDriverAccCtx, volumeSize);
-        }
+        long volumeSize = roundUpToExtentSize(vlmData);
+
         ZfsCommands.create(
             extCmdFactory.create(),
-            vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class).zpool,
-            asLvIdentifier(vlm),
+            vlmData.zpool,
+            asLvIdentifier(vlmData),
             volumeSize,
             true
         );
@@ -92,13 +80,5 @@ public class ZfsThinProvider extends ZfsProvider
             throw new ImplementationError(exc);
         }
         return zPool;
-    }
-
-    @RemoveAfterDevMgrRework // this method should stay protected. Here it is made public
-    // only to be accessible from LayeredSnapshotHelper
-    @Override
-    public String asLvIdentifier(VolumeDefinition vlmDfn)
-    {
-        return super.asLvIdentifier(vlmDfn);
     }
 }

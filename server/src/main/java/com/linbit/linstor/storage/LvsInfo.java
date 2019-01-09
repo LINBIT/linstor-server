@@ -12,7 +12,6 @@ import com.linbit.extproc.ExtCmd.OutputData;
  */
 public class LvsInfo extends VolumeInfo
 {
-
     public LvsInfo(final long size, final String identifier, final String path)
     {
         super(size, identifier, path);

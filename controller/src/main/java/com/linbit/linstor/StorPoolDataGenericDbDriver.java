@@ -211,7 +211,6 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
             storPoolDfn,
             StorageDriverLoader.getKind(resultSet.getString(SP_DRIVER)),
             freeSpaceMgr,
-            false,
             this,
             propsContainerFactory,
             transObjFactory,

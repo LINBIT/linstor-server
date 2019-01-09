@@ -451,4 +451,14 @@ public class Checks
         }
         System.arraycopy(rightParts, 0, parts, parts.length - rightParts.length, rightParts.length);
     }
+
+    public static <T> T requireNonNull(T t)
+    {
+        if (t == null)
+        {
+
+        }
+        return t;
+    }
+
 }

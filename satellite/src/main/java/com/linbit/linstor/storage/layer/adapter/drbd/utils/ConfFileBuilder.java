@@ -39,6 +39,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.Pair;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmData;
 
 import org.slf4j.event.Level;
 
@@ -48,8 +51,8 @@ public class ConfFileBuilder
 
     private final ErrorReporter errorReporter;
     private final AccessContext accCtx;
-    private final Resource localRsc;
-    private final Collection<Resource> remoteResources;
+    private final DrbdRscData localRscData;
+    private final Collection<DrbdRscData> remoteResourceData;
     private final WhitelistProps whitelistProps;
 
     private StringBuilder stringBuilder;
@@ -58,15 +61,15 @@ public class ConfFileBuilder
     public ConfFileBuilder(
         final ErrorReporter errorReporterRef,
         final AccessContext accCtxRef,
-        final Resource localRscRef,
-        final Collection<Resource> remoteResourcesRef,
+        final DrbdRscData localRscRef,
+        final Collection<DrbdRscData> remoteResourcesRef,
         final WhitelistProps whitelistPropsRef
     )
     {
         errorReporter = errorReporterRef;
         accCtx = accCtxRef;
-        localRsc = localRscRef;
-        remoteResources = remoteResourcesRef;
+        localRscData = localRscRef;
+        remoteResourceData = remoteResourcesRef;
         whitelistProps = whitelistPropsRef;
 
         stringBuilder = new StringBuilder();
@@ -81,8 +84,8 @@ public class ConfFileBuilder
     {
         errorReporter = errorReporterRef;
         accCtx = null;
-        localRsc = null;
-        remoteResources = null;
+        localRscData = null;
+        remoteResourceData = null;
         whitelistProps = whitelistPropsRef;
 
         stringBuilder = new StringBuilder();
@@ -98,14 +101,15 @@ public class ConfFileBuilder
     public String build()
         throws AccessDeniedException, StorageException
     {
-        Set<Resource> peerRscSet = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
-
-        if (remoteResources == null)
+        Set<DrbdRscData> peerRscSet = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
+        DrbdRscDfnData rscDfnData = localRscData.getRscDfnLayerObject();
+        if (remoteResourceData == null)
         {
-            throw new ImplementationError("No remote resources found for " + localRsc + "!");
+            throw new ImplementationError("No remote resources found for " + localRscData.getResource() + "!");
         }
-        peerRscSet.addAll(remoteResources); // node-alphabetically sorted
+        peerRscSet.addAll(remoteResourceData); // node-alphabetically sorted
 
+        Resource localRsc = localRscData.getResource();
         final ResourceDefinition rscDfn = localRsc.getDefinition();
         if (rscDfn == null)
         {
@@ -114,7 +118,7 @@ public class ConfFileBuilder
 
         appendLine(header());
         appendLine("");
-        appendLine("resource \"%s\"", localRsc.getDefinition().getName().displayValue);
+        appendLine("resource \"%s\"", localRscData.getSuffixedResourceName());
         try (Section resourceSection = new Section())
         {
             // include linstor common
@@ -141,7 +145,7 @@ public class ConfFileBuilder
                 // TODO: make configurable
                 appendLine("cram-hmac-alg     %s;", "sha1");
                 // TODO: make configurable
-                appendLine("shared-secret     \"%s\";", localRsc.getDefinition().getSecret(accCtx));
+                appendLine("shared-secret     \"%s\";", rscDfnData.getSecret());
 
                 appendDrbdOptions(
                     LinStorObject.CONTROLLER,
@@ -164,37 +168,38 @@ public class ConfFileBuilder
                 }
             }
 
-            int port = localRsc.getDefinition().getPort(accCtx).value;
+            int port = rscDfnData.getPort().value;
             // Create local network configuration
             {
                 appendLine("");
                 appendLine("on %s", localRsc.getAssignedNode().getName().displayValue);
                 try (Section onSection = new Section())
                 {
-                    Iterator<Volume> vlmIterator = localRsc.iterateVolumes();
-                    while (vlmIterator.hasNext())
+                    Collection<DrbdVlmData> vlmDataList = localRscData.getVlmLayerObjects().values();
+                    for (DrbdVlmData vlmData : vlmDataList)
                     {
-                        appendVlmIfPresent(vlmIterator.next(), accCtx, false);
+                        appendVlmIfPresent(vlmData, accCtx, false);
                     }
                     appendLine("node-id    %d;", localRsc.getNodeId().value);
                 }
             }
 
-            for (final Resource peerRsc : peerRscSet)
+            for (final DrbdRscData peerRscData : peerRscSet)
             {
+                Resource peerRsc = peerRscData.getResource();
                 if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE))
                 {
                     appendLine("");
                     appendLine("on %s", peerRsc.getAssignedNode().getName().displayValue);
                     try (Section onSection = new Section())
                     {
-                        Iterator<Volume> peerVlms = peerRsc.iterateVolumes();
-                        while (peerVlms.hasNext())
+                        Collection<DrbdVlmData> peerVlmDataList = peerRscData.getVlmLayerObjects().values();
+                        for (DrbdVlmData peerVlmData : peerVlmDataList)
                         {
-                            appendVlmIfPresent(peerVlms.next(), accCtx, true);
+                            appendVlmIfPresent(peerVlmData, accCtx, true);
                         }
 
-                        appendLine("node-id    %d;", peerRsc.getNodeId().value);
+                        appendLine("node-id    %d;", peerRscData.getNodeId().value);
 
                         // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
                         // sb.append(peerResource.co)
@@ -203,8 +208,9 @@ public class ConfFileBuilder
             }
 
             // first generate all with local first
-            for (final Resource peerRsc : peerRscSet)
+            for (final DrbdRscData peerRscData : peerRscSet)
             {
+                Resource peerRsc = peerRscData.getResource();
                 // don't create a connection entry if the resource has the deleted flag
                 // or if it is a connection between two diskless nodes
                 if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE) &&
@@ -704,23 +710,23 @@ public class ConfFileBuilder
         return preferredNetIf;
     }
 
-    private void appendVlmIfPresent(Volume vlm, AccessContext localAccCtx, boolean isPeerRsc)
+    private void appendVlmIfPresent(DrbdVlmData vlmData, AccessContext localAccCtx, boolean isPeerRsc)
         throws AccessDeniedException
     {
-        if (vlm.getFlags().isUnset(localAccCtx, Volume.VlmFlags.DELETE))
+        if (vlmData.getVolume().getFlags().isUnset(localAccCtx, Volume.VlmFlags.DELETE))
         {
             final String disk;
-            if (vlm.getBackingDiskPath(localAccCtx) == null ||
-                (isPeerRsc && vlm.getResource().disklessForPeers(localAccCtx)) ||
-                (!isPeerRsc && vlm.getResource().getStateFlags().isSet(localAccCtx, RscFlags.DISKLESS)))
+            if ((!isPeerRsc && vlmData.getBackingDevice() == null) ||
+                (isPeerRsc && vlmData.getRscLayerObject().isDisklessForPeers()) |
+                (!isPeerRsc && vlmData.getRscLayerObject().isDiskless()))
             {
                 disk = "none";
             }
             else
             {
-                if (vlm.getResource().equals(localRsc))
+                if (vlmData.getRscLayerObject().equals(localRscData))
                 {
-                    String backingDiskPath = vlm.getBackingDiskPath(localAccCtx);
+                    String backingDiskPath = vlmData.getBackingDevice();
                     if (backingDiskPath.trim().equals(""))
                     {
                         throw new LinStorRuntimeException(
@@ -730,7 +736,7 @@ public class ConfFileBuilder
                                 "recently occured error. Please check the error logs and try to solve the other " +
                                 "other errors first",
                             null,
-                            vlm.toString()
+                            vlmData.toString()
                         );
                     }
                     disk = backingDiskPath;
@@ -743,24 +749,24 @@ public class ConfFileBuilder
                 }
             }
             final String metaDisk;
-            if (vlm.getMetaDiskPath(localAccCtx) == null)
+            if (vlmData.getMetaDiskPath() == null)
             {
                 metaDisk = "internal";
             }
             else
             {
-                String tmpMeta = vlm.getMetaDiskPath(localAccCtx);
+                String tmpMeta = vlmData.getMetaDiskPath();
                 if (tmpMeta.trim().equals(""))
                 {
                     metaDisk = "internal";
                 }
                 else
                 {
-                    metaDisk = vlm.getMetaDiskPath(localAccCtx);
+                    metaDisk = vlmData.getMetaDiskPath();
                 }
             }
 
-            final VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+            final VolumeDefinition vlmDfn = vlmData.getVolume().getVolumeDefinition();
             appendLine("volume %s", vlmDfn.getVolumeNumber().value);
             try (Section volumeSection = new Section())
             {
@@ -781,7 +787,7 @@ public class ConfFileBuilder
 
                 appendLine("meta-disk   %s;", metaDisk);
                 appendLine("device      minor %d;",
-                    vlm.getVolumeDefinition().getMinorNr(localAccCtx).value
+                    vlmData.getVlmDfnLayerObject().getMinorNr().value
                 // TODO: impl and ask storPool for device
                 );
                 // TODO: add "disk { ... }" section
@@ -815,12 +821,14 @@ public class ConfFileBuilder
         appendLine(format, args);
     }
 
-    private static class ResourceNameComparator implements Comparator<Resource>
+    private static class ResourceNameComparator implements Comparator<DrbdRscData>
     {
         @Override
-        public int compare(Resource o1, Resource o2)
+        public int compare(DrbdRscData o1, DrbdRscData o2)
         {
-            return o1.getAssignedNode().getName().compareTo(o2.getAssignedNode().getName());
+            return o1.getResource().getAssignedNode().getName().compareTo(
+                   o2.getResource().getAssignedNode().getName()
+            );
         }
     }
 

@@ -145,11 +145,6 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
             }
             catch (EventsSourceException exc)
             {
-//                errorReporter.reportError(new ImplementationError(
-//                    "Unable to process event line from DRBD",
-//                    exc
-//                ));
-
                 errorReporter.logError("Unable to process event line from DRBD");
                 restartEvents2Stream(RESTART_EVENTS2_STREAM_NOW);
             }
@@ -180,10 +175,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
         }
         try
         {
-            if (timeout > 0)
-            {
-                Thread.sleep(timeout);
-            }
+            Thread.sleep(timeout);
             try
             {
                 eventDeque.clear();

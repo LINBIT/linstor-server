@@ -18,6 +18,7 @@ import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,10 +127,24 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         );
 
         volSrc = volumeDataFactory.create(
-            SYS_CTX, resSrc, volDfn, storPool1, volBlockDevSrc, volMetaDiskPathSrc, null
+            SYS_CTX,
+            resSrc,
+            volDfn,
+            storPool1,
+            volBlockDevSrc,
+            volMetaDiskPathSrc,
+            null,
+            Collections.emptyList()
         );
         volDst = volumeDataFactory.create(
-            SYS_CTX, resDst, volDfn, storPool2, volBlockDevDst, volMetaDiskPathDst, null
+            SYS_CTX,
+            resDst,
+            volDfn,
+            storPool2,
+            volBlockDevDst,
+            volMetaDiskPathDst,
+            null,
+            Collections.emptyList()
         );
     }
 

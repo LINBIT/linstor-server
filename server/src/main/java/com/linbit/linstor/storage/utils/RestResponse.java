@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.utils;
 
-import com.linbit.linstor.Volume;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import java.util.Map;
@@ -18,5 +18,5 @@ public interface RestResponse<T>
 
     String toString(Integer... excludeExpectedRcs);
 
-    Volume getVolume();
+    VlmProviderObject getVolumeData();
 }

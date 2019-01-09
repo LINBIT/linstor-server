@@ -2,11 +2,8 @@ package com.linbit.linstor.storage.layer.adapter.cryptsetup;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -16,12 +13,13 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.layer.ResourceLayer;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
-import com.linbit.linstor.storage.utils.CryptSetup;
-import com.linbit.linstor.storage.utils.ResourceUtils;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -30,10 +28,11 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
-public class CryptSetupLayer implements ResourceLayer
+public class CryptSetupLayer implements DeviceLayer
 {
     private static final String CRYPT_IDENTIFIER_FORMAT = "crypt_%s_%05d";
 
@@ -69,36 +68,22 @@ public class CryptSetupLayer implements ResourceLayer
     }
 
     @Override
-    public void prepare(List<Resource> rscs, List<Snapshot> snapshots)
+    public void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
         throws StorageException, AccessDeniedException, SQLException
     {
-        for (Volume vlm : rscs.stream().flatMap(Resource::streamVolumes).collect(Collectors.toList()))
-        {
-            CryptSetupStltData data = vlm.getLayerData(sysCtx, CryptSetupStltData.class);
-            if (data == null)
-            {
-                VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-                vlm.setLayerData(
-                    sysCtx,
-                    new CryptSetupStltData(
-                        vlmDfn.getCryptKey(sysCtx).getBytes(),
-                        String.format(
-                            CRYPT_IDENTIFIER_FORMAT,
-                            vlm.getResourceDefinition().getName().displayValue,
-                            vlmDfn.getVolumeNumber().value
-                        )
-                    )
-                );
-            }
-        }
-        // ignore snapshots
+        // no-op
     }
 
     @Override
-    public void updateGrossSize(Volume cryptVlm, Volume parentVolume) throws AccessDeniedException, SQLException
+    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
     {
-        cryptVlm.setUsableSize(sysCtx, parentVolume.getAllocatedSize(sysCtx));
-        cryptVlm.setAllocatedSize(sysCtx, parentVolume.getAllocatedSize(sysCtx) + 2 * MIB);
+        CryptSetupVlmStltData cryptData = (CryptSetupVlmStltData) vlmData;
+
+        long parentAllocatedSize = cryptData.getParentAllocatedSizeOrElse(
+            () -> cryptData.vlm.getVolumeDefinition().getVolumeSize(sysCtx)
+        );
+        cryptData.usableSize = parentAllocatedSize;
+        cryptData.allocatedSize = parentAllocatedSize + 2 * MIB;
     }
 
     @Override
@@ -114,21 +99,20 @@ public class CryptSetupLayer implements ResourceLayer
     }
 
     @Override
-    public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    public void process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
-        Resource childRsc = ResourceUtils.getSingleChild(rsc, sysCtx);
+        CryptSetupRscStltData cryptRscData = (CryptSetupRscStltData) rscData;
+        boolean deleteRsc = cryptRscData.rsc.getStateFlags().isSet(sysCtx, RscFlags.DELETE);
 
-        boolean deleteRsc = rsc.getStateFlags().isSet(sysCtx, RscFlags.DELETE);
-
-        Map<Boolean, List<Volume>> groupedByDeleteFlag =
-            rsc.streamVolumes().collect(
-                Collectors.partitioningBy(vlm ->
+        Map<Boolean, List<CryptSetupVlmStltData>> groupedByDeleteFlag =
+            cryptRscData.unmodVlmLayerObjects.values().stream().collect(
+                Collectors.partitioningBy(cryptVlmData ->
                 {
                     boolean ret;
                     try
                     {
-                        ret = deleteRsc || vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE);
+                        ret = deleteRsc || cryptVlmData.vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE);
                     }
                     catch (AccessDeniedException exc)
                     {
@@ -139,45 +123,41 @@ public class CryptSetupLayer implements ResourceLayer
             )
         );
 
-        for (Volume vlm : groupedByDeleteFlag.get(true))
+        for (CryptSetupVlmStltData vlmData : groupedByDeleteFlag.get(true))
         {
-            CryptSetupStltData data = vlm.getLayerData(sysCtx, CryptSetupStltData.class);
-            String identifier = getIdentifier(vlm, data);
-
+            String identifier = getIdentifier(vlmData);
 
             if (cryptSetup.isOpen(identifier))
             {
                 cryptSetup.closeCryptDevice(identifier);
-                data.opened = false;
+                vlmData.opened = false;
             }
         }
 
         resourceProcessorProvider.get().process(
-            childRsc,
+            rscData.getSingleChild(),
             snapshots,
             apiCallRc
         );
 
-        for (Volume vlm : groupedByDeleteFlag.get(false))
+        for (CryptSetupVlmStltData vlmData : groupedByDeleteFlag.get(false))
         {
-            CryptSetupStltData data = vlm.getLayerData(sysCtx, CryptSetupStltData.class);
-
-            String identifier = getIdentifier(vlm, data);
+            String identifier = getIdentifier(vlmData);
 
             boolean isOpen = cryptSetup.isOpen(identifier);
 
-            String backingDev = childRsc.getVolume(
-                vlm.getVolumeDefinition().getVolumeNumber()
-            ).getDevicePath(sysCtx);
+            vlmData.backingDevice = vlmData.getSingleChild().getDevicePath();
 
-            vlm.setBackingDiskPath(sysCtx, backingDev);
-
-            boolean alreadyLuks = cryptSetup.hasLuksFormat(backingDev);
+            boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
 
             if (!alreadyLuks)
             {
-                String providedDev = cryptSetup.createCryptDevice(backingDev, data.password, identifier);
-                vlm.setDevicePath(sysCtx, providedDev);
+                String providedDev = cryptSetup.createCryptDevice(
+                    vlmData.backingDevice,
+                    vlmData.getPassword(),
+                    identifier
+                );
+                vlmData.devicePath = providedDev;
             }
             else
             {
@@ -188,34 +168,28 @@ public class CryptSetupLayer implements ResourceLayer
                  * in every iteration. Once those data live longer (or are restored from props)
                  * the next command can be removed
                  */
-                vlm.setDevicePath(sysCtx, cryptSetup.getCryptVolumePath(identifier));
+                vlmData.devicePath = cryptSetup.getCryptVolumePath(identifier);
             }
 
             if (!isOpen)
             {
-                cryptSetup.openCryptDevice(backingDev, identifier, data.password);
+                cryptSetup.openCryptDevice(vlmData.backingDevice, identifier, vlmData.getPassword());
             }
 
-            vlm.setAllocatedSize(
-                sysCtx,
-                Commands.getBlockSizeInKib(
-                    extCmdFactory.create(),
-                    backingDev
-                )
+            vlmData.allocatedSize = Commands.getBlockSizeInKib(
+                extCmdFactory.create(),
+                vlmData.backingDevice
             );
-            vlm.setUsableSize(
-                sysCtx,
-                Commands.getBlockSizeInKib(
-                    extCmdFactory.create(),
-                    vlm.getDevicePath(sysCtx)
-                )
+            vlmData.usableSize = Commands.getBlockSizeInKib(
+                extCmdFactory.create(),
+                vlmData.devicePath
             );
 
-            data.opened = true;
+            vlmData.opened = true;
         }
     }
 
-    private String getIdentifier(Volume vlm, CryptSetupStltData vlmData)
+    private String getIdentifier(CryptSetupVlmStltData vlmData)
     {
         String identifier = vlmData.identifier;
 
@@ -223,40 +197,12 @@ public class CryptSetupLayer implements ResourceLayer
         {
             identifier = String.format(
                 CRYPT_IDENTIFIER_FORMAT,
-                vlm.getResourceDefinition().getName().displayValue,
-                vlm.getVolumeDefinition().getVolumeNumber().value
+                vlmData.rscData.getSuffixedResourceName(),
+                vlmData.getVlmNr().value
             );
             vlmData.identifier = identifier;
         }
 
         return identifier;
     }
-
-    private boolean isDeviceAlreadyLuks(String providedDev, String backingDev)
-    {
-        /*
-         * check with "cryptsetup isLuks <device>" if the backing device is already in luks format
-         * retcode 0 == yes, 1 == no
-         */
-        throw new ImplementationError("Not implemented yet");
-    }
-
-    private void cryptLuksFormat(String backingDev)
-    {
-        /*
-         * if not in luksformat exec "cryptsetup -q luksFormat <device>" and write the passwd
-         * to the cryptsetup's stdin
-         */
-        throw new ImplementationError("Not implemented yet");
-    }
-
-
-    private void closeLuks(String luksIdentifier)
-    {
-        /*
-         *
-         */
-        throw new ImplementationError("Not implemented yet");
-    }
-
 }

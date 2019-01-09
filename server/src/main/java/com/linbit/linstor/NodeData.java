@@ -26,8 +26,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-import com.linbit.utils.Pair;
-
 import javax.inject.Provider;
 
 import java.sql.SQLException;
@@ -64,7 +62,7 @@ public class NodeData extends BaseTransactionObject implements Node
     private final TransactionSimpleObject<NodeData, NodeType> nodeType;
 
     // List of resources assigned to this cluster node
-    private final TransactionMap<Pair<ResourceName, ResourceType>, Resource> resourceMap;
+    private final TransactionMap<ResourceName, Resource> resourceMap;
 
     // List of snapshots on this cluster node
     private final TransactionMap<SnapshotDefinition.Key, Snapshot> snapshotMap;
@@ -134,7 +132,7 @@ public class NodeData extends BaseTransactionObject implements Node
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider,
-        Map<Pair<ResourceName, ResourceType>, Resource> rscMapRef,
+        Map<ResourceName, Resource> rscMapRef,
         Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
         Map<NetInterfaceName, NetInterface> netIfMapRef,
         Map<StorPoolName, StorPool> storPoolMapRef,
@@ -213,12 +211,12 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public Resource getResource(AccessContext accCtx, ResourceName resName, ResourceType type)
+    public Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return resourceMap.get(new Pair<>(resName, type));
+        return resourceMap.get(resName);
     }
 
     @Override
@@ -295,13 +293,7 @@ public class NodeData extends BaseTransactionObject implements Node
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        resourceMap.put(
-            new Pair<>(
-                resRef.getDefinition().getName(),
-                resRef.getType()
-            ),
-            resRef
-        );
+        resourceMap.put(resRef.getDefinition().getName(), resRef);
     }
 
     void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
@@ -309,7 +301,7 @@ public class NodeData extends BaseTransactionObject implements Node
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        resourceMap.remove(new Pair<>(resRef.getDefinition().getName(), resRef.getType()));
+        resourceMap.remove(resRef.getDefinition().getName());
     }
 
     @Override

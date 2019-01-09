@@ -8,20 +8,18 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.data.ZfsLayerData;
-import com.linbit.linstor.storage.layer.data.categories.VlmLayerData.Size;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
@@ -29,6 +27,7 @@ import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
 import com.linbit.linstor.storage.utils.ZfsUtils;
 import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -38,18 +37,19 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
 @Singleton
-public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
+public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 {
     protected static final int DEFAULT_ZFS_EXTENT_SIZE = 8; // 8K
 
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
-    public static final String FORMAT_RSC_TO_ZFS_ID = "%s_%05d";
+    public static final String FORMAT_RSC_TO_ZFS_ID = "%s_%s_%05d";
     private static final String FORMAT_ZFS_DEV_PATH = "/dev/zvol/%s/%s";
     private static final int TOLERANCE_FACTOR = 3;
 
@@ -62,8 +62,9 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
+        Provider<TransactionMgr> transMgrProvider,
         String subTypeDescr,
-        Class<? extends ZfsLayerDataStlt> layerDataClass
+        DeviceProviderKind kind
     )
     {
         super(
@@ -73,8 +74,9 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
+            transMgrProvider,
             subTypeDescr,
-            layerDataClass
+            kind
         );
     }
 
@@ -85,7 +87,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
         @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider
+        Provider<NotificationListener> notificationListenerProvider,
+        Provider<TransactionMgr> transMgrProvider
     )
     {
         super(
@@ -95,8 +98,9 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
+            transMgrProvider,
             "ZFS",
-            ZfsLayerDataStlt.class
+            DeviceProviderKind.ZFS
         );
     }
 
@@ -114,45 +118,53 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     }
 
     @Override
-    protected Map<String, ZfsInfo> getInfoListImpl(Collection<Volume> volumes) throws StorageException
+    protected Map<String, ZfsInfo> getInfoListImpl(List<ZfsData> vlmDataListRef) throws StorageException
     {
         return ZfsUtils.getZfsList(extCmdFactory.create());
     }
 
     @Override
-    protected String asLvIdentifier(Volume vlm)
-    {
-        return asLvIdentifier(vlm.getVolumeDefinition());
-    }
-
-    @Override
-    protected String asLvIdentifier(ResourceName resourceName, VolumeNumber volumeNumber)
+    protected String asLvIdentifier(ResourceName resourceName, String rscNameSuffix, VolumeNumber volumeNumber)
     {
         return String.format(
             FORMAT_RSC_TO_ZFS_ID,
             resourceName.displayValue,
+            rscNameSuffix,
             volumeNumber.value
         );
     }
 
-    private String asFullQualifiedLvIdentifier(SnapshotVolume snapVlm)
-        throws AccessDeniedException, SQLException
+    private String asFullQualifiedLvIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
+        throws AccessDeniedException
     {
-        return getStorageName(snapVlm) + File.separator + asLvIdentifier(snapVlm);
+        return getZPool(snapVlm.getStorPool(storDriverAccCtx)) + File.separator +
+            asLvIdentifier(rscNameSuffix, snapVlm);
     }
 
-    private String asLvIdentifier(SnapshotVolume snapVlm)
+    private String asLvIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
     {
-        return
-            asLvIdentifier(snapVlm.getSnapshotVolumeDefinition()) + "@" +
+        return asLvIdentifier(rscNameSuffix, snapVlm.getSnapshotVolumeDefinition()) + "@" +
             snapVlm.getSnapshotName().displayValue;
     }
 
-
     @Override
-    protected void createLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
+    protected void createLvImpl(ZfsData vlmData)
+        throws StorageException, AccessDeniedException, SQLException
     {
-        long volumeSize = vlm.getUsableSize(storDriverAccCtx);
+        long volumeSize = roundUpToExtentSize(vlmData);
+
+        ZfsCommands.create(
+            extCmdFactory.create(),
+            vlmData.zpool,
+            asLvIdentifier(vlmData),
+            volumeSize,
+            false
+        );
+    }
+
+    protected long roundUpToExtentSize(ZfsData vlmData)
+    {
+        long volumeSize = vlmData.usableSize;
         if (volumeSize % DEFAULT_ZFS_EXTENT_SIZE != 0)
         {
             long origSize = volumeSize;
@@ -165,89 +177,88 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
                     DEFAULT_ZFS_EXTENT_SIZE
                 )
             );
-            vlm.setAllocatedSize(storDriverAccCtx, volumeSize);
+            vlmData.allocatedSize = volumeSize;
         }
-        ZfsCommands.create(
-            extCmdFactory.create(),
-            vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class).zpool,
-            asLvIdentifier(vlm),
-            volumeSize,
-            false
-        );
+        return volumeSize;
     }
 
     @Override
-    protected void resizeLvImpl(Volume vlm) throws StorageException, AccessDeniedException, SQLException
+    protected void resizeLvImpl(ZfsData vlmData)
+        throws StorageException, AccessDeniedException, SQLException
     {
         ZfsCommands.resize(
             extCmdFactory.create(),
-            vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class).zpool,
-            asLvIdentifier(vlm),
-            vlm.getUsableSize(storDriverAccCtx)
+            vlmData.zpool,
+            asLvIdentifier(vlmData),
+            vlmData.usableSize
         );
     }
 
     @Override
-    protected void deleteLvImpl(Volume vlm, String lvId)
+    protected void deleteLvImpl(ZfsData vlmData, String lvId)
         throws StorageException, AccessDeniedException, SQLException
     {
         ZfsCommands.delete(
             extCmdFactory.create(),
-            vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class).zpool,
+            vlmData.zpool,
             lvId
         );
+        vlmData.exists = false;
     }
 
     @Override
     public boolean snapshotExists(SnapshotVolume snapVlm)
         throws StorageException, AccessDeniedException, SQLException
     {
-        return ((ZfsLayerDataStlt) snapVlm.getLayerData(storDriverAccCtx)).exists;
+        // FIXME: RAID: rscNameSuffix
+        return infoListCache.get(asFullQualifiedLvIdentifier("", snapVlm)) != null;
     }
 
     @Override
-    protected void createSnapshot(Volume vlm, SnapshotVolume snapVlm)
+    protected void createSnapshot(ZfsData vlmData, SnapshotVolume snapVlm)
         throws StorageException, AccessDeniedException, SQLException
     {
         ZfsCommands.createSnapshot(
             extCmdFactory.create(),
-            getStorageName(vlm),
-            asLvIdentifier(vlm),
+            getStorageName(vlmData),
+            asLvIdentifier(vlmData),
             snapVlm.getSnapshotName().displayValue
         );
     }
 
     @Override
-    protected void restoreSnapshot(String sourceLvId, String sourceSnapshotName, Volume targetVlm)
+    protected void restoreSnapshot(String sourceLvId, String sourceSnapName, ZfsData targetVlmData)
         throws StorageException, AccessDeniedException, SQLException
     {
         ZfsCommands.restoreSnapshot(
             extCmdFactory.create(),
-            getZPool(targetVlm),
+            getStorageName(targetVlmData),
             sourceLvId,
-            sourceSnapshotName,
-            asLvIdentifier(targetVlm)
+            sourceSnapName,
+            asLvIdentifier(targetVlmData)
         );
     }
 
+
     @Override
-    protected void deleteSnapshot(SnapshotVolume snapVlm) throws StorageException, AccessDeniedException, SQLException
+    protected void deleteSnapshot(String rscNameSuffix, SnapshotVolume snapVlm)
+        throws StorageException, AccessDeniedException, SQLException
     {
         ZfsCommands.delete(
             extCmdFactory.create(),
-            ((ZfsLayerDataStlt) snapVlm.getLayerData(storDriverAccCtx)).zpool,
-            asLvIdentifier(snapVlm)
+            getZPool(snapVlm.getStorPool(storDriverAccCtx)),
+            asLvIdentifier(rscNameSuffix, snapVlm)
         );
     }
 
     @Override
-    protected void rollbackImpl(Volume vlm, String rollbackTargetSnapshotName)
+    protected void rollbackImpl(ZfsData vlmData, String rollbackTargetSnapshotName)
         throws StorageException, AccessDeniedException, SQLException
     {
         ZfsCommands.rollback(
             extCmdFactory.create(),
-            getZPool(vlm),
-            asLvIdentifier(vlm),
+            getStorageName(vlmData),
+            asLvIdentifier(vlmData),
             rollbackTargetSnapshotName
         );
     }
@@ -259,46 +270,21 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     }
 
     @Override
-    protected String getIdentifier(ZfsLayerDataStlt layerData)
+    protected String getIdentifier(ZfsData layerData)
     {
         return layerData.identifier;
     }
 
     @Override
-    protected Size getSize(ZfsLayerDataStlt layerData)
+    protected Size getSize(ZfsData layerData)
     {
         return layerData.sizeState;
     }
 
     @Override
-    protected String getStorageName(Volume vlm) throws AccessDeniedException, SQLException
+    protected String getStorageName(ZfsData vlmData)
     {
-        String volumeGroup = null;
-        ZfsLayerDataStlt layerData = vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class);
-        if (layerData == null)
-        {
-            volumeGroup = getZPool(vlm.getStorPool(storDriverAccCtx));
-        }
-        else
-        {
-            volumeGroup = layerData.zpool;
-        }
-        return volumeGroup;
-    }
-
-    protected String getStorageName(SnapshotVolume snapVlm) throws AccessDeniedException, SQLException
-    {
-        String volumeGroup = null;
-        ZfsLayerDataStlt layerData = (ZfsLayerDataStlt) snapVlm.getLayerData(storDriverAccCtx);
-        if (layerData == null)
-        {
-            volumeGroup = getZPool(snapVlm.getStorPool(storDriverAccCtx));
-        }
-        else
-        {
-            volumeGroup = layerData.zpool;
-        }
-        return volumeGroup;
+        return vlmData.zpool;
     }
 
     protected String getZPool(StorPool storPool) throws AccessDeniedException
@@ -317,83 +303,44 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
         return zPool;
     }
 
-    private String getZPool(Volume vlm) throws AccessDeniedException, SQLException
-    {
-        String zPool = null;
-        ZfsLayerData layerData = vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class);
-        if (layerData == null)
-        {
-            zPool = getZPool(vlm.getStorPool(storDriverAccCtx));
-        }
-        else
-        {
-            zPool = layerData.getZPool();
-        }
-        return zPool;
-    }
-
-    private String getZPool(SnapshotVolume snapVlm) throws AccessDeniedException, SQLException
-    {
-        String zPool = null;
-        ZfsLayerData layerData = (ZfsLayerData) snapVlm.getLayerData(storDriverAccCtx);
-        if (layerData == null)
-        {
-            zPool = getZPool(snapVlm.getStorPool(storDriverAccCtx));
-        }
-        else
-        {
-            zPool = layerData.getZPool();
-        }
-        return zPool;
-    }
-
     @Override
     public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
+        String zpoolName = getZPool(storPool);
+        if (zpoolName == null)
+        {
+            throw new StorageException(
+                "zPool name not given for storPool '" +
+                    storPool.getName().displayValue + "'"
+            );
+        }
+        zpoolName = zpoolName.trim();
         try
         {
-            Props storPoolProps = DeviceLayerUtils.getNamespaceStorDriver(storPool.getProps(storDriverAccCtx));
-
-            String zpoolName = storPoolProps.getProp(StorageConstants.CONFIG_ZFS_POOL_KEY).trim();
-            if (zpoolName == null)
-            {
-                throw new StorageException(
-                    "zPool name not given for storPool '" +
-                        storPool.getName().displayValue + "'"
-                    );
-            }
-
-            try
-            {
-                Checks.nameCheck(
-                    zpoolName,
-                    1,
-                    Integer.MAX_VALUE,
-                    StorPoolName.VALID_CHARS,
-                    StorPoolName.VALID_INNER_CHARS
-                );
-            }
-            catch (InvalidNameException ine)
-            {
-                final String cause = String.format("Invalid pool name: %s", zpoolName);
-                throw new StorageException(
-                    "Invalid configuration, " + cause,
-                    null,
-                    cause,
-                    "Specify a valid and existing pool name",
-                    null
-                );
-            }
-
-            Set<String> zpoolList = ZfsUtils.getZPoolList(extCmdFactory.create());
-            if (!zpoolList.contains(zpoolName))
-            {
-                throw new StorageException("no zpool found with name '" + zpoolName + "'");
-            }
+            Checks.nameCheck(
+                zpoolName,
+                1,
+                Integer.MAX_VALUE,
+                StorPoolName.VALID_CHARS,
+                StorPoolName.VALID_INNER_CHARS
+            );
         }
-        catch (InvalidKeyException exc)
+        catch (InvalidNameException ine)
         {
-            throw new ImplementationError(exc);
+            final String cause = String.format("Invalid pool name: %s", zpoolName);
+            throw new StorageException(
+                "Invalid configuration, " + cause,
+                null,
+                cause,
+                "Specify a valid and existing pool name",
+                null
+            );
+        }
+
+        Set<String> zpoolList = ZfsUtils.getZPoolList(extCmdFactory.create());
+        if (!zpoolList.contains(zpoolName))
+        {
+            throw new StorageException("no zpool found with name '" + zpoolName + "'");
         }
     }
 
@@ -432,41 +379,38 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
     }
 
     @Override
-    protected void updateStates(Collection<Volume> vlms, Collection<SnapshotVolume> snapVlms)
+    protected void updateStates(List<ZfsData> vlmDataList, Collection<SnapshotVolume> snapVlms)
         throws StorageException, AccessDeniedException, SQLException
     {
         Set<StorPool> storPools = new TreeSet<>();
         /*
          *  updating volume states
          */
-        for (Volume vlm : vlms)
+        for (ZfsData vlmData : vlmDataList)
         {
-            storPools.add(vlm.getStorPool(storDriverAccCtx));
+            storPools.add(vlmData.vlm.getStorPool(storDriverAccCtx));
 
-            ZfsInfo info = infoListCache.get(asFullQualifiedLvIdentifier(vlm));
+            vlmData.zpool = getZPool(vlmData.vlm.getStorPool(storDriverAccCtx));
+            vlmData.identifier = asFullQualifiedLvIdentifier(vlmData);
+            ZfsInfo info = infoListCache.get(vlmData.identifier);
 
-            ZfsLayerDataStlt state = vlm.getLayerData(storDriverAccCtx, ZfsLayerDataStlt.class);
             if (info != null)
             {
-                if (state == null)
-                {
-                    state = createLayerData(vlm, info);
-                }
-                state.exists = true;
+                vlmData.updateInfo(info);
 
-                final long expectedSize = vlm.getUsableSize(storDriverAccCtx);
+                final long expectedSize = vlmData.usableSize;
                 final long actualSize = info.size;
                 if (actualSize != expectedSize)
                 {
                     if (actualSize < expectedSize)
                     {
-                        state.sizeState = Size.TOO_SMALL;
+                        vlmData.sizeState = Size.TOO_SMALL;
                     }
                     else
                     {
                         if (actualSize == expectedSize)
                         {
-                            state.sizeState = Size.AS_EXPECTED;
+                            vlmData.sizeState = Size.AS_EXPECTED;
                         }
                         else
                         {
@@ -475,94 +419,47 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsLayerDataStlt>
                                 info.poolName,
                                 info.identifier
                             );
-                            state.sizeState = Size.TOO_LARGE;
+                            vlmData.sizeState = Size.TOO_LARGE;
                             final long toleratedSize =
                                 expectedSize + extentSize * TOLERANCE_FACTOR;
                             if (actualSize < toleratedSize)
                             {
-                                state.sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
+                                vlmData.sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
                             }
                         }
                     }
                 }
-                vlm.setDevicePath(storDriverAccCtx, info.path);
-                ProviderUtils.updateAllocatedSize(vlm, extCmdFactory.create(), storDriverAccCtx);
+                vlmData.allocatedSize = ProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create());
             }
             else
             {
-                if (state == null)
-                {
-                    state = createEmptyLayerData(vlm);
-                }
-                state.exists = false;
-                vlm.setDevicePath(storDriverAccCtx, null);
-                vlm.setAllocatedSize(storDriverAccCtx, -1);
+                vlmData.exists = false;
+                vlmData.devicePath = null;
+                vlmData.allocatedSize = -1;
             }
         }
-
-        /*
-         *  updating snapshot states
-         */
-        for (SnapshotVolume snapVlm : snapVlms)
-        {
-            ZfsInfo info = infoListCache.get(asFullQualifiedLvIdentifier(snapVlm));
-            // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
-
-            ZfsLayerDataStlt state = (ZfsLayerDataStlt) snapVlm.getLayerData(storDriverAccCtx);
-            if (state == null)
-            {
-                if (info != null)
-                {
-                    state = createLayerData(snapVlm, info);
-                }
-                else
-                {
-                    state = createEmptyLayerData(snapVlm);
-                }
-            }
-            state.exists = info != null;
-        }
     }
 
-    private String asFullQualifiedLvIdentifier(Volume vlm) throws AccessDeniedException, SQLException
+    private String asFullQualifiedLvIdentifier(ZfsData vlmData)
     {
-        return getStorageName(vlm) + File.separator + asLvIdentifier(vlm);
+        return getStorageName(vlmData) + File.separator + asLvIdentifier(vlmData);
     }
 
-    protected ZfsLayerDataStlt createLayerData(Volume vlm, ZfsInfo info) throws AccessDeniedException, SQLException
+    @Override
+    protected void setDevicePath(ZfsData vlmData, String devPath)
     {
-        ZfsLayerDataStlt data = new ZfsLayerDataStlt(info);
-        vlm.setLayerData(storDriverAccCtx, data);
-        return data;
+        vlmData.devicePath = devPath;
     }
 
-    protected ZfsLayerDataStlt createLayerData(SnapshotVolume snapvlm, ZfsInfo info)
-        throws AccessDeniedException, SQLException
+    @Override
+    protected void setAllocatedSize(ZfsData vlmData, long size)
     {
-        ZfsLayerDataStlt data = new ZfsLayerDataStlt(info);
-        snapvlm.setLayerData(storDriverAccCtx, data);
-        return data;
+        vlmData.allocatedSize = size;
     }
 
-    protected ZfsLayerDataStlt createEmptyLayerData(Volume vlm)
-        throws AccessDeniedException, SQLException
+    @Override
+    protected void setUsableSize(ZfsData vlmData, long size)
     {
-        ZfsLayerDataStlt data = new ZfsLayerDataStlt(
-            getZPool(vlm),
-            asLvIdentifier(vlm)
-        );
-        vlm.setLayerData(storDriverAccCtx, data);
-        return data;
-    }
-
-    protected ZfsLayerDataStlt createEmptyLayerData(SnapshotVolume snapVlm)
-        throws AccessDeniedException, SQLException
-    {
-        ZfsLayerDataStlt data = new ZfsLayerDataStlt(
-            getZPool(snapVlm),
-            asLvIdentifier(snapVlm.getResourceDefinition().getVolumeDfn(storDriverAccCtx, snapVlm.getVolumeNumber()))
-        );
-        snapVlm.setLayerData(storDriverAccCtx, data);
-        return data;
+        vlmData.usableSize = size;
     }
 }

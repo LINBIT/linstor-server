@@ -14,7 +14,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.storage.layer.data.categories.RscDfnLayerData;
+import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -88,7 +89,7 @@ public class ResourceDefinitionDataControllerFactory
         RscDfnFlags[] flags,
         String secret,
         TransportType transType,
-        Map<Class<? extends RscDfnLayerData>, RscDfnLayerData> layerData
+        Map<DeviceLayerKind, RscDfnLayerObject> layerData
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException

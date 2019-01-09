@@ -19,8 +19,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.layers.State;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.data.State;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.HttpHeader;
@@ -42,11 +44,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class AbsSwordfishProvider implements DeviceProvider
-{
-    private static final String STATE_FAILED = "Failed";
-    public static final String STATE_REMOVE = "INTERNAL_REMOVE";
 
+// TODO: create custom SwordFish communication objects and use a JSON serializer / deserializer
+public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject> implements DeviceProvider
+{
     protected final StltConfigAccessor stltConfigAccessor;
     protected Props localNodeProps;
 
@@ -59,7 +60,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
     protected final String deletedMsg;
     protected final Collection<StorPool> changedStorPools;
     protected final VolumeDiskStateEvent vlmDiskStateEvent;
-
+    protected final DeviceProviderKind kind;
 
     /*
      * The current Swordfish-driver only allows one swordfish host per linstor-instance
@@ -79,6 +80,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         Provider<NotificationListener> notificationListenerProviderRef,
         StltConfigAccessor stltConfigAccessorRef,
         VolumeDiskStateEvent vlmDiskStateEventRef,
+        DeviceProviderKind kindRef,
         String typeDescrRef,
         String createdMsgRef,
         String deletedMsgRef
@@ -90,6 +92,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         notificationListenerProvider = notificationListenerProviderRef;
         stltConfigAccessor = stltConfigAccessorRef;
         vlmDiskStateEvent = vlmDiskStateEventRef;
+        kind = kindRef;
         typeDescr = typeDescrRef;
         createdMsg = createdMsgRef;
         deletedMsg = deletedMsgRef;
@@ -100,18 +103,11 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
 
     private void handleUnexpectedReturnCode(RestResponse<Map<String, Object>> response)
     {
-        try
+        VlmProviderObject vlmData = response.getVolumeData();
+        if (vlmData != null)
         {
-            Volume vlm = response.getVolume();
-            if (vlm != null)
-            {
-                // could be null if we were requesting free space or total capacity (no vlm involved)
-                clearAndSet(vlm, SfVlmDataStlt.FAILED);
-            }
-        }
-        catch (AccessDeniedException | SQLException exc)
-        {
-            throw new ImplementationError(exc);
+            // could be null if we were requesting free space or total capacity (no vlm involved)
+            clearAndSet(vlmData, SfTargetData.FAILED);
         }
     }
 
@@ -128,8 +124,20 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         return copy;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void prepare(List<Volume> volumes, List<SnapshotVolume> snapVlms)
+    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
+    {
+        setUsableSize(
+            (LAYER_DATA) vlmData,
+            vlmData.getParentAllocatedSizeOrElse(
+                () -> vlmData.getVlmDfnLayerObject().getVolumeDefinition().getVolumeSize(sysCtx)
+            )
+        );
+    }
+
+    @Override
+    public void prepare(List<VlmProviderObject> vlmDataList, List<SnapshotVolume> snapVlms)
         throws StorageException, AccessDeniedException, SQLException
     {
         // no-op
@@ -141,45 +149,53 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         localNodeProps = localNodePropsRef;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void process(List<Volume> volumes, List<SnapshotVolume> list, ApiCallRcImpl apiCallRc)
+    public void process(
+        List<VlmProviderObject> rawVlmDataList,
+        List<SnapshotVolume> ignoredSnapshotlist,
+        ApiCallRcImpl apiCallRc
+    )
         throws AccessDeniedException, SQLException, StorageException
     {
-        List<Volume> createList = new ArrayList<>();
-        List<Volume> deleteList = new ArrayList<>();
+        List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) rawVlmDataList;
+
+        List<LAYER_DATA> createList = new ArrayList<>();
+        List<LAYER_DATA> deleteList = new ArrayList<>();
 
         try
         {
-            for (Volume vlm : volumes)
+            for (LAYER_DATA vlmData : vlmDataList)
             {
+                Volume vlm = vlmData.getVolume();
                 Props props = DeviceLayerUtils.getInternalNamespaceStorDriver(
                     vlm.getVolumeDefinition().getProps(sysCtx)
                 );
                 if (vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
                 {
-                    deleteList.add(vlm);
+                    deleteList.add(vlmData);
                     errorReporter.logInfo(
                         "Deleting / Detaching volume %s/%d",
-                        vlm.getResourceDefinition().getName().displayValue,
-                        vlm.getVolumeDefinition().getVolumeNumber().value
+                        vlmData.getRscLayerObject().getSuffixedResourceName(),
+                        vlmData.getVlmNr().value
                     );
                 }
                 else
                 if (props.getProp(SwordfishConsts.DRIVER_SF_VLM_ID_KEY) == null)
                 {
-                    createList.add(vlm);
+                    createList.add(vlmData);
                     errorReporter.logInfo(
                         "Creating / Attaching volume %s/%d",
-                        vlm.getResourceDefinition().getName().displayValue,
-                        vlm.getVolumeDefinition().getVolumeNumber().value
+                        vlmData.getRscLayerObject().getSuffixedResourceName(),
+                        vlmData.getVlmNr().value
                     );
                 }
                 else
                 {
                     errorReporter.logInfo(
                         "No-op for volume %s/%d",
-                        vlm.getResourceDefinition().getName().displayValue,
-                        vlm.getVolumeDefinition().getVolumeNumber().value
+                        vlmData.getRscLayerObject().getSuffixedResourceName(),
+                        vlmData.getVlmNr().value
                     );
                 }
             }
@@ -244,46 +260,30 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         return exists;
     }
 
-    private void create(List<Volume> volmes, ApiCallRcImpl apiCallRc)
+    private void create(List<LAYER_DATA> vlmDataList, ApiCallRcImpl apiCallRc)
         throws StorageException, AccessDeniedException, SQLException
     {
-        for (Volume vlm : volmes)
+        for (LAYER_DATA vlmData : vlmDataList)
         {
-            ensureVlmLayerDataExists(vlm);
-
-            createImpl(vlm);
-            changedStorPools.add(vlm.getStorPool(sysCtx));
-            addCreatedMsg(vlm, apiCallRc);
+            createImpl(vlmData);
+            changedStorPools.add(vlmData.getVolume().getStorPool(sysCtx));
+            addCreatedMsg(vlmData, apiCallRc);
         }
     }
 
-    private void delete(List<Volume> volmes, ApiCallRcImpl apiCallRc)
+    private void delete(List<LAYER_DATA> deleteList, ApiCallRcImpl apiCallRc)
         throws StorageException, AccessDeniedException, SQLException
     {
-        for (Volume vlm : volmes)
+        for (LAYER_DATA vlmData : deleteList)
         {
-            ensureVlmLayerDataExists(vlm);
-
-            deleteImpl(vlm);
-            changedStorPools.add(vlm.getStorPool(sysCtx));
-            addDeletedMsg(vlm, apiCallRc);
-            vlm.delete(sysCtx);
+            deleteImpl(vlmData);
+            changedStorPools.add(vlmData.getVolume().getStorPool(sysCtx));
+            addDeletedMsg(vlmData, apiCallRc);
         }
     }
-
-    private void ensureVlmLayerDataExists(Volume vlm) throws AccessDeniedException, SQLException
-    {
-        SfVlmDataStlt layerData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
-        if (layerData == null)
-        {
-            layerData = new SfVlmDataStlt(vlm.getVolumeDefinition().getLayerData(sysCtx, SfVlmDfnDataStlt.class));
-            vlm.setLayerData(sysCtx, layerData);
-        }
-    }
-
 
     protected RestResponse<Map<String, Object>> getSwordfishResource(
-        Volume vlm,
+        VlmProviderObject vlmData,
         String odataId,
         boolean allowNotFound
     )
@@ -300,7 +300,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
             }
             rscInfo = restClient.execute(
                 null,
-                vlm,
+                vlmData,
                 RestOp.GET,
                 sfUrl + odataId,
                 getDefaultHeader().build(),
@@ -326,15 +326,15 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         return httpHeaderBuilder;
     }
 
-    private void addCreatedMsg(Volume vlm, ApiCallRcImpl apiCallRc)
+    private void addCreatedMsg(LAYER_DATA vlmData, ApiCallRcImpl apiCallRc)
     {
-        String rscName = vlm.getResourceDefinition().getName().displayValue;
-        int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
+        String rscName = vlmData.getRscLayerObject().getSuffixedResourceName();
+        int vlmNr = vlmData.getVlmNr().value;
         apiCallRc.addEntry(
             ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_VLM | ApiConsts.CREATED,
                 String.format(
-                    "Volume number %d of resource '%s' [%s] created",
+                    "Volume %d of resource '%s' [%s] created",
                     vlmNr,
                     rscName,
                     typeDescr
@@ -346,15 +346,15 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         );
     }
 
-    private void addDeletedMsg(Volume vlm, ApiCallRcImpl apiCallRc)
+    private void addDeletedMsg(LAYER_DATA vlmData, ApiCallRcImpl apiCallRc)
     {
-        String rscName = vlm.getResourceDefinition().getName().displayValue;
-        int vlmNr = vlm.getVolumeDefinition().getVolumeNumber().value;
+        String rscName = vlmData.getRscLayerObject().getSuffixedResourceName();
+        int vlmNr = vlmData.getVlmNr().value;
         apiCallRc.addEntry(
             ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_VLM | ApiConsts.DELETED,
                 String.format(
-                    "Volume number %d of resource '%s' [%s] deleted",
+                    "Volume %d of resource '%s' [%s] deleted",
                     vlmNr,
                     rscName,
                     typeDescr
@@ -454,13 +454,14 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         }
     }
 
-    protected void clearAndSet(Volume vlm, State state) throws AccessDeniedException, SQLException
+    @SuppressWarnings("unchecked")
+    protected <T extends State> void clearAndSet(VlmProviderObject vlmData, T state)
     {
-        SfVlmDataStlt vlmData = vlm.getLayerData(sysCtx, SfVlmDataStlt.class);
-        List<State> states = vlmData.states;
+        List<T> states = (List<T>) vlmData.getStates();
         states.clear();
 
-        if (state.equals(SfVlmDataStlt.INTERNAL_REMOVE))
+        Volume vlm = vlmData.getVolume();
+        if (state.equals(SfTargetData.INTERNAL_REMOVE))
         {
             vlmDiskStateEvent.get().closeStream(ObjectIdentifier.volumeDefinition(
                 vlm.getResourceDefinition().getName(),
@@ -496,10 +497,10 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
         return new PriorityProps(props).getProp(key, STORAGE_NAMESPACE);
     }
 
-    protected abstract void createImpl(Volume vlm)
+    protected abstract void createImpl(LAYER_DATA vlmData)
         throws StorageException, AccessDeniedException, SQLException;
 
-    protected abstract void deleteImpl(Volume vlm)
+    protected abstract void deleteImpl(LAYER_DATA vlmData)
         throws StorageException, AccessDeniedException, SQLException;
 
     @Override
@@ -510,6 +511,7 @@ public abstract class AbsSwordfishProvider implements DeviceProvider
     public abstract long getPoolFreeSpace(StorPool storPool)
         throws StorageException, AccessDeniedException;
 
+    protected abstract void setUsableSize(LAYER_DATA vlmData, long size);
 
     protected static class SfRscException extends StorageException
     {

@@ -2,12 +2,12 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.storage.layer.data.DrbdVlmDfnData;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmDfnObject;
 
 public interface DrbdVlmDfnDatabaseDriver
 {
-    SingleColumnDatabaseDriver<DrbdVlmDfnData, MinorNumber> getMinorDriver();
+    SingleColumnDatabaseDriver<DrbdVlmDfnObject, MinorNumber> getMinorDriver();
 
-    SingleColumnDatabaseDriver<DrbdVlmDfnData, Integer> getPeerSlotsDriver();
+    SingleColumnDatabaseDriver<DrbdVlmDfnObject, Integer> getPeerSlotsDriver();
 
 }

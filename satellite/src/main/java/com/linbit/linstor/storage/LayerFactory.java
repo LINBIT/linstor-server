@@ -1,14 +1,9 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.linstor.storage.layer.ResourceLayer;
-import com.linbit.linstor.storage.layer.adapter.DefaultLayer;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.adapter.cryptsetup.CryptSetupLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
-import com.linbit.linstor.storage.layer.kinds.CryptSetupLayerKind;
-import com.linbit.linstor.storage.layer.kinds.DefaultLayerKind;
-import com.linbit.linstor.storage.layer.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.layer.kinds.DrbdLayerKind;
-import com.linbit.linstor.storage.layer.kinds.StorageLayerKind;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 
 import javax.inject.Inject;
@@ -22,11 +17,10 @@ import java.util.stream.Stream;
 @Singleton
 public class LayerFactory
 {
-    private final Map<Class<? extends DeviceLayerKind>, ResourceLayer> devLayerLookupTable;
+    private final Map<DeviceLayerKind, DeviceLayer> devLayerLookupTable;
 
     @Inject
     public LayerFactory(
-        DefaultLayer dfltLayer,
         DrbdLayer drbdLayer,
         StorageLayer storageLayer,
         CryptSetupLayer cryptSetupLayer
@@ -34,23 +28,22 @@ public class LayerFactory
     {
         devLayerLookupTable = new HashMap<>();
 
-        devLayerLookupTable.put(DefaultLayerKind.class, dfltLayer);
-        devLayerLookupTable.put(DrbdLayerKind.class, drbdLayer);
-        devLayerLookupTable.put(StorageLayerKind.class, storageLayer);
-        devLayerLookupTable.put(CryptSetupLayerKind.class, cryptSetupLayer);
+        devLayerLookupTable.put(DeviceLayerKind.DRBD, drbdLayer);
+        devLayerLookupTable.put(DeviceLayerKind.CRYPT_SETUP, cryptSetupLayer);
+        devLayerLookupTable.put(DeviceLayerKind.STORAGE, storageLayer);
     }
 
-    public ResourceLayer getDeviceLayer(Class<? extends DeviceLayerKind> kindClass)
+    public DeviceLayer getDeviceLayer(DeviceLayerKind kind)
     {
-        return devLayerLookupTable.get(kindClass);
+        return devLayerLookupTable.get(kind);
     }
 
-    public Stream<ResourceLayer> streamDeviceHandlers()
+    public Stream<DeviceLayer> streamDeviceHandlers()
     {
         return devLayerLookupTable.values().stream();
     }
 
-    public Iterator<ResourceLayer> iterateDeviceHandlers()
+    public Iterator<DeviceLayer> iterateDeviceHandlers()
     {
         return devLayerLookupTable.values().iterator();
     }

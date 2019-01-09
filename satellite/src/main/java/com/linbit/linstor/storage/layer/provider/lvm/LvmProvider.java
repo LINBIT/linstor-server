@@ -5,7 +5,6 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -16,9 +15,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.data.LvmLayerData;
-import com.linbit.linstor.storage.layer.data.categories.VlmLayerData.Size;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.StorageConfigReader;
@@ -27,6 +26,7 @@ import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -36,16 +36,17 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 @Singleton
-public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
+public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
 {
     private static final int TOLERANCE_FACTOR = 3;
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
-    public static final String FORMAT_RSC_TO_LVM_ID = "%s_%05d";
+    public static final String FORMAT_RSC_TO_LVM_ID = "%s_%s_%05d";
     private static final String FORMAT_LVM_ID_WIPE_IN_PROGRESS = "%s_linstor_wiping_in_progress";
     private static final String FORMAT_DEV_PATH = "/dev/%s/%s";
 
@@ -56,8 +57,9 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
+        Provider<TransactionMgr> transMgrProvider,
         String subTypeDescr,
-        Class<? extends LvmLayerDataStlt> layerDataClass
+        DeviceProviderKind subTypeKind
     )
     {
         super(
@@ -67,8 +69,9 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
+            transMgrProvider,
             subTypeDescr,
-            layerDataClass
+            subTypeKind
         );
     }
 
@@ -79,7 +82,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider
+        Provider<NotificationListener> notificationListenerProvider,
+        Provider<TransactionMgr> transMgrProvider
     )
     {
         super(
@@ -89,69 +93,74 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
             stltConfigAccessor,
             wipeHandler,
             notificationListenerProvider,
+            transMgrProvider,
             "LVM",
-            LvmLayerDataStlt.class
+            DeviceProviderKind.LVM
         );
     }
 
     @Override
-    protected void updateStates(Collection<Volume> vlms, Collection<SnapshotVolume> snapshots)
+    protected void updateStates(List<LvmData> vlmDataList, Collection<SnapshotVolume> snapshots)
         throws StorageException, AccessDeniedException, SQLException
     {
         final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
             extCmdFactory.create(),
-            getAffectedVolumeGroups(vlms)
+            getAffectedVolumeGroups(vlmDataList)
         );
-        for (Volume vlm : vlms)
+        for (LvmData vlmData : vlmDataList)
         {
-            final LvsInfo info = infoListCache.get(asLvIdentifier(vlm));
+            vlmData.identifier = asLvIdentifier(vlmData);
+            final LvsInfo info = infoListCache.get(vlmData.identifier);
+
             // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
 
-            LvmLayerDataStlt state = vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class);
             if (info != null)
             {
-                if (state == null)
-                {
-                    state = createLayerData(vlm, info);
-                }
-                state.exists = true;
+                vlmData.exists = true;
+                vlmData.updateInfo(info);
 
-                final long expectedSize = vlm.getUsableSize(storDriverAccCtx);
+                final long expectedSize = vlmData.getUsableSize();
                 final long actualSize = info.size;
                 if (actualSize != expectedSize)
                 {
                     if (actualSize < expectedSize)
                     {
-                        state.sizeState = Size.TOO_SMALL;
+                        vlmData.sizeState = Size.TOO_SMALL;
                     }
                     else
                     {
-                        state.sizeState = Size.TOO_LARGE;
+                        Size sizeState = Size.TOO_LARGE;
+
                         final long toleratedSize =
                             expectedSize + extentSizes.get(info.volumeGroup) * TOLERANCE_FACTOR;
                         if (actualSize < toleratedSize)
                         {
-                            state.sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
+                            sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
                         }
+                        vlmData.sizeState = sizeState;
                     }
                 }
-                vlm.setDevicePath(storDriverAccCtx, info.path);
-                ProviderUtils.updateAllocatedSize(vlm, extCmdFactory.create(), storDriverAccCtx);
                 // vlm.setUsableSize already set in StorageLayer#updateGrossSize
+                vlmData.allocatedSize = ProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create());
             }
             else
             {
-                if (state == null)
-                {
-                    state = createEmptyLayerData(vlm);
-                }
-                state.exists = false;
-                vlm.setDevicePath(storDriverAccCtx, null);
-                vlm.setAllocatedSize(storDriverAccCtx, -1);
+                extractVolumeGroup(vlmData);
+                vlmData.exists = false;
+                vlmData.devicePath = null;
+                vlmData.allocatedSize = -1;
             }
         }
 
         updateSnapshotStates(snapshots);
+    }
+
+    /*
+     * Expected to be overridden by LvmThinProvider
+     */
+    protected void extractVolumeGroup(LvmData vlmData) throws AccessDeniedException
+    {
+        vlmData.volumeGroup = getVolumeGroup(vlmData.vlm.getStorPool(storDriverAccCtx));
     }
 
     /*
@@ -165,43 +174,44 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     }
 
     @Override
-    protected void createLvImpl(Volume vlm)
-        throws StorageException, AccessDeniedException, SQLException
+    protected void createLvImpl(LvmData vlmData)
+        throws StorageException
     {
         LvmCommands.createFat(
             extCmdFactory.create(),
-            vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class).getVolumeGroup(),
-            asLvIdentifier(vlm),
-            vlm.getUsableSize(storDriverAccCtx)
+            vlmData.getVolumeGroup(),
+            asLvIdentifier(vlmData),
+            vlmData.usableSize
         );
     }
 
     @Override
-    protected void resizeLvImpl(Volume vlm)
-        throws StorageException, AccessDeniedException, SQLException
+    protected void resizeLvImpl(LvmData vlmData)
+        throws StorageException
     {
         LvmCommands.resize(
             extCmdFactory.create(),
-            vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class).getVolumeGroup(),
-            asLvIdentifier(vlm),
-            vlm.getUsableSize(storDriverAccCtx)
+            vlmData.volumeGroup,
+            asLvIdentifier(vlmData),
+            vlmData.usableSize
         );
     }
 
     @Override
-    protected void deleteLvImpl(Volume vlm, String oldLvmId)
-        throws StorageException, AccessDeniedException, SQLException
+    protected void deleteLvImpl(LvmData vlmData, String oldLvmId)
+        throws StorageException
     {
         // just make sure to not colide with any other ongoing wipe-lv-name
         String newLvmId = String.format(FORMAT_LVM_ID_WIPE_IN_PROGRESS, UUID.randomUUID().toString());
 
-        String devicePath = vlm.getDevicePath(storDriverAccCtx);
+        String devicePath = vlmData.devicePath;
         // devicePath is the "current" devicePath. as we will rename it right now
         // we will have to adjust the devicePath
         int lastIndexOf = devicePath.lastIndexOf(oldLvmId);
         devicePath = devicePath.substring(0, lastIndexOf) + newLvmId;
 
-        String volumeGroup = vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class).getVolumeGroup();
+        String volumeGroup = vlmData.getVolumeGroup();
+
         LvmCommands.rename(
             extCmdFactory.create(),
             volumeGroup,
@@ -220,6 +230,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
                         volumeGroup,
                         newLvmId
                     );
+                    vlmData.exists = false;
                 }
                 catch (StorageException exc)
                 {
@@ -236,9 +247,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     }
 
     @Override
-    protected Map<String, LvsInfo> getInfoListImpl(Collection<Volume> volumes) throws StorageException
+    protected Map<String, LvsInfo> getInfoListImpl(List<LvmData> vlmDataList)
+        throws StorageException, AccessDeniedException
     {
-        return LvmUtils.getLvsInfo(extCmdFactory.create(), getAffectedVolumeGroups(volumes));
+        return LvmUtils.getLvsInfo(extCmdFactory.create(), getAffectedVolumeGroups(vlmDataList));
     }
 
     @Override
@@ -248,41 +260,32 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
     }
 
     @Override
-    protected String asLvIdentifier(ResourceName resourceName, VolumeNumber volumeNumber)
+    protected String asLvIdentifier(ResourceName resourceName, String rscNameSuffix, VolumeNumber volumeNumber)
     {
         return String.format(
             FORMAT_RSC_TO_LVM_ID,
             resourceName.displayValue,
+            rscNameSuffix,
             volumeNumber.value
         );
     }
 
     @Override
-    protected String getIdentifier(LvmLayerDataStlt layerData)
+    protected String getIdentifier(LvmData layerData)
     {
         return layerData.identifier;
     }
 
     @Override
-    protected Size getSize(LvmLayerDataStlt layerData)
+    protected Size getSize(LvmData layerData)
     {
         return layerData.sizeState;
     }
 
     @Override
-    protected String getStorageName(Volume vlm) throws AccessDeniedException, SQLException
+    protected String getStorageName(LvmData vlmData) throws AccessDeniedException, SQLException
     {
-        String volumeGroup = null;
-        LvmLayerData layerData = vlm.getLayerData(storDriverAccCtx, LvmLayerDataStlt.class);
-        if (layerData == null)
-        {
-            volumeGroup = getVolumeGroup(vlm.getStorPool(storDriverAccCtx));
-        }
-        else
-        {
-            volumeGroup = layerData.getVolumeGroup();
-        }
-        return volumeGroup;
+        return vlmData.volumeGroup;
     }
 
     protected String getVolumeGroup(StorPool storPool)
@@ -349,46 +352,37 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmLayerDataStlt>
         StorageConfigReader.checkToleranceFactor(props);
     }
 
-    private Set<String> getAffectedVolumeGroups(Collection<Volume> vlms)
+    private Set<String> getAffectedVolumeGroups(List<LvmData> vlmDataList) throws AccessDeniedException
     {
         Set<String> volumeGroups = new HashSet<>();
-        try
+        for (LvmData vlmData : vlmDataList)
         {
-            for (Volume vlm : vlms)
+            String volumeGroup = vlmData.volumeGroup;
+            if (volumeGroup == null)
             {
-                volumeGroups.add(getVolumeGroup(vlm.getStorPool(storDriverAccCtx)));
+                volumeGroup = getVolumeGroup(vlmData.vlm.getStorPool(storDriverAccCtx));
+                vlmData.volumeGroup = volumeGroup;
             }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
+            volumeGroups.add(volumeGroup);
         }
         return volumeGroups;
     }
 
-    /*
-     * Expected to be overridden by LvmThinProvider
-     */
-    protected LvmLayerDataStlt createLayerData(Volume vlm, LvsInfo info) throws AccessDeniedException, SQLException
+    @Override
+    protected void setDevicePath(LvmData vlmData, String devPath)
     {
-        LvmLayerDataStlt data = new LvmLayerDataStlt(info);
-        vlm.setLayerData(storDriverAccCtx, data);
-        return data;
+        vlmData.devicePath = devPath;
     }
 
-
-    /*
-     * Expected to be overridden by LvmThinProvider
-     */
-    protected LvmLayerDataStlt createEmptyLayerData(Volume vlm)
-        throws AccessDeniedException, SQLException
+    @Override
+    protected void setAllocatedSize(LvmData vlmData, long size)
     {
-        LvmLayerDataStlt data = new LvmLayerDataStlt(
-            getStorageName(vlm),
-            null, // thin pool
-            asLvIdentifier(vlm)
-        );
-        vlm.setLayerData(storDriverAccCtx, data);
-        return data;
+        vlmData.allocatedSize = size;
+    }
+
+    @Override
+    protected void setUsableSize(LvmData vlmData, long size)
+    {
+        vlmData.usableSize = size;
     }
 }

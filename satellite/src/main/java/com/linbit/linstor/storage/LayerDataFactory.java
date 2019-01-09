@@ -5,27 +5,41 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.dbdrivers.interfaces.CryptSetupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdRscDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdVlmDfnDatabaseDriver;
-import com.linbit.linstor.storage.layer.adapter.cryptsetup.CryptSetupStltData;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnDataStlt;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDataStlt;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDataStlt;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnDataStlt;
-import com.linbit.linstor.storage.layer.data.CryptSetupData;
-import com.linbit.linstor.storage.layer.kinds.CryptSetupLayerKind;
-import com.linbit.linstor.storage.layer.kinds.DrbdLayerKind;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.layer.adapter.cryptsetup.CryptSetupRscStltData;
+import com.linbit.linstor.storage.layer.adapter.cryptsetup.CryptSetupVlmStltData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.layer.provider.StorageRscData;
+import com.linbit.linstor.storage.layer.provider.diskless.DrbdDisklessVlmObjectData;
+import com.linbit.linstor.storage.layer.provider.lvm.LvmData;
+import com.linbit.linstor.storage.layer.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.layer.provider.swordfish.SfInitiatorData;
+import com.linbit.linstor.storage.layer.provider.swordfish.SfTargetData;
+import com.linbit.linstor.storage.layer.provider.swordfish.SfVlmDfnData;
+import com.linbit.linstor.storage.layer.provider.zfs.ZfsData;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class LayerDataFactory
@@ -44,9 +58,6 @@ public class LayerDataFactory
 
     private final Provider<TransactionMgr> transMgrProvider;
     private final TransactionObjectFactory transObjFactory;
-
-    private final DrbdLayerKind drbdKind;
-    private final CryptSetupLayerKind cryptKind;
 
     @Inject
     public LayerDataFactory(
@@ -79,66 +90,197 @@ public class LayerDataFactory
 
         transMgrProvider = transMgrProviderRef;
         transObjFactory = transObjFactoryRef;
-
-        drbdKind = (DrbdLayerKind) ResourceType.DRBD.getDevLayerKind();
-        cryptKind = (CryptSetupLayerKind) ResourceType.CRYPT.getDevLayerKind();
     }
 
-    public DrbdRscDataStlt createDrbdRscData(
+    public DrbdRscData createDrbdRscData(
         Resource rsc,
-        String identifier,
+        String rscNameSuffix,
+        @Nullable RscLayerObject parent,
+        DrbdRscDfnData rscDfnData,
+        List<RscLayerObject> childrenData,
+        Map<VolumeNumber, DrbdVlmData> vlmDataMap,
         NodeId nodeId,
         boolean diskless,
         boolean disklessForPeers
     )
     {
-        return new DrbdRscDataStlt(
+        return new DrbdRscData(
+            rsc,
+            rscNameSuffix,
+            parent,
+            rscDfnData,
+            childrenData,
+            vlmDataMap,
             nodeId,
+            disklessForPeers,
             diskless,
-            disklessForPeers
-        );
-    }
-
-    public DrbdRscDfnDataStlt createDrbdRscDfnData(
-        ResourceDefinition rscDfn,
-        String identifier,
-        TcpPortNumber port,
-        TransportType transportType,
-        String secret
-    )
-    {
-        return new DrbdRscDfnDataStlt(
-            port,
-            transportType,
-            secret,
             transMgrProvider
         );
     }
 
-    public DrbdVlmDfnDataStlt createDrbdVlmDfnData(
+    public DrbdRscDfnData createDrbdRscDfnData(
+        ResourceDefinition rscDfn,
+        TcpPortNumber port,
+        TransportType transportType,
+        String secret,
+        List<DrbdRscData> drbdRscDataList
+    )
+    {
+        return new DrbdRscDfnData(
+            rscDfn,
+            port,
+            transportType,
+            secret,
+            drbdRscDataList,
+            transMgrProvider
+        );
+    }
+
+    public DrbdVlmDfnData createDrbdVlmDfnData(
         VolumeDefinition vlmDfn,
         MinorNumber minorNr,
         int peerSlots
     )
     {
-        return new DrbdVlmDfnDataStlt(
+        return new DrbdVlmDfnData(
+            vlmDfn,
             minorNr,
             peerSlots,
             transMgrProvider
         );
     }
 
-    public DrbdVlmDataStlt createDrbdVlmData()
+    public DrbdVlmData createDrbdVlmData(
+        Volume vlm,
+        DrbdRscData rscData,
+        DrbdVlmDfnData vlmDfnData
+    )
     {
-        return new DrbdVlmDataStlt();
-    }
-
-    public CryptSetupData createCryptSetupData(String identifier, byte[] password)
-    {
-        return new CryptSetupStltData(
-            password,
-            identifier
+        return new DrbdVlmData(
+            vlm,
+            rscData,
+            vlmDfnData,
+            transMgrProvider
         );
     }
 
+    public DrbdDisklessVlmObjectData createDrbdDisklessData(
+        Volume vlm,
+        RscLayerObject rscData
+    )
+    {
+        return new DrbdDisklessVlmObjectData(
+            vlm,
+            rscData,
+            transMgrProvider
+        );
+    }
+
+    public CryptSetupRscStltData createCryptSetupRscData(
+        Resource rsc,
+        String rscNameSuffix,
+        RscLayerObject parentData,
+        List<RscLayerObject> childrenDataList,
+        Map<VolumeNumber, CryptSetupVlmStltData> vlmDataMap
+    )
+    {
+        return new CryptSetupRscStltData(
+            rsc,
+            rscNameSuffix,
+            parentData,
+            childrenDataList,
+            vlmDataMap,
+            transMgrProvider
+        );
+    }
+
+    public CryptSetupVlmStltData createCryptSetupVlmData(
+        Volume vlm,
+        CryptSetupRscStltData rscData,
+        byte[] password
+    )
+    {
+        return new CryptSetupVlmStltData(
+            vlm,
+            rscData,
+            password,
+            transMgrProvider
+        );
+    }
+
+    public StorageRscData createStorageRscData(
+        RscLayerObject parentRscData,
+        Resource rsc,
+        String rscNameSuffix,
+        Map<VolumeNumber, VlmProviderObject> vlmDataMap
+    )
+    {
+        return new StorageRscData(
+            parentRscData,
+            rsc,
+            rscNameSuffix,
+            vlmDataMap,
+            transMgrProvider
+        );
+    }
+
+    public LvmData createLvmData(Volume vlm, StorageRscData rscData)
+    {
+        return new LvmData(
+            vlm,
+            rscData,
+            transMgrProvider
+        );
+    }
+
+    public LvmThinData createLvmThinData(Volume vlm, StorageRscData rscData)
+    {
+        return new LvmThinData(
+            vlm,
+            rscData,
+            transMgrProvider
+        );
+    }
+
+    public SfInitiatorData createSfInitData(
+        Volume vlmRef,
+        StorageRscData storRscDataRef,
+        SfVlmDfnData sfVlmDfnData
+    )
+    {
+        return new SfInitiatorData(
+            storRscDataRef,
+            vlmRef,
+            sfVlmDfnData,
+            transMgrProvider
+        );
+    }
+
+    public SfTargetData createSfTargetData(
+        Volume vlm,
+        StorageRscData rscData,
+        SfVlmDfnData sfVlmDfnData
+    )
+    {
+        return new SfTargetData(
+            vlm,
+            rscData,
+            sfVlmDfnData,
+            transMgrProvider
+        );
+    }
+
+    public ZfsData createZfsData(
+        Volume vlm,
+        StorageRscData rscData,
+        DeviceProviderKind kind
+    )
+    {
+        return new ZfsData(
+            vlm,
+            rscData,
+            kind,
+            transMgrProvider
+        );
+    }
 }

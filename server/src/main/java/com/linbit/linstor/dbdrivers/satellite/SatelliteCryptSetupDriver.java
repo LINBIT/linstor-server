@@ -2,7 +2,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CryptSetupDatabaseDriver;
-import com.linbit.linstor.storage.layer.data.CryptSetupData;
+import com.linbit.linstor.storage.interfaces.layers.cryptsetup.CryptSetupVlmObject;
 
 import javax.inject.Inject;
 
@@ -17,9 +17,9 @@ public class SatelliteCryptSetupDriver implements CryptSetupDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<CryptSetupData, char[]> getPasswordDriver()
+    public SingleColumnDatabaseDriver<CryptSetupVlmObject, char[]> getPasswordDriver()
     {
-        return (SingleColumnDatabaseDriver<CryptSetupData, char[]>) singleColDriver;
+        return (SingleColumnDatabaseDriver<CryptSetupVlmObject, char[]>) singleColDriver;
     }
 
 }

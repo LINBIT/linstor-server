@@ -94,7 +94,6 @@ public class StorPoolDataControllerFactory
             storPoolDef,
             storageDriverKind,
             freeSpaceTrackerRef,
-            false,
             driver,
             propsContainerFactory,
             transObjFactory,

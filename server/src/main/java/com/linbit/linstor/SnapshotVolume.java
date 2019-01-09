@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
@@ -57,10 +56,6 @@ public interface SnapshotVolume extends TransactionObject, DbgInstanceUuid
     }
 
     StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
-
-    VlmLayerData setLayerData(AccessContext accCtx, VlmLayerData data) throws AccessDeniedException, SQLException;
-
-    VlmLayerData getLayerData(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;

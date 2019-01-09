@@ -6,8 +6,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -53,16 +54,20 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
     void setStorPool(AccessContext accCtx, StorPool storPool)
         throws AccessDeniedException, SQLException;
 
+    @RemoveAfterDevMgrRework
     String getBackingDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
+    @RemoveAfterDevMgrRework
     String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
     String getDevicePath(AccessContext accCtx) throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
+    @RemoveAfterDevMgrRework
     void setBackingDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
+    @RemoveAfterDevMgrRework
     void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
     void setDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
@@ -81,11 +86,11 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException;
 
-    <T extends VlmLayerData> T setLayerData(AccessContext storDriverAccCtx, T data)
-        throws AccessDeniedException, SQLException;
+    List<DeviceLayerKind> getLayerStack(AccessContext accCtx)
+        throws AccessDeniedException;
 
-    <T extends VlmLayerData> T getLayerData(AccessContext storDriverAccCtx, Class<T> dataClass)
-        throws AccessDeniedException, SQLException;
+    @RemoveAfterDevMgrRework // needed by LayeredResourceHelper
+    void setLayerStack(List<DeviceLayerKind> layerStack);
 
     boolean isDeleted();
 

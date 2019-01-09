@@ -69,7 +69,6 @@ public class StorPoolDataSatelliteFactory
                     storPoolDef,
                     StorageDriverLoader.getKind(storDriverSimpleClassName),
                     fsm,
-                    true,
                     driver,
                     propsContainerFactory,
                     transObjFactory,

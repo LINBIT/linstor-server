@@ -3,13 +3,13 @@ package com.linbit.linstor.storage.layer.provider;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -20,10 +20,14 @@ public interface DeviceProvider
 
     void clearCache() throws StorageException;
 
-    void prepare(List<Volume> volumes, List<SnapshotVolume> snapVlms)
+    void prepare(List<VlmProviderObject> vlmDataList, List<SnapshotVolume> snapVlms)
         throws StorageException, AccessDeniedException, SQLException;
 
-    void process(List<Volume> volumes, List<SnapshotVolume> list, ApiCallRcImpl apiCallRc)
+    void process(
+        List<VlmProviderObject> vlmDataList,
+        List<SnapshotVolume> list,
+        ApiCallRcImpl apiCallRc
+    )
         throws AccessDeniedException, SQLException, StorageException;
 
     /**
@@ -52,4 +56,7 @@ public interface DeviceProvider
     void setLocalNodeProps(Props localNodePropsRef);
 
     Collection<StorPool> getChangedStorPools();
+
+    void updateGrossSize(VlmProviderObject vlmObj)
+        throws AccessDeniedException, SQLException;
 }

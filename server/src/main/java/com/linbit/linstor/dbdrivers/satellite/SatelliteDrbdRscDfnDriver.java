@@ -4,7 +4,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdRscDfnDatabaseDriver;
-import com.linbit.linstor.storage.layer.data.DrbdRscDfnData;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject;
 
 import javax.inject.Inject;
 
@@ -20,22 +20,22 @@ public class SatelliteDrbdRscDfnDriver implements DrbdRscDfnDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscDfnData, TcpPortNumber> getPortDriver()
+    public SingleColumnDatabaseDriver<DrbdRscDfnObject, TcpPortNumber> getPortDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData, TcpPortNumber>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscDfnObject, TcpPortNumber>) singleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscDfnData, TransportType> getTransportTypeDriver()
+    public SingleColumnDatabaseDriver<DrbdRscDfnObject, TransportType> getTransportTypeDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData, TransportType>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscDfnObject, TransportType>) singleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscDfnData, String> getSecretDriver()
+    public SingleColumnDatabaseDriver<DrbdRscDfnObject, String> getSecretDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData, String>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscDfnObject, String>) singleColDriver;
     }
 }

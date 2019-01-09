@@ -12,7 +12,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
@@ -994,7 +993,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     if (curRscDfn != null)
                     {
                         // Delete the resource from all nodes
-                        Map<Pair<NodeName, ResourceType>, Resource> rscMap = new TreeMap<>();
+                        Map<NodeName, Resource> rscMap = new TreeMap<>();
                         curRscDfn.copyResourceMap(wrkCtx, rscMap);
                         for (Resource delRsc : rscMap.values())
                         {

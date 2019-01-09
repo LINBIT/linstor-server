@@ -3,7 +3,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdVlmDfnDatabaseDriver;
-import com.linbit.linstor.storage.layer.data.DrbdVlmDfnData;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmDfnObject;
 
 import javax.inject.Inject;
 
@@ -18,16 +18,16 @@ public class SatelliteDrbdVlmDfnDriver implements DrbdVlmDfnDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdVlmDfnData, MinorNumber> getMinorDriver()
+    public SingleColumnDatabaseDriver<DrbdVlmDfnObject, MinorNumber> getMinorDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdVlmDfnData, MinorNumber>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdVlmDfnObject, MinorNumber>) singleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdVlmDfnData, Integer> getPeerSlotsDriver()
+    public SingleColumnDatabaseDriver<DrbdVlmDfnObject, Integer> getPeerSlotsDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdVlmDfnData, Integer>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdVlmDfnObject, Integer>) singleColDriver;
     }
 
 }

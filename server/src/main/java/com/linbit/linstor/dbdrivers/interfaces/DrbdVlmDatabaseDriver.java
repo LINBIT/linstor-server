@@ -1,10 +1,10 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.storage.layer.data.DrbdVlmData;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
 
 public interface DrbdVlmDatabaseDriver
 {
-    SingleColumnDatabaseDriver<DrbdVlmData, String> getMetaDiskDriver();
+    SingleColumnDatabaseDriver<DrbdVlmObject, String> getMetaDiskDriver();
 
 }

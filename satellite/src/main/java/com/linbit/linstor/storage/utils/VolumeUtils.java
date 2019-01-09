@@ -1,21 +1,19 @@
 package com.linbit.linstor.storage.utils;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class VolumeUtils
 {
-    public static Volume getBackingVolume(AccessContext accCtx, Volume vlm)
-        throws StorageException, AccessDeniedException
+    public static VlmProviderObject getBackingVolume(VlmProviderObject vlm)
+        throws StorageException
     {
-        List<Volume> backingVlms = getBackingVolumes(accCtx, vlm);
+        List<VlmProviderObject> backingVlms = getBackingVolumes(vlm);
 
         if (backingVlms.size() > 1)
         {
@@ -25,35 +23,33 @@ public class VolumeUtils
         return backingVlms.isEmpty() ? null : backingVlms.get(0);
     }
 
-    public static List<Volume> getBackingVolumes(AccessContext accCtx, Volume vlm)
-        throws AccessDeniedException
+    public static List<VlmProviderObject> getBackingVolumes(VlmProviderObject vlm)
     {
-        VolumeNumber volumeNumber = vlm.getVolumeDefinition().getVolumeNumber();
-        List<Resource> childResources = vlm.getResource().getChildResources(accCtx);
+        VolumeNumber volumeNumber = vlm.getVlmNr();
+        List<RscLayerObject> childResources = vlm.getRscLayerObject().getChildren();
 
-        List<Volume> backingVolumes = new ArrayList<>();
-        for (Resource backingResource : childResources)
+        List<VlmProviderObject> backingVolumes = new ArrayList<>();
+        for (RscLayerObject backingResource : childResources)
         {
-            backingVolumes.add(backingResource.getVolume(volumeNumber));
+            backingVolumes.add(backingResource.getVlmProviderObject(volumeNumber));
         }
         return backingVolumes;
     }
 
-    public static boolean isVolumeThinlyBacked(AccessContext accCtx, Volume vlm)
-        throws AccessDeniedException, StorageException
+    public static boolean isVolumeThinlyBacked(VlmProviderObject vlmData)
+        throws StorageException
     {
-        Volume backingVlm = vlm;
-        Volume tmp = backingVlm;
+        VlmProviderObject backingVlm = vlmData;
+        VlmProviderObject tmp = backingVlm;
         while (tmp != null)
         {
-            tmp = getBackingVolume(accCtx, backingVlm);
+            tmp = getBackingVolume(backingVlm);
             if (tmp == null)
             {
                 break;
             }
             backingVlm = tmp;
         }
-
-        return backingVlm.getStorPool(accCtx).getDriverKind().usesThinProvisioning();
+        return backingVlm.getProviderKind().usesThinProvisioning();
     }
 }

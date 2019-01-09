@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -9,6 +10,8 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.RemoveAfterDevMgrRework;
@@ -17,9 +20,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -47,38 +48,39 @@ public class ResourceDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    @RemoveAfterDevMgrRework
+    public ResourceData create(
+        AccessContext accessContext,
+        ResourceDefinitionData rscDfn,
+        Node node,
+        @RemoveAfterDevMgrRework
+        NodeId nodeId,
+        RscFlags[] restoreFlags
+    )
+        throws AccessDeniedException, LinStorDataAlreadyExistsException, SQLException
+    {
+        return create(
+            accessContext,
+            rscDfn,
+            node,
+            nodeId,
+            restoreFlags,
+            new TreeMap<>()
+        );
+    }
+
     public ResourceData create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
-        NodeId nodeId,
-        Resource.RscFlags[] initFlags
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
-    {
-        return createTyped(
-            accCtx,
-            rscDfn,
-            node,
-            nodeId,
-            initFlags,
-            ResourceType.DEFAULT // this state will be remove when rework is finished
-        );
-    }
-
-    public ResourceData createTyped(
-        AccessContext accCtx,
-        ResourceDefinition rscDfn,
-        Node node,
+        @RemoveAfterDevMgrRework
         NodeId nodeId,
         Resource.RscFlags[] initFlags,
-        ResourceType type
+        Map<DeviceLayerKind, RscLayerObject> layerData
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        ResourceData rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName(), type);
+        ResourceData rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());
 
         if (rscData != null)
         {
@@ -99,15 +101,13 @@ public class ResourceDataFactory
             node,
             nodeId,
             StateFlagsBits.getMask(initFlags),
-            type,
-            new ArrayList<>(),
             dbDriver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
             new TreeMap<>(),
-            new HashMap<>() // LayerDataStorage uses Class as key, which is not comparable -> no TreeMap
+            layerData
         );
         dbDriver.create(rscData);
         ((NodeData) node).addResource(accCtx, rscData);
@@ -116,45 +116,21 @@ public class ResourceDataFactory
         return rscData;
     }
 
-    @RemoveAfterDevMgrRework
     public ResourceData getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
         Node node,
         ResourceDefinition rscDfn,
         NodeId nodeId,
-        Resource.RscFlags[] initFlags
-    )
-        throws ImplementationError
-    {
-        return getTypedInstanceSatellite(
-            accCtx,
-            uuid,
-            node,
-            rscDfn,
-            nodeId,
-            initFlags,
-            ResourceType.DEFAULT,
-            new ArrayList<>()
-        );
-    }
-
-    public ResourceData getTypedInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        Node node,
-        ResourceDefinition rscDfn,
-        NodeId nodeId,
         Resource.RscFlags[] initFlags,
-        ResourceType type,
-        List<Resource> children
+        Map<DeviceLayerKind, RscLayerObject> layerData
     )
         throws ImplementationError
     {
         ResourceData rscData;
         try
         {
-            rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName(), type);
+            rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());
             if (rscData == null)
             {
                 rscData = new ResourceData(
@@ -164,15 +140,13 @@ public class ResourceDataFactory
                     node,
                     nodeId,
                     StateFlagsBits.getMask(initFlags),
-                    type,
-                    children,
                     dbDriver,
                     propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
                     new TreeMap<>(),
                     new TreeMap<>(),
-                    new HashMap<>() // LayerDataStorage uses Class as key, which is not comparable -> no TreeMap
+                    layerData
                 );
                 ((NodeData) node).addResource(accCtx, rscData);
                 ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);

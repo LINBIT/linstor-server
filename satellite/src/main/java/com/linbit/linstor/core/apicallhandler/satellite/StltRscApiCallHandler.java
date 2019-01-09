@@ -28,7 +28,6 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.StorPoolDefinition;
@@ -59,6 +58,8 @@ import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Base64;
 
@@ -176,8 +177,7 @@ class StltRscApiCallHandler
                 Collections.singleton(
                     new Resource.Key(
                         controllerPeerConnector.getLocalNodeName(),
-                        rscName,
-                        ResourceType.DEFAULT
+                        rscName
                     )
                 )
             );
@@ -287,6 +287,9 @@ class StltRscApiCallHandler
 
                 NodeData localNode = controllerPeerConnector.getLocalNode();
 
+                // XXX restore layerData from rawRsc
+                Map<DeviceLayerKind, RscLayerObject> localRscLayerData = new TreeMap<>();
+
                 localRsc = createRsc(
                     rscRawData.getLocalRscUuid(),
                     localNode,
@@ -295,7 +298,8 @@ class StltRscApiCallHandler
                     RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
                     rscRawData.getLocalRscProps(),
                     rscRawData.getLocalVlms(),
-                    false
+                    false,
+                    localRscLayerData
                 );
 
                 createdRscSet.add(new Resource.Key(localRsc));
@@ -324,6 +328,9 @@ class StltRscApiCallHandler
                     }
                     nodesToRegister.add(remoteNode);
 
+                    // XXX restore layerData from rawRsc
+                    Map<DeviceLayerKind, RscLayerObject> remoteRscLayerData = new TreeMap<>();
+
                     ResourceData remoteRsc = createRsc(
                         otherRscRaw.getRscUuid(),
                         remoteNode,
@@ -332,7 +339,8 @@ class StltRscApiCallHandler
                         RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
                         otherRscRaw.getRscProps(),
                         otherRscRaw.getVlms(),
-                        true
+                        true,
+                        remoteRscLayerData
                     );
                     otherRscs.add(remoteRsc);
 
@@ -477,6 +485,9 @@ class StltRscApiCallHandler
                         map.clear();
                         map.putAll(otherRsc.getNodeProps());
 
+                        // XXX restore layerData from rawRsc
+                        Map<DeviceLayerKind, RscLayerObject> remoteRscLayerData = new TreeMap<>();
+
                         // create resource
                         remoteRsc = createRsc(
                             otherRsc.getRscUuid(),
@@ -486,7 +497,8 @@ class StltRscApiCallHandler
                             RscFlags.restoreFlags(otherRsc.getRscFlags()),
                             otherRsc.getRscProps(),
                             otherRsc.getVlms(),
-                            true
+                            true,
+                            remoteRscLayerData
                         );
 
                         createdRscSet.add(new Resource.Key(remoteRsc));
@@ -574,17 +586,13 @@ class StltRscApiCallHandler
                 }
                 // all resources have been created, updated or deleted
 
-                if (removedList.stream().filter(rsc -> rsc.getType().equals(ResourceType.DEFAULT)).count() != 0)
-                {
-                    errorReporter.logDebug(
-                        "We know at least one resource the controller does not:\n   " +
-                            removedList.stream()
-                                .filter(rsc -> rsc.getType().equals(ResourceType.DEFAULT))
-                                .map(Resource::toString)
-                                .collect(Collectors.joining(",\n   ")) +
-                            "\nThe controller is not be aware of typed resources or we have missed a resource deletion."
-                    );
-                }
+                errorReporter.logWarning(
+                    "We know at least one resource the controller does not:\n   " +
+                        removedList.stream()
+                            .map(Resource::toString)
+                            .collect(Collectors.joining(",\n   ")) +
+                        "\nThe controller is not be aware of typed resources or we have missed a resource deletion."
+                );
             }
 
             // create resource connections
@@ -710,7 +718,8 @@ class StltRscApiCallHandler
         RscFlags[] flags,
         Map<String, String> rscProps,
         List<VolumeData.VlmApi> vlms,
-        boolean remoteRsc
+        boolean remoteRsc,
+        Map<DeviceLayerKind, RscLayerObject> layerData
     )
         throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException
     {
@@ -720,7 +729,8 @@ class StltRscApiCallHandler
             node,
             rscDfn,
             nodeId,
-            flags
+            flags,
+            layerData
         );
 
         checkUuid(
@@ -734,6 +744,8 @@ class StltRscApiCallHandler
         Map<String, String> map = rsc.getProps(apiCtx).map();
         map.clear();
         map.putAll(rscProps);
+
+        // XXX ensure to apply possible changes in layerData
 
         for (Volume.VlmApi vlmRaw : vlms)
         {
@@ -754,6 +766,9 @@ class StltRscApiCallHandler
 
         VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
+        // XXX restore layerStack from vlmApi
+        List<DeviceLayerKind> layerStack = new ArrayList<>();
+
         VolumeData vlm = volumeDataFactory.getInstanceSatellite(
             apiCtx,
             vlmApi.getVlmUuid(),
@@ -762,10 +777,13 @@ class StltRscApiCallHandler
             storPool,
             vlmApi.getBlockDevice(),
             vlmApi.getMetaDisk(),
-            Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
+            Volume.VlmFlags.restoreFlags(vlmApi.getFlags()),
+            layerStack
         );
 
         vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());
+
+        // XXX check if vlm really has expected layerStack (stack cannot be changed!)
     }
 
     private void mergeVlm(Volume vlm, VlmApi vlmApi, boolean remoteRsc)

@@ -7,7 +7,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.layer.data.categories.VlmDfnLayerData;
+import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
@@ -67,10 +68,10 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
 
     String getCryptKey(AccessContext accCtx) throws AccessDeniedException;
 
-    <T extends VlmDfnLayerData> T setLayerData(AccessContext accCtx, T layerData)
+    <T extends VlmDfnLayerObject> T setLayerData(AccessContext accCtx, T layerData)
         throws AccessDeniedException;
 
-    <T extends VlmDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> clazz)
+    <T extends VlmDfnLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
         throws AccessDeniedException;
 
     @Override

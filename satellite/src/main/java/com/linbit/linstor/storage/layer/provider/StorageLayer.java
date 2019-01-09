@@ -2,11 +2,9 @@ package com.linbit.linstor.storage.layer.provider;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -18,10 +16,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.layer.ResourceLayer;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
-import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
 
@@ -40,12 +39,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
-public class StorageLayer implements ResourceLayer
+public class StorageLayer implements DeviceLayer
 {
     private final AccessContext storDriverAccCtx;
     private final DeviceProviderMapper deviceProviderMapper;
     private final ExtCmdFactory extCmdFactory;
-
 
     @Inject
     public StorageLayer(
@@ -84,12 +82,12 @@ public class StorageLayer implements ResourceLayer
     }
 
     @Override
-    public void prepare(List<Resource> resources, List<Snapshot> snapshots)
+    public void prepare(Set<RscLayerObject> rscObjList, Set<Snapshot> snapshots)
         throws StorageException, AccessDeniedException, SQLException
     {
-        Map<DeviceProvider, List<Volume>> groupedVolumes = resources.stream()
-            .flatMap(Resource::streamVolumes)
-            .collect(Collectors.groupingBy(this::classifier));
+        Map<DeviceProvider, List<VlmProviderObject>> groupedVolumes = rscObjList.stream()
+            .flatMap(RscLayerObject::streamVlmLayerObjects)
+            .collect(Collectors.groupingBy(this::getDevProviderByVlmObj));
 
         Map<DeviceProvider, List<SnapshotVolume>> groupedSnapshotVolumes = snapshots.stream()
             .flatMap(snapshot ->
@@ -97,23 +95,26 @@ public class StorageLayer implements ResourceLayer
             )
             .collect(Collectors.groupingBy(this::classifier));
 
-        for (Entry<DeviceProvider, List<Volume>> entry : groupedVolumes.entrySet())
+        for (Entry<DeviceProvider, List<VlmProviderObject>> entry : groupedVolumes.entrySet())
         {
             DeviceProvider deviceProvider = entry.getKey();
-            List<Volume> volumes = entry.getValue();
-            if (!volumes.isEmpty())
+            List<VlmProviderObject> vlmDataList = entry.getValue();
+
+            if (!vlmDataList.isEmpty())
             {
+                // TODO: RAID: maybe we also need something like snapshotVolumeLayerObject
                 List<SnapshotVolume> snapVlms = groupedSnapshotVolumes.get(deviceProvider);
                 if (snapVlms == null)
                 {
                     snapVlms = Collections.emptyList();
                 }
-                deviceProvider.prepare(volumes, snapVlms);
+
+                deviceProvider.prepare(vlmDataList, snapVlms);
             }
 
             // FIXME: this should only be done once on fullSync and whenever a storpool changes
-            Set<StorPool> affectedStorPools = volumes.stream()
-                .map(vlm -> AccessUtils.execPrivileged(() -> vlm.getStorPool(storDriverAccCtx)))
+            Set<StorPool> affectedStorPools = vlmDataList.stream()
+                .map(vlmObj -> AccessUtils.execPrivileged(() -> vlmObj.getVolume().getStorPool(storDriverAccCtx)))
                 .collect(Collectors.toSet());
             for (StorPool storPool : affectedStorPools)
             {
@@ -123,20 +124,19 @@ public class StorageLayer implements ResourceLayer
     }
 
     @Override
-    public void updateGrossSize(Volume childVlm, Volume parentVolume) throws AccessDeniedException, SQLException
+    public void updateGrossSize(VlmProviderObject vlmObj) throws AccessDeniedException, SQLException
     {
-        childVlm.setUsableSize(storDriverAccCtx, parentVolume.getAllocatedSize(storDriverAccCtx));
-        // the childvlm.setAllocateSize method is called from the corresponding DeviceProvider
+        getDevProviderByVlmObj(vlmObj).updateGrossSize(vlmObj);
     }
 
     @Override
-    public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    public void process(RscLayerObject rscLayerData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
-        Map<DeviceProvider, List<Volume>> groupedVolumes =
-            rsc == null ?
+        Map<DeviceProvider, List<VlmProviderObject>> groupedVolumes =
+            rscLayerData == null ? // == null when processing unprocessed snapshots
                 Collections.emptyMap() :
-                    rsc.streamVolumes().collect(Collectors.groupingBy(this::classifier));
+                rscLayerData.streamVlmLayerObjects().collect(Collectors.groupingBy(this::getDevProviderByVlmObj));
 
         Map<DeviceProvider, List<SnapshotVolume>> groupedSnapshotVolumes = snapshots.stream()
             .flatMap(snapshot ->
@@ -160,25 +160,25 @@ public class StorageLayer implements ResourceLayer
 
         for (DeviceProvider devProvider : deviceProviders)
         {
-            List<Volume> vlmList = groupedVolumes.get(devProvider);
+            List<VlmProviderObject> vlmDataList = groupedVolumes.get(devProvider);
             List<SnapshotVolume> snapVlmList = groupedSnapshotVolumes.get(devProvider);
 
-            if (vlmList == null)
+            if (vlmDataList == null)
             {
-                vlmList = Collections.emptyList();
+                vlmDataList = Collections.emptyList();
             }
             if (snapVlmList == null)
             {
                 snapVlmList = Collections.emptyList();
             }
-            devProvider.process(vlmList, snapVlmList, apiCallRc);
+            devProvider.process(vlmDataList, snapVlmList, apiCallRc);
 
-            for (Volume vlm : vlmList)
+            for (VlmProviderObject vlmData : vlmDataList)
             {
-                if (!vlm.isDeleted() && vlm.getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
+                if (vlmData.exists() && vlmData.getVolume().getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
                 {
                     throw new ImplementationError(
-                        devProvider.getClass().getSimpleName() + " did not delete the volume " + vlm
+                        devProvider.getClass().getSimpleName() + " did not delete the volume " + vlmData
                     );
                 }
             }
@@ -211,18 +211,9 @@ public class StorageLayer implements ResourceLayer
         return spaceMap;
     }
 
-    private DeviceProvider classifier(Volume vlm)
+    private DeviceProvider getDevProviderByVlmObj(VlmProviderObject vlmLayerObject)
     {
-        DeviceProvider devProvider = null;
-        try
-        {
-            devProvider = deviceProviderMapper.getDeviceProviderByStorPool(vlm.getStorPool(storDriverAccCtx));
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return devProvider;
+        return deviceProviderMapper.getDeviceProviderByKind(vlmLayerObject.getProviderKind());
     }
 
     private DeviceProvider classifier(SnapshotVolume snapVlm)
@@ -273,11 +264,5 @@ public class StorageLayer implements ResourceLayer
         DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
         deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
         deviceProvider.checkConfig(storPool);
-    }
-
-    public long getAllocatedSize(Volume vlm, AccessContext accCtx)
-        throws StorageException, AccessDeniedException
-    {
-        return ProviderUtils.getAllocatedSize(vlm, extCmdFactory.create(), accCtx);
     }
 }

@@ -1,45 +1,61 @@
 package com.linbit.linstor.storage.layer;
 
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.devmgr.DeviceHandlerImpl;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
+import java.sql.SQLException;
 import java.util.Collection;
-import java.util.Map;
+import java.util.Set;
 
-/**
- * <p>
- * Base interface for all kinds of DeviceLayers providing or adapting a device.
- * </p>
- * <p>
- * Examples for device providers are LVM, ZFS, their *Thin types, ...
- * Device adaptor are for example DRBD, CryptSetup, ...
- * </p>
- *
- * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
- */
 public interface DeviceLayer
 {
-    String INTERNAL_STORAGE_NAMESPACE = InternalApiConsts.NAMESPC_INTERNAL + "/" + ApiConsts.NAMESPC_STORAGE_DRIVER;
     String STOR_DRIVER_NAMESPACE = ApiConsts.NAMESPC_STORAGE_DRIVER;
 
-    Map<Resource, StorageException> adjustTopDown(Collection<Resource> resources, Collection<Snapshot> snapshots)
-        throws StorageException;
+    String getName();
 
-    Map<Resource, StorageException> adjustBottomUp(Collection<Resource> resources, Collection<Snapshot> snapshots)
-        throws StorageException;
+    void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
+        throws StorageException, AccessDeniedException, SQLException;
 
-    void adjust(Resource rsc, DeviceHandlerImpl deviceHandlerImpl)
-        throws ResourceException, VolumeException, StorageException;
+    void updateGrossSize(VlmProviderObject vlmData)
+        throws AccessDeniedException, SQLException;
+
+    /**
+     * @param rsc The resource to process
+     * @param rscLayerData The current layer's data. This is an explicit parameter in case we
+     * want to (in far future) allow multiple occurrences of the same layer in a given layerStack
+     * (could be useful in case of RAID)
+     * @param rscNameSuffix A suffix (can be "") which will be appended to the resource name, but
+     * before the volume numbers in case of storage-layers. This is necessary for the RAID layer
+     * @param snapshots Snapshots to be processed
+     * @param apiCallRc Responses to the ApiCall
+     *
+     * @throws StorageException
+     * @throws ResourceException
+     * @throws VolumeException
+     * @throws AccessDeniedException
+     * @throws SQLException
+     */
+    void process(
+        RscLayerObject rscLayerData,
+        Collection<Snapshot> snapshots,
+        ApiCallRcImpl apiCallRc
+    )
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException,
+            SQLException;
+
+    void clearCache() throws StorageException;
 
     void setLocalNodeProps(Props localNodeProps);
 
@@ -57,4 +73,5 @@ public interface DeviceLayer
 
         void notifySnapshotDeleted(Snapshot snapshot);
     }
+
 }

@@ -7,6 +7,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -14,7 +15,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -46,7 +47,8 @@ public class VolumeDataFactory
         StorPool storPool,
         String blockDevicePathRef,
         String metaDiskPathRef,
-        Volume.VlmFlags[] flags
+        Volume.VlmFlags[] flags,
+        List<DeviceLayerKind> layerStack
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -73,7 +75,7 @@ public class VolumeDataFactory
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new HashMap<>() // LayerDataStorage uses Class as key, which is not comparable -> no TreeMap
+            layerStack
         );
         driver.create(volData);
         ((ResourceData) rsc).putVolume(accCtx, volData);
@@ -91,7 +93,8 @@ public class VolumeDataFactory
         StorPool storPoolRef,
         String blockDevicePathRef,
         String metaDiskPathRef,
-        Volume.VlmFlags[] flags
+        Volume.VlmFlags[] flags,
+        List<DeviceLayerKind> layerStack
     )
     {
         VolumeData vlmData;
@@ -113,7 +116,7 @@ public class VolumeDataFactory
                     transObjFactory,
                     transMgrProvider,
                     new TreeMap<>(),
-                    new HashMap<>() // LayerDataStorage uses Class as key, which is not comparable -> no TreeMap
+                    layerStack
                 );
                 ((ResourceData) rsc).putVolume(accCtx, vlmData);
                 storPoolRef.putVolume(accCtx, vlmData);

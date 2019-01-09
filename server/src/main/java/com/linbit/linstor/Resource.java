@@ -7,12 +7,10 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.layer.data.categories.RscLayerData;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.RemoveAfterDevMgrRework;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -93,40 +91,11 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     boolean isDiskless(AccessContext accCtx)
         throws AccessDeniedException;
 
-    ResourceType getType();
-
-    <T extends RscLayerData> T setLayerData(AccessContext accCtx, T rscLayerData)
-        throws AccessDeniedException, SQLException;
-
-    <T extends RscLayerData> T getLayerData(AccessContext accCtx, Class<T> dataClass)
+    <T extends RscLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
         throws AccessDeniedException;
 
-    @Nullable Resource getParentResource(AccessContext accCtx)
+    void setLayerData(AccessContext accCtx, RscLayerObject layerData)
         throws AccessDeniedException;
-
-    void addChild(AccessContext accCtx, Resource child)
-        throws AccessDeniedException, SQLException;
-
-    void removeChild(AccessContext accCtx, Resource child)
-        throws AccessDeniedException, SQLException;
-
-    /**
-     * @return A list that is not allowed to be null, but empty
-     */
-    @Nonnull List<Resource> getChildResources(AccessContext accCtx)
-        throws AccessDeniedException;
-
-    default void setParentResource(AccessContext accCtx, Resource parent)
-        throws AccessDeniedException, SQLException
-    {
-        setParentResource(accCtx, parent, false);
-    }
-
-    void setParentResource(AccessContext accCtx, Resource parent, boolean overrideOldParent)
-        throws AccessDeniedException, SQLException;
-
-    void removeParent(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
 
     /**
      * Returns the identification key without checking if "this" is already deleted
@@ -147,8 +116,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     static String getStringId(Resource rsc)
     {
         return rsc.getAssignedNode().getName().value + "/" +
-               rsc.getDefinition().getName().value + "/" +
-               rsc.getType().name();
+               rsc.getDefinition().getName().value;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -219,18 +187,16 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     {
         private final NodeName nodeName;
         private final ResourceName resourceName;
-        private final ResourceType resourceType;
 
         public Key(Resource resource)
         {
-            this(resource.getAssignedNode().getName(), resource.getDefinition().getName(), resource.getType());
+            this(resource.getAssignedNode().getName(), resource.getDefinition().getName());
         }
 
-        public Key(NodeName nodeNameRef, ResourceName resourceNameRef, ResourceType resourceTypeRef)
+        public Key(NodeName nodeNameRef, ResourceName resourceNameRef)
         {
             resourceName = resourceNameRef;
             nodeName = nodeNameRef;
-            resourceType = resourceTypeRef;
         }
 
         public NodeName getNodeName()
@@ -241,11 +207,6 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         public ResourceName getResourceName()
         {
             return resourceName;
-        }
-
-        public ResourceType getResourceType()
-        {
-            return resourceType;
         }
 
         @Override
@@ -263,14 +224,13 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
             }
             Key that = (Key) o;
             return Objects.equals(nodeName, that.nodeName) &&
-                Objects.equals(resourceName, that.resourceName) &&
-                Objects.equals(resourceType, that.resourceType);
+                Objects.equals(resourceName, that.resourceName);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(nodeName, resourceName, resourceType);
+            return Objects.hash(nodeName, resourceName);
         }
 
         @Override
@@ -280,10 +240,6 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
             if (eq == 0)
             {
                 eq = resourceName.compareTo(other.resourceName);
-                if (eq == 0)
-                {
-                    eq = resourceType.compareTo(other.resourceType);
-                }
             }
             return eq;
         }
@@ -291,7 +247,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         @Override
         public String toString()
         {
-            return "Resource.Key [Node: " + nodeName + ", Resource: " + resourceName + ", Type: " + resourceType + "]";
+            return "Resource.Key [Node: " + nodeName + ", Resource: " + resourceName + "]";
         }
     }
 

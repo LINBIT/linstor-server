@@ -9,17 +9,15 @@ import java.util.List;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NodeId;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.extproc.ExtCmdFailedException;
-import com.linbit.linstor.core.SatelliteCoreModule;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmData;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.File;
 
@@ -38,31 +36,22 @@ public class DrbdAdm
 
     public static final int WAIT_CONNECT_RES_TIME = 10;
 
-    private final ErrorReporter errorReporter;
-    private final Path configPath;
-    private final CoreTimer timer;
+    private final ExtCmdFactory extCmdFactory;
 
     @Inject
-    public DrbdAdm(
-        ErrorReporter errorReporterRef,
-        @Named(SatelliteCoreModule.DRBD_CONFIG_PATH) Path configPathRef,
-        CoreTimer timerRef
-    )
+    public DrbdAdm(ExtCmdFactory extCmdFactoryRef)
     {
-        errorReporter = errorReporterRef;
-        configPath = configPathRef;
-        timer = timerRef;
+        extCmdFactory = extCmdFactoryRef;
     }
 
     /**
      * Adjusts a resource
      */
     public void adjust(
-        ResourceName resourceName,
+        DrbdRscData drbdRscData,
         boolean skipNet,
         boolean skipDisk,
-        boolean discard,
-        VolumeNumber volNum
+        boolean discard
     )
         throws ExtCmdFailedException
     {
@@ -92,7 +81,7 @@ public class DrbdAdm
         //     resName += "/" + volNum.value;
         // }
         // command.add(resName);
-        command.add(resourceName.displayValue);
+        command.add(drbdRscData.getSuffixedResourceName());
         execute(command);
     }
 
@@ -100,13 +89,13 @@ public class DrbdAdm
      * Resizes a resource
      */
     public void resize(
-        ResourceName resourceName,
-        VolumeNumber volNum,
+        DrbdVlmData drbdVlmData,
         boolean assumeClean
     )
         throws ExtCmdFailedException
     {
-        waitConnectResource(resourceName, WAIT_CONNECT_RES_TIME);
+        DrbdRscData drbdRscData = drbdVlmData.getRscLayerObject();
+        waitConnectResource(drbdRscData, WAIT_CONNECT_RES_TIME);
         List<String> command = new ArrayList<>();
         command.addAll(Arrays.asList(DRBDADM_UTIL, "-vvv"));
         if (assumeClean)
@@ -114,27 +103,28 @@ public class DrbdAdm
             command.add("--");
             command.add("--assume-clean");
         }
-        String resName = resourceName.displayValue;
+        String resName = drbdRscData.getSuffixedResourceName();
         // Using -c disables /etc/drbd.d/global_common.conf
         // command.addAll(asConfigParameter(resName)); // basically just adds the -c <rscName.conf> as parameter
         command.add("resize");
-        command.add(resName + "/" + volNum.value);
+        command.add(resName + "/" + drbdVlmData.getVlmNr().value);
         execute(command);
     }
 
     /**
      * Shuts down (unconfigures) a DRBD resource
+     * @param rscNameSuffix
      */
-    public void down(ResourceName resourceName) throws ExtCmdFailedException
+    public void down(DrbdRscData drbdRscData) throws ExtCmdFailedException
     {
-        simpleSetupCommand(resourceName, "down");
+        simpleSetupCommand(drbdRscData, (VolumeNumber) null, "down");
     }
 
     /**
      * Switches a DRBD resource to primary mode
      */
     public void primary(
-        ResourceName resourceName,
+        DrbdRscData drbdRscData,
         boolean force,
         boolean withDrbdSetup
     )
@@ -149,7 +139,7 @@ public class DrbdAdm
                 command.add("--force");
             }
             command.add("primary");
-            command.add(resourceName.value);
+            command.add(drbdRscData.getSuffixedResourceName());
 
             execute(command);
         }
@@ -157,11 +147,11 @@ public class DrbdAdm
         {
             if (force)
             {
-                simpleAdmCommand(resourceName, null, "primary", "--force");
+                simpleAdmCommand(drbdRscData, null, "primary", "--force");
             }
             else
             {
-                simpleAdmCommand(resourceName, null, "primary");
+                simpleAdmCommand(drbdRscData, null, "primary");
             }
         }
     }
@@ -169,25 +159,25 @@ public class DrbdAdm
     /**
      * Switches a resource to secondary mode
      */
-    public void secondary(ResourceName resourceName) throws ExtCmdFailedException
+    public void secondary(DrbdRscData drbdRscData) throws ExtCmdFailedException
     {
-        simpleAdmCommand(resourceName, "secondary");
+        simpleAdmCommand(drbdRscData, "secondary");
     }
 
     /**
      * Connects a resource to its peer resuorces on other hosts
      */
-    public void connect(ResourceName resourceName, boolean discard) throws ExtCmdFailedException
+    public void connect(DrbdRscData drbdRscData, boolean discard) throws ExtCmdFailedException
     {
-        adjust(resourceName, false, true, discard, null);
+        adjust(drbdRscData, false, true, discard);
     }
 
     /**
      * Disconnects a resource from its peer resources on other hosts
      */
-    public void disconnect(ResourceName resourceName) throws ExtCmdFailedException
+    public void disconnect(DrbdRscData drbdRscData) throws ExtCmdFailedException
     {
-        simpleAdmCommand(resourceName, "disconnect");
+        simpleAdmCommand(drbdRscData, "disconnect");
     }
 
     /**
@@ -197,9 +187,9 @@ public class DrbdAdm
      * @param volNum
      * @throws ExtCmdFailedException
      */
-    public void attach(ResourceName resourceName, VolumeNumber volNum) throws ExtCmdFailedException
+    public void attach(DrbdVlmData drbdVlmData) throws ExtCmdFailedException
     {
-        adjust(resourceName, true, false, false, volNum);
+        adjust(drbdVlmData.getRscLayerObject(), true, false, false);
     }
 
     /**
@@ -207,24 +197,33 @@ public class DrbdAdm
      *
      * @param diskless If true, convert to a diskless client volume
      */
-    public void detach(ResourceName resourceName, VolumeNumber volNum, boolean diskless) throws ExtCmdFailedException
+    public void detach(DrbdVlmData drbdVlmData, boolean diskless) throws ExtCmdFailedException
     {
+        List<String> commands = new ArrayList<>();
+        commands.add(DRBDSETUP_UTIL);
+        commands.add("detach");
+        commands.add(Integer.toString(drbdVlmData.getVlmDfnLayerObject().getMinorNr().value));
+
         if (diskless)
         {
-            simpleAdmCommand(resourceName, volNum, "detach", "--diskless");
+            commands.add("--diskless");
         }
-        else
-        {
-            simpleAdmCommand(resourceName, volNum, "detach");
-        }
+        execute(commands);
     }
 
     /**
      * Calls drbdadm to create the metadata information for a volume
      */
-    public void createMd(ResourceName resourceName, VolumeNumber volNum, int peers) throws ExtCmdFailedException
+    public void createMd(DrbdVlmData drbdVlmData, int peers) throws ExtCmdFailedException
     {
-        simpleAdmCommand(resourceName, volNum, "--max-peers", Integer.toString(peers), "--", "--force", "create-md");
+        simpleAdmCommand(
+            drbdVlmData.getRscLayerObject(),
+            drbdVlmData.getVlmNr(),
+            "--max-peers", Integer.toString(peers),
+            "--",
+            "--force",
+            "create-md"
+        );
     }
 
     /**
@@ -250,7 +249,7 @@ public class DrbdAdm
 
         boolean mdFlag = true;
         String[] params = command.toArray(new String[command.size()]);
-        ExtCmd utilsCmd = new ExtCmd(timer, errorReporter);
+        ExtCmd utilsCmd = extCmdFactory.create();
         File nullDevice = new File("/dev/null");
         try
         {
@@ -306,30 +305,29 @@ public class DrbdAdm
         );
     }
 
-    public void suspendIo(ResourceName rscName)
+    public void suspendIo(DrbdRscData drbdRscData)
         throws ExtCmdFailedException
     {
-        execute(DRBDADM_UTIL, "suspend-io", rscName.displayValue);
+        execute(DRBDADM_UTIL, "suspend-io", drbdRscData.getSuffixedResourceName());
     }
 
-    public void resumeIo(ResourceName rscName)
+    public void resumeIo(DrbdRscData drbdRscData)
         throws ExtCmdFailedException
     {
-        execute(DRBDADM_UTIL, "resume-io", rscName.displayValue);
+        execute(DRBDADM_UTIL, "resume-io", drbdRscData.getSuffixedResourceName());
     }
 
-    public void waitConnectResource(ResourceName resourceName, int timeout) throws ExtCmdFailedException
+    public void waitConnectResource(DrbdRscData drbdRscData, int timeout) throws ExtCmdFailedException
     {
-        waitForFamily(resourceName, timeout, "wait-connect-resource");
+        waitForFamily(drbdRscData, timeout, "wait-connect-resource");
     }
 
-    public void waitSyncResource(ResourceName resourceName, int timeout) throws ExtCmdFailedException
+    public void waitSyncResource(DrbdRscData drbdRscData, int timeout) throws ExtCmdFailedException
     {
-        waitForFamily(resourceName, timeout, "wait-sync-resource");
+        waitForFamily(drbdRscData, timeout, "wait-sync-resource");
     }
 
     public void checkResFile(
-        ResourceName resourceName,
         Path tmpResPath,
         Path resPath
     )
@@ -347,19 +345,18 @@ public class DrbdAdm
         // execute(DRBDADM_UTIL, "-d", "up", resourceName.value);
     }
 
-    private void simpleSetupCommand(ResourceName rscName, String subcommand) throws ExtCmdFailedException
-    {
-        simpleSetupCommand(rscName, null, subcommand);
-    }
-
-    private void simpleSetupCommand(ResourceName rscName, VolumeNumber vlmNr, String... subCommands)
+    private void simpleSetupCommand(
+        DrbdRscData drbdRscData,
+        VolumeNumber vlmNr,
+        String... subCommands
+    )
         throws ExtCmdFailedException
     {
         List<String> command = new ArrayList<>();
         command.add(DRBDSETUP_UTIL);
         command.addAll(Arrays.asList(subCommands));
 
-        String drbdObj = rscName.displayValue;
+        String drbdObj = drbdRscData.getSuffixedResourceName();
         if (vlmNr != null)
         {
             drbdObj += "/" + vlmNr.value;
@@ -369,13 +366,13 @@ public class DrbdAdm
         execute(command);
     }
 
-    private void simpleAdmCommand(ResourceName resourceName, String subcommand) throws ExtCmdFailedException
+    private void simpleAdmCommand(DrbdRscData drbdRscData, String subcommand) throws ExtCmdFailedException
     {
-        simpleAdmCommand(resourceName, null, subcommand);
+        simpleAdmCommand(drbdRscData, null, subcommand);
     }
 
     private void simpleAdmCommand(
-        ResourceName resourceName,
+        DrbdRscData drbdRscData,
         VolumeNumber volNum,
         String... subCommands
     )
@@ -391,7 +388,7 @@ public class DrbdAdm
 
         // command.addAll(asConfigParameter(resourceName.value));
         command.addAll(Arrays.asList(subCommands));
-        String resName = resourceName.displayValue;
+        String resName = drbdRscData.getSuffixedResourceName();
         if (volNum != null)
         {
             resName += "/" + volNum.value;
@@ -402,7 +399,7 @@ public class DrbdAdm
     }
 
     private void waitForFamily(
-        ResourceName resourceName,
+        DrbdRscData drbdRscData,
         int timeout,
         String commandRef
     )
@@ -413,7 +410,7 @@ public class DrbdAdm
             commandRef,
             "--wait-after-sb=yes",
             "--wfc-timeout=" + timeout,
-            resourceName.displayValue
+            drbdRscData.getSuffixedResourceName()
         );
     }
 
@@ -449,7 +446,7 @@ public class DrbdAdm
         {
             // FIXME: Works only on Unix
             File nullDevice = new File("/dev/null");
-            ExtCmd extCmd = new ExtCmd(timer, errorReporter);
+            ExtCmd extCmd = extCmdFactory.create();
             OutputData outputData = extCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), command);
             if (outputData.exitCode != 0)
             {

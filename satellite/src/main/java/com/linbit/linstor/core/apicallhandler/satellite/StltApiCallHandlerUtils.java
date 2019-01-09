@@ -21,12 +21,12 @@ import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Either;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -136,25 +136,11 @@ public class StltApiCallHandlerUtils
     private Either<Long, ApiRcException> getVlmAllocatedOrError(Volume vlm)
         throws AccessDeniedException
     {
-        Either<Long, ApiRcException> result;
-        try
-        {
-            result = Either.left(getVlmAllocated(vlm));
-        }
-        catch (StorageException storageExc)
-        {
-            result = Either.right(new ApiRcException(ApiCallRcImpl
-                .entryBuilder(ApiConsts.FAIL_UNKNOWN_ERROR, "Failed to query volume allocated")
-                .setCause(storageExc.getMessage())
-                .build(),
-                storageExc
-            ));
-        }
-        return result;
+        return Either.left(getVlmAllocated(vlm));
     }
 
     private Long getVlmAllocated(Volume vlm)
-        throws StorageException, AccessDeniedException
+        throws AccessDeniedException
     {
         long allocated;
         StorPool storPool = vlm.getStorPool(apiCtx);
@@ -171,7 +157,7 @@ public class StltApiCallHandlerUtils
         }
         else
         {
-            allocated = storageLayer.getAllocatedSize(vlm, apiCtx);
+            allocated = ProviderUtils.getAllocatedSize(vlm, apiCtx);
         }
         return allocated;
     }

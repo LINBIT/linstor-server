@@ -3,7 +3,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdRscDatabaseDriver;
-import com.linbit.linstor.storage.layer.data.DrbdRscData;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 
 import javax.inject.Inject;
 
@@ -18,22 +18,22 @@ public class SatelliteDrbdRscDriver implements DrbdRscDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscData, NodeId> getNodeIdDriver()
+    public SingleColumnDatabaseDriver<DrbdRscObject, NodeId> getNodeIdDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscData, NodeId>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscObject, NodeId>) singleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscData, Boolean> getDisklessForPeersDriver()
+    public SingleColumnDatabaseDriver<DrbdRscObject, Boolean> getDisklessForPeersDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscData, Boolean>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscObject, Boolean>) singleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscData, Boolean> getDisklessDriver()
+    public SingleColumnDatabaseDriver<DrbdRscObject, Boolean> getDisklessDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscData, Boolean>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscObject, Boolean>) singleColDriver;
     }
 }

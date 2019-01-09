@@ -11,8 +11,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.layer.LayerDataStorage;
-import com.linbit.linstor.storage.layer.data.categories.VlmLayerData;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -24,6 +23,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -79,7 +80,10 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final Key vlmKey;
 
-    private final LayerDataStorage<VlmLayerData> layerStorage;
+    private final List<DeviceLayerKind> layerStack;
+
+    @RemoveAfterDevMgrRework
+    private final List<DeviceLayerKind> modifyableLayerStack;
 
     VolumeData(
         UUID uuid,
@@ -94,7 +98,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<Volume.Key, VolumeConnection> vlmConnsMapRef,
-        Map<Class<? extends VlmLayerData>, VlmLayerData> layerDataMapRef
+        List<DeviceLayerKind> layerStackRef
     )
         throws SQLException
     {
@@ -135,7 +139,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
         usableSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         allocatedSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-        layerStorage = new LayerDataStorage<>(layerDataMapRef);
+
+        modifyableLayerStack = layerStackRef;
+        layerStack = Collections.unmodifiableList(modifyableLayerStack);
 
         vlmKey = new Key(this);
 
@@ -439,19 +445,19 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public <T extends VlmLayerData> T setLayerData(AccessContext accCtx, T data)
-        throws AccessDeniedException, SQLException
+    public List<DeviceLayerKind> getLayerStack(AccessContext accCtx) throws AccessDeniedException
     {
-        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
-        return layerStorage.put(data);
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return layerStack;
     }
 
     @Override
-    public <T extends VlmLayerData> T getLayerData(AccessContext accCtx, Class<T> dataClass)
-        throws AccessDeniedException, SQLException
+    @RemoveAfterDevMgrRework
+    public void setLayerStack(List<DeviceLayerKind> layerStackRef)
     {
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return layerStorage.get(dataClass);
+        modifyableLayerStack.clear();
+        modifyableLayerStack.addAll(layerStackRef);
     }
 
     @Override
@@ -492,7 +498,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         if (deleted.get())
         {
-System.out.println("\n\n\n\nvlm checkDeleted: " + getKey());
             throw new AccessToDeletedDataException("Access to deleted volume");
         }
     }
@@ -502,8 +507,7 @@ System.out.println("\n\n\n\nvlm checkDeleted: " + getKey());
     {
         return "Node: '" + resource.getAssignedNode().getName() + "', " +
                "Rsc: '" + resource.getDefinition().getName() + "', " +
-               "VlmNr: '" + volumeDfn.getVolumeNumber() + "', " +
-               "Type: '"  + resource.getType().name() + "'";
+               "VlmNr: '" + volumeDfn.getVolumeNumber() + "'";
     }
 
     @Override

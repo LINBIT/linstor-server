@@ -16,16 +16,14 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.layer.LayerDataStorage;
-import com.linbit.linstor.storage.layer.data.categories.RscDfnLayerData;
+import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.locks.LockGuard;
-import com.linbit.utils.Pair;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,8 +62,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     private final TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
 
     // Resources defined by this ResourceDefinition
-    // TODO: change to something like Map<NodeName, Map<ResourceType, Resource>>
-    private final TransactionMap<Pair<NodeName, ResourceType>, Resource> resourceMap;
+    private final TransactionMap<NodeName, Resource> resourceMap;
 
     // Snapshots from this resource definition
     private final TransactionMap<SnapshotName, SnapshotDefinition> snapshotDfnMap;
@@ -90,7 +87,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // TODO: should be moved to DrbdRscData once controller knows about it
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> down;
 
-    private final LayerDataStorage<RscDfnLayerData> layerStorage;
+    private final Map<DeviceLayerKind, RscDfnLayerObject> layerStorage;
 
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
@@ -108,9 +105,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
-        Map<Pair<NodeName, ResourceType>, Resource> rscMapRef,
+        Map<NodeName, Resource> rscMapRef,
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,
-        Map<Class<? extends RscDfnLayerData>, RscDfnLayerData> layerDataMapRef
+        Map<DeviceLayerKind, RscDfnLayerObject> layerDataMapRef
     )
         throws SQLException
     {
@@ -154,7 +151,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             this.dbDriver.getTransportTypeDriver()
         );
 
-        layerStorage = new LayerDataStorage<>(layerDataMapRef);
+        layerStorage = layerDataMapRef;
 
         transObjs = Arrays.asList(
             flags,
@@ -281,7 +278,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     @Override
     public void copyResourceMap(
-        AccessContext accCtx, Map<Pair<NodeName, ResourceType>, ? super Resource> dstMap
+        AccessContext accCtx, Map<NodeName, ? super Resource> dstMap
     )
         throws AccessDeniedException
     {
@@ -298,12 +295,12 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public Resource getResource(AccessContext accCtx, NodeName clNodeName, ResourceType type)
+    public Resource getResource(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return resourceMap.get(new Pair<>(clNodeName, type));
+        return resourceMap.get(clNodeName);
     }
 
     @Override
@@ -332,7 +329,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        resourceMap.put(new Pair<>(resRef.getAssignedNode().getName(), resRef.getType()), resRef);
+        resourceMap.put(resRef.getAssignedNode().getName(), resRef);
     }
 
     void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
@@ -340,7 +337,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        resourceMap.remove(new Pair<>(resRef.getAssignedNode().getName(), resRef.getType()));
+        resourceMap.remove(resRef.getAssignedNode().getName());
     }
 
     @Override
@@ -452,22 +449,24 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         getFlags().enableFlags(accCtx, RscDfnFlags.DELETE);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T extends RscDfnLayerData> T setLayerData(AccessContext accCtx, T rscDfnLayerData)
+    public <T extends RscDfnLayerObject> T setLayerData(AccessContext accCtx, T rscDfnLayerData)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        return layerStorage.put(rscDfnLayerData);
+        return (T) layerStorage.put(rscDfnLayerData.getLayerKind(), rscDfnLayerData);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T extends RscDfnLayerData> T getLayerData(AccessContext accCtx, Class<T> dataClass)
+    public <T extends RscDfnLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        return layerStorage.get(dataClass);
+        return (T) layerStorage.get(kind);
     }
 
     @Override

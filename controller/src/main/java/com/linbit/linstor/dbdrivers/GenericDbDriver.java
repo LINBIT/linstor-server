@@ -245,9 +245,9 @@ public class GenericDbDriver implements DatabaseDriver
             for (Resource rsc : loadedResources.keySet())
             {
                 loadedNodesMap.get(rsc.getAssignedNode()).getRscMap()
-                    .put(new Pair<>(rsc.getDefinition().getName(), rsc.getType()), rsc);
+                    .put(rsc.getDefinition().getName(), rsc);
                 loadedRscDfnsMap.get(rsc.getDefinition()).getRscMap()
-                    .put(new Pair<>(rsc.getAssignedNode().getName(), rsc.getType()), rsc);
+                    .put(rsc.getAssignedNode().getName(), rsc);
             }
 
             // temporary resource map

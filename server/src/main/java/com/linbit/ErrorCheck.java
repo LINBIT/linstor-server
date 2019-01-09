@@ -1,5 +1,7 @@
 package com.linbit;
 
+import com.linbit.linstor.Volume;
+
 /**
  * Implementation error checks
  *
@@ -24,5 +26,11 @@ public class ErrorCheck
                 new NullPointerException()
             );
         }
+    }
+
+    public static <ARG> ARG requireNonNull(Class<?> objClass, Class<ARG> argClass, ARG arg)
+    {
+        ctorNotNull(objClass, argClass, arg);
+        return arg;
     }
 }

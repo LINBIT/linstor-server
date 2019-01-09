@@ -15,7 +15,6 @@ import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -86,8 +85,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
-            ResourceType.DEFAULT,
-            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -155,8 +152,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
-            ResourceType.DEFAULT,
-            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -191,8 +186,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
-            ResourceType.DEFAULT,
-            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -249,8 +242,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
-            ResourceType.DEFAULT,
-            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -283,8 +274,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
-            ResourceType.DEFAULT,
-            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -327,8 +316,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
-            ResourceType.DEFAULT,
-            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -367,8 +354,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             node,
             nodeId,
             initFlags,
-            ResourceType.DEFAULT,
-            Collections.emptyList(),
             driver,
             propsContainerFactory,
             transObjFactory,

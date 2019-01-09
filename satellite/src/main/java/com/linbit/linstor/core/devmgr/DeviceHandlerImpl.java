@@ -9,6 +9,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -19,7 +20,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
-import com.linbit.linstor.core.devmgr.helper.LayeredSnapshotHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -27,11 +27,13 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LayerFactory;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.ResourceLayer;
+import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
-import com.linbit.linstor.storage.layer.kinds.DefaultLayerKind;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.utils.Either;
 import com.linbit.utils.RemoveAfterDevMgrRework;
@@ -44,13 +46,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -64,7 +70,6 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final CtrlStltSerializer interComSerializer;
 
     private final LayeredResourcesHelper layeredRscHelper;
-    private final LayeredSnapshotHelper layeredSnapshotHelper;
     private final LayerFactory layerFactory;
     private final AtomicBoolean fullSyncApplied;
     private final StorageLayer storageLayer;
@@ -77,7 +82,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         CtrlStltSerializer interComSerializerRef,
         Provider<NotificationListener> notificationListenerRef,
         LayeredResourcesHelper layeredRscHelperRef,
-        LayeredSnapshotHelper layeredSnapshotHelperRef,
         LayerFactory layerFactoryRef,
         StorageLayer storageLayerRef
     )
@@ -89,7 +93,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         notificationListener = notificationListenerRef;
 
         layeredRscHelper = layeredRscHelperRef;
-        layeredSnapshotHelper = layeredSnapshotHelperRef;
         layerFactory = layerFactoryRef;
         storageLayer = storageLayerRef;
 
@@ -99,15 +102,18 @@ public class DeviceHandlerImpl implements DeviceHandler
     @Override
     public void dispatchResources(Collection<Resource> rscs, Collection<Snapshot> snapshots)
     {
+        /*
+         * TODO: we may need to add some snapshotname-suffix logic (like for resourcename)
+         * when implementing snapshots for / through RAID-layer
+         */
+
         Collection<Resource> origResources = rscs;
-        List<Resource> allResources = convertResources(origResources);
-        updateSnapshotLayerData(origResources, snapshots);
+        Collection<Resource> allResources = convertResources(origResources, snapshots);
 
-        Set<Resource> rootResources = origResources.stream().map(rsc -> getRoot(rsc)).collect(Collectors.toSet());
-        Map<ResourceLayer, List<Resource>> rscByLayer = groupResourcesByLayer(allResources);
-        Map<ResourceName, List<Snapshot>> snapshotsByRscName = groupSnapshotsByResourceName(snapshots);
+        Map<DeviceLayer, Set<RscLayerObject>> rscByLayer = groupResourcesByLayer(allResources);
+        Map<ResourceName, Set<Snapshot>> snapshotsByRscName = groupSnapshotsByResourceName(snapshots);
 
-        calculateGrossSizes(rootResources);
+        calculateGrossSizes(rscs);
 
         boolean prepareSuccess = prepareLayers(rscByLayer, snapshotsByRscName);
 
@@ -121,7 +127,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
             processResourcesAndTheirSnapshots(
                 snapshots,
-                rootResources,
+                rscs,
                 snapshotsByRscName,
                 unprocessedSnapshots,
                 rscListNotifyApplied,
@@ -137,22 +143,53 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
-    private Map<ResourceLayer, List<Resource>> groupResourcesByLayer(List<Resource> allResources)
+    private Map<DeviceLayer, Set<RscLayerObject>> groupResourcesByLayer(Collection<Resource> allResources)
     {
-        return allResources.stream()
-            .collect(
-                Collectors.groupingBy(
-                    rsc -> layerFactory.getDeviceLayer(rsc.getType().getDevLayerKind().getClass())
+        Map<DeviceLayer, Set<RscLayerObject>> ret = new HashMap<>();
+        try
+        {
+            for (Resource rsc : allResources)
+            {
+                for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
+                {
+                    DeviceLayerKind rootKind = vlm.getLayerStack(wrkCtx).get(0);
+                    RscLayerObject rootRscData = rsc.getLayerData(wrkCtx, rootKind);
+
+                    LinkedList<RscLayerObject> toProcess = new LinkedList<>();
+                    toProcess.add(rootRscData);
+                    while (!toProcess.isEmpty())
+                    {
+                        RscLayerObject rscData = toProcess.poll();
+
+                        toProcess.addAll(rscData.getChildren());
+
+                        DeviceLayer devLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());
+                        ret.computeIfAbsent(devLayer, ignored -> new HashSet<>()).add(rscData);
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return ret;
+    }
+
+    private Map<ResourceName, Set<Snapshot>> groupSnapshotsByResourceName(Collection<Snapshot> snapshots)
+    {
+        return snapshots.stream().collect(
+            Collectors.groupingBy(
+                Snapshot::getResourceName,
+                Collectors.mapping(
+                    Function.identity(),
+                    Collectors.toSet()
                 )
-            );
+            )
+        );
     }
 
-    private Map<ResourceName, List<Snapshot>> groupSnapshotsByResourceName(Collection<Snapshot> snapshots)
-    {
-        return snapshots.stream().collect(Collectors.groupingBy(Snapshot::getResourceName));
-    }
-
-    private void calculateGrossSizes(Set<Resource> rootResources) throws ImplementationError
+    private void calculateGrossSizes(Collection<Resource> rootResources) throws ImplementationError
     {
         for (Resource rsc : rootResources)
         {
@@ -168,25 +205,26 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     private boolean prepareLayers(
-        Map<ResourceLayer, List<Resource>> rscByLayer,
-        Map<ResourceName, List<Snapshot>> snapshotsByRscName
+        Map<DeviceLayer, Set<RscLayerObject>> rscByLayer,
+        Map<ResourceName, Set<Snapshot>> snapshotsByRscName
     )
     {
         boolean prepareSuccess = true;
-        for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
+        for (Entry<DeviceLayer, Set<RscLayerObject>> entry : rscByLayer.entrySet())
         {
-            List<Snapshot> affectedSnapshots = new ArrayList<>();
-            List<Resource> rscList = entry.getValue();
-            for (Resource rsc : rscList)
+            Set<Snapshot> affectedSnapshots = new TreeSet<>();
+            Set<RscLayerObject> rscDataList = entry.getValue();
+            for (RscLayerObject rscData : rscDataList)
             {
-                List<Snapshot> list = snapshotsByRscName.get(rsc.getDefinition().getName());
+                // FIXME: RAID: add rscNameSuffix
+                Set<Snapshot> list = snapshotsByRscName.get(rscData.getResourceName());
                 if (list != null)
                 {
                     affectedSnapshots.addAll(list);
                 }
             }
-            ResourceLayer layer = entry.getKey();
-            if (!prepare(layer, rscList, affectedSnapshots))
+            DeviceLayer layer = entry.getKey();
+            if (!prepare(layer, rscDataList, affectedSnapshots))
             {
                 prepareSuccess = false;
                 break;
@@ -197,8 +235,8 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private void processResourcesAndTheirSnapshots(
         Collection<Snapshot> snapshots,
-        Set<Resource> rootResources,
-        Map<ResourceName, List<Snapshot>> snapshotsByRscName,
+        Collection<Resource> rootResources,
+        Map<ResourceName, Set<Snapshot>> snapshotsByRscName,
         List<Snapshot> unprocessedSnapshots,
         List<Resource> rscListNotifyApplied,
         List<Resource> rscListNotifyDelete,
@@ -210,41 +248,57 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             ResourceName rscName = rsc.getDefinition().getName();
 
-            List<Snapshot> snapshotList = snapshotsByRscName.getOrDefault(rscName, Collections.emptyList());
+            Set<Snapshot> snapshotList = snapshotsByRscName.getOrDefault(rscName, Collections.emptySet());
             unprocessedSnapshots.removeAll(snapshotList);
 
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
             try
             {
-                process(rsc, snapshotList, apiCallRc);
-
-                /*
-                 * old device manager reported changes of free space after every
-                 * resource operation. As this could require to query the same
-                 * VG or zpool multiple times within the same device manager run,
-                 * we only query the free space after the whole run.
-                 * This also means that we only send the resourceApplied messages
-                 * at the very end
-                 */
-                if (rsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE))
+                DeviceLayerKind rootKind = null;
                 {
-                    rscListNotifyDelete.add(rsc);
-                    notificationListener.get().notifyResourceDeleted(rsc);
-                    // rsc.delete is done by the deviceManager
-                }
-                else
-                {
-                    rscListNotifyApplied.add(rsc);
-                    notificationListener.get().notifyResourceApplied(rsc);
-                }
-
-                for (Snapshot snapshot : snapshots)
-                {
-                    if (snapshot.getFlags().isSet(wrkCtx, SnapshotFlags.DELETE))
+                    Volume firstVlm = rsc.streamVolumes().findFirst().get();
+                    if (firstVlm != null)
                     {
-                        snapListNotifyDelete.add(snapshot);
-                        notificationListener.get().notifySnapshotDeleted(snapshot);
-                        // snapshot.delete is done by the deviceManager
+                        rootKind = firstVlm.getLayerStack(wrkCtx).get(0);
+                    }
+                }
+
+                if (rootKind != null)
+                {
+                    process(
+                        rsc.getLayerData(wrkCtx, rootKind),
+                        snapshotList,
+                        apiCallRc
+                    );
+
+                    /*
+                     * old device manager reported changes of free space after every
+                     * resource operation. As this could require to query the same
+                     * VG or zpool multiple times within the same device manager run,
+                     * we only query the free space after the whole run.
+                     * This also means that we only send the resourceApplied messages
+                     * at the very end
+                     */
+                    if (rsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE))
+                    {
+                        rscListNotifyDelete.add(rsc);
+                        notificationListener.get().notifyResourceDeleted(rsc);
+                        // rsc.delete is done by the deviceManager
+                    }
+                    else
+                    {
+                        rscListNotifyApplied.add(rsc);
+                        notificationListener.get().notifyResourceApplied(rsc);
+                    }
+
+                    for (Snapshot snapshot : snapshots)
+                    {
+                        if (snapshot.getFlags().isSet(wrkCtx, SnapshotFlags.DELETE))
+                        {
+                            snapListNotifyDelete.add(snapshot);
+                            notificationListener.get().notifySnapshotDeleted(snapshot);
+                            // snapshot.delete is done by the deviceManager
+                        }
                     }
                 }
             }
@@ -317,7 +371,7 @@ public class DeviceHandlerImpl implements DeviceHandler
          *  However, actually we know that there are no resources "based" on these snapshots (else the
          *  DeviceManager would have found them and called the previous case, such that those snapshots
          *  would have been processed already).
-         *  That means, we can skip all layers and go directoy to the StorageLayer, which, fortunately,
+         *  That means, we can skip all layers and go directory to the StorageLayer, which, fortunately,
          *  does not need a resource for processing snapshots.
          */
         for (Entry<ResourceName, List<Snapshot>> entry : snapshotsByResourceName.entrySet())
@@ -325,7 +379,11 @@ public class DeviceHandlerImpl implements DeviceHandler
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
             try
             {
-                storageLayer.process(null, entry.getValue(), apiCallRc);
+                storageLayer.process(
+                    null, // no resource, no rscLayerData
+                    entry.getValue(), // list of snapshots
+                    apiCallRc
+                );
             }
             catch (AccessDeniedException | SQLException exc)
             {
@@ -401,11 +459,11 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
-    private void clearLayerCaches(Map<ResourceLayer, List<Resource>> rscByLayer)
+    private void clearLayerCaches(Map<DeviceLayer, Set<RscLayerObject>> rscByLayer)
     {
-        for (Entry<ResourceLayer, List<Resource>> entry : rscByLayer.entrySet())
+        for (Entry<DeviceLayer, Set<RscLayerObject>> entry : rscByLayer.entrySet())
         {
-            ResourceLayer layer = entry.getKey();
+            DeviceLayer layer = entry.getKey();
             try
             {
                 layer.clearCache();
@@ -423,10 +481,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                     .setDetails(exc.getDetailsText())
                     .build()
                 );
-                for (Resource rsc : entry.getValue())
+                for (RscLayerObject rsc : entry.getValue())
                 {
                     notificationListener.get().notifyResourceDispatchResponse(
-                        rsc.getDefinition().getName(),
+                        rsc.getResourceName(),
                         apiCallRc
                     );
                 }
@@ -434,26 +492,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
-    private Resource getRoot(Resource rsc)
-    {
-        Resource root = rsc;
-        try
-        {
-            Resource tmp = rsc.getParentResource(wrkCtx);
-            while (tmp != null)
-            {
-                root = tmp;
-                tmp = tmp.getParentResource(wrkCtx);
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return root;
-    }
-
-    private boolean prepare(ResourceLayer layer, List<Resource> resources, List<Snapshot> affectedSnapshots)
+    private boolean prepare(DeviceLayer layer, Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
     {
         boolean success;
         try
@@ -461,13 +500,13 @@ public class DeviceHandlerImpl implements DeviceHandler
             errorReporter.logTrace(
                 "Layer '%s' preparing %d resources",
                 layer.getName(),
-                resources.size()
+                rscDataList.size()
             );
-            layer.prepare(resources, affectedSnapshots);
+            layer.prepare(rscDataList, affectedSnapshots);
             errorReporter.logTrace(
                 "Layer '%s' finished preparing %d resources",
                 layer.getName(),
-                resources.size()
+                rscDataList.size()
             );
             success = true;
         }
@@ -487,10 +526,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                 .setDetails(exc.getDetailsText())
                 .build()
             );
-            for (Resource failedResource : resources)
+            for (RscLayerObject failedResourceData : rscDataList)
             {
                 notificationListener.get().notifyResourceDispatchResponse(
-                    failedResource.getDefinition().getName(),
+                    failedResourceData.getResourceName(),
                     apiCallRc
                 );
             }
@@ -502,53 +541,58 @@ public class DeviceHandlerImpl implements DeviceHandler
         return success;
     }
 
+
     @Override
-    public void process(Resource rsc, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
-        throws StorageException, ResourceException, VolumeException,
-            AccessDeniedException, SQLException
+    public void process(
+        RscLayerObject rscLayerData,
+        Collection<Snapshot> snapshots,
+        ApiCallRcImpl apiCallRc
+    )
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
-        ResourceLayer devLayer = layerFactory.getDeviceLayer(rsc.getType().getDevLayerKind().getClass());
+        DeviceLayer nextLayer = layerFactory.getDeviceLayer(rscLayerData.getLayerKind());
+
         errorReporter.logTrace(
             "Layer '%s' processing resource '%s'",
-            devLayer.getName(),
-            rsc.getKey().toString()
+            nextLayer.getName(),
+            rscLayerData.getSuffixedResourceName()
         );
-        devLayer.process(rsc, snapshots, apiCallRc);
+
+        nextLayer.process(rscLayerData, snapshots, apiCallRc);
+
         errorReporter.logTrace(
             "Layer '%s' finished processing resource '%s'",
-            devLayer.getName(),
-            rsc.getKey().toString()
+            nextLayer.getName(),
+            rscLayerData.getSuffixedResourceName()
         );
     }
 
-    public void updateGrossSizeForChildren(Resource dfltRsc) throws AccessDeniedException, SQLException
+    public void updateGrossSizeForChildren(Resource rsc) throws AccessDeniedException, SQLException
     {
-        LinkedList<Resource> resources = new LinkedList<>();
-        resources.add(dfltRsc);
-
-        // special case: defaultLayer has no parent
-        ResourceLayer dfltLayer = layerFactory.getDeviceLayer(DefaultLayerKind.class);
-        for (Volume dfltVlm : dfltRsc.streamVolumes().collect(Collectors.toList()))
+        for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
         {
-            dfltLayer.updateGrossSize(dfltVlm, null);
-        }
+            { // set initial size which will be changed by the actual layers shortly
+                long size = vlm.getVolumeDefinition().getVolumeSize(wrkCtx);
+                vlm.setAllocatedSize(wrkCtx, size);
+                vlm.setUsableSize(wrkCtx, size);
+            }
 
-        while (!resources.isEmpty())
-        {
-            Resource parent = resources.pollFirst();
-            for (Resource child : parent.getChildResources(wrkCtx))
+            VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+
+            RscLayerObject rscData = null;
+            VlmProviderObject vlmData = null;
+            for (DeviceLayerKind kind : vlm.getLayerStack(wrkCtx))
             {
-                ResourceLayer devLayer = layerFactory.getDeviceLayer(child.getType().getDevLayerKind().getClass());
-
-                for (Volume childVlm : child.streamVolumes().collect(Collectors.toList()))
+                if (rscData == null)
                 {
-                    devLayer.updateGrossSize(
-                        childVlm,
-                        parent.getVolume(childVlm.getVolumeDefinition().getVolumeNumber())
-                    );
+                    rscData = rsc.getLayerData(wrkCtx, kind);
                 }
-
-                resources.add(child);
+                else
+                {
+                    rscData = rscData.getSingleChild();
+                }
+                vlmData = rscData.getVlmProviderObject(vlmNr);
+                layerFactory.getDeviceLayer(kind).updateGrossSize(vlmData);
             }
         }
     }
@@ -560,19 +604,17 @@ public class DeviceHandlerImpl implements DeviceHandler
      * This method splits one {@link Resource} into device-layer-specific resources.
      * In future versions of LINSTOR this method should get obsolete as the API layer should
      * already receive the correct resources.
+     * @param snapshotsRef
      * @throws AccessDeniedException
      */
     @RemoveAfterDevMgrRework
-    private List<Resource> convertResources(Collection<Resource> resourcesToProcess)
+    private Collection<Resource> convertResources(
+        Collection<Resource> resourcesToProcess,
+        Collection<Snapshot> snapshots
+    )
     {
         // convert resourceNames to resources
         return layeredRscHelper.extractLayers(resourcesToProcess);
-    }
-
-    @RemoveAfterDevMgrRework
-    private void updateSnapshotLayerData(Collection<Resource> dfltResources, Collection<Snapshot> snapshots)
-    {
-        layeredSnapshotHelper.updateSnapshotLayerData(dfltResources, snapshots);
     }
 
     public void fullSyncApplied(Node localNode)

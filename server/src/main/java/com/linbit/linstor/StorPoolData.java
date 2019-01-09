@@ -1,31 +1,26 @@
 package com.linbit.linstor;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
-import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
-
 import com.linbit.ErrorCheck;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
-import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
-import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.timer.CoreTimer;
+import com.linbit.linstor.storage.StorageDriverLoader;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+import com.linbit.utils.RemoveAfterDevMgrRework;
 
 import javax.inject.Provider;
 
@@ -33,10 +28,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,8 +41,10 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final transient UUID dbgInstanceId;
 
     private final StorPoolDefinition storPoolDef;
+    @RemoveAfterDevMgrRework
     private final StorageDriverKind storageDriverKind;
-    private final boolean allowStorageDriverCreation;
+    private final DeviceProviderKind deviceProviderKind;
+
     private final Props props;
     private final Node node;
     private final StorPoolDataDatabaseDriver dbDriver;
@@ -65,9 +60,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         UUID id,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
+        @RemoveAfterDevMgrRework
         StorageDriverKind storageDriverKindRef,
         FreeSpaceTracker freeSpaceTrackerRef,
-        boolean allowStorageDriverCreationRef,
         StorPoolDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -83,8 +78,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
         storageDriverKind = storageDriverKindRef;
+        deviceProviderKind = StorageDriverLoader.getDeviceProviderKind(storageDriverKindRef);
         freeSpaceTracker = freeSpaceTrackerRef;
-        allowStorageDriverCreation = allowStorageDriverCreationRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
         volumeMap = transObjFactory.createTransactionMap(volumeMapRef, null);
@@ -145,23 +140,16 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return deviceProviderKind;
+    }
+
+    @Override
     public Props getProps(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtx, node.getObjProt(), storPoolDef.getObjProt(), props);
-    }
-
-    private Map<String, String> cutKeyPrefix(Map<String, String> map, int prefixLen)
-    {
-        Map<String, String> tmp = new HashMap<>();
-        for (Entry<String, String> entry : map.entrySet())
-        {
-            tmp.put(
-                entry.getKey().substring(prefixLen),
-                entry.getValue()
-            );
-        }
-        return tmp;
     }
 
     @Override

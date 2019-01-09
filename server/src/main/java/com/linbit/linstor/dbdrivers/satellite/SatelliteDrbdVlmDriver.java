@@ -2,7 +2,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdVlmDatabaseDriver;
-import com.linbit.linstor.storage.layer.data.DrbdVlmData;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
 
 import javax.inject.Inject;
 
@@ -17,8 +17,8 @@ public class SatelliteDrbdVlmDriver implements DrbdVlmDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdVlmData, String> getMetaDiskDriver()
+    public SingleColumnDatabaseDriver<DrbdVlmObject, String> getMetaDiskDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdVlmData, String>) singleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdVlmObject, String>) singleColDriver;
     }
 }

@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.ResourceType;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
@@ -60,7 +59,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
         NodeName nodeName
     )
     {
-        Resource.Key resourceKey = new Resource.Key(nodeName, resourceName, ResourceType.DEFAULT);
+        Resource.Key resourceKey = new Resource.Key(nodeName, resourceName);
         return update(cachedUpdates.rscUpdates.computeIfAbsent(
             resourceKey, ignored -> new UpdateNotification(rscUuid)));
     }

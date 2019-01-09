@@ -13,6 +13,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -28,6 +29,9 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.storage.interfaces.categories.VlmLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
@@ -41,7 +45,10 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -117,9 +124,11 @@ class CtrlVlmCrtApiHelper
          * - the overrideVlmId property is not set; in this case we assume the volume already
          * exists on the storPool, which means we will not consume additional $volumeSize space
          */
-        if (storPool.getDriverKind().hasBackingStorage() &&
+
+        DeviceProviderKind driverKind = storPool.getDeviceProviderKind();
+        if (driverKind.hasBackingDevice() &&
             getPeerPrivileged(rsc.getAssignedNode()).getConnectionStatus() == Peer.ConnectionStatus.ONLINE &&
-            (thinFreeCapacities != null || !storPool.getDriverKind().usesThinProvisioning()) &&
+            (thinFreeCapacities != null || !driverKind.usesThinProvisioning()) &&
             !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
         )
         {
@@ -149,6 +158,11 @@ class CtrlVlmCrtApiHelper
             }
         }
 
+        Map<DeviceLayerKind, VlmLayerObject> layerData = new TreeMap<>();
+        List<DeviceLayerKind> layerStack = new ArrayList<>();
+
+        fillLayerData(vlmDfn, driverKind, layerStack);
+
         VolumeData vlm;
         try
         {
@@ -159,7 +173,8 @@ class CtrlVlmCrtApiHelper
                 storPool,
                 blockDevice,
                 metaDisk,
-                null // flags
+                null, // flags
+                layerStack
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -182,6 +197,45 @@ class CtrlVlmCrtApiHelper
             throw new ApiSQLException(sqlExc);
         }
         return vlm;
+    }
+
+    // TODO make layerStack configurable by the user
+    private void fillLayerData(
+        VolumeDefinition vlmDfn,
+        DeviceProviderKind kind,
+        List<DeviceLayerKind> layerStack
+    )
+    {
+        try
+        {
+            if (
+                !kind.equals(DeviceProviderKind.SWORDFISH_INITIATOR) &&
+                !kind.equals(DeviceProviderKind.SWORDFISH_TARGET)
+            )
+            {
+                layerStack.add(DeviceLayerKind.DRBD);
+
+                // XXX ensure Resource also has DrbdRscLayerData set
+                // XXX ensure ResourceDefinition has DrbdRscDfnLayerData set
+                // XXX ensure VolumeDefinition has DrbdVlmDfnLayerData set
+
+                // XXX create DrbdVlmLayerData for this volume
+            }
+            if (vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.ENCRYPTED))
+            {
+                layerStack.add(DeviceLayerKind.CRYPT_SETUP);
+
+                // XXX ensure VolumeDefinition has CryptSetupVlmDfnLayerData set
+            }
+
+            layerStack.add(DeviceLayerKind.STORAGE);
+
+            // XXX create corresponding *VlmLayerData
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError("ApiContext has not enough privileges", accDeniedExc);
+        }
     }
 
     private Peer getPeerPrivileged(Node assignedNode)

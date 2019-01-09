@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
@@ -16,7 +17,15 @@ import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
+import com.linbit.linstor.storage.layer.provider.StorageRscData;
+import com.linbit.linstor.storage.layer.provider.lvm.LvmData;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -34,11 +43,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,12 +66,13 @@ public class ConfFileBuilderTest
     private ObjectProtection dummyObjectProtection;
     private WhitelistProps whitelistProps;
 
-    private Resource localRsc, peerRsc;
+    private DrbdRscData localRscData, peerRscData;
 
     private ConfFileBuilder confFileBuilder;
     private ResourceConnection rscConn;
     private NodeConnection nodeConn;
     private PropsContainer props;
+    private Provider<TransactionMgr> transMgrProvider;
 
     @Before
     public void setUp() throws Exception
@@ -75,22 +88,27 @@ public class ConfFileBuilderTest
         // just let it empty - we do not want test drbd-options anyways here
 
         TransactionMgr dummyTransMgr = new SatelliteTransactionMgr();
-        Provider<TransactionMgr> transMgrProvider = () -> dummyTransMgr;
+        transMgrProvider = () -> dummyTransMgr;
         props = new PropsContainerFactory(
                 new SatellitePropDriver(), transMgrProvider).getInstance("TESTINSTANCE");
-        localRsc = makeMockResource(101, "alpha", "1.2.3.4", false, false, false);
-        peerRsc = makeMockResource(202, "bravo", "5.6.7.8", false, false, false);
-        when(localRsc.getAssignedNode().getNodeConnection(
-                accessContext, peerRsc.getAssignedNode())).thenReturn(nodeConn);
-        when(peerRsc.getAssignedNode().getNodeConnection(
-                accessContext, localRsc.getAssignedNode())).thenReturn(nodeConn);
+        localRscData = makeMockResource(101, "alpha", "1.2.3.4", false, false, false);
+        peerRscData = makeMockResource(202, "bravo", "5.6.7.8", false, false, false);
+        when(localRscData.getResource().getAssignedNode().getNodeConnection(
+                accessContext, peerRscData.getResource().getAssignedNode()))
+            .thenReturn(nodeConn);
+        when(peerRscData.getResource().getAssignedNode().getNodeConnection(
+                accessContext, localRscData.getResource().getAssignedNode()))
+            .thenReturn(nodeConn);
         when(rscConn.getProps(accessContext)).thenReturn(props);
         when(nodeConn.getProps(accessContext)).thenReturn(props);
-        when(localRsc.getResourceConnection(accessContext, peerRsc)).thenReturn(rscConn);
-        when(peerRsc.getResourceConnection(accessContext, localRsc)).thenReturn(rscConn);
+        when(localRscData.getResource().getResourceConnection(accessContext, peerRscData.getResource()))
+            .thenReturn(rscConn);
+        when(peerRscData.getResource().getResourceConnection(accessContext, localRscData.getResource()))
+            .thenReturn(rscConn);
     }
 
-    private void setProps(String[] nodeNames, String... nicNames) throws SQLException, InvalidValueException, InvalidKeyException
+    private void setProps(String[] nodeNames, String... nicNames)
+        throws SQLException, InvalidValueException, InvalidKeyException
     {
         assertThat(nodeNames.length == 2).isTrue();
         assertThat(nicNames.length == 4).isTrue();
@@ -106,7 +124,7 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
+                localRscData,
                 null,
                 whitelistProps
         );
@@ -120,7 +138,7 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
+                localRscData,
                 Collections.emptyList(),
                 whitelistProps
         );
@@ -131,12 +149,12 @@ public class ConfFileBuilderTest
     @Test(expected = ImplementationError.class)
     public void testRscDfnNull() throws Exception
     {
-        when(localRsc.getDefinition()).thenReturn(null);
+        when(localRscData.getResource().getDefinition()).thenReturn(null);
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
 
@@ -149,8 +167,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
 
@@ -166,8 +184,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
 
@@ -181,8 +199,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
 
@@ -196,8 +214,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
 
@@ -211,8 +229,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
         setProps(new String[] {"alpha", "bravo"}, "666", "666", "666", "666");
@@ -226,8 +244,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
         setProps(new String[] {"alpha", "bravo"}, "eth0", "eth1", "eth2", "eth3");
@@ -253,7 +271,7 @@ public class ConfFileBuilderTest
     }
 */
     @SuppressWarnings("checkstyle:magicnumber")
-    private Resource makeMockResource(
+    private DrbdRscData makeMockResource(
             final int volumeNumber,
             final String nodeName,
             final String ipAddr,
@@ -336,6 +354,8 @@ public class ConfFileBuilderTest
         when(rscDfnProps.getNamespace(any(String.class))).thenReturn(Optional.empty());
         when(resourceDefinition.getPort(any(AccessContext.class)))
                 .thenReturn(new TcpPortNumber(42));
+        when(resourceDefinition.getTransportType(accessContext)).thenReturn(TransportType.IP);
+        when(resourceDefinition.getSecret(accessContext)).thenReturn("SuperSecretPassword");
 
         when(volumeDefinition.getProps(accessContext)).thenReturn(vlmDfnProps);
         when(vlmDfnProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS)).thenReturn(drbdprops);
@@ -346,13 +366,80 @@ public class ConfFileBuilderTest
         when(rscConn.getStateFlags()).thenReturn(rscConnStateFlags);
         when(resource.getAssignedNode()).thenReturn(assignedNode);
         when(resource.iterateVolumes()).thenAnswer(makeIteratorAnswer(volume));
+        when(resource.streamVolumes()).thenAnswer(makeStreamAnswer(volume));
         when(resource.getNodeId()).thenReturn(new NodeId(12));
         when(resource.getProps(accessContext)).thenReturn(rscProps);
         when(resource.disklessForPeers(accessContext)).thenReturn(diskless);
 
         when(assignedNode.getProps(accessContext)).thenReturn(nodeProps);
 
-        return resource;
+
+        List<DrbdRscData> rscDataList = new ArrayList<>();
+
+        DrbdRscDfnData rscDfnData = new DrbdRscDfnData(
+            resourceDefinition,
+            resourceDefinition.getPort(accessContext),
+            resourceDefinition.getTransportType(accessContext),
+            resourceDefinition.getSecret(accessContext),
+            rscDataList,
+            transMgrProvider
+        );
+
+        Map<VolumeNumber, DrbdVlmDfnData> drbdVlmDfnMap = new HashMap<>();
+        DrbdRscData rscData;
+        {
+            List<RscLayerObject> drbdRscDataChildren = new ArrayList<>();
+            Map<VolumeNumber, DrbdVlmData> drbdRscDataVlmMap = new HashMap<>();
+
+            rscData = new DrbdRscData(
+                resource,
+                "",
+                null,
+                rscDfnData,
+                drbdRscDataChildren,
+                drbdRscDataVlmMap,
+                resource.getNodeId(),
+                resource.disklessForPeers(accessContext),
+                resource.isDiskless(accessContext),
+                transMgrProvider
+            );
+            rscDataList.add(rscData);
+
+            Map<VolumeNumber, VlmProviderObject> vlmProviderMap = new HashMap<>();
+            StorageRscData storRscData = new StorageRscData(
+                rscData,
+                resource,
+                "",
+                vlmProviderMap,
+                transMgrProvider
+            );
+            for (Volume vlm : resource.streamVolumes().collect(Collectors.toList()))
+            {
+                VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+
+                DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
+                    vlm.getVolumeDefinition(),
+                    vlm.getVolumeDefinition().getMinorNr(accessContext),
+                    7, // good enough for tests
+                    transMgrProvider
+                );
+                drbdVlmDfnMap.put(vlmNr, drbdVlmDfnData);
+
+                DrbdVlmData drbdVlmData = new DrbdVlmData(
+                    vlm,
+                    rscData,
+                    drbdVlmDfnData,
+                    transMgrProvider
+                );
+                drbdRscDataVlmMap.put(vlmNr, drbdVlmData);
+
+                vlmProviderMap.put(vlmNr, new LvmData(vlm, storRscData, transMgrProvider));
+            }
+
+            drbdRscDataChildren.add(storRscData);
+        }
+
+        return rscData;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -362,8 +449,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
             errorReporter,
             accessContext,
-            localRsc,
-            Collections.singletonList(peerRsc),
+            localRscData,
+            Collections.singletonList(peerRscData),
             whitelistProps
         );
         String confFile = confFileBuilder.build();
@@ -381,8 +468,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
         String confFile = confFileBuilder.build();
@@ -408,8 +495,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
         String confFileNormal = confFileBuilder.build();
@@ -433,8 +520,8 @@ public class ConfFileBuilderTest
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
-                localRsc,
-                Collections.singletonList(peerRsc),
+                localRscData,
+                Collections.singletonList(peerRscData),
                 whitelistProps
         );
         String confFileNormal = confFileBuilder.build();
@@ -457,7 +544,7 @@ public class ConfFileBuilderTest
     public void testNoConnectionBetweenDiskless() throws Exception
     {
         {
-            List<Resource> peerRscs = new ArrayList<>();
+            List<DrbdRscData> peerRscs = new ArrayList<>();
             peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, true));
             peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, true));
             String confFileNormal = new ConfFileBuilder(
@@ -472,7 +559,7 @@ public class ConfFileBuilderTest
         }
 
         {
-            List<Resource> peerRscs = new ArrayList<>();
+            List<DrbdRscData> peerRscs = new ArrayList<>();
             peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, false));
             peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, true));
             String confFileNormal = new ConfFileBuilder(
@@ -487,7 +574,7 @@ public class ConfFileBuilderTest
         }
 
         {
-            List<Resource> peerRscs = new ArrayList<>();
+            List<DrbdRscData> peerRscs = new ArrayList<>();
             peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, false));
             peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, false));
             String confFileNormal = new ConfFileBuilder(
