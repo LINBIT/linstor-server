@@ -19,6 +19,7 @@ import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeConnection;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
@@ -36,6 +37,9 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.Pair;
+
 import org.slf4j.event.Level;
 
 public class ConfFileBuilder
@@ -92,12 +96,21 @@ public class ConfFileBuilder
     }
 
     public String build()
-        throws AccessDeniedException
+        throws AccessDeniedException, StorageException
     {
         Set<Resource> peerRscSet = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
+
+        if (remoteResources == null)
+        {
+            throw new ImplementationError("No remote resources found for " + localRsc + "!");
+        }
         peerRscSet.addAll(remoteResources); // node-alphabetically sorted
 
         final ResourceDefinition rscDfn = localRsc.getDefinition();
+        if (rscDfn == null)
+        {
+            throw new ImplementationError("No resource definition found for " + localRsc + "!");
+        }
 
         appendLine(header());
         appendLine("");
@@ -202,13 +215,16 @@ public class ConfFileBuilder
                     appendLine("connection");
                     try (Section connectionSection = new Section())
                     {
+                        List<Pair<NetInterface, NetInterface>> pathsList = new ArrayList<>();
                         ResourceConnection rscConn = localRsc.getResourceConnection(accCtx, peerRsc);
-
-                        appendConnectionHost(port, localRsc, rscConn);
-                        appendConnectionHost(port, peerRsc, rscConn);
+                        NodeConnection nodeConn;
+                        Optional<Props> paths = Optional.empty();
 
                         if (rscConn != null)
                         {
+                            // get paths from resource connection...
+                            paths = rscConn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_CONNECTION_PATHS);
+
                             Props rscConnProps = rscConn.getProps(accCtx);
                             if (rscConnProps.getNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS).isPresent())
                             {
@@ -217,9 +233,9 @@ public class ConfFileBuilder
                                 try (Section ignore = new Section())
                                 {
                                     appendDrbdOptions(
-                                        LinStorObject.CONTROLLER,
-                                        rscConnProps,
-                                        ApiConsts.NAMESPC_DRBD_NET_OPTIONS
+                                            LinStorObject.CONTROLLER,
+                                            rscConnProps,
+                                            ApiConsts.NAMESPC_DRBD_NET_OPTIONS
                                     );
                                 }
                             }
@@ -231,11 +247,11 @@ public class ConfFileBuilder
                                 try (Section ignore = new Section())
                                 {
                                     appendConflictingDrbdOptions(
-                                        LinStorObject.CONTROLLER,
-                                        "resource-definition",
-                                        rscDfn.getProps(accCtx),
-                                        rscConnProps,
-                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                                            LinStorObject.CONTROLLER,
+                                            "resource-definition",
+                                            rscDfn.getProps(accCtx),
+                                            rscConnProps,
+                                            ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
                                     );
                                 }
                             }
@@ -243,47 +259,158 @@ public class ConfFileBuilder
                         else
                         {
                             if (rscDfn.getProps(accCtx)
-                                .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
-                                )
+                                    .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
+                            )
                             {
                                 appendLine("");
                                 appendLine("disk");
                                 try (Section ignore = new Section())
                                 {
                                     appendDrbdOptions(
-                                        LinStorObject.CONTROLLER,
-                                        rscDfn.getProps(accCtx),
-                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                                            LinStorObject.CONTROLLER,
+                                            rscDfn.getProps(accCtx),
+                                            ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
                                     );
                                 }
                             }
                         }
+
+                        // ...or fall back to node connection
+                        if (!paths.isPresent())
+                        {
+                            nodeConn = localRsc.getAssignedNode().getNodeConnection(accCtx, peerRsc.getAssignedNode());
+
+                            if (nodeConn != null)
+                            {
+                                paths = nodeConn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_CONNECTION_PATHS);
+                            }
+                        }
+
+                        if (paths.isPresent())
+                        {
+                            // iterate through network connection paths
+                            Iterator<String> pathsIterator = paths.get().iterateNamespaces();
+                            while (pathsIterator.hasNext())
+                            {
+                                String path = pathsIterator.next();
+                                Optional<Props> nodes = paths.get().getNamespace(path);
+
+                                if (nodes.isPresent() && nodes.get().map().size() == 2)
+                                {
+                                    Node firstNode = peerRsc.getAssignedNode();
+                                    Node secondNode = localRsc.getAssignedNode();
+                                    try
+                                    {
+                                        // iterate through nodes (should be exactly 2)
+                                        Iterator<String> nodesIterator = nodes.get().keysIterator();
+                                        String firstNodeName = nodesIterator.next().split("/")[2];
+                                        String secondNodeName = nodesIterator.next().split("/")[2];
+
+                                        // keep order of nodes correct
+                                        if (firstNode.getName().value.equalsIgnoreCase(secondNodeName) &&
+                                            secondNode.getName().value.equalsIgnoreCase(firstNodeName))
+                                        {
+                                            Node temp = firstNode;
+                                            firstNode = secondNode;
+                                            secondNode = temp;
+                                        }
+                                        else if (!(firstNode.getName().value.equalsIgnoreCase(firstNodeName) &&
+                                                secondNode.getName().value.equalsIgnoreCase(secondNodeName)))
+                                        {
+                                            throw new ImplementationError(
+                                                    "Configured node names " + firstNodeName + " and " +
+                                                    secondNodeName + " do not match the actual node names."
+                                            );
+                                        }
+
+                                        // get corresponding network interfaces
+                                        String nicName = nodes.get().getProp(firstNodeName);
+                                        NetInterface firstNic = firstNode.getNetInterface(
+                                                accCtx, new NetInterfaceName(nicName));
+
+                                        if (firstNic == null)
+                                        {
+                                            throw new StorageException("Network interface '" + nicName +
+                                                    "' of node '" + firstNode + "' does not exist!");
+                                        }
+
+                                        nicName = nodes.get().getProp(secondNodeName);
+                                        NetInterface secondNic = secondNode.getNetInterface(
+                                                accCtx, new NetInterfaceName(nicName));
+
+                                        if (secondNic == null)
+                                        {
+                                            throw new StorageException("Network interface '" + nicName +
+                                                    "' of node '" + secondNode + "' does not exist!");
+                                        }
+
+                                        pathsList.add(new Pair<>(firstNic, secondNic));
+                                    }
+                                    catch (InvalidKeyException exc)
+                                    {
+                                        throw new ImplementationError(
+                                                "No network interface configured!", exc);
+                                    }
+                                    catch (InvalidNameException exc)
+                                    {
+                                        throw new StorageException(
+                                                "Name format of for network interface is not valid!", exc);
+                                    }
+                                }
+                                else
+                                {
+                                    throw new ImplementationError(
+                                            "When configuring a path it must contain exactly two nodes!");
+                                }
+                            }
+
+                            // add network connection paths...
+                            for (Pair<NetInterface, NetInterface> path : pathsList)
+                            {
+                                if (path != pathsList.get(0))
+                                {
+                                    appendLine("");
+                                }
+                                appendLine("path");
+                                try (Section pathSection = new Section())
+                                {
+                                    appendConnectionHost(port, rscConn, path.objA);
+                                    appendConnectionHost(port, rscConn, path.objB);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // ...or fall back to previous implementation
+                            appendConnectionHost(port, rscConn, getPreferredNetIf(localRsc));
+                            appendConnectionHost(port, rscConn, getPreferredNetIf(peerRsc));
+                        }
                     }
                 }
             }
+        }
 
-            Optional<String> compressionTypeProp = rscDfn.getProps(accCtx)
-                .getNamespace(ApiConsts.NAMESPC_DRBD_PROXY)
-                .map(Props::map)
-                .map(map -> map.get(ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE));
+        Optional<String> compressionTypeProp = rscDfn.getProps(accCtx)
+            .getNamespace(ApiConsts.NAMESPC_DRBD_PROXY)
+            .map(Props::map)
+            .map(map -> map.get(ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE));
 
-            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS).isPresent() ||
-                compressionTypeProp.isPresent())
+        if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS).isPresent() ||
+            compressionTypeProp.isPresent())
+        {
+            appendLine("");
+            appendLine("proxy");
+            try (Section ignore = new Section())
             {
-                appendLine("");
-                appendLine("proxy");
-                try (Section ignore = new Section())
-                {
-                    appendDrbdOptions(
-                        LinStorObject.DRBD_PROXY,
-                        rscDfn.getProps(accCtx),
-                        ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS
-                    );
+                appendDrbdOptions(
+                    LinStorObject.DRBD_PROXY,
+                    rscDfn.getProps(accCtx),
+                    ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS
+                );
 
-                    if (compressionTypeProp.isPresent())
-                    {
-                        appendCompressionPlugin(rscDfn, compressionTypeProp.get());
-                    }
+                if (compressionTypeProp.isPresent())
+                {
+                    appendCompressionPlugin(rscDfn, compressionTypeProp.get());
                 }
             }
         }
@@ -291,13 +418,12 @@ public class ConfFileBuilder
         return stringBuilder.toString();
     }
 
-    private void appendConnectionHost(int rscDfnPort, Resource rsc, ResourceConnection rscConn)
+    private void appendConnectionHost(int rscDfnPort, ResourceConnection rscConn, NetInterface netIf)
         throws AccessDeniedException
     {
         TcpPortNumber rscConnPort = rscConn == null ? null : rscConn.getPort(accCtx);
         int port = rscConnPort == null ? rscDfnPort : rscConnPort.value;
 
-        NetInterface netIf = getPreferredNetIf(rsc);
         LsIpAddress addr = netIf.getAddress(accCtx);
         String addrText = addr.getAddress();
 
@@ -311,7 +437,7 @@ public class ConfFileBuilder
             outsideAddress = String.format("ipv4 %s:%d", addrText, port);
         }
 
-        String hostName = rsc.getAssignedNode().getName().displayValue;
+        String hostName = netIf.getNode().getName().displayValue;
 
         if (rscConn != null && rscConn.getStateFlags().isSet(accCtx, ResourceConnection.RscConnFlags.LOCAL_DRBD_PROXY))
         {
