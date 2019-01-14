@@ -22,7 +22,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ControllerCoreModule extends AbstractModule
 {
     public static final String CTRL_CONF_LOCK = "ctrlConfLock";
-    public static final String CTRL_ERROR_LIST_LOCK = "ctrlErrorListLock";
 
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
 
