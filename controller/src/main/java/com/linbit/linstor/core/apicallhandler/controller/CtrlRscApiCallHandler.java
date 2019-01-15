@@ -45,6 +45,7 @@ import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -163,14 +164,12 @@ public class CtrlRscApiCallHandler
         return responses;
     }
 
-    byte[] listResources(
-        long apiCallId,
+    ResourceList listResources(
         List<String> filterNodes,
         List<String> filterResources
     )
     {
-        ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
-        Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
+        final ResourceList rscList = new ResourceList();
         try
         {
             final List<String> upperFilterNodes = filterNodes.stream().map(String::toUpperCase).collect(toList());
@@ -189,7 +188,7 @@ public class CtrlRscApiCallHandler
                                 upperFilterNodes.contains(rsc.getAssignedNode().getName().value))
                             .collect(toList()))
                         {
-                            rscs.add(rsc.getApiData(peerAccCtx.get(), null, null));
+                            rscList.addResource(rsc.getApiData(peerAccCtx.get(), null, null));
                             // fullSyncId and updateId null, as they are not going to be serialized anyways
                         }
                     }
@@ -230,7 +229,7 @@ public class CtrlRscApiCallHandler
                                     }
                                 }
                                 removeSet.forEach(rscName -> filterStates.getResourceStates().remove(rscName));
-                                satelliteStates.put(node.getName(), filterStates);
+                                rscList.putSatelliteState(node.getName(), filterStates);
                             }
                         }
                         finally
@@ -247,10 +246,7 @@ public class CtrlRscApiCallHandler
             errorReporter.reportError(accDeniedExc);
         }
 
-        return clientComSerializer
-                .answerBuilder(API_LST_RSC, apiCallId)
-                .resourceList(rscs, satelliteStates)
-                .build();
+        return rscList;
     }
 
     byte[] listResourceConnections(

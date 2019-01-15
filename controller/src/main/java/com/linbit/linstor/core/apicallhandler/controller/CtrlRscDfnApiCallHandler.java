@@ -307,7 +307,7 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
-    byte[] listResourceDefinitions(long apiCallId)
+    ArrayList<ResourceDefinitionData.RscDfnApi> listResourceDefinitions()
     {
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try
@@ -329,10 +329,7 @@ public class CtrlRscDfnApiCallHandler
             // for now return an empty list.
         }
 
-        return clientComSerializer
-            .answerBuilder(ApiConsts.API_LST_RSC_DFN, apiCallId)
-            .resourceDfnList(rscdfns)
-            .build();
+        return rscdfns;
     }
 
     private void requireRscDfnMapChangeAccess()

@@ -2,7 +2,10 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
@@ -11,6 +14,7 @@ import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.locks.LockGuard;
 
@@ -18,6 +22,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -188,12 +193,12 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listNode()
+    public ArrayList<Node.NodeApi> listNode()
     {
-        byte[] listNodes;
+        ArrayList<Node.NodeApi> listNodes;
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock()))
         {
-            listNodes = nodeApiCallHandler.listNodes(apiCallId.get());
+            listNodes = nodeApiCallHandler.listNodes();
         }
         return listNodes;
     }
@@ -291,12 +296,12 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listResourceDefinition()
+    public ArrayList<ResourceDefinitionData.RscDfnApi> listResourceDefinition()
     {
-        byte[] listResourceDefinitions;
+        ArrayList<ResourceDefinitionData.RscDfnApi> listResourceDefinitions;
         try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.readLock()))
         {
-            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions(apiCallId.get());
+            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions();
         }
         return listResourceDefinitions;
     }
@@ -376,9 +381,9 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listResource(List<String> filterNodes, List<String> filterResources)
+    public ResourceList listResource(List<String> filterNodes, List<String> filterResources)
     {
-        byte[] listResources;
+        ResourceList resourceList;
         try (
             LockGuard ls = LockGuard.createLocked(
                 nodesMapLock.readLock(),
@@ -386,13 +391,12 @@ public class CtrlApiCallHandler
             )
         )
         {
-            listResources = rscApiCallHandler.listResources(
-                apiCallId.get(),
+            resourceList = rscApiCallHandler.listResources(
                 filterNodes,
                 filterResources
             );
         }
-        return listResources;
+        return resourceList;
     }
 
     public byte[] listResourceConnections(String rscName)
@@ -505,12 +509,12 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listStorPoolDefinition()
+    public ArrayList<StorPoolDefinitionData.StorPoolDfnApi> listStorPoolDefinition()
     {
-        byte[] listStorPoolDefinitions;
+        ArrayList<StorPoolDefinitionData.StorPoolDfnApi> listStorPoolDefinitions;
         try (LockGuard ls = LockGuard.createLocked(storPoolDfnMapLock.readLock()))
         {
-            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions(apiCallId.get());
+            listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions();
         }
         return listStorPoolDefinitions;
     }
@@ -1076,12 +1080,12 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listCtrlCfg()
+    public Map<String, String> listCtrlCfg()
     {
-        byte[] data;
+        Map<String, String> data;
         try (LockGuard ls = LockGuard.createLocked(ctrlConfigLock.readLock()))
         {
-            data  = ctrlConfApiCallHandler.listProps(apiCallId.get());
+            data  = ctrlConfApiCallHandler.listProps();
         }
         return data;
     }
@@ -1257,12 +1261,12 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listSnapshotDefinition()
+    public ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> listSnapshotDefinition()
     {
-        byte[] listSnapshotDefinitions;
+        ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> listSnapshotDefinitions;
         try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.readLock()))
         {
-            listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions(apiCallId.get());
+            listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions();
         }
         return listSnapshotDefinitions;
     }

@@ -276,7 +276,7 @@ class CtrlStorPoolDfnApiCallHandler
         return iterator;
     }
 
-    byte[] listStorPoolDefinitions(long apiCallId)
+    ArrayList<StorPoolDefinitionData.StorPoolDfnApi> listStorPoolDefinitions()
     {
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
         try
@@ -301,10 +301,7 @@ class CtrlStorPoolDfnApiCallHandler
             // for now return an empty list.
         }
 
-        return clientComSerializer
-            .answerBuilder(ApiConsts.API_LST_STOR_POOL_DFN, apiCallId)
-            .storPoolDfnList(storPoolDfns)
-            .build();
+        return storPoolDfns;
     }
 
     private StorPoolDefinitionData createStorPool(String storPoolNameStrRef)

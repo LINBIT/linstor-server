@@ -517,7 +517,7 @@ public class CtrlNodeApiCallHandler
         return responses;
     }
 
-    byte[] listNodes(long apiCallId)
+    ArrayList<Node.NodeApi> listNodes()
     {
         ArrayList<Node.NodeApi> nodes = new ArrayList<>();
         try
@@ -541,7 +541,7 @@ public class CtrlNodeApiCallHandler
             // for now return an empty list.
         }
 
-        return clientComSerializer.answerBuilder(ApiConsts.API_LST_NODE, apiCallId).nodeList(nodes).build();
+        return nodes;
     }
 
     void respondNode(long apiCallId, UUID nodeUuid, String nodeNameStr)

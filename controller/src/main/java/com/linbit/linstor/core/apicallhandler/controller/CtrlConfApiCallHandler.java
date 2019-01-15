@@ -249,25 +249,19 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
-    public byte[] listProps(long apiCallId)
+    public Map<String, String> listProps()
     {
-        byte[] data = null;
+        Map<String, String> mergedMap = new TreeMap<>();
         try
         {
-            CtrlClientSerializer.CtrlClientSerializerBuilder builder =
-                ctrlClientcomSrzl.answerBuilder(ApiConsts.API_LST_CFG_VAL, apiCallId);
-            Map<String, String> mergedMap = new TreeMap<>();
             mergedMap.putAll(systemConfRepository.getCtrlConfForView(peerAccCtx.get()).map());
             mergedMap.putAll(systemConfRepository.getStltConfForView(peerAccCtx.get()).map());
-            builder.ctrlCfgProps(mergedMap);
-
-            data = builder.build();
         }
-        catch (Exception exc)
+        catch (Exception ignored)
         {
-            data = new byte[0]; // the list will be empty
+            // empty list
         }
-        return data;
+        return mergedMap;
     }
 
     public ApiCallRc deleteProp(String key, String namespace)

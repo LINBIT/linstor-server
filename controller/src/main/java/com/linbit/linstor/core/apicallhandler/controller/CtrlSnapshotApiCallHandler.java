@@ -128,7 +128,7 @@ public class CtrlSnapshotApiCallHandler
         }
     }
 
-    byte[] listSnapshotDefinitions(long apiCallId)
+    ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> listSnapshotDefinitions()
     {
         ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns = new ArrayList<>();
         try
@@ -153,10 +153,7 @@ public class CtrlSnapshotApiCallHandler
             // for now return an empty list.
         }
 
-        return clientComSerializer
-            .answerBuilder(ApiConsts.API_LST_SNAPSHOT_DFN, apiCallId)
-            .snapshotDfnList(snapshotDfns)
-            .build();
+        return snapshotDfns;
     }
 
     public static String getSnapshotDescription(
