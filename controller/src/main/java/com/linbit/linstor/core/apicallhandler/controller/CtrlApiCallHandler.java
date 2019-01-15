@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
@@ -399,17 +400,14 @@ public class CtrlApiCallHandler
         return resourceList;
     }
 
-    public byte[] listResourceConnections(String rscName)
+    public List<ResourceConnection.RscConnApi> listResourceConnections(String rscName)
     {
-        byte[] listRscConns;
+        List<ResourceConnection.RscConnApi> listRscConns;
         try
         {
             nodesMapLock.readLock().lock();
             rscDfnMapLock.readLock().lock();
-            listRscConns = rscApiCallHandler.listResourceConnections(
-                apiCallId.get(),
-                rscName
-            );
+            listRscConns = rscApiCallHandler.listResourceConnections(rscName);
         }
         finally
         {

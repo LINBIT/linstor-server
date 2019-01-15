@@ -249,8 +249,7 @@ public class CtrlRscApiCallHandler
         return rscList;
     }
 
-    byte[] listResourceConnections(
-        long apiCallId,
+    List<ResourceConnection.RscConnApi> listResourceConnections(
         final String rscNameString
     )
     {
@@ -330,10 +329,7 @@ public class CtrlRscApiCallHandler
             );
         }
 
-        return clientComSerializer
-            .answerBuilder(API_LST_RSC_CONN, apiCallId)
-            .resourceConnList(rscConns)
-            .build();
+        return rscConns;
     }
 
     public void respondResource(
