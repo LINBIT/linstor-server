@@ -1,9 +1,10 @@
-package com.linbit.linstor.api.protobuf.controller;
+package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.SnapshotInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 
 import javax.inject.Inject;
@@ -20,12 +21,12 @@ import java.util.UUID;
 @Singleton
 public class IntRequestSnapshot implements ApiCall
 {
-    private final CtrlApiCallHandler apiCallHandler;
+    private final SnapshotInternalCallHandler snapshotInternalCallHandler;
 
     @Inject
-    public IntRequestSnapshot(CtrlApiCallHandler apiCallHandlerRef)
+    public IntRequestSnapshot(SnapshotInternalCallHandler apiCallHandlerRef)
     {
-        apiCallHandler = apiCallHandlerRef;
+        snapshotInternalCallHandler = apiCallHandlerRef;
     }
 
     @Override
@@ -38,6 +39,6 @@ public class IntRequestSnapshot implements ApiCall
         UUID snapshotUuid = UUID.fromString(snapshotId.getUuid());
         String snapshotName = snapshotId.getName();
 
-        apiCallHandler.handleSnapshotRequest(resourceName, snapshotUuid, snapshotName);
+        snapshotInternalCallHandler.handleSnapshotRequest(resourceName, snapshotUuid, snapshotName);
     }
 }

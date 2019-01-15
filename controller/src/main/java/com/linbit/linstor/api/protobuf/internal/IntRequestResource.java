@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.protobuf.controller;
+package com.linbit.linstor.api.protobuf.internal;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -7,6 +7,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.RscInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 
 import java.io.IOException;
@@ -21,12 +22,12 @@ import java.util.UUID;
 @Singleton
 public class IntRequestResource implements ApiCall
 {
-    private final CtrlApiCallHandler apiCallHandler;
+    private final RscInternalCallHandler rscInternalCallHandler;
 
     @Inject
-    public IntRequestResource(CtrlApiCallHandler apiCallHandlerRef)
+    public IntRequestResource(RscInternalCallHandler apiCallHandlerRef)
     {
-        apiCallHandler = apiCallHandlerRef;
+        rscInternalCallHandler = apiCallHandlerRef;
     }
 
     @Override
@@ -40,6 +41,6 @@ public class IntRequestResource implements ApiCall
         UUID rscUuid = UUID.fromString(rscId.getUuid());
         String rscName = rscId.getName();
 
-        apiCallHandler.handleResourceRequest(nodeName, rscUuid, rscName);
+        rscInternalCallHandler.handleResourceRequest(nodeName, rscUuid, rscName);
     }
 }

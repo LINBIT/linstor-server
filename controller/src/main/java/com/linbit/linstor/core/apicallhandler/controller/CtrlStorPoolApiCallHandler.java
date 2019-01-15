@@ -1,62 +1,50 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescription;
-import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
-
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescription;
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-
 @Singleton
 public class CtrlStorPoolApiCallHandler
 {
-    private final ErrorReporter errorReporter;
-    private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
@@ -64,24 +52,18 @@ public class CtrlStorPoolApiCallHandler
 
     @Inject
     public CtrlStorPoolApiCallHandler(
-        ErrorReporter errorReporterRef,
-        @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
-        errorReporter = errorReporterRef;
-        apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
@@ -242,139 +224,6 @@ public class CtrlStorPoolApiCallHandler
         return responses;
     }
 
-    public void respondStorPool(long apiCallId, UUID storPoolUuid, String storPoolNameStr)
-    {
-        try
-        {
-            StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
-
-            Peer currentPeer = peer.get();
-            StorPool storPool = currentPeer.getNode().getStorPool(apiCtx, storPoolName);
-            // TODO: check if the storPool has the same uuid as storPoolUuid
-            if (storPool != null)
-            {
-                long fullSyncTimestamp = currentPeer.getFullSyncId();
-                long updateId = currentPeer.getNextSerializerId();
-                currentPeer.sendMessage(
-                    ctrlStltSerializer
-                        .onewayBuilder(InternalApiConsts.API_APPLY_STOR_POOL)
-                        .storPoolData(storPool, fullSyncTimestamp, updateId)
-                        .build()
-                );
-            }
-            else
-            {
-                long fullSyncTimestamp = currentPeer.getFullSyncId();
-                long updateId = currentPeer.getNextSerializerId();
-                currentPeer.sendMessage(
-                    ctrlStltSerializer
-                        .onewayBuilder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED)
-                        .deletedStorPoolData(storPoolNameStr, fullSyncTimestamp, updateId)
-                        .build()
-                );
-            }
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Satellite requested data for invalid storpool name '" + storPoolNameStr + "'.",
-                    invalidNameExc
-                )
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Controller's api context has not enough privileges to gather requested storpool data.",
-                    accDeniedExc
-                )
-            );
-        }
-    }
-
-    public void updateRealFreeSpace(List<CapacityInfoPojo> capacityInfoPojoList)
-    {
-        if (!peer.get().getNode().isDeleted())
-        {
-            String nodeName = peer.get().getNode().getName().displayValue;
-
-            try
-            {
-                for (CapacityInfoPojo capacityInfoPojo : capacityInfoPojoList)
-                {
-                    ResponseContext context = makeStorPoolContext(
-                        ApiOperation.makeModifyOperation(),
-                        peer.get().getNode().getName().displayValue,
-                        capacityInfoPojo.getStorPoolName()
-                    );
-
-                    try
-                    {
-                        StorPoolData storPool = loadStorPool(nodeName, capacityInfoPojo.getStorPoolName(), true);
-                        if (storPool.getUuid().equals(capacityInfoPojo.getStorPoolUuid()))
-                        {
-                            setCapacityInfo(
-                                storPool,
-                                capacityInfoPojo.getFreeCapacity(),
-                                capacityInfoPojo.getTotalCapacity()
-                            );
-                        }
-                        else
-                        {
-                            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_UUID_STOR_POOL,
-                                "UUIDs mismatched when updating free space of " + getStorPoolDescriptionInline(storPool)
-                            ));
-                        }
-                    }
-                    catch (Exception | ImplementationError exc)
-                    {
-                        // Add context to exception
-                        throw new ApiRcException(
-                            responseConverter.exceptionToResponse(peer.get(), context, exc), exc, true);
-                    }
-                }
-
-                ctrlTransactionHelper.commit();
-            }
-            catch (ApiRcException exc)
-            {
-                ApiCallRc apiCallRc = exc.getApiCallRc();
-                for (ApiCallRc.RcEntry entry : apiCallRc.getEntries())
-                {
-                    errorReporter.reportError(
-                        exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
-                        peerAccCtx.get(),
-                        peer.get(),
-                        entry.getMessage()
-                    );
-                }
-            }
-        }
-        // else: the node is deleted, thus if it still has any storpools left, those will
-        // soon be deleted as well.
-    }
-
-    private void setCapacityInfo(StorPoolData storPool, long freeCapacity, long totalCapacity)
-    {
-        try
-        {
-            storPool.getFreeSpaceTracker().setCapacityInfo(peerAccCtx.get(), freeCapacity, totalCapacity);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "update free space of free space manager '" +
-                    storPool.getFreeSpaceTracker().getName().displayValue +
-                    "'",
-                ApiConsts.FAIL_ACC_DENIED_FREE_SPACE_MGR
-            );
-        }
-    }
-
     private Collection<Volume> getVolumes(StorPoolData storPool)
     {
         Collection<Volume> volumes;
@@ -422,7 +271,7 @@ public class CtrlStorPoolApiCallHandler
         );
     }
 
-    static ResponseContext makeStorPoolContext(
+    public static ResponseContext makeStorPoolContext(
         ApiOperation operation,
         String nodeNameStr,
         String storPoolNameStr

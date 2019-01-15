@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.protobuf.controller;
+package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
@@ -7,7 +7,7 @@ import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlFullSyncApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;

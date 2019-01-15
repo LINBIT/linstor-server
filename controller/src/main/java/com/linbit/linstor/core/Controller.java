@@ -326,7 +326,7 @@ public final class Controller
             long startAPIClassLoadingTime = System.currentTimeMillis();
             ApiType apiType = new ProtobufApiType();
             ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
-            List<String> packageSuffixes = Arrays.asList("common", "controller");
+            List<String> packageSuffixes = Arrays.asList("common", "controller", "internal");
 
             List<Class<? extends BaseApiCall>> apiCalls = classPathLoader.loadClasses(
                 ProtobufApiType.class.getPackage().getName(),

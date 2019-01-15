@@ -1,27 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
@@ -30,22 +11,15 @@ import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.pojo.RscConnPojo;
-import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -59,9 +33,21 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
-import static com.linbit.linstor.api.ApiConsts.API_LST_RSC_CONN;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+
 import static java.util.stream.Collectors.toList;
 
 @Singleton
@@ -74,8 +60,6 @@ public class CtrlRscApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final NodeRepository nodeRepository;
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
@@ -90,8 +74,6 @@ public class CtrlRscApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         NodeRepository nodeRepositoryRef,
-        CtrlClientSerializer clientComSerializerRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
@@ -105,8 +87,6 @@ public class CtrlRscApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         nodeRepository = nodeRepositoryRef;
-        clientComSerializer = clientComSerializerRef;
-        ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
@@ -330,160 +310,6 @@ public class CtrlRscApiCallHandler
         }
 
         return rscConns;
-    }
-
-    public void respondResource(
-        long apiCallId,
-        String nodeNameStr,
-        UUID rscUuid,
-        String rscNameStr
-    )
-    {
-        try
-        {
-            NodeName nodeName = new NodeName(nodeNameStr);
-
-            Node node = nodeRepository.get(apiCtx, nodeName);
-
-            if (node != null)
-            {
-                ResourceName rscName = new ResourceName(rscNameStr);
-                Resource rsc = !node.isDeleted() ? node.getResource(apiCtx, rscName) : null;
-
-                long fullSyncTimestamp = peer.get().getFullSyncId();
-                long updateId = peer.get().getNextSerializerId();
-                // TODO: check if the localResource has the same uuid as rscUuid
-                if (rsc != null && !rsc.isDeleted())
-                {
-                    peer.get().sendMessage(
-                        ctrlStltSerializer
-                            .onewayBuilder(InternalApiConsts.API_APPLY_RSC)
-                            .resourceData(rsc, fullSyncTimestamp, updateId)
-                            .build()
-                    );
-                }
-                else
-                {
-                    peer.get().sendMessage(
-                        ctrlStltSerializer
-                            .onewayBuilder(InternalApiConsts.API_APPLY_RSC_DELETED)
-                            .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
-                            .build()
-                    );
-                }
-            }
-            else
-            {
-                errorReporter.reportError(
-                    new ImplementationError(
-                        "Satellite requested resource '" + rscNameStr + "' on node '" + nodeNameStr + "' " +
-                            "but that node does not exist.",
-                        null
-                    )
-                );
-                peer.get().closeConnection();
-            }
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Satellite requested data for invalid name (node or rsc name).",
-                    invalidNameExc
-                )
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Controller's api context has not enough privileges to gather requested resource data.",
-                    accDeniedExc
-                )
-            );
-        }
-    }
-
-    void updateVolumeData(
-        String resourceName,
-        List<VlmUpdatePojo> vlmUpdates,
-        List<CapacityInfoPojo> capacityInfos
-    )
-    {
-        try
-        {
-            NodeName nodeName = peer.get().getNode().getName();
-            Map<StorPoolName, CapacityInfoPojo> storPoolToCapacityInfoMap = capacityInfos.stream().collect(
-                Collectors.toMap(
-                    freeSpacePojo -> LinstorParsingUtils.asStorPoolName(freeSpacePojo.getStorPoolName()),
-                    Function.identity()
-                )
-            );
-            ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
-            Resource rsc = rscDfn.getResource(apiCtx, nodeName);
-
-            for (VlmUpdatePojo vlmUpd : vlmUpdates)
-            {
-                try
-                {
-                    Volume vlm = rsc.getVolume(new VolumeNumber(vlmUpd.getVolumeNumber()));
-                    if (vlm != null)
-                    {
-                        vlm.setBackingDiskPath(apiCtx, vlmUpd.getBlockDevicePath());
-                        vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
-                        vlm.setDevicePath(apiCtx, vlmUpd.getDevicePath());
-                        vlm.setUsableSize(apiCtx, vlmUpd.getUsableSize());
-                        vlm.setAllocatedSize(apiCtx, vlmUpd.getAllocatedSize());
-
-                        Map<String, String> propsMap = vlm.getVolumeDefinition().getProps(apiCtx).map();
-                        propsMap.clear();
-                        propsMap.putAll(vlmUpd.getVlmDfnPropsMap());
-
-                        StorPool storPool = vlm.getStorPool(apiCtx);
-                        CapacityInfoPojo capacityInfo =
-                            storPoolToCapacityInfoMap.get(storPool.getName());
-
-                        storPool.getFreeSpaceTracker().vlmCreationFinished(
-                            apiCtx,
-                            vlm,
-                            capacityInfo == null ? null : capacityInfo.getFreeCapacity(),
-                            capacityInfo == null ? null : capacityInfo.getTotalCapacity()
-                        );
-
-                        if (capacityInfo == null && !storPool.getDriverKind().usesThinProvisioning())
-                        {
-                            errorReporter.logWarning(
-                                String.format(
-                                    "No freespace info for storage pool '%s' on node: %s",
-                                    storPool.getName().value,
-                                    nodeName.displayValue
-                                )
-                            );
-                        }
-
-                    }
-                    else
-                    {
-                        errorReporter.logWarning(
-                            String.format(
-                                "Tried to update a non existing volume. Node: %s, Resource: %s, VolumeNr: %d",
-                                nodeName.displayValue,
-                                rscDfn.getName().displayValue,
-                                vlmUpd.getVolumeNumber()
-                            )
-                        );
-                    }
-                }
-                catch (ValueOutOfRangeException ignored)
-                {
-                }
-            }
-            ctrlTransactionHelper.commit();
-        }
-        catch (InvalidNameException | AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
     }
 
     public static String getRscDescription(Resource resource)

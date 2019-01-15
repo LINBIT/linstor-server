@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.protobuf.controller;
+package com.linbit.linstor.api.protobuf.internal;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

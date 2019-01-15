@@ -9,19 +9,14 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.api.pojo.CapacityInfoPojo;
-import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +34,6 @@ public class CtrlApiCallHandler
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
     private final CtrlRscApiCallHandler rscApiCallHandler;
-    private final CtrlVlmListApiCallHandler vlmApiCallHandler;
     private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
     private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
     private final CtrlNodeConnectionApiCallHandler nodeConnApiCallHandler;
@@ -57,9 +51,6 @@ public class CtrlApiCallHandler
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock ctrlConfigLock;
 
-    private final Provider<Peer> peer;
-    private final Provider<Long> apiCallId;
-
     @Inject
     CtrlApiCallHandler(
         CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
@@ -67,7 +58,6 @@ public class CtrlApiCallHandler
         CtrlRscDfnApiCallHandler rscDfnApiCallHandlerRef,
         CtrlVlmDfnApiCallHandler vlmDfnApiCallHandlerRef,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
-        CtrlVlmListApiCallHandler vlmApiCallHandlerRef,
         CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandlerRef,
         CtrlStorPoolApiCallHandler storPoolApiCallHandlerRef,
         CtrlNodeConnectionApiCallHandler nodeConnApiCallHandlerRef,
@@ -82,9 +72,7 @@ public class CtrlApiCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
-        Provider<Peer> clientRef,
-        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef
+        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef
     )
     {
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
@@ -92,7 +80,6 @@ public class CtrlApiCallHandler
         rscDfnApiCallHandler = rscDfnApiCallHandlerRef;
         vlmDfnApiCallHandler = vlmDfnApiCallHandlerRef;
         rscApiCallHandler = rscApiCallHandlerRef;
-        vlmApiCallHandler = vlmApiCallHandlerRef;
         storPoolDfnApiCallHandler = storPoolDfnApiCallHandlerRef;
         storPoolApiCallHandler = storPoolApiCallHandlerRef;
         nodeConnApiCallHandler = nodeConnApiCallHandlerRef;
@@ -108,8 +95,6 @@ public class CtrlApiCallHandler
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlConfigLock = ctrlConfigLockRef;
-        peer = clientRef;
-        apiCallId = apiCallIdRef;
     }
 
     /**
@@ -942,132 +927,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    /**
-     * This method should be called when the controller sent a message to a satellite
-     * that its resources {@code rscName} has changed, and the satellite now queries those
-     * changes.
-     * Calling this method will collect the needed data and send it to the given
-     * satellite.
-     * @param rscUuid required (for double checking)
-     * @param rscName required
-     */
-    public void handleResourceRequest(
-        String nodeName,
-        UUID rscUuid,
-        String rscName
-    )
-    {
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.readLock(),
-                rscDfnMapLock.readLock(),
-                storPoolDfnMapLock.readLock(),
-                peer.get().getSerializerLock().readLock()
-            )
-        )
-        {
-            rscApiCallHandler.respondResource(apiCallId.get(), nodeName, rscUuid, rscName);
-        }
-    }
-
-    /**
-     * This method should be called when the controller sent a message to a satellite
-     * that its storPools {@code storPoolName} has changed, and the satellite now
-     * queries those changes.
-     * Calling this method will collect the needed data and send it to the given
-     * satellite.
-     * @param storPoolUuid required (for double checking)
-     * @param storPoolNameStr required
-     */
-    public void handleStorPoolRequest(
-        UUID storPoolUuid,
-        String storPoolNameStr
-    )
-    {
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.readLock(),
-                storPoolDfnMapLock.readLock(),
-                peer.get().getSerializerLock().readLock()
-            )
-        )
-        {
-            storPoolApiCallHandler.respondStorPool(
-                apiCallId.get(),
-                storPoolUuid,
-                storPoolNameStr
-            );
-        }
-    }
-
-    public void handleSnapshotRequest(String resourceName, UUID snapshotUuid, String snapshotName)
-    {
-        try (
-            LockGuard ls = LockGuard.createLocked(
-                rscDfnMapLock.readLock(),
-                peer.get().getSerializerLock().readLock()
-            )
-        )
-        {
-            snapshotApiCallHandler.respondSnapshot(
-                apiCallId.get(),
-                resourceName,
-                snapshotUuid,
-                snapshotName
-            );
-        }
-    }
-
-    public void handleControllerRequest(
-        UUID nodeUuid,
-        String nodeNameStr
-    )
-    {
-        try (LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.readLock(),
-                peer.get().getSerializerLock().readLock()
-            )
-        )
-        {
-            ctrlConfApiCallHandler.respondController(
-                apiCallId.get(),
-                nodeUuid,
-                nodeNameStr
-            );
-        }
-    }
-
-    public void handleNodeRequest(
-        UUID nodeUuid,
-        String nodeNameStr
-    )
-    {
-        try (LockGuard ls = LockGuard.createLocked(
-                nodesMapLock.readLock(),
-                peer.get().getSerializerLock().readLock()
-            )
-        )
-        {
-            nodeApiCallHandler.respondNode(
-                apiCallId.get(),
-                nodeUuid,
-                nodeNameStr
-            );
-        }
-    }
-
-    public void handlePrimaryResourceRequest(
-        String rscName,
-        UUID rscUuid,
-        boolean alreadyInitialized
-    )
-    {
-        try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
-        {
-            rscDfnApiCallHandler.handlePrimaryResourceRequest(apiCallId.get(), rscName, rscUuid, alreadyInitialized);
-        }
-    }
-
     public ApiCallRc setCtrlCfgProp(String key, String namespace, String value)
     {
         ApiCallRc apiCallRc;
@@ -1192,26 +1051,6 @@ public class CtrlApiCallHandler
         return watchApiCallHandler.deleteWatch(
             peerWatchId
         );
-    }
-
-    public void updateVolumeData(
-        String resourceName,
-        List<VlmUpdatePojo> vlmUpdates,
-        List<CapacityInfoPojo> freeSpaceList
-    )
-    {
-        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
-        {
-            rscApiCallHandler.updateVolumeData(resourceName, vlmUpdates, freeSpaceList);
-        }
-    }
-
-    public void updateRealFreeSpace(List<CapacityInfoPojo> capacityInfoPojoList)
-    {
-        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()))
-        {
-            storPoolApiCallHandler.updateRealFreeSpace(capacityInfoPojoList);
-        }
     }
 
     public ApiCallRc restoreVlmDfn(String fromRscName, String fromSnapshotName, String toRscName)

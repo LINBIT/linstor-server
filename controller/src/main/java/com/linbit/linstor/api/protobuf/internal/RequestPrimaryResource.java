@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.protobuf.controller;
+package com.linbit.linstor.api.protobuf.internal;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -7,6 +7,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.RscDfnInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass.MsgIntPrimary;
 
 import java.io.IOException;
@@ -24,12 +25,12 @@ import java.util.UUID;
 @Singleton
 public class RequestPrimaryResource implements ApiCall
 {
-    private final CtrlApiCallHandler apiCallHandler;
+    private final RscDfnInternalCallHandler rscDfnInternalCallHandler;
 
     @Inject
-    public RequestPrimaryResource(CtrlApiCallHandler apiCallHandlerRef)
+    public RequestPrimaryResource(RscDfnInternalCallHandler apiCallHandlerRef)
     {
-        apiCallHandler = apiCallHandlerRef;
+        rscDfnInternalCallHandler = apiCallHandlerRef;
     }
 
     @Override
@@ -37,7 +38,7 @@ public class RequestPrimaryResource implements ApiCall
         throws IOException
     {
         MsgIntPrimary msgReqPrimary = MsgIntPrimary.parseDelimitedFrom(msgDataIn);
-        apiCallHandler.handlePrimaryResourceRequest(
+        rscDfnInternalCallHandler.handlePrimaryResourceRequest(
             msgReqPrimary.getRscName(),
             UUID.fromString(msgReqPrimary.getRscUuid()),
             msgReqPrimary.getAlreadyInitialized()

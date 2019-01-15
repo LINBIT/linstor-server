@@ -4,11 +4,9 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -29,9 +27,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -41,12 +38,11 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -61,8 +57,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-
 @Singleton
 public class CtrlRscDfnApiCallHandler
 {
@@ -74,8 +68,6 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
@@ -91,8 +83,6 @@ public class CtrlRscDfnApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
-        CtrlClientSerializer clientComSerializerRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
@@ -107,8 +97,6 @@ public class CtrlRscDfnApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
-        clientComSerializer = clientComSerializerRef;
-        ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
@@ -245,66 +233,6 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return responses;
-    }
-
-    void handlePrimaryResourceRequest(
-        long apiCallId,
-        String rscNameStr,
-        UUID rscUuid,
-        boolean alreadyInitialized
-    )
-    {
-        Peer currentPeer = peer.get();
-        try
-        {
-            Resource res = ctrlApiDataLoader.loadRsc(currentPeer.getNode().getName().displayValue, rscNameStr, true);
-            ResourceDefinitionData resDfn = (ResourceDefinitionData) res.getDefinition();
-
-            Props resDfnProps = ctrlPropsHelper.getProps(resDfn);
-            if (resDfnProps.getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)
-            {
-                resDfnProps.setProp(
-                    InternalApiConsts.PROP_PRIMARY_SET,
-                    res.getAssignedNode().getName().value
-                );
-
-                ctrlTransactionHelper.commit();
-
-                errorReporter.logTrace(
-                    "Primary set for " + currentPeer.getNode().getName().getDisplayName() + "; " +
-                        " already initialized: " + alreadyInitialized
-                );
-
-                ctrlSatelliteUpdater.updateSatellites(resDfn);
-
-                if (!alreadyInitialized)
-                {
-                    currentPeer.sendMessage(
-                        ctrlStltSerializer
-                            .onewayBuilder(InternalApiConsts.API_PRIMARY_RSC)
-                            .primaryRequest(rscNameStr, res.getUuid().toString(), false)
-                            .build()
-                    );
-                }
-            }
-        }
-        catch (InvalidKeyException | InvalidValueException | AccessDeniedException ignored)
-        {
-        }
-        catch (SQLException sqlExc)
-        {
-            String errorMessage = String.format(
-                "A database error occured while trying to rollback the deletion of " +
-                    "resource definition '%s'.",
-                rscNameStr
-            );
-            errorReporter.reportError(
-                sqlExc,
-                peerAccCtx.get(),
-                currentPeer,
-                errorMessage
-            );
-        }
     }
 
     ArrayList<ResourceDefinitionData.RscDfnApi> listResourceDefinitions()

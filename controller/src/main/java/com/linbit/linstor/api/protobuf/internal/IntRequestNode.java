@@ -1,14 +1,13 @@
-package com.linbit.linstor.api.protobuf.controller;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
+package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.NodeInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -21,12 +20,12 @@ import java.util.UUID;
 @Singleton
 public class IntRequestNode implements ApiCall
 {
-    private final CtrlApiCallHandler apiCallHandler;
+    private final NodeInternalCallHandler internalNodeCallHandler;
 
     @Inject
-    public IntRequestNode(CtrlApiCallHandler apiCallHandlerRef)
+    public IntRequestNode(NodeInternalCallHandler apiCallHandlerRef)
     {
-        apiCallHandler = apiCallHandlerRef;
+        internalNodeCallHandler = apiCallHandlerRef;
     }
 
     @Override
@@ -37,7 +36,7 @@ public class IntRequestNode implements ApiCall
         UUID nodeUuid = UUID.fromString(objId.getUuid());
         String nodeName = objId.getName();
 
-        apiCallHandler.handleNodeRequest(nodeUuid, nodeName);
+        internalNodeCallHandler.handleNodeRequest(nodeUuid, nodeName);
     }
 
 }

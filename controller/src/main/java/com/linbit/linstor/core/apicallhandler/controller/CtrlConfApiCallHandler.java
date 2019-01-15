@@ -1,20 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.regex.Matcher;
-
-import com.google.inject.Provider;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SymmetricKeyCipher;
@@ -23,7 +8,6 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
@@ -32,14 +16,13 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
-import com.linbit.linstor.core.CoreModule.NodesMap;
-import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -52,6 +35,21 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Base64;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+
+import com.google.inject.Provider;
 
 @Singleton
 public class CtrlConfApiCallHandler
@@ -66,7 +64,6 @@ public class CtrlConfApiCallHandler
     private static MessageDigest sha512;
 
     private ErrorReporter errorReporter;
-    private final CtrlClientSerializer ctrlClientcomSrzl;
     private final SystemConfRepository systemConfRepository;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorNrPool;
@@ -95,7 +92,6 @@ public class CtrlConfApiCallHandler
     @Inject
     public CtrlConfApiCallHandler(
         ErrorReporter errorReporterRef,
-        CtrlClientSerializer ctrlClientcomSrzlRef,
         SystemConfRepository systemConfRepositoryRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
@@ -110,7 +106,6 @@ public class CtrlConfApiCallHandler
     )
     {
         errorReporter = errorReporterRef;
-        ctrlClientcomSrzl = ctrlClientcomSrzlRef;
         systemConfRepository = systemConfRepositoryRef;
         tcpPortPool = tcpPortPoolRef;
         minorNrPool = minorNrPoolRef;
@@ -866,27 +861,5 @@ public class CtrlConfApiCallHandler
             );
         }
         return isValid;
-    }
-
-    void respondController(long apiCallId, UUID nodeUuid, String nodeNameStr)
-    {
-        try
-        {
-            Peer currentPeer = peerProvider.get();
-            NodeName nodeName = new NodeName(nodeNameStr);
-
-            currentPeer.sendMessage(
-                ctrlStltSrzl
-                    .onewayBuilder(InternalApiConsts.API_APPLY_CONTROLLER)
-                    .controllerData(currentPeer.getFullSyncId(), currentPeer.getNextSerializerId())
-                    .build()
-            );
-        }
-        catch (Exception exc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(exc)
-            );
-        }
     }
 }

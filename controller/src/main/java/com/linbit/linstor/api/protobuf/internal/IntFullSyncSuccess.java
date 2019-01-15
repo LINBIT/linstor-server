@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.protobuf.controller;
+package com.linbit.linstor.api.protobuf.internal;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -10,8 +10,9 @@ import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlFullSyncApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.MsgIntFullSyncSuccessOuterClass.MsgIntFullSyncSuccess;
 import com.linbit.locks.LockGuard;
@@ -32,7 +33,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 public class IntFullSyncSuccess implements ApiCallReactive
 {
     private final ScopeRunner scopeRunner;
-    private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
+    private final StorPoolInternalCallHandler storPoolApiCallHandler;
     private final CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandler;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
@@ -40,7 +41,7 @@ public class IntFullSyncSuccess implements ApiCallReactive
     @Inject
     public IntFullSyncSuccess(
         ScopeRunner scopeRunnerRef,
-        CtrlStorPoolApiCallHandler storPoolApiCallHandlerRef,
+        StorPoolInternalCallHandler storPoolApiCallHandlerRef,
         CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandlerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef

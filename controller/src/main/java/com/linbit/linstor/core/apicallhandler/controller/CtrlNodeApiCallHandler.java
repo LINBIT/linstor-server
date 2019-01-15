@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -19,8 +18,6 @@ import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataControllerFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
@@ -29,8 +26,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
@@ -38,6 +33,7 @@ import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.SwordfishTargetProcessManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -62,19 +58,14 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import reactor.core.scheduler.Scheduler;
-
-import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlNodeApiCallHandler
@@ -87,9 +78,6 @@ public class CtrlNodeApiCallHandler
     private final NodeDataControllerFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final NodeRepository nodeRepository;
-    private final ResourceDefinitionRepository resourceDefinitionRepository;
-    private final CtrlClientSerializer clientComSerializer;
-    private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final SatelliteConnector satelliteConnector;
     private final ResponseConverter responseConverter;
@@ -111,9 +99,6 @@ public class CtrlNodeApiCallHandler
         NodeDataControllerFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         NodeRepository nodeRepositoryRef,
-        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
-        CtrlClientSerializer clientComSerializerRef,
-        CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         SatelliteConnector satelliteConnectorRef,
         ResponseConverter responseConverterRef,
@@ -134,9 +119,6 @@ public class CtrlNodeApiCallHandler
         nodeDataFactory = nodeDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         nodeRepository = nodeRepositoryRef;
-        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
-        clientComSerializer = clientComSerializerRef;
-        ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         satelliteConnector = satelliteConnectorRef;
         responseConverter = responseConverterRef;
@@ -542,74 +524,6 @@ public class CtrlNodeApiCallHandler
         }
 
         return nodes;
-    }
-
-    void respondNode(long apiCallId, UUID nodeUuid, String nodeNameStr)
-    {
-        try
-        {
-            Peer currentPeer = peer.get();
-            NodeName nodeName = new NodeName(nodeNameStr);
-
-            Node node = nodeRepository.get(apiCtx, nodeName);
-            if (node != null && !node.isDeleted() && node.getFlags().isUnset(apiCtx, NodeFlag.DELETE))
-            {
-                if (node.getUuid().equals(nodeUuid))
-                {
-                    Collection<Node> otherNodes = new TreeSet<>();
-                    // otherNodes can be filled with all nodes (except the current 'node')
-                    // related to the satellite. The serializer only needs the other nodes for
-                    // the nodeConnections.
-                    for (Resource rsc : currentPeer.getNode().streamResources(apiCtx).collect(toList()))
-                    {
-                        Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
-                        while (otherRscIterator.hasNext())
-                        {
-                            Resource otherRsc = otherRscIterator.next();
-                            if (otherRsc != rsc)
-                            {
-                                otherNodes.add(otherRsc.getAssignedNode());
-                            }
-                        }
-                    }
-                    long fullSyncTimestamp = currentPeer.getFullSyncId();
-                    long serializerId = currentPeer.getNextSerializerId();
-                    currentPeer.sendMessage(
-                        ctrlStltSerializer
-                            .onewayBuilder(InternalApiConsts.API_APPLY_NODE)
-                            .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
-                            .build()
-                    );
-                }
-                else
-                {
-                    errorReporter.reportError(
-                        new ImplementationError(
-                            currentPeer + " requested a node with an outdated " +
-                            "UUID. Current UUID: " + node.getUuid() + ", satellites outdated UUID: " +
-                            nodeUuid,
-                            null
-                        )
-                    );
-                }
-            }
-            else
-            {
-                long fullSyncTimestamp = currentPeer.getFullSyncId();
-                long serializerId = currentPeer.getNextSerializerId();
-                currentPeer.sendMessage(
-                    ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_APPLY_NODE_DELETED)
-                        .deletedNodeData(nodeNameStr, fullSyncTimestamp, serializerId)
-                        .build()
-                );
-            }
-        }
-        catch (Exception exc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(exc)
-            );
-        }
     }
 
     private NodeType asNodeType(String nodeTypeStr)

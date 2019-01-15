@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.protobuf.controller;
+package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
@@ -7,6 +7,7 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.RscInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 
 import javax.inject.Inject;
@@ -24,14 +25,14 @@ import java.util.stream.Collectors;
 @Singleton
 public class NotifyResourceApplied implements ApiCall
 {
-    private final CtrlApiCallHandler apiCallHandler;
+    private final RscInternalCallHandler rscInternalCallHandler;
 
     @Inject
     public NotifyResourceApplied(
-        CtrlApiCallHandler apiCallHandlerRef
+        RscInternalCallHandler apiCallHandlerRef
     )
     {
-        apiCallHandler = apiCallHandlerRef;
+        rscInternalCallHandler = apiCallHandlerRef;
     }
 
     @Override
@@ -44,7 +45,7 @@ public class NotifyResourceApplied implements ApiCall
         // If so, we could display to the client if a resource-adjustment is pending or if the
         // satellite is basically idle
 
-        apiCallHandler.updateVolumeData(
+        rscInternalCallHandler.updateVolumeData(
             msgIntAppliedRsc.getRscId().getName(),
             msgIntAppliedRsc.getVlmDataList().stream()
                 .map(v ->
