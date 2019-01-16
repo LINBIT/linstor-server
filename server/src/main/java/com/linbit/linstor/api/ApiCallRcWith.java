@@ -15,6 +15,11 @@ public class ApiCallRcWith<T>
         value = valueRef;
     }
 
+    public boolean hasApiCallRc()
+    {
+        return apiCallRc != null && !apiCallRc.getEntries().isEmpty();
+    }
+
     public ApiCallRc getApiCallRc()
     {
         return apiCallRc;
