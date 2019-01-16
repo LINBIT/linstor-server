@@ -7,11 +7,11 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -21,11 +21,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.ComparatorUtils;
-import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,6 +34,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import reactor.core.publisher.Flux;
+
 @Singleton
 public class CtrlQueryMaxVlmSizeApiCallHandler
 {
@@ -43,10 +43,8 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
     private final ScopeRunner scopeRunner;
     private final CtrlAutoStorPoolSelector ctrlAutoStorPoolSelector;
     private final FreeCapacityFetcher freeCapacityFetcher;
-    private final CtrlClientSerializer clientComSerializer;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
-    private final Provider<Long> apiCallIdProvider;
 
     @Inject
     CtrlQueryMaxVlmSizeApiCallHandler(
@@ -54,23 +52,19 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
         ScopeRunner scopeRunnerRef,
         CtrlAutoStorPoolSelector ctrlAutoStorPoolSelectorRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
-        CtrlClientSerializer clientComSerializerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdProviderRef
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
     )
     {
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
         ctrlAutoStorPoolSelector = ctrlAutoStorPoolSelectorRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
-        clientComSerializer = clientComSerializerRef;
         nodesMapLock = nodesMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
-        apiCallIdProvider = apiCallIdProviderRef;
     }
 
-    public Flux<byte[]> queryMaxVlmSize(AutoSelectFilterApi selectFilter)
+    public Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> queryMaxVlmSize(AutoSelectFilterApi selectFilter)
     {
         return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
             .flatMapMany(thinFreeCapacities -> scopeRunner
@@ -84,7 +78,7 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
                 ));
     }
 
-    private Flux<byte[]> queryMaxVlmSizeInScope(
+    private Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> queryMaxVlmSizeInScope(
         AutoSelectFilterApi selectFilter,
         Map<StorPool.Key, Long> thinFreeCapacities
     )
@@ -149,18 +143,15 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
         return apiData;
     }
 
-    private byte[] makeResponse(List<MaxVlmSizeCandidatePojo> candidates)
+    private ApiCallRcWith<List<MaxVlmSizeCandidatePojo>> makeResponse(List<MaxVlmSizeCandidatePojo> candidates)
     {
-        byte[] result;
+        ApiCallRc apirc = null;
         if (candidates.isEmpty())
         {
-            result = clientComSerializer
-                .answerBuilder(ApiConsts.API_REPLY, apiCallIdProvider.get())
-                .apiCallRcSeries(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.MASK_ERROR | ApiConsts.FAIL_NOT_ENOUGH_NODES,
-                    "Not enough nodes"
-                )))
-                .build();
+            apirc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_ERROR | ApiConsts.FAIL_NOT_ENOUGH_NODES,
+                "Not enough nodes"
+            ));
         }
         else
         {
@@ -168,12 +159,7 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
                 MaxVlmSizeCandidatePojo::getStorPoolDfnApi,
                 Comparator.comparing(StorPoolDefinition.StorPoolDfnApi::getName)
             ));
-
-            result = clientComSerializer
-                .answerBuilder(ApiConsts.API_RSP_MAX_VLM_SIZE, apiCallIdProvider.get())
-                .maxVlmSizeCandidateList(candidates)
-                .build();
         }
-        return result;
+        return new ApiCallRcWith<>(apirc, candidates);
     }
 }
