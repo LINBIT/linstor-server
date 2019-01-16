@@ -15,8 +15,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -33,8 +31,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -45,55 +44,44 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-
 @Singleton
 class CtrlStorPoolDfnApiCallHandler
 {
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlAutoStorPoolSelector autoStorPoolSelector;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
-    private final CtrlClientSerializer clientComSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final Provider<Long> apiCallIdProvider;
 
     @Inject
     CtrlStorPoolDfnApiCallHandler(
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlAutoStorPoolSelector autoStorPoolSelectorRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
-        CtrlClientSerializer clientComSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdProviderRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        autoStorPoolSelector = autoStorPoolSelectorRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
-        clientComSerializer = clientComSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-        apiCallIdProvider = apiCallIdProviderRef;
     }
 
     public ApiCallRc createStorPoolDfn(
