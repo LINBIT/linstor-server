@@ -6,7 +6,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
@@ -14,12 +13,12 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -27,15 +26,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.locks.LockGuard;
-import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +39,9 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
+
+import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
 
 import static java.util.stream.Collectors.toList;
 
@@ -54,11 +53,9 @@ public class CtrlVlmListApiCallHandler
     private final VlmAllocatedFetcher vlmAllocatedFetcher;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final NodeRepository nodeRepository;
-    private final CtrlClientSerializer clientComSerializer;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
-    private final Provider<Long> apiCallId;
 
     @Inject
     public CtrlVlmListApiCallHandler(
@@ -67,11 +64,9 @@ public class CtrlVlmListApiCallHandler
         VlmAllocatedFetcher vlmAllocatedFetcherRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         NodeRepository nodeRepositoryRef,
-        CtrlClientSerializer clientComSerializerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         errorReporter = errorReporterRef;
@@ -79,14 +74,12 @@ public class CtrlVlmListApiCallHandler
         vlmAllocatedFetcher = vlmAllocatedFetcherRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         nodeRepository = nodeRepositoryRef;
-        clientComSerializer = clientComSerializerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         peerAccCtx = peerAccCtxRef;
-        apiCallId = apiCallIdRef;
     }
 
-    public Flux<byte[]> listVlms(
+    public Flux<ApiCallRcWith<ResourceList>> listVlms(
         List<String> nodeNames,
         List<String> storPools,
         List<String> resources
@@ -109,15 +102,14 @@ public class CtrlVlmListApiCallHandler
             );
     }
 
-    public Flux<byte[]> assembleList(
+    public Flux<ApiCallRcWith<ResourceList>> assembleList(
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolsFilter,
         Set<ResourceName> resourceFilter,
         Tuple2<Map<Volume.Key, Long>, List<ApiCallRc>> vlmAllocatedAnswers
     )
     {
-        ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
-        Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
+        ResourceList rscList = new ResourceList();
         final Map<Volume.Key, Long> vlmAllocatedCapacities = vlmAllocatedAnswers.getT1();
         try
         {
@@ -173,7 +165,7 @@ public class CtrlVlmListApiCallHandler
                                     rscConns,
                                     null,
                                     null);
-                                rscs.add(filteredRscVlms);
+                                rscList.addResource(filteredRscVlms);
                             }
                         }
                     }
@@ -198,7 +190,7 @@ public class CtrlVlmListApiCallHandler
 
                         if (satelliteState != null)
                         {
-                            satelliteStates.put(node.getName(), new SatelliteState(satelliteState));
+                            rscList.putSatelliteState(node.getName(), new SatelliteState(satelliteState));
                         }
                     }
                     finally
@@ -214,23 +206,13 @@ public class CtrlVlmListApiCallHandler
             errorReporter.reportError(accDeniedExc);
         }
 
-        Flux<byte[]> flux =  Flux.just(
-            clientComSerializer
-                .answerBuilder(ApiConsts.API_LST_VLM, apiCallId.get())
-                .resourceList(rscs, satelliteStates)
-                .build()
-        );
-
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         for (ApiCallRc apiCallRc : vlmAllocatedAnswers.getT2())
         {
-            flux = flux.concatWith(Flux.just(clientComSerializer
-                .answerBuilder(ApiConsts.API_REPLY, apiCallId.get())
-                .apiCallRcSeries(apiCallRc)
-                .build())
-            );
+            apiCallRcs.addEntries(apiCallRc);
         }
 
-        return flux;
+        return Flux.just(new ApiCallRcWith<>(apiCallRcs, rscList));
     }
 
     private Long getAllocated(Map<Volume.Key, Long> vlmAllocatedCapacities, Volume vlm)
