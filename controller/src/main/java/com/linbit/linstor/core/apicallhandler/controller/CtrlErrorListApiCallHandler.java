@@ -1,5 +1,25 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NodeRepository;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
+import com.linbit.linstor.proto.MsgErrorReportOuterClass;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuard;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -17,26 +37,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.NodeRepository;
-import com.linbit.linstor.annotation.PeerContext;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.logging.ErrorReport;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.logging.StdErrorReporter;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.proto.MsgErrorReportOuterClass;
-import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -50,7 +50,6 @@ public class CtrlErrorListApiCallHandler
     private final CtrlClientSerializer clientComSerializer;
     private final Provider<AccessContext> peerAccCtx;
     private final ReadWriteLock nodesMapLock;
-    private final Provider<Long> apiCallId;
 
     @Inject
     public CtrlErrorListApiCallHandler(
@@ -59,9 +58,7 @@ public class CtrlErrorListApiCallHandler
         CtrlClientSerializer clientComSerializerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef
-    )
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef)
     {
         errorReporter = errorReporterRef;
         nodeRepository = nodeRepositoryRef;
@@ -69,10 +66,9 @@ public class CtrlErrorListApiCallHandler
         peerAccCtx = peerAccCtxRef;
         scopeRunner = scopeRunnerRef;
         nodesMapLock = nodesMapLockRef;
-        apiCallId = apiCallIdRef;
     }
 
-    public Flux<byte[]> listErrorReports(
+    public Flux<Set<ErrorReport>> listErrorReports(
         final Set<String> nodes,
         boolean withContent,
         final Optional<Date> since,
@@ -155,7 +151,7 @@ public class CtrlErrorListApiCallHandler
         return peer;
     }
 
-    private byte[] assembleList(
+    private Set<ErrorReport> assembleList(
         Set<String> nodesToRequest,
         boolean withContent,
         final Optional<Date> since,
@@ -188,10 +184,7 @@ public class CtrlErrorListApiCallHandler
             errorReports.addAll(deserializeErrorReports(errorReportMsgDataIn));
         }
 
-        // send combined answer
-        return clientComSerializer.answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, apiCallId.get())
-            .errorReports(errorReports)
-            .build();
+        return errorReports;
     }
 
     // TODO? hide deserialization in interface?
