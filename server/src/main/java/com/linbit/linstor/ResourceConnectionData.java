@@ -153,6 +153,22 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public Node getNode(NodeName nodeName)
+    {
+        checkDeleted();
+        Node node = null;
+        if (connectionKey.getSource().getAssignedNode().getName().equals(nodeName))
+        {
+            node = connectionKey.getSource().getAssignedNode();
+        }
+        else if (connectionKey.getTarget().getAssignedNode().getName().equals(nodeName))
+        {
+            node = connectionKey.getTarget().getAssignedNode();
+        }
+        return node;
+    }
+
+    @Override
     public Resource getSourceResource(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();

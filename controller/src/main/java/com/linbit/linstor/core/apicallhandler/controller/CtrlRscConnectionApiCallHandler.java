@@ -1,6 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.annotation.ApiContext;
@@ -12,6 +16,7 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -25,6 +30,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -123,11 +130,62 @@ class CtrlRscConnectionApiCallHandler
             ResourceConnectionData rscConn =
                 ctrlRscConnectionHelper.loadOrCreateRscConn(rscConnUuid, nodeName1, nodeName2, rscNameStr);
 
+            for (String key : overrideProps.keySet())
+            {
+                if (key.startsWith(ApiConsts.NAMESPC_CONNECTION_PATHS + "/"))
+                {
+                    if (key.matches(ApiConsts.NAMESPC_CONNECTION_PATHS + "/.*/.*"))
+                    {
+                        // check node name is correct
+                        int lastSlash = key.lastIndexOf("/");
+                        String nodeName = key.substring(lastSlash + 1);
+                        if (!nodeName.equals(nodeName1) && !nodeName.equals(nodeName2))
+                        {
+                            throw new ApiRcException(ApiCallRcImpl
+                                .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Connection path node unknown.")
+                                .setCause("The node name '" + nodeName + "' is unknown.")
+                                .build()
+                            );
+                        }
+
+                        // now check that the interface name are correct/existing
+                        String netIfName = overrideProps.get(key);
+                        Node node = rscConn.getNode(new NodeName(nodeName));
+                        NetInterface netInterface = node.getNetInterface(apiCtx, new NetInterfaceName(netIfName));
+                        if (netInterface == null)
+                        {
+                            throw new ApiRcException(ApiCallRcImpl
+                                .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "NetInterface for node unknown.")
+                                .setCause(
+                                    String.format("The Netinterface '%s' is not known for node '%s'", netIfName, nodeName)
+                                )
+                                .build()
+                            );
+                        }
+                    }
+                    else
+                    {
+                        throw new ApiRcException(ApiCallRcImpl
+                            .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Connection path property invalid.")
+                            .setCause("The key '" + key + "' is invalid.")
+                            .build()
+                        );
+                    }
+                }
+            }
+
             Props props = getProps(rscConn);
             Map<String, String> propsMap = props.map();
+            List<String> keysIgnored = new ArrayList<>();
+            keysIgnored.add(ApiConsts.NAMESPC_CONNECTION_PATHS + "/");
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.RSC_CONN, overrideProps, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
+                LinStorObject.RSC_CONN,
+                overrideProps,
+                getProps(rscConn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_CONN,
+                keysIgnored
+            );
 
             for (String delKey : deletePropKeys)
             {

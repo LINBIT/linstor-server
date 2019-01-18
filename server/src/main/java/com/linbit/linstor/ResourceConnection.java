@@ -25,6 +25,8 @@ public interface ResourceConnection extends DbgInstanceUuid, TransactionObject
 {
     UUID getUuid();
 
+    Node getNode(NodeName nodeName);
+
     Resource getSourceResource(AccessContext accCtx) throws AccessDeniedException;
 
     Resource getTargetResource(AccessContext accCtx) throws AccessDeniedException;
