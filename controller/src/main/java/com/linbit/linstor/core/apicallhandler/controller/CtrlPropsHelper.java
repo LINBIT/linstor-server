@@ -25,6 +25,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -156,6 +158,7 @@ public class CtrlPropsHelper
         return props;
     }
 
+
     public void fillProperties(
         LinStorObject linstorObj,
         Map<String, String> sourceProps,
@@ -163,12 +166,24 @@ public class CtrlPropsHelper
         long failAccDeniedRc
     )
     {
+        fillProperties(linstorObj, sourceProps, targetProps, failAccDeniedRc, new ArrayList<>());
+    }
+
+    public void fillProperties(
+        LinStorObject linstorObj,
+        Map<String, String> sourceProps,
+        Props targetProps,
+        long failAccDeniedRc,
+        List<String> ignoredKeys
+    )
+    {
         for (Map.Entry<String, String> entry : sourceProps.entrySet())
         {
             String key = entry.getKey();
             String value = entry.getValue();
 
-            boolean isPropAllowed = propsWhiteList.isAllowed(linstorObj, key, value, true);
+            ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
+            boolean isPropAllowed = propsWhiteList.isAllowed(linstorObj, ignoredKeys, key, value, true);
             if (isPropAllowed)
             {
                 String normalized = propsWhiteList.normalize(linstorObj, key, value);

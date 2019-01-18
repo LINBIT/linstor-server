@@ -422,7 +422,7 @@ public class ConfFileBuilder
     )
     {
         boolean ret = true;
-        if (!whitelistProps.isAllowed(lsObj, key, value, true))
+        if (!whitelistProps.isAllowed(lsObj, new ArrayList<>(), key, value, true))
         {
             ret = false;
             errorReporter.reportProblem(

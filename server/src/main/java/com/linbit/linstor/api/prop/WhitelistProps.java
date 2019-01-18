@@ -207,9 +207,9 @@ public class WhitelistProps
         }
     }
 
-    public boolean isAllowed(LinStorObject lsObj, String key, String value, boolean log)
+    public boolean isAllowed(LinStorObject lsObj, List<String> ignoredKeys, String key, String value, boolean log)
     {
-        boolean validProp = key.startsWith(ApiConsts.NAMESPC_AUXILIARY + "/");
+        boolean validProp = ignoredKeys.stream().anyMatch(ignoredKey -> key.startsWith(ignoredKey));
         if (!validProp)
         {
             Property rule = rules.get(lsObj).get(key);

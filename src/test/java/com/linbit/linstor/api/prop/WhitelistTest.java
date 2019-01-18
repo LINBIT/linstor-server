@@ -3,9 +3,14 @@ package com.linbit.linstor.api.prop;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -17,6 +22,8 @@ public class WhitelistTest
     private static String xmlFooter;
 
     private PropBuilder builder;
+
+    private static List<String> ignoredKeys = Arrays.asList(ApiConsts.NAMESPC_AUXILIARY + "/");
 
     @BeforeClass
     public static void setUpClass()
@@ -143,7 +150,7 @@ public class WhitelistTest
 
     private boolean isValid(WhitelistProps whitelistProps, LinStorObject lsObj, String key, String value)
     {
-        return whitelistProps.isAllowed(lsObj, key, value, false);
+        return whitelistProps.isAllowed(lsObj, ignoredKeys, key, value, false);
     }
 
     private void assertInvalid(WhitelistProps whitelistProps, String key, String value)

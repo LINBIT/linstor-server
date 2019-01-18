@@ -43,8 +43,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -151,7 +153,9 @@ public class CtrlConfApiCallHandler
             {
                 fullKey = key;
             }
-            if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, fullKey, value, false))
+            List<String> ignoredKeys = new ArrayList<>();
+            ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
+            if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
                 String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
                 switch (fullKey)
