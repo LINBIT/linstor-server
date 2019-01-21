@@ -5,7 +5,7 @@ import javax.inject.Inject;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.SystemConfRepository;
-import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -53,7 +53,7 @@ public class CmdSetConfValue extends BaseDebugCmd
     @Inject
     public CmdSetConfValue(
         DbConnectionPool dbConnectionPoolRef,
-        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
+        @Named(CoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
         SystemConfRepository systemConfRepositoryRef,
         Provider<TransactionMgr> trnActProviderRef
     )

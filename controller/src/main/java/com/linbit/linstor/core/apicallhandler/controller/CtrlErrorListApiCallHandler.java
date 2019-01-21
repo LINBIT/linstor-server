@@ -6,7 +6,6 @@ import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -18,10 +17,11 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.MsgErrorReportOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,7 +48,7 @@ public class CtrlErrorListApiCallHandler
     private final NodeRepository nodeRepository;
     private final CtrlClientSerializer clientComSerializer;
     private final Provider<AccessContext> peerAccCtx;
-    private final ReadWriteLock nodesMapLock;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlErrorListApiCallHandler(
@@ -58,14 +57,15 @@ public class CtrlErrorListApiCallHandler
         CtrlClientSerializer clientComSerializerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef)
-    {
+        LockGuardFactory lockGuardFactoryRef
+    )
+        {
         errorReporter = errorReporterRef;
         nodeRepository = nodeRepositoryRef;
         clientComSerializer = clientComSerializerRef;
         peerAccCtx = peerAccCtxRef;
         scopeRunner = scopeRunnerRef;
-        nodesMapLock = nodesMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
     public Flux<Set<ErrorReport>> listErrorReports(
@@ -79,14 +79,14 @@ public class CtrlErrorListApiCallHandler
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Collect error reports",
-                LockGuard.createDeferred(nodesMapLock.readLock()),
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
                 () -> assembleRequests(nodes, withContent, since, to, ids)
             )
             .collect(Collectors.toList())
             .flatMapMany(errorReportAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble error report list",
-                    LockGuard.createDeferred(nodesMapLock.readLock()),
+                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
                     () -> Flux.just(assembleList(nodes, withContent, since, to, ids, errorReportAnswers))
                 )
             );

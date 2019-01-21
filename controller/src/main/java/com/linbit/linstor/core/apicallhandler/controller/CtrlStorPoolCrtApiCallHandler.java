@@ -9,7 +9,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -22,16 +21,16 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler.makeStorPoolContext;
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
 
@@ -45,9 +44,8 @@ public class CtrlStorPoolCrtApiCallHandler
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock storPoolDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
+    private final LockGuardFactory lockGuardFactory;
     private final StorPoolHelper storPoolHelper;
 
     @Inject
@@ -60,8 +58,7 @@ public class CtrlStorPoolCrtApiCallHandler
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -73,8 +70,7 @@ public class CtrlStorPoolCrtApiCallHandler
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
-        nodesMapLock = nodesMapLockRef;
-        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -95,10 +91,7 @@ public class CtrlStorPoolCrtApiCallHandler
         return scopeRunner
             .fluxInTransactionalScope(
                 "Create storage pool",
-                LockGuard.createDeferred(
-                    nodesMapLock.writeLock(),
-                    storPoolDfnMapLock.writeLock()
-                ),
+                lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
                 () -> createStorPoolInTransaction(
                     nodeNameStr,
                     storPoolNameStr,

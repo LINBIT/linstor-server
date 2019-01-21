@@ -8,7 +8,6 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -18,12 +17,13 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
@@ -43,10 +42,8 @@ public class CtrlRscCrtApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final ResponseConverter responseConverter;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock rscDfnMapLock;
-    private final ReadWriteLock storPoolDfnMapLock;
     private final FreeCapacityFetcher freeCapacityFetcher;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
@@ -54,9 +51,7 @@ public class CtrlRscCrtApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
         ResponseConverter responseConverterRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         FreeCapacityFetcher freeCapacityFetcherRef
     )
     {
@@ -64,9 +59,7 @@ public class CtrlRscCrtApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
         responseConverter = responseConverterRef;
-        nodesMapLock = nodesMapLockRef;
-        rscDfnMapLock = rscDfnMapLockRef;
-        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
     }
 
@@ -106,10 +99,9 @@ public class CtrlRscCrtApiCallHandler
                     scopeRunner
                     .fluxInTransactionalScope(
                         "Create resource",
-                        LockGuard.createDeferred(
-                            nodesMapLock.writeLock(),
-                            rscDfnMapLock.writeLock(),
-                            storPoolDfnMapLock.writeLock()
+                        lockGuardFactory.buildDeferred(
+                            LockType.WRITE,
+                            LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
                         ),
                         () -> createResourceInTransaction(rscApiList, context, thinFreeCapacities)
                     )

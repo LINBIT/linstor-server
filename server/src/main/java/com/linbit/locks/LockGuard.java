@@ -26,7 +26,7 @@ public class LockGuard implements AutoCloseable
      * @param deferred control flag for the immediate or deferred acquisition of the specified locks
      * @param locksRef array of locks to be managed by the new LockGuard instance
      */
-    public LockGuard(final boolean deferred, final Lock... locksRef)
+    LockGuard(final boolean deferred, final Lock... locksRef)
     {
         lockBundle = locksRef;
         if (!deferred)

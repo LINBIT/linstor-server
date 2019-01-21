@@ -16,7 +16,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -25,10 +24,11 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
@@ -53,8 +52,7 @@ public class CtrlVlmListApiCallHandler
     private final VlmAllocatedFetcher vlmAllocatedFetcher;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final NodeRepository nodeRepository;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock rscDfnMapLock;
+    private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
@@ -64,8 +62,7 @@ public class CtrlVlmListApiCallHandler
         VlmAllocatedFetcher vlmAllocatedFetcherRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         NodeRepository nodeRepositoryRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -74,8 +71,7 @@ public class CtrlVlmListApiCallHandler
         vlmAllocatedFetcher = vlmAllocatedFetcherRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         nodeRepository = nodeRepositoryRef;
-        nodesMapLock = nodesMapLockRef;
-        rscDfnMapLock = rscDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -96,7 +92,7 @@ public class CtrlVlmListApiCallHandler
             .flatMapMany(vlmAllocatedAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble volume list",
-                    LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.readLock()),
+                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                     () -> assembleList(nodesFilter, storPoolsFilter, resourceFilter, vlmAllocatedAnswers)
                 )
             );

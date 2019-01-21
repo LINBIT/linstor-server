@@ -20,7 +20,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackgroundRunner;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -41,12 +40,15 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -55,8 +57,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
@@ -94,8 +94,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final ResponseConverter responseConverter;
     private final ResourceStateEvent resourceStateEvent;
     private final EventWaiter eventWaiter;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock rscDfnMapLock;
+    private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
@@ -111,8 +110,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ResponseConverter responseConverterRef,
         ResourceStateEvent resourceStateEventRef,
         EventWaiter eventWaiterRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -128,8 +126,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         responseConverter = responseConverterRef;
         resourceStateEvent = resourceStateEventRef;
         eventWaiter = eventWaiterRef;
-        nodesMapLock = nodesMapLockRef;
-        rscDfnMapLock = rscDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -545,7 +542,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 .next()
                 .thenMany(scopeRunner.fluxInTransactionalScope(
                     "Delete after migrate",
-                    LockGuard.createDeferred(rscDfnMapLock.writeLock()),
+                    lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
                     () -> startDeletionInTransaction(nodeName, rscName, migrateFromNodeName)
                 ))
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
@@ -826,9 +823,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
     private LockGuard createLockGuard()
     {
-        return LockGuard.createDeferred(
-            nodesMapLock.writeLock(),
-            rscDfnMapLock.writeLock()
-        );
+        return lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP);
     }
 }

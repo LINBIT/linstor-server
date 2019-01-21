@@ -13,24 +13,23 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.ComparatorUtils;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -43,8 +42,7 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
     private final ScopeRunner scopeRunner;
     private final CtrlAutoStorPoolSelector ctrlAutoStorPoolSelector;
     private final FreeCapacityFetcher freeCapacityFetcher;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock storPoolDfnMapLock;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     CtrlQueryMaxVlmSizeApiCallHandler(
@@ -52,16 +50,14 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
         ScopeRunner scopeRunnerRef,
         CtrlAutoStorPoolSelector ctrlAutoStorPoolSelectorRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
         ctrlAutoStorPoolSelector = ctrlAutoStorPoolSelectorRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
-        nodesMapLock = nodesMapLockRef;
-        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
     public Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> queryMaxVlmSize(AutoSelectFilterApi selectFilter)
@@ -70,10 +66,7 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
             .flatMapMany(thinFreeCapacities -> scopeRunner
                 .fluxInTransactionlessScope(
                     "Query max volume size",
-                    LockGuard.createDeferred(
-                        nodesMapLock.writeLock(),
-                        storPoolDfnMapLock.writeLock()
-                    ),
+                    lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
                     () -> queryMaxVlmSizeInScope(selectFilter, thinFreeCapacities)
                 ));
     }

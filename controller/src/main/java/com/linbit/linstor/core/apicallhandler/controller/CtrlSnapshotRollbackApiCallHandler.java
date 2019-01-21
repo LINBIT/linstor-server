@@ -17,7 +17,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -31,12 +30,14 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -46,7 +47,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -82,9 +82,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
+    private LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlSnapshotRollbackApiCallHandler(
@@ -95,8 +94,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -107,8 +105,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
-        nodesMapLock = nodesMapLockRef;
-        rscDfnMapLock = rscDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -145,7 +142,10 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         return scopeRunner
             .fluxInTransactionalScope(
                 "Rollback to snapshot",
-                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
                 () -> rollbackSnapshotInTransaction(rscNameStr, snapshotNameStr)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -195,7 +195,10 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         return scopeRunner
             .fluxInTransactionalScope(
                 "Reactivate resources due to failed deactivation",
-                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
                 () -> reactivateRscDfnInTransaction(rscName, exception)
             );
     }
@@ -230,7 +233,10 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         return scopeRunner
             .fluxInTransactionalScope(
                 "Initiate rollback",
-                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
                 () -> startRollbackInTransaction(rscName, snapshotName)
             );
     }
@@ -260,7 +266,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Update for rollback",
-                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.readLock()),
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                 () -> updateForRollbackInScope(rscName)
             );
     }
@@ -311,7 +317,10 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             .concatWith(scopeRunner
                 .fluxInTransactionalScope(
                     "Handle successful rollback",
-                    LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                    lockGuardFactory.create()
+                        .read(LockObj.NODES_MAP)
+                        .write(LockObj.RSC_DFN_MAP)
+                        .buildDeferred(),
                     () -> resourceRollbackSuccessfulInTransaction(rscName, nodeName)
                 )
             )
@@ -337,7 +346,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Reactivate resources after rollback",
-                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.readLock()),
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                 () -> finishRollbackInScope(rscName)
             );
     }

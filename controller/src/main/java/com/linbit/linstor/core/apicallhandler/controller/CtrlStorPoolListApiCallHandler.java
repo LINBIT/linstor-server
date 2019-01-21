@@ -11,23 +11,22 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
@@ -39,7 +38,7 @@ import static java.util.stream.Collectors.toList;
 public class CtrlStorPoolListApiCallHandler
 {
     private final ScopeRunner scopeRunner;
-    private final ReadWriteLock storPoolDfnMapLock;
+    private final LockGuardFactory lockGuardFactory;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final Provider<AccessContext> peerAccCtx;
@@ -47,14 +46,14 @@ public class CtrlStorPoolListApiCallHandler
     @Inject
     public CtrlStorPoolListApiCallHandler(
         ScopeRunner scopeRunnerRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         scopeRunner = scopeRunnerRef;
-        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         peerAccCtx = peerAccCtxRef;
@@ -74,7 +73,7 @@ public class CtrlStorPoolListApiCallHandler
             .flatMapMany(freeCapacityAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble storage pool list",
-                    LockGuard.createDeferred(storPoolDfnMapLock.readLock()),
+                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.STOR_POOL_DFN_MAP),
                     () -> assembleList(nodesFilter, storPoolsFilter, freeCapacityAnswers)
                 )
             );

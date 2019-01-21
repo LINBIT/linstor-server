@@ -18,7 +18,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -30,11 +29,13 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -44,8 +45,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
@@ -60,7 +59,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
-    private final ReadWriteLock rscDfnMapLock;
+    private final LockGuardFactory lockguardFactory;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
@@ -71,7 +70,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        LockGuardFactory lockguardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -81,7 +80,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
-        rscDfnMapLock = rscDfnMapLockRef;
+        lockguardFactory = lockguardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -119,7 +118,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete volume definition",
-                LockGuard.createDeferred(rscDfnMapLock.writeLock()),
+                lockguardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
                 () -> deleteVolumeDefinitionInTransaction(rscNameStr, vlmNrInt)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -194,7 +193,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Update for volume definition deletion",
-                LockGuard.createDeferred(rscDfnMapLock.readLock()),
+                lockguardFactory.buildDeferred(LockType.READ, LockObj.RSC_DFN_MAP),
                 () -> updateSatellitesInScope(rscName, vlmNr)
             );
     }
@@ -229,7 +228,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete volume definition data",
-                LockGuard.createDeferred(rscDfnMapLock.writeLock()),
+                lockguardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
                 () -> deleteDataInTransaction(rscName, vlmNr)
             );
     }

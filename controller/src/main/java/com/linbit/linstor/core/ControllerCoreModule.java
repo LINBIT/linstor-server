@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -21,8 +22,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ControllerCoreModule extends AbstractModule
 {
-    public static final String CTRL_CONF_LOCK = "ctrlConfLock";
-
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
 
     @Override
@@ -33,7 +32,7 @@ public class ControllerCoreModule extends AbstractModule
 
         bind(FreeSpaceMgrMap.class).to(FreeSpaceMgrMapImpl.class);
 
-        bind(ReadWriteLock.class).annotatedWith(Names.named(CTRL_CONF_LOCK))
+        bind(ReadWriteLock.class).annotatedWith(Names.named(CoreModule.CTRL_CONF_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
     }
 

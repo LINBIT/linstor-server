@@ -32,6 +32,7 @@ public class CoreModule extends AbstractModule
     public static final String MODULE_NAME = "ModuleName";
 
     public static final String RECONFIGURATION_LOCK = "reconfigurationLock";
+    public static final String CTRL_CONF_LOCK = "ctrlConfLock";
     public static final String NODES_MAP_LOCK = "nodesMapLock";
     public static final String RSC_DFN_MAP_LOCK = "rscDfnMapLock";
     public static final String STOR_POOL_DFN_MAP_LOCK = "storPoolDfnMapLock";

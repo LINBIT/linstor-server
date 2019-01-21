@@ -17,7 +17,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -33,11 +32,13 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -49,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Stream;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
@@ -67,9 +67,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private final NodeRepository nodeRepository;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlNodeDeleteApiCallHandler(
@@ -81,8 +80,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         NodeRepository nodeRepositoryRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -94,8 +92,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         nodeRepository = nodeRepositoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
-        nodesMapLock = nodesMapLockRef;
-        rscDfnMapLock = rscDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -135,7 +132,10 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete node",
-                LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.readLock()),
+                lockGuardFactory.createDeferred()
+                    .write(LockObj.NODES_MAP)
+                    .read(LockObj.RSC_DFN_MAP)
+                    .build(),
                 () -> deleteNodeInTransaction(context, nodeNameStr)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -228,7 +228,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Update for node deletion",
-                LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
+                lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                 () -> updateSatellitesInScope(nodeName, rscName)
             );
     }
@@ -276,7 +276,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         return scopeRunner
             .fluxInTransactionalScope(
                 "Resource deleted",
-                LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
+                lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                 () -> resourceDeletedInTransaction(nodeName, rscName)
             );
     }

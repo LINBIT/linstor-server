@@ -18,7 +18,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -35,11 +34,13 @@ import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
@@ -49,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,9 +67,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodesMap nodesMap;
     private final ResponseConverter responseConverter;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock rscDfnMapLock;
-    private final ReadWriteLock storPoolDfnMapLock;
+    private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
@@ -85,9 +83,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodesMap nodesMapRef,
         ResponseConverter responseConverterRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -102,9 +98,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodesMap = nodesMapRef;
         responseConverter = responseConverterRef;
-        nodesMapLock = nodesMapLockRef;
-        rscDfnMapLock = rscDfnMapLockRef;
-        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -128,10 +122,9 @@ public class CtrlRscAutoPlaceApiCallHandler
         return scopeRunner
             .fluxInTransactionalScope(
                 "Auto-place resource",
-                LockGuard.createDeferred(
-                    nodesMapLock.writeLock(),
-                    rscDfnMapLock.writeLock(),
-                    storPoolDfnMapLock.writeLock()
+                lockGuardFactory.buildDeferred(
+                    LockType.WRITE,
+                    LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
                 ),
                 () -> autoPlaceInTransaction(rscNameStr, selectFilter, disklessOnRemainingNodes, context)
             )
@@ -280,11 +273,9 @@ public class CtrlRscAutoPlaceApiCallHandler
             .flatMapMany(freeCapacities -> scopeRunner
                 .fluxInTransactionalScope(
                     "Auto-place resource including thin pools",
-                    LockGuard.createDeferred(
-                        nodesMapLock.writeLock(),
-                        rscDfnMapLock.writeLock(),
-                        storPoolDfnMapLock.writeLock()
-                    ),
+                    lockGuardFactory.buildDeferred(
+                        LockType.WRITE,
+                        LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP),
                     () -> autoPlaceThinInTransaction(
                         context,
                         rscNameStr,

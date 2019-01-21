@@ -9,7 +9,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.linbit.linstor.Node;
-import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;
@@ -60,7 +59,7 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
     @Inject
     public CmdDisplayObjectStatistics(
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
-        @Named(ControllerCoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
+        @Named(CoreModule.CTRL_CONF_LOCK) ReadWriteLock confLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,

@@ -14,7 +14,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -28,18 +27,19 @@ import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
@@ -52,8 +52,8 @@ public class CtrlRscDeleteApiHelper
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
-    private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
+    private LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlRscDeleteApiHelper(
@@ -63,7 +63,7 @@ public class CtrlRscDeleteApiHelper
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -73,7 +73,7 @@ public class CtrlRscDeleteApiHelper
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
-        rscDfnMapLock = rscDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -109,7 +109,7 @@ public class CtrlRscDeleteApiHelper
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Update for resource deletion",
-                LockGuard.createDeferred(rscDfnMapLock.readLock()),
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.RSC_DFN_MAP),
                 () -> updateSatellitesInScope(nodeName, rscName)
             );
     }
@@ -146,7 +146,7 @@ public class CtrlRscDeleteApiHelper
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete resource data",
-                LockGuard.createDeferred(rscDfnMapLock.writeLock()),
+                lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
                 () -> deleteDataInTransaction(nodeName, rscName)
             );
     }

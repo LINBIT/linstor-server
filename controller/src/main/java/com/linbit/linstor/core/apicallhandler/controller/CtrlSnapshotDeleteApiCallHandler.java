@@ -12,7 +12,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -24,11 +23,13 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -37,8 +38,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
@@ -53,8 +52,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock rscDfnMapLock;
+    private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
@@ -65,8 +63,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        LockGuardFactory lockguardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
@@ -76,8 +73,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
-        nodesMapLock = nodesMapLockRef;
-        rscDfnMapLock = rscDfnMapLockRef;
+        lockGuardFactory = lockguardFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
@@ -110,7 +106,10 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete snapshot",
-                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
                 () -> deleteSnapshotInTransaction(rscNameStr, snapshotNameStr)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -147,7 +146,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Delete snapshots on nodes",
-                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.readLock()),
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                 () -> deleteSnapshotsOnNodesInScope(rscName, snapshotName)
             );
     }
@@ -183,7 +182,10 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete snapshot data",
-                LockGuard.createDeferred(nodesMapLock.readLock(), rscDfnMapLock.writeLock()),
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
                 () -> deleteDataInTransaction(rscName, snapshotName)
             );
     }
