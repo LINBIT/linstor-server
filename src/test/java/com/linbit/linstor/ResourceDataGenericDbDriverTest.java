@@ -25,7 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class ResouceDataGenericDbDriverTest extends GenericDbBase
+public class ResourceDataGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RESOURCES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + NODE_ID + ", " + RESOURCE_FLAGS +
@@ -46,7 +46,7 @@ public class ResouceDataGenericDbDriverTest extends GenericDbBase
     @Inject private ResourceDataGenericDbDriver driver;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public ResouceDataGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
+    public ResourceDataGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
     {
         nodeName = new NodeName("TestNodeName");
         resName = new ResourceName("TestResName");

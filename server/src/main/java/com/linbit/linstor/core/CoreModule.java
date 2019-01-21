@@ -6,6 +6,8 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.linstor.KeyValueStore;
+import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -37,12 +39,14 @@ public class CoreModule extends AbstractModule
     public static final String RSC_DFN_MAP_LOCK = "rscDfnMapLock";
     public static final String STOR_POOL_DFN_MAP_LOCK = "storPoolDfnMapLock";
     public static final String FREE_SPACE_MGR_MAP_LOCK = "freeSpaceMgrMapLock";
+    public static final String KVS_MAP_LOCK = "keyValueStoreMapLock";
 
     private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
     // Path to the DRBD configuration files; this should be replaced by some meaningful constant or possibly
     // a value configurable in the cluster configuration
     public static final String CONFIG_PATH = "/var/lib/linstor.d";
+
 
     @Override
     protected void configure()
@@ -56,6 +60,7 @@ public class CoreModule extends AbstractModule
         bind(NodesMap.class).to(NodesMapImpl.class);
         bind(ResourceDefinitionMap.class).to(ResourceDefinitionMapImpl.class);
         bind(StorPoolDefinitionMap.class).to(StorPoolDefinitionMapImpl.class);
+        bind(KeyValueStoreMap.class).to(KeyValueStoreMapImpl.class);
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 
@@ -68,6 +73,10 @@ public class CoreModule extends AbstractModule
         bind(ReadWriteLock.class).annotatedWith(Names.named(STOR_POOL_DFN_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(FREE_SPACE_MGR_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(CTRL_CONF_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(KVS_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
     }
 
@@ -88,6 +97,10 @@ public class CoreModule extends AbstractModule
     }
 
     public interface StorPoolDefinitionMap extends Map<StorPoolName, StorPoolDefinition>
+    {
+    }
+
+    public interface KeyValueStoreMap extends Map<KeyValueStoreName, KeyValueStore>
     {
     }
 
@@ -123,6 +136,17 @@ public class CoreModule extends AbstractModule
     {
         @Inject
         public StorPoolDefinitionMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
+        }
+    }
+
+    @Singleton
+    public static class KeyValueStoreMapImpl
+        extends TransactionMap<KeyValueStoreName, KeyValueStore> implements KeyValueStoreMap
+    {
+        @Inject
+        public KeyValueStoreMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
             super(new TreeMap<>(), null, transMgrProvider);
         }

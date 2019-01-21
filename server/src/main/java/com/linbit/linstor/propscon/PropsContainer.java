@@ -3,6 +3,7 @@ package com.linbit.linstor.propscon;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
@@ -61,8 +62,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private static final String PATH_NODE_CON_DEFINITIONS     = "/conDfn/nodes/";
     private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
     private static final String PATH_VOLUME_CON_DEFINITIONS   = "/conDfn/volume/";
-    private static final String PATH_SNAPSHOT_DEFINITIONS = "/snapshotdefinitions/";
+    private static final String PATH_SNAPSHOT_DEFINITIONS     = "/snapshotdefinitions/";
     private static final String PATH_SNAPSHOT_VOLUME_DEFINITIONS = "/snapshotvolumedefinitions/";
+    private static final String PATH_KVS                      = "/keyvaluestores/";
 
     public static final int PATH_MAX_LENGTH = 256;
 
@@ -250,7 +252,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     {
         if (value == null)
         {
-            throw new InvalidValueException();
+            throw new InvalidValueException(key, value, "Value must not be null");
         }
 
         String[] pathElements = splitPath(namespace, key);
@@ -330,7 +332,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             if (value == null)
             {
                 transMgrProvider.get().rollback();
-                throw new InvalidValueException("Value must not be null");
+                throw new InvalidValueException(key, value, "Value must not be null");
             }
 
             String[] pathElements = splitPath(namespace, key);
@@ -2408,6 +2410,11 @@ public class PropsContainer extends AbsTransactionObject implements Props
         return PATH_SNAPSHOT_VOLUME_DEFINITIONS + resName.value +
             PATH_SEPARATOR + snapshotName.value +
             PATH_SEPARATOR + volNr.value;
+    }
+
+    public static String buildPath(KeyValueStoreName kvsName)
+    {
+        return PATH_KVS + kvsName.value;
     }
 
     @Override

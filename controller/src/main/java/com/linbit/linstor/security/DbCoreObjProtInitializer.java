@@ -2,6 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.linstor.FreeSpaceMgrProtectionRepository;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.KeyValueStoreProtectionRepository;
 import com.linbit.linstor.NodeProtectionRepository;
 import com.linbit.linstor.ResourceDefinitionProtectionRepository;
 import com.linbit.linstor.StorPoolDefinitionProtectionRepository;
@@ -26,6 +27,7 @@ public class DbCoreObjProtInitializer
     private final StorPoolDefinitionProtectionRepository storPoolDefinitionProtectionRepository;
     private final FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepository;
     private final SystemConfProtectionRepository systemConfProtectionRepository;
+    private final KeyValueStoreProtectionRepository keyValueStoreProtectionRepository;
     private final ShutdownProtHolder shutdownProtHolder;
 
     @Inject
@@ -39,6 +41,7 @@ public class DbCoreObjProtInitializer
         StorPoolDefinitionProtectionRepository storPoolDefinitionProtectionRepositoryRef,
         FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepositoryRef,
         SystemConfProtectionRepository systemConfProtectionRepositoryRef,
+        KeyValueStoreProtectionRepository keyValueStoreProtectionRepositoryRef,
         ShutdownProtHolder shutdownProtHolderRef
     )
     {
@@ -51,6 +54,7 @@ public class DbCoreObjProtInitializer
         storPoolDefinitionProtectionRepository = storPoolDefinitionProtectionRepositoryRef;
         freeSpaceMgrProtectionRepository = freeSpaceMgrProtectionRepositoryRef;
         systemConfProtectionRepository = systemConfProtectionRepositoryRef;
+        keyValueStoreProtectionRepository = keyValueStoreProtectionRepositoryRef;
         shutdownProtHolder = shutdownProtHolderRef;
     }
 
@@ -83,6 +87,11 @@ public class DbCoreObjProtInitializer
             freeSpaceMgrProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("freeSpaceMgrMap"),
+                true
+            ));
+            keyValueStoreProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
+                initCtx,
+                ObjectProtection.buildPathController("keyValueStoreMap"),
                 true
             ));
 

@@ -4,6 +4,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.FreeSpaceMgrName;
+import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
@@ -34,6 +35,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_NODES                   = "/nodes/";
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
     private static final String PATH_FREE_SPACE_MGRS         = "/freespacemgrs/";
+    private static final String PATH_KVS                     = "/keyvaluestores/";
 
     private static final String PATH_SYS                     = "/sys/";
     private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
@@ -500,6 +502,17 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     /**
+     * ObjProt-Path for KeyValueStores
+     *
+     * @param kvsName
+     * @return
+     */
+    public static String buildPath(KeyValueStoreName kvsName)
+    {
+        return PATH_KVS + kvsName.value;
+    }
+
+    /**
      * ObjProt-Path for FreeSpaceMgrs
      *
      * @param freeSpaceMgrName
@@ -514,4 +527,5 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         return objPath;
     }
+
 }

@@ -44,7 +44,7 @@ public class LockGuardFactory
         NODES_MAP,
         RSC_DFN_MAP,
         STOR_POOL_DFN_MAP,
-        PLUGIN_NAMESPACE
+        KVS_MAP
     }
 
     public enum LockType
@@ -59,6 +59,7 @@ public class LockGuardFactory
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock ctrlConfigLock;
     private final ReadWriteLock reconfigurationLock;
+    private final ReadWriteLock pluginConfLock;
 
     @Inject
     public LockGuardFactory(
@@ -66,7 +67,8 @@ public class LockGuardFactory
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        @Named(CoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef
+        @Named(CoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
+        @Named(CoreModule.KVS_MAP_LOCK) ReadWriteLock kvsMapLockRef
     )
     {
         reconfigurationLock = reconfigurationLockRef;
@@ -74,6 +76,7 @@ public class LockGuardFactory
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlConfigLock = ctrlConfigLockRef;
+        pluginConfLock = kvsMapLockRef;
         lockOrder = Collections.unmodifiableList(
             // order defined in server/src/main/java/com/linbit/linstor/@LOCK_ORDER
             Arrays.asList(
@@ -144,6 +147,9 @@ public class LockGuardFactory
                 break;
             case CTRL_CONFIG:
                 lock = ctrlConfigLock;
+                break;
+            case KVS_MAP:
+                lock = pluginConfLock;
                 break;
             default:
                 throw new ImplementationError("Unknown lock type: " + type);

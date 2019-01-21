@@ -1,6 +1,8 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.google.inject.AbstractModule;
+
+import com.linbit.linstor.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.NodeConnectionDataGenericDbDriver;
 import com.linbit.linstor.NodeDataGenericDbDriver;
@@ -16,6 +18,7 @@ import com.linbit.linstor.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
+import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -65,5 +68,6 @@ public class ControllerDbModule extends AbstractModule
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionGenericDbDriver.class);
         bind(SnapshotDataDatabaseDriver.class).to(SnapshotDataGenericDbDriver.class);
         bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDataGenericDbDriver.class);
+        bind(KeyValueStoreDataDatabaseDriver.class).to(KeyValueStoreDataGenericDbDriver.class);
     }
 }

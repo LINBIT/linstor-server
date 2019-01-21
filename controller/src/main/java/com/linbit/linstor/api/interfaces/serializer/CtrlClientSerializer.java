@@ -51,5 +51,6 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder ctrlCfgProps(Map<String, String> map);
 
         CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<MaxVlmSizeCandidatePojo> candidates);
+        CtrlClientSerializerBuilder keyValueStoreList(Map<String, String> listProps);
     }
 }

@@ -90,7 +90,7 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private transient TransactionSimpleObject<NodeData, NetInterface> currentStltConn;
 
-    private TransactionSimpleObject<NodeData, Boolean> deleted;
+    private final TransactionSimpleObject<NodeData, Boolean> deleted;
 
     NodeData(
         UUID uuidRef,

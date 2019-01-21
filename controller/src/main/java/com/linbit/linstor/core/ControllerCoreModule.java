@@ -17,12 +17,10 @@ import javax.inject.Singleton;
 
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ControllerCoreModule extends AbstractModule
 {
-    private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
+    private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "/CTRLCFG";
 
     @Override
     protected void configure()
@@ -31,9 +29,6 @@ public class ControllerCoreModule extends AbstractModule
             .toInstance(LinStor.CONTROLLER_MODULE);
 
         bind(FreeSpaceMgrMap.class).to(FreeSpaceMgrMapImpl.class);
-
-        bind(ReadWriteLock.class).annotatedWith(Names.named(CoreModule.CTRL_CONF_LOCK))
-            .toInstance(new ReentrantReadWriteLock(true));
     }
 
     @Provides

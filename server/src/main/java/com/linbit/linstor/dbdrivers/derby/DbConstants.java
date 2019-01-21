@@ -39,6 +39,7 @@ public class DbConstants
     public static final String TBL_SNAPSHOTS             = "SNAPSHOTS";
     public static final String TBL_SNAPSHOT_VOLUME_DEFINITIONS = "SNAPSHOT_VOLUME_DEFINITIONS";
     public static final String TBL_SNAPSHOT_VOLUMES      = "SNAPSHOT_VOLUMES";
+    public static final String TBL_KEY_VALUE_STORE       = "KEY_VALUE_STORE";
 
     // SEC_CONFIGURATION column names
     public static final String ENTRY_KEY     = "ENTRY_KEY";
@@ -137,6 +138,10 @@ public class DbConstants
     public static final String SNAPSHOT_NAME = "SNAPSHOT_NAME";
     public static final String SNAPSHOT_DSP_NAME = "SNAPSHOT_DSP_NAME";
     public static final String SNAPSHOT_FLAGS = "SNAPSHOT_FLAGS";
+
+    // KEY_VALUE_STORE column names
+    public static final String KVS_NAME     = "KVS_NAME";
+    public static final String KVS_DSP_NAME = "KVS_DSP_NAME";
 
     private DbConstants()
     {

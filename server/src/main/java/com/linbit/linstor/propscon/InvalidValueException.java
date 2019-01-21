@@ -7,13 +7,21 @@ package com.linbit.linstor.propscon;
  */
 public class InvalidValueException extends Exception
 {
+    private static final long serialVersionUID = 2696642939160868138L;
 
-    public InvalidValueException()
+    public final String key;
+    public final String value;
+
+    public InvalidValueException(String keyRef, String valueRef, String errMsg)
     {
+        super(errMsg);
+        key = keyRef;
+        value = valueRef;
     }
 
-    public InvalidValueException(String string)
+    public InvalidValueException(String keyRef, String valueRef)
     {
-        super(string);
+        key = keyRef;
+        value = valueRef;
     }
 }
