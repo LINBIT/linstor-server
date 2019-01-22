@@ -165,14 +165,14 @@ public class DbConnectionPoolInitializer
                 {
                     GenericDbUtils.executeStatement(con,
                         String.format("UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
-                                "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'",
+                                "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'",
                             args.getInMemoryDbPort()));
                 }
                 if (args.getInMemoryDbAddress() != null)
                 {
                     GenericDbUtils.executeStatement(con,
                         String.format("UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
-                                "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'",
+                                "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'",
                             args.getInMemoryDbAddress()));
                 }
                 con.commit();

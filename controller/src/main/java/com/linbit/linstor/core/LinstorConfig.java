@@ -127,7 +127,7 @@ public class LinstorConfig
             {
                 con.setSchema(DATABASE_SCHEMA_NAME);
                 final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
-                    "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
+                    "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
                 GenericDbUtils.executeStatement(con, String.format(stmt, controllerPort));
                 con.commit();
                 System.out.println("Controller plain port set to " + controllerPort);
@@ -160,7 +160,7 @@ public class LinstorConfig
             {
                 con.setSchema(DATABASE_SCHEMA_NAME);
                 final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
-                    "WHERE PROPS_INSTANCE='CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
+                    "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
                 GenericDbUtils.executeStatement(con, String.format(stmt, listenAddress));
                 con.commit();
 
