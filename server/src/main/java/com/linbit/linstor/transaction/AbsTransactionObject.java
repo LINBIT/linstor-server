@@ -3,8 +3,6 @@ package com.linbit.linstor.transaction;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.propscon.PropsContainer;
 
-import java.sql.Connection;
-
 import javax.inject.Provider;
 
 /**
@@ -12,7 +10,6 @@ import javax.inject.Provider;
  * previously performed changes.<br>
  * <br>
  * It is highly recommended to manually commit the database-transaction
- * (which is used by the {@link AbsTransactionObject#setConnection(Connection)} method)
  * once all changes are done to the object(s) and if that database-commit
  * passed, call the commit method(s) of the modified object(s).
  *

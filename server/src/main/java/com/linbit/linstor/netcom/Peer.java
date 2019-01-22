@@ -144,7 +144,6 @@ public interface Peer
 
     /**
      * Get a zero-based sequence number for this peer.
-     * Suitable for use in {@link #processInOrder(long, Supplier)}.
      */
     long getNextIncomingMessageSeq();
 
