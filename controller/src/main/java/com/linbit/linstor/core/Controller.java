@@ -1,16 +1,5 @@
 package com.linbit.linstor.core;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
@@ -29,6 +18,7 @@ import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
+import com.linbit.linstor.api.rest.v1.GrizzlyHttpService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -67,6 +57,18 @@ import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 /**
  * linstor controller prototype
@@ -176,7 +178,7 @@ public final class Controller
         whitelistProps = whitelistPropsRef;
     }
 
-    public void start()
+    public void start(Injector injector)
         throws SystemServiceStartException, InitializationException
     {
         applicationLifecycleManager.installShutdownHook();
@@ -196,6 +198,8 @@ public final class Controller
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
+            final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(injector, "localhost", 8080);
+            systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
 
             dbConnectionPoolInitializer.initialize();
 
@@ -387,7 +391,7 @@ public final class Controller
             );
 
             Controller instance = injector.getInstance(Controller.class);
-            instance.start();
+            instance.start(injector);
 
             if (cArgs.startDebugConsole())
             {

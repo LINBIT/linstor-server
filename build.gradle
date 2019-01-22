@@ -235,6 +235,19 @@ project(':controller') {
             testCompile fileTree(dir: "libs/testCompile")
             testRuntime fileTree(dir: "libs/testRuntime")
         } else {
+            // rest libs (grizzly http(s), jersey(rest))
+            compile 'org.glassfish.grizzly:grizzly-http-server:2.+'
+            compile 'org.glassfish.jersey.inject:jersey-hk2:2.27'
+            compile 'org.glassfish.hk2:guice-bridge:2.5.0-b42'
+            compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.+'
+            compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:2.+'
+
+            // jdk 11 javax.xml dependency needed by jersey
+            compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.11'
+            compile group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
+            compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
+            compile group: 'javax.activation', name: 'activation', version: '1.1.1'
+
             compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.5.0'
             compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
             compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.4'
