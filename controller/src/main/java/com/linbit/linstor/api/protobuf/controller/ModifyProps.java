@@ -37,8 +37,8 @@ public class ModifyProps implements ApiCall
         MsgModKvsProps msgModProps = MsgModKvsProps.parseDelimitedFrom(msgDataIn);
         ApiCallRc apiCallRc = apiCallHandler.modifyKvsProps(
             msgModProps.getInstanceName(),
-            ProtoMapUtils.asMap(msgModProps.getModPropsList()),
-            msgModProps.getDelPropsList()
+            ProtoMapUtils.asMap(msgModProps.getOverridePropsList()),
+            msgModProps.getDeletePropKeysList()
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
