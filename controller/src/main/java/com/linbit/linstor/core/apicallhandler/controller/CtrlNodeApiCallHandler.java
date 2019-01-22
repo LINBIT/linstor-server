@@ -429,6 +429,14 @@ public class CtrlNodeApiCallHandler
             Props props = ctrlPropsHelper.getProps(node);
             ctrlPropsHelper.fillProperties(LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
 
+            // check if specified preferred network interface exists
+            ctrlPropsHelper.checkPrefNic(
+                    apiCtx,
+                    node,
+                    overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+                    ApiConsts.MASK_NODE
+            );
+
             Map<String, String> nodeProps = props.map();
             for (String key : deletePropKeys)
             {

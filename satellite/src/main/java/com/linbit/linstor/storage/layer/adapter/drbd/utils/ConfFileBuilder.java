@@ -677,7 +677,7 @@ public class ConfFileBuilder
             {
                 preferredNetIf = rsc.getAssignedNode().getNetInterface(
                     accCtx,
-                    new NetInterfaceName(prefNic) // TODO: validate on controller
+                    new NetInterfaceName(prefNic)
                 );
 
                 if (preferredNetIf == null)

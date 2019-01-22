@@ -125,6 +125,14 @@ public class CtrlRscApiCallHandler
 
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
 
+            // check if specified preferred network interface exists
+            ctrlPropsHelper.checkPrefNic(
+                    apiCtx,
+                    rsc.getAssignedNode(),
+                    overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+                    ApiConsts.MASK_RSC
+            );
+
             for (String delKey : deletePropKeys)
             {
                 propsMap.remove(delKey);

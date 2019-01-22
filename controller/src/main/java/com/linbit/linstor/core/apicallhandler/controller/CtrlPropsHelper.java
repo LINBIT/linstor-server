@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -43,6 +45,21 @@ public class CtrlPropsHelper
     {
         propsWhiteList = propsWhiteListRef;
         peerAccCtx = peerAccCtxRef;
+    }
+
+    public void checkPrefNic(AccessContext accessContext, Node node, String prefNic, long maskObj)
+            throws AccessDeniedException, InvalidNameException
+    {
+        if (prefNic != null)
+        {
+            if (node.getNetInterface(accessContext, new NetInterfaceName(prefNic)) == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                        ApiConsts.MASK_ERROR | maskObj | ApiConsts.FAIL_INVLD_PROP,
+                        "The network interface '" + prefNic + "' of node '" + node.getName() + "' does not exist!"
+                ));
+            }
+        }
     }
 
     public Props getProps(Node node)

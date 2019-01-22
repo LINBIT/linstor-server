@@ -107,6 +107,14 @@ public class CtrlStorPoolApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
 
+            // check if specified preferred network interface exists
+            ctrlPropsHelper.checkPrefNic(
+                    peerAccCtx.get(),
+                    storPool.getNode(),
+                    overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+                    ApiConsts.MASK_STOR_POOL
+            );
+
             for (String delKey : deletePropKeys)
             {
                 propsMap.remove(delKey);
