@@ -159,7 +159,7 @@ public class ScopeRunner
                             sqlExc,
                             accCtx,
                             peer,
-                            "A database error occured while trying to rollback '" + apiCallName + "'"
+                            "A database error occurred while trying to rollback '" + apiCallName + "'"
                         );
                     }
                 }
