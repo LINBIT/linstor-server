@@ -410,9 +410,15 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         public void update(NetInterfaceData parent, TcpPortNumber port)
             throws SQLException
         {
+            Integer portNumber = null;
+            if (getStltPort(parent) != null)
+            {
+                portNumber = getStltPort(parent).value;
+            }
+
             errorReporter.logTrace(
                 "Updating NetInterface's satellite connection port from [%d] to [%d] %s",
-                getStltPort(parent),
+                portNumber,
                 port.value,
                 getId(parent)
             );
@@ -426,18 +432,18 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             }
             errorReporter.logTrace(
                 "NetInterface's satellite connection port updated from [%d] to [%d] %s",
-                getStltPort(parent),
+                portNumber,
                 port.value,
                 getId(parent)
             );
         }
 
-        private int getStltPort(NetInterfaceData netIf)
+        private TcpPortNumber getStltPort(NetInterfaceData netIf)
         {
-            int port = 0;
+            TcpPortNumber port = null;
             try
             {
-                port = netIf.getStltConnPort(dbCtx).value;
+                port = netIf.getStltConnPort(dbCtx);
             }
             catch (AccessDeniedException accessDeniedExc)
             {
@@ -481,7 +487,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             String type = null;
             try
             {
-                type = parent.getStltConnEncryptionType(dbCtx).name();
+                if (parent.getStltConnEncryptionType(dbCtx) != null)
+                {
+                    type = parent.getStltConnEncryptionType(dbCtx).name();
+                }
             }
             catch (AccessDeniedException accDeniedExc)
             {
