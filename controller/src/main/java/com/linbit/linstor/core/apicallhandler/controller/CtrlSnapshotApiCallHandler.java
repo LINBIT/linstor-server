@@ -102,6 +102,11 @@ public class CtrlSnapshotApiCallHandler
             snapshotDescription + " on nodes '" + String.join(", ", nodeNameStrs) + "'";
     }
 
+    public static String getSnapshotDfnDescription(String snapshotName)
+    {
+        return "Snapshot definition: " + snapshotName;
+    }
+
     public static String getSnapshotDfnDescriptionInline(SnapshotDefinition snapshotDfn)
     {
         return getSnapshotDfnDescriptionInline(snapshotDfn.getResourceName(), snapshotDfn.getName());

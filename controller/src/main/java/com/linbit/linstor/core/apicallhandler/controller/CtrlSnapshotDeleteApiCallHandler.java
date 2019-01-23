@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
@@ -39,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
@@ -117,7 +119,16 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
     private Flux<ApiCallRc> deleteSnapshotInTransaction(String rscNameStr, String snapshotNameStr)
     {
-        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameStr, snapshotNameStr, true);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameStr, snapshotNameStr, false);
+
+        if (snapshotDfn == null)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.WARN_NOT_FOUND,
+                    getSnapshotDfnDescription(snapshotNameStr) + " not found."
+            ));
+        }
+
         ResourceName rscName = snapshotDfn.getResourceName();
         SnapshotName snapshotName = snapshotDfn.getName();
 
