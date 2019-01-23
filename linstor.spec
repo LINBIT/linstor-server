@@ -14,7 +14,11 @@ License: GPLv2+
 URL: https://github.com/LINBIT/linstor-server
 Source0: http://www.linbit.com/downloads/linstor/linstor-server-%{version}.tar.gz
 
+%if 0%{?suse_version} >= 1500
+BuildRequires: java-1_8_0-openjdk-headless java-1_8_0-openjdk-devel python
+%else  # rhel
 BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python
+%endif
 
 %description
 TODO.
