@@ -227,7 +227,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * setProp("a", "value", "b/c") has the same effect as setProp("b/c/a", "value", null)
      *
      * @param namespace Acts as a prefix for {@param keys}
-     * @return The old value (can be null)
+     * @return The old value or null if no entry was present
      * @throws InvalidKeyException if the key contains a path separator
      * @throws InvalidValueException if the value of an entry of {@param entryMap} is null
      * @throws SQLException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
@@ -272,9 +272,17 @@ public class PropsContainer extends AbsTransactionObject implements Props
         {
             String key = entry.getKey();
             String value = entry.getValue();
-            if (!value.equalsIgnoreCase(setProp(key, value, namespace)))
+            try
             {
-                modified = true;
+                if (!value.equalsIgnoreCase(setProp(key, value, namespace)))
+                {
+                    modified = true;
+                }
+            }
+            catch (InvalidKeyException | InvalidValueException exc)
+            {
+                rollbackImpl();
+                throw exc;
             }
         }
         return modified;
@@ -286,29 +294,35 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * removeProp("a", "b/c") has the same effect as removeProp("b/c/a", null)
      *
      * @param namespace Acts as a prefix for {@param keys}
-     * @return The old value (can be null)
+     * @return The old value or null if no entry was present
      * @throws InvalidKeyException if the key contains a path separator
      * @throws SQLException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
      *                      a database operation
      */
     @Override
-    public String removeProp(String key, String namespace) throws InvalidKeyException, SQLException
+    public String removeProp(String key, String namespace) throws SQLException
     {
         String value = null;
-        String[] pathElements = splitPath(namespace, key);
-        String actualKey = pathElements[PATH_KEY];
-        checkKey(actualKey);
-        PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]).orElse(null);
-        if (con != null)
+        try
         {
-            value = con.propMap.remove(actualKey);
-
-            if (value != null)
+            String[] pathElements = splitPath(namespace, key);
+            String actualKey = pathElements[PATH_KEY];
+            checkKey(actualKey);
+            PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]).orElse(null);
+            if (con != null)
             {
-                con.modifySize(-1);
-                con.removeCleanup();
-                dbRemove(con.getPath() + actualKey, value);
+                value = con.propMap.remove(actualKey);
+
+                if (value != null)
+                {
+                    con.modifySize(-1);
+                    con.removeCleanup();
+                    dbRemove(con.getPath() + actualKey, value);
+                }
             }
+        }
+        catch (InvalidKeyException ignored)
+        {
         }
         return value;
     }
@@ -327,15 +341,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
         boolean changed = false;
         for (String key : selection)
         {
-            try
+            if (removeProp(key, namespace) != null)
             {
-                if (removeProp(key, namespace) != null)
-                {
-                    changed = true;
-                }
-            }
-            catch (InvalidKeyException ignored)
-            {
+                changed = true;
             }
         }
         return changed;
@@ -352,6 +360,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public boolean retainAllProps(Set<String> selection, String namespace) throws SQLException
     {
+        boolean changed = false;
         Set<String> removeSet = new TreeSet<>();
         Iterator<String> keysIter = keysIterator();
         while (keysIter.hasNext())
@@ -362,7 +371,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 removeSet.add(key);
             }
         }
-        return removeAllProps(removeSet, namespace);
+        changed = removeAllProps(removeSet, namespace);
+        return changed;
     }
 
     @Override
@@ -1028,10 +1038,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             }
             catch (ClassCastException castExc)
             {
-                throw new ImplementationError(
-                        "Key for map operation is of illegal object type",
-                        castExc
-                );
+                throw new ImplementationError("Key for map operation is of illegal object type", castExc);
             }
             return result;
         }
@@ -1046,17 +1053,11 @@ public class PropsContainer extends AbsTransactionObject implements Props
             }
             catch (ClassCastException castExc)
             {
-                throw new ImplementationError(
-                        "Key for map operation is of illegal object type",
-                        castExc
-                );
+                throw new ImplementationError("Key for map operation is of illegal object type", castExc);
             }
             catch (InvalidKeyException keyExc)
             {
-                throw new IllegalArgumentException(
-                        "Key for map operation violates validity constraints",
-                        keyExc
-                );
+                throw new IllegalArgumentException("Key for map operation violates validity constraints", keyExc);
             }
             return value;
         }
@@ -1071,14 +1072,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
             }
             catch (InvalidKeyException | InvalidValueException invData)
             {
-                throw new IllegalArgumentException(
-                        "Map values to insert violate validity constraints",
-                        invData
-                );
+                throw new IllegalArgumentException("Map values to insert violate validity constraints", invData);
             }
             catch (SQLException sqlExc)
             {
-                rollback();
                 throw new LinStorSqlRuntimeException(
                         "Failed to add or update entries in the properties container " + instanceName,
                         sqlExc
@@ -1117,13 +1114,6 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 unknownType = true;
                 unknownTypeCause = castExc;
             }
-            catch (InvalidKeyException keyExc)
-            {
-                throw new IllegalArgumentException(
-                        "Key for map operation violates validity constraints",
-                        keyExc
-                );
-            }
             catch (SQLException sqlExc)
             {
                 throw new LinStorSqlRuntimeException(
@@ -1151,7 +1141,6 @@ public class PropsContainer extends AbsTransactionObject implements Props
             }
             catch (InvalidKeyException keyExc)
             {
-                rollbackImpl();
                 throw new IllegalArgumentException(
                         "Key for map operation violates validity constraints",
                         keyExc
@@ -1159,14 +1148,12 @@ public class PropsContainer extends AbsTransactionObject implements Props
             }
             catch (InvalidValueException valueExc)
             {
-                rollbackImpl();
                 throw new IllegalArgumentException(
                         "Value for map operation violates validity contraints",
                         valueExc);
             }
             catch (SQLException sqlExc)
             {
-                rollbackImpl();
                 throw new LinStorSqlRuntimeException(
                         "Failed to add or update entries in the properties container " + instanceName,
                         sqlExc
@@ -1345,17 +1332,11 @@ public class PropsContainer extends AbsTransactionObject implements Props
             }
             catch (InvalidKeyException keyExc)
             {
-                throw new IllegalArgumentException(
-                        "Key for map operation violates validity constraints",
-                        keyExc
-                );
+                throw new IllegalArgumentException("Key for map operation violates validity constraints", keyExc);
             }
             catch (InvalidValueException valueExc)
             {
-                throw new IllegalArgumentException(
-                        "Value for map operation violates validity constraints",
-                        valueExc
-                );
+                throw new IllegalArgumentException("Value for map operation violates validity constraints", valueExc);
             }
             catch (SQLException sqlExc)
             {
@@ -1379,17 +1360,11 @@ public class PropsContainer extends AbsTransactionObject implements Props
             }
             catch (ClassCastException castExc)
             {
-                throw new ImplementationError(
-                        "Key for map operation is of illegal object type",
-                        castExc
-                );
+                throw new ImplementationError("Key for map operation is of illegal object type", castExc);
             }
             catch (InvalidKeyException keyExc)
             {
-                throw new IllegalArgumentException(
-                        "Key for map operation violates validity constraints",
-                        keyExc
-                );
+                throw new IllegalArgumentException("Key for map operation violates validity constraints", keyExc);
             }
             catch (SQLException sqlExc)
             {
@@ -1433,23 +1408,14 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 }
                 catch (InvalidKeyException keyExc)
                 {
-                    rollbackImpl();
-                    throw new IllegalArgumentException(
-                            "Key for set operation violates validity constraints",
-                            keyExc
-                    );
+                    throw new IllegalArgumentException("Key for set operation violates validity constraints", keyExc);
                 }
                 catch (InvalidValueException valExc)
                 {
-                    rollbackImpl();
-                    throw new IllegalArgumentException(
-                            "Value for set operation violates validity constraints",
-                            valExc
-                    );
+                    throw new IllegalArgumentException("Value for set operation violates validity constraints", valExc);
                 }
                 catch (SQLException sqlExc)
                 {
-                    rollbackImpl();
                     throw new LinStorSqlRuntimeException(
                             "Failed to add or update entries in the properties container " +
                                     instanceName,
@@ -1464,19 +1430,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
         public boolean retainAll(Collection<?> keyList)
         {
             boolean changed = false;
-            // Collect all non-matching keys
-            Set<String> removeSet = new TreeSet<>();
-            for (String key : this)
-            {
-                if (!keyList.contains(key))
-                {
-                    removeSet.add(key);
-                }
-            }
-            // Remove all entries with a non-matching key
             try
             {
-                changed = container.removeAllProps(removeSet, null);
+                changed = container.retainAllProps((Set)keyList, null);
             }
             catch (SQLException sqlExc)
             {
@@ -1542,8 +1498,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             else
             {
                 throw new IllegalArgumentException(
-                        "Key must be either a String or an instance of Map.Entry<String, ?>"
-                );
+                        "Key must be either a String or an instance of Map.Entry<String, ?>");
             }
             return container.map().containsKey(key);
         }
@@ -1646,12 +1601,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
             }
             catch (InvalidKeyException | InvalidValueException exc)
             {
-                rollbackImpl();
                 throw new IllegalArgumentException(exc);
             }
             catch (SQLException sqlExc)
             {
-                rollbackImpl();
                 throw new LinStorSqlRuntimeException(
                         "Failed to add or update entries in the properties container " +
                                 instanceName,
@@ -1665,20 +1618,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
         public boolean retainAll(Collection<?> keyList)
         {
             boolean changed = false;
-            // Collect all non-matching keys
-            Set<String> removeSet = new TreeSet<>();
-            for (Map.Entry<String, String> entry : this)
-            {
-                String key = entry.getKey();
-                if (!keyList.contains(key))
-                {
-                    removeSet.add(key);
-                }
-            }
-            // Remove all entries with a non-matching key
             try
             {
-                changed = container.removeAllProps(removeSet, null);
+                changed = container.retainAllProps((Set)keyList, null);
             }
             catch (SQLException sqlExc)
             {

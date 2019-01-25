@@ -24,6 +24,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
 
@@ -149,9 +150,9 @@ class StltNodeApiCallHandler
 
             node.getFlags().resetFlagsTo(apiCtx, nodeFlags);
 
-            Map<String, String> map = node.getProps(apiCtx).map();
-            map.clear();
-            map.putAll(nodePojo.getProps());
+            Props nodeProps = node.getProps(apiCtx);
+            nodeProps.map().putAll(nodePojo.getProps());
+            nodeProps.keySet().retainAll(nodePojo.getProps().keySet());
 
             for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
             {
@@ -168,9 +169,9 @@ class StltNodeApiCallHandler
                     node,
                     otherNode
                 );
-                Map<String, String> props = nodeCon.getProps(apiCtx).map();
-                props.clear();
-                props.putAll(nodeConn.getNodeConnProps());
+                Props nodeConnProps = nodeCon.getProps(apiCtx);
+                nodeConnProps.map().putAll(nodeConn.getNodeConnProps());
+                nodeConnProps.keySet().retainAll(nodeConn.getNodeConnProps().keySet());
             }
 
             for (NetInterface.NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())

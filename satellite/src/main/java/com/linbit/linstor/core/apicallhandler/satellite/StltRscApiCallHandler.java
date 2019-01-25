@@ -56,6 +56,7 @@ import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
@@ -223,9 +224,9 @@ class StltRscApiCallHandler
                 rscDfnToRegister = rscDfn;
             }
             rscDfn.setPort(apiCtx, port);
-            Map<String, String> rscDfnProps = rscDfn.getProps(apiCtx).map();
-            rscDfnProps.clear();
-            rscDfnProps.putAll(rscRawData.getRscDfnProps());
+            Props rscDfnProps = rscDfn.getProps(apiCtx);
+            rscDfnProps.map().putAll(rscRawData.getRscDfnProps());
+            rscDfnProps.keySet().retainAll(rscRawData.getRscDfnProps().keySet());
             rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
             rscDfn.setDown(apiCtx, rscRawData.getRscDfnDown());
 
@@ -248,10 +249,9 @@ class StltRscApiCallHandler
                         VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags())
                     );
                     checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
-                    Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
-
-                    vlmDfnPropsMap.clear();
-                    vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
+                    Props vlmDfnProps = vlmDfn.getProps(apiCtx);
+                    vlmDfnProps.map().putAll(vlmDfnRaw.getProps());
+                    vlmDfnProps.keySet().retainAll(vlmDfnRaw.getProps().keySet());
 
                     vlmDfn.setVolumeSize(apiCtx, vlmDfnRaw.getSize());
 
@@ -403,9 +403,9 @@ class StltRscApiCallHandler
 
                 // update props
                 {
-                    Map<String, String> localRscProps = localRsc.getProps(apiCtx).map();
-                    localRscProps.clear();
-                    localRscProps.putAll(rscRawData.getLocalRscProps());
+                    Props localRscProps = localRsc.getProps(apiCtx);
+                    localRscProps.map().putAll(rscRawData.getLocalRscProps());
+                    localRscProps.keySet().retainAll(rscRawData.getLocalRscProps().keySet());
                 }
 
                 // update flags
@@ -481,9 +481,9 @@ class StltRscApiCallHandler
                         {
                             checkUuid(remoteNode, otherRsc);
                         }
-                        Map<String, String> map = remoteNode.getProps(apiCtx).map();
-                        map.clear();
-                        map.putAll(otherRsc.getNodeProps());
+                        Props remoteNodeProps = remoteNode.getProps(apiCtx);
+                        remoteNodeProps.map().putAll(otherRsc.getNodeProps());
+                        remoteNodeProps.keySet().retainAll(otherRsc.getNodeProps().keySet());
 
                         // XXX restore layerData from rawRsc
                         Map<DeviceLayerKind, RscLayerObject> remoteRscLayerData = new TreeMap<>();
@@ -511,14 +511,14 @@ class StltRscApiCallHandler
                         checkUuid(remoteNode, otherRsc);
 
                         // update node props
-                        Map<String, String> remoteNodeProps = remoteNode.getProps(apiCtx).map();
-                        remoteNodeProps.clear();
-                        remoteNodeProps.putAll(otherRsc.getNodeProps());
+                        Props remoteNodeProps = remoteNode.getProps(apiCtx);
+                        remoteNodeProps.map().putAll(otherRsc.getNodeProps());
+                        remoteNodeProps.keySet().retainAll(otherRsc.getNodeProps().keySet());
 
                         // update matching resource props
-                        Map<String, String> remoteRscProps = remoteRsc.getProps(apiCtx).map();
-                        remoteRscProps.clear();
-                        remoteRscProps.putAll(otherRsc.getRscProps());
+                        Props remoteRscProps = remoteRsc.getProps(apiCtx);
+                        remoteRscProps.map().putAll(otherRsc.getRscProps());
+                        remoteRscProps.keySet().retainAll(otherRsc.getRscProps().keySet());
 
                         // update flags
                         remoteRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(otherRsc.getRscFlags()));
@@ -620,9 +620,9 @@ class StltRscApiCallHandler
                         null
                     );
 
-                    Map<String, String> propMap = rscConn.getProps(apiCtx).map();
-                    propMap.clear();
-                    propMap.putAll(rscConnApi.getProps());
+                    Props rscConnProps = rscConn.getProps(apiCtx);
+                    rscConnProps.map().putAll(rscConnApi.getProps());
+                    rscConnProps.keySet().retainAll(rscConnApi.getProps().keySet());
 
                     rscConn.getStateFlags().resetFlagsTo(
                         apiCtx, ResourceConnection.RscConnFlags.restoreFlags(rscConnApi.getFlags()));
@@ -741,9 +741,9 @@ class StltRscApiCallHandler
             "Node: '" + node.getName().displayValue + "', RscName: '" + rscDfn.getName().displayValue + "'"
         );
 
-        Map<String, String> map = rsc.getProps(apiCtx).map();
-        map.clear();
-        map.putAll(rscProps);
+        Props rscDataProps = rsc.getProps(apiCtx);
+        rscDataProps.map().putAll(rscProps);
+        rscDataProps.keySet().retainAll(rscProps.keySet());
 
         // XXX ensure to apply possible changes in layerData
 
@@ -796,9 +796,9 @@ class StltRscApiCallHandler
         StorPool storPool = getStorPool(vlm.getResource(), vlmApi, remoteRsc);
         vlm.setStorPool(apiCtx, storPool);
 
-        Map<String, String> vlmProps = vlm.getProps(apiCtx).map();
-        vlmProps.clear();
-        vlmProps.putAll(vlmApi.getVlmProps());
+        Props vlmProps = vlm.getProps(apiCtx);
+        vlmProps.map().putAll(vlmApi.getVlmProps());
+        vlmProps.keySet().retainAll(vlmApi.getVlmProps().keySet());
         vlm.getFlags().resetFlagsTo(apiCtx, Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
     }
 
@@ -855,9 +855,9 @@ class StltRscApiCallHandler
             );
         }
 
-        Map<String, String> storPoolProps = storPool.getProps(apiCtx).map();
-        storPoolProps.clear();
-        storPoolProps.putAll(vlmApi.getStorPoolProps());
+        Props storPoolProps = storPool.getProps(apiCtx);
+        storPoolProps.map().putAll(vlmApi.getStorPoolProps());
+        storPoolProps.keySet().retainAll(vlmApi.getStorPoolProps().keySet());
 
         return storPool;
     }

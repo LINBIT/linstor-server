@@ -498,8 +498,8 @@ public class StltApiCallHandler
     {
         try
         {
-            stltConf.clear();
             stltConf.map().putAll(satelliteProps);
+            stltConf.keySet().retainAll(satelliteProps.keySet());
 
             // local nodename need to be set for swordfish driver
             stltConf.setProp(LinStor.KEY_NODE_NAME, controllerPeerConnector.getLocalNodeName().displayValue);

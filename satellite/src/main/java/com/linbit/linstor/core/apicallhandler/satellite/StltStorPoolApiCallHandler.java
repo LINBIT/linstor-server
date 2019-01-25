@@ -25,6 +25,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -147,9 +148,9 @@ class StltStorPoolApiCallHandler
                 checkUuid(storPool, storPoolRaw);
                 checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
 
-                Map<String, String> map = storPool.getProps(apiCtx).map();
-                map.clear();
-                map.putAll(storPoolRaw.getStorPoolProps());
+                Props storPoolProps = storPool.getProps(apiCtx);
+                storPoolProps.map().putAll(storPoolRaw.getStorPoolProps());
+                storPoolProps.keySet().retainAll(storPoolRaw.getStorPoolProps().keySet());
 
                 Collection<Volume> volumes = storPool.getVolumes(apiCtx);
                 for (Volume vlm : volumes)

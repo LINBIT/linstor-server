@@ -24,6 +24,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -189,9 +190,9 @@ public class RscInternalCallHandler
                         vlm.setUsableSize(apiCtx, vlmUpd.getUsableSize());
                         vlm.setAllocatedSize(apiCtx, vlmUpd.getAllocatedSize());
 
-                        Map<String, String> propsMap = vlm.getVolumeDefinition().getProps(apiCtx).map();
-                        propsMap.clear();
-                        propsMap.putAll(vlmUpd.getVlmDfnPropsMap());
+                        Props vlmDfnProps = vlm.getVolumeDefinition().getProps(apiCtx);
+                        vlmDfnProps.map().putAll(vlmUpd.getVlmDfnPropsMap());
+                        vlmDfnProps.keySet().retainAll(vlmUpd.getVlmDfnPropsMap().keySet());
 
                         StorPool storPool = vlm.getStorPool(apiCtx);
                         CapacityInfoPojo capacityInfo =

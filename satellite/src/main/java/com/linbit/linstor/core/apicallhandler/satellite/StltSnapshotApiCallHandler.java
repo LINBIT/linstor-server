@@ -32,6 +32,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -148,9 +149,9 @@ class StltSnapshotApiCallHandler
             rscDfnMap.put(rscName, rscDfn);
         }
         rscDfn.setPort(apiCtx, port);
-        Map<String, String> rscDfnProps = rscDfn.getProps(apiCtx).map();
-        rscDfnProps.clear();
-        rscDfnProps.putAll(rscDfnApi.getProps());
+        Props rscDfnProps = rscDfn.getProps(apiCtx);
+        rscDfnProps.map().putAll(rscDfnApi.getProps());
+        rscDfnProps.keySet().retainAll(rscDfnApi.getProps().keySet());
         rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
         rscDfn.setDown(apiCtx, rscDfnApi.isDown());
         return rscDfn;
@@ -180,9 +181,9 @@ class StltSnapshotApiCallHandler
         }
         checkUuid(snapshotDfn, snapshotDfnApi);
 
-        Map<String, String> snapshotDfnProps = snapshotDfn.getProps(apiCtx).map();
-        snapshotDfnProps.clear();
-        snapshotDfnProps.putAll(snapshotDfnApi.getProps());
+        Props snapshotDfnProps = snapshotDfn.getProps(apiCtx);
+        snapshotDfnProps.map().putAll(snapshotDfnApi.getProps());
+        snapshotDfnProps.keySet().retainAll(snapshotDfnApi.getProps().keySet());
 
         snapshotDfn.getFlags().resetFlagsTo(apiCtx, SnapshotDfnFlags.restoreFlags(snapshotDfnApi.getFlags()));
 
