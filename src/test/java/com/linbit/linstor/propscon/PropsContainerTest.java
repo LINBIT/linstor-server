@@ -339,7 +339,7 @@ public class PropsContainerTest extends GenericDbBase
         map.put("b", "b");
         map.put("a/a2", "aa2");
         map.put("", "root");
-        root.setAllProps(map, null);
+        root.map().putAll(map);
 
         transMgrProvider.get().commit();
 
@@ -350,10 +350,10 @@ public class PropsContainerTest extends GenericDbBase
 
         try
         {
-            root.setAllProps(overrideMap, null);
-            fail("InvalidValueException expected");
+            root.map().putAll(overrideMap);
+            fail("IllegalArgumentException expected");
         }
-        catch (InvalidValueException invValueExc)
+        catch (IllegalArgumentException invValueExc)
         {
             // expected
         }
