@@ -35,6 +35,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
@@ -72,6 +73,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
+import com.linbit.linstor.storage.PrepareDisksHandler;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
@@ -99,6 +101,7 @@ public class StltApiCallHandler
     private final StltRscApiCallHandler rscHandler;
     private final StltStorPoolApiCallHandler storPoolHandler;
     private final StltSnapshotApiCallHandler snapshotHandler;
+    private final PrepareDisksHandler prepareDisksHandler;
 
     private final CtrlStltSerializer interComSerializer;
 
@@ -142,6 +145,7 @@ public class StltApiCallHandler
         StltRscApiCallHandler rscHandlerRef,
         StltStorPoolApiCallHandler storPoolHandlerRef,
         StltSnapshotApiCallHandler snapshotHandlerRef,
+        PrepareDisksHandler prepareDisksHandlerRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
@@ -177,6 +181,7 @@ public class StltApiCallHandler
         rscHandler = rscHandlerRef;
         storPoolHandler = storPoolHandlerRef;
         snapshotHandler = snapshotHandlerRef;
+        prepareDisksHandler = prepareDisksHandlerRef;
         interComSerializer = interComSerializerRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
@@ -823,6 +828,12 @@ public class StltApiCallHandler
         }
         return hostName;
     }
+
+    public ApiCallRc prepareDisks(final String nvmeFilter, final boolean detectPMEM)
+    {
+        return prepareDisksHandler.prepareDisks(nvmeFilter, detectPMEM);
+    }
+
 
     private interface ApplyData
     {

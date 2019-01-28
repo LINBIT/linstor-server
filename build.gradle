@@ -57,6 +57,7 @@ subprojects {
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
             compile 'org.apache.httpcomponents:httpclient:4.5.7'
             compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.8'
+            compile 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
         }
     }
 }
