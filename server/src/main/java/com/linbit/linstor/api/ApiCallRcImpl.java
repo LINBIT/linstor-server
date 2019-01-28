@@ -49,6 +49,11 @@ public class ApiCallRcImpl implements ApiCallRc
         return entries;
     }
 
+    public boolean isEmpty()
+    {
+        return entries.isEmpty();
+    }
+
     @Override
     public String toString()
     {
@@ -188,6 +193,12 @@ public class ApiCallRcImpl implements ApiCallRc
         public Set<String> getErrorIds()
         {
             return errorIds;
+        }
+
+        @Override
+        public boolean isError()
+        {
+            return (returnCode & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR;
         }
 
         @Override

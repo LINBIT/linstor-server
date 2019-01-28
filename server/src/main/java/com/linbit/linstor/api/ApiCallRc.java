@@ -15,6 +15,8 @@ public interface ApiCallRc
     // List of return codes
     List<RcEntry> getEntries();
 
+    boolean isEmpty();
+
     /**
      * Return code entry
      */
@@ -65,5 +67,11 @@ public interface ApiCallRc
          * @return List of error ids
          */
         Set<String> getErrorIds();
+
+        /**
+         * True if the RcEntry is an error.
+         * @return True if the RcEntry is an error.
+         */
+        boolean isError();
     }
 }
