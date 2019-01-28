@@ -707,6 +707,27 @@ public class PropsContainerTest extends GenericDbBase
     }
 
     @Test
+    public void testDeleteNamespace() throws Throwable
+    {
+        root.clear();
+
+        final Map<String, String> map = new HashMap<>();
+        map.put("a", "a");
+        map.put("b", "b");
+        map.put("a/a2", "aa2");
+        map.put("", "root");
+
+        root.setAllProps(map, null);
+
+        assertTrue(root.getNamespace("a").isPresent());
+
+        assertTrue(root.deleteNamespace("a"));
+
+        assertFalse(root.getNamespace("a").isPresent());
+        assertNotNull(root.getProp("a"));
+    }
+
+    @Test
     public void testRetainAllProps() throws Throwable
     {
         final Map<String, String> map = new HashMap<>();

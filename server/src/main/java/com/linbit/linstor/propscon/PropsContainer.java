@@ -295,7 +295,6 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *
      * @param namespace Acts as a prefix for {@param keys}
      * @return The old value or null if no entry was present
-     * @throws InvalidKeyException if the key contains a path separator
      * @throws SQLException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
      *                      a database operation
      */
@@ -344,6 +343,31 @@ public class PropsContainer extends AbsTransactionObject implements Props
             if (removeProp(key, namespace) != null)
             {
                 changed = true;
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * Removes the given {@param namespace} and all its properties.
+     *
+     * @param namespace Acts as a prefix for all keys of the map
+     * @return True if any property has been modified by this method, false otherwise
+     */
+    public boolean deleteNamespace(String namespace)
+    {
+        boolean changed = false;
+        Optional<PropsContainer> currCon = findNamespace(namespace);
+        if (currCon.isPresent())
+        {
+            try
+            {
+                changed = removeAllProps(currCon.get().map().keySet(), null);
+            }
+            catch (SQLException exc)
+            {
+                throw new LinStorSqlRuntimeException(
+                        "Failed to add or update entries in the properties container " + instanceName, exc);
             }
         }
         return changed;
