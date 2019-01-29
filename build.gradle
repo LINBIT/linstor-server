@@ -51,12 +51,12 @@ subprojects {
 
             compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
-            compile 'info.picocli:picocli:3.6.0'
+            compile 'info.picocli:picocli:3.8.2'
             compile group: 'io.projectreactor', name: 'reactor-core', version: '3.2.3.RELEASE'
             compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-            compile 'org.apache.httpcomponents:httpclient:4.5.5'
-            compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.0'
+            compile 'org.apache.httpcomponents:httpclient:4.5.7'
+            compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.8'
         }
     }
 }
@@ -234,9 +234,9 @@ project(':controller') {
             testCompile fileTree(dir: "libs/testCompile")
             testRuntime fileTree(dir: "libs/testRuntime")
         } else {
-            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.2.0'
+            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.5.0'
             compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
-            compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.0'
+            compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.4'
             runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
 //            runtime 'org.mariadb.jdbc:mariadb-java-client:2.2.6'
