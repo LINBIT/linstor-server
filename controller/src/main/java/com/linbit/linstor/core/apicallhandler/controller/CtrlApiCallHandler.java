@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.KeyValueStore;
+import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceConnection;
@@ -105,11 +107,6 @@ public class CtrlApiCallHandler
      *            required
      * @param netIfs
      *            required, at least one needed
-     * @param satelliteConnectionApis
-     *            required, currently all but first ignored. At least one required
-     * @param props
-     *            optional
-     * @return
      */
     public ApiCallRc createNode(
         String nodeNameStr,
@@ -209,19 +206,12 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Creates new {@link ResourceDefinition}
+     * Creates new resource definition
      *
      * @param resourceName
      *            required
      * @param port
      *            optional
-     * @param secret
-     *            optional
-     * @param props
-     *            optional
-     * @param volDescrMap
-     *            optional
-     * @return
      */
     public ApiCallRc createResourceDefinition(
         String resourceName,
@@ -272,13 +262,10 @@ public class CtrlApiCallHandler
      *            required
      * @param port
      *            optional - if given, attempts to override the old port
-     * @param secret
-     *            optional - if given, attempts to override the old secret
      * @param overrideProps
      *            required (can be empty) - overrides the given property key-value pairs
      * @param deletePropKeys
      *            required (can be empty) - deletes the given property keys
-     * @return
      */
     public ApiCallRc modifyRscDfn(
         UUID rscDfnUuid,
@@ -313,13 +300,10 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Creates new {@link VolumeDefinition}s for a given {@link ResourceDefinition}.
+     * Creates new volume definitions for a given resource definition.
      *
      * @param rscName
      *            required
-     * @param vlmDfnApiList
-     *            optional
-     * @return
      */
     public ApiCallRc createVlmDfns(
         String rscName,
@@ -343,7 +327,7 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Modifies an existing {@link Resource}
+     * Modifies an existing resource
      *
      * @param rscUuid
      *            optional, if given checked against persisted UUID
@@ -351,11 +335,6 @@ public class CtrlApiCallHandler
      *            required
      * @param rscName
      *            required
-     * @param overrideProps
-     *            optional
-     * @param deletePropKeys
-     *            optional
-     * @return
      */
     public ApiCallRc modifyRsc(
         UUID rscUuid,
@@ -417,13 +396,12 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Creates a new {@link StorPoolDefinition}.
+     * Creates a new storPoolDefinition.
      *
      * @param storPoolName
      *            required
      * @param storPoolDfnPropsMap
      *            optional
-     * @return
      */
     public ApiCallRc createStoragePoolDefinition(
         String storPoolName,
@@ -447,7 +425,7 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Modifies an existing {@link StorPoolDefinition}
+     * Modifies an existing storPoolDefinition
      *
      * @param storPoolDfnUuid
      *            optional, if given checked against persisted UUID
@@ -457,7 +435,6 @@ public class CtrlApiCallHandler
      *            optional
      * @param deletePropKeysRef
      *            optional
-     * @return
      */
     public ApiCallRc modifyStorPoolDfn(
         UUID storPoolDfnUuid,
@@ -491,14 +468,13 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Marks a {@link StorPoolDefinition} for deletion.
+     * Marks a storPoolDefinition for deletion.
      *
-     * The {@link StorPoolDefinition} is only deleted once all corresponding satellites
+     * The storPoolDefinition is only deleted once all corresponding satellites
      * confirmed that they have undeployed (deleted) the {@link StorPool}.
      *
      * @param storPoolName
      *            required
-     * @return
      */
     public ApiCallRc deleteStoragePoolDefinition(String storPoolName)
     {
@@ -535,7 +511,6 @@ public class CtrlApiCallHandler
      *            optional
      * @param deletePropKeysRef
      *            optional
-     * @return
      */
     public ApiCallRc modifyStorPool(
         UUID storPoolUuid,
@@ -575,10 +550,6 @@ public class CtrlApiCallHandler
      *
      * The {@link StorPool} is only deleted once the corresponding satellite
      * confirms that it has undeployed (deleted) the {@link StorPool}.
-     *
-     * @param nodeName
-     * @param storPoolName
-     * @return
      */
     public ApiCallRc deleteStoragePool(
         String nodeName,
@@ -598,7 +569,7 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Creates a new {@link NodeConnection}.
+     * Creates a new nodeConnection.
      *
      * @param nodeName1
      *            required
@@ -606,7 +577,6 @@ public class CtrlApiCallHandler
      *            required
      * @param nodeConnPropsMap
      *            optional, recommended
-     * @return
      */
     public ApiCallRc createNodeConnection(
         String nodeName1,
@@ -632,7 +602,7 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Modifies an existing {@link NodeConnection}
+     * Modifies an existing nodeConnection
      *
      * @param nodeConnUuid
      *            optional, if given checks against persisted uuid
@@ -644,7 +614,6 @@ public class CtrlApiCallHandler
      *            optional, can be empty
      * @param deletePropKeysRef
      *            optional, can be empty
-     * @return
      */
     public ApiCallRc modifyNodeConn(
         UUID nodeConnUuid,
@@ -679,13 +648,7 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Deletes the {@link NodeConnection}.
-     *
-     * @param nodeName
-     *            required
-     * @param storPoolName
-     *            required
-     * @return
+     * Deletes the nodeConnection.
      */
     public ApiCallRc deleteNodeConnection(
         String nodeName1,
@@ -714,7 +677,6 @@ public class CtrlApiCallHandler
      *            required
      * @param rscConnPropsMap
      *            optional, recommended
-     * @return
      */
     public ApiCallRc createResourceConnection(
         String nodeName1,
@@ -756,7 +718,6 @@ public class CtrlApiCallHandler
      *            optional
      * @param deletePropKeysRef
      *            optional
-     * @return
      */
     public ApiCallRc modifyRscConn(
         UUID rscConnUuid,
@@ -802,7 +763,6 @@ public class CtrlApiCallHandler
      *            required
      * @param rscName
      *            required
-     * @return
      */
     public ApiCallRc deleteResourceConnection(
         String nodeName1,
@@ -823,7 +783,7 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Creates a new {@link VolumeConnection}.
+     * Creates a new volumeConnection.
      *
      * @param nodeName1
      *            required
@@ -835,7 +795,6 @@ public class CtrlApiCallHandler
      *            required
      * @param vlmConnPropsMap
      *            optional, recommended
-     * @return
      */
     public ApiCallRc createVolumeConnection(
         String nodeName1,
@@ -865,7 +824,7 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Modifies an existing {@link VolumeConnection}
+     * Modifies an existing volumeConnection
      *
      * @param vlmConnUuid
      *            optional, if given checked against persisted UUID
@@ -881,7 +840,6 @@ public class CtrlApiCallHandler
      *            optional
      * @param deletePropKeysRef
      *            optional
-     * @return
      */
     public ApiCallRc modifyVlmConn(
         UUID vlmConnUuid,
@@ -921,7 +879,7 @@ public class CtrlApiCallHandler
     }
 
     /**
-     * Deletes a {@link VolumeConnection}.
+     * Deletes a volumeConnection.
      *
      * @param nodeName1
      *            required
@@ -931,7 +889,6 @@ public class CtrlApiCallHandler
      *            required
      * @param vlmNr
      *            required
-     * @return
      */
     public ApiCallRc deleteVolumeConnection(
         String nodeName1,
@@ -1147,7 +1104,6 @@ public class CtrlApiCallHandler
      *            required (can be empty) - overrides the given property key-value pairs
      * @param deletePropKeys
      *            required (can be empty) - deletes the given property keys
-     * @return
      */
     public ApiCallRc modifyDrbdProxy(
         UUID rscDfnUuid,
@@ -1173,14 +1129,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    /**
-     * Creates, modifies or deletes given properties
-     *
-     * @param modProps
-     * @param deletePropKeys
-     *
-     * @return
-     */
     public ApiCallRc modifyKvsProps(
         String instanceName,
         Map<String, String> modProps,
@@ -1199,11 +1147,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    /**
-     * Creates, modifies or deletes given properties
-     *
-     * @return
-     */
     public Map<String, String> listKvsProps(String instanceName)
     {
         Map<String, String> props;
@@ -1212,5 +1155,15 @@ public class CtrlApiCallHandler
             props = kvsApiCallHandler.listProps(instanceName);
         }
         return props;
+    }
+
+    public Set<KeyValueStore.KvsApi> listKvs()
+    {
+        Set<KeyValueStore.KvsApi> kvs;
+        try (LockGuard lg = lockGuardFactory.build(READ, KVS_MAP))
+        {
+            kvs = kvsApiCallHandler.listKvs();
+        }
+        return kvs;
     }
 }

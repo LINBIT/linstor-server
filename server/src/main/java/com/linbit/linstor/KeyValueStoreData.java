@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.api.pojo.KeyValueStorePojo;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -102,5 +103,12 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
         {
             throw new AccessToDeletedDataException("Access to deleted KeyValueStore");
         }
+    }
+
+    @Override
+    public KeyValueStore.KvsApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+            throws AccessDeniedException
+    {
+        return new KeyValueStorePojo(getName().getDisplayName());
     }
 }

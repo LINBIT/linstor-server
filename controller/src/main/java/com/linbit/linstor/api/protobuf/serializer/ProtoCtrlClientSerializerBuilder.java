@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.linbit.linstor.KeyValueStore;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeApi;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource.RscApi;
@@ -28,6 +31,7 @@ import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
 import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
 import com.linbit.linstor.proto.MsgLstRscDfnOuterClass.MsgLstRscDfn;
+import com.linbit.linstor.proto.MsgRspKvsOuterClass;
 import com.linbit.linstor.proto.MsgRspMaxVlmSizesOuterClass;
 import com.linbit.linstor.proto.MsgRspMaxVlmSizesOuterClass.MsgRspMaxVlmSizes;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
@@ -36,10 +40,11 @@ import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
 import com.linbit.linstor.proto.MsgRspKvsPropsOuterClass.MsgRspKvsProps;
 import com.linbit.linstor.proto.MsgLstRscConnOuterClass.MsgLstRscConn;
+import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.RscStateOuterClass;
 import com.linbit.linstor.proto.SnapshotDfnOuterClass;
 import com.linbit.linstor.proto.VlmStateOuterClass;
-import com.linbit.linstor.proto.apidata.NodeApiData;
+import com.linbit.linstor.proto.apidata.NetInterfaceApiData;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.RscConnApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
@@ -71,9 +76,18 @@ public class ProtoCtrlClientSerializerBuilder
         {
             MsgLstNodeOuterClass.MsgLstNode.Builder msgListNodeBuilder = MsgLstNodeOuterClass.MsgLstNode.newBuilder();
 
-            for (NodeApi apiNode : nodes)
+            for (NodeApi nodeApi : nodes)
             {
-                msgListNodeBuilder.addNodes(NodeApiData.toNodeProto(apiNode));
+                NodeOuterClass.Node.Builder bld = NodeOuterClass.Node.newBuilder();
+                bld.setName(nodeApi.getName());
+                bld.setType(nodeApi.getType());
+                bld.setUuid(nodeApi.getUuid().toString());
+                bld.addAllProps(ProtoMapUtils.fromMap(nodeApi.getProps()));
+                bld.addAllFlags(Node.NodeFlag.toStringList(nodeApi.getFlags()));
+                bld.addAllNetInterfaces(NetInterfaceApiData.toNetInterfaceProtoList(nodeApi.getNetInterfaces()));
+                bld.setConnectionStatus(NodeOuterClass.Node.ConnectionStatus.forNumber(nodeApi.connectionStatus().value()));
+
+                msgListNodeBuilder.addNodes(bld.build());
             }
 
             msgListNodeBuilder.build().writeDelimitedTo(baos);
@@ -340,7 +354,7 @@ public class ProtoCtrlClientSerializerBuilder
     }
 
     @Override
-    public CtrlClientSerializerBuilder keyValueStoreList(Map<String, String> map)
+    public CtrlClientSerializerBuilder keyValueStoreListProps(Map<String, String> map)
     {
         try
         {
@@ -350,6 +364,27 @@ public class ProtoCtrlClientSerializerBuilder
                 )
                 .build()
                 .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlClientSerializerBuilder keyValueStoreList(Set<KeyValueStore.KvsApi> kvsSet)
+    {
+        try
+        {
+            MsgRspKvsOuterClass.MsgRspKvs.Builder msgListKvsBuilder = MsgRspKvsOuterClass.MsgRspKvs.newBuilder();
+
+            for (KeyValueStore.KvsApi kvsApi : kvsSet)
+            {
+                msgListKvsBuilder.addInstanceNames(kvsApi.getName());
+            }
+
+            msgListKvsBuilder.build().writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

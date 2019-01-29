@@ -57,7 +57,7 @@ public class ListKvsProps implements ApiCall
                     ApiConsts.API_LST_KVS_PROPS,
                     apiCallId.get()
                 )
-                .keyValueStoreList(
+                .keyValueStoreListProps(
                     apiCallHandler.listKvsProps(
                         msgLstProps.getInstanceName()
                     )

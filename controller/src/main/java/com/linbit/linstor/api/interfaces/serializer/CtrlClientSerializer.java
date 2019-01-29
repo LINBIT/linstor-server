@@ -2,7 +2,9 @@ package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
@@ -51,6 +53,7 @@ public interface CtrlClientSerializer extends CommonSerializer
         CtrlClientSerializerBuilder ctrlCfgProps(Map<String, String> map);
 
         CtrlClientSerializerBuilder maxVlmSizeCandidateList(List<MaxVlmSizeCandidatePojo> candidates);
-        CtrlClientSerializerBuilder keyValueStoreList(Map<String, String> listProps);
+        CtrlClientSerializerBuilder keyValueStoreListProps(Map<String, String> listKvsProps);
+        CtrlClientSerializerBuilder keyValueStoreList(Set<KeyValueStore.KvsApi> listKvs);
     }
 }

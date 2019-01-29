@@ -21,6 +21,13 @@ public interface KeyValueStore extends TransactionObject, Comparable<KeyValueSto
 
     boolean isDeleted();
 
+    interface KvsApi
+    {
+        String getName();
+    }
+
+    KvsApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId) throws AccessDeniedException;
+
     interface InitMaps
     {
         // currently only a place holder for future maps

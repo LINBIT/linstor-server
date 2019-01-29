@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.KeyValueStoreData;
 import com.linbit.linstor.KeyValueStoreDataControllerFactory;
 import com.linbit.linstor.KeyValueStoreName;
@@ -27,9 +28,11 @@ import javax.inject.Singleton;
 
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.google.inject.Provider;
 
@@ -201,6 +204,25 @@ public class CtrlKvsApiCallHandler
         catch (Exception exc)
         {
             errorReporter.reportError(exc);
+        }
+        return retMap;
+    }
+
+    public Set<KeyValueStore.KvsApi> listKvs()
+    {
+        Set<KeyValueStore.KvsApi> retMap = new HashSet<>();
+        try
+        {
+            AccessContext accCtx = peerAccCtx.get();
+            for (KeyValueStore kvs : kvsRepo.getMapForView(accCtx).values())
+            {
+                retMap.add(kvs.getApiData(accCtx, null, null));
+            }
+        }
+        catch (Exception exc)
+        {
+            exc.printStackTrace();
+            retMap = Collections.emptySet();
         }
         return retMap;
     }
