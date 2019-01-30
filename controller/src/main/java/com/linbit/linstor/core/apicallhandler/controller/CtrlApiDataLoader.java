@@ -1,5 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.KeyValueStoreData;
+import com.linbit.linstor.KeyValueStoreName;
+import com.linbit.linstor.KeyValueStoreRepository;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
@@ -42,19 +45,22 @@ public class CtrlApiDataLoader
     private final NodeRepository nodeRepository;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
+    private final KeyValueStoreRepository kvsRepository;
 
     @Inject
     public CtrlApiDataLoader(
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         NodeRepository nodeRepositoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
-        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef
+        StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
+        KeyValueStoreRepository kvsRepositoryRef
     )
     {
         peerAccCtx = peerAccCtxRef;
         nodeRepository = nodeRepositoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
+        kvsRepository = kvsRepositoryRef;
     }
 
     public final NodeData loadNode(String nodeNameStr, boolean failIfNull)
@@ -430,5 +436,44 @@ public class CtrlApiDataLoader
             );
         }
         return storPool;
+    }
+
+    public final KeyValueStoreData loadKvs(String kvsNameStr, boolean failIfNull)
+    {
+        return loadKvs(LinstorParsingUtils.asKvsName(kvsNameStr), failIfNull);
+    }
+
+    public final KeyValueStoreData loadKvs(KeyValueStoreName kvsName, boolean failIfNull)
+    {
+        KeyValueStoreData kvs;
+        try
+        {
+            kvs = kvsRepository.get(
+                    peerAccCtx.get(),
+                    kvsName
+            );
+
+            if (failIfNull && kvs == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(
+                                ApiConsts.FAIL_NOT_FOUND_KVS,
+                                "KeyValueStore '" + kvsName.displayValue + "' not found."
+                        )
+                        .setCause("The specified keyValueStore '" + kvsName.displayValue + "' could not be found in the database")
+                        .setCorrection("Create a keyValueStore with the name '" + kvsName.displayValue + "' first.")
+                        .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDenied)
+        {
+            throw new ApiAccessDeniedException(
+                    accDenied,
+                    "loading keyValueStore '" + kvsName.displayValue + "'.",
+                    ApiConsts.FAIL_ACC_DENIED_KVS
+            );
+        }
+        return kvs;
     }
 }

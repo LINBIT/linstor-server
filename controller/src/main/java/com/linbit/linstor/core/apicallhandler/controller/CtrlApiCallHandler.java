@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.KeyValueStore;
-import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceConnection;
@@ -1129,34 +1128,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc modifyKvsProps(
-        String instanceName,
-        Map<String, String> modProps,
-        List<String> deletePropKeys
-    )
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard lg = lockGuardFactory.build(WRITE, KVS_MAP))
-        {
-            apiCallRc = kvsApiCallHandler.modifyProps(
-                instanceName,
-                modProps,
-                deletePropKeys
-            );
-        }
-        return apiCallRc;
-    }
-
-    public Map<String, String> listKvsProps(String instanceName)
-    {
-        Map<String, String> props;
-        try (LockGuard lg = lockGuardFactory.build(READ, KVS_MAP))
-        {
-            props = kvsApiCallHandler.listProps(instanceName);
-        }
-        return props;
-    }
-
     public Set<KeyValueStore.KvsApi> listKvs()
     {
         Set<KeyValueStore.KvsApi> kvs;
@@ -1165,5 +1136,25 @@ public class CtrlApiCallHandler
             kvs = kvsApiCallHandler.listKvs();
         }
         return kvs;
+    }
+
+    public ApiCallRc modifyKvs(
+            UUID kvsUuid,
+            String instanceName,
+            Map<String, String> modProps,
+            List<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, KVS_MAP))
+        {
+            apiCallRc = kvsApiCallHandler.modifyKvs(
+                    kvsUuid,
+                    instanceName,
+                    modProps,
+                    deletePropKeys
+            );
+        }
+        return apiCallRc;
     }
 }

@@ -17,6 +17,7 @@ public enum LinStorObject
     STORAGEPOOL,
     STORAGEPOOL_DEFINITION,
     SNAPSHOT,
+    KVS,
     // The various DRBD Proxy configuration sections are considered separate objects for the purposes of setting
     // properties, even though the properties are stored in the resource definition
     DRBD_PROXY,

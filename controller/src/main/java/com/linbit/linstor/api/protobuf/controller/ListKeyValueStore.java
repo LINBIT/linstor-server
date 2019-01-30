@@ -17,11 +17,11 @@ import java.io.InputStream;
 
 @ProtobufApiCall(
         name = ApiConsts.API_LST_KVS,
-        description = "Queries the list of kvs",
+        description = "Queries the list of KeyValueStores",
         transactional = false
 )
 @Singleton
-public class ListKvs implements ApiCall
+public class ListKeyValueStore implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
     private final Provider<Peer> clientProvider;
@@ -29,7 +29,7 @@ public class ListKvs implements ApiCall
     private final CtrlClientSerializer ctrlClientSerializer;
 
     @Inject
-    public ListKvs(
+    public ListKeyValueStore(
             CtrlApiCallHandler apiCallHandlerRef,
             Provider<Peer> clientProviderRef,
             @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,

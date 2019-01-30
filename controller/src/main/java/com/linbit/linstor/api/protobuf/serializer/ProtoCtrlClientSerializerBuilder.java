@@ -38,7 +38,6 @@ import com.linbit.linstor.proto.MsgLstRscOuterClass;
 import com.linbit.linstor.proto.MsgLstSnapshotDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
-import com.linbit.linstor.proto.MsgRspKvsPropsOuterClass.MsgRspKvsProps;
 import com.linbit.linstor.proto.MsgLstRscConnOuterClass.MsgLstRscConn;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.RscStateOuterClass;
@@ -342,25 +341,6 @@ public class ProtoCtrlClientSerializerBuilder
                 .addAllCandidates(protoCandidates)
                 .setDefaultMaxOversubscriptionRatio(
                     Double.toString(FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO)
-                )
-                .build()
-                .writeDelimitedTo(baos);
-        }
-        catch (IOException exc)
-        {
-            handleIOException(exc);
-        }
-        return this;
-    }
-
-    @Override
-    public CtrlClientSerializerBuilder keyValueStoreListProps(Map<String, String> map)
-    {
-        try
-        {
-            MsgRspKvsProps.newBuilder()
-                .addAllProps(
-                    ProtoMapUtils.fromMap(map)
                 )
                 .build()
                 .writeDelimitedTo(baos);

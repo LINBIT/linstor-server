@@ -222,4 +222,24 @@ public class LinstorParsingUtils
         }
         return fsmName;
     }
+
+    /**
+     * Returns the given String as a {@link KeyValueStoreName} if possible. If the String is not a valid
+     * {@link KeyValueStoreName} an exception is thrown.
+     */
+    public static KeyValueStoreName asKvsName(String kvsNameStr)
+    {
+        KeyValueStoreName kvsName;
+        try
+        {
+            kvsName = new KeyValueStoreName(kvsNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_KVS_NAME, "The given keyValueStore name '" + kvsNameStr + "' is invalid."
+            ), invalidNameExc);
+        }
+        return kvsName;
+    }
 }

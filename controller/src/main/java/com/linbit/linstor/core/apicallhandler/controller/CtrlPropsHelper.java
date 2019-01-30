@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -175,6 +176,23 @@ public class CtrlPropsHelper
         return props;
     }
 
+    public Props getProps(KeyValueStore kvs)
+    {
+        Props props;
+        try
+        {
+            props = kvs.getProps(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                    accDeniedExc,
+                    "access properties for keyValueStore '" + kvs.getName().displayValue + "'",
+                    ApiConsts.FAIL_ACC_DENIED_KVS
+            );
+        }
+        return props;
+    }
 
     public void fillProperties(
         LinStorObject linstorObj,
