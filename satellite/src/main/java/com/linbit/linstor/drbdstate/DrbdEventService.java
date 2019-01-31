@@ -17,6 +17,7 @@ import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -34,7 +35,8 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     public static final String DRBDSETUP_COMMAND = "drbdsetup";
     private static final int EVENT_QUEUE_DEFAULT_SIZE = 10_000;
 
-    private static final int RESTART_TIMEOUT = 5_000;
+    private static final int RESTART_EVENTS2_STREAM_TIMEOUT = 5_000;
+    private static final long RESTART_EVENTS2_STREAM_NOW = 0;
 
     private ServiceName instanceName;
     private boolean started = false;
@@ -105,10 +107,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                         "DRBD 'events2' returned error: %n%s",
                         new String(((StdErrEvent) event).data)
                     );
-                    demonHandler.stop(true);
-                    errorReporter.logTrace("Restarting DRBD 'events2' in " + RESTART_TIMEOUT + "ms");
-                    Thread.sleep(RESTART_TIMEOUT);
-                    demonHandler.start();
+                    restartEvents2Stream(RESTART_EVENTS2_STREAM_TIMEOUT);
                 }
                 else
                 if (event instanceof ExceptionEvent)
@@ -127,22 +126,17 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 {
                     if (running)
                     {
-                        errorReporter.logWarning(
-                            "DRBD 'events2' exited. Restarting in %d ms %n", RESTART_TIMEOUT
-                        );
                         // both, stdOut and stdErr will send us an EOFEvent. just consume the second
                         Event nextEvent = eventDeque.peek();
                         if (nextEvent != null && nextEvent instanceof EOFEvent)
                         {
                             eventDeque.take();
                         }
-                        demonHandler.stop(true);
-                        Thread.sleep(RESTART_TIMEOUT);
-                        demonHandler.start();
+                        restartEvents2Stream(RESTART_EVENTS2_STREAM_TIMEOUT);
                     }
                 }
             }
-            catch (InterruptedException | IOException exc)
+            catch (InterruptedException exc)
             {
                 if (running)
                 {
@@ -151,11 +145,71 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
             }
             catch (EventsSourceException exc)
             {
-                errorReporter.reportError(new ImplementationError(
-                    "Unable to process event line from DRBD",
+//                errorReporter.reportError(new ImplementationError(
+//                    "Unable to process event line from DRBD",
+//                    exc
+//                ));
+
+                errorReporter.logError("Unable to process event line from DRBD");
+                restartEvents2Stream(RESTART_EVENTS2_STREAM_NOW);
+            }
+            catch (Exception exc)
+            {
+                 errorReporter.reportError(new ImplementationError(
+                    "Unknown exception occured while parsing event from DRBD. Restarting events2",
                     exc
                 ));
+
+                errorReporter.logError("Unknown exception occured while parsing event from DRBD");
+                restartEvents2Stream(RESTART_EVENTS2_STREAM_NOW);
             }
+        }
+    }
+
+    private void restartEvents2Stream(long timeout)
+    {
+        demonHandler.stop(true);
+        eventsMonitor.reinitializing();
+        if (timeout <= 0)
+        {
+            errorReporter.logTrace("Restarting DRBD 'events2' now");
+        }
+        else
+        {
+            errorReporter.logTrace("Restarting DRBD 'events2' in " + timeout + "ms");
+        }
+        try
+        {
+            if (timeout > 0)
+            {
+                Thread.sleep(timeout);
+            }
+            try
+            {
+                eventDeque.clear();
+                demonHandler.start();
+            }
+            catch (IOException exc1)
+            {
+                errorReporter.reportError(
+                    new LinStorException(
+                        "Could not restart events2 stream after failure",
+                        exc1
+                    )
+                );
+            }
+        }
+        catch (InterruptedException exc)
+        {
+            if (running)
+            {
+                errorReporter.reportError(
+                    new LinStorException(
+                        "Could not restart events2 stream after failure",
+                        exc
+                    )
+                );
+            } // otherwise we are in a shutdown sequence - ignore this exception, just gracefully die
         }
     }
 

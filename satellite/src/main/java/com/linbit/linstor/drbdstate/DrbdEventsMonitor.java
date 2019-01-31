@@ -6,7 +6,9 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.utils.Triple;
 
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -39,6 +41,9 @@ public class DrbdEventsMonitor
 
     private final ErrorReporter errorReporter;
     private final ResourceDefinitionMap rscDfnMap;
+
+    private boolean existsFinished = false;
+    private final LinkedList<Triple<String, String, Map<String, String>>> duringExistsQueue = new LinkedList<>();
 
     public DrbdEventsMonitor(
         DrbdStateTracker trackerRef,
@@ -86,23 +91,13 @@ public class DrbdEventsMonitor
                         }
                     }
 
-                    // Select action
-                    switch (action)
+                    if (!existsFinished && !action.equals(ACTION_EXISTS))
                     {
-                        case ACTION_EXISTS: // fall-through
-                        case ACTION_CREATE:
-                            create(props, objType);
-                            break;
-                        case ACTION_CHANGE:
-                            change(props, objType);
-                            break;
-                        case ACTION_DESTROY:
-                            destroy(props, objType);
-                            break;
-                        default:
-                            // Other action type, such as a helper script call
-                            // Those are not tracked
-                            break;
+                        duringExistsQueue.add(new Triple<>(action, objType, props));
+                    }
+                    else
+                    {
+                        executeAction(action, objType, props);
                     }
                 }
                 else
@@ -114,6 +109,28 @@ public class DrbdEventsMonitor
             {
                 throw new EventsSourceException("Received an event line without an action parameter");
             }
+        }
+    }
+
+    private void executeAction(String action, String objType, Map<String, String> props) throws EventsSourceException
+    {
+        // Select action
+        switch (action)
+        {
+            case ACTION_EXISTS: // fall-through
+            case ACTION_CREATE:
+                create(props, objType);
+                break;
+            case ACTION_CHANGE:
+                change(props, objType);
+                break;
+            case ACTION_DESTROY:
+                destroy(props, objType);
+                break;
+            default:
+                // Other action type, such as a helper script call
+                // Those are not tracked
+                break;
         }
     }
 
@@ -135,6 +152,14 @@ public class DrbdEventsMonitor
                 break;
             case OBJ_END_OF_INIT:
                 drbdStateAvailable();
+                if (!existsFinished)
+                {
+                    existsFinished = true;
+                    for (Triple<String, String, Map<String, String>> triple : duringExistsQueue)
+                    {
+                        executeAction(triple.objA, triple.objB, triple.objC);
+                    }
+                }
                 break;
             default:
                 // Other object type, such as a connection path
