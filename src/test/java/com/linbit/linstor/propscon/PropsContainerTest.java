@@ -89,6 +89,29 @@ public class PropsContainerTest extends GenericDbBase
     }
 
     @Test
+    public void testMultipleSlashes() throws Throwable
+    {
+        root.clear();
+
+        root.setProp("/////a", "b");
+        assertEquals("b", root.getProp("a"));
+        assertEquals("b", root.getProp("////a"));
+        assertEquals("b", root.getProp("///////////a"));
+
+    }
+
+    @Test
+    public void testSpaceInNamespaces() throws Throwable
+    {
+        root.clear();
+
+        root.setProp("/ /a", "b");
+        assertNull(root.getProp("a"));
+        assertEquals("b", root.getProp("/ /a"));
+        assertEquals("b", root.getProp("a", " "));
+    }
+
+    @Test
     public void testIsEmpty() throws Throwable
     {
         root.clear();
