@@ -486,7 +486,7 @@ public class DrbdEventsMonitor
             throw new EventsSourceException(
                 String.format(
                     "Event line for operation '%s %s' references non-existent volume %d of resource '%s'",
-                    action, objType, volNr, resource.resName
+                    action, objType, volNr.value, resource.resName
                 )
             );
         }
@@ -496,7 +496,7 @@ public class DrbdEventsMonitor
                 String.format(
                     "Event line for operation '%s %s' references non-existent peer-volume %d " +
                         "of connection '%s' of resource '%s'",
-                        action, objType, volNr, connection.peerName, resource.resName
+                        action, objType, volNr.value, connection.peerName, resource.resName
                 )
             );
         }
