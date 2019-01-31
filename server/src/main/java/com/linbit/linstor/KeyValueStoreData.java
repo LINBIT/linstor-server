@@ -1,12 +1,14 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.pojo.KeyValueStorePojo;
+import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -26,6 +28,7 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
     private final ObjectProtection objProt;
     private final KeyValueStoreName kvsName;
     private final Props props;
+    private final KeyValueStoreDataDatabaseDriver driver;
 
     private final TransactionSimpleObject<KeyValueStoreData, Boolean> deleted;
 
@@ -33,6 +36,7 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
         UUID uuidRef,
         ObjectProtection objProtRef,
         KeyValueStoreName kvsNameRef,
+        KeyValueStoreDataDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
@@ -43,6 +47,7 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
         uuid = uuidRef;
         objProt = objProtRef;
         kvsName = kvsNameRef;
+        driver = driverRef;
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(kvsNameRef)
@@ -97,6 +102,24 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
         return deleted.get();
     }
 
+    @Override
+    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        if (!deleted.get())
+        {
+            objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+            props.delete();
+            objProt.delete(accCtx);
+
+            activateTransMgr();
+
+            driver.delete(this);
+
+            deleted.set(true);
+        }
+    }
+
     private void checkDeleted()
     {
         if (deleted.get())
@@ -109,6 +132,9 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
     public KeyValueStore.KvsApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
             throws AccessDeniedException
     {
-        return new KeyValueStorePojo(getName().getDisplayName());
+        return new KeyValueStorePojo(
+            getName().getDisplayName(),
+            props.map()
+        );
     }
 }

@@ -1139,21 +1139,33 @@ public class CtrlApiCallHandler
     }
 
     public ApiCallRc modifyKvs(
-            UUID kvsUuid,
-            String instanceName,
-            Map<String, String> modProps,
-            List<String> deletePropKeys
+        UUID kvsUuid,
+        String kvsName,
+        Map<String, String> modProps,
+        List<String> deletePropKeys,
+        List<String> deleteNamespaces
     )
     {
         ApiCallRc apiCallRc;
         try (LockGuard lg = lockGuardFactory.build(WRITE, KVS_MAP))
         {
             apiCallRc = kvsApiCallHandler.modifyKvs(
-                    kvsUuid,
-                    instanceName,
-                    modProps,
-                    deletePropKeys
+                kvsUuid,
+                kvsName,
+                modProps,
+                deletePropKeys,
+                deleteNamespaces
             );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteKvs(UUID kvsUuid, String kvsName)
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, KVS_MAP))
+        {
+            apiCallRc = kvsApiCallHandler.deleteKvs(kvsUuid, kvsName);
         }
         return apiCallRc;
     }

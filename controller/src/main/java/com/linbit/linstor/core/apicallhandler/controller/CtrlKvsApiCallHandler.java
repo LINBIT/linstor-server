@@ -28,6 +28,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -151,20 +153,23 @@ public class CtrlKvsApiCallHandler
         UUID kvsUuid,
         String kvsNameStr,
         Map<String, String> overrideProps,
-        List<String> deletePropKeys
+        List<String> deletePropKeys,
+        List<String> deleteNamespaces
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
             requireKvsMapChangeAccess();
-            KeyValueStoreData kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, true);
-            if (kvsUuid != null && !kvsUuid.equals(kvs.getUuid()))
+            KeyValueStoreData kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, false);
+            if (kvsUuid != null && kvs != null && !kvsUuid.equals(kvs.getUuid()))
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_UUID_KVS,
                         "UUID-check failed"
-                ));
+                    )
+                );
             }
 
             AccessContext accCtx = peerAccCtx.get();
@@ -221,6 +226,81 @@ public class CtrlKvsApiCallHandler
             );
         }
         return apiCallRc;
+    }
+
+    ApiCallRc deleteKvs(UUID kvsUuidRef, String kvsNameStr)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        AccessContext accCtx = peerAccCtx.get();
+        try
+        {
+            requireKvsMapChangeAccess();
+            KeyValueStoreData kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, false);
+            if (kvsUuidRef != null && kvs != null && !kvsUuidRef.equals(kvs.getUuid()))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UUID_KVS,
+                        "UUID-check failed"
+                    )
+                );
+            }
+
+            if (kvs != null)
+            {
+                UUID kvsUuid = kvs.getUuid();
+                String kvsDescription = firstLetterCaps(getKvsDescriptionInline(kvs));
+                KeyValueStoreName kvsName = kvs.getName();
+
+                kvs.delete(accCtx);
+                kvsRepo.remove(accCtx, kvsName);
+                ctrlTransactionHelper.commit();
+
+                apiCallRc.addEntry(
+                    ApiCallRcImpl
+                        .entryBuilder(ApiConsts.DELETED, kvsDescription + " deleted.")
+                        .setDetails(kvsDescription + " UUID was: " + kvsUuid.toString())
+                        .build()
+                );
+            }
+            else
+            {
+                apiCallRc.addEntry(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.WARN_NOT_FOUND,
+                        "Deletion of kvs '" + kvsNameStr + "' had no effect."
+                    )
+                    .setCause("Kvs '" + kvsNameStr + "' does not exist.")
+                    .build()
+                );
+            }
+        }
+        catch (SQLException exc)
+        {
+            apiCallRc.addEntry(
+                    ResponseUtils.getSqlMsg("Persisting properties in instancename '" + kvsNameStr + "'"),
+                    ApiConsts.FAIL_SQL
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "access the given KeyValueStore",
+                ApiConsts.FAIL_ACC_DENIED_KVS
+            );
+        }
+        return apiCallRc;
+    }
+
+    public static String getKvsDescriptionInline(KeyValueStore kvs)
+    {
+        return getKvsDescriptionInline(kvs.getName().displayValue);
+    }
+
+    public static String getKvsDescriptionInline(String kvsNameStr)
+    {
+        return "kvs '" + kvsNameStr + "'";
     }
 
     private void requireKvsMapChangeAccess()

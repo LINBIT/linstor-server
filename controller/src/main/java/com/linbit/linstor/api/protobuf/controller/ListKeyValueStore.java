@@ -30,10 +30,10 @@ public class ListKeyValueStore implements ApiCall
 
     @Inject
     public ListKeyValueStore(
-            CtrlApiCallHandler apiCallHandlerRef,
-            Provider<Peer> clientProviderRef,
-            @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
-            CtrlClientSerializer ctrlClientSerializerRef)
+        CtrlApiCallHandler apiCallHandlerRef,
+        Provider<Peer> clientProviderRef,
+        @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
+        CtrlClientSerializer ctrlClientSerializerRef)
     {
         apiCallHandler = apiCallHandlerRef;
         clientProvider = clientProviderRef;
@@ -43,12 +43,12 @@ public class ListKeyValueStore implements ApiCall
 
     @Override
     public void execute(InputStream msgDataIn)
-            throws IOException
+        throws IOException
     {
         clientProvider.get().sendMessage(
-                ctrlClientSerializer
-                        .answerBuilder(ApiConsts.API_LST_KVS, apiCallId.get())
-                        .keyValueStoreList(apiCallHandler.listKvs()).build()
+            ctrlClientSerializer
+                .answerBuilder(ApiConsts.API_LST_KVS, apiCallId.get())
+                .keyValueStoreList(apiCallHandler.listKvs()).build()
         );
     }
 }

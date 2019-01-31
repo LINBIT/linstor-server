@@ -155,6 +155,7 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
             java.util.UUID.fromString(resultSet.getString(KVS_UUID)),
             objProt,
             kvsName,
+            this,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider

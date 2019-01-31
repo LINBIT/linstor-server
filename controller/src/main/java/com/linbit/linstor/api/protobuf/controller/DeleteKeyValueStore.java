@@ -1,33 +1,32 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgModKvsOuterClass;
+import com.linbit.linstor.proto.MsgDelKvsOuterClass;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
 @ProtobufApiCall(
-    name = ApiConsts.API_MOD_KVS,
-    description = "Modifies a KeyValueStore",
+    name = ApiConsts.API_DEL_KVS,
+    description = "Deletes a KeyValueStore",
     transactional = true
 )
 @Singleton
-public class ModifyKeyValueStore implements ApiCall
+public class DeleteKeyValueStore implements ApiCall
 {
     private final CtrlApiCallHandler apiCallHandler;
     private final ApiCallAnswerer apiCallAnswerer;
 
     @Inject
-    public ModifyKeyValueStore(
+    public DeleteKeyValueStore(
         CtrlApiCallHandler apiCallHandlerRef,
         ApiCallAnswerer apiCallAnswererRef
     )
@@ -39,19 +38,13 @@ public class ModifyKeyValueStore implements ApiCall
     @Override
     public void execute(InputStream msgDataIn) throws IOException
     {
-        MsgModKvsOuterClass.MsgModKvs msgModKvs = MsgModKvsOuterClass.MsgModKvs.parseDelimitedFrom(msgDataIn);
-        UUID kvsUuid = null;
-        if (msgModKvs.hasNodeUuid())
-        {
-            kvsUuid = UUID.fromString(msgModKvs.getNodeUuid());
-        }
-        ApiCallRc apiCallRc = apiCallHandler.modifyKvs(
-            kvsUuid,
-            msgModKvs.getKvsName(),
-            ProtoMapUtils.asMap(msgModKvs.getOverridePropsList()),
-            msgModKvs.getDeletePropKeysList(),
-            msgModKvs.getDelNamespacesList()
+        MsgDelKvsOuterClass.MsgDelKvs msgDeleteKvs = MsgDelKvsOuterClass.MsgDelKvs.parseDelimitedFrom(msgDataIn);
+
+        apiCallAnswerer.answerApiCallRc(
+            apiCallHandler.deleteKvs(
+                msgDeleteKvs.hasUuid() ? UUID.fromString(msgDeleteKvs.getUuid()) : null,
+                msgDeleteKvs.getKvsName()
+            )
         );
-        apiCallAnswerer.answerApiCallRc(apiCallRc);
     }
 }

@@ -12,6 +12,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -64,6 +65,7 @@ public class KeyValueStoreDataControllerFactory
                 true
             ),
             kvsName,
+            driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider

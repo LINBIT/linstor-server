@@ -27,6 +27,7 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.KvsOuterClass;
 import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
 import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
@@ -361,7 +362,11 @@ public class ProtoCtrlClientSerializerBuilder
 
             for (KeyValueStore.KvsApi kvsApi : kvsSet)
             {
-                msgListKvsBuilder.addInstanceNames(kvsApi.getName());
+                msgListKvsBuilder.addKeyValueStore(
+                    KvsOuterClass.Kvs.newBuilder()
+                        .setName(kvsApi.getName())
+                        .addAllProps(ProtoMapUtils.fromMap(kvsApi.getProps()))
+                );
             }
 
             msgListKvsBuilder.build().writeDelimitedTo(baos);
