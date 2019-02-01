@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -56,6 +57,41 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
         rscLayerDataPojo = rscLayerDataPojoRef;
+    }
+
+    /**
+     * Simple constructor only initializing must have fields for resource creation.
+     *
+     * @param rscNameRef Resource name.
+     * @param nodeNameRef Node name.
+     * @param flagsRef Flags mask value.
+     * @param propsRef Property map.
+     * @param nodeIdRef Node id, can be null if auto assign.
+     */
+    public RscPojo(
+        final String rscNameRef,
+        final String nodeNameRef,
+        final long flagsRef,
+        final Map<String, String> propsRef,
+        final Integer nodeIdRef
+    )
+    {
+        rscName = rscNameRef;
+        nodeName = nodeNameRef;
+        localRscFlags = flagsRef;
+        localRscProps = propsRef;
+        localRscNodeId = nodeIdRef;
+
+
+        nodeUuid = null;
+        rscDefinition = null;
+        localRscUuid = null;
+        localVlms = new ArrayList<>();
+        otherRscs = null;
+        rscConnections = null;
+        fullSyncId = null;
+        updateId = null;
+        rscLayerDataPojo = null;
     }
 
     @Override

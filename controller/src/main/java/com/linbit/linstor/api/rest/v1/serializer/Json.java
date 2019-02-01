@@ -115,4 +115,29 @@ public class Json
         public Set<String> delete_props = Collections.emptySet();
         public Set<String> delete_namespaces = Collections.emptySet();
     }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceData
+    {
+        public String name;
+        public String node_name;
+        public Map<String, String> props = Collections.emptyMap();
+        public List<String> flags = Collections.emptyList();
+        public Integer node_id;
+        public Boolean override_node_id;
+        public ResourceStateData state;
+    }
+
+    public static class ResourceStateData
+    {
+        public Boolean in_use;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceModifyData
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public Set<String> delete_props = Collections.emptySet();
+        public Set<String> delete_namespaces = Collections.emptySet();
+    }
 }

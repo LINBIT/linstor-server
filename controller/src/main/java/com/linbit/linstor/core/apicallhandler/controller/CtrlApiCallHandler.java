@@ -382,6 +382,21 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    public ResourceList listResource(String rscNameStr, List<String> filterNodes)
+    {
+        ResourceList resourceList;
+        try (
+            LockGuard lg = lockGuardFactory.build(READ, NODES_MAP, RSC_DFN_MAP)
+        )
+        {
+            resourceList = rscApiCallHandler.listResources(
+                rscNameStr,
+                filterNodes
+            );
+        }
+        return resourceList;
+    }
+
     public ResourceList listResource(List<String> filterNodes, List<String> filterResources)
     {
         ResourceList resourceList;

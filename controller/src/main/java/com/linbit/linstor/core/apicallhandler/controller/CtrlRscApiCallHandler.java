@@ -149,6 +149,19 @@ public class CtrlRscApiCallHandler
     }
 
     ResourceList listResources(
+        String rscNameStr,
+        List<String> filterNodes
+    )
+    {
+        // fake load and fail if not exists
+        ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+
+        List<String> rscList = new ArrayList<>();
+        rscList.add(rscNameStr);
+        return listResources(filterNodes, rscList);
+    }
+
+    ResourceList listResources(
         List<String> filterNodes,
         List<String> filterResources
     )
