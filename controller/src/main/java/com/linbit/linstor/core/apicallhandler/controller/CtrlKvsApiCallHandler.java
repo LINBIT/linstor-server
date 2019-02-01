@@ -183,7 +183,7 @@ public class CtrlKvsApiCallHandler
 
     public Map<String, String> listProps(String kvsNameStr)
     {
-        Map<String, String> retMap;
+        Map<String, String> retMap = Collections.emptyMap();
         try
         {
             KeyValueStoreName kvsName = new KeyValueStoreName(kvsNameStr);
@@ -191,13 +191,16 @@ public class CtrlKvsApiCallHandler
             AccessContext accCtx = peerAccCtx.get();
             KeyValueStoreData kvs = kvsRepo.get(accCtx, kvsName);
 
-            Props props = kvs.getProps(accCtx);
-            retMap = Collections.unmodifiableMap(props.map());
+            // if there is no instance of this keyvalue store yet, return an empty one
+            if (kvs != null)
+            {
+                Props props = kvs.getProps(accCtx);
+                retMap = Collections.unmodifiableMap(props.map());
+            }
         }
         catch (Exception exc)
         {
-            exc.printStackTrace();
-            retMap = Collections.emptyMap();
+            errorReporter.reportError(exc);
         }
         return retMap;
     }
