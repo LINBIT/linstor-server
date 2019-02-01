@@ -8,7 +8,7 @@ import com.linbit.linstor.transaction.TransactionObject;
 
 import java.util.UUID;
 
-public interface KeyValueStore extends TransactionObject
+public interface KeyValueStore extends TransactionObject, Comparable<KeyValueStore>
 {
     UUID getUuid();
 

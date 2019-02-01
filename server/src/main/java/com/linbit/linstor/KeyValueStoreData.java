@@ -12,6 +12,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
+import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
@@ -52,6 +53,12 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
             props,
             deleted
         );
+    }
+
+    @Override
+    public int compareTo(@Nonnull KeyValueStore keyValueStore)
+    {
+        return this.getName().compareTo(keyValueStore.getName());
     }
 
     @Override

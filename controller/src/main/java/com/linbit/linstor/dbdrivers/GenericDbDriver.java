@@ -5,6 +5,9 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.FreeSpaceMgr;
 import com.linbit.linstor.FreeSpaceMgrName;
+import com.linbit.linstor.KeyValueStore;
+import com.linbit.linstor.KeyValueStoreDataGenericDbDriver;
+import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.Node;
@@ -104,11 +107,13 @@ public class GenericDbDriver implements DatabaseDriver
     private final SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriver;
     private final SnapshotDataGenericDbDriver snapshotDriver;
     private final SnapshotVolumeDataGenericDbDriver snapshotVolumeDriver;
+    private final KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriver;
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
+    private final CoreModule.KeyValueStoreMap keyValueStoreMap;
 
     @Inject
     public GenericDbDriver(
@@ -128,10 +133,12 @@ public class GenericDbDriver implements DatabaseDriver
         SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataGenericDbDriver snapshotDriverRef,
         SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
+        KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriverRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef
+        ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
+        CoreModule.KeyValueStoreMap keyValueStoreMapRef
     )
     {
         dbCtx = privCtx;
@@ -150,10 +157,12 @@ public class GenericDbDriver implements DatabaseDriver
         snapshotVolumeDefinitionDriver = snapshotVolumeDefinitionDriverRef;
         snapshotDriver = snapshotDriverRef;
         snapshotVolumeDriver = snapshotVolumeDriverRef;
+        keyValueStoreDataGenericDbDriver = keyValueStoreDataGenericDbDriverRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         freeSpaceMgrMap = freeSpaceMgrMapRef;
+        keyValueStoreMap = keyValueStoreMapRef;
     }
 
     /**
@@ -379,6 +388,13 @@ public class GenericDbDriver implements DatabaseDriver
                 loadedSnapshotVolumeDefinitions.get(snapshotVolume.getSnapshotVolumeDefinition()).getSnapshotVlmMap()
                     .put(snapshotVolume.getNodeName(), snapshotVolume);
             }
+
+            // load and put key value store map
+            Map<KeyValueStore, KeyValueStore.InitMaps> loadedKeyValueStoreMap =
+                Collections.unmodifiableMap(keyValueStoreDataGenericDbDriver.loadAll());
+            Map<KeyValueStoreName, KeyValueStore> tmpKeyValueStoreMap =
+                mapByName(loadedKeyValueStoreMap, KeyValueStore::getName);
+            keyValueStoreMap.putAll(tmpKeyValueStoreMap);
 
             nodesMap.putAll(tmpNodesMap);
             rscDfnMap.putAll(tmpRscDfnMap);
