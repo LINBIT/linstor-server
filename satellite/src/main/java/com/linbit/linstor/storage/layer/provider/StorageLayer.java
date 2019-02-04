@@ -111,15 +111,6 @@ public class StorageLayer implements DeviceLayer
 
                 deviceProvider.prepare(vlmDataList, snapVlms);
             }
-
-            // FIXME: this should only be done once on fullSync and whenever a storpool changes
-            Set<StorPool> affectedStorPools = vlmDataList.stream()
-                .map(vlmObj -> AccessUtils.execPrivileged(() -> vlmObj.getVolume().getStorPool(storDriverAccCtx)))
-                .collect(Collectors.toSet());
-            for (StorPool storPool : affectedStorPools)
-            {
-                deviceProvider.checkConfig(storPool);
-            }
         }
     }
 

@@ -73,5 +73,4 @@ public interface DeviceLayer
 
         void notifySnapshotDeleted(Snapshot snapshot);
     }
-
 }

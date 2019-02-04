@@ -19,6 +19,7 @@ public class Commands
     }
 
     public static final RetryHandler NO_RETRY = new NoRetryHandler();
+    public static final RetryHandler SKIP_EXIT_CODE_CHECK = new SkipExitCodeRetryHandler();
 
     private static final int KIB = 1024;
 
@@ -132,7 +133,6 @@ public class Commands
 
     public static class NoRetryHandler implements RetryHandler
     {
-
         @Override
         public boolean retry(OutputData outputData)
         {
@@ -144,6 +144,20 @@ public class Commands
         {
             return false;
         }
+    }
 
+    public static class SkipExitCodeRetryHandler implements RetryHandler
+    {
+        @Override
+        public boolean retry(OutputData outputData)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean skip(OutputData outData)
+        {
+            return true;
+        }
     }
 }

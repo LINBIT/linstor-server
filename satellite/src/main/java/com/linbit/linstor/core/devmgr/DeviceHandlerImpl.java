@@ -52,6 +52,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -256,10 +257,10 @@ public class DeviceHandlerImpl implements DeviceHandler
             {
                 DeviceLayerKind rootKind = null;
                 {
-                    Volume firstVlm = rsc.streamVolumes().findFirst().get();
-                    if (firstVlm != null)
+                    Optional<Volume> firstVlm = rsc.streamVolumes().findFirst();
+                    if (firstVlm.isPresent())
                     {
-                        rootKind = firstVlm.getLayerStack(wrkCtx).get(0);
+                        rootKind = firstVlm.get().getLayerStack(wrkCtx).get(0);
                     }
                 }
 

@@ -80,13 +80,18 @@ public class ParseUtils
             }
             else
             {
-                throw new StorageException(
-                    "Unable to parse '" + descr + "'",
-                    "Expected " + requiredColumns + " columns, but got " + data.length,
-                    "Failed to parse line: '" + line + "'",
-                    null,
-                    "External command: " + String.join(" ", output.executedCommand)
-                );
+                // maybe output is completely empty ""
+                if (lines.length != 1 || !line.trim().isEmpty())
+                {
+                    throw new StorageException(
+                        "Unable to parse '" + descr + "'",
+                        "Expected " + requiredColumns + " columns, but got " + data.length,
+                        "Failed to parse line: '" + line + "'",
+                        null,
+                        "External command: " + String.join(" ", output.executedCommand)
+                    );
+                }
+                // else just return the empty map
             }
         }
         return result;
