@@ -6,6 +6,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.provider.utils.Commands.RetryHandler;
+import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.storage.layer.provider.utils.RetryIfDeviceBusy;
 import com.linbit.utils.StringUtils;
 
@@ -36,7 +37,8 @@ public class LvmCommands
                 volumeGroups
             ),
             "Failed to list lvm volumes",
-            "Failed to query 'lvs' info"
+            "Failed to query 'lvs' info",
+            Commands.SKIP_EXIT_CODE_CHECK
         );
     }
 
@@ -56,7 +58,8 @@ public class LvmCommands
                 volumeGroups
             ),
             "Failed to query lvm extent size",
-            "Failed to query extent size of volume group(s) " + volumeGroups
+            "Failed to query extent size of volume group(s) " + volumeGroups,
+            Commands.SKIP_EXIT_CODE_CHECK
         );
     }
 
@@ -254,7 +257,8 @@ public class LvmCommands
                 volumeGroups
             ),
             "Failed to query total size of volume group(s) " + volumeGroups,
-            "Failed to query total size of volume group(s) " + volumeGroups
+            "Failed to query total size of volume group(s) " + volumeGroups,
+            Commands.SKIP_EXIT_CODE_CHECK
         );
     }
 
@@ -276,7 +280,8 @@ public class LvmCommands
                 volumeGroups
             ),
             "Failed to query free size of volume group(s) " + volumeGroups,
-            "Failed to query free size of volume group(s) " + volumeGroups
+            "Failed to query free size of volume group(s) " + volumeGroups,
+            Commands.SKIP_EXIT_CODE_CHECK
         );
     }
 
@@ -298,7 +303,8 @@ public class LvmCommands
                     volumeGroups
                 ),
             "Failed to query total size of volume group(s) " + volumeGroups,
-            "Failed to query total size of volume group(s) " + volumeGroups
+            "Failed to query total size of volume group(s) " + volumeGroups,
+            Commands.SKIP_EXIT_CODE_CHECK
         );
     }
 
@@ -320,7 +326,8 @@ public class LvmCommands
                     volumeGroups
                 ),
             "Failed to query free size of volume group(s) " + volumeGroups,
-            "Failed to query free size of volume group(s) " + volumeGroups
+            "Failed to query free size of volume group(s) " + volumeGroups,
+            Commands.SKIP_EXIT_CODE_CHECK
         );
     }
 

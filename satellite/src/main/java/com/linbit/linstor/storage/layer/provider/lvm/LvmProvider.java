@@ -243,7 +243,15 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        return LvmUtils.getVgFreeSize(extCmdFactory.create(), changedStoragePoolStrings);
+        Map<String, Long> freeSizes = LvmUtils.getVgFreeSize(extCmdFactory.create(), changedStoragePoolStrings);
+        for (String storPool : changedStoragePoolStrings)
+        {
+            if (!freeSizes.containsKey(storPool))
+            {
+                freeSizes.put(storPool, SIZE_OF_NOT_FOUND_STOR_POOL);
+            }
+        }
+        return freeSizes;
     }
 
     @Override
@@ -319,10 +327,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         {
             throw new StorageException("Unset volume group for " + storPool);
         }
-        return LvmUtils.getVgTotalSize(
+        Long capacity = LvmUtils.getVgTotalSize(
             extCmdFactory.create(),
             Collections.singleton(vg)
         ).get(vg);
+        return capacity == null ? SIZE_OF_NOT_FOUND_STOR_POOL : capacity;
     }
 
     @Override
@@ -333,10 +342,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         {
             throw new StorageException("Unset volume group for " + storPool);
         }
-        return LvmUtils.getVgFreeSize(
+        Long freespace = LvmUtils.getVgFreeSize(
             extCmdFactory.create(),
             Collections.singleton(vg)
         ).get(vg);
+        return freespace == null ? SIZE_OF_NOT_FOUND_STOR_POOL : freespace;
     }
 
     /*
