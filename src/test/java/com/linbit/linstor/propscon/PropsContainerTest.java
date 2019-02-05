@@ -721,7 +721,7 @@ public class PropsContainerTest extends GenericDbBase
 
         assertTrue(root.getNamespace("a").isPresent());
 
-        assertTrue(root.deleteNamespace("a"));
+        assertTrue(root.removeNamespace("a"));
 
         assertFalse(root.getNamespace("a").isPresent());
         assertNotNull(root.getProp("a"));

@@ -50,13 +50,15 @@ public class ModifyResource implements ApiCall
         String rscName = msgModRsc.getRscName();
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModRsc.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModRsc.getDeletePropKeysList());
+        Set<String> deletePropNamespace = new HashSet<>(msgModRsc.getDelNamespacesList());
 
         ApiCallRc apiCallRc = apiCallHandler.modifyRsc(
             rscUuid,
             nodeName,
             rscName,
             overrideProps,
-            deletePropKeys
+            deletePropKeys,
+            deletePropNamespace
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

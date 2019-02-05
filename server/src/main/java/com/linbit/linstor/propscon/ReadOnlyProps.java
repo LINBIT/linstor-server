@@ -112,6 +112,17 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
+    public boolean removeNamespace(String namespaceRef)
+        throws AccessDeniedException
+    {
+        // throws UnsupportedOperationException
+        denyAccess();
+
+        // Never reached
+        return false;
+    }
+
+    @Override
     public void loadAll()
         throws SQLException, AccessDeniedException
     {

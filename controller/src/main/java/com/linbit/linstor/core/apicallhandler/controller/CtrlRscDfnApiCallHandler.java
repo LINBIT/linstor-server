@@ -38,6 +38,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -168,7 +169,8 @@ public class CtrlRscDfnApiCallHandler
         String rscNameStr,
         Integer portInt,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespacesRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -202,23 +204,11 @@ public class CtrlRscDfnApiCallHandler
             }
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
-                Map<String, String> map = ctrlPropsHelper.getProps(rscDfn).map();
+                Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
 
                 ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, overrideProps,
-                    ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
-
-                for (String delKey : deletePropKeys)
-                {
-                    String oldValue = map.remove(delKey);
-                    if (oldValue == null)
-                    {
-                        responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
-                            ApiConsts.WARN_DEL_UNSET_PROP,
-                            "Could not delete property '" + delKey + "' as it did not exist. " +
-                                                "This operation had no effect."
-                        ));
-                    }
-                }
+                    rscDfnProps, ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
+                ctrlPropsHelper.remove(rscDfnProps, deletePropKeys, deletePropNamespacesRef);
             }
 
             ctrlTransactionHelper.commit();

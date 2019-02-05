@@ -114,7 +114,8 @@ class CtrlNodeConnectionApiCallHandler
         String nodeName1,
         String nodeName2,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -137,15 +138,10 @@ class CtrlNodeConnectionApiCallHandler
             }
 
             Props props = getProps(nodeConn);
-            Map<String, String> propsMap = props.map();
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.NODE_CONN, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
-
-            for (String delKey : deletePropKeys)
-            {
-                propsMap.remove(delKey);
-            }
+            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

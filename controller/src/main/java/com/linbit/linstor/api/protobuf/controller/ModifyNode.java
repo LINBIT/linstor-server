@@ -54,13 +54,15 @@ public class ModifyNode implements ApiCall
         }
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModNode.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModNode.getDeletePropKeysList());
+        Set<String> deleteNamespaces = new HashSet<>(msgModNode.getDelNamespacesList());
 
         ApiCallRc apiCallRc = apiCallHandler.modifyNode(
             nodeUuid,
             nodeName,
             nodeType,
             overrideProps,
-            deletePropKeys
+            deletePropKeys,
+            deleteNamespaces
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

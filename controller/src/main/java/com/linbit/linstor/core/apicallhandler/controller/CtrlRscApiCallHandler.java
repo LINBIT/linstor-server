@@ -98,7 +98,8 @@ public class CtrlRscApiCallHandler
         String nodeNameStr,
         String rscNameStr,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespacesRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -121,9 +122,9 @@ public class CtrlRscApiCallHandler
             }
 
             Props props = ctrlPropsHelper.getProps(rsc);
-            Map<String, String> propsMap = props.map();
 
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
+            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespacesRef);
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
@@ -132,11 +133,6 @@ public class CtrlRscApiCallHandler
                     overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
                     ApiConsts.MASK_RSC
             );
-
-            for (String delKey : deletePropKeys)
-            {
-                propsMap.remove(delKey);
-            }
 
             ctrlTransactionHelper.commit();
 

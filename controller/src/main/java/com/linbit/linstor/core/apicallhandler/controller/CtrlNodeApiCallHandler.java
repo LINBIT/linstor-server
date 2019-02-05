@@ -400,7 +400,8 @@ public class CtrlNodeApiCallHandler
         String nodeNameStr,
         String nodeTypeStr,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespaces
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -428,6 +429,7 @@ public class CtrlNodeApiCallHandler
 
             Props props = ctrlPropsHelper.getProps(node);
             ctrlPropsHelper.fillProperties(LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
+            ctrlPropsHelper.remove(props, deletePropKeys, deleteNamespaces);
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
@@ -436,12 +438,6 @@ public class CtrlNodeApiCallHandler
                     overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
                     ApiConsts.MASK_NODE
             );
-
-            Map<String, String> nodeProps = props.map();
-            for (String key : deletePropKeys)
-            {
-                nodeProps.remove(key);
-            }
 
             ctrlTransactionHelper.commit();
 

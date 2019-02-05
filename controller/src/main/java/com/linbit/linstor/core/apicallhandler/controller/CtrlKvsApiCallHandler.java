@@ -13,17 +13,13 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
-import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -54,9 +50,6 @@ public class CtrlKvsApiCallHandler
     private final KeyValueStoreDataControllerFactory kvsFactory;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlPropsHelper ctrlPropsHelper;
-    private final ResponseConverter responseConverter;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final javax.inject.Provider<Peer> peer;
 
     @Inject
     public CtrlKvsApiCallHandler(
@@ -67,11 +60,8 @@ public class CtrlKvsApiCallHandler
         KeyValueStoreRepository kvsRepositoryRef,
         KeyValueStoreDataControllerFactory kvsFactoryRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        CtrlPropsHelper ctrlPropsHelperRef,
-        ResponseConverter responseConverterRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        javax.inject.Provider<Peer> peerRef
-        )
+        CtrlPropsHelper ctrlPropsHelperRef
+    )
     {
         errorReporter = errorReporterRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
@@ -81,9 +71,6 @@ public class CtrlKvsApiCallHandler
         kvsFactory = kvsFactoryRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
-        responseConverter = responseConverterRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        peer = peerRef;
     }
 
     private KeyValueStoreData create(AccessContext accCtx, KeyValueStoreName kvsName)
@@ -179,15 +166,12 @@ public class CtrlKvsApiCallHandler
                 kvsRepo.put(apiCtx.get(), LinstorParsingUtils.asKvsName(kvsNameStr), kvs);
             }
 
-            Props props = kvs.getProps(accCtx);
-            for (Map.Entry<String, String> entry : overrideProps.entrySet())
-            {
-                props.setProp(entry.getKey(), entry.getValue());
-            }
-            for (String key : deletePropKeys)
-            {
-                props.removeProp(key);
-            }
+            ctrlPropsHelper.addModifyDeleteUnconditional(
+                kvs.getProps(accCtx),
+                overrideProps,
+                deletePropKeys,
+                deleteNamespaces
+            );
 
             ctrlTransactionHelper.commit();
 

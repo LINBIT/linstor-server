@@ -114,7 +114,8 @@ class CtrlRscConnectionApiCallHandler
         String nodeName2,
         String rscNameStr,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -175,7 +176,6 @@ class CtrlRscConnectionApiCallHandler
             }
 
             Props props = getProps(rscConn);
-            Map<String, String> propsMap = props.map();
             List<String> keysIgnored = new ArrayList<>();
             keysIgnored.add(ApiConsts.NAMESPC_CONNECTION_PATHS + "/");
 
@@ -186,11 +186,7 @@ class CtrlRscConnectionApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN,
                 keysIgnored
             );
-
-            for (String delKey : deletePropKeys)
-            {
-                propsMap.remove(delKey);
-            }
+            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

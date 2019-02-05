@@ -50,13 +50,15 @@ public class ModifyStorPool implements ApiCall
         String storPoolName = msgModStorPool.getStorPoolName();
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModStorPool.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModStorPool.getDeletePropKeysList());
+        Set<String> deletePropNamespace = new HashSet<>(msgModStorPool.getDelNamespacesList());
 
         ApiCallRc apiCallRc = apiCallHandler.modifyStorPool(
             storPoolUuid,
             nodeName,
             storPoolName,
             overrideProps,
-            deletePropKeys
+            deletePropKeys,
+            deletePropNamespace
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

@@ -146,6 +146,7 @@ public class CtrlApiCallHandler
      *            required (can be empty) - overrides the given property key-value pairs
      * @param deletePropKeys
      *            required (can be empty) - deletes the given property keys
+     * @param deleteNamespaces
      * @return
      */
     public ApiCallRc modifyNode(
@@ -153,7 +154,8 @@ public class CtrlApiCallHandler
         String nodeName,
         String nodeType,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespaces
     )
     {
         ApiCallRc apiCallRc;
@@ -164,7 +166,8 @@ public class CtrlApiCallHandler
                 nodeName,
                 nodeType,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deleteNamespaces
             );
         }
         return apiCallRc;
@@ -271,7 +274,8 @@ public class CtrlApiCallHandler
         String rscName,
         Integer port,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRc apiCallRc;
@@ -282,7 +286,8 @@ public class CtrlApiCallHandler
                 rscName,
                 port,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deletePropNamespaces
             );
         }
         return apiCallRc;
@@ -340,7 +345,8 @@ public class CtrlApiCallHandler
         String nodeName,
         String rscName,
         Map<String, String> overridePropsRef,
-        Set<String> deletePropKeysRef
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRc apiCallRc;
@@ -363,7 +369,8 @@ public class CtrlApiCallHandler
                 nodeName,
                 rscName,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deletePropNamespaces
             );
         }
         return apiCallRc;
@@ -439,7 +446,8 @@ public class CtrlApiCallHandler
         UUID storPoolDfnUuid,
         String storPoolName,
         Map<String, String> overridePropsRef,
-        Set<String> deletePropKeysRef
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRc apiCallRc;
@@ -460,7 +468,8 @@ public class CtrlApiCallHandler
                 storPoolDfnUuid,
                 storPoolName,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deletePropNamespaces
             );
         }
         return apiCallRc;
@@ -516,7 +525,8 @@ public class CtrlApiCallHandler
         String nodeName,
         String storPoolName,
         Map<String, String> overridePropsRef,
-        Set<String> deletePropKeysRef
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRc apiCallRc;
@@ -538,7 +548,8 @@ public class CtrlApiCallHandler
                 nodeName,
                 storPoolName,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deletePropNamespaces
             );
         }
         return apiCallRc;
@@ -619,7 +630,8 @@ public class CtrlApiCallHandler
         String nodeName1,
         String nodeName2,
         Map<String, String> overridePropsRef,
-        Set<String> deletePropKeysRef
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespaces
     )
     {
         Map<String, String> overrideProps = overridePropsRef;
@@ -640,7 +652,8 @@ public class CtrlApiCallHandler
                 nodeName1,
                 nodeName2,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deletePropNamespaces
             );
         }
         return apiCallRc;
@@ -724,7 +737,8 @@ public class CtrlApiCallHandler
         String nodeName2,
         String rscName,
         Map<String, String> overridePropsRef,
-        Set<String> deletePropKeysRef
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRc apiCallRc;
@@ -747,7 +761,8 @@ public class CtrlApiCallHandler
                 nodeName2,
                 rscName,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deletePropNamespaces
             );
         }
         return apiCallRc;
@@ -847,7 +862,8 @@ public class CtrlApiCallHandler
         String rscName,
         int vlmNr,
         Map<String, String> overridePropsRef,
-        Set<String> deletePropKeysRef
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRc apiCallRc;
@@ -871,7 +887,8 @@ public class CtrlApiCallHandler
                 rscName,
                 vlmNr,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deletePropNamespaces
             );
         }
         return apiCallRc;

@@ -353,22 +353,16 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *
      * @param namespace Acts as a prefix for all keys of the map
      * @return True if any property has been modified by this method, false otherwise
+     * @throws SQLException
      */
-    public boolean deleteNamespace(String namespace)
+    @Override
+    public boolean removeNamespace(String namespace) throws SQLException
     {
         boolean changed = false;
         Optional<PropsContainer> currCon = findNamespace(namespace);
         if (currCon.isPresent())
         {
-            try
-            {
-                changed = removeAllProps(currCon.get().map().keySet(), null);
-            }
-            catch (SQLException exc)
-            {
-                throw new LinStorSqlRuntimeException(
-                        "Failed to add or update entries in the properties container " + instanceName, exc);
-            }
+            changed = removeAllProps(currCon.get().map().keySet(), null);
         }
         return changed;
     }
@@ -401,7 +395,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
 
     @Override
     public void loadAll()
-            throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException
     {
         try
         {

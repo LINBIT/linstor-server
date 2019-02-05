@@ -54,12 +54,15 @@ public class ModifyResourceDefinition implements ApiCall
         }
         Map<String, String> overrideProps = ProtoMapUtils.asMap(modRscDfn.getOverridePropsList());
         Set<String> delProps = new HashSet<>(modRscDfn.getDeletePropKeysList());
+        Set<String> deletePropNamespace = new HashSet<>(modRscDfn.getDelNamespacesList());
+
         ApiCallRc apiCallRc = apiCallHandler.modifyRscDfn(
             rscDfnUUID,
             rscNameStr,
             port,
             overrideProps,
-            delProps
+            delProps,
+            deletePropNamespace
         );
 
         apiCallAnswerer.answerApiCallRc(apiCallRc);

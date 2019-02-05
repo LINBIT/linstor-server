@@ -121,7 +121,8 @@ class CtrlStorPoolDfnApiCallHandler
         UUID storPoolDfnUuid,
         String storPoolNameStr,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -144,15 +145,10 @@ class CtrlStorPoolDfnApiCallHandler
             }
 
             Props props = getProps(storPoolDfn);
-            Map<String, String> propsMap = props.map();
 
             ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, overrideProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
-
-            for (String delKey : deletePropKeys)
-            {
-                propsMap.remove(delKey);
-            }
+            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

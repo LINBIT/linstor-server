@@ -52,6 +52,7 @@ public class ModifyVolumeConn implements ApiCall
         int vlmNr = msgModVlmConn.getVlmNr();
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModVlmConn.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModVlmConn.getDeletePropKeysList());
+        Set<String> deletePropNamespace = new HashSet<>(msgModVlmConn.getDelNamespacesList());
 
         ApiCallRc apiCallRc = apiCallHandler.modifyVlmConn(
             vlmConnUuid,
@@ -60,7 +61,8 @@ public class ModifyVolumeConn implements ApiCall
             rscName,
             vlmNr,
             overrideProps,
-            deletePropKeys
+            deletePropKeys,
+            deletePropNamespace
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

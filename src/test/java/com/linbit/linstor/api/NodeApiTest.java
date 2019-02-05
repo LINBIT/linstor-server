@@ -266,6 +266,7 @@ public class NodeApiTest extends ApiTestBase
         private String nodeType;
         private Map<String, String> overrideProps;
         private Set<String> deletePropKeys;
+        private Set<String> deletePropNamespaces;
 
         ModifyNodeCall(long retCode)
         {
@@ -281,6 +282,7 @@ public class NodeApiTest extends ApiTestBase
             nodeType = null; // default: do not update nodeType
             overrideProps = new TreeMap<>();
             deletePropKeys = new TreeSet<>();
+            deletePropNamespaces = new TreeSet<>();
         }
 
         public AbsApiCallTester nodeUuid(java.util.UUID uuid)
@@ -313,6 +315,12 @@ public class NodeApiTest extends ApiTestBase
             return this;
         }
 
+        public AbsApiCallTester deleteNamespace(String namespace)
+        {
+            deletePropNamespaces.add(namespace);
+            return this;
+        }
+
         @Override
         public ApiCallRc executeApiCall()
         {
@@ -321,7 +329,8 @@ public class NodeApiTest extends ApiTestBase
                 nodeName,
                 nodeType,
                 overrideProps,
-                deletePropKeys
+                deletePropKeys,
+                deletePropNamespaces
             );
         }
 

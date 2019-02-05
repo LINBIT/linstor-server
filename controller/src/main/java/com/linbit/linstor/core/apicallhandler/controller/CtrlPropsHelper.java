@@ -29,6 +29,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -291,6 +292,38 @@ public class CtrlPropsHelper
                     .build()
                 );
             }
+        }
+    }
+
+    public void addModifyDeleteUnconditional(
+        Props props,
+        Map<String, String> overrideProps,
+        Collection<String> deletePropKeys,
+        Collection<String> deleteNamespaces
+    )
+        throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
+    {
+        for (Map.Entry<String, String> entry : overrideProps.entrySet())
+        {
+            props.setProp(entry.getKey(), entry.getValue());
+        }
+        remove(props, deletePropKeys, deleteNamespaces);
+    }
+
+    public void remove(
+        Props props,
+        Collection<String> deletePropKeys,
+        Collection<String> deleteNamespaces
+    )
+        throws AccessDeniedException, InvalidKeyException, SQLException
+    {
+        for (String key : deletePropKeys)
+        {
+            props.removeProp(key);
+        }
+        for (String deleteNamespace : deleteNamespaces)
+        {
+            props.removeNamespace(deleteNamespace);
         }
     }
 }

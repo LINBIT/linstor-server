@@ -51,6 +51,7 @@ public class ModifyResourceConn implements ApiCall
         String rscName = msgModRscConn.getRscName();
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModRscConn.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModRscConn.getDeletePropKeysList());
+        Set<String> deletePropNamespace = new HashSet<>(msgModRscConn.getDelNamespacesList());
 
         ApiCallRc apiCallRc = apiCallHandler.modifyRscConn(
             rscConnUuid,
@@ -58,7 +59,8 @@ public class ModifyResourceConn implements ApiCall
             nodeName2,
             rscName,
             overrideProps,
-            deletePropKeys
+            deletePropKeys,
+            deletePropNamespace
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

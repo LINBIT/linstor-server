@@ -50,13 +50,15 @@ public class ModifyNodeConn implements ApiCall
         String nodeName2 = msgModNodeConn.getNode2Name();
         Map<String, String> overrideProps = ProtoMapUtils.asMap(msgModNodeConn.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModNodeConn.getDeletePropKeysList());
+        Set<String> deletePropNamespaces = new HashSet<>(msgModNodeConn.getDelNamespacesList());
 
         ApiCallRc apiCallRc = apiCallHandler.modifyNodeConn(
             nodeConnUuid,
             nodeName1,
             nodeName2,
             overrideProps,
-            deletePropKeys
+            deletePropKeys,
+            deletePropNamespaces
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

@@ -75,7 +75,8 @@ public class CtrlStorPoolApiCallHandler
         String nodeNameStr,
         String storPoolNameStr,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -98,14 +99,14 @@ public class CtrlStorPoolApiCallHandler
             }
 
             Props props = ctrlPropsHelper.getProps(storPool);
-            Map<String, String> propsMap = props.map();
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL,
                 overrideProps,
-                ctrlPropsHelper.getProps(storPool),
+                props,
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
+            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
@@ -114,11 +115,6 @@ public class CtrlStorPoolApiCallHandler
                     overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
                     ApiConsts.MASK_STOR_POOL
             );
-
-            for (String delKey : deletePropKeys)
-            {
-                propsMap.remove(delKey);
-            }
 
             ctrlTransactionHelper.commit();
 

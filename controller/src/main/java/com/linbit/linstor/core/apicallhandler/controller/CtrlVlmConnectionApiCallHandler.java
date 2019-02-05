@@ -118,7 +118,8 @@ class CtrlVlmConnectionApiCallHandler
         String rscNameStr,
         int vlmNrInt,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -143,15 +144,10 @@ class CtrlVlmConnectionApiCallHandler
             }
 
             Props props = getProps(vlmConn);
-            Map<String, String> propsMap = props.map();
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.VOLUME_CONN, overrideProps, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
-
-            for (String delKey : deletePropKeys)
-            {
-                propsMap.remove(delKey);
-            }
+            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 
