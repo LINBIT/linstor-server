@@ -4,7 +4,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -32,11 +32,9 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Node>
+public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Node>, ProtectedObject
 {
     UUID getUuid();
-
-    ObjectProtection getObjProt();
 
     NodeName getName();
 

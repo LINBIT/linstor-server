@@ -3,18 +3,16 @@ package com.linbit.linstor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
 
-public interface KeyValueStore extends TransactionObject, Comparable<KeyValueStore>
+public interface KeyValueStore extends TransactionObject, Comparable<KeyValueStore>, ProtectedObject
 {
     UUID getUuid();
-
-    ObjectProtection getObjProt();
 
     KeyValueStoreName getName();
 

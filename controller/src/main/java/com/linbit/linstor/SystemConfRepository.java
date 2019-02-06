@@ -6,7 +6,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 
 import java.sql.SQLException;
 
@@ -15,10 +15,8 @@ import java.sql.SQLException;
  * The controller (ctrl) props are those which only the controller uses.
  * The satellite (stlt) props are those which are transfered to the satellites.
  */
-public interface SystemConfRepository
+public interface SystemConfRepository extends ProtectedObject
 {
-    ObjectProtection getObjProt();
-
     void requireAccess(AccessContext accCtx, AccessType requested)
         throws AccessDeniedException;
 

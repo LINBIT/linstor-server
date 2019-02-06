@@ -4,15 +4,13 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 
 /**
  * Provides access to {@link KeyValueStore}s with automatic security checks.
  */
-public interface KeyValueStoreRepository
+public interface KeyValueStoreRepository extends ProtectedObject
 {
-    ObjectProtection getObjProt();
-
     void requireAccess(AccessContext accCtx, AccessType requested)
         throws AccessDeniedException;
 

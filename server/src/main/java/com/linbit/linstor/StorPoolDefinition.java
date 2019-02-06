@@ -3,7 +3,7 @@ package com.linbit.linstor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
@@ -17,11 +17,10 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface StorPoolDefinition extends TransactionObject, DbgInstanceUuid, Comparable<StorPoolDefinition>
+public interface StorPoolDefinition
+    extends TransactionObject, DbgInstanceUuid, Comparable<StorPoolDefinition>, ProtectedObject
 {
     UUID getUuid();
-
-    ObjectProtection getObjProt();
 
     StorPoolName getName();
 

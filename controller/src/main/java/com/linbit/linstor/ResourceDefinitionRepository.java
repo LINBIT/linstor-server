@@ -4,15 +4,13 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 
 /**
  * Provides access to resource definitions with automatic security checks.
  */
-public interface ResourceDefinitionRepository
+public interface ResourceDefinitionRepository extends ProtectedObject
 {
-    ObjectProtection getObjProt();
-
     void requireAccess(AccessContext accCtx, AccessType requested)
         throws AccessDeniedException;
 

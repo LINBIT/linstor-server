@@ -3,7 +3,7 @@ package com.linbit.linstor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -25,11 +25,9 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable<Resource>
+public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable<Resource>, ProtectedObject
 {
     UUID getUuid();
-
-    ObjectProtection getObjProt();
 
     ResourceDefinition getDefinition();
 
