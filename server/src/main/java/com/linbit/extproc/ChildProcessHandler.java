@@ -175,10 +175,7 @@ public class ChildProcessHandler
             // If the waitFor() ended without being interrupted, cancel the timeout
             // and cleanup the thread's interrupted status if the interrupt arrived
             // between the return from waitFor() and the cancellation of the timeout
-            if (timeoutScheduler != null)
-            {
-                timeoutScheduler.cancelAction(intrAction.getId());
-            }
+            timeoutScheduler.cancelAction(intrAction.getId());
             // Cancel this thread's interrupted status
             Thread.interrupted();
         }

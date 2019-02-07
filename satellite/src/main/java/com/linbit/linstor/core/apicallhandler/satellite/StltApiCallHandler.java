@@ -69,7 +69,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
@@ -620,18 +619,6 @@ public class StltApiCallHandler
             Node localNode = controllerPeerConnector.getLocalNode();
             if (localNode != null)
             {
-                Optional<Props> optNodeNamespace = controllerPeerConnector.getLocalNode()
-                    .getProps(apiCtx)
-                    .getNamespace(ApiConsts.NAMESPC_STORAGE_DRIVER);
-                ReadOnlyProps nodeNamespace;
-                if (optNodeNamespace.isPresent())
-                {
-                    nodeNamespace = new ReadOnlyProps(optNodeNamespace.get());
-                }
-                else
-                {
-                    nodeNamespace = ReadOnlyProps.emptyRoProps();
-                }
                 for (StorPoolDefinition spd : storPoolDfnMap.values())
                 {
                     try

@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -49,7 +48,6 @@ public class ConfInternalCallHandler
         ))
         {
             Peer currentPeer = peer.get();
-            NodeName nodeName = new NodeName(nodeNameStr);
 
             currentPeer.sendMessage(
                 ctrlStltSrzl

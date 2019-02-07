@@ -29,7 +29,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.interfaces.categories.VlmLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -48,7 +47,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -158,7 +156,6 @@ class CtrlVlmCrtApiHelper
             }
         }
 
-        Map<DeviceLayerKind, VlmLayerObject> layerData = new TreeMap<>();
         List<DeviceLayerKind> layerStack = new ArrayList<>();
 
         fillLayerData(vlmDfn, driverKind, layerStack);

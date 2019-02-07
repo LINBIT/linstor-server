@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -89,12 +90,12 @@ public class PropsContainer extends AbsTransactionObject implements Props
     protected String instanceName;
 
     PropsContainer(
-            String key,
-            PropsContainer parent,
-            PropsConDatabaseDriver dbDriverRef,
-            Provider<TransactionMgr> transMgrProviderRef
+        String key,
+        PropsContainer parent,
+        PropsConDatabaseDriver dbDriverRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
-            throws InvalidKeyException
+        throws InvalidKeyException
     {
         super(transMgrProviderRef);
 
@@ -1450,7 +1451,14 @@ public class PropsContainer extends AbsTransactionObject implements Props
             boolean changed = false;
             try
             {
-                changed = container.retainAllProps((Set)keyList, null);
+                changed = container.retainAllProps(
+                    keyList.stream()
+                        .filter(elem -> elem instanceof String)
+                        .map(elem -> (String) elem)
+                        .collect(Collectors.toSet()
+                    ),
+                    null
+                );
             }
             catch (SQLException sqlExc)
             {
@@ -1638,7 +1646,14 @@ public class PropsContainer extends AbsTransactionObject implements Props
             boolean changed = false;
             try
             {
-                changed = container.retainAllProps((Set)keyList, null);
+                changed = container.retainAllProps(
+                    keyList.stream()
+                        .filter(elem -> elem instanceof String)
+                        .map(elem -> (String) elem)
+                        .collect(Collectors.toSet()
+                    ),
+                    null
+                );
             }
             catch (SQLException sqlExc)
             {

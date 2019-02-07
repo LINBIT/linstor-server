@@ -853,7 +853,7 @@ public class DebugConsoleImpl implements DebugConsole
                 "Error:\n" +
                 "    The command line is not valid. The parser encountered an error at position %d.\n" +
                 "Cause:\n" +
-                "    This error is commonly cause by entering an invalid character or unbalanced parenthesis.\n",
+                "    This error is commonly cause by entering an invalid character or unbalanced parenthesis.\n" +
                 "Correction:\n" +
                 "    Make sure that values for command parameters are correctly enclosed in parenthesis\n" +
                 "    and that no invalid characters are present in the command line.",

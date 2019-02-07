@@ -24,6 +24,17 @@ public class PeerOffline implements Peer
     private final ReadWriteLock satelliteStateLock;
     private SatelliteState satelliteState;
 
+    static
+    {
+        try
+        {
+            serviceName = new ServiceName("PeerOffline");
+        }
+        catch (InvalidNameException ignored)
+        {
+        }
+    }
+
     public PeerOffline(
         String peerIdRef,
         Node nodeRef
@@ -32,14 +43,6 @@ public class PeerOffline implements Peer
         peerId = peerIdRef;
         node = nodeRef;
         satelliteStateLock = new ReentrantReadWriteLock(true);
-
-        try
-        {
-            serviceName = new ServiceName("PeerOffline");
-        }
-        catch (InvalidNameException ignored)
-        {
-        }
 
         if (node != null)
         {

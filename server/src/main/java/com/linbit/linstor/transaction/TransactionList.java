@@ -21,7 +21,7 @@ public class TransactionList<PARENT, VALUE extends TransactionObject>
     private final List<VALUE> backingList;
     private final List<VALUE> oldValues;
     private final List<VALUE> immutableBackingList;
-    private boolean isDirty;
+    private volatile boolean isDirty;
 
     public TransactionList(
         PARENT parentRef,
