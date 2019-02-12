@@ -245,7 +245,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
                 label = LBL_CFGVAL;
                 break;
             case SO_SHUTDOWN:
-                objProt = shutdownProtHolder.getShutdownProt();
+                objProt = shutdownProtHolder.getObjProt();
                 label = LBL_SHUTDOWN;
                 break;
             default:

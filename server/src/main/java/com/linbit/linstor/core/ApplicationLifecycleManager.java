@@ -130,7 +130,7 @@ public class ApplicationLifecycleManager
      */
     public void requireShutdownAccess(AccessContext accCtx) throws AccessDeniedException
     {
-        shutdownProtHolder.getShutdownProt().requireAccess(accCtx, AccessType.USE);
+        shutdownProtHolder.getObjProt().requireAccess(accCtx, AccessType.USE);
     }
 
     public void shutdown(AccessContext accCtx) throws AccessDeniedException

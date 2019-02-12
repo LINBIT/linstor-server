@@ -8,7 +8,7 @@ import javax.inject.Singleton;
  * dependency injection has been performed.
  */
 @Singleton
-public class ShutdownProtHolder
+public class ShutdownProtHolder implements ProtectedObject
 {
     private ObjectProtection shutdownProt;
 
@@ -26,7 +26,8 @@ public class ShutdownProtHolder
         shutdownProt = shutdownProtRef;
     }
 
-    public ObjectProtection getShutdownProt()
+    @Override
+    public ObjectProtection getObjProt()
     {
         if (shutdownProt == null)
         {
