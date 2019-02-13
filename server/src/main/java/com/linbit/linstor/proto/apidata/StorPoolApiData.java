@@ -140,6 +140,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi
         storPoolBld.addAllProps(ProtoMapUtils.fromMap(apiStorPool.getStorPoolProps()));
         storPoolBld.addAllVlms(VlmApiData.toVlmProtoList(apiStorPool.getVlmList()));
         storPoolBld.addAllStaticTraits(ProtoMapUtils.fromMap(apiStorPool.getStorPoolStaticTraits()));
+        storPoolBld.setFreeSpaceMgrName(apiStorPool.getFreeSpaceManagerName());
         if (apiStorPool.getFreeCapacity().isPresent())
         {
             StorPoolFreeSpace.Builder storPoolFreeSpcBld = StorPoolFreeSpace.newBuilder();
