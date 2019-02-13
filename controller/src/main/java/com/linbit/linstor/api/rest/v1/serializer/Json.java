@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1.serializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -139,5 +140,59 @@ public class Json
         public Map<String, String> override_props = Collections.emptyMap();
         public Set<String> delete_props = Collections.emptySet();
         public Set<String> delete_namespaces = Collections.emptySet();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class AutoSelectFilterData implements AutoSelectFilterApi
+    {
+        public int place_count = 2;
+        public String storage_pool;
+        public List<String> not_place_with_rsc = new ArrayList<>();
+        public String not_place_with_rsc_regex;
+        public List<String> replicas_on_same = new ArrayList<>();
+        public List<String> replicas_on_different = new ArrayList<>();
+
+        @Override
+        public int getPlaceCount()
+        {
+            return place_count;
+        }
+
+        @Override
+        public String getStorPoolNameStr()
+        {
+            return storage_pool;
+        }
+
+        @Override
+        public List<String> getNotPlaceWithRscList()
+        {
+            return not_place_with_rsc;
+        }
+
+        @Override
+        public String getNotPlaceWithRscRegex()
+        {
+            return not_place_with_rsc_regex;
+        }
+
+        @Override
+        public List<String> getReplicasOnSameList()
+        {
+            return replicas_on_same;
+        }
+
+        @Override
+        public List<String> getReplicasOnDifferentList()
+        {
+            return replicas_on_different;
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class AutoPlaceRequest
+    {
+        public boolean diskless_on_remaining = false;
+        public AutoSelectFilterData select_filter = new AutoSelectFilterData();
     }
 }
