@@ -10,6 +10,7 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +60,28 @@ public class Json
     public static class NodeModifyData
     {
         public String node_type;
+        public Map<String, String> override_props = Collections.emptyMap();
+        public Set<String> delete_props = Collections.emptySet();
+        public Set<String> delete_namespaces = Collections.emptySet();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class StorPoolData
+    {
+        public String node_name;
+        public String storage_pool_name;
+        public String driver;
+        public Map<String, String> props = new HashMap<>();
+        // Volumes are for now not reported, maybe later via flag
+        public Map<String, String> static_traits;
+        public Long free_capacity;
+        public Long total_capacity;
+        public String free_space_mgr_name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class StorPoolModifyData
+    {
         public Map<String, String> override_props = Collections.emptyMap();
         public Set<String> delete_props = Collections.emptySet();
         public Set<String> delete_namespaces = Collections.emptySet();
