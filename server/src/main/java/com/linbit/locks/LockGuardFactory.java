@@ -5,9 +5,6 @@ import com.linbit.linstor.core.CoreModule;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
@@ -22,11 +19,11 @@ public class LockGuardFactory
     {
         LockGuardBuilder setDefer(boolean defer);
 
-        LockGuardBuilder write(LockObj... lockObj);
+        LockGuardBuilder write(LockObj... lockIdList);
 
-        LockGuardBuilder read(LockObj... lockObj);
+        LockGuardBuilder read(LockObj... lockIdList);
 
-        LockGuardBuilder lock(ReadWriteLock readWriteLock, LockType lockType);
+        LockGuardBuilder lock(LockObj lockId, LockType lockType);
 
         LockGuard build();
 
@@ -39,20 +36,26 @@ public class LockGuardFactory
 
     public enum LockObj
     {
-        RECONFIGURATION,
-        CTRL_CONFIG,
-        NODES_MAP,
-        RSC_DFN_MAP,
-        STOR_POOL_DFN_MAP,
-        KVS_MAP
+        RECONFIGURATION(0),
+        CTRL_CONFIG(1),
+        NODES_MAP(2),
+        RSC_DFN_MAP(3),
+        STOR_POOL_DFN_MAP(4),
+        KVS_MAP(5);
+
+        public final int lockIdx;
+
+        private LockObj(final int idx)
+        {
+            lockIdx = idx;
+        }
     }
 
     public enum LockType
     {
-        READ, WRITE
+        READ,
+        WRITE
     }
-
-    private final List<ReadWriteLock> lockOrder;
 
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
@@ -77,16 +80,6 @@ public class LockGuardFactory
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlConfigLock = ctrlConfigLockRef;
         pluginConfLock = kvsMapLockRef;
-        lockOrder = Collections.unmodifiableList(
-            // order defined in server/src/main/java/com/linbit/linstor/@LOCK_ORDER
-            Arrays.asList(
-                reconfigurationLockRef,
-                ctrlConfigLockRef,
-                nodesMapLockRef,
-                rscDfnMapLockRef,
-                storPoolDfnMapLockRef
-            )
-        );
     }
 
     public LockGuardBuilder create()
@@ -99,39 +92,39 @@ public class LockGuardFactory
         return new LockGuardBuilderImpl(true);
     }
 
-    public LockGuard build(LockType type, LockObj... lockObjs)
+    public LockGuard build(LockType type, LockObj... lockIdList)
     {
-        return build(new LockGuardBuilderImpl(), type, lockObjs);
+        return build(new LockGuardBuilderImpl(), type, lockIdList);
     }
 
-    public LockGuard buildDeferred(LockType type, LockObj... lockObjs)
+    public LockGuard buildDeferred(LockType type, LockObj... lockIdList)
     {
-        return build(new LockGuardBuilderImpl(true), type, lockObjs);
+        return build(new LockGuardBuilderImpl(true), type, lockIdList);
     }
 
     private LockGuard build(
         LockGuardBuilder lockGuardBuilder,
         LockType type,
-        LockObj[] lockObjs
+        LockObj[] lockIdList
     )
     {
         LockGuardBuilder tmpLGB;
         if (type == LockType.READ)
         {
-            tmpLGB = lockGuardBuilder.read(lockObjs);
+            tmpLGB = lockGuardBuilder.read(lockIdList);
         }
         else
         {
-            tmpLGB = lockGuardBuilder.write(lockObjs);
+            tmpLGB = lockGuardBuilder.write(lockIdList);
         }
         return tmpLGB.build();
     }
 
 
-    private ReadWriteLock getByLockObj(LockObj type)
+    private ReadWriteLock lockObjToLock(LockObj lockId)
     {
         ReadWriteLock lock;
-        switch (type)
+        switch (lockId)
         {
             case RECONFIGURATION:
                 lock = reconfigurationLock;
@@ -152,28 +145,20 @@ public class LockGuardFactory
                 lock = pluginConfLock;
                 break;
             default:
-                throw new ImplementationError("Unknown lock type: " + type);
+                throw new ImplementationError("Unknown lock identifier " + lockId.name());
         }
         return lock;
     }
 
-    private int compareLocks(ReadWriteLock lock1, ReadWriteLock lock2)
-    {
-        return Integer.compare(
-            lockOrder.indexOf(lock1),
-            lockOrder.indexOf(lock2)
-        );
-    }
-
     private class LockGuardBuilderImpl implements LockGuardBuilder
     {
-        private final TreeMap<ReadWriteLock, LockType> locks;
+        private final TreeMap<LockObj, LockType> locks;
 
         private boolean defer = false;
 
         private LockGuardBuilderImpl()
         {
-            locks = new TreeMap<>(LockGuardFactory.this::compareLocks);
+            locks = new TreeMap<>((lock1st, lock2nd) -> Integer.compare(lock1st.lockIdx, lock2nd.lockIdx));
         }
 
         private LockGuardBuilderImpl(boolean deferRef)
@@ -194,7 +179,7 @@ public class LockGuardFactory
         {
             for (LockObj lockObj : lockObjs)
             {
-                lock(getByLockObj(lockObj), LockType.READ);
+                lock(lockObj, LockType.READ);
             }
             return this;
         }
@@ -204,15 +189,15 @@ public class LockGuardFactory
         {
             for (LockObj lockObj : lockObjs)
             {
-                lock(getByLockObj(lockObj), LockType.WRITE);
+                lock(lockObj, LockType.WRITE);
             }
             return this;
         }
 
         @Override
-        public LockGuardBuilder lock(ReadWriteLock lock, LockType type)
+        public LockGuardBuilder lock(LockObj lockId, LockType type)
         {
-            locks.put(lock, type);
+            locks.put(lockId, type);
             return this;
         }
 
@@ -226,23 +211,23 @@ public class LockGuardFactory
         @Override
         public LockGuard build()
         {
-            if (!locks.isEmpty() && locks.get(reconfigurationLock) == null)
+            if (!locks.isEmpty() && !locks.containsKey(LockObj.RECONFIGURATION))
             {
-                locks.put(reconfigurationLock, LockType.READ);
+                locks.put(LockObj.RECONFIGURATION, LockType.READ);
             }
 
             Lock[] lockArr = new Lock[locks.size()];
             int lockIdx = 0;
-            for (Entry<ReadWriteLock, LockType> entry : locks.entrySet())
+            for (Entry<LockObj, LockType> entry : locks.entrySet())
             {
                 Lock lock;
                 if (entry.getValue() == LockType.READ)
                 {
-                    lock = entry.getKey().readLock();
+                    lock = lockObjToLock(entry.getKey()).readLock();
                 }
                 else
                 {
-                    lock = entry.getKey().readLock();
+                    lock = lockObjToLock(entry.getKey()).writeLock();
                 }
                 lockArr[lockIdx] = lock;
                 ++lockIdx;
@@ -251,4 +236,3 @@ public class LockGuardFactory
         }
     }
 }
-
