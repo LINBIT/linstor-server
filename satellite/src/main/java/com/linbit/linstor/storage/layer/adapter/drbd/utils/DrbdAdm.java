@@ -13,9 +13,9 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.extproc.ExtCmdFailedException;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmData;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -82,7 +82,9 @@ public class DrbdAdm
         // }
         // command.add(resName);
         command.add(drbdRscData.getSuffixedResourceName());
+        // execute(Arrays.asList("drbdsetup", "show", drbdRscData.getSuffixedResourceName()));
         execute(command);
+        // execute(Arrays.asList("drbdsetup", "show", drbdRscData.getSuffixedResourceName()));
     }
 
     /**

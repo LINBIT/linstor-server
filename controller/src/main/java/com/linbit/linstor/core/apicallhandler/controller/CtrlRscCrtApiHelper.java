@@ -32,6 +32,7 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.LayerConvHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -51,7 +52,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.SwordfishTargetDriverKind;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
@@ -68,7 +68,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.reactivestreams.Publisher;
@@ -89,6 +88,7 @@ public class CtrlRscCrtApiHelper
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDataFactory resourceDataFactory;
     private final Provider<AccessContext> peerAccCtx;
+    private final LayerConvHelper layerConvHelper;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -102,7 +102,8 @@ public class CtrlRscCrtApiHelper
         ResponseConverter responseConverterRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDataFactory resourceDataFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        LayerConvHelper layerConvHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -116,6 +117,7 @@ public class CtrlRscCrtApiHelper
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDataFactory = resourceDataFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        layerConvHelper = layerConvHelperRef;
     }
 
     /**
@@ -224,6 +226,7 @@ public class CtrlRscCrtApiHelper
             );
         }
 
+        layerConvHelper.ensureDefaultLayerData(rsc);
         return new ApiCallRcWith<>(responses, rsc);
     }
 

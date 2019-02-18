@@ -16,6 +16,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -23,6 +24,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import static com.linbit.linstor.numberpool.NumberPoolModule.LAYER_RSC_ID_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.SF_TARGET_PORT_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.TCP_PORT_POOL;
@@ -34,6 +36,7 @@ public class DbNumberPoolInitializer
     private final DynamicNumberPool minorNrPool;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool sfTargetPortPool;
+    private final DynamicNumberPool layerRscIdPool;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.NodesMap nodesMap;
 
@@ -44,6 +47,7 @@ public class DbNumberPoolInitializer
         @Named(MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @Named(TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(SF_TARGET_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
+        @Named(LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.NodesMap nodesMapRef
     )
@@ -53,6 +57,7 @@ public class DbNumberPoolInitializer
         minorNrPool = minorNrPoolRef;
         tcpPortPool = tcpPortPoolRef;
         sfTargetPortPool = sfTargetPortPoolRef;
+        layerRscIdPool = layerRscIdPoolRef;
         rscDfnMap = rscDfnMapRef;
         nodesMap = nodesMapRef;
     }
@@ -62,6 +67,7 @@ public class DbNumberPoolInitializer
         initializeMinorNrPool();
         initializeTcpPortPool();
         initializeSfTargetPortPool();
+        initializeLayerRscIdPool();
     }
 
     private void initializeMinorNrPool()
@@ -202,6 +208,43 @@ public class DbNumberPoolInitializer
                     "during number allocation cache initialization",
                 accExc
             );
+        }
+    }
+
+    private void initializeLayerRscIdPool()
+    {
+        layerRscIdPool.reloadRange();
+
+        try
+        {
+            for (Node curNode : nodesMap.values())
+            {
+                Iterator<Resource> iterateResources = curNode.iterateResources(initCtx);
+                while (iterateResources.hasNext())
+                {
+                    Resource rsc = iterateResources.next();
+                    RscLayerObject rscLayerData = rsc.getLayerData(initCtx);
+
+                    allocate(rscLayerData);
+                }
+            }
+        }
+        catch (AccessDeniedException | ValueInUseException exc)
+        {
+            throw new ImplementationError(
+                "An " + exc.getClass().getSimpleName() + " exception was generated " +
+                    "during number allocation cache initialization",
+                    exc
+                );
+        }
+    }
+
+    private void allocate(RscLayerObject rscLayerDataRef) throws ValueInUseException
+    {
+        layerRscIdPool.allocate(rscLayerDataRef.getRscLayerId());
+        for (RscLayerObject childRscLayerData : rscLayerDataRef.getChildren())
+        {
+            allocate(childRscLayerData);
         }
     }
 }

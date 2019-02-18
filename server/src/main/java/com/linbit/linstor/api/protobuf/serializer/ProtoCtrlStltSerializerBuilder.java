@@ -13,6 +13,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
+
+import com.linbit.ImplementationError;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnection;
@@ -35,11 +37,28 @@ import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.proto.CryptRscOuterClass.CryptRsc;
+import com.linbit.linstor.proto.CryptRscOuterClass.CryptVlm;
+import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdRsc;
+import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdRscDfn;
+import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdVlm;
+import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdVlmDfn;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
+import com.linbit.linstor.proto.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
+import com.linbit.linstor.proto.StorageRscOuterClass.DrbdDisklessVlm;
+import com.linbit.linstor.proto.StorageRscOuterClass.LvmThinVlm;
+import com.linbit.linstor.proto.StorageRscOuterClass.LvmVlm;
+import com.linbit.linstor.proto.StorageRscOuterClass.StorageRsc;
+import com.linbit.linstor.proto.StorageRscOuterClass.StorageVlm;
+import com.linbit.linstor.proto.StorageRscOuterClass.SwordfishInitiator;
+import com.linbit.linstor.proto.StorageRscOuterClass.SwordfishTarget;
+import com.linbit.linstor.proto.StorageRscOuterClass.SwordfishVlmDfn;
+import com.linbit.linstor.proto.StorageRscOuterClass.ZfsThinVlm;
+import com.linbit.linstor.proto.StorageRscOuterClass.ZfsVlm;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
@@ -66,6 +85,17 @@ import com.linbit.linstor.proto.javainternal.MsgIntUpdateFreeSpaceOuterClass.Msg
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupRscData;
+import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
+import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
+import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.utils.Base64;
 
 import static java.util.stream.Collectors.toList;
@@ -489,12 +519,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            List<MsgIntApplyRscSuccessOuterClass.VlmData> vlmDatas = new ArrayList<>();
-            for (Volume vlm : resource.streamVolumes().collect(toList()))
-            {
-                vlmDatas.add(buildResourceAppliedVolume(vlm));
-            }
-
             MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess.newBuilder()
                 .setRscId(
                     MsgIntObjectId.newBuilder()
@@ -505,7 +529,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllFreeSpace(
                     ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
                 )
-                .addAllVlmData(vlmDatas)
+                .setLayerObject(rscSerializerHelper.buildRscLayerData(resource))
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -518,43 +542,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             handleAccessDeniedException(exc);
         }
         return this;
-    }
-
-    private MsgIntApplyRscSuccessOuterClass.VlmData buildResourceAppliedVolume(Volume vlm)
-        throws AccessDeniedException
-    {
-        MsgIntApplyRscSuccessOuterClass.VlmData.Builder builder = MsgIntApplyRscSuccessOuterClass.VlmData.newBuilder()
-            .setVlmNr(vlm.getVolumeDefinition().getVolumeNumber().value)
-            .addAllVlmDfnProps(asLinStorList(vlm.getVolumeDefinition().getProps(serializerCtx)));
-
-        String backingDiskPath = vlm.getBackingDiskPath(serializerCtx);
-        if (backingDiskPath != null)
-        {
-            builder.setBlockDevicePath(backingDiskPath);
-        }
-
-        String metaDiskPath = vlm.getMetaDiskPath(serializerCtx);
-        if (metaDiskPath != null)
-        {
-            builder.setMetaDisk(metaDiskPath);
-        }
-
-        String devicePath = vlm.getDevicePath(serializerCtx);
-        if (devicePath != null)
-        {
-            builder.setDevicePath(devicePath);
-        }
-
-        if (vlm.isUsableSizeSet(serializerCtx))
-        {
-            builder.setUsableSize(vlm.getUsableSize(serializerCtx));
-        }
-        if (vlm.isAllocatedSizeSet(serializerCtx))
-        {
-            builder.setAllocatedSize(vlm.getAllocatedSize(serializerCtx));
-        }
-
-        return builder.build();
     }
 
     @Override
@@ -851,6 +838,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 )
                 .addAllRscConnections(buildRscConnections(localResource))
                 .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
+                .setLayerObject(buildRscLayerData(localResource))
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
                 .build();
@@ -988,6 +976,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .addAllLocalVlms(
                             buildVlmMessages(rsc)
                         )
+                        .setLayerObject(buildRscLayerData(rsc))
                         .build()
                 );
             }
@@ -1024,6 +1013,208 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
 
             return protoNetIfs;
+        }
+
+        private RscLayerData buildRscLayerData(Resource rsc) throws AccessDeniedException
+        {
+            return buildRscLayerData(
+                // explicit inference needed as otherwise java might try to cast the return
+                // value to Resource, which will cause a compile error because of ambiguous call
+
+                // renaming one of these two methods would just too lame :)
+                rsc.<RscLayerObject>getLayerData(serializerCtx)
+            );
+        }
+
+        private RscLayerData buildRscLayerData(RscLayerObject layerData) throws AccessDeniedException
+        {
+            RscLayerData.Builder builder = RscLayerData.newBuilder();
+
+            List<RscLayerData> serializedChildren = new ArrayList<>();
+            for (RscLayerObject childRscObj : layerData.getChildren())
+            {
+                serializedChildren.add(buildRscLayerData(childRscObj));
+            }
+            builder
+                .setId(layerData.getRscLayerId())
+                .setRscNameSuffix(layerData.getResourceNameSuffix())
+                .addAllChildren(serializedChildren);
+            switch (layerData.getLayerKind())
+            {
+                case DRBD:
+                    builder.setDrbd(buildDrbdRscData((DrbdRscData) layerData));
+                    break;
+                case CRYPT_SETUP:
+                    builder.setCrypt(buildCryptRscData((CryptSetupRscData) layerData));
+                    break;
+                case STORAGE:
+                    builder.setStorage(buildStorageRscData((StorageRscData) layerData));
+                    break;
+                default:
+                    break;
+            }
+
+            return builder.build();
+        }
+
+        private DrbdRsc buildDrbdRscData(DrbdRscData drbdRscData) throws AccessDeniedException
+        {
+            DrbdRscDfnData drbdRscDfnData = drbdRscData.getRscDfnLayerObject();
+
+            List<DrbdVlm> serializedDrbdVlms = new ArrayList<>();
+            for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            {
+                DrbdVlmDfnData drbdVlmDfnData = drbdVlmData.getVlmDfnLayerObject();
+                DrbdVlm.Builder builder = DrbdVlm.newBuilder()
+                    .setDrbdVlmDfn(
+                        DrbdVlmDfn.newBuilder()
+                            .setRscNameSuffix(drbdVlmDfnData.getResourceNameSuffix())
+                            .setVlmNr(drbdVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
+                            .setMinor(drbdVlmDfnData.getMinorNr().value)
+                    )
+                    .setAllocatedSize(drbdVlmData.getAllocatedSize())
+                    .setUsableSize(drbdVlmData.getUsableSize());
+                if (drbdVlmData.getDevicePath() != null)
+                {
+                    builder.setDevicePath(drbdVlmData.getDevicePath());
+                }
+                if (drbdVlmData.getBackingDevice() != null)
+                {
+                    builder.setBackingDevice(drbdVlmData.getBackingDevice());
+                }
+                if (drbdVlmData.getMetaDiskPath() != null)
+                {
+                    builder.setMetaDisk(drbdVlmData.getMetaDiskPath());
+                }
+
+                serializedDrbdVlms.add(
+                    builder.build()
+                );
+            }
+
+            DrbdRsc.Builder builder = DrbdRsc.newBuilder();
+            builder.setDrbdRscDfn(
+                DrbdRscDfn.newBuilder()
+                    .setRscNameSuffix(drbdRscDfnData.getResourceNameSuffix())
+                    .setPeersSlots(drbdRscDfnData.getPeerSlots())
+                    .setAlStripes(drbdRscDfnData.getAlStripes())
+                    .setAlSize(drbdRscDfnData.getAlStripeSize())
+                    .setPort(drbdRscDfnData.getTcpPort().value)
+                    .setTransportType(drbdRscDfnData.getTransportType().name())
+                    .setSecret(drbdRscDfnData.getSecret())
+                    .build()
+            )
+            .setNodeId(drbdRscData.getNodeId().value)
+            .setPeersSlots(drbdRscData.getPeerSlots())
+            .setAlStripes(drbdRscData.getAlStripes())
+            .setAlSize(drbdRscData.getAlStripeSize())
+            .setFlags(drbdRscData.getFlags().getFlagsBits(serializerCtx))
+            .addAllDrbdVlms(serializedDrbdVlms);
+
+            return builder.build();
+        }
+
+        private CryptRsc buildCryptRscData(CryptSetupRscData cryptRscData)
+        {
+            List<CryptVlm> cryptVlms = new ArrayList<>();
+            for (CryptSetupVlmData cryptSetupVlmData : cryptRscData.getVlmLayerObjects().values())
+            {
+                CryptVlm.Builder builder = CryptVlm.newBuilder()
+                    .setVlmNr(cryptSetupVlmData.getVlmNr().value)
+                    .setEncryptedPassword(ByteString.copyFrom(cryptSetupVlmData.getEncryptedPassword()))
+                    .setAllocatedSize(cryptSetupVlmData.getAllocatedSize())
+                    .setUsableSize(cryptSetupVlmData.getUsableSize());
+                if (cryptSetupVlmData.getDevicePath() != null)
+                {
+                    builder.setDevicePath(cryptSetupVlmData.getDevicePath());
+                }
+                if (cryptSetupVlmData.getBackingDevice() != null)
+                {
+                    builder.setBackingDevice(cryptSetupVlmData.getBackingDevice());
+                }
+
+                cryptVlms.add(
+                    builder.build()
+                );
+            }
+
+            return CryptRsc.newBuilder()
+                .addAllCryptVlms(cryptVlms)
+                .build();
+        }
+
+        private StorageRsc buildStorageRscData(StorageRscData storageRscData)
+        {
+            List<StorageVlm> storageVlms = new ArrayList<>();
+            for (VlmProviderObject vlmData : storageRscData.getVlmLayerObjects().values())
+            {
+                StorageVlm.Builder builder = StorageVlm.newBuilder()
+                    .setVlmNr(vlmData.getVlmNr().value)
+                    .setAllocatedSize(vlmData.getAllocatedSize())
+                    .setUsableSize(vlmData.getUsableSize());
+                if (vlmData.getDevicePath() != null)
+                {
+                    builder.setDevicePath(vlmData.getDevicePath());
+                }
+
+                switch (vlmData.getProviderKind())
+                {
+                    case DRBD_DISKLESS:
+                        builder.setDrbdDiskless(DrbdDisklessVlm.newBuilder().build());
+                        break;
+                    case LVM:
+                        builder.setLvm(LvmVlm.newBuilder().build());
+                        break;
+                    case LVM_THIN:
+                        builder.setLvmThin(LvmThinVlm.newBuilder().build());
+                        break;
+                    case ZFS:
+                        builder.setZfs(ZfsVlm.newBuilder().build());
+                        break;
+                    case ZFS_THIN:
+                        builder.setZfsThin(ZfsThinVlm.newBuilder().build());
+                        break;
+                    case SWORDFISH_INITIATOR:
+                        {
+                            SfVlmDfnData sfVlmDfnData = ((SfInitiatorData) vlmData).getVlmDfnLayerObject();
+                            builder.setSfInit(
+                                SwordfishInitiator.newBuilder()
+                                    .setSfVlmDfn(
+                                        SwordfishVlmDfn.newBuilder()
+                                            .setSuffixedRscName(sfVlmDfnData.getSuffixedResourceName())
+                                            .setVlmNr(sfVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
+                                            .setVlmOdata(sfVlmDfnData.getVlmOdata())
+                                            .build()
+                                    )
+                                    .build()
+                            );
+                        }
+                        break;
+                    case SWORDFISH_TARGET:
+                        {
+                            SfVlmDfnData sfVlmDfnData = ((SfInitiatorData) vlmData).getVlmDfnLayerObject();
+                            builder.setSfTarget(
+                                SwordfishTarget.newBuilder()
+                                    .setSfVlmDfn(
+                                        SwordfishVlmDfn.newBuilder()
+                                            .setSuffixedRscName(sfVlmDfnData.getSuffixedResourceName())
+                                            .setVlmNr(sfVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
+                                            .setVlmOdata(sfVlmDfnData.getVlmOdata())
+                                            .build()
+                                    )
+                                    .build()
+                                );
+                        }
+                        break;
+                    case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                    default:
+                        throw new ImplementationError("Unexpected provider kind: " + vlmData.getProviderKind());
+                }
+                storageVlms.add(builder.build());
+            }
+            return StorageRsc.newBuilder()
+                .addAllStorageVlms(storageVlms)
+                .build();
         }
     }
 

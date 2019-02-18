@@ -2,6 +2,8 @@ package com.linbit.linstor.storage.interfaces.categories;
 
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -65,9 +67,15 @@ public interface VlmProviderObject extends LayerObject
 
     long getUsableSize();
 
-    String getDevicePath();
+    // can be null if the layer cannot provide that device even in non-error states
+    // e.g: VG / LV inactivate, DRBD secondary, missing crypt password, ...
+    @Nullable String getDevicePath();
 
     Size getSizeState();
 
     List<? extends State> getStates();
+
+    String getIdentifier();
+
+    VlmLayerDataPojo asPojo(AccessContext accCtxRef);
 }

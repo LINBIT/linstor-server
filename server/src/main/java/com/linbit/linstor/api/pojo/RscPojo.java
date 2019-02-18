@@ -9,6 +9,7 @@ import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
 
 public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
 {
@@ -25,6 +26,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     private final List<ResourceConnection.RscConnApi> rscConnections;
     private final Long fullSyncId;
     private final Long updateId;
+    private final RscLayerDataPojo rscLayerDataPojo;
 
     public RscPojo(
         final String rscNameRef,
@@ -39,7 +41,8 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         final List<OtherRscPojo> otherRscListRef,
         final List<ResourceConnection.RscConnApi> rscConnectionsRef,
         final Long fullSyncIdRef,
-        final Long updateIdRef
+        final Long updateIdRef,
+        final RscLayerDataPojo rscLayerDataPojoRef
     )
     {
         rscName = rscNameRef;
@@ -55,6 +58,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         otherRscs = otherRscListRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
+        rscLayerDataPojo = rscLayerDataPojoRef;
     }
 
     @Override
@@ -186,6 +190,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         return updateId;
     }
 
+    public RscLayerDataPojo getRscLayerDataPojo()
+    {
+        return rscLayerDataPojo;
+    }
+
     @Override
     public int compareTo(RscPojo otherRscPojo)
     {
@@ -205,6 +214,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         private final Map<String, String> rscProps;
         private final List<Volume.VlmApi> vlms;
         private final List<OtherNodeNetInterfacePojo> netInterfacefPojos;
+        private final RscLayerDataPojo rscLayerDataPojo;
 
         public OtherRscPojo(
             String nodeNameRef,
@@ -217,7 +227,8 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             int rscNodeIdRef,
             long rscFlagsRef,
             Map<String, String> rscPropsRef,
-            List<Volume.VlmApi> vlmsRef
+            List<Volume.VlmApi> vlmsRef,
+            RscLayerDataPojo rscLayerDataPojoRef
         )
         {
             nodeName = nodeNameRef;
@@ -231,6 +242,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             rscFlags = rscFlagsRef;
             rscProps = rscPropsRef;
             vlms = vlmsRef;
+            rscLayerDataPojo = rscLayerDataPojoRef;
         }
 
         public String getNodeName()
@@ -286,6 +298,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         public List<Volume.VlmApi> getVlms()
         {
             return vlms;
+        }
+
+        public RscLayerDataPojo getRscLayerDataPojo()
+        {
+            return rscLayerDataPojo;
         }
     }
 

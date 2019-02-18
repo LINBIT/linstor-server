@@ -13,13 +13,13 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDataFactory;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ConfigModule;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.LayerConvHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
@@ -29,7 +29,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
@@ -44,8 +43,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -57,6 +54,7 @@ class CtrlVlmCrtApiHelper
     private final VolumeDataFactory volumeDataFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final String defaultStorPoolName;
+    private final LayerConvHelper layerConvHelper;
 
     @Inject
     CtrlVlmCrtApiHelper(
@@ -64,7 +62,8 @@ class CtrlVlmCrtApiHelper
         CtrlPropsHelper ctrlPropsHelperRef,
         VolumeDataFactory volumeDataFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
+        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef        ,
+        LayerConvHelper layerConvHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -72,6 +71,7 @@ class CtrlVlmCrtApiHelper
         volumeDataFactory = volumeDataFactoryRef;
         peerAccCtx = peerAccCtxRef;
         defaultStorPoolName = defaultStorPoolNameRef;
+        layerConvHelper = layerConvHelperRef;
     }
 
     public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
@@ -156,10 +156,6 @@ class CtrlVlmCrtApiHelper
             }
         }
 
-        List<DeviceLayerKind> layerStack = new ArrayList<>();
-
-        fillLayerData(vlmDfn, driverKind, layerStack);
-
         VolumeData vlm;
         try
         {
@@ -170,8 +166,7 @@ class CtrlVlmCrtApiHelper
                 storPool,
                 blockDevice,
                 metaDisk,
-                null, // flags
-                layerStack
+                null // flags
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -193,46 +188,10 @@ class CtrlVlmCrtApiHelper
         {
             throw new ApiSQLException(sqlExc);
         }
+
+        // TODO: only do this as a fallback, not always
+        layerConvHelper.ensureDefaultLayerData(rsc);
         return vlm;
-    }
-
-    // TODO make layerStack configurable by the user
-    private void fillLayerData(
-        VolumeDefinition vlmDfn,
-        DeviceProviderKind kind,
-        List<DeviceLayerKind> layerStack
-    )
-    {
-        try
-        {
-            if (
-                !kind.equals(DeviceProviderKind.SWORDFISH_INITIATOR) &&
-                !kind.equals(DeviceProviderKind.SWORDFISH_TARGET)
-            )
-            {
-                layerStack.add(DeviceLayerKind.DRBD);
-
-                // XXX ensure Resource also has DrbdRscLayerData set
-                // XXX ensure ResourceDefinition has DrbdRscDfnLayerData set
-                // XXX ensure VolumeDefinition has DrbdVlmDfnLayerData set
-
-                // XXX create DrbdVlmLayerData for this volume
-            }
-            if (vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.ENCRYPTED))
-            {
-                layerStack.add(DeviceLayerKind.CRYPT_SETUP);
-
-                // XXX ensure VolumeDefinition has CryptSetupVlmDfnLayerData set
-            }
-
-            layerStack.add(DeviceLayerKind.STORAGE);
-
-            // XXX create corresponding *VlmLayerData
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError("ApiContext has not enough privileges", accDeniedExc);
-        }
     }
 
     private Peer getPeerPrivileged(Node assignedNode)

@@ -3,7 +3,6 @@ package com.linbit.linstor.proto.apidata;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.RscOuterClass;
 
 import java.util.List;

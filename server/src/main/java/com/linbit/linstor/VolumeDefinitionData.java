@@ -128,7 +128,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             PropsContainer.buildPath(resDfnRef.getName(), volumeNr)
         );
 
-        layerStorage = layerDataMapRef;
+        layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
 
         volumes = transObjFactory.createTransactionMap(vlmMapRef, null);
 

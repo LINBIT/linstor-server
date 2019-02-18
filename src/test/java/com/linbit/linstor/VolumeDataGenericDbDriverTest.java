@@ -14,7 +14,6 @@ import org.junit.Test;
 import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -92,8 +91,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             resDfn,
             node,
             nodeId,
-            null,
-            new TreeMap<>()
+            null
         );
 
         storPoolName = new StorPoolName("TestStorPoolName");
@@ -142,8 +140,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>(),
-            new ArrayList<>()
+            new TreeMap<>()
         );
         driver.create(vol);
         commit();
@@ -176,8 +173,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            new VlmFlags[] {VlmFlags.DELETE},
-            new ArrayList<>()
+            new VlmFlags[] {VlmFlags.DELETE}
         );
         commit();
 
@@ -224,8 +220,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>(),
-            new ArrayList<>()
+            new TreeMap<>()
         );
         driver.create(vol);
 
@@ -260,8 +255,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>(),
-            new ArrayList<>()
+            new TreeMap<>()
         );
         driver.create(vol);
         volDfn.putVolume(SYS_CTX, vol);
@@ -281,8 +275,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            null,
-            new ArrayList<>()
+            null
         );
 
         // no clearCaches
@@ -305,8 +298,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>(),
-            new ArrayList<>()
+            new TreeMap<>()
         );
         driver.create(vol);
         commit();
@@ -345,8 +337,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>(),
-            new ArrayList<>()
+            new TreeMap<>()
         );
         driver.create(vol);
         commit();
@@ -376,8 +367,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>(),
-            new ArrayList<>()
+            new TreeMap<>()
         );
         driver.create(vol);
 
@@ -435,8 +425,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>(),
-            new ArrayList<>()
+            new TreeMap<>()
         );
         driver.create(vol);
         volDfn.putVolume(SYS_CTX, vol);
@@ -449,8 +438,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             storPool,
             blockDevicePath,
             metaDiskPath,
-            null,
-            new ArrayList<>()
+            null
         );
     }
 

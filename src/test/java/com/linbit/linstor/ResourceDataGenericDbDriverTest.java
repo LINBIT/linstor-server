@@ -90,8 +90,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
         driver.create(res);
         commit();
@@ -157,8 +156,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
         driver.create(res);
         node.addResource(SYS_CTX, res);
@@ -191,8 +189,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
         driver.create(res);
 
@@ -247,8 +244,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
         driver.create(res);
         commit();
@@ -279,8 +275,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
         driver.create(res);
         commit();
@@ -321,8 +316,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
         driver.ensureResExists(SYS_CTX, res);
         commit();
@@ -359,8 +353,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
         driver.create(res);
         node.addResource(SYS_CTX, res);

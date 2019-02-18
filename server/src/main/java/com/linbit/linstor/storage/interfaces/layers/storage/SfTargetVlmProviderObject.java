@@ -9,6 +9,4 @@ public interface SfTargetVlmProviderObject extends SfVlmProviderObject
     State CREATED = new State(true, true, "Created");
 
     String getVlmOdata();
-
-    String getStorPoolService();
 }

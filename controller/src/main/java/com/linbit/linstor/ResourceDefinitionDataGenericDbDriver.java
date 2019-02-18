@@ -235,7 +235,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             vlmDfnMap,
             rscMap,
             snapshotDfnMap,
-            null // TODO: restore layer data
+            new TreeMap<>()
         );
 
         retPair.objA = resDfn;

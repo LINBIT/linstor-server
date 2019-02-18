@@ -8,7 +8,6 @@ import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
@@ -89,11 +88,11 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     boolean isDiskless(AccessContext accCtx)
         throws AccessDeniedException;
 
-    <T extends RscLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
+    <T extends RscLayerObject> T getLayerData(AccessContext accCtx)
         throws AccessDeniedException;
 
     void setLayerData(AccessContext accCtx, RscLayerObject layerData)
-        throws AccessDeniedException;
+        throws AccessDeniedException, SQLException;
 
     /**
      * Returns the identification key without checking if "this" is already deleted

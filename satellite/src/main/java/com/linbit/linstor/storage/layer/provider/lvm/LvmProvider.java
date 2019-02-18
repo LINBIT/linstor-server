@@ -15,13 +15,13 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.StorageConfigReader;
-import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
@@ -109,23 +109,20 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         );
         for (LvmData vlmData : vlmDataList)
         {
-            vlmData.identifier = asLvIdentifier(vlmData);
-            final LvsInfo info = infoListCache.get(vlmData.identifier);
+            final LvsInfo info = infoListCache.get(asLvIdentifier(vlmData));
+            updateInfo(vlmData, info);
 
             // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
 
             if (info != null)
             {
-                vlmData.exists = true;
-                vlmData.updateInfo(info);
-
                 final long expectedSize = vlmData.getUsableSize();
                 final long actualSize = info.size;
                 if (actualSize != expectedSize)
                 {
                     if (actualSize < expectedSize)
                     {
-                        vlmData.sizeState = Size.TOO_SMALL;
+                        vlmData.setSizeState(Size.TOO_SMALL);
                     }
                     else
                     {
@@ -137,18 +134,9 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                         {
                             sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
                         }
-                        vlmData.sizeState = sizeState;
+                        vlmData.setSizeState(sizeState);
                     }
                 }
-                // vlm.setUsableSize already set in StorageLayer#updateGrossSize
-                vlmData.allocatedSize = ProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create());
-            }
-            else
-            {
-                extractVolumeGroup(vlmData);
-                vlmData.exists = false;
-                vlmData.devicePath = null;
-                vlmData.allocatedSize = -1;
             }
         }
 
@@ -156,11 +144,34 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     /*
-     * Expected to be overridden by LvmThinProvider
+     * Expected to be overridden (extended) by LvmThinProvider
      */
-    protected void extractVolumeGroup(LvmData vlmData) throws AccessDeniedException
+    protected void updateInfo(LvmData vlmData, LvsInfo info) throws AccessDeniedException, SQLException
     {
-        vlmData.volumeGroup = getVolumeGroup(vlmData.vlm.getStorPool(storDriverAccCtx));
+        vlmData.setIdentifier(asLvIdentifier(vlmData));
+        if (info == null)
+        {
+            vlmData.setExists(false);
+            vlmData.setVolumeGroup(extractVolumeGroup(vlmData));
+            vlmData.setDevicePath(null);
+            vlmData.setAllocatedSize(-1);
+            vlmData.setDevicePath(null);
+        }
+        else
+        {
+            vlmData.setExists(true);
+            vlmData.setVolumeGroup(info.volumeGroup);
+            vlmData.setDevicePath(info.path);
+            vlmData.setIdentifier(info.identifier);
+            vlmData.setAllocatedSize(info.size);
+            vlmData.setUsableSize(info.size);
+            vlmData.setDevicePath(info.path);
+        }
+    }
+
+    protected String extractVolumeGroup(LvmData vlmData) throws AccessDeniedException
+    {
+        return getVolumeGroup(vlmData.getVolume().getStorPool(storDriverAccCtx));
     }
 
     /*
@@ -181,7 +192,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             extCmdFactory.create(),
             vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
-            vlmData.usableSize
+            vlmData.getUsableSize()
         );
     }
 
@@ -191,20 +202,20 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     {
         LvmCommands.resize(
             extCmdFactory.create(),
-            vlmData.volumeGroup,
+            vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
-            vlmData.usableSize
+            vlmData.getUsableSize()
         );
     }
 
     @Override
     protected void deleteLvImpl(LvmData vlmData, String oldLvmId)
-        throws StorageException
+        throws StorageException, SQLException
     {
         // just make sure to not colide with any other ongoing wipe-lv-name
         String newLvmId = String.format(FORMAT_LVM_ID_WIPE_IN_PROGRESS, UUID.randomUUID().toString());
 
-        String devicePath = vlmData.devicePath;
+        String devicePath = vlmData.getDevicePath();
         // devicePath is the "current" devicePath. as we will rename it right now
         // we will have to adjust the devicePath
         int lastIndexOf = devicePath.lastIndexOf(oldLvmId);
@@ -230,11 +241,15 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                         volumeGroup,
                         newLvmId
                     );
-                    vlmData.exists = false;
+                    vlmData.setExists(false);
                 }
                 catch (StorageException exc)
                 {
                     errorReporter.reportError(exc);
+                }
+                catch (SQLException exc)
+                {
+                    throw new ImplementationError(exc);
                 }
             }
         );
@@ -276,24 +291,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             rscNameSuffix,
             volumeNumber.value
         );
-    }
-
-    @Override
-    protected String getIdentifier(LvmData layerData)
-    {
-        return layerData.identifier;
-    }
-
-    @Override
-    protected Size getSize(LvmData layerData)
-    {
-        return layerData.sizeState;
-    }
-
-    @Override
-    protected String getStorageName(LvmData vlmData) throws AccessDeniedException, SQLException
-    {
-        return vlmData.volumeGroup;
     }
 
     protected String getVolumeGroup(StorPool storPool)
@@ -367,11 +364,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         Set<String> volumeGroups = new HashSet<>();
         for (LvmData vlmData : vlmDataList)
         {
-            String volumeGroup = vlmData.volumeGroup;
+            String volumeGroup = vlmData.getVolumeGroup();
             if (volumeGroup == null)
             {
-                volumeGroup = getVolumeGroup(vlmData.vlm.getStorPool(storDriverAccCtx));
-                vlmData.volumeGroup = volumeGroup;
+                volumeGroup = getVolumeGroup(vlmData.getVolume().getStorPool(storDriverAccCtx));
+                vlmData.setVolumeGroup(volumeGroup);
             }
             volumeGroups.add(volumeGroup);
         }
@@ -379,20 +376,26 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     @Override
-    protected void setDevicePath(LvmData vlmData, String devPath)
+    protected void setDevicePath(LvmData vlmData, String devPath) throws SQLException
     {
-        vlmData.devicePath = devPath;
+        vlmData.setDevicePath(devPath);
     }
 
     @Override
-    protected void setAllocatedSize(LvmData vlmData, long size)
+    protected void setAllocatedSize(LvmData vlmData, long size) throws SQLException
     {
-        vlmData.allocatedSize = size;
+        vlmData.setAllocatedSize(size);
     }
 
     @Override
-    protected void setUsableSize(LvmData vlmData, long size)
+    protected void setUsableSize(LvmData vlmData, long size) throws SQLException
     {
-        vlmData.usableSize = size;
+        vlmData.setUsableSize(size);
+    }
+
+    @Override
+    protected String getStorageName(LvmData vlmDataRef) throws SQLException
+    {
+        return vlmDataRef.getVolumeGroup();
     }
 }

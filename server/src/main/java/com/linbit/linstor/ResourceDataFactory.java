@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -10,8 +9,6 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.RemoveAfterDevMgrRework;
@@ -20,7 +17,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -49,33 +45,12 @@ public class ResourceDataFactory
     }
 
     public ResourceData create(
-        AccessContext accessContext,
-        ResourceDefinitionData rscDfn,
-        Node node,
-        @RemoveAfterDevMgrRework
-        NodeId nodeId,
-        RscFlags[] restoreFlags
-    )
-        throws AccessDeniedException, LinStorDataAlreadyExistsException, SQLException
-    {
-        return create(
-            accessContext,
-            rscDfn,
-            node,
-            nodeId,
-            restoreFlags,
-            new TreeMap<>()
-        );
-    }
-
-    public ResourceData create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
         @RemoveAfterDevMgrRework
         NodeId nodeId,
-        Resource.RscFlags[] initFlags,
-        Map<DeviceLayerKind, RscLayerObject> layerData
+        Resource.RscFlags[] initFlags
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -106,8 +81,7 @@ public class ResourceDataFactory
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>(),
-            layerData
+            new TreeMap<>()
         );
         dbDriver.create(rscData);
         ((NodeData) node).addResource(accCtx, rscData);
@@ -122,8 +96,7 @@ public class ResourceDataFactory
         Node node,
         ResourceDefinition rscDfn,
         NodeId nodeId,
-        Resource.RscFlags[] initFlags,
-        Map<DeviceLayerKind, RscLayerObject> layerData
+        Resource.RscFlags[] initFlags
     )
         throws ImplementationError
     {
@@ -145,8 +118,7 @@ public class ResourceDataFactory
                     transObjFactory,
                     transMgrProvider,
                     new TreeMap<>(),
-                    new TreeMap<>(),
-                    layerData
+                    new TreeMap<>()
                 );
                 ((NodeData) node).addResource(accCtx, rscData);
                 ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);

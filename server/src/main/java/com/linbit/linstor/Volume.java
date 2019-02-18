@@ -6,7 +6,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
@@ -85,12 +84,6 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
     long getAllocatedSize(AccessContext accCtx) throws AccessDeniedException;
 
     long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException;
-
-    List<DeviceLayerKind> getLayerStack(AccessContext accCtx)
-        throws AccessDeniedException;
-
-    @RemoveAfterDevMgrRework // needed by LayeredResourceHelper
-    void setLayerStack(List<DeviceLayerKind> layerStack);
 
     boolean isDeleted();
 

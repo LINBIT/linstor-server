@@ -6,6 +6,4 @@ import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
 public interface DrbdVlmDfnObject extends VlmDfnLayerObject
 {
     MinorNumber getMinorNr();
-
-    int getPeerSlots();
 }

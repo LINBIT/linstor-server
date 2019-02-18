@@ -11,6 +11,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
@@ -58,7 +59,7 @@ public class ZfsThinProvider extends ZfsProvider
 
         ZfsCommands.create(
             extCmdFactory.create(),
-            vlmData.zpool,
+            vlmData.getZPool(),
             asLvIdentifier(vlmData),
             volumeSize,
             true

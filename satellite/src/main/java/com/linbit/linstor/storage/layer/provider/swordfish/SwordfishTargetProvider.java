@@ -15,6 +15,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
+import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.utils.HttpHeader;
@@ -86,17 +88,17 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     {
         try
         {
-            SfVlmDfnData vlmDfnData = vlmData.vlmDfnData;
+            SfVlmDfnData vlmDfnData = vlmData.getVlmDfnLayerObject();
 
-            if (!sfResourceExists(vlmDfnData.vlmOdata))
+            if (!sfResourceExists(vlmDfnData.getVlmOdata()))
             {
                 createSfVlm(vlmData);
                 // extract the swordfish id of that volume and persist if for later lookups
-                errorReporter.logTrace("volume created with @odata.id: %s",  vlmDfnData.vlmOdata);
+                errorReporter.logTrace("volume created with @odata.id: %s",  vlmDfnData.getVlmOdata());
             }
             else
             {
-                errorReporter.logTrace("volume found with @odata.id: %s", vlmDfnData.vlmOdata);
+                errorReporter.logTrace("volume found with @odata.id: %s", vlmDfnData.getVlmOdata());
             }
             clearAndSet(vlmData, SfTargetData.CREATED);
             // volume exists
@@ -122,7 +124,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     {
         try
         {
-            String vlmOdataId = vlmData.vlmDfnData.vlmOdata;
+            String vlmOdataId = vlmData.getVlmOdata();
             if (vlmOdataId != null)
             {
                 // TODO health check on composed node
@@ -141,7 +143,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
 
             // internal state to send a close event to the ctrl
             clearAndSet(vlmData, SfTargetData.INTERNAL_REMOVE);
-            vlmData.vlmDfnData.exists = false;
+            vlmData.getVlmDfnLayerObject().setExists(false);
         }
         catch (IOException ioExc)
         {
@@ -172,9 +174,9 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
         throws AccessDeniedException, StorageException, IOException, SQLException,
         InterruptedException, InvalidKeyException
     {
-        VolumeDefinition vlmDfn = vlmData.vlmDfnData.vlmDfn;
-        long sizeInKiB = vlmData.allocatedSize;
-        StorPool storPool = vlmData.vlm.getStorPool(sysCtx);
+        VolumeDefinition vlmDfn = vlmData.getVlmDfnLayerObject().getVolumeDefinition();
+        long sizeInKiB = vlmData.getAllocatedSize();
+        StorPool storPool = vlmData.getVolume().getStorPool(sysCtx);
         Props storPoolProps = storPool.getProps(sysCtx);
 
         // POST to volumes collection
@@ -306,7 +308,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
             }
         }
         clearAndSet(vlmData, SfTargetData.CREATED);
-        vlmData.vlmDfnData.vlmOdata = vlmLocation;
+        vlmData.getVlmDfnLayerObject().setVlmOdata(vlmLocation);
         try
         {
             // FIXME: only for compatibility... remove once rework is completed
@@ -362,9 +364,9 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     }
 
     @Override
-    protected void setUsableSize(SfTargetData vlmData, long size)
+    protected void setUsableSize(SfTargetData vlmData, long size) throws SQLException
     {
         // we don't have usable size... but we need allocated size
-        vlmData.allocatedSize = size;
+        vlmData.setAllocatedSize(size);
     }
 }

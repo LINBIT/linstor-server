@@ -14,8 +14,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -24,8 +22,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -64,32 +60,9 @@ public class ResourceDefinitionDataControllerFactory
         AccessContext accCtx,
         ResourceName rscName,
         Integer port,
-        ResourceDefinition.RscDfnFlags[] flags,
-        String secret,
-        ResourceDefinition.TransportType transType
-    )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
-        ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
-    {
-        return createTyped(
-            accCtx,
-            rscName,
-            port,
-            flags,
-            secret,
-            transType,
-            Collections.emptyMap()
-        );
-    }
-
-    private ResourceDefinitionData createTyped(
-        AccessContext accCtx,
-        ResourceName rscName,
-        Integer port,
         RscDfnFlags[] flags,
         String secret,
-        TransportType transType,
-        Map<DeviceLayerKind, RscDfnLayerObject> layerData
+        TransportType transType
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
@@ -132,7 +105,7 @@ public class ResourceDefinitionDataControllerFactory
             new TreeMap<>(),
             new TreeMap<>(),
             new TreeMap<>(),
-            layerData
+            new TreeMap<>()
         );
         driver.create(rscDfn);
 

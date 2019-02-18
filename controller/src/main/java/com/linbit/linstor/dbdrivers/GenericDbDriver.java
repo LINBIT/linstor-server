@@ -3,6 +3,8 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.CryptSetupLayerGenericDbDriver;
+import com.linbit.linstor.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.FreeSpaceMgr;
 import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.KeyValueStore;
@@ -22,6 +24,8 @@ import com.linbit.linstor.ResourceDataGenericDbDriver;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.ResourceLayerIdGenericDbDriver;
+import com.linbit.linstor.ResourceLayerIdGenericDbDriver.RscLayerInfoData;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.SnapshotDefinition;
@@ -36,6 +40,7 @@ import com.linbit.linstor.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.StorageLayerGenericDbDriver;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
 import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
@@ -50,6 +55,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
 
@@ -60,9 +66,12 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -108,6 +117,10 @@ public class GenericDbDriver implements DatabaseDriver
     private final SnapshotDataGenericDbDriver snapshotDriver;
     private final SnapshotVolumeDataGenericDbDriver snapshotVolumeDriver;
     private final KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriver;
+    private final ResourceLayerIdGenericDbDriver rscLayerObjDriver;
+    private final DrbdLayerGenericDbDriver drbdLayerDriver;
+    private final CryptSetupLayerGenericDbDriver cryptLayerDriver;
+    private final StorageLayerGenericDbDriver storageLayerDriver;
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -134,6 +147,10 @@ public class GenericDbDriver implements DatabaseDriver
         SnapshotDataGenericDbDriver snapshotDriverRef,
         SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
         KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriverRef,
+        ResourceLayerIdGenericDbDriver rscLayerObjDriverRef,
+        DrbdLayerGenericDbDriver drbdLayerDriverRef,
+        CryptSetupLayerGenericDbDriver cryptLayerDriverRef,
+        StorageLayerGenericDbDriver storageLayerDriverRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
@@ -158,6 +175,10 @@ public class GenericDbDriver implements DatabaseDriver
         snapshotDriver = snapshotDriverRef;
         snapshotVolumeDriver = snapshotVolumeDriverRef;
         keyValueStoreDataGenericDbDriver = keyValueStoreDataGenericDbDriverRef;
+        rscLayerObjDriver = rscLayerObjDriverRef;
+        drbdLayerDriver = drbdLayerDriverRef;
+        cryptLayerDriver = cryptLayerDriverRef;
+        storageLayerDriver = storageLayerDriverRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
@@ -396,6 +417,9 @@ public class GenericDbDriver implements DatabaseDriver
                 mapByName(loadedKeyValueStoreMap, KeyValueStore::getName);
             keyValueStoreMap.putAll(tmpKeyValueStoreMap);
 
+            // load layered resource objects
+            loadLayeredResourceObects(tmpRscMap);
+
             nodesMap.putAll(tmpNodesMap);
             rscDfnMap.putAll(tmpRscDfnMap);
             storPoolDfnMap.putAll(tmpStorPoolDfnMap);
@@ -417,6 +441,104 @@ public class GenericDbDriver implements DatabaseDriver
     {
         return map.keySet().stream().collect(
             Collectors.toMap(nameMapper, Function.identity(), throwingMerger(), TreeMap::new));
+    }
+
+    private void loadLayeredResourceObects(Map<Pair<NodeName, ResourceName>, Resource> tmpRscMapRef)
+        throws SQLException, AccessDeniedException
+    {
+        List<RscLayerInfoData> rscLayerInfoList = rscLayerObjDriver.loadAllResourceIds();
+        storageLayerDriver.fetchForLoadAll();
+
+        Set<Integer> parentIds = null;
+        boolean loadNext = true;
+        Map<Integer, Pair<RscLayerObject, Set<RscLayerObject>>> rscLayerObjectChildren = new HashMap<>();
+
+        while (loadNext)
+        {
+            // we need to load in a top-down fashion.
+            List<RscLayerInfoData> nextRscInfoToLoad = nextRscLayerToLoad(rscLayerInfoList, parentIds);
+            loadNext = !nextRscInfoToLoad.isEmpty();
+
+            parentIds = new HashSet<>();
+            for (RscLayerInfoData rli : nextRscInfoToLoad)
+            {
+                Pair<? extends RscLayerObject, Set<RscLayerObject>> rscLayerObjectPair;
+                Resource rsc = tmpRscMapRef.get(new Pair<>(rli.nodeName, rli.resourceName));
+
+                RscLayerObject parent = null;
+                Set<RscLayerObject> parentsChildren = null;
+                if (rli.parentId != null)
+                {
+                    Pair<RscLayerObject, Set<RscLayerObject>> pair = rscLayerObjectChildren.get(rli.parentId);
+
+                    parent = pair.objA;
+                    parentsChildren = pair.objB;
+                }
+                switch (rli.kind)
+                {
+                    case DRBD:
+                        rscLayerObjectPair = drbdLayerDriver.load(
+                            rsc,
+                            rli.id,
+                            rli.rscSuffix,
+                            parent
+                        );
+                        break;
+                    case CRYPT_SETUP:
+                        rscLayerObjectPair = cryptLayerDriver.load(
+                            rsc,
+                            rli.id,
+                            rli.rscSuffix,
+                            parent
+                        );
+                        break;
+                    case STORAGE:
+                        rscLayerObjectPair = storageLayerDriver.load(
+                            rsc,
+                            rli.id,
+                            rli.rscSuffix,
+                            parent
+                        );
+                        break;
+                    default:
+                        throw new ImplementationError("Unhandled case for device kind '" + rli.kind + "'");
+                }
+                RscLayerObject rscLayerObject = rscLayerObjectPair.objA;
+                rscLayerObjectChildren.put(rli.id, new Pair<>(rscLayerObject, rscLayerObjectPair.objB));
+                if (parent == null)
+                {
+                    rsc.setLayerData(dbCtx, rscLayerObject);
+                }
+                else
+                {
+                    parentsChildren.add(rscLayerObject);
+                }
+
+                // rli will be the parent for the next iteration
+                parentIds.add(rli.id);
+            }
+        }
+
+        drbdLayerDriver.clearLoadCache();
+        storageLayerDriver.clearLoadAllCache();
+    }
+
+    private List<RscLayerInfoData> nextRscLayerToLoad(
+        List<RscLayerInfoData> rscLayerInfoListRef,
+        Set<Integer> ids
+    )
+    {
+        List<RscLayerInfoData> ret;
+        if (ids == null)
+        {
+            // root rscLayerObjects
+            ret = rscLayerInfoListRef.stream().filter(rlo -> rlo.parentId == null).collect(Collectors.toList());
+        }
+        else
+        {
+            ret = rscLayerInfoListRef.stream().filter(rlo -> ids.contains(rlo.parentId)).collect(Collectors.toList());
+        }
+        return ret;
     }
 
     @Override

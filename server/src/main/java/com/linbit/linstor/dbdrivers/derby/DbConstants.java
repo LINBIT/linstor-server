@@ -40,6 +40,13 @@ public class DbConstants
     public static final String TBL_SNAPSHOT_VOLUME_DEFINITIONS = "SNAPSHOT_VOLUME_DEFINITIONS";
     public static final String TBL_SNAPSHOT_VOLUMES      = "SNAPSHOT_VOLUMES";
     public static final String TBL_KEY_VALUE_STORE       = "KEY_VALUE_STORE";
+    public static final String TBL_LAYER_RESOURCE_IDS    = "LAYER_RESOURCE_IDS";
+    public static final String TBL_LAYER_DRBD_RESOURCE_DEFINITIONS = "LAYER_DRBD_RESOURCE_DEFINITIONS";
+    public static final String TBL_LAYER_DRBD_RESOURCES  = "LAYER_DRBD_RESOURCES";
+    public static final String TBL_LAYER_DRBD_VOLUME_DEFINITIONS = "LAYER_DRBD_VOLUME_DEFINITIONS";
+    public static final String TBL_LAYER_CRYPT_SETUP_VOLUMES = "LAYER_CRYPT_SETUP_VOLUMES";
+    public static final String TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS = "LAYER_SWORDFISH_VOLUME_DEFINITIONS";
+    public static final String TBL_LAYER_STORAGE_VOLUMES = "LAYER_STORAGE_VOLUMES";
 
     // SEC_CONFIGURATION column names
     public static final String ENTRY_KEY     = "ENTRY_KEY";
@@ -142,6 +149,31 @@ public class DbConstants
     // KEY_VALUE_STORE column names
     public static final String KVS_NAME     = "KVS_NAME";
     public static final String KVS_DSP_NAME = "KVS_DSP_NAME";
+
+    // LAYER_RESOURCE_IDS column names
+    public static final String LAYER_RESOURCE_ID = "LAYER_RESOURCE_ID";
+    public static final String LAYER_RESOURCE_KIND = "LAYER_RESOURCE_KIND";
+    public static final String LAYER_RESOURCE_PARENT_ID = "LAYER_RESOURCE_PARENT_ID";
+    public static final String LAYER_RESOURCE_SUFFIX = "LAYER_RESOURCE_SUFFIX";
+
+    // LAYER_DRBD_RESOURCES column names
+    public static final String AL_STRIPES      = "AL_STRIPES";
+    public static final String AL_STRIPE_SIZE  = "AL_STRIPE_SIZE";
+    //    public static final String NODE_ID         = "NODE_ID";
+    public static final String PEER_SLOTS      = "PEER_SLOTS";
+    public static final String FLAGS           = "FLAGS";
+
+    // LAYER_DRBD_RESOURCE_DEFINIITONS column names
+    public static final String RESOURCE_NAME_SUFFIX = "RESOURCE_NAME_SUFFIX";
+
+    // LAYER_CRYPT_SETUP_VOLUMES column names
+    public static final String ENCRYPTED_PASSWORD = "ENCRYPTED_PASSWORD";
+
+    // LAYER_SWORDFISH_VOLUME_DEFINITIONS column names
+    public static final String SF_VLM_ODATA = "SF_VLM_ODATA";
+
+    // LAYER_STORAGE_VOLUMES column names
+    public static final String PROVIDER_KIND = "PROVIDER_KIND";
 
     private DbConstants()
     {

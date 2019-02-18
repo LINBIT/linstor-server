@@ -87,7 +87,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // TODO: should be moved to DrbdRscData once controller knows about it
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> down;
 
-    private final Map<DeviceLayerKind, RscDfnLayerObject> layerStorage;
+    private final TransactionMap<DeviceLayerKind, RscDfnLayerObject> layerStorage;
 
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
@@ -151,7 +151,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             this.dbDriver.getTransportTypeDriver()
         );
 
-        layerStorage = layerDataMapRef;
+        layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
 
         transObjs = Arrays.asList(
             flags,

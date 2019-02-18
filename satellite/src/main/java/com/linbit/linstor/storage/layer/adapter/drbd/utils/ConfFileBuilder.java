@@ -38,10 +38,10 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.utils.Pair;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnData;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmData;
 
 import org.slf4j.event.Level;
 
@@ -168,7 +168,7 @@ public class ConfFileBuilder
                 }
             }
 
-            int port = rscDfnData.getPort().value;
+            int port = rscDfnData.getTcpPort().value;
             // Create local network configuration
             {
                 appendLine("");
@@ -717,14 +717,14 @@ public class ConfFileBuilder
         {
             final String disk;
             if ((!isPeerRsc && vlmData.getBackingDevice() == null) ||
-                (isPeerRsc && vlmData.getRscLayerObject().isDisklessForPeers()) ||
-                (!isPeerRsc && vlmData.getRscLayerObject().isDiskless()))
+                (isPeerRsc && vlmData.getRscLayerObject().isDisklessForPeers(accCtx)) ||
+                (!isPeerRsc && vlmData.getRscLayerObject().isDiskless(accCtx)))
             {
                 disk = "none";
             }
             else
             {
-                if (vlmData.getRscLayerObject().equals(localRscData))
+                if (!isPeerRsc)
                 {
                     String backingDiskPath = vlmData.getBackingDevice();
                     if (backingDiskPath.trim().equals(""))

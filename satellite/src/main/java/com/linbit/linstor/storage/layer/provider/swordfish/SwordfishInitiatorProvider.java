@@ -17,11 +17,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.interfaces.layers.storage.SfInitiatorVlmProviderObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
+import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.HttpHeader;
 import com.linbit.linstor.storage.utils.RestHttpClient;
@@ -120,8 +120,8 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
 
             String volumePath = getVolumePath(vlmData);
 
-            vlmData.devicePath = volumePath;
-            vlmData.allocatedSize = ProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create());
+            vlmData.setDevicePath(volumePath);
+            vlmData.setAllocatedSize(StltProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create()));
         }
         catch (InvalidKeyException exc)
         {
@@ -145,7 +145,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         try
         {
             detatchSfVlm(vlmData);
-            vlmData.exists = false;
+            vlmData.setExists(false);
 
             // TODO health check on composed node
         }
@@ -191,7 +191,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
 
     @SuppressWarnings("unchecked")
     private String getSfVolumeEndpointDurableNameNqn(SfInitiatorData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException
     {
         RestResponse<Map<String, Object>> sfVlmResp = getSfVlm(vlmData);
 
@@ -305,7 +305,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
                         {
                             Map<String, Object> paramAllowableValueMap = (Map<String, Object>) paramAllowableValue;
                             String attachableVlmId = (String) paramAllowableValueMap.get(JSON_KEY_ODATA_ID);
-                            if (vlmData.vlmDfnData.vlmOdata.equals(attachableVlmId))
+                            if (vlmData.getVlmDfnLayerObject().getVlmOdata().equals(attachableVlmId))
                             {
                                 attachable = true;
                                 break;
@@ -350,7 +350,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
                 .put(
                     JSON_KEY_RESOURCE,
                     MapBuilder.defaultImpl().start()
-                        .put(JSON_KEY_ODATA_ID, vlmData.vlmDfnData.vlmOdata)
+                        .put(JSON_KEY_ODATA_ID, vlmData.getVlmDfnLayerObject().getVlmOdata())
                         .build()
                 )
                 .build(),
@@ -360,7 +360,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     }
 
     public String getVolumePath(SfInitiatorData vlmData)
-        throws StorageException, AccessDeniedException, InvalidKeyException, SQLException
+        throws StorageException, AccessDeniedException, InvalidKeyException
     {
         ReadOnlyProps stltRoProps = stltConfigAccessor.getReadonlyProps();
         Props storPoolProps = vlmData.getVolume().getStorPool(sysCtx).getProps(sysCtx);
@@ -461,7 +461,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         //        String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
         //        String sfVlmId = getSfVlmId(vlmDfnProps, true);
 
-        String vlmOdataId = vlmData.vlmDfnData.vlmOdata;
+        String vlmOdataId = vlmData.getVlmDfnLayerObject().getVlmOdata();
 
         if (vlmOdataId != null)
         {
@@ -545,14 +545,14 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     {
         return getSwordfishResource(
             vlmData,
-            vlmData.vlmDfnData.vlmOdata,
+            vlmData.getVlmDfnLayerObject().getVlmOdata(),
             false
         );
     }
 
     @Override
-    protected void setUsableSize(SfInitiatorData vlmData, long size)
+    protected void setUsableSize(SfInitiatorData vlmData, long size) throws SQLException
     {
-        vlmData.usableSize = size;
+        vlmData.setUsableSize(size);
     }
 }

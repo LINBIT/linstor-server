@@ -1,6 +1,10 @@
 package com.linbit.linstor.storage.interfaces.layers;
 
-public class State
+import com.linbit.ImplementationError;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObject;
+
+public class State implements TransactionObject
 {
     private final boolean good;
     private final boolean stable;
@@ -27,5 +31,41 @@ public class State
     public String toString()
     {
         return descr;
+    }
+
+    @Override
+    public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
+    {
+        // no-op
+    }
+
+    @Override
+    public boolean hasTransMgr()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isDirtyWithoutTransMgr()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return false;
+    }
+
+    @Override
+    public void rollback()
+    {
+        // no-op
+    }
+
+    @Override
+    public void commit()
+    {
+        // no-op
     }
 }

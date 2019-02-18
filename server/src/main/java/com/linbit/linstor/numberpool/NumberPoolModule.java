@@ -2,6 +2,8 @@ package com.linbit.linstor.numberpool;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+
+import com.linbit.Checks;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.ApiConsts;
@@ -20,6 +22,7 @@ public class NumberPoolModule extends AbstractModule
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
     public static final String SF_TARGET_PORT_POOL = "SfTargetPortPool";
+    public static final String LAYER_RSC_ID_POOL = "LayerRscIdPool";
 
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
 
@@ -39,6 +42,10 @@ public class NumberPoolModule extends AbstractModule
     private static final int DEFAULT_SF_TARGET_TCP_PORT_MAX = 10_999;
 
     private static final String SF_TARGET_TCP_ELEMENT_NAME = "Swordfish target TCP port";
+
+    private static final int LAYER_RSC_ID_MIN = 0;
+    private static final int LAYER_RSC_ID_MAX = BitmapPool.MAX_CAPACITY - 1;
+    private static final String LAYER_RSC_ID_ELEMENT_NAME = "Layer Resource Id";
 
     @Override
     protected void configure()
@@ -102,6 +109,31 @@ public class NumberPoolModule extends AbstractModule
             TcpPortNumber.PORT_NR_MAX,
             DEFAULT_SF_TARGET_TCP_PORT_MIN,
             DEFAULT_SF_TARGET_TCP_PORT_MAX
+        );
+    }
+
+    @Provides
+    @Singleton
+    @Named(LAYER_RSC_ID_POOL)
+    public DynamicNumberPool layerRscIdPool(
+        ErrorReporter errorReporter,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+    )
+    {
+        return new DynamicNumberPoolImpl(
+            errorReporter,
+            ctrlConfRef,
+            LAYER_RSC_ID_MIN + "-" + LAYER_RSC_ID_MAX,
+            LAYER_RSC_ID_ELEMENT_NAME,
+            rscId -> Checks.genericRangeCheck(
+                rscId,
+                LAYER_RSC_ID_MIN,
+                LAYER_RSC_ID_MAX,
+                "Layer resource id %d is out of range [%d - %d]"
+            ),
+            LAYER_RSC_ID_MAX,
+            LAYER_RSC_ID_MIN,
+            LAYER_RSC_ID_MAX
         );
     }
 }

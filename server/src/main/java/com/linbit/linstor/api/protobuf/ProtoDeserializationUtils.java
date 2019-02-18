@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.google.protobuf.ByteString;
+
 public class ProtoDeserializationUtils
 {
     public static ApiCallRc.RcEntry parseApiCallRc(
@@ -50,6 +52,13 @@ public class ProtoDeserializationUtils
                 LinStorMapEntryOuterClass.LinStorMapEntry::getKey,
                 LinStorMapEntryOuterClass.LinStorMapEntry::getValue
             ));
+    }
+
+    public static byte[] extractByteArray(ByteString protoBytes)
+    {
+        byte[] arr = new byte[protoBytes.size()];
+        protoBytes.copyTo(arr, 0);
+        return arr;
     }
 
     private ProtoDeserializationUtils()

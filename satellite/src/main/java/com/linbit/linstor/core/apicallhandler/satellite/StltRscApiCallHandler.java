@@ -55,12 +55,11 @@ import com.linbit.linstor.core.DivergentDataException;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.apicallhandler.LayerRscDataMerger;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.Base64;
 
@@ -105,6 +104,7 @@ class StltRscApiCallHandler
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
+    private final LayerRscDataMerger layerRscDataMerger;
 
     @Inject
     StltRscApiCallHandler(
@@ -126,7 +126,8 @@ class StltRscApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionDataSatelliteFactory resourceConnectionDataFactoryRef,
-        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef
+        FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
+        LayerRscDataMerger layerRscDataMergerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -148,6 +149,7 @@ class StltRscApiCallHandler
         stltSecObjs = stltSecObjsRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
+        layerRscDataMerger = layerRscDataMergerRef;
     }
 
     /**
@@ -287,9 +289,6 @@ class StltRscApiCallHandler
 
                 NodeData localNode = controllerPeerConnector.getLocalNode();
 
-                // XXX restore layerData from rawRsc
-                Map<DeviceLayerKind, RscLayerObject> localRscLayerData = new TreeMap<>();
-
                 localRsc = createRsc(
                     rscRawData.getLocalRscUuid(),
                     localNode,
@@ -298,8 +297,7 @@ class StltRscApiCallHandler
                     RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
                     rscRawData.getLocalRscProps(),
                     rscRawData.getLocalVlms(),
-                    false,
-                    localRscLayerData
+                    false
                 );
 
                 createdRscSet.add(new Resource.Key(localRsc));
@@ -328,9 +326,6 @@ class StltRscApiCallHandler
                     }
                     nodesToRegister.add(remoteNode);
 
-                    // XXX restore layerData from rawRsc
-                    Map<DeviceLayerKind, RscLayerObject> remoteRscLayerData = new TreeMap<>();
-
                     ResourceData remoteRsc = createRsc(
                         otherRscRaw.getRscUuid(),
                         remoteNode,
@@ -339,8 +334,7 @@ class StltRscApiCallHandler
                         RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
                         otherRscRaw.getRscProps(),
                         otherRscRaw.getVlms(),
-                        true,
-                        remoteRscLayerData
+                        true
                     );
                     otherRscs.add(remoteRsc);
 
@@ -485,9 +479,6 @@ class StltRscApiCallHandler
                         remoteNodeProps.map().putAll(otherRsc.getNodeProps());
                         remoteNodeProps.keySet().retainAll(otherRsc.getNodeProps().keySet());
 
-                        // XXX restore layerData from rawRsc
-                        Map<DeviceLayerKind, RscLayerObject> remoteRscLayerData = new TreeMap<>();
-
                         // create resource
                         remoteRsc = createRsc(
                             otherRsc.getRscUuid(),
@@ -497,8 +488,7 @@ class StltRscApiCallHandler
                             RscFlags.restoreFlags(otherRsc.getRscFlags()),
                             otherRsc.getRscProps(),
                             otherRsc.getVlms(),
-                            true,
-                            remoteRscLayerData
+                            true
                         );
 
                         createdRscSet.add(new Resource.Key(remoteRsc));
@@ -586,13 +576,16 @@ class StltRscApiCallHandler
                 }
                 // all resources have been created, updated or deleted
 
-                errorReporter.logWarning(
-                    "We know at least one resource the controller does not:\n   " +
-                        removedList.stream()
-                            .map(Resource::toString)
-                            .collect(Collectors.joining(",\n   ")) +
-                        "\nThe controller is not be aware of typed resources or we have missed a resource deletion."
-                );
+                if (!removedList.isEmpty())
+                {
+                    errorReporter.logWarning(
+                        "We know at least one resource the controller does not:\n   " +
+                            removedList.stream()
+                                .map(Resource::toString)
+                                .collect(Collectors.joining(",\n   ")) +
+                            "\nThe controller is not be aware of typed resources or we have missed a resource deletion."
+                    );
+                }
             }
 
             // create resource connections
@@ -673,6 +666,27 @@ class StltRscApiCallHandler
                 }
             }
 
+            layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getRscLayerDataPojo());
+            for (Resource otherRsc : otherRscs)
+            {
+                OtherRscPojo otherRscPojo = null;
+                for (OtherRscPojo tmp : rscRawData.getOtherRscList())
+                {
+                    if (otherRsc.getAssignedNode().getName().value.equals(
+                        tmp.getNodeName().toUpperCase()
+                    ))
+                    {
+                        otherRscPojo = tmp;
+                        break;
+                    }
+                }
+                if (otherRscPojo == null)
+                {
+                    throw new ImplementationError("No rscPojo found for remote resource " + otherRsc);
+                }
+                layerRscDataMerger.restoreLayerData(otherRsc, otherRscPojo.getRscLayerDataPojo());
+            }
+
             transMgrProvider.get().commit();
 
             Set<Resource.Key> devMgrNotifications = new TreeSet<>();
@@ -718,8 +732,7 @@ class StltRscApiCallHandler
         RscFlags[] flags,
         Map<String, String> rscProps,
         List<VolumeData.VlmApi> vlms,
-        boolean remoteRsc,
-        Map<DeviceLayerKind, RscLayerObject> layerData
+        boolean remoteRsc
     )
         throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException
     {
@@ -729,8 +742,7 @@ class StltRscApiCallHandler
             node,
             rscDfn,
             nodeId,
-            flags,
-            layerData
+            flags
         );
 
         checkUuid(
@@ -766,9 +778,6 @@ class StltRscApiCallHandler
 
         VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
-        // XXX restore layerStack from vlmApi
-        List<DeviceLayerKind> layerStack = new ArrayList<>();
-
         VolumeData vlm = volumeDataFactory.getInstanceSatellite(
             apiCtx,
             vlmApi.getVlmUuid(),
@@ -777,8 +786,7 @@ class StltRscApiCallHandler
             storPool,
             vlmApi.getBlockDevice(),
             vlmApi.getMetaDisk(),
-            Volume.VlmFlags.restoreFlags(vlmApi.getFlags()),
-            layerStack
+            Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
         );
 
         vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());

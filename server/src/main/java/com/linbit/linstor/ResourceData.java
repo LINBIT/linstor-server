@@ -13,7 +13,6 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -78,7 +77,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     private final Key rscKey;
 
-    private final TransactionMap<DeviceLayerKind, RscLayerObject> layerStorage;
+    private final TransactionSimpleObject<ResourceData, RscLayerObject> rootLayerData;
 
     ResourceData(
         UUID objIdRef,
@@ -92,8 +91,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<Resource.Key, ResourceConnection> rscConnMapRef,
-        Map<VolumeNumber, Volume> vlmMapRef,
-        Map<DeviceLayerKind, RscLayerObject> layerStorageMapRef
+        Map<VolumeNumber, Volume> vlmMapRef
     )
         throws SQLException
     {
@@ -118,7 +116,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
         objProt = objProtRef;
-        layerStorage = transObjFactory.createTransactionMap(layerStorageMapRef, null);
+        rootLayerData = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -138,6 +136,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
             resourceConnections,
             volumeMap,
             resourceProps,
+            rootLayerData,
             deleted
         );
     }
@@ -261,7 +260,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        volumeMap.remove(vol.getVolumeDefinition().getVolumeNumber());
+        VolumeNumber vlmNr = vol.getVolumeDefinition().getVolumeNumber();
+        volumeMap.remove(vlmNr);
+        rootLayerData.get().remove(vlmNr);
     }
 
     @Override
@@ -311,20 +312,21 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends RscLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
+    public <T extends RscLayerObject> T getLayerData(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        return (T) layerStorage.get(kind);
+        return (T) rootLayerData.get();
     }
 
     @Override
-    public void setLayerData(AccessContext accCtx, RscLayerObject layerData) throws AccessDeniedException
+    public void setLayerData(AccessContext accCtx, RscLayerObject layerData)
+        throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        layerStorage.put(layerData.getLayerKind(), layerData);
+        rootLayerData.set(layerData);
 
     }
 
@@ -362,6 +364,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
             resourceProps.delete();
 
             objProt.delete(accCtx);
+
+            if (rootLayerData.get() != null)
+            {
+                rootLayerData.get().delete();
+            }
 
             activateTransMgr();
             dbDriver.delete(this);
@@ -449,7 +456,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
             null, // otherRscList
             rscConns,
             fullSyncId,
-            updateId
+            updateId,
+            getLayerData(accCtx).asPojo(accCtx)
         );
     }
 

@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;

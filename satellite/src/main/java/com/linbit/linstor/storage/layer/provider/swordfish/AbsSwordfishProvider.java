@@ -19,6 +19,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -511,7 +512,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     public abstract long getPoolFreeSpace(StorPool storPool)
         throws StorageException, AccessDeniedException;
 
-    protected abstract void setUsableSize(LAYER_DATA vlmData, long size);
+    protected abstract void setUsableSize(LAYER_DATA vlmData, long size) throws SQLException;
 
     protected static class SfRscException extends StorageException
     {

@@ -11,8 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.SQLException;
-import java.util.Collections;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -106,8 +104,7 @@ public class ConnectionPropsTest extends GenericDbBase
             storPool1,
             blockDev1,
             metaDisk1,
-            null,
-            Collections.emptyList()
+            null
         );
         vol2 = volumeDataFactory.create(
             SYS_CTX,
@@ -116,8 +113,7 @@ public class ConnectionPropsTest extends GenericDbBase
             storPool2,
             blockDev2,
             metaDisk2,
-            null,
-            Collections.emptyList()
+            null
         );
 
         nodeCon = nodeConnectionDataFactory.create(SYS_CTX, node1, node2);

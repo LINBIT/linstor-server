@@ -126,12 +126,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 {
                     if (running)
                     {
-                        // both, stdOut and stdErr will send us an EOFEvent. just consume the second
-                        Event nextEvent = eventDeque.peek();
-                        if (nextEvent != null && nextEvent instanceof EOFEvent)
-                        {
-                            eventDeque.take();
-                        }
+                        errorReporter.logWarning("DRBD 'events2' stream ended unexpectedly");
                         restartEvents2Stream(RESTART_EVENTS2_STREAM_TIMEOUT);
                     }
                 }
@@ -163,6 +158,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
 
     private void restartEvents2Stream(long timeout)
     {
+        errorReporter.logTrace("Stopping DRBD 'events2' demonHandler.");
         demonHandler.stop(true);
         eventsMonitor.reinitializing();
         if (timeout <= 0)
@@ -173,11 +169,16 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
         {
             errorReporter.logTrace("Restarting DRBD 'events2' in " + timeout + "ms");
         }
+new Exception().printStackTrace();
         try
         {
-            Thread.sleep(timeout);
+            if (timeout > 0)
+            {
+                Thread.sleep(timeout);
+            }
             try
             {
+                errorReporter.logTrace("Clearing eventDeque and starting DRBD 'events2' demonHandler");
                 eventDeque.clear();
                 demonHandler.start();
             }
@@ -201,7 +202,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                         exc
                     )
                 );
-            } // otherwise we are in a shutdown sequence - ignore this exception, just gracefully die
+            } // otherwise we are in a shutdown sequence - ignore this exception, just die gracefully
         }
     }
 

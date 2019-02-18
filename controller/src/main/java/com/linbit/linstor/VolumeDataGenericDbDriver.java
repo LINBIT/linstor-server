@@ -15,7 +15,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
@@ -28,8 +27,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -167,9 +164,6 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     {
         Map<Volume.Key, VolumeConnection> vlmConnsMap = new TreeMap<>();
 
-        // XXX restore layerstack
-        List<DeviceLayerKind> layerStack = new ArrayList<>();
-
         VolumeData vlm = new VolumeData(
             java.util.UUID.fromString(resultSet.getString(VOL_UUID)),
             rsc,
@@ -182,8 +176,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            vlmConnsMap,
-            layerStack
+            vlmConnsMap
         );
 
         return new Pair<>(

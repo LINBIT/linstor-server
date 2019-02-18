@@ -160,7 +160,9 @@ public class CtrlVlmListApiCallHandler
                                     null,
                                     rscConns,
                                     null,
-                                    null);
+                                    null,
+                                    rsc.getLayerData(peerAccCtx.get()).asPojo(peerAccCtx.get())
+                                );
                                 rscList.addResource(filteredRscVlms);
                             }
                         }

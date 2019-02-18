@@ -75,6 +75,20 @@ public class StringUtils
         return result.toArray(new String[0]);
     }
 
+    public static String repeat(String repeatedElement, String glue, int times)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (times > 0)
+        {
+            sb.append(repeatedElement);
+        }
+        for (int idx = 1; idx < times; ++idx)
+        {
+            sb.append(glue).append(repeatedElement);
+        }
+        return sb.toString();
+    }
+
     public static class ConditionalStringJoiner
     {
         private final StringJoiner stringJoiner;

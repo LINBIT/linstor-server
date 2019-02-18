@@ -4,6 +4,11 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 public interface VlmLayerObject extends VlmProviderObject
 {
+    default int getRscLayerId()
+    {
+        return getRscLayerObject().getRscLayerId();
+    }
+
     default String getBackingDevice()
     {
         return getSingleChild().getDevicePath();

@@ -19,7 +19,6 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.devmgr.helper.LayeredResourcesHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -29,15 +28,12 @@ import com.linbit.linstor.storage.LayerFactory;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.utils.Either;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -52,7 +48,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -70,7 +65,6 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final ControllerPeerConnector controllerPeerConnector;
     private final CtrlStltSerializer interComSerializer;
 
-    private final LayeredResourcesHelper layeredRscHelper;
     private final LayerFactory layerFactory;
     private final AtomicBoolean fullSyncApplied;
     private final StorageLayer storageLayer;
@@ -82,7 +76,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         ControllerPeerConnector controllerPeerConnectorRef,
         CtrlStltSerializer interComSerializerRef,
         Provider<NotificationListener> notificationListenerRef,
-        LayeredResourcesHelper layeredRscHelperRef,
         LayerFactory layerFactoryRef,
         StorageLayer storageLayerRef
     )
@@ -93,7 +86,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         interComSerializer = interComSerializerRef;
         notificationListener = notificationListenerRef;
 
-        layeredRscHelper = layeredRscHelperRef;
         layerFactory = layerFactoryRef;
         storageLayer = storageLayerRef;
 
@@ -107,11 +99,7 @@ public class DeviceHandlerImpl implements DeviceHandler
          * TODO: we may need to add some snapshotname-suffix logic (like for resourcename)
          * when implementing snapshots for / through RAID-layer
          */
-
-        Collection<Resource> origResources = rscs;
-        Collection<Resource> allResources = convertResources(origResources, snapshots);
-
-        Map<DeviceLayer, Set<RscLayerObject>> rscByLayer = groupResourcesByLayer(allResources);
+        Map<DeviceLayer, Set<RscLayerObject>> rscByLayer = groupResourcesByLayer(rscs);
         Map<ResourceName, Set<Snapshot>> snapshotsByRscName = groupSnapshotsByResourceName(snapshots);
 
         calculateGrossSizes(rscs);
@@ -140,7 +128,6 @@ public class DeviceHandlerImpl implements DeviceHandler
             notifyResourcesApplied(rscListNotifyApplied);
 
             clearLayerCaches(rscByLayer);
-            layeredRscHelper.cleanupResources(origResources);
         }
     }
 
@@ -151,22 +138,17 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             for (Resource rsc : allResources)
             {
-                for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
+                RscLayerObject rootRscData = rsc.getLayerData(wrkCtx);
+
+                LinkedList<RscLayerObject> toProcess = new LinkedList<>();
+                toProcess.add(rootRscData);
+                while (!toProcess.isEmpty())
                 {
-                    DeviceLayerKind rootKind = vlm.getLayerStack(wrkCtx).get(0);
-                    RscLayerObject rootRscData = rsc.getLayerData(wrkCtx, rootKind);
+                    RscLayerObject rscData = toProcess.poll();
+                    toProcess.addAll(rscData.getChildren());
 
-                    LinkedList<RscLayerObject> toProcess = new LinkedList<>();
-                    toProcess.add(rootRscData);
-                    while (!toProcess.isEmpty())
-                    {
-                        RscLayerObject rscData = toProcess.poll();
-
-                        toProcess.addAll(rscData.getChildren());
-
-                        DeviceLayer devLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());
-                        ret.computeIfAbsent(devLayer, ignored -> new HashSet<>()).add(rscData);
-                    }
+                    DeviceLayer devLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());
+                    ret.computeIfAbsent(devLayer, ignored -> new HashSet<>()).add(rscData);
                 }
             }
         }
@@ -255,51 +237,39 @@ public class DeviceHandlerImpl implements DeviceHandler
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
             try
             {
-                DeviceLayerKind rootKind = null;
+                process(
+                    rsc.getLayerData(wrkCtx),
+                    snapshotList,
+                    apiCallRc
+                );
+
+                /*
+                 * old device manager reported changes of free space after every
+                 * resource operation. As this could require to query the same
+                 * VG or zpool multiple times within the same device manager run,
+                 * we only query the free space after the whole run.
+                 * This also means that we only send the resourceApplied messages
+                 * at the very end
+                 */
+                if (rsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE))
                 {
-                    Optional<Volume> firstVlm = rsc.streamVolumes().findFirst();
-                    if (firstVlm.isPresent())
-                    {
-                        rootKind = firstVlm.get().getLayerStack(wrkCtx).get(0);
-                    }
+                    rscListNotifyDelete.add(rsc);
+                    notificationListener.get().notifyResourceDeleted(rsc);
+                    // rsc.delete is done by the deviceManager
+                }
+                else
+                {
+                    rscListNotifyApplied.add(rsc);
+                    notificationListener.get().notifyResourceApplied(rsc);
                 }
 
-                if (rootKind != null)
+                for (Snapshot snapshot : snapshots)
                 {
-                    process(
-                        rsc.getLayerData(wrkCtx, rootKind),
-                        snapshotList,
-                        apiCallRc
-                    );
-
-                    /*
-                     * old device manager reported changes of free space after every
-                     * resource operation. As this could require to query the same
-                     * VG or zpool multiple times within the same device manager run,
-                     * we only query the free space after the whole run.
-                     * This also means that we only send the resourceApplied messages
-                     * at the very end
-                     */
-                    if (rsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE))
+                    if (snapshot.getFlags().isSet(wrkCtx, SnapshotFlags.DELETE))
                     {
-                        rscListNotifyDelete.add(rsc);
-                        notificationListener.get().notifyResourceDeleted(rsc);
-                        // rsc.delete is done by the deviceManager
-                    }
-                    else
-                    {
-                        rscListNotifyApplied.add(rsc);
-                        notificationListener.get().notifyResourceApplied(rsc);
-                    }
-
-                    for (Snapshot snapshot : snapshots)
-                    {
-                        if (snapshot.getFlags().isSet(wrkCtx, SnapshotFlags.DELETE))
-                        {
-                            snapListNotifyDelete.add(snapshot);
-                            notificationListener.get().notifySnapshotDeleted(snapshot);
-                            // snapshot.delete is done by the deviceManager
-                        }
+                        snapListNotifyDelete.add(snapshot);
+                        notificationListener.get().notifySnapshotDeleted(snapshot);
+                        // snapshot.delete is done by the deviceManager
                     }
                 }
             }
@@ -580,43 +550,24 @@ public class DeviceHandlerImpl implements DeviceHandler
 
             VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
 
-            RscLayerObject rscData = null;
+            LinkedList<RscLayerObject> rscDataList = new LinkedList<>();
+            rscDataList.add(rsc.getLayerData(wrkCtx));
+
             VlmProviderObject vlmData = null;
-            for (DeviceLayerKind kind : vlm.getLayerStack(wrkCtx))
+
+            while (!rscDataList.isEmpty())
             {
-                if (rscData == null)
-                {
-                    rscData = rsc.getLayerData(wrkCtx, kind);
-                }
-                else
-                {
-                    rscData = rscData.getSingleChild();
-                }
+                RscLayerObject rscData = rscDataList.removeFirst();
+                rscDataList.addAll(rscData.getChildren());
+
                 vlmData = rscData.getVlmProviderObject(vlmNr);
-                layerFactory.getDeviceLayer(kind).updateGrossSize(vlmData);
+                layerFactory.getDeviceLayer(rscData.getLayerKind()).updateGrossSize(vlmData);
             }
         }
     }
 
     // TODO: create delete volume / resource mehtods that (for now) only perform the actual .delete()
     // command. This method should be a central point for future logging or other extensions / purposes
-
-    /**
-     * This method splits one {@link Resource} into device-layer-specific resources.
-     * In future versions of LINSTOR this method should get obsolete as the API layer should
-     * already receive the correct resources.
-     * @param snapshotsRef
-     * @throws AccessDeniedException
-     */
-    @RemoveAfterDevMgrRework
-    private Collection<Resource> convertResources(
-        Collection<Resource> resourcesToProcess,
-        Collection<Snapshot> snapshots
-    )
-    {
-        // convert resourceNames to resources
-        return layeredRscHelper.extractLayers(resourcesToProcess);
-    }
 
     public void fullSyncApplied(Node localNode)
     {

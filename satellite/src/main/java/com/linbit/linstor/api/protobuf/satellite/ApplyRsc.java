@@ -14,6 +14,7 @@ import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.protobuf.ProtoRscLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
@@ -80,7 +81,8 @@ public class ApplyRsc implements ApiCall
             rscData.getRscDfnTransportType(),
             rscData.getRscDfnDown(),
             ProtoMapUtils.asMap(rscData.getRscDfnPropsList()),
-            vlmDfns);
+            vlmDfns
+        );
         RscPojo rscRawData = new RscPojo(
             rscData.getRscName(),
             null,
@@ -94,7 +96,8 @@ public class ApplyRsc implements ApiCall
             otherRscList,
             rscConns,
             rscData.getFullSyncId(),
-            rscData.getUpdateId()
+            rscData.getUpdateId(),
+            ProtoRscLayerUtils.extractLayerData(rscData.getLayerObject())
         );
         return rscRawData;
     }
@@ -187,7 +190,8 @@ public class ApplyRsc implements ApiCall
                     ProtoMapUtils.asMap(otherRsc.getRscPropsList()),
                     extractRawVolumes(
                         otherRsc.getLocalVlmsList()
-                    )
+                    ),
+                    ProtoRscLayerUtils.extractLayerData(otherRsc.getLayerObject())
                 )
             );
         }

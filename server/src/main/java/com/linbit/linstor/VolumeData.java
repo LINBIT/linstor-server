@@ -80,11 +80,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final Key vlmKey;
 
-    private final List<DeviceLayerKind> layerStack;
-
-    @RemoveAfterDevMgrRework
-    private final List<DeviceLayerKind> modifyableLayerStack;
-
     VolumeData(
         UUID uuid,
         Resource resRef,
@@ -97,8 +92,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
-        Map<Volume.Key, VolumeConnection> vlmConnsMapRef,
-        List<DeviceLayerKind> layerStackRef
+        Map<Volume.Key, VolumeConnection> vlmConnsMapRef
     )
         throws SQLException
     {
@@ -139,9 +133,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         usableSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         allocatedSize = transObjFactory.createTransactionSimpleObject(this, null, null);
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-
-        modifyableLayerStack = layerStackRef;
-        layerStack = Collections.unmodifiableList(modifyableLayerStack);
 
         vlmKey = new Key(this);
 
@@ -442,22 +433,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
         return volumeDfn.getVolumeSize(accCtx);
-    }
-
-    @Override
-    public List<DeviceLayerKind> getLayerStack(AccessContext accCtx) throws AccessDeniedException
-    {
-        checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return layerStack;
-    }
-
-    @Override
-    @RemoveAfterDevMgrRework
-    public void setLayerStack(List<DeviceLayerKind> layerStackRef)
-    {
-        modifyableLayerStack.clear();
-        modifyableLayerStack.addAll(layerStackRef);
     }
 
     @Override

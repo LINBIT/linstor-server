@@ -25,7 +25,6 @@ import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -410,8 +409,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 storPool1,
                 vol1TestBlockDev,
                 vol1TestMetaDisk,
-                new VlmFlags[] {},
-                Collections.emptyList()
+                new VlmFlags[] {}
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
             vol1Uuid = vol1.getUuid();
@@ -435,8 +433,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 storPool2,
                 vol2TestBlockDev,
                 vol2TestMetaDisk,
-                new VlmFlags[] {},
-                Collections.emptyList()
+                new VlmFlags[] {}
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);
             vol2Uuid = vol2.getUuid();

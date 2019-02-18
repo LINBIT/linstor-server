@@ -19,9 +19,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
-import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Either;
 

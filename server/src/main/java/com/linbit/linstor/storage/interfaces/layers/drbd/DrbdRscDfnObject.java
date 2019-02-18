@@ -6,7 +6,7 @@ import com.linbit.linstor.TcpPortNumber;
 
 public interface DrbdRscDfnObject extends RscDfnLayerObject
 {
-    TcpPortNumber getPort();
+    TcpPortNumber getTcpPort();
 
     TransportType getTransportType();
 

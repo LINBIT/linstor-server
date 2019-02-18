@@ -10,7 +10,5 @@ public interface SfVlmDfnProviderObject extends VlmDfnLayerObject
 
     boolean isAttached();
 
-    long getAllocatedSize();
-
-    long getUsableSize();
+    long getSize();
 }

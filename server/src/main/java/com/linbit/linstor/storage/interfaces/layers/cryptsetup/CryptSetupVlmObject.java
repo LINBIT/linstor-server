@@ -4,5 +4,5 @@ import com.linbit.linstor.storage.interfaces.categories.VlmLayerObject;
 
 public interface CryptSetupVlmObject extends VlmLayerObject
 {
-    byte[] getPassword();
+    byte[] getEncryptedPassword();
 }

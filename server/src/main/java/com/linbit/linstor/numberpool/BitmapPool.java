@@ -35,7 +35,7 @@ public class BitmapPool implements NumberPool
     // END Bitmap & level shift constants
 
     // power(2, 30) numbers
-    private static final int MAX_CAPACITY = 0x40000000;
+    public static final int MAX_CAPACITY = 0x40000000;
 
     private static final long SUBELEMS_EMPTY     = 0L;
     private static final long SUBELEMS_EXHAUSTED = -1L;
@@ -159,6 +159,7 @@ public class BitmapPool implements NumberPool
     /**
      * Clears the pool by resetting the state of all numbers to unallocated
      */
+    @Override
     public void clear()
     {
         poolWrLock.lock();

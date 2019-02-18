@@ -4,10 +4,15 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+
 import javax.annotation.Nullable;
 
-import java.util.List;
+import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -15,9 +20,13 @@ import java.util.stream.Stream;
  */
 public interface RscLayerObject extends LayerObject
 {
+    int getRscLayerId();
+
     @Nullable RscLayerObject getParent();
 
-    List<RscLayerObject> getChildren();
+    void setParent(RscLayerObject parentRscLayerObject) throws SQLException;
+
+    Set<RscLayerObject> getChildren();
 
     Resource getResource();
 
@@ -29,13 +38,13 @@ public interface RscLayerObject extends LayerObject
 
     default RscLayerObject getSingleChild()
     {
-        List<RscLayerObject> children = getChildren();
+        Set<RscLayerObject> children = getChildren();
         if (children.size() != 1)
         {
             throw new ImplementationError("Exactly one child layer data expected but found: " +
                 children.size() + " " + this.getClass().getSimpleName());
         }
-        return children.get(0);
+        return children.iterator().next();
     }
 
     default ResourceName getResourceName()
@@ -62,4 +71,10 @@ public interface RscLayerObject extends LayerObject
     {
         return getVlmLayerObjects().get(volumeNumber);
     }
+
+    RscLayerDataPojo asPojo(AccessContext accCtx) throws AccessDeniedException;
+
+    void delete();
+
+    void remove(VolumeNumber vlmNrRef);
 }

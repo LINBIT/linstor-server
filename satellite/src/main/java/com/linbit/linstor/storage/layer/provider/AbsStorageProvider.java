@@ -29,11 +29,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.utils.DmStatCommands;
-import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
+import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Pair;
@@ -186,7 +185,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 Resource.RscFlags.DISK_REMOVING
             );
 
-            String lvId = getIdentifier(vlmData);
+            String lvId = vlmData.getIdentifier();
             if (vlmData.exists())
             {
                 errorReporter.logTrace("Lv %s found", lvId);
@@ -215,6 +214,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 else
                 {
                     errorReporter.logTrace("Lv %s should be deleted but does not exist; no-op", lvId);
+
 
                     String storageName = getStorageName(vlmData);
                     addPostRunNotification(
@@ -471,7 +471,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
     private long getAllocatedSize(LAYER_DATA vlmData) throws StorageException
     {
-        return ProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create());
+        return StltProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create());
     }
 
     protected void addPostRunNotification(
@@ -816,16 +816,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
     protected abstract String getDevicePath(String storageName, String lvId);
 
-    protected abstract String getIdentifier(LAYER_DATA layerData);
+    protected abstract String getStorageName(LAYER_DATA vlmData) throws SQLException;
 
-    protected abstract Size getSize(LAYER_DATA layerData);
+    protected abstract void setDevicePath(LAYER_DATA vlmData, String devicePath) throws SQLException;
 
-    protected abstract String getStorageName(LAYER_DATA vlmData)
-        throws AccessDeniedException, SQLException;
+    protected abstract void setAllocatedSize(LAYER_DATA vlmData, long size) throws SQLException;
 
-    protected abstract void setDevicePath(LAYER_DATA vlmData, String devPath);
+    protected abstract void setUsableSize(LAYER_DATA vlmData, long size) throws SQLException;
 
-    protected abstract void setAllocatedSize(LAYER_DATA vlmData, long blockSizeInKib);
-
-    protected abstract void setUsableSize(LAYER_DATA vlmData, long blockSizeInKib);
 }

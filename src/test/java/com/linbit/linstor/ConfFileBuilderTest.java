@@ -4,7 +4,12 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.core.ConfigModule;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdLayerDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
+import com.linbit.linstor.dbdrivers.satellite.SatelliteStorageLayerDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -17,18 +22,20 @@ import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
+import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdRscDfnData;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.layer.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
-import com.linbit.linstor.storage.layer.provider.StorageRscData;
-import com.linbit.linstor.storage.layer.provider.lvm.LvmData;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
 
@@ -44,10 +51,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -58,8 +68,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("checkstyle:magicnumber")
 public class ConfFileBuilderTest
 {
+    private static final DrbdLayerDatabaseDriver DRBD_LAYER_NO_OP_DRIVER = new SatelliteDrbdLayerDriver();
+    private static final StorageLayerDatabaseDriver STORAGE_LAYER_NO_OP_DRIVER = new SatelliteStorageLayerDriver();
+
     private ErrorReporter errorReporter;
     private AccessContext accessContext;
 
@@ -73,6 +87,9 @@ public class ConfFileBuilderTest
     private NodeConnection nodeConn;
     private PropsContainer props;
     private Provider<TransactionMgr> transMgrProvider;
+    private TransactionObjectFactory transObjFactory;
+
+    private AtomicInteger idGenerator = new AtomicInteger(0);
 
     @Before
     public void setUp() throws Exception
@@ -89,6 +106,7 @@ public class ConfFileBuilderTest
 
         TransactionMgr dummyTransMgr = new SatelliteTransactionMgr();
         transMgrProvider = () -> dummyTransMgr;
+        transObjFactory = new TransactionObjectFactory(transMgrProvider);
         props = new PropsContainerFactory(
                 new SatellitePropDriver(), transMgrProvider).getInstance("TESTINSTANCE");
         localRscData = makeMockResource(101, "alpha", "1.2.3.4", false, false, false);
@@ -378,39 +396,54 @@ public class ConfFileBuilderTest
 
         DrbdRscDfnData rscDfnData = new DrbdRscDfnData(
             resourceDefinition,
+            "",
+            ConfigModule.DEFAULT_PEER_COUNT,
+            ConfigModule.DEFAULT_AL_STRIPES,
+            ConfigModule.DEFAULT_AL_SIZE,
             resourceDefinition.getPort(accessContext),
             resourceDefinition.getTransportType(accessContext),
             resourceDefinition.getSecret(accessContext),
             rscDataList,
+            DRBD_LAYER_NO_OP_DRIVER,
+            transObjFactory,
             transMgrProvider
         );
 
         Map<VolumeNumber, DrbdVlmDfnData> drbdVlmDfnMap = new HashMap<>();
         DrbdRscData rscData;
         {
-            List<RscLayerObject> drbdRscDataChildren = new ArrayList<>();
+            Set<RscLayerObject> drbdRscDataChildren = new HashSet<>();
             Map<VolumeNumber, DrbdVlmData> drbdRscDataVlmMap = new HashMap<>();
 
             rscData = new DrbdRscData(
+                idGenerator.incrementAndGet(),
                 resource,
-                "",
                 null,
                 rscDfnData,
                 drbdRscDataChildren,
                 drbdRscDataVlmMap,
+                "",
                 resource.getNodeId(),
-                resource.disklessForPeers(accessContext),
-                resource.isDiskless(accessContext),
+                null, // copied from rscDfnData
+                null, // copied from rscDfnData
+                null, // copied from rscDfnData
+                resource.isDiskless(accessContext) ?
+                    DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue : 0,
+                DRBD_LAYER_NO_OP_DRIVER,
+                transObjFactory,
                 transMgrProvider
             );
             rscDataList.add(rscData);
 
             Map<VolumeNumber, VlmProviderObject> vlmProviderMap = new HashMap<>();
             StorageRscData storRscData = new StorageRscData(
+                -1, // satellite does not care about rscLayerIds (database index only)
                 rscData,
                 resource,
                 "",
                 vlmProviderMap,
+                STORAGE_LAYER_NO_OP_DRIVER,
+                transObjFactory,
                 transMgrProvider
             );
             for (Volume vlm : resource.streamVolumes().collect(Collectors.toList()))
@@ -419,8 +452,8 @@ public class ConfFileBuilderTest
 
                 DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
                     vlm.getVolumeDefinition(),
+                    "",
                     vlm.getVolumeDefinition().getMinorNr(accessContext),
-                    7, // good enough for tests
                     transMgrProvider
                 );
                 drbdVlmDfnMap.put(vlmNr, drbdVlmDfnData);
@@ -429,11 +462,12 @@ public class ConfFileBuilderTest
                     vlm,
                     rscData,
                     drbdVlmDfnData,
+                    transObjFactory,
                     transMgrProvider
                 );
                 drbdRscDataVlmMap.put(vlmNr, drbdVlmData);
 
-                vlmProviderMap.put(vlmNr, new LvmData(vlm, storRscData, transMgrProvider));
+                vlmProviderMap.put(vlmNr, new LvmData(vlm, storRscData, transObjFactory, transMgrProvider));
             }
 
             drbdRscDataChildren.add(storRscData);

@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
@@ -15,23 +14,26 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
+import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
-import com.linbit.linstor.api.pojo.VlmUpdatePojo;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.apicallhandler.LayerRscDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,6 +55,7 @@ public class RscInternalCallHandler
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
+    private LayerRscDataMerger layerRscDataMerger;
 
     @Inject
     public RscInternalCallHandler(
@@ -65,7 +68,8 @@ public class RscInternalCallHandler
         Provider<Peer> peerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef
+        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        LayerRscDataMerger layerRscDataMergerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -79,6 +83,7 @@ public class RscInternalCallHandler
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
+        layerRscDataMerger = layerRscDataMergerRef;
     }
 
     public void handleResourceRequest(
@@ -161,7 +166,7 @@ public class RscInternalCallHandler
 
     public void updateVolumeData(
         String resourceName,
-        List<VlmUpdatePojo> vlmUpdates,
+        RscLayerDataPojo rscLayerDataPojoRef,
         List<CapacityInfoPojo> capacityInfos
     )
     {
@@ -177,60 +182,55 @@ public class RscInternalCallHandler
             ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
             Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
-            for (VlmUpdatePojo vlmUpd : vlmUpdates)
+            layerRscDataMerger.restoreLayerData(rsc, rscLayerDataPojoRef);
+
+            Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+            while (iterateVolumes.hasNext())
             {
-                try
+                Volume vlm = iterateVolumes.next();
+
+                VlmLayerDataPojo vlmLayerDataPojo = rscLayerDataPojoRef.getVolumeMap().get(
+                    vlm.getVolumeDefinition().getVolumeNumber().value
+                );
+
+                if (vlmLayerDataPojo != null)
                 {
-                    Volume vlm = rsc.getVolume(new VolumeNumber(vlmUpd.getVolumeNumber()));
-                    if (vlm != null)
-                    {
-                        vlm.setBackingDiskPath(apiCtx, vlmUpd.getBlockDevicePath());
-                        vlm.setMetaDiskPath(apiCtx, vlmUpd.getMetaDiskPath());
-                        vlm.setDevicePath(apiCtx, vlmUpd.getDevicePath());
-                        vlm.setUsableSize(apiCtx, vlmUpd.getUsableSize());
-                        vlm.setAllocatedSize(apiCtx, vlmUpd.getAllocatedSize());
+                    vlm.setDevicePath(apiCtx, vlmLayerDataPojo.getDevicePath());
+                    vlm.setUsableSize(apiCtx, vlmLayerDataPojo.getUsableSize());
+                    vlm.setAllocatedSize(apiCtx, ProviderUtils.getAllocatedSize(vlm, apiCtx));
 
-                        Props vlmDfnProps = vlm.getVolumeDefinition().getProps(apiCtx);
-                        vlmDfnProps.map().putAll(vlmUpd.getVlmDfnPropsMap());
-                        vlmDfnProps.keySet().retainAll(vlmUpd.getVlmDfnPropsMap().keySet());
+                    StorPool storPool = vlm.getStorPool(apiCtx);
+                    CapacityInfoPojo capacityInfo =
+                        storPoolToCapacityInfoMap.get(storPool.getName());
 
-                        StorPool storPool = vlm.getStorPool(apiCtx);
-                        CapacityInfoPojo capacityInfo =
-                            storPoolToCapacityInfoMap.get(storPool.getName());
+                    storPool.getFreeSpaceTracker().vlmCreationFinished(
+                        apiCtx,
+                        vlm,
+                        capacityInfo == null ? null : capacityInfo.getFreeCapacity(),
+                        capacityInfo == null ? null : capacityInfo.getTotalCapacity()
+                    );
 
-                        storPool.getFreeSpaceTracker().vlmCreationFinished(
-                            apiCtx,
-                            vlm,
-                            capacityInfo == null ? null : capacityInfo.getFreeCapacity(),
-                            capacityInfo == null ? null : capacityInfo.getTotalCapacity()
-                        );
-
-                        if (capacityInfo == null && !storPool.getDriverKind().usesThinProvisioning())
-                        {
-                            errorReporter.logWarning(
-                                String.format(
-                                    "No freespace info for storage pool '%s' on node: %s",
-                                    storPool.getName().value,
-                                    nodeName.displayValue
-                                )
-                            );
-                        }
-
-                    }
-                    else
+                    if (capacityInfo == null && !storPool.getDriverKind().usesThinProvisioning())
                     {
                         errorReporter.logWarning(
                             String.format(
-                                "Tried to update a non existing volume. Node: %s, Resource: %s, VolumeNr: %d",
-                                nodeName.displayValue,
-                                rscDfn.getName().displayValue,
-                                vlmUpd.getVolumeNumber()
+                                "No freespace info for storage pool '%s' on node: %s",
+                                storPool.getName().value,
+                                nodeName.displayValue
                             )
                         );
                     }
                 }
-                catch (ValueOutOfRangeException ignored)
+                else
                 {
+                    errorReporter.logWarning(
+                        String.format(
+                            "Tried to update a volume with missing layer data. Node: %s, Resource: %s, VolumeNr: %d",
+                            nodeName.displayValue,
+                            rscDfn.getName().displayValue,
+                            vlm.getVolumeDefinition().getVolumeNumber()
+                        )
+                    );
                 }
             }
             ctrlTransactionHelper.commit();

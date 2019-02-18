@@ -17,12 +17,13 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
-import com.linbit.linstor.storage.layer.provider.utils.ProviderUtils;
+import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
 import com.linbit.linstor.storage.utils.ZfsUtils;
@@ -155,16 +156,16 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
         ZfsCommands.create(
             extCmdFactory.create(),
-            vlmData.zpool,
+            vlmData.getZPool(),
             asLvIdentifier(vlmData),
             volumeSize,
             false
         );
     }
 
-    protected long roundUpToExtentSize(ZfsData vlmData)
+    protected long roundUpToExtentSize(ZfsData vlmData) throws SQLException
     {
-        long volumeSize = vlmData.usableSize;
+        long volumeSize = vlmData.getUsableSize();
         if (volumeSize % DEFAULT_ZFS_EXTENT_SIZE != 0)
         {
             long origSize = volumeSize;
@@ -177,7 +178,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
                     DEFAULT_ZFS_EXTENT_SIZE
                 )
             );
-            vlmData.allocatedSize = volumeSize;
+            vlmData.setAllocatedSize(volumeSize);
         }
         return volumeSize;
     }
@@ -188,9 +189,9 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     {
         ZfsCommands.resize(
             extCmdFactory.create(),
-            vlmData.zpool,
+            vlmData.getZPool(),
             asLvIdentifier(vlmData),
-            vlmData.usableSize
+            vlmData.getUsableSize()
         );
     }
 
@@ -200,10 +201,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     {
         ZfsCommands.delete(
             extCmdFactory.create(),
-            vlmData.zpool,
+            vlmData.getZPool(),
             lvId
         );
-        vlmData.exists = false;
+        vlmData.setExists(false);
     }
 
     @Override
@@ -220,7 +221,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     {
         ZfsCommands.createSnapshot(
             extCmdFactory.create(),
-            getStorageName(vlmData),
+            vlmData.getZPool(),
             asLvIdentifier(vlmData),
             snapVlm.getSnapshotName().displayValue
         );
@@ -232,7 +233,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     {
         ZfsCommands.restoreSnapshot(
             extCmdFactory.create(),
-            getStorageName(targetVlmData),
+            targetVlmData.getZPool(),
             sourceLvId,
             sourceSnapName,
             asLvIdentifier(targetVlmData)
@@ -257,7 +258,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     {
         ZfsCommands.rollback(
             extCmdFactory.create(),
-            getStorageName(vlmData),
+            vlmData.getZPool(),
             asLvIdentifier(vlmData),
             rollbackTargetSnapshotName
         );
@@ -267,24 +268,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     protected String getDevicePath(String zPool, String identifier)
     {
         return String.format(FORMAT_ZFS_DEV_PATH, zPool, identifier);
-    }
-
-    @Override
-    protected String getIdentifier(ZfsData layerData)
-    {
-        return layerData.identifier;
-    }
-
-    @Override
-    protected Size getSize(ZfsData layerData)
-    {
-        return layerData.sizeState;
-    }
-
-    @Override
-    protected String getStorageName(ZfsData vlmData)
-    {
-        return vlmData.zpool;
     }
 
     protected String getZPool(StorPool storPool) throws AccessDeniedException
@@ -388,29 +371,29 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
          */
         for (ZfsData vlmData : vlmDataList)
         {
-            storPools.add(vlmData.vlm.getStorPool(storDriverAccCtx));
+            storPools.add(vlmData.getVolume().getStorPool(storDriverAccCtx));
 
-            vlmData.zpool = getZPool(vlmData.vlm.getStorPool(storDriverAccCtx));
-            vlmData.identifier = asFullQualifiedLvIdentifier(vlmData);
-            ZfsInfo info = infoListCache.get(vlmData.identifier);
+            vlmData.setZPool(getZPool(vlmData.getVolume().getStorPool(storDriverAccCtx)));
+            vlmData.setIdentifier(asLvIdentifier(vlmData));
+            ZfsInfo info = infoListCache.get(vlmData.getFullQualifiedLvIdentifier());
 
             if (info != null)
             {
-                vlmData.updateInfo(info);
+                updateInfo(vlmData, info);
 
-                final long expectedSize = vlmData.usableSize;
+                final long expectedSize = vlmData.getUsableSize();
                 final long actualSize = info.size;
                 if (actualSize != expectedSize)
                 {
                     if (actualSize < expectedSize)
                     {
-                        vlmData.sizeState = Size.TOO_SMALL;
+                        vlmData.setSizeState(Size.TOO_SMALL);
                     }
                     else
                     {
                         if (actualSize == expectedSize)
                         {
-                            vlmData.sizeState = Size.AS_EXPECTED;
+                            vlmData.setSizeState(Size.AS_EXPECTED);
                         }
                         else
                         {
@@ -419,47 +402,58 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
                                 info.poolName,
                                 info.identifier
                             );
-                            vlmData.sizeState = Size.TOO_LARGE;
+                            vlmData.setSizeState(Size.TOO_LARGE);
                             final long toleratedSize =
                                 expectedSize + extentSize * TOLERANCE_FACTOR;
                             if (actualSize < toleratedSize)
                             {
-                                vlmData.sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
+                                vlmData.setSizeState(Size.TOO_LARGE_WITHIN_TOLERANCE);
                             }
                         }
                     }
                 }
-                vlmData.allocatedSize = ProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create());
+                vlmData.setAllocatedSize(StltProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create()));
             }
             else
             {
-                vlmData.exists = false;
-                vlmData.devicePath = null;
-                vlmData.allocatedSize = -1;
+                vlmData.setExists(false);
+                vlmData.setDevicePath(null);
+                vlmData.setAllocatedSize(-1);
             }
         }
     }
 
-    private String asFullQualifiedLvIdentifier(ZfsData vlmData)
+    private void updateInfo(ZfsData vlmData, ZfsInfo zfsInfo) throws SQLException
     {
-        return getStorageName(vlmData) + File.separator + asLvIdentifier(vlmData);
+        vlmData.setExists(true);
+        vlmData.setZPool(zfsInfo.poolName);
+        vlmData.setIdentifier(zfsInfo.identifier);
+        vlmData.setAllocatedSize(zfsInfo.size);
+        vlmData.setUsableSize(zfsInfo.size);
+        vlmData.setDevicePath(zfsInfo.path);
     }
 
     @Override
-    protected void setDevicePath(ZfsData vlmData, String devPath)
+    protected void setDevicePath(ZfsData vlmDataRef, String devicePathRef) throws SQLException
     {
-        vlmData.devicePath = devPath;
+        vlmDataRef.setDevicePath(devicePathRef);
     }
 
     @Override
-    protected void setAllocatedSize(ZfsData vlmData, long size)
+    protected void setAllocatedSize(ZfsData vlmDataRef, long sizeRef) throws SQLException
     {
-        vlmData.allocatedSize = size;
+        vlmDataRef.setAllocatedSize(sizeRef);
     }
 
     @Override
-    protected void setUsableSize(ZfsData vlmData, long size)
+    protected void setUsableSize(ZfsData vlmDataRef, long sizeRef) throws SQLException
     {
-        vlmData.usableSize = size;
+        vlmDataRef.setUsableSize(sizeRef);
+    }
+
+    @Override
+    protected String getStorageName(ZfsData vlmDataRef) throws SQLException
+    {
+        return vlmDataRef.getZPool();
     }
 }
