@@ -218,4 +218,13 @@ public class Json
         public boolean diskless_on_remaining = false;
         public AutoSelectFilterData select_filter = new AutoSelectFilterData();
     }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ErrorReport
+    {
+        public String node_name;
+        public long error_time;
+        public String filename;
+        public String text;
+    }
 }
