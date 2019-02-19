@@ -243,4 +243,11 @@ public class Json
         public String git_hash;
         public String build_time;
     }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PassPhraseCreate
+    {
+        public String new_passphrase;
+        public String old_passphrase;
+    }
 }
