@@ -227,4 +227,20 @@ public class Json
         public String filename;
         public String text;
     }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerPropsModify
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public Set<String> delete_props = Collections.emptySet();
+        public Set<String> delete_namespaces = Collections.emptySet();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerVersion
+    {
+        public String version;
+        public String git_hash;
+        public String build_time;
+    }
 }
