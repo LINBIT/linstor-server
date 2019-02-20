@@ -240,9 +240,9 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     }
                     peer = createTcpConnectorPeer(peerId, connKey, true, node);
                     connKey.attach(peer);
+                    connObserver.outboundConnectionEstablished(peer);
                     if (connected)
                     {
-                        connObserver.outboundConnectionEstablished(peer);
                         // May throw SSLException
                         peer.connectionEstablished();
                     }
