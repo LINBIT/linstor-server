@@ -3,6 +3,7 @@ package com.linbit.linstor.debug;
 import javax.inject.Inject;
 import com.linbit.AutoIndent;
 import com.linbit.ServiceName;
+import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.core.CoreModule;
@@ -277,6 +278,16 @@ public class CmdDisplayConnections extends BaseDebugCmd
                                         "    Peer:       Satellite on %s\n",
                                         peerNodeName.displayValue
                                     );
+                                }
+                                Object peerCtx = curPeer.getAttachment();
+                                if (peerCtx instanceof com.linbit.linstor.ControllerPeerCtx)
+                                {
+                                    ControllerPeerCtx ctrlPeerCtx = (ControllerPeerCtx) peerCtx;
+                                    DebugConsole dbgCnsl = ctrlPeerCtx.getDebugConsole();
+                                    if (dbgCnsl != null)
+                                    {
+                                        debugOut.println("    Debug console attached");
+                                    }
                                 }
                             }
                             if (detailConn)
