@@ -1,7 +1,8 @@
 package com.linbit.linstor.api.rest.v1.serializer;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.SnapshotDefinition;
+import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
@@ -14,6 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class Json
 {
@@ -249,5 +253,58 @@ public class Json
     {
         public String new_passphrase;
         public String old_passphrase;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapshotVolumeDfnData
+    {
+        public Integer volume_number;
+        public long size;
+
+        public SnapshotVolumeDfnData()
+        {
+        }
+
+        public SnapshotVolumeDfnData(SnapshotVolumeDefinition.SnapshotVlmDfnApi snapshotVlmDfnApi)
+        {
+            volume_number = snapshotVlmDfnApi.getVolumeNr();
+            size = snapshotVlmDfnApi.getSize();
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapshotData
+    {
+        public String name;
+        public String resource_name;
+        public List<String> nodes = Collections.emptyList();
+        public Map<String, String> props = Collections.emptyMap();
+        public List<String> flags = Collections.emptyList();
+        public List<SnapshotVolumeDfnData> volume_definitions = Collections.emptyList();
+
+        public SnapshotData()
+        {
+        }
+
+        public SnapshotData(SnapshotDefinition.SnapshotDfnListItemApi snapshotDfnListItemApi)
+        {
+            name = snapshotDfnListItemApi.getSnapshotName();
+            resource_name = snapshotDfnListItemApi.getRscDfn().getResourceName();
+            nodes = snapshotDfnListItemApi.getNodeNames();
+            props = snapshotDfnListItemApi.getProps();
+            flags = FlagsHelper.toStringList(
+                SnapshotDefinition.SnapshotDfnFlags.class, snapshotDfnListItemApi.getFlags()
+            );
+            volume_definitions = snapshotDfnListItemApi.getSnapshotVlmDfnList().stream()
+                .map(SnapshotVolumeDfnData::new)
+                .collect(Collectors.toList());
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapshotRestore
+    {
+        public List<String> nodes = Collections.emptyList();  //optional
+        public String to_resource;
     }
 }
