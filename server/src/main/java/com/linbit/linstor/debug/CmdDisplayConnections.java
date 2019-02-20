@@ -39,6 +39,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
     private static final String PRM_DETAIL_CONN     = "CONN";
     private static final String PRM_DETAIL_CTXT     = "CONTEXT";
     private static final String PRM_DETAIL_PRIVS    = "PRIVS";
+    private static final String PRM_DETAIL_PENDING  = "PENDING";
     private static final String PRM_DETAIL_FULL     = "FULL";
 
     private static final String PRM_CONNECTOR_MATCH = "CONNECTOR";
@@ -67,6 +68,11 @@ public class CmdDisplayConnections extends BaseDebugCmd
             "    PRIVS\n" +
             "        Displays the privilege sets associated with the\n" +
             "        connection's access context\n" +
+            "    PENDING\n" +
+            "        Displays pending connections (connections in the connect phase)\n" +
+            "        This option implies the ID option, because pending connections can be in a state\n" +
+            "        where the endpoint addresses are unknown, so the connection can only be identified\n" +
+            "        by its connection ID\n" +
             "    FULL\n" +
             "        Displays all available information\n"
         );
@@ -119,6 +125,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
         boolean detailConn      = false;
         boolean detailContext   = false;
         boolean detailPrivs     = false;
+        boolean detailPending   = false;
 
         try
         {
@@ -148,11 +155,16 @@ public class CmdDisplayConnections extends BaseDebugCmd
                         case PRM_DETAIL_PRIVS:
                             detailPrivs = true;
                             break;
+                        case PRM_DETAIL_PENDING:
+                            detailPending = true;
+                            detailId = true;
+                            break;
                         case PRM_DETAIL_FULL:
                             detailId = true;
                             detailStats = true;
                             detailConn = true;
                             detailContext = true;
+                            detailPending = true;
                             detailPrivs = true;
                             break;
                         case PRM_DETAIL_DFLT:
@@ -191,106 +203,109 @@ public class CmdDisplayConnections extends BaseDebugCmd
                 int count = 0;
                 for (Peer curPeer : peerList.values())
                 {
-                    String connId = curPeer.getId();
-                    String localAddress = "<unknown>";
+                    if (detailPending || curPeer.isConnected(false))
                     {
-                        InetSocketAddress sockAddr = curPeer.localAddress();
-                        if (sockAddr != null)
+                        String connId = curPeer.getId();
+                        String localAddress = "<unknown>";
                         {
-                            InetAddress inetAddr = sockAddr.getAddress();
-                            if (inetAddr != null)
+                            InetSocketAddress sockAddr = curPeer.localAddress();
+                            if (sockAddr != null)
                             {
-                                localAddress = inetAddr.getHostAddress() + ":" + sockAddr.getPort();
+                                InetAddress inetAddr = sockAddr.getAddress();
+                                if (inetAddr != null)
+                                {
+                                    localAddress = inetAddr.getHostAddress() + ":" + sockAddr.getPort();
+                                }
                             }
                         }
-                    }
-                    String peerAddress = "<unknown>";
-                    {
-                        InetSocketAddress sockAddr = curPeer.peerAddress();
-                        if (sockAddr != null)
+                        String peerAddress = "<unknown>";
                         {
-                            InetAddress inetAddr = sockAddr.getAddress();
-                            if (inetAddr != null)
+                            InetSocketAddress sockAddr = curPeer.peerAddress();
+                            if (sockAddr != null)
                             {
-                                peerAddress = inetAddr.getHostAddress() + ":" + sockAddr.getPort();
+                                InetAddress inetAddr = sockAddr.getAddress();
+                                if (inetAddr != null)
+                                {
+                                    peerAddress = inetAddr.getHostAddress() + ":" + sockAddr.getPort();
+                                }
                             }
                         }
-                    }
-                    String connector = "<unknown>";
-                    {
-                        ServiceName connectorInstance = curPeer.getConnectorInstanceName();
-                        if (connectorInstance != null)
+                        String connector = "<unknown>";
                         {
-                            connector = connectorInstance.displayValue;
+                            ServiceName connectorInstance = curPeer.getConnectorInstanceName();
+                            if (connectorInstance != null)
+                            {
+                                connector = connectorInstance.displayValue;
+                            }
                         }
-                    }
 
-                    boolean selected = (
-                        match(connSvcMatch, connector) &&
-                        match(addrMatch, peerAddress) &&
-                        match(connIdMatch, connId)
-                    );
-
-                    if (selected)
-                    {
-                        AccessContext peerAccCtx = curPeer.getAccessContext();
-                        debugOut.printf(
-                            "%-46s \u2194 %-46s\n",
-                            localAddress,
-                            peerAddress
+                        boolean selected = (
+                            match(connSvcMatch, connector) &&
+                            match(addrMatch, peerAddress) &&
+                            match(connIdMatch, connId)
                         );
-                        if (detailStats)
+
+                        if (selected)
                         {
+                            AccessContext peerAccCtx = curPeer.getAccessContext();
                             debugOut.printf(
-                                "    MsgRecv: %8d   MsgSent: %8d   OutQ: %5d  QCap: %5d  " +
-                                "RecvPeakSz: %8d  SentPeakSz: %8d\n",
-                                curPeer.msgRecvCount(), curPeer.msgSentCount(),
-                                curPeer.outQueueCount(), curPeer.outQueueCapacity(),
-                                curPeer.msgRecvMaxSize(), curPeer.msgSentMaxSize()
+                                "%-46s \u2194 %-46s\n",
+                                localAddress,
+                                peerAddress
                             );
-                        }
-                        if (detailId)
-                        {
-                            debugOut.printf(
-                                "    Id:         %-64s\n",
-                                curPeer.getId()
-                            );
-                            Node peerNode = curPeer.getNode();
-                            if (peerNode != null)
+                            if (detailStats)
                             {
-                                NodeName peerNodeName = peerNode.getName();
                                 debugOut.printf(
-                                    "    Peer:       Satellite on %s\n",
-                                    peerNodeName.displayValue
+                                    "    MsgRecv: %8d   MsgSent: %8d   OutQ: %5d  QCap: %5d  " +
+                                    "RecvPeakSz: %8d  SentPeakSz: %8d\n",
+                                    curPeer.msgRecvCount(), curPeer.msgSentCount(),
+                                    curPeer.outQueueCount(), curPeer.outQueueCapacity(),
+                                    curPeer.msgRecvMaxSize(), curPeer.msgSentMaxSize()
                                 );
                             }
+                            if (detailId)
+                            {
+                                debugOut.printf(
+                                    "    Id:         %-64s\n",
+                                    curPeer.getId()
+                                );
+                                Node peerNode = curPeer.getNode();
+                                if (peerNode != null)
+                                {
+                                    NodeName peerNodeName = peerNode.getName();
+                                    debugOut.printf(
+                                        "    Peer:       Satellite on %s\n",
+                                        peerNodeName.displayValue
+                                    );
+                                }
+                            }
+                            if (detailConn)
+                            {
+                                debugOut.printf(
+                                    "    Connector:  %-24s\n",
+                                    connector
+                                );
+                            }
+                            if (detailContext)
+                            {
+                                Identity peerIdentity = peerAccCtx.getIdentity();
+                                Role peerRole = peerAccCtx.getRole();
+                                SecurityType peerDomain = peerAccCtx.getDomain();
+                                debugOut.printf(
+                                    "    Identity:   %-24s Role: %-24s\n" +
+                                    "    Security domain: %-24s\n",
+                                    peerIdentity, peerRole, peerDomain
+                                );
+                            }
+                            if (detailPrivs)
+                            {
+                                debugOut.println("    Limit privileges:");
+                                printPrivString(debugOut, peerAccCtx.getLimitPrivs());
+                                debugOut.println("    Effective privileges:");
+                                printPrivString(debugOut, peerAccCtx.getEffectivePrivs());
+                            }
+                            ++count;
                         }
-                        if (detailConn)
-                        {
-                            debugOut.printf(
-                                "    Connector:  %-24s\n",
-                                connector
-                            );
-                        }
-                        if (detailContext)
-                        {
-                            Identity peerIdentity = peerAccCtx.getIdentity();
-                            Role peerRole = peerAccCtx.getRole();
-                            SecurityType peerDomain = peerAccCtx.getDomain();
-                            debugOut.printf(
-                                "    Identity:   %-24s Role: %-24s\n" +
-                                "    Security domain: %-24s\n",
-                                peerIdentity, peerRole, peerDomain
-                            );
-                        }
-                        if (detailPrivs)
-                        {
-                            debugOut.println("    Limit privileges:");
-                            printPrivString(debugOut, peerAccCtx.getLimitPrivs());
-                            debugOut.println("    Effective privileges:");
-                            printPrivString(debugOut, peerAccCtx.getEffectivePrivs());
-                        }
-                        ++count;
                     }
                 }
 
