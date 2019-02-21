@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.rest.v1.serializer;
 
 import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.VolumeDefinition;
@@ -306,5 +307,36 @@ public class Json
     {
         public List<String> nodes = Collections.emptyList();  //optional
         public String to_resource;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceConnectionData
+    {
+        public String node_a;
+        public String node_b;
+        public Map<String, String> props = Collections.emptyMap();
+        public List<String> flags = Collections.emptyList();
+        public Integer port;
+
+        public ResourceConnectionData()
+        {
+        }
+
+        public ResourceConnectionData(ResourceConnection.RscConnApi rscConnApi)
+        {
+            node_a = rscConnApi.getSourceNodeName();
+            node_b = rscConnApi.getTargetNodeName();
+            props = rscConnApi.getProps();
+            flags = FlagsHelper.toStringList(ResourceConnection.RscConnFlags.class, rscConnApi.getFlags());
+            port = rscConnApi.getPort();
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceConnectionModify
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public Set<String> delete_props = Collections.emptySet();
+        public Set<String> delete_namespaces = Collections.emptySet();
     }
 }
