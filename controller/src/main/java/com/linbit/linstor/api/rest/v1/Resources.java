@@ -10,6 +10,7 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceData;
@@ -51,6 +52,7 @@ public class Resources
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandler;
+    private final CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandler;
     private final ObjectMapper objectMapper;
 
     @Inject
@@ -58,13 +60,15 @@ public class Resources
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
-        CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandlerRef
+        CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandlerRef,
+        CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         ctrlRscDeleteApiCallHandler = ctrlRscDeleteApiCallHandlerRef;
+        ctrlRscToggleDiskApiCallHandler = ctrlRscToggleDiskApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -243,6 +247,107 @@ public class Resources
     {
         Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+    }
+
+    @PUT
+    @Path("{nodeName}/toggle-disk/diskless")
+    public void toggleDiskDiskless(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("rscName") String rscName
+    )
+    {
+        toggleDiskDiskless(request, asyncResponse, nodeName, rscName, null);
+    }
+
+    @PUT
+    @Path("{nodeName}/toggle-disk/diskless/{disklessPool}")
+    public void toggleDiskDiskless(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("rscName") String rscName,
+        @PathParam("disklessPool") String disklessPool
+    )
+    {
+        Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
+                nodeName,
+                rscName,
+                disklessPool,
+                null,
+                true)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+    }
+
+    @PUT
+    @Path("{nodeName}/toggle-disk/diskful")
+    public void toggleDiskDiskful(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("rscName") String rscName
+    )
+    {
+        toggleDiskDiskful(request, asyncResponse, nodeName, rscName, null);
+    }
+
+    @PUT
+    @Path("{nodeName}/toggle-disk/diskful/{storagePool}")
+    public void toggleDiskDiskful(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("rscName") String rscName,
+        @PathParam("storagePool") String storagePool
+    )
+    {
+        Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
+                nodeName,
+                rscName,
+                storagePool,
+                null,
+                false)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+    }
+
+    @PUT
+    @Path("{nodeName}/migrate-disk/{fromNode}")
+    public void migrateDisk(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("fromNode") String fromNode,
+        @PathParam("rscName") String rscName
+    )
+    {
+        migrateDisk(request, asyncResponse, nodeName, fromNode, rscName, null);
+    }
+
+    @PUT
+    @Path("{nodeName}/migrate-disk/{fromNode}/{storagePool}")
+    public void migrateDisk(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("fromNode") String fromNode,
+        @PathParam("rscName") String rscName,
+        @PathParam("storagePool") String storagePool
+    )
+    {
+        Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
+            nodeName,
+            rscName,
+            storagePool,
+            fromNode,
+            false)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
     }
