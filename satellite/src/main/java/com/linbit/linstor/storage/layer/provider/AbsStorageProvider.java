@@ -401,7 +401,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         for (SnapshotVolume snapVlm : snapVlms)
         {
             errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
-            deleteSnapshot(rscNameSuffix, snapVlm);
+            if (snapshotExists(snapVlm))
+            {
+                deleteSnapshot(rscNameSuffix, snapVlm);
+            }
+            else
+            {
+                errorReporter.logTrace("Snapshot '%s' already deleted", snapVlm.toString());
+            }
 
             changedStorPools.add(snapVlm.getStorPool(storDriverAccCtx));
 
