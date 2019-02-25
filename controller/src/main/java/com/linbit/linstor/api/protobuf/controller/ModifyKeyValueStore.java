@@ -13,6 +13,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.UUID;
 
 @ProtobufApiCall(
@@ -49,8 +50,8 @@ public class ModifyKeyValueStore implements ApiCall
             kvsUuid,
             msgModKvs.getKvsName(),
             ProtoMapUtils.asMap(msgModKvs.getOverridePropsList()),
-            msgModKvs.getDeletePropKeysList(),
-            msgModKvs.getDelNamespacesList()
+            new HashSet<>(msgModKvs.getDeletePropKeysList()),
+            new HashSet<>(msgModKvs.getDelNamespacesList())
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

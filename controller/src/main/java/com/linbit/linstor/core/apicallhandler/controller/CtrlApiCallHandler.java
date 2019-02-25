@@ -1159,8 +1159,8 @@ public class CtrlApiCallHandler
         UUID kvsUuid,
         String kvsName,
         Map<String, String> modProps,
-        List<String> deletePropKeys,
-        List<String> deleteNamespaces
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespaces
     )
     {
         ApiCallRc apiCallRc;
