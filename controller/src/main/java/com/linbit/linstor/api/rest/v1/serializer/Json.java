@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1.serializer;
 
+import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.SnapshotDefinition;
@@ -427,5 +428,26 @@ public class Json
         {
             candidates = candidatePojos.stream().map(Candidate::new).collect(Collectors.toList());
         }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class KeyValueStore
+    {
+        public String name;
+        public Map<String, String> props;
+
+        public KeyValueStore(com.linbit.linstor.KeyValueStore.KvsApi kvsApi)
+        {
+            name = kvsApi.getName();
+            props = kvsApi.getProps();
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ModifyKeyValueStore
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public Set<String> delete_props = Collections.emptySet();
+        public Set<String> delete_namespaces = Collections.emptySet();
     }
 }
