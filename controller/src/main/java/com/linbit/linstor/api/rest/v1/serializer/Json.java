@@ -9,6 +9,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
+import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.stateflags.FlagsHelper;
 
 import java.util.ArrayList;
@@ -397,5 +398,34 @@ public class Json
         public Set<String> delete_namespaces = Collections.emptySet();
         public String compression_type;
         public Map<String, String> compression_props = Collections.emptyMap();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class Candidate
+    {
+        public String storage_pool;
+        public Long max_volume_size;
+        public List<String> node_names;
+        public boolean all_thin;
+
+        public Candidate(MaxVlmSizeCandidatePojo pojo)
+        {
+            storage_pool = pojo.getStorPoolDfnApi().getName();
+            max_volume_size = pojo.getMaxVlmSize();
+            node_names = pojo.getNodeNames();
+            all_thin = pojo.areAllThin();
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class MaxVolumeSizesData
+    {
+        public List<Candidate> candidates;
+        public Double default_max_oversubscription_ratio;
+
+        public MaxVolumeSizesData(List<MaxVlmSizeCandidatePojo> candidatePojos)
+        {
+            candidates = candidatePojos.stream().map(Candidate::new).collect(Collectors.toList());
+        }
     }
 }
