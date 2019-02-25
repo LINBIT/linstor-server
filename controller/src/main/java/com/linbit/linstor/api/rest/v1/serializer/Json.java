@@ -339,4 +339,20 @@ public class Json
         public Set<String> delete_props = Collections.emptySet();
         public Set<String> delete_namespaces = Collections.emptySet();
     }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class DrbdProxyEnable
+    {
+        public Integer port;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class DrbdProxyModify
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public Set<String> delete_props = Collections.emptySet();
+        public Set<String> delete_namespaces = Collections.emptySet();
+        public String compression_type;
+        public Map<String, String> compression_props = Collections.emptyMap();
+    }
 }
