@@ -394,29 +394,29 @@ public class ConfFileBuilder
                     }
                 }
             }
-        }
 
-        Optional<String> compressionTypeProp = rscDfn.getProps(accCtx)
-            .getNamespace(ApiConsts.NAMESPC_DRBD_PROXY)
-            .map(Props::map)
-            .map(map -> map.get(ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE));
+            Optional<String> compressionTypeProp = rscDfn.getProps(accCtx)
+                .getNamespace(ApiConsts.NAMESPC_DRBD_PROXY)
+                .map(Props::map)
+                .map(map -> map.get(ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE));
 
-        if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS).isPresent() ||
-            compressionTypeProp.isPresent())
-        {
-            appendLine("");
-            appendLine("proxy");
-            try (Section ignore = new Section())
+            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS).isPresent() ||
+                compressionTypeProp.isPresent())
             {
-                appendDrbdOptions(
-                    LinStorObject.DRBD_PROXY,
-                    rscDfn.getProps(accCtx),
-                    ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS
-                );
-
-                if (compressionTypeProp.isPresent())
+                appendLine("");
+                appendLine("proxy");
+                try (Section ignore = new Section())
                 {
-                    appendCompressionPlugin(rscDfn, compressionTypeProp.get());
+                    appendDrbdOptions(
+                        LinStorObject.DRBD_PROXY,
+                        rscDfn.getProps(accCtx),
+                        ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS
+                    );
+
+                    if (compressionTypeProp.isPresent())
+                    {
+                        appendCompressionPlugin(rscDfn, compressionTypeProp.get());
+                    }
                 }
             }
         }
