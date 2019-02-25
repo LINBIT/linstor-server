@@ -170,4 +170,20 @@ public class RequestHelper
                 )
             );
     }
+
+    Response notFoundResponse(final long retcode, final String message)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        apiCallRc.addEntry(
+            ApiCallRcImpl.simpleEntry(
+                retcode,
+                message
+            )
+        );
+        return Response
+            .status(Response.Status.NOT_FOUND)
+            .entity(ApiCallRcConverter.toJSON(apiCallRc))
+            .type(MediaType.APPLICATION_JSON)
+            .build();
+    }
 }

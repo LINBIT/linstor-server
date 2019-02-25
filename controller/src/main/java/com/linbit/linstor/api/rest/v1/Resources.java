@@ -1,21 +1,30 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.InvalidNameException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceData;
+import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceModifyData;
+import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceStateData;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceModifyData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceStateData;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -40,9 +49,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Path("resource-definitions/{rscName}/resources")
 @Produces(MediaType.APPLICATION_JSON)
@@ -53,6 +64,7 @@ public class Resources
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandler;
     private final CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandler;
+    private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;
     private final ObjectMapper objectMapper;
 
     @Inject
@@ -61,7 +73,8 @@ public class Resources
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandlerRef,
-        CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandlerRef
+        CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandlerRef,
+        CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
@@ -69,6 +82,7 @@ public class Resources
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         ctrlRscDeleteApiCallHandler = ctrlRscDeleteApiCallHandlerRef;
         ctrlRscToggleDiskApiCallHandler = ctrlRscToggleDiskApiCallHandlerRef;
+        ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -144,6 +158,153 @@ public class Resources
                 .entity(objectMapper.writeValueAsString(rscs))
                 .build();
         }, false);
+    }
+
+    @GET
+    @Path("{nodeName}/volumes")
+    public void listVolumes(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @PathParam("rscName") String rscName,
+        @PathParam("nodeName") String nodeName,
+        @DefaultValue("0") @QueryParam("limit") int limit,
+        @DefaultValue("0") @QueryParam("offset") int offset
+    )
+    {
+        listVolumes(request, asyncResponse, rscName, nodeName, null, limit, offset);
+    }
+
+    @GET
+    @Path("{nodeName}/volumes/{vlmNr}")
+    public void listVolumes(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @PathParam("rscName") String rscName,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("vlmNr") Integer vlmNr,
+        @DefaultValue("0") @QueryParam("limit") int limit,
+        @DefaultValue("0") @QueryParam("offset") int offset
+    )
+    {
+        ArrayList<String> nodes = new ArrayList<>();
+        ArrayList<String> rscNames = new ArrayList<>();
+        nodes.add(nodeName);
+        rscNames.add(rscName);
+
+        Flux<ApiCallRcWith<ResourceList>> flux = ctrlVlmListApiCallHandler.listVlms(nodes, new ArrayList<>(), rscNames)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
+
+        requestHelper.doFlux(
+            asyncResponse,
+            listVolumesApiCallRcWithToResponse(flux, rscName, nodeName, vlmNr, limit, offset)
+        );
+    }
+
+    private Mono<Response> listVolumesApiCallRcWithToResponse(
+        Flux<ApiCallRcWith<ResourceList>> apiCallRcWithFlux,
+        final String rscName,
+        final String nodeName,
+        final Integer vlmNr,
+        int limit,
+        int offset
+    )
+    {
+        return apiCallRcWithFlux.flatMap(apiCallRcWith ->
+        {
+            Response resp;
+            if (apiCallRcWith.hasApiCallRc())
+            {
+                resp = ApiCallRcConverter.toResponse(
+                    apiCallRcWith.getApiCallRc(),
+                    Response.Status.INTERNAL_SERVER_ERROR
+                );
+            }
+            else
+            {
+                ResourceList resourceList = apiCallRcWith.getValue();
+                if (resourceList.isEmpty())
+                {
+                    resp = requestHelper.notFoundResponse(
+                        ApiConsts.FAIL_NOT_FOUND_RSC,
+                        String.format("Resource '%s' not found on node '%s'.", rscName, nodeName)
+                    );
+                }
+                else
+                {
+                    Stream<? extends Volume.VlmApi> vlmApiStream = resourceList.getResources()
+                        .get(0).getVlmList().stream().filter(
+                            vlmApi -> vlmNr == null || vlmApi.getVlmNr() == vlmNr
+                        );
+
+                    if (limit > 0)
+                    {
+                        vlmApiStream = vlmApiStream.skip(offset).limit(limit);
+                    }
+
+                    final List<Json.VolumeData> vlms = vlmApiStream.map(vlmApi ->
+                    {
+                        Json.VolumeData vlmData = new Json.VolumeData(vlmApi);
+
+                        Json.VolumeStateData vlmState = null;
+                        try
+                        {
+                            final ResourceName rscNameRes = new ResourceName(rscName);
+                            final NodeName linNodeName = new NodeName(nodeName);
+                            if (resourceList.getSatelliteStates().containsKey(linNodeName) &&
+                                resourceList.getSatelliteStates().get(linNodeName)
+                                    .getResourceStates().containsKey(rscNameRes))
+                            {
+                                SatelliteResourceState satResState = resourceList
+                                    .getSatelliteStates()
+                                    .get(linNodeName)
+                                    .getResourceStates()
+                                    .get(rscNameRes);
+
+                                VolumeNumber vlmNumber = new VolumeNumber(vlmApi.getVlmNr());
+                                if (satResState.getVolumeStates().containsKey(vlmNumber))
+                                {
+                                    vlmState = new Json.VolumeStateData();
+                                    SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
+                                    vlmState.disk_state = satVlmState.getDiskState();
+                                }
+                            }
+                        }
+                        catch (InvalidNameException | ValueOutOfRangeException ignored)
+                        {
+                        }
+                        vlmData.state = vlmState;
+                        return vlmData;
+                    })
+                        .collect(Collectors.toList());
+
+                    if (vlmNr != null && vlms.isEmpty())
+                    {
+                        resp = requestHelper.notFoundResponse(
+                            ApiConsts.FAIL_NOT_FOUND_VLM,
+                            String.format("Volume '%d' of resource '%s' on node '%s' not found.",
+                                vlmNr, rscName, nodeName)
+                        );
+                    }
+                    else
+                    {
+                        try
+                        {
+                            resp = Response
+                                .status(Response.Status.OK)
+                                .entity(objectMapper.writeValueAsString(vlms))
+                                .build();
+                        }
+                        catch (JsonProcessingException exc)
+                        {
+                            exc.printStackTrace();
+                            resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                        }
+                    }
+                }
+            }
+
+            return Mono.just(resp);
+        }).next();
     }
 
     @POST

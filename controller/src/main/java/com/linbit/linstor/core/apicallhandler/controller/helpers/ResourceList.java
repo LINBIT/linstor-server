@@ -28,6 +28,11 @@ public class ResourceList
         return rscs;
     }
 
+    public boolean isEmpty()
+    {
+        return rscs.isEmpty();
+    }
+
     public Map<NodeName, SatelliteState> getSatelliteStates()
     {
         return satelliteStates;

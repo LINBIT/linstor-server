@@ -4,6 +4,7 @@ import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
@@ -168,6 +169,48 @@ public class Json
         public Map<String, String> override_props = Collections.emptyMap();
         public Set<String> delete_props = Collections.emptySet();
         public Set<String> delete_namespaces = Collections.emptySet();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class VolumeData
+    {
+        public Integer volume_number;
+        public Integer minor_number;
+        public String backing_disk;
+        public String meta_disk;
+        public String storage_pool;
+        public String storage_pool_driver;
+        public Map<String, String> storage_pool_definition_props = Collections.emptyMap();
+        public String device_path;
+        public Long allocated_size;
+        public Long usable_size;
+        public Map<String, String> props = Collections.emptyMap();
+        public List<String> flags = Collections.emptyList();
+
+        public VolumeStateData state;
+
+        public VolumeData(Volume.VlmApi vlmApi)
+        {
+            volume_number = vlmApi.getVlmNr();
+            minor_number = vlmApi.getVlmMinorNr();
+            backing_disk = vlmApi.getBlockDevice();
+            meta_disk = vlmApi.getMetaDisk();
+            storage_pool = vlmApi.getStorPoolName();
+            storage_pool_driver = vlmApi.getStorDriverSimpleClassName();
+            storage_pool_definition_props = vlmApi.getStorPoolDfnProps();
+
+            device_path = vlmApi.getDevicePath();
+            allocated_size = vlmApi.getAllocatedSize().orElse(null);
+
+            props = vlmApi.getVlmProps();
+            flags = FlagsHelper.toStringList(Volume.VlmFlags.class, vlmApi.getFlags());
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class VolumeStateData
+    {
+        public String disk_state;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
