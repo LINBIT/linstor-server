@@ -164,7 +164,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             vlmData.setDevicePath(info.path);
             vlmData.setIdentifier(info.identifier);
             vlmData.setAllocatedSize(info.size);
-            vlmData.setUsableSize(info.size);
             vlmData.setDevicePath(info.path);
         }
     }

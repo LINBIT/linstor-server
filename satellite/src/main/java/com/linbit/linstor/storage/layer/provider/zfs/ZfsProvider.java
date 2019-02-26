@@ -429,7 +429,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
         vlmData.setZPool(zfsInfo.poolName);
         vlmData.setIdentifier(zfsInfo.identifier);
         vlmData.setAllocatedSize(zfsInfo.size);
-        vlmData.setUsableSize(zfsInfo.size);
         vlmData.setDevicePath(zfsInfo.path);
     }
 
