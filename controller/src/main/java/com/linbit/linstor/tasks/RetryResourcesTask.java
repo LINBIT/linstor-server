@@ -160,6 +160,7 @@ public class RetryResourcesTask implements Task
             if (now >= retryAt)
             {
                 ret.add(entry.getKey());
+                pair.objA += 1;
                 pair.objB = now;
             }
         }
