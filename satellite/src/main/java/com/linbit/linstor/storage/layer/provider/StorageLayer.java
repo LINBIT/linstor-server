@@ -23,11 +23,13 @@ import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,33 +87,51 @@ public class StorageLayer implements DeviceLayer
     public void prepare(Set<RscLayerObject> rscObjList, Set<Snapshot> snapshots)
         throws StorageException, AccessDeniedException, SQLException
     {
-        Map<DeviceProvider, List<VlmProviderObject>> groupedVolumes = rscObjList.stream()
-            .flatMap(RscLayerObject::streamVlmLayerObjects)
-            .collect(Collectors.groupingBy(this::getDevProviderByVlmObj));
+        Map<DeviceProvider, Pair<List<VlmProviderObject>, List<SnapshotVolume>>> groupedData;
+        groupedData = new HashMap<>();
 
-        Map<DeviceProvider, List<SnapshotVolume>> groupedSnapshotVolumes = snapshots.stream()
-            .flatMap(snapshot ->
-                AccessUtils.execPrivileged(() -> snapshot.getAllSnapshotVolumes(storDriverAccCtx).stream())
-            )
-            .collect(Collectors.groupingBy(this::classifier));
-
-        for (Entry<DeviceProvider, List<VlmProviderObject>> entry : groupedVolumes.entrySet())
+        for (RscLayerObject rscLayerObject : rscObjList)
         {
-            DeviceProvider deviceProvider = entry.getKey();
-            List<VlmProviderObject> vlmDataList = entry.getValue();
-
-            if (!vlmDataList.isEmpty())
+            for (VlmProviderObject vlmProviderObject : rscLayerObject.getVlmLayerObjects().values())
             {
-                // TODO: RAID: maybe we also need something like snapshotVolumeLayerObject
-                List<SnapshotVolume> snapVlms = groupedSnapshotVolumes.get(deviceProvider);
-                if (snapVlms == null)
-                {
-                    snapVlms = Collections.emptyList();
-                }
-
-                deviceProvider.prepare(vlmDataList, snapVlms);
+                getOrCreatePair(
+                    groupedData,
+                    getDevProviderByVlmObj(vlmProviderObject)
+                ).objA.add(vlmProviderObject);
             }
         }
+
+        for (Snapshot snapshot : snapshots)
+        {
+            for (SnapshotVolume snapVlm : snapshot.getAllSnapshotVolumes(storDriverAccCtx))
+            {
+                getOrCreatePair(
+                    groupedData,
+                    classifier(snapVlm)
+                ).objB.add(snapVlm);
+            }
+        }
+        for (Entry<DeviceProvider, Pair<List<VlmProviderObject>, List<SnapshotVolume>>> entry : groupedData.entrySet())
+        {
+            DeviceProvider deviceProvider = entry.getKey();
+            Pair<List<VlmProviderObject>, List<SnapshotVolume>> pair = entry.getValue();
+
+            deviceProvider.prepare(pair.objA, pair.objB);
+        }
+    }
+
+    private Pair<List<VlmProviderObject>, List<SnapshotVolume>> getOrCreatePair(
+        Map<DeviceProvider, Pair<List<VlmProviderObject>, List<SnapshotVolume>>> groupedData,
+        DeviceProvider deviceProvider
+    )
+    {
+        Pair<List<VlmProviderObject>, List<SnapshotVolume>> pair = groupedData.get(deviceProvider);
+        if (pair == null)
+        {
+            pair = new Pair<>(new ArrayList<>(), new ArrayList<>());
+            groupedData.put(deviceProvider, pair);
+        }
+        return pair;
     }
 
     @Override

@@ -119,7 +119,11 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     }
 
     @Override
-    protected Map<String, ZfsInfo> getInfoListImpl(List<ZfsData> vlmDataListRef) throws StorageException
+    protected Map<String, ZfsInfo> getInfoListImpl(
+        List<ZfsData> vlmDataListRef,
+        List<SnapshotVolume> snapVlmsRef
+    )
+        throws StorageException
     {
         return ZfsUtils.getZfsList(extCmdFactory.create());
     }

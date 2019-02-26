@@ -105,7 +105,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     {
         final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
             extCmdFactory.create(),
-            getAffectedVolumeGroups(vlmDataList)
+            getAffectedVolumeGroups(vlmDataList, snapshots)
         );
         for (LvmData vlmData : vlmDataList)
         {
@@ -269,10 +269,13 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     @Override
-    protected Map<String, LvsInfo> getInfoListImpl(List<LvmData> vlmDataList)
+    protected Map<String, LvsInfo> getInfoListImpl(List<LvmData> vlmDataList, List<SnapshotVolume> snapVlms)
         throws StorageException, AccessDeniedException
     {
-        return LvmUtils.getLvsInfo(extCmdFactory.create(), getAffectedVolumeGroups(vlmDataList));
+        return LvmUtils.getLvsInfo(
+            extCmdFactory.create(),
+            getAffectedVolumeGroups(vlmDataList, snapVlms)
+        );
     }
 
     @Override
@@ -358,7 +361,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         StorageConfigReader.checkToleranceFactor(props);
     }
 
-    private Set<String> getAffectedVolumeGroups(List<LvmData> vlmDataList) throws AccessDeniedException
+    private Set<String> getAffectedVolumeGroups(
+        Collection<LvmData> vlmDataList,
+        Collection<SnapshotVolume> snapVlms
+    )
+        throws AccessDeniedException
     {
         Set<String> volumeGroups = new HashSet<>();
         for (LvmData vlmData : vlmDataList)
@@ -370,6 +377,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                 vlmData.setVolumeGroup(volumeGroup);
             }
             volumeGroups.add(volumeGroup);
+        }
+        for (SnapshotVolume snapVlm : snapVlms)
+        {
+            volumeGroups.add(getVolumeGroup(snapVlm.getStorPool(storDriverAccCtx)));
         }
         return volumeGroups;
     }

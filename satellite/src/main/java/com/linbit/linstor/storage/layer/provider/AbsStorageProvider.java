@@ -139,7 +139,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
         List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) rawVlmDataList;
 
-        infoListCache.putAll(getInfoListImpl(vlmDataList));
+        infoListCache.putAll(getInfoListImpl(vlmDataList, snapVlms));
+
         updateStates(vlmDataList, snapVlms);
     }
 
@@ -763,7 +764,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
     protected abstract Map<String, Long> getFreeSpacesImpl() throws StorageException;
 
-    protected abstract Map<String, INFO> getInfoListImpl(List<LAYER_DATA> vlmDataList)
+    protected abstract Map<String, INFO> getInfoListImpl(
+        List<LAYER_DATA> vlmDataList,
+        List<SnapshotVolume> snapVlmsRef
+    )
         throws StorageException, AccessDeniedException;
 
     protected abstract void updateStates(List<LAYER_DATA> vlmDataList, Collection<SnapshotVolume> snapVlms)

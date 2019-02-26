@@ -34,6 +34,8 @@ import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.utils.Either;
+import com.linbit.utils.Pair;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -50,7 +52,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -104,7 +105,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
         calculateGrossSizes(rscs);
 
-        boolean prepareSuccess = prepareLayers(rscByLayer, snapshotsByRscName);
+        boolean prepareSuccess = prepareLayers(rscByLayer, snapshots);
 
         if (prepareSuccess)
         {
@@ -189,25 +190,34 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private boolean prepareLayers(
         Map<DeviceLayer, Set<RscLayerObject>> rscByLayer,
-        Map<ResourceName, Set<Snapshot>> snapshotsByRscName
+        Collection<Snapshot> snapshots
     )
     {
         boolean prepareSuccess = true;
+
+        Map<DeviceLayer, Pair<Set<RscLayerObject>, Set<Snapshot>>> dataPerLayer = new HashMap<>();
         for (Entry<DeviceLayer, Set<RscLayerObject>> entry : rscByLayer.entrySet())
         {
-            Set<Snapshot> affectedSnapshots = new TreeSet<>();
-            Set<RscLayerObject> rscDataList = entry.getValue();
-            for (RscLayerObject rscData : rscDataList)
+            dataPerLayer.put(entry.getKey(), new Pair<>(entry.getValue(), new HashSet<>()));
+        }
+        if (!snapshots.isEmpty())
+        {
+            Pair<Set<RscLayerObject>, Set<Snapshot>> storageLayerObjectPair = dataPerLayer.get(storageLayer);
+            if (storageLayerObjectPair == null)
             {
-                // FIXME: RAID: add rscNameSuffix
-                Set<Snapshot> list = snapshotsByRscName.get(rscData.getResourceName());
-                if (list != null)
-                {
-                    affectedSnapshots.addAll(list);
-                }
+                storageLayerObjectPair = new Pair<>(new HashSet<>(), new HashSet<>());
+                dataPerLayer.put(storageLayer, storageLayerObjectPair);
             }
+            Set<Snapshot> snapshotsToPrepare = storageLayerObjectPair.objB;
+            snapshotsToPrepare.addAll(snapshots);
+        }
+
+
+        for (Entry<DeviceLayer, Pair<Set<RscLayerObject>, Set<Snapshot>>> entry : dataPerLayer.entrySet())
+        {
             DeviceLayer layer = entry.getKey();
-            if (!prepare(layer, rscDataList, affectedSnapshots))
+            Pair<Set<RscLayerObject>, Set<Snapshot>> pair = entry.getValue();
+            if (!prepare(layer, pair.objA, pair.objB))
             {
                 prepareSuccess = false;
                 break;
@@ -469,15 +479,17 @@ public class DeviceHandlerImpl implements DeviceHandler
         try
         {
             errorReporter.logTrace(
-                "Layer '%s' preparing %d resources",
+                "Layer '%s' preparing %d resources, %d snapshots",
                 layer.getName(),
-                rscDataList.size()
+                rscDataList.size(),
+                affectedSnapshots.size()
             );
             layer.prepare(rscDataList, affectedSnapshots);
             errorReporter.logTrace(
-                "Layer '%s' finished preparing %d resources",
+                "Layer '%s' finished preparing %d resources, %d snapshots",
                 layer.getName(),
-                rscDataList.size()
+                rscDataList.size(),
+                affectedSnapshots.size()
             );
             success = true;
         }
