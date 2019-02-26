@@ -662,15 +662,14 @@ public class ConfFileBuilder
         NetInterface preferredNetIf = null;
         try
         {
-            Volume firstVlm = rsc.iterateVolumes().next();
-
-            PriorityProps prioProps;
-            prioProps = new PriorityProps(
+            Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+            PriorityProps prioProps = new PriorityProps(
                 rsc.getProps(accCtx),
-                firstVlm.getStorPool(accCtx).getProps(accCtx),
+                iterateVolumes.hasNext() ?
+                    iterateVolumes.next().getStorPool(accCtx).getProps(accCtx) :
+                    null, // prioProps will skip null props-instances
                 rsc.getAssignedNode().getProps(accCtx)
             );
-
             String prefNic = prioProps.getProp(ApiConsts.KEY_STOR_POOL_PREF_NIC);
 
             if (prefNic != null)
