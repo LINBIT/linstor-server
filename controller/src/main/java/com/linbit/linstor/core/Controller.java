@@ -12,6 +12,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
@@ -41,6 +42,7 @@ import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.NetComModule;
 import com.linbit.linstor.numberpool.DbNumberPoolInitializer;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -81,6 +83,9 @@ public final class Controller
 
     public static final int API_VERSION = 3;
     public static final int API_MIN_VERSION = API_VERSION;
+
+    private static final String DEFAULT_HTTP_LISTEN_ADDRESS = "127.0.0.1";
+    private static final String DEFAULT_HTTP_REST_PORT = "3370";
 
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
@@ -198,12 +203,8 @@ public final class Controller
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
-            final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(injector, "localhost", 8080);
-            systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
 
             dbConnectionPoolInitializer.initialize();
-
-            applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).
@@ -213,6 +214,10 @@ public final class Controller
             dbCoreObjProtInitializer.initialize();
             dbDataInitializer.initialize();
             dbNumberPoolInitializer.initialize();
+
+            initializeRestServer(injector);
+
+            applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             controllerNetComInitializer.initNetComServices(
                 ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null),
@@ -228,6 +233,13 @@ public final class Controller
 
             errorReporter.logInfo("Controller initialized");
         }
+        catch (InvalidKeyException invalidKeyExc)
+        {
+            throw new ImplementationError(
+              "Invalid key used.",
+              invalidKeyExc
+            );
+        }
         catch (AccessDeniedException accessExc)
         {
             throw new ImplementationError(
@@ -239,6 +251,27 @@ public final class Controller
         finally
         {
             reconfigurationLock.writeLock().unlock();
+        }
+    }
+
+    private void initializeRestServer(Injector injector) throws InvalidKeyException
+    {
+        boolean restEnabled = Boolean.parseBoolean(
+            ctrlConf.getPropWithDefault(ApiConsts.KEY_REST_ENABLED, ApiConsts.NAMESPC_REST, "true")
+        );
+        String restListenAddr = ctrlConf.getPropWithDefault(
+            ApiConsts.KEY_REST_LISTEN_ADDR, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_LISTEN_ADDRESS
+        );
+        int restListenPort = Integer.parseInt(
+            ctrlConf.getPropWithDefault(ApiConsts.KEY_REST_LISTEN_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT)
+        );
+
+        if (restEnabled)
+        {
+            final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(
+                injector, errorReporter.getLogDirectory(), restListenAddr, restListenPort
+            );
+            systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
         }
     }
 

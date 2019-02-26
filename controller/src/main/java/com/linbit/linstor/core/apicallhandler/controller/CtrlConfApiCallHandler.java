@@ -230,17 +230,24 @@ public class CtrlConfApiCallHandler
             if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
                 String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
-                switch (fullKey)
+                if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/'))
                 {
-                    case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
-                        setTcpPort(key, namespace, normalized, apiCallRc);
-                        break;
-                    case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
-                        setMinorNr(key, namespace, normalized, apiCallRc);
-                        break;
-                    default:
-                        systemConfRepository.setStltProp(peerAccCtx.get(), fullKey, normalized);
-                        break;
+                    systemConfRepository.setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                }
+                else
+                {
+                    switch (fullKey)
+                    {
+                        case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
+                            setTcpPort(key, namespace, normalized, apiCallRc);
+                            break;
+                        case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
+                            setMinorNr(key, namespace, normalized, apiCallRc);
+                            break;
+                        default:
+                            systemConfRepository.setStltProp(peerAccCtx.get(), fullKey, normalized);
+                            break;
+                    }
                 }
                 transMgrProvider.get().commit();
 

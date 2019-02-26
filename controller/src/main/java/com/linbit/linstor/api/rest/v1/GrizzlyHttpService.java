@@ -7,10 +7,12 @@ import com.linbit.SystemServiceStartException;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Injector;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.accesslog.AccessLogBuilder;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -19,7 +21,7 @@ public class GrizzlyHttpService implements SystemService
     private final HttpServer httpServer;
     private ServiceName instanceName;
 
-    public GrizzlyHttpService(Injector injector, String listenAddress, int port)
+    public GrizzlyHttpService(Injector injector, Path logDirectory, String listenAddress, int port)
     {
         ResourceConfig resourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
         resourceConfig.register(new CORSFilter());
@@ -29,6 +31,9 @@ public class GrizzlyHttpService implements SystemService
             resourceConfig,
             false
         );
+
+        final AccessLogBuilder builder = new AccessLogBuilder(logDirectory.resolve("rest-access.log").toFile());
+        builder.instrument(httpServer.getServerConfiguration());
 
         try
         {

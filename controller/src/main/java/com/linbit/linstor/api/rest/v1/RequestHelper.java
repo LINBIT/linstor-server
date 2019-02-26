@@ -52,6 +52,8 @@ public class RequestHelper
     Context createContext(String apiCall, org.glassfish.grizzly.http.server.Request request)
     {
         // request.getAuthorization() contains authorization http field
+
+        errorReporter.logDebug("REST access api '%s' from '%s'", apiCall, request.getRemoteAddr());
         return  Context.of(
             ApiModule.API_CALL_NAME, apiCall,
             AccessContext.class, systemContext,
