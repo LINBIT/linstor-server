@@ -54,8 +54,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     private final TransactionSimpleObject<StorPoolData, Boolean> deleted;
 
-    private final transient Object syncObj = new Object();
-
     StorPoolData(
         UUID id,
         Node nodeRef,
