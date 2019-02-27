@@ -189,7 +189,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             catch (InvalidNameException invNameExc)
             {
                 String msg = "The command line contains an invalid object name";
-                printDmException(
+                printLsException(
                     debugErr,
                     new LinStorException(
                         msg,
@@ -202,7 +202,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             }
             catch (AccessDeniedException accExc)
             {
-                printDmException(debugErr, accExc);
+                printLsException(debugErr, accExc);
             }
             finally
             {
@@ -287,7 +287,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             else
             {
                 String msg = "No node entry exists for the specified name '" + nodeObjName.displayValue + "'";
-                printDmException(
+                printLsException(
                     debugErr,
                     new LinStorException(
                         msg,
@@ -332,7 +332,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             {
                 String msg = "No resource definition entry exists for the specified name '" +
                     rscName.displayValue + "'";
-                printDmException(
+                printLsException(
                     debugErr,
                     new LinStorException(
                         msg,
@@ -388,7 +388,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
                         String msg = "No resource entry exists on the node '" + nodeObjName.displayValue + "' " +
                             "for the specified resource name '" +
                             rscName.displayValue + "'";
-                        printDmException(
+                        printLsException(
                             debugErr,
                             new LinStorException(
                                 msg,
@@ -403,7 +403,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
                 else
                 {
                     String msg = "No node entry exists for the specified name '" + nodeObjName.displayValue + "'";
-                    printDmException(
+                    printLsException(
                         debugErr,
                         new LinStorException(
                             msg,
@@ -424,7 +424,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
         else
         {
             String msg = "The specified object path is not valid";
-            printDmException(
+            printLsException(
                 debugErr,
                 new LinStorException(
                     msg,
@@ -466,7 +466,7 @@ public class CmdDisplayObjProt extends BaseDebugCmd
             {
                 String msg = "No entry exists for the specified storage pool name '" +
                     spName.displayValue + "'";
-                printDmException(
+                printLsException(
                     debugErr,
                     new LinStorException(
                         msg,

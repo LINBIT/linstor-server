@@ -239,7 +239,7 @@ public class CmdSetConnectionContext extends BaseDebugCmd
         }
         catch (LinStorException lsExc)
         {
-            printDmException(debugErr, lsExc);
+            printLsException(debugErr, lsExc);
         }
     }
 }

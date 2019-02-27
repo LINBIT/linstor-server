@@ -98,25 +98,25 @@ public class DebugPrintHelper
         }
     }
 
-    public void printDmException(PrintStream debugErr, LinStorException dmExc)
+    public void printLsException(PrintStream debugErr, LinStorException lsExc)
     {
-        String descText = dmExc.getDescriptionText();
+        String descText = lsExc.getDescriptionText();
         if (descText == null)
         {
-            descText = dmExc.getMessage();
+            descText = lsExc.getMessage();
             if (descText == null)
             {
                 descText = "(Uncommented exception of type " +
-                    dmExc.getClass().getCanonicalName() + ")";
+                    lsExc.getClass().getCanonicalName() + ")";
             }
         }
 
         printError(
             debugErr,
             descText,
-            dmExc.getCauseText(),
-            dmExc.getCorrectionText(),
-            dmExc.getDetailsText()
+            lsExc.getCauseText(),
+            lsExc.getCorrectionText(),
+            lsExc.getDetailsText()
         );
     }
 

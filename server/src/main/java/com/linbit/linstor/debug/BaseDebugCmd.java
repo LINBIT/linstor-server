@@ -136,9 +136,9 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         debugPrintHelper.printMultiMissingParamError(debugErr, parameters, paramNameList);
     }
 
-    public void printDmException(PrintStream debugErr, LinStorException dmExc)
+    public void printLsException(PrintStream debugErr, LinStorException lsExc)
     {
-        debugPrintHelper.printDmException(debugErr, dmExc);
+        debugPrintHelper.printLsException(debugErr, lsExc);
     }
 
     public void printError(

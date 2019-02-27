@@ -402,7 +402,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
         }
         catch (LinStorException exc)
         {
-            debugPrintHelper.printDmException(debugErr, exc);
+            debugPrintHelper.printLsException(debugErr, exc);
         }
         catch (SQLException sqlExc)
         {

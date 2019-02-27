@@ -143,9 +143,9 @@ public class CmdDeleteConfValue extends BaseDebugCmd
                 null
             );
         }
-        catch (LinStorException dmExc)
+        catch (LinStorException lsExc)
         {
-            printDmException(debugErr, dmExc);
+            printLsException(debugErr, lsExc);
         }
         finally
         {

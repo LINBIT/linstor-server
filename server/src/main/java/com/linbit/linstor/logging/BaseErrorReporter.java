@@ -160,18 +160,18 @@ public abstract class BaseErrorReporter
         output.println();
     }
 
-    boolean reportLinStorException(PrintStream output, LinStorException dmExc)
+    boolean reportLinStorException(PrintStream output, LinStorException lsExc)
     {
         boolean detailsAvailable = false;
 
-        String descriptionMsg   = dmExc.getDescriptionText();
-        String causeMsg         = dmExc.getCauseText();
-        String correctionMsg    = dmExc.getCorrectionText();
-        String detailsMsg       = dmExc.getDetailsText();
+        String descriptionMsg   = lsExc.getDescriptionText();
+        String causeMsg         = lsExc.getCauseText();
+        String correctionMsg    = lsExc.getCorrectionText();
+        String detailsMsg       = lsExc.getDetailsText();
 
         if (descriptionMsg == null)
         {
-            descriptionMsg = dmExc.getMessage();
+            descriptionMsg = lsExc.getMessage();
         }
 
         if (descriptionMsg != null)

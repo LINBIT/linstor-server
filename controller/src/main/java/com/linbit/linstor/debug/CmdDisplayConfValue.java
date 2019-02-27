@@ -250,9 +250,9 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             {
                 debugOut.println(nameSpcExc.getMessage());
             }
-            catch (LinStorException dmExc)
+            catch (LinStorException lsExc)
             {
-                printDmException(debugErr, dmExc);
+                printLsException(debugErr, lsExc);
             }
             finally
             {

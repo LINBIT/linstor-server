@@ -130,7 +130,7 @@ public class CmdSetSecLevel extends BaseDebugCmd
                 }
                 catch (AccessDeniedException accExc)
                 {
-                    printDmException(debugErr, accExc);
+                    printLsException(debugErr, accExc);
                 }
                 catch (SQLException sqlExc)
                 {
@@ -146,7 +146,7 @@ public class CmdSetSecLevel extends BaseDebugCmd
                     {
                         detailsText += "\nAn error report was filed under report ID " + reportId + ".";
                     }
-                    printDmException(
+                    printLsException(
                         debugErr,
                         new LinStorException(
                             "The security level was not changed due to a database error",
