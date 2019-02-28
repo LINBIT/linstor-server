@@ -4,7 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass.MsgIntSnapshotEndedData;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass.MsgIntSnapshotEndedData;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

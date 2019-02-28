@@ -6,7 +6,7 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
-import com.linbit.linstor.proto.MsgModVlmDfnOuterClass.MsgModVlmDfn;
+import com.linbit.linstor.proto.requests.MsgModVlmDfnOuterClass.MsgModVlmDfn;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;

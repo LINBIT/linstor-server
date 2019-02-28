@@ -7,7 +7,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedNodeOuterClass.MsgIntApplyDeletedNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +31,7 @@ public class ApplyDeletedNode implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntNodeDeletedData nodeDeletedData = MsgIntNodeDeletedData.parseDelimitedFrom(msgDataIn);
+        MsgIntApplyDeletedNode nodeDeletedData = MsgIntApplyDeletedNode.parseDelimitedFrom(msgDataIn);
         apiCallHandler.applyDeletedNodeChange(
             nodeDeletedData.getNodeName(),
             nodeDeletedData.getFullSyncId(),

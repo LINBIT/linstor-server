@@ -14,12 +14,10 @@ import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnection;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
@@ -27,9 +25,6 @@ import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
@@ -37,65 +32,35 @@ import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.proto.CryptRscOuterClass.CryptRsc;
-import com.linbit.linstor.proto.CryptRscOuterClass.CryptVlm;
-import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdRsc;
-import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdRscDfn;
-import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdVlm;
-import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdVlmDfn;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
-import com.linbit.linstor.proto.NetInterfaceOuterClass;
-import com.linbit.linstor.proto.NodeOuterClass;
-import com.linbit.linstor.proto.RscLayerDataOuterClass.RscLayerData;
-import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass;
-import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
-import com.linbit.linstor.proto.StorageRscOuterClass.DrbdDisklessVlm;
-import com.linbit.linstor.proto.StorageRscOuterClass.LvmThinVlm;
-import com.linbit.linstor.proto.StorageRscOuterClass.LvmVlm;
-import com.linbit.linstor.proto.StorageRscOuterClass.StorageRsc;
-import com.linbit.linstor.proto.StorageRscOuterClass.StorageVlm;
-import com.linbit.linstor.proto.StorageRscOuterClass.SwordfishInitiator;
-import com.linbit.linstor.proto.StorageRscOuterClass.SwordfishTarget;
-import com.linbit.linstor.proto.StorageRscOuterClass.SwordfishVlmDfn;
-import com.linbit.linstor.proto.StorageRscOuterClass.ZfsThinVlm;
-import com.linbit.linstor.proto.StorageRscOuterClass.ZfsVlm;
-import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
-import com.linbit.linstor.proto.VlmOuterClass.Vlm;
-import com.linbit.linstor.proto.javainternal.MsgIntApplyRscSuccessOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData;
-import com.linbit.linstor.proto.javainternal.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
-import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
-import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDeletedDataOuterClass.MsgIntRscDeletedData;
-import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass.MsgIntSnapshotData;
-import com.linbit.linstor.proto.javainternal.MsgIntSnapshotEndedDataOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
-import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
-import com.linbit.linstor.proto.javainternal.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
+import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
+import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
+import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
+import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
+import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
+import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNodeConn;
+import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntOtherRsc;
+import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
+import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapshot;
+import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyControllerOuterClass.MsgIntApplyController;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedNodeOuterClass.MsgIntApplyDeletedNode;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedRscOuterClass.MsgIntApplyDeletedRsc;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedStorPoolOuterClass.MsgIntApplyDeletedStorPool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyNodeOuterClass.MsgIntApplyNode;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgIntApplyRsc;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupRscData;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
-import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.utils.Base64;
 
 import static java.util.stream.Collectors.toList;
@@ -156,7 +121,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         appendObjectId(nodeUuid, nodeName);
         return this;
-
     }
 
     // no fullSync- or update-id needed
@@ -196,7 +160,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             ctrlSerializerHelper
-                .buildControllerDataMsg(fullSyncTimestamp, serializerid)
+                .buildApplyControllerMsg(fullSyncTimestamp, serializerid)
                 .writeDelimitedTo(baos);
         }
         catch (IOException exc)
@@ -216,8 +180,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            nodeSerializerHelper
-                .buildNodeDataMsg(node, relatedNodes, fullSyncTimestamp, serializerId)
+            MsgIntApplyNode.newBuilder()
+                .setNode(nodeSerializerHelper.buildNodeDataMsg(node, relatedNodes))
+                .setFullSyncId(fullSyncTimestamp)
+                .setUpdateId(serializerId)
+                .build()
                 .writeDelimitedTo(baos);
         }
         catch (IOException exc)
@@ -240,7 +207,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            MsgIntNodeDeletedData.newBuilder()
+            MsgIntApplyDeletedNode.newBuilder()
                 .setNodeName(nodeNameStr)
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
@@ -263,8 +230,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            rscSerializerHelper
-                .buildResourceDataMsg(localResource, fullSyncTimestamp, updateId)
+            MsgIntApplyRsc.newBuilder()
+                .setRsc(rscSerializerHelper.buildIntResourceData(localResource))
+                .setFullSyncId(fullSyncTimestamp)
+                .setUpdateId(updateId)
+                .build()
                 .writeDelimitedTo(baos);
         }
         catch (IOException exc)
@@ -287,7 +257,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            MsgIntRscDeletedData.newBuilder()
+            MsgIntApplyDeletedRsc.newBuilder()
                 .setRscName(rscNameStr)
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
@@ -310,7 +280,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            buildStorPoolDataMsg(storPool, fullSyncTimestamp, updateId)
+            MsgIntApplyStorPool.newBuilder()
+                .setStorPool(buildIntStorPoolDataMsg(storPool))
+                .setFullSyncId(fullSyncTimestamp)
+                .setUpdateId(updateId)
+                .build()
                 .writeDelimitedTo(baos);
         }
         catch (IOException exc)
@@ -333,7 +307,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            MsgIntStorPoolDeletedData.newBuilder()
+            MsgIntApplyDeletedStorPool.newBuilder()
                 .setStorPoolName(storPoolNameStr)
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
@@ -354,8 +328,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            snapshotSerializerHelper
-                .buildSnapshotDataMsg(snapshot, fullSyncId, updateId)
+            MsgIntApplySnapshot.newBuilder()
+                .setSnapshot(snapshotSerializerHelper.buildSnapshotDataMsg(snapshot))
+                .setFullSyncId(fullSyncId)
+                .setUpdateId(updateId)
+                .build()
                 .writeDelimitedTo(baos);
         }
         catch (IOException exc)
@@ -403,15 +380,12 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            ArrayList<MsgIntNodeData> serializedNodes = new ArrayList<>();
-            ArrayList<MsgIntStorPoolData> serializedStorPools = new ArrayList<>();
-            ArrayList<MsgIntRscData> serializedRscs = new ArrayList<>();
-            ArrayList<MsgIntSnapshotData> serializedSnapshots = new ArrayList<>();
+            ArrayList<IntNode> serializedNodes = new ArrayList<>();
+            ArrayList<IntStorPool> serializedStorPools = new ArrayList<>();
+            ArrayList<IntRsc> serializedRscs = new ArrayList<>();
+            ArrayList<IntSnapshot> serializedSnapshots = new ArrayList<>();
 
-            MsgIntControllerData serializedController = ctrlSerializerHelper.buildControllerDataMsg(
-                fullSyncTimestamp,
-                updateId
-            );
+            IntController serializedCtrl = ctrlSerializerHelper.buildControllerDataMsg();
 
             LinkedList<Node> nodes = new LinkedList<>(nodeSet);
 
@@ -419,46 +393,25 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 Node node = nodes.removeFirst();
                 serializedNodes.add(
-                    nodeSerializerHelper.buildNodeDataMsg(
-                        node,
-                        nodes,
-                        fullSyncTimestamp,
-                        updateId
-                    )
+                    nodeSerializerHelper.buildNodeDataMsg(node, nodes)
                 );
             }
             for (StorPool storPool : storPools)
             {
                 serializedStorPools.add(
-                    buildStorPoolDataMsg(
-                        storPool,
-                        fullSyncTimestamp,
-                        updateId
-                    )
+                    buildIntStorPoolDataMsg(storPool)
                 );
             }
             for (Resource rsc : resources)
             {
                 if (rsc.iterateVolumes().hasNext())
                 {
-                    serializedRscs.add(
-                        rscSerializerHelper.buildResourceDataMsg(
-                            rsc,
-                            fullSyncTimestamp,
-                            updateId
-                        )
-                    );
+                    serializedRscs.add(rscSerializerHelper.buildIntResourceData(rsc));
                 }
             }
             for (Snapshot snapshot : snapshots)
             {
-                serializedSnapshots.add(
-                    snapshotSerializerHelper.buildSnapshotDataMsg(
-                        snapshot,
-                        fullSyncTimestamp,
-                        updateId
-                    )
-                );
+                serializedSnapshots.add(snapshotSerializerHelper.buildSnapshotDataMsg(snapshot));
             }
 
             String encodedMasterKey = "";
@@ -467,14 +420,14 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 encodedMasterKey = Base64.encode(cryptKey);
             }
-            MsgIntFullSync.newBuilder()
+            MsgIntApplyFullSync.newBuilder()
                 .addAllNodes(serializedNodes)
                 .addAllStorPools(serializedStorPools)
                 .addAllRscs(serializedRscs)
                 .addAllSnapshots(serializedSnapshots)
                 .setFullSyncTimestamp(fullSyncTimestamp)
                 .setMasterKey(encodedMasterKey)
-                .setCtrlData(serializedController)
+                .setCtrl(serializedCtrl)
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -521,7 +474,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         {
             MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess.newBuilder()
                 .setRscId(
-                    MsgIntObjectId.newBuilder()
+                    IntObjectId.newBuilder()
                         .setUuid(resource.getUuid().toString())
                         .setName(resource.getDefinition().getName().displayValue)
                         .build()
@@ -529,7 +482,12 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllFreeSpace(
                     ProtoStorPoolFreeSpaceUtils.getAllStorPoolFreeSpaces(freeSpaceMap)
                 )
-                .setLayerObject(rscSerializerHelper.buildRscLayerData(resource))
+                .setLayerObject(
+                    ProtoCommonSerializerBuilder.LayerObjectSerializer.serializeLayerObject(
+                        resource.getLayerData(serializerCtx),
+                        serializerCtx
+                    )
+                )
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -640,14 +598,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         return this;
     }
 
-    /*
-     * Helper methods
-     */
     private void appendObjectId(UUID objUuid, String objName)
     {
         try
         {
-            MsgIntObjectId.Builder msgBuilder = MsgIntObjectId.newBuilder();
+            IntObjectId.Builder msgBuilder = IntObjectId.newBuilder();
             if (objUuid != null)
             {
                 msgBuilder.setUuid(objUuid.toString());
@@ -655,86 +610,68 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             msgBuilder
                 .setName(objName)
                 .build()
-                .writeDelimitedTo(baos);
+            .writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {
-            handleIOException(exc);
+             handleIOException(exc);
         }
     }
 
-    private MsgIntStorPoolData buildStorPoolDataMsg(StorPool storPool, long fullSyncTimestamp, long updateId)
+    private IntStorPool buildIntStorPoolDataMsg(StorPool storPool)
         throws AccessDeniedException
     {
         StorPoolDefinition storPoolDfn = storPool.getDefinition(serializerCtx);
-        return MsgIntStorPoolData.newBuilder()
-            .setStorPoolUuid(storPool.getUuid().toString())
-            .setNodeUuid(storPool.getNode().getUuid().toString())
-            .setStorPoolDfnUuid(storPoolDfn.getUuid().toString())
-            .setStorPoolName(storPool.getName().displayValue)
-            .setDriver(storPool.getDriverName())
-            .setFreeSpaceMgrName(storPool.getFreeSpaceTracker().getName().displayValue)
-            .addAllStorPoolProps(asLinStorList(storPool.getProps(serializerCtx)))
-            .addAllStorPoolDfnProps(asLinStorList(storPoolDfn.getProps(serializerCtx)))
-            .setFullSyncId(fullSyncTimestamp)
-            .setUpdateId(updateId)
+        return IntStorPool.newBuilder()
+            .setStorPool(ProtoCommonSerializerBuilder.serializeStorPool(serializerCtx, storPool))
+            .setStorPoolDfn(ProtoCommonSerializerBuilder.serializeStorPoolDfn(serializerCtx, storPoolDfn))
             .build();
-    }
-
-    private List<LinStorMapEntry> asLinStorList(Props props)
-    {
-        return ProtoMapUtils.fromMap(props.map());
     }
 
     private class NodeSerializerHelper
     {
-        private MsgIntNodeData buildNodeDataMsg(
-            Node node,
-            Collection<Node> relatedNodes,
-            long fullSyncTimestamp,
-            long updateId
-        )
+        private IntNode buildNodeDataMsg(Node node, Collection<Node> relatedNodes)
             throws AccessDeniedException
         {
-            return MsgIntNodeData.newBuilder()
-                .setNodeUuid(node.getUuid().toString())
-                .setNodeName(node.getName().displayValue)
-                .setNodeFlags(node.getFlags().getFlagsBits(serializerCtx))
-                .setNodeType(node.getNodeType(serializerCtx).name())
-                .addAllNodeNetIfs(
+            return IntNode.newBuilder()
+                .setUuid(node.getUuid().toString())
+                .setName(node.getName().displayValue)
+                .setFlags(node.getFlags().getFlagsBits(serializerCtx))
+                .setType(node.getNodeType(serializerCtx).name())
+                .addAllNetIfs(
                     getNetIfs(node)
                 )
                 .addAllNodeConns(
                     getNodeConns(node, relatedNodes)
                 )
-                .addAllNodeProps(
+                .addAllProps(
                     ProtoMapUtils.fromMap(node.getProps(serializerCtx).map())
                 )
-                .setFullSyncId(fullSyncTimestamp)
-                .setUpdateId(updateId)
                 .build();
         }
 
-        private Iterable<? extends NetIf> getNetIfs(Node node) throws AccessDeniedException
+        private Iterable<? extends IntNetIf> getNetIfs(Node node) throws AccessDeniedException
         {
-            ArrayList<NetIf> netIfs = new ArrayList<>();
+            ArrayList<IntNetIf> netIfs = new ArrayList<>();
             for (NetInterface netIf : node.streamNetInterfaces(serializerCtx).collect(toList()))
             {
                 netIfs.add(
-                    NetIf.newBuilder()
-                        .setNetIfUuid(netIf.getUuid().toString())
-                        .setNetIfName(netIf.getName().displayValue)
-                        .setNetIfAddr(netIf.getAddress(serializerCtx).getAddress())
+                    IntNetIf.newBuilder()
+                        .setUuid(netIf.getUuid().toString())
+                        .setName(netIf.getName().displayValue)
+                        .setAddr(netIf.getAddress(serializerCtx).getAddress())
+                        .setStltConnPort(netIf.getStltConnPort(serializerCtx).value)
+                        .setStltConnEncrType(netIf.getStltConnEncryptionType(serializerCtx).name())
                         .build()
                 );
             }
             return netIfs;
         }
 
-        private ArrayList<NodeConn> getNodeConns(Node node, Collection<Node> otherNodes)
+        private ArrayList<IntNodeConn> getNodeConns(Node node, Collection<Node> otherNodes)
             throws AccessDeniedException
         {
-            ArrayList<NodeConn> nodeConns = new ArrayList<>();
+            ArrayList<IntNodeConn> nodeConns = new ArrayList<>();
             for (Node otherNode : otherNodes)
             {
                 NodeConnection nodeConnection = node.getNodeConnection(serializerCtx, otherNode);
@@ -752,7 +689,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                     }
 
                     nodeConns.add(
-                        NodeConn.newBuilder()
+                        IntNodeConn.newBuilder()
                             .setOtherNodeUuid(otherNode.getUuid().toString())
                             .setOtherNodeName(otherName)
                             .setOtherNodeType(otherNode.getNodeType(serializerCtx).name())
@@ -782,21 +719,26 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             ctrlConfProps = ctrlConfRef;
         }
 
-        private MsgIntControllerData buildControllerDataMsg(
-            long fullSyncTimestamp,
-            long updateId)
+        private MsgIntApplyController buildApplyControllerMsg(long fullSyncTimeStamp, long updateId)
         {
-            return MsgIntControllerData.newBuilder()
-                .addAllControllerProps(ProtoMapUtils.fromMap(ctrlConfProps.map()))
-                .setFullSyncId(fullSyncTimestamp)
+            return MsgIntApplyController.newBuilder()
+                .setCtrl(buildControllerDataMsg())
+                .setFullSyncId(fullSyncTimeStamp)
                 .setUpdateId(updateId)
+                .build();
+        }
+
+        private IntController buildControllerDataMsg()
+        {
+            return IntController.newBuilder()
+                .addAllProps(ProtoMapUtils.fromMap(ctrlConfProps.map()))
                 .build();
         }
     }
 
     private class ResourceSerializerHelper
     {
-        private MsgIntRscData buildResourceDataMsg(Resource localResource, long fullSyncTimestamp, long updateId)
+        private IntRsc buildIntResourceData(Resource localResource)
             throws AccessDeniedException
         {
             List<Resource> otherResources = new ArrayList<>();
@@ -811,427 +753,57 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
 
             ResourceDefinition rscDfn = localResource.getDefinition();
-            String rscName = rscDfn.getName().displayValue;
-            Map<String, String> rscDfnProps = rscDfn.getProps(serializerCtx).map();
-            Map<String, String> rscProps = localResource.getProps(serializerCtx).map();
 
-            return MsgIntRscData.newBuilder()
-                .setRscName(rscName)
-                .setRscDfnUuid(rscDfn.getUuid().toString())
-                .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
-                .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
-                .setRscDfnSecret(rscDfn.getSecret(serializerCtx))
-                .addAllRscDfnProps(ProtoMapUtils.fromMap(rscDfnProps))
-                .setRscDfnDown(rscDfn.isDown(serializerCtx))
-                .setLocalRscUuid(localResource.getUuid().toString())
-                .setLocalRscFlags(localResource.getStateFlags().getFlagsBits(serializerCtx))
-                .setLocalRscNodeId(localResource.getNodeId().value)
-                .addAllLocalRscProps(ProtoMapUtils.fromMap(rscProps))
-                .addAllVlmDfns(
-                    buildVlmDfnMessages(localResource)
+            return IntRsc.newBuilder()
+                .setLocalRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, localResource))
+                .setRscDfn(ProtoCommonSerializerBuilder.serializeResourceDefinition(serializerCtx, rscDfn))
+                .addAllOtherResources(buildOtherResources(otherResources))
+                .addAllRscConnections(
+                    ProtoCommonSerializerBuilder.serializeResourceConnections(
+                        serializerCtx,
+                        localResource.streamResourceConnections(serializerCtx).collect(Collectors.toList())
+                    )
                 )
-                .addAllLocalVolumes(
-                    buildVlmMessages(localResource)
-                )
-                .addAllOtherResources(
-                    buildOtherResources(otherResources)
-                )
-                .addAllRscConnections(buildRscConnections(localResource))
-                .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
-                .setLayerObject(buildRscLayerData(localResource))
-                .setFullSyncId(fullSyncTimestamp)
-                .setUpdateId(updateId)
                 .build();
         }
 
-        private Iterable<? extends RscConnectionData> buildRscConnections(Resource localResource)
+
+        private List<IntOtherRsc> buildOtherResources(List<Resource> otherResources)
             throws AccessDeniedException
         {
-            List<RscConnectionData> list = new ArrayList<>();
-
-            for (ResourceConnection conn : localResource.streamResourceConnections(serializerCtx)
-                .collect(Collectors.toList()))
-            {
-                RscConnectionData.Builder builder = RscConnectionData.newBuilder()
-                    .setUuid(conn.getUuid().toString())
-                    .setNode1(conn.getSourceResource(serializerCtx).getAssignedNode().getName().getDisplayName())
-                    .setNode2(conn.getTargetResource(serializerCtx).getAssignedNode().getName().getDisplayName())
-                    .addAllProps(ProtoMapUtils.fromMap(conn.getProps(serializerCtx).map()))
-                    .setFlags(conn.getStateFlags().getFlagsBits(serializerCtx));
-
-                TcpPortNumber port = conn.getPort(serializerCtx);
-                if (port != null)
-                {
-                    builder.setPort(port.value);
-                }
-
-                list.add(builder.build());
-            }
-            return list;
-        }
-
-        private Iterable<? extends VlmDfn> buildVlmDfnMessages(Resource localResource)
-            throws AccessDeniedException
-        {
-            List<VlmDfn> list = new ArrayList<>();
-
-            Iterator<Volume> localVolIterator = localResource.iterateVolumes();
-            while (localVolIterator.hasNext())
-            {
-                Volume vol = localVolIterator.next();
-                VolumeDefinition vlmDfn = vol.getVolumeDefinition();
-
-                Map<String, String> vlmDfnProps = vlmDfn.getProps(serializerCtx).map();
-                list.add(
-                    VlmDfn.newBuilder()
-                        .setVlmDfnUuid(vlmDfn.getUuid().toString())
-                        .setVlmNr(vlmDfn.getVolumeNumber().value)
-                        .setVlmSize(vlmDfn.getVolumeSize(serializerCtx))
-                        .setVlmMinor(vlmDfn.getMinorNr(serializerCtx).value)
-                        .addAllVlmFlags(
-                            FlagsHelper.toStringList(
-                                VolumeDefinition.VlmDfnFlags.class,
-                                vlmDfn.getFlags().getFlagsBits(serializerCtx)
-                            )
-                        )
-                        .addAllVlmProps(ProtoMapUtils.fromMap(vlmDfnProps))
-                        .build()
-                );
-            }
-
-            return list;
-        }
-
-        private List<Vlm> buildVlmMessages(Resource rsc)
-            throws AccessDeniedException
-        {
-            List<Vlm> vlmList = new ArrayList<>();
-
-            Iterator<Volume> volIterator = rsc.iterateVolumes();
-            while (volIterator.hasNext())
-            {
-                Volume vol = volIterator.next();
-                Map<String, String> volProps = vol.getProps(serializerCtx).map();
-                StorPool vlmStorPool = vol.getStorPool(serializerCtx);
-                Vlm.Builder builder = Vlm.newBuilder()
-                    .setVlmDfnUuid(vol.getVolumeDefinition().getUuid().toString())
-                    .setVlmUuid(vol.getUuid().toString())
-                    .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
-                    .setVlmMinorNr(vol.getVolumeDefinition().getMinorNr(serializerCtx).value)
-                    .addAllVlmFlags(Volume.VlmFlags.toStringList(vol.getFlags().getFlagsBits(serializerCtx)))
-                    .setStorPoolUuid(vlmStorPool.getUuid().toString())
-                    .setStorPoolName(vlmStorPool.getName().displayValue)
-                    .setStorPoolDriverName(vlmStorPool.getDriverName())
-                    .setStorPoolDfnUuid(vlmStorPool.getDefinition(serializerCtx).getUuid().toString())
-                    .addAllStorPoolDfnProps(
-                        ProtoMapUtils.fromMap(
-                            vlmStorPool.getDefinition(serializerCtx).getProps(serializerCtx).map())
-                    )
-                    .addAllStorPoolProps(
-                        ProtoMapUtils.fromMap(
-                            vlmStorPool.getProps(serializerCtx).map())
-                    )
-                    .addAllVlmProps(ProtoMapUtils.fromMap(volProps));
-                String blockDev = vol.getBackingDiskPath(serializerCtx);
-                if (blockDev != null)
-                {
-                    builder.setBackingDisk(blockDev);
-                }
-                String metaDisk = vol.getMetaDiskPath(serializerCtx);
-                if (metaDisk != null)
-                {
-                    builder.setMetaDisk(metaDisk);
-                }
-                if (vol.isUsableSizeSet(serializerCtx))
-                {
-                    builder.setUsableSize(vol.getUsableSize(serializerCtx));
-                }
-                if (vol.isAllocatedSizeSet(serializerCtx))
-                {
-                    builder.setAllocatedSize(vol.getAllocatedSize(serializerCtx));
-                }
-
-                vlmList.add(builder.build());
-            }
-            return vlmList;
-        }
-
-        private List<MsgIntOtherRscData> buildOtherResources(List<Resource> otherResources)
-            throws AccessDeniedException
-        {
-            List<MsgIntOtherRscData> list = new ArrayList<>();
+            List<IntOtherRsc> list = new ArrayList<>();
 
             for (Resource rsc : otherResources)
             {
-                Node node = rsc.getAssignedNode();
-                Map<String, String> rscProps = rsc.getProps(serializerCtx).map();
                 list.add(
-                    MsgIntOtherRscData.newBuilder()
-                        .setNode(buildOtherNode(node))
-                        .setNodeFlags(node.getFlags().getFlagsBits(serializerCtx))
-                        .setRscUuid(rsc.getUuid().toString())
-                        .setRscNodeId(rsc.getNodeId().value)
-                        .setRscFlags(rsc.getStateFlags().getFlagsBits(serializerCtx))
-                        .addAllRscProps(ProtoMapUtils.fromMap(rscProps))
-                        .addAllLocalVlms(
-                            buildVlmMessages(rsc)
+                    IntOtherRsc.newBuilder()
+                        .setNode(ProtoCommonSerializerBuilder.serializeNode(
+                            serializerCtx,
+                            rsc.getAssignedNode())
                         )
-                        .setLayerObject(buildRscLayerData(rsc))
+                        .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rsc))
                         .build()
                 );
             }
 
             return list;
-        }
-
-        private NodeOuterClass.Node buildOtherNode(Node node) throws AccessDeniedException
-        {
-            Map<String, String> nodeProps = node.getProps(serializerCtx).map();
-            return NodeOuterClass.Node.newBuilder()
-                .setUuid(node.getUuid().toString())
-                .setName(node.getName().displayValue)
-                .setType(node.getNodeType(serializerCtx).name())
-                .addAllProps(ProtoMapUtils.fromMap(nodeProps))
-                .addAllNetInterfaces(buildNodeNetInterfaces(node))
-                .build();
-        }
-
-        private Iterable<? extends NetInterfaceOuterClass.NetInterface> buildNodeNetInterfaces(Node node)
-            throws AccessDeniedException
-        {
-            List<NetInterfaceOuterClass.NetInterface> protoNetIfs = new ArrayList<>();
-
-            for (NetInterface netIf : node.streamNetInterfaces(serializerCtx).collect(toList()))
-            {
-                protoNetIfs.add(
-                    NetInterfaceOuterClass.NetInterface.newBuilder()
-                        .setUuid(netIf.getUuid().toString())
-                        .setName(netIf.getName().displayValue)
-                        .setAddress(netIf.getAddress(serializerCtx).getAddress())
-                        .build()
-                );
-            }
-
-            return protoNetIfs;
-        }
-
-        private RscLayerData buildRscLayerData(Resource rsc) throws AccessDeniedException
-        {
-            return buildRscLayerData(
-                // explicit inference needed as otherwise java might try to cast the return
-                // value to Resource, which will cause a compile error because of ambiguous call
-
-                // renaming one of these two methods would just too lame :)
-                rsc.<RscLayerObject>getLayerData(serializerCtx)
-            );
-        }
-
-        private RscLayerData buildRscLayerData(RscLayerObject layerData) throws AccessDeniedException
-        {
-            RscLayerData.Builder builder = RscLayerData.newBuilder();
-
-            List<RscLayerData> serializedChildren = new ArrayList<>();
-            for (RscLayerObject childRscObj : layerData.getChildren())
-            {
-                serializedChildren.add(buildRscLayerData(childRscObj));
-            }
-            builder
-                .setId(layerData.getRscLayerId())
-                .setRscNameSuffix(layerData.getResourceNameSuffix())
-                .addAllChildren(serializedChildren);
-            switch (layerData.getLayerKind())
-            {
-                case DRBD:
-                    builder.setDrbd(buildDrbdRscData((DrbdRscData) layerData));
-                    break;
-                case CRYPT_SETUP:
-                    builder.setCrypt(buildCryptRscData((CryptSetupRscData) layerData));
-                    break;
-                case STORAGE:
-                    builder.setStorage(buildStorageRscData((StorageRscData) layerData));
-                    break;
-                default:
-                    break;
-            }
-
-            return builder.build();
-        }
-
-        private DrbdRsc buildDrbdRscData(DrbdRscData drbdRscData) throws AccessDeniedException
-        {
-            DrbdRscDfnData drbdRscDfnData = drbdRscData.getRscDfnLayerObject();
-
-            List<DrbdVlm> serializedDrbdVlms = new ArrayList<>();
-            for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
-            {
-                DrbdVlmDfnData drbdVlmDfnData = drbdVlmData.getVlmDfnLayerObject();
-                DrbdVlm.Builder builder = DrbdVlm.newBuilder()
-                    .setDrbdVlmDfn(
-                        DrbdVlmDfn.newBuilder()
-                            .setRscNameSuffix(drbdVlmDfnData.getResourceNameSuffix())
-                            .setVlmNr(drbdVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
-                            .setMinor(drbdVlmDfnData.getMinorNr().value)
-                    )
-                    .setAllocatedSize(drbdVlmData.getAllocatedSize())
-                    .setUsableSize(drbdVlmData.getUsableSize());
-                if (drbdVlmData.getDevicePath() != null)
-                {
-                    builder.setDevicePath(drbdVlmData.getDevicePath());
-                }
-                if (drbdVlmData.getBackingDevice() != null)
-                {
-                    builder.setBackingDevice(drbdVlmData.getBackingDevice());
-                }
-                if (drbdVlmData.getMetaDiskPath() != null)
-                {
-                    builder.setMetaDisk(drbdVlmData.getMetaDiskPath());
-                }
-
-                serializedDrbdVlms.add(
-                    builder.build()
-                );
-            }
-
-            DrbdRsc.Builder builder = DrbdRsc.newBuilder();
-            builder.setDrbdRscDfn(
-                DrbdRscDfn.newBuilder()
-                    .setRscNameSuffix(drbdRscDfnData.getResourceNameSuffix())
-                    .setPeersSlots(drbdRscDfnData.getPeerSlots())
-                    .setAlStripes(drbdRscDfnData.getAlStripes())
-                    .setAlSize(drbdRscDfnData.getAlStripeSize())
-                    .setPort(drbdRscDfnData.getTcpPort().value)
-                    .setTransportType(drbdRscDfnData.getTransportType().name())
-                    .setSecret(drbdRscDfnData.getSecret())
-                    .build()
-            )
-            .setNodeId(drbdRscData.getNodeId().value)
-            .setPeersSlots(drbdRscData.getPeerSlots())
-            .setAlStripes(drbdRscData.getAlStripes())
-            .setAlSize(drbdRscData.getAlStripeSize())
-            .setFlags(drbdRscData.getFlags().getFlagsBits(serializerCtx))
-            .addAllDrbdVlms(serializedDrbdVlms);
-
-            return builder.build();
-        }
-
-        private CryptRsc buildCryptRscData(CryptSetupRscData cryptRscData)
-        {
-            List<CryptVlm> cryptVlms = new ArrayList<>();
-            for (CryptSetupVlmData cryptSetupVlmData : cryptRscData.getVlmLayerObjects().values())
-            {
-                CryptVlm.Builder builder = CryptVlm.newBuilder()
-                    .setVlmNr(cryptSetupVlmData.getVlmNr().value)
-                    .setEncryptedPassword(ByteString.copyFrom(cryptSetupVlmData.getEncryptedPassword()))
-                    .setAllocatedSize(cryptSetupVlmData.getAllocatedSize())
-                    .setUsableSize(cryptSetupVlmData.getUsableSize());
-                if (cryptSetupVlmData.getDevicePath() != null)
-                {
-                    builder.setDevicePath(cryptSetupVlmData.getDevicePath());
-                }
-                if (cryptSetupVlmData.getBackingDevice() != null)
-                {
-                    builder.setBackingDevice(cryptSetupVlmData.getBackingDevice());
-                }
-
-                cryptVlms.add(
-                    builder.build()
-                );
-            }
-
-            return CryptRsc.newBuilder()
-                .addAllCryptVlms(cryptVlms)
-                .build();
-        }
-
-        private StorageRsc buildStorageRscData(StorageRscData storageRscData)
-        {
-            List<StorageVlm> storageVlms = new ArrayList<>();
-            for (VlmProviderObject vlmData : storageRscData.getVlmLayerObjects().values())
-            {
-                StorageVlm.Builder builder = StorageVlm.newBuilder()
-                    .setVlmNr(vlmData.getVlmNr().value)
-                    .setAllocatedSize(vlmData.getAllocatedSize())
-                    .setUsableSize(vlmData.getUsableSize());
-                if (vlmData.getDevicePath() != null)
-                {
-                    builder.setDevicePath(vlmData.getDevicePath());
-                }
-
-                switch (vlmData.getProviderKind())
-                {
-                    case DRBD_DISKLESS:
-                        builder.setDrbdDiskless(DrbdDisklessVlm.newBuilder().build());
-                        break;
-                    case LVM:
-                        builder.setLvm(LvmVlm.newBuilder().build());
-                        break;
-                    case LVM_THIN:
-                        builder.setLvmThin(LvmThinVlm.newBuilder().build());
-                        break;
-                    case ZFS:
-                        builder.setZfs(ZfsVlm.newBuilder().build());
-                        break;
-                    case ZFS_THIN:
-                        builder.setZfsThin(ZfsThinVlm.newBuilder().build());
-                        break;
-                    case SWORDFISH_INITIATOR:
-                        {
-                            SfVlmDfnData sfVlmDfnData = ((SfInitiatorData) vlmData).getVlmDfnLayerObject();
-                            builder.setSfInit(
-                                SwordfishInitiator.newBuilder()
-                                    .setSfVlmDfn(
-                                        SwordfishVlmDfn.newBuilder()
-                                            .setSuffixedRscName(sfVlmDfnData.getSuffixedResourceName())
-                                            .setVlmNr(sfVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
-                                            .setVlmOdata(sfVlmDfnData.getVlmOdata())
-                                            .build()
-                                    )
-                                    .build()
-                            );
-                        }
-                        break;
-                    case SWORDFISH_TARGET:
-                        {
-                            SfVlmDfnData sfVlmDfnData = ((SfInitiatorData) vlmData).getVlmDfnLayerObject();
-                            builder.setSfTarget(
-                                SwordfishTarget.newBuilder()
-                                    .setSfVlmDfn(
-                                        SwordfishVlmDfn.newBuilder()
-                                            .setSuffixedRscName(sfVlmDfnData.getSuffixedResourceName())
-                                            .setVlmNr(sfVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
-                                            .setVlmOdata(sfVlmDfnData.getVlmOdata())
-                                            .build()
-                                    )
-                                    .build()
-                                );
-                        }
-                        break;
-                    case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-                    default:
-                        throw new ImplementationError("Unexpected provider kind: " + vlmData.getProviderKind());
-                }
-                storageVlms.add(builder.build());
-            }
-            return StorageRsc.newBuilder()
-                .addAllStorageVlms(storageVlms)
-                .build();
         }
     }
 
     private class SnapshotSerializerHelper
     {
-        private MsgIntSnapshotData buildSnapshotDataMsg(Snapshot snapshot, long fullSyncId, long updateId)
+        private IntSnapshot buildSnapshotDataMsg(Snapshot snapshot)
             throws AccessDeniedException
         {
             SnapshotDefinition snapshotDfn = snapshot.getSnapshotDefinition();
             ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
-            List<MsgIntSnapshotDataOuterClass.SnapshotVlmDfn> snapshotVlmDfns = new ArrayList<>();
+            List<IntSnapshotOuterClass.SnapshotVlmDfn> snapshotVlmDfns = new ArrayList<>();
             for (SnapshotVolumeDefinition snapshotVolumeDefinition :
                 snapshotDfn.getAllSnapshotVolumeDefinitions(serializerCtx))
             {
                 snapshotVlmDfns.add(
-                    MsgIntSnapshotDataOuterClass.SnapshotVlmDfn.newBuilder()
+                    IntSnapshotOuterClass.SnapshotVlmDfn.newBuilder()
                         .setSnapshotVlmDfnUuid(snapshotVolumeDefinition.getUuid().toString())
                         .setVlmNr(snapshotVolumeDefinition.getVolumeNumber().value)
                         .setVlmSize(snapshotVolumeDefinition.getVolumeSize(serializerCtx))
@@ -1240,12 +812,12 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 );
             }
 
-            List<MsgIntSnapshotDataOuterClass.SnapshotVlm> snapshotVlms = new ArrayList<>();
+            List<IntSnapshotOuterClass.SnapshotVlm> snapshotVlms = new ArrayList<>();
             for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(serializerCtx))
             {
                 StorPool storPool = snapshotVolume.getStorPool(serializerCtx);
                 snapshotVlms.add(
-                    MsgIntSnapshotDataOuterClass.SnapshotVlm.newBuilder()
+                    IntSnapshotOuterClass.SnapshotVlm.newBuilder()
                         .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
                         .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
                         .setVlmNr(snapshotVolume.getVolumeNumber().value)
@@ -1255,7 +827,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 );
             }
 
-            return MsgIntSnapshotData.newBuilder()
+            return IntSnapshot.newBuilder()
                 .setRscName(rscDfn.getName().displayValue)
                 .setRscDfnUuid(rscDfn.getUuid().toString())
                 .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
@@ -1274,8 +846,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
                 .setSuspendResource(snapshot.getSuspendResource(serializerCtx))
                 .setTakeSnapshot(snapshot.getTakeSnapshot(serializerCtx))
-                .setFullSyncId(fullSyncId)
-                .setUpdateId(updateId)
                 .build();
         }
     }

@@ -13,7 +13,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.FilterOuterClass.Filter;
+import com.linbit.linstor.proto.common.FilterOuterClass.Filter;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
 

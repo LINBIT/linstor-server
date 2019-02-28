@@ -6,8 +6,8 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
-import com.linbit.linstor.proto.MsgCrtStorPoolOuterClass.MsgCrtStorPool;
-import com.linbit.linstor.proto.StorPoolOuterClass.StorPool;
+import com.linbit.linstor.proto.requests.MsgCrtStorPoolOuterClass.MsgCrtStorPool;
+import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;

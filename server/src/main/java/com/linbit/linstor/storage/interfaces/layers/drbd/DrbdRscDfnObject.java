@@ -11,4 +11,10 @@ public interface DrbdRscDfnObject extends RscDfnLayerObject
     TransportType getTransportType();
 
     String getSecret();
+
+    short getPeerSlots();
+
+    int getAlStripes();
+
+    long getAlStripeSize();
 }

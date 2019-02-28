@@ -63,7 +63,8 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
         return suffixedResourceName;
     }
 
-    public String getResourceNameSuffix()
+    @Override
+    public String getRscNameSuffix()
     {
         return resourceNameSuffix;
     }

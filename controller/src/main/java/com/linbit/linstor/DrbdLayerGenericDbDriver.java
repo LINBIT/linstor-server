@@ -473,7 +473,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_RSC_DFN))
         {
             stmt.setString(1, drbdRscDfnDataRef.getResourceDefinition().getName().value);
-            stmt.setString(2, drbdRscDfnDataRef.getResourceNameSuffix());
+            stmt.setString(2, drbdRscDfnDataRef.getRscNameSuffix());
             stmt.setShort(3, drbdRscDfnDataRef.getPeerSlots());
             stmt.setInt(4, drbdRscDfnDataRef.getAlStripes());
             stmt.setLong(5, drbdRscDfnDataRef.getAlStripeSize());
@@ -500,7 +500,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM_DFN))
         {
             stmt.setString(1, drbdVlmDfnDataRef.getVolumeDefinition().getResourceDefinition().getName().value);
-            stmt.setString(2, drbdVlmDfnDataRef.getResourceNameSuffix());
+            stmt.setString(2, drbdVlmDfnDataRef.getRscNameSuffix());
             stmt.setInt(3, drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber().value);
             stmt.setInt(4, drbdVlmDfnDataRef.getMinorNr().value);
 
@@ -529,7 +529,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_RSC_DFN))
         {
             stmt.setString(1, drbdRscDfnDataRef.getResourceDefinition().getName().value);
-            stmt.setString(2, drbdRscDfnDataRef.getResourceNameSuffix());
+            stmt.setString(2, drbdRscDfnDataRef.getRscNameSuffix());
 
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdRscDfnData deleted %s", getId(drbdRscDfnDataRef));

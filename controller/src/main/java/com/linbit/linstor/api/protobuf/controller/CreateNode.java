@@ -11,9 +11,9 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgCrtNodeOuterClass.MsgCrtNode;
-import com.linbit.linstor.proto.NetInterfaceOuterClass;
-import com.linbit.linstor.proto.NodeOuterClass;
+import com.linbit.linstor.proto.requests.MsgCrtNodeOuterClass.MsgCrtNode;
+import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.apidata.NetInterfaceApiData;
 
 import java.io.IOException;

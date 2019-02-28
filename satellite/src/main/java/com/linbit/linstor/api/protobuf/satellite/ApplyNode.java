@@ -13,9 +13,10 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
+import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
+import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
+import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNodeConn;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyNodeOuterClass.MsgIntApplyNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,37 +43,41 @@ public class ApplyNode implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntNodeData nodeData = MsgIntNodeData.parseDelimitedFrom(msgDataIn);
-        NodePojo nodePojo = asNodePojo(nodeData);
-        apiCallHandler.applyNodeChanges(nodePojo);
-    }
-
-    static NodePojo asNodePojo(MsgIntNodeData nodeData)
-    {
-        return new NodePojo(
-            UUID.fromString(nodeData.getNodeUuid()),
-            nodeData.getNodeName(),
-            nodeData.getNodeType(),
-            nodeData.getNodeFlags(),
-            extractNetIfs(nodeData.getNodeNetIfsList()),
-            extractNodeConns(nodeData.getNodeConnsList()),
-            ProtoMapUtils.asMap(nodeData.getNodePropsList()),
-            Peer.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
+        MsgIntApplyNode nodeData = MsgIntApplyNode.parseDelimitedFrom(msgDataIn);
+        NodePojo nodePojo = asNodePojo(
+            nodeData.getNode(),
             nodeData.getFullSyncId(),
             nodeData.getUpdateId()
         );
+        apiCallHandler.applyNodeChanges(nodePojo);
     }
 
-    static List<NetInterface.NetInterfaceApi> extractNetIfs(List<NetIf> nodeNetIfsList)
+    static NodePojo asNodePojo(IntNode nodeData, long fullSyncId, long updateId)
+    {
+        return new NodePojo(
+            UUID.fromString(nodeData.getUuid()),
+            nodeData.getName(),
+            nodeData.getType(),
+            nodeData.getFlags(),
+            extractNetIfs(nodeData.getNetIfsList()),
+            extractNodeConns(nodeData.getNodeConnsList()),
+            ProtoMapUtils.asMap(nodeData.getPropsList()),
+            Peer.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
+            fullSyncId,
+            updateId
+        );
+    }
+
+    static List<NetInterface.NetInterfaceApi> extractNetIfs(List<IntNetIf> nodeNetIfsList)
     {
         List<NetInterface.NetInterfaceApi> netIfs = new ArrayList<>();
-        for (NetIf netIf : nodeNetIfsList)
+        for (IntNetIf netIf : nodeNetIfsList)
         {
             netIfs.add(
                 new NetInterfacePojo(
-                    UUID.fromString(netIf.getNetIfUuid()),
-                    netIf.getNetIfName(),
-                    netIf.getNetIfAddr(),
+                    UUID.fromString(netIf.getUuid()),
+                    netIf.getName(),
+                    netIf.getAddr(),
                     netIf.getStltConnPort(),
                     netIf.getStltConnEncrType()
                 )
@@ -81,10 +86,10 @@ public class ApplyNode implements ApiCall
         return netIfs;
     }
 
-    static ArrayList<NodeConnPojo> extractNodeConns(List<NodeConn> nodeConnPropsList)
+    static ArrayList<NodeConnPojo> extractNodeConns(List<IntNodeConn> nodeConnPropsList)
     {
         ArrayList<NodeConnPojo> nodeConns = new ArrayList<>();
-        for (NodeConn nodeConn : nodeConnPropsList)
+        for (IntNodeConn nodeConn : nodeConnPropsList)
         {
             nodeConns.add(
                 new NodeConnPojo(

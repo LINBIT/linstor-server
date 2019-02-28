@@ -6,8 +6,9 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
-import com.linbit.linstor.proto.MsgAutoPlaceRscOuterClass.MsgAutoPlaceRsc;
 import com.linbit.linstor.proto.apidata.AutoSelectFilterApiData;
+import com.linbit.linstor.proto.requests.MsgAutoPlaceRscOuterClass.MsgAutoPlaceRsc;
+
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;

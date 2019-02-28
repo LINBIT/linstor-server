@@ -7,8 +7,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
-
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedStorPoolOuterClass.MsgIntApplyDeletedStorPool;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -31,7 +30,7 @@ public class ApplyDeletedStorPool implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntStorPoolDeletedData storPoolDeletedData = MsgIntStorPoolDeletedData.parseDelimitedFrom(msgDataIn);
+        MsgIntApplyDeletedStorPool storPoolDeletedData = MsgIntApplyDeletedStorPool.parseDelimitedFrom(msgDataIn);
         apiCallHandler.applyDeletedStorPoolChange(
             storPoolDeletedData.getStorPoolName(),
             storPoolDeletedData.getFullSyncId(),

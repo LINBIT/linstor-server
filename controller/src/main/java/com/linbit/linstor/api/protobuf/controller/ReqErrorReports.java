@@ -8,7 +8,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
 import com.linbit.linstor.logging.ErrorReport;
-import com.linbit.linstor.proto.MsgReqErrorReportOuterClass.MsgReqErrorReport;
+import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;

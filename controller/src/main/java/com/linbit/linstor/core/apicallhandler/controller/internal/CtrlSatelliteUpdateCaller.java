@@ -19,7 +19,8 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
+import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
+import com.linbit.linstor.proto.responses.MsgGenericResponseOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.RetryResourcesTask;
@@ -337,8 +338,9 @@ public class CtrlSatelliteUpdateCaller
         {
             while (inputStream.available() > 0)
             {
-                MsgApiCallResponseOuterClass.MsgApiCallResponse apiCallResponse =
-                    MsgApiCallResponseOuterClass.MsgApiCallResponse.parseDelimitedFrom(inputStream);
+                MsgGenericResponseOuterClass.MsgGenericResponse msgGenericResponse =
+                    MsgGenericResponseOuterClass.MsgGenericResponse.parseDelimitedFrom(inputStream);
+                ApiCallResponse apiCallResponse = msgGenericResponse.getResponse();
                 deploymentState.addEntry(ProtoDeserializationUtils.parseApiCallRc(
                     apiCallResponse, "(" + nodeName.displayValue + ") "
                 ));

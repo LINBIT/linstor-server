@@ -190,7 +190,8 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         return updateId;
     }
 
-    public RscLayerDataPojo getRscLayerDataPojo()
+    @Override
+    public RscLayerDataPojo getLayerData()
     {
         return rscLayerDataPojo;
     }
@@ -334,4 +335,5 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             return address;
         }
     }
+
 }

@@ -14,7 +14,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgReqRscConnOuterClass.MsgReqRscConn;
+import com.linbit.linstor.proto.requests.MsgReqRscConnOuterClass.MsgReqRscConn;
 
 import static com.linbit.linstor.api.ApiConsts.API_LST_RSC_CONN;
 

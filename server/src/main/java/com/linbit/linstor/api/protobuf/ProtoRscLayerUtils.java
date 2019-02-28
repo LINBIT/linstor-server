@@ -18,14 +18,14 @@ import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
-import com.linbit.linstor.proto.CryptRscOuterClass.CryptVlm;
-import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdRsc;
-import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdRscDfn;
-import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdVlm;
-import com.linbit.linstor.proto.DrbdRscOuterClass.DrbdVlmDfn;
-import com.linbit.linstor.proto.RscLayerDataOuterClass.RscLayerData;
-import com.linbit.linstor.proto.StorageRscOuterClass.StorageVlm;
-import com.linbit.linstor.proto.StorageRscOuterClass.SwordfishVlmDfn;
+import com.linbit.linstor.proto.common.CryptRscOuterClass.CryptVlm;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
+import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 
 import java.util.ArrayList;
 
@@ -170,7 +170,7 @@ public class ProtoRscLayerUtils
                     SwordfishVlmDfn protoSfVlmDfn = protoVlm.getSfInit().getSfVlmDfn();
                     ret = new SwordfishInitiatorVlmPojo(
                         new SwordfishVlmDfnPojo(
-                            protoSfVlmDfn.getSuffixedRscName(),
+                            protoSfVlmDfn.getRscNameSuffix(),
                             protoSfVlmDfn.getVlmNr(),
                             protoSfVlmDfn.getVlmOdata()
                         ),
@@ -185,7 +185,7 @@ public class ProtoRscLayerUtils
                     SwordfishVlmDfn protoSfVlmDfn = protoVlm.getSfTarget().getSfVlmDfn();
                     ret = new SwordfishTargetVlmPojo(
                         new SwordfishVlmDfnPojo(
-                            protoSfVlmDfn.getSuffixedRscName(),
+                            protoSfVlmDfn.getRscNameSuffix(),
                             protoSfVlmDfn.getVlmNr(),
                             protoSfVlmDfn.getVlmOdata()
                         ),

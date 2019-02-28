@@ -27,29 +27,25 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.proto.KvsOuterClass;
-import com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion;
-import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
-import com.linbit.linstor.proto.MsgLstNodeOuterClass;
-import com.linbit.linstor.proto.MsgLstRscDfnOuterClass.MsgLstRscDfn;
-import com.linbit.linstor.proto.MsgRspKvsOuterClass;
-import com.linbit.linstor.proto.MsgRspMaxVlmSizesOuterClass;
-import com.linbit.linstor.proto.MsgRspMaxVlmSizesOuterClass.MsgRspMaxVlmSizes;
-import com.linbit.linstor.proto.MsgLstRscOuterClass;
-import com.linbit.linstor.proto.MsgLstSnapshotDfnOuterClass;
-import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
-import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
-import com.linbit.linstor.proto.MsgLstRscConnOuterClass.MsgLstRscConn;
-import com.linbit.linstor.proto.NodeOuterClass;
-import com.linbit.linstor.proto.RscStateOuterClass;
-import com.linbit.linstor.proto.SnapshotDfnOuterClass;
-import com.linbit.linstor.proto.VlmStateOuterClass;
 import com.linbit.linstor.proto.apidata.NetInterfaceApiData;
-import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.RscConnApiData;
-import com.linbit.linstor.proto.apidata.RscDfnApiData;
-import com.linbit.linstor.proto.apidata.StorPoolApiData;
-import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
+import com.linbit.linstor.proto.common.KvsOuterClass;
+import com.linbit.linstor.proto.common.NodeOuterClass;
+import com.linbit.linstor.proto.common.RscStateOuterClass;
+import com.linbit.linstor.proto.common.SnapshotDfnOuterClass;
+import com.linbit.linstor.proto.common.VlmStateOuterClass;
+import com.linbit.linstor.proto.responses.MsgApiVersionOuterClass.MsgApiVersion;
+import com.linbit.linstor.proto.responses.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
+import com.linbit.linstor.proto.responses.MsgLstNodeOuterClass;
+import com.linbit.linstor.proto.responses.MsgLstRscConnOuterClass.MsgLstRscConn;
+import com.linbit.linstor.proto.responses.MsgLstRscDfnOuterClass.MsgLstRscDfn;
+import com.linbit.linstor.proto.responses.MsgLstRscOuterClass;
+import com.linbit.linstor.proto.responses.MsgLstSnapshotDfnOuterClass;
+import com.linbit.linstor.proto.responses.MsgLstStorPoolDfnOuterClass;
+import com.linbit.linstor.proto.responses.MsgLstStorPoolOuterClass;
+import com.linbit.linstor.proto.responses.MsgRspKvsOuterClass;
+import com.linbit.linstor.proto.responses.MsgRspMaxVlmSizesOuterClass;
+import com.linbit.linstor.proto.responses.MsgRspMaxVlmSizesOuterClass.MsgRspMaxVlmSizes;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -85,7 +81,11 @@ public class ProtoCtrlClientSerializerBuilder
                 bld.addAllProps(ProtoMapUtils.fromMap(nodeApi.getProps()));
                 bld.addAllFlags(Node.NodeFlag.toStringList(nodeApi.getFlags()));
                 bld.addAllNetInterfaces(NetInterfaceApiData.toNetInterfaceProtoList(nodeApi.getNetInterfaces()));
-                bld.setConnectionStatus(NodeOuterClass.Node.ConnectionStatus.forNumber(nodeApi.connectionStatus().value()));
+                bld.setConnectionStatus(
+                    NodeOuterClass.Node.ConnectionStatus.forNumber(
+                        nodeApi.connectionStatus().value()
+                    )
+                );
 
                 msgListNodeBuilder.addNodes(bld.build());
             }
@@ -109,7 +109,9 @@ public class ProtoCtrlClientSerializerBuilder
 
             for (StorPoolDfnApi apiDfn: storPoolDfns)
             {
-                msgListStorPoolDfnsBuilder.addStorPoolDfns(StorPoolDfnApiData.fromStorPoolDfnApi(apiDfn));
+                msgListStorPoolDfnsBuilder.addStorPoolDfns(
+                    ProtoCommonSerializerBuilder.serializeStorPoolDfn(apiDfn)
+                );
             }
 
             msgListStorPoolDfnsBuilder.build().writeDelimitedTo(baos);
@@ -130,7 +132,9 @@ public class ProtoCtrlClientSerializerBuilder
                 MsgLstStorPoolOuterClass.MsgLstStorPool.newBuilder();
             for (StorPoolApi apiStorPool: storPools)
             {
-                msgListBuilder.addStorPools(StorPoolApiData.toStorPoolProto(apiStorPool));
+                msgListBuilder.addStorPools(
+                    ProtoCommonSerializerBuilder.serializeStorPool(apiStorPool)
+                );
             }
 
             msgListBuilder.build().writeDelimitedTo(baos);
@@ -151,7 +155,9 @@ public class ProtoCtrlClientSerializerBuilder
 
             for (RscDfnApi apiRscDfn: rscDfns)
             {
-                msgListRscDfnsBuilder.addRscDfns(RscDfnApiData.fromRscDfnApi(apiRscDfn));
+                msgListRscDfnsBuilder.addRscDfns(
+                    ProtoCommonSerializerBuilder.serializeResourceDefinition(apiRscDfn)
+                );
             }
 
             msgListRscDfnsBuilder.build().writeDelimitedTo(baos);
@@ -175,7 +181,9 @@ public class ProtoCtrlClientSerializerBuilder
 
             for (RscApi apiRsc: rscs)
             {
-                msgListRscsBuilder.addResources(RscApiData.toRscProto(apiRsc));
+                msgListRscsBuilder.addResources(
+                    ProtoCommonSerializerBuilder.serializeResource(apiRsc)
+                );
             }
 
             for (Map.Entry<NodeName, SatelliteState> satelliteEntry : satelliteStates.entrySet())
@@ -330,7 +338,7 @@ public class ProtoCtrlClientSerializerBuilder
                     MsgRspMaxVlmSizesOuterClass.Candidate.newBuilder()
                         .setMaxVlmSize(maxVlmSizeCandidatePojo.getMaxVlmSize())
                         .addAllNodeNames(maxVlmSizeCandidatePojo.getNodeNames())
-                        .setStorPoolDfn(StorPoolDfnApiData.fromStorPoolDfnApi(
+                        .setStorPoolDfn(ProtoCommonSerializerBuilder.serializeStorPoolDfn(
                             maxVlmSizeCandidatePojo.getStorPoolDfnApi()
                         ))
                         .setAllThin(maxVlmSizeCandidatePojo.areAllThin())

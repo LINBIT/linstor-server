@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.SnapshotInternalCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -33,8 +33,8 @@ public class IntRequestSnapshot implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntObjectId resourceId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-        MsgIntObjectId snapshotId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        IntObjectId resourceId = IntObjectId.parseDelimitedFrom(msgDataIn);
+        IntObjectId snapshotId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String resourceName = resourceId.getName();
         UUID snapshotUuid = UUID.fromString(snapshotId.getUuid());
         String snapshotName = snapshotId.getName();

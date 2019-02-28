@@ -2,10 +2,9 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
-import com.linbit.linstor.proto.RscDfnOuterClass;
-import java.util.ArrayList;
+import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
+import com.linbit.linstor.proto.common.RscDfnOuterClass;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,28 +86,4 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
     {
         return VlmDfnApiData.toApiList(rscDfn.getVlmDfnsList());
     }
-
-    public static RscDfnOuterClass.RscDfn fromRscDfnApi(final ResourceDefinition.RscDfnApi apiRscDfn)
-    {
-        RscDfnOuterClass.RscDfn.Builder rscDfnBuilder = RscDfnOuterClass.RscDfn.newBuilder();
-        rscDfnBuilder.setRscName(apiRscDfn.getResourceName());
-        rscDfnBuilder.setRscDfnPort(apiRscDfn.getPort());
-        rscDfnBuilder.setRscDfnSecret(apiRscDfn.getSecret());
-        rscDfnBuilder.setRscDfnUuid(apiRscDfn.getUuid().toString());
-        rscDfnBuilder.addAllVlmDfns(VlmDfnApiData.fromApiList(apiRscDfn.getVlmDfnList()));
-        rscDfnBuilder.addAllRscDfnProps(ProtoMapUtils.fromMap(apiRscDfn.getProps()));
-
-        return rscDfnBuilder.build();
-    }
-
-    public static List<RscDfnOuterClass.RscDfn> fromApiList(final List<ResourceDefinition.RscDfnApi> rscDfns)
-    {
-        ArrayList<RscDfnOuterClass.RscDfn> protoRscDfs = new ArrayList<>();
-        for (ResourceDefinition.RscDfnApi rscDfnApi : rscDfns)
-        {
-            protoRscDfs.add(RscDfnApiData.fromRscDfnApi(rscDfnApi));
-        }
-        return protoRscDfs;
-    }
-
 }

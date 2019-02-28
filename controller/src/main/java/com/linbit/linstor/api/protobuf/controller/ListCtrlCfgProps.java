@@ -18,7 +18,7 @@ import java.io.InputStream;
 import java.util.Map;
 
 @ProtobufApiCall(
-    name = ApiConsts.API_LST_CFG_VAL,
+    name = ApiConsts.API_LST_CTRL_PROPS,
     description = "Lists controller config properties",
     transactional = false
 )
@@ -49,7 +49,7 @@ public class ListCtrlCfgProps implements ApiCall
     {
         Map<String, String> properties = apiCallHandler.listCtrlCfg();
         CtrlClientSerializer.CtrlClientSerializerBuilder builder =
-            ctrlClientSerializer.answerBuilder(ApiConsts.API_LST_CFG_VAL, apiCallId.get());
+            ctrlClientSerializer.answerBuilder(ApiConsts.API_LST_CTRL_PROPS, apiCallId.get());
 
         builder.ctrlCfgProps(properties);
 

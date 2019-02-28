@@ -21,14 +21,14 @@ import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
-import com.linbit.linstor.proto.javainternal.MsgIntControllerDataOuterClass.MsgIntControllerData;
-import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
-import com.linbit.linstor.proto.javainternal.MsgIntFullSyncSuccessOuterClass.MsgIntFullSyncSuccess;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
-import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
+import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
+import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
+import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
+import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
+import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncSuccessOuterClass.MsgIntFullSyncSuccess;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
@@ -79,22 +79,30 @@ public class FullSync implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntFullSync fullSync = MsgIntFullSync.parseDelimitedFrom(msgDataIn);
+        MsgIntApplyFullSync applyFullSync = MsgIntApplyFullSync.parseDelimitedFrom(msgDataIn);
+        long fullSyncId = applyFullSync.getFullSyncTimestamp();
+        long updateId = 0;
 
-        MsgIntControllerData msgIntControllerData = fullSync.getCtrlData();
-        Set<NodePojo> nodes = new TreeSet<>(asNodes(fullSync.getNodesList()));
-        Set<StorPoolPojo> storPools = new TreeSet<>(asStorPool(fullSync.getStorPoolsList()));
-        Set<RscPojo> resources = new TreeSet<>(asResources(fullSync.getRscsList()));
-        Set<SnapshotPojo> snapshots = new TreeSet<>(asSnapshots(fullSync.getSnapshotsList()));
+        IntController msgIntControllerData = applyFullSync.getCtrl();
+        Set<NodePojo> nodes = new TreeSet<>(asNodes(applyFullSync.getNodesList(), fullSyncId, updateId));
+        Set<StorPoolPojo> storPools = new TreeSet<>(asStorPool(applyFullSync.getStorPoolsList(), fullSyncId, updateId));
+        Set<RscPojo> resources = new TreeSet<>(asResources(applyFullSync.getRscsList(), fullSyncId, updateId));
+        Set<SnapshotPojo> snapshots = new TreeSet<>(
+            asSnapshots(
+                applyFullSync.getSnapshotsList(),
+                fullSyncId,
+                updateId
+            )
+        );
 
         apiCallHandler.applyFullSync(
-            ProtoMapUtils.asMap(msgIntControllerData.getControllerPropsList()),
+            ProtoMapUtils.asMap(msgIntControllerData.getPropsList()),
             nodes,
             storPools,
             resources,
             snapshots,
-            fullSync.getFullSyncTimestamp(),
-            Base64.decode(fullSync.getMasterKey())
+            applyFullSync.getFullSyncTimestamp(),
+            Base64.decode(applyFullSync.getMasterKey())
         );
 
         Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
@@ -130,44 +138,60 @@ public class FullSync implements ApiCall
         );
     }
 
-    private ArrayList<NodePojo> asNodes(List<MsgIntNodeData> nodesList)
+    private ArrayList<NodePojo> asNodes(
+        List<IntNode> nodesList,
+        long fullSyncId,
+        long updateId
+    )
     {
         ArrayList<NodePojo> nodes = new ArrayList<>(nodesList.size());
 
-        for (MsgIntNodeData nodeData : nodesList)
+        for (IntNode nodeData : nodesList)
         {
-            nodes.add(ApplyNode.asNodePojo(nodeData));
+            nodes.add(ApplyNode.asNodePojo(nodeData, fullSyncId, updateId));
         }
         return nodes;
     }
 
-    private ArrayList<StorPoolPojo> asStorPool(List<MsgIntStorPoolData> storPoolsList)
+    private ArrayList<StorPoolPojo> asStorPool(
+        List<IntStorPool> storPoolsList,
+        long fullSyncId,
+        long updateId
+    )
     {
         ArrayList<StorPoolPojo> storPools = new ArrayList<>(storPoolsList.size());
         String nodeName = controllerPeerConnector.getLocalNode().getName().displayValue;
-        for (MsgIntStorPoolData storPoolData : storPoolsList)
+        for (IntStorPool storPoolData : storPoolsList)
         {
-            storPools.add(ApplyStorPool.asStorPoolPojo(storPoolData, nodeName));
+            storPools.add(ApplyStorPool.asStorPoolPojo(storPoolData, nodeName, fullSyncId, updateId));
         }
         return storPools;
     }
 
-    private ArrayList<RscPojo> asResources(List<MsgIntRscData> rscsList)
+    private ArrayList<RscPojo> asResources(
+        List<IntRsc> rscsList,
+        long fullSyncId,
+        long updateId
+    )
     {
         ArrayList<RscPojo> rscs = new ArrayList<>(rscsList.size());
-        for (MsgIntRscData rscData : rscsList)
+        for (IntRsc rscData : rscsList)
         {
-            rscs.add(ApplyRsc.asRscPojo(rscData));
+            rscs.add(ApplyRsc.asRscPojo(rscData, fullSyncId, updateId));
         }
         return rscs;
     }
 
-    private ArrayList<SnapshotPojo> asSnapshots(List<MsgIntSnapshotDataOuterClass.MsgIntSnapshotData> snapshotsList)
+    private ArrayList<SnapshotPojo> asSnapshots(
+        List<IntSnapshotOuterClass.IntSnapshot> snapshotsList,
+        long fullSyncId,
+        long updateId
+    )
     {
         ArrayList<SnapshotPojo> snapshots = new ArrayList<>(snapshotsList.size());
-        for (MsgIntSnapshotDataOuterClass.MsgIntSnapshotData snapshotData : snapshotsList)
+        for (IntSnapshotOuterClass.IntSnapshot snapshotData : snapshotsList)
         {
-            snapshots.add(ApplySnapshot.asSnapshotPojo(snapshotData));
+            snapshots.add(ApplySnapshot.asSnapshotPojo(snapshotData, fullSyncId, updateId));
         }
         return snapshots;
     }

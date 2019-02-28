@@ -9,7 +9,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
@@ -45,7 +45,7 @@ public class ChangedRsc implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        IntObjectId rscId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String rscNameStr = rscId.getName();
         UUID rscUuid = UUID.fromString(rscId.getUuid());
 

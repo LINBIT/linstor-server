@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.RscConnOuterClass;
+import com.linbit.linstor.proto.common.RscConnOuterClass;
 
 public class RscConnApiData implements ResourceConnection.RscConnApi
 {

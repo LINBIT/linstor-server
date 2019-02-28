@@ -128,16 +128,19 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         return drbdRscDataList;
     }
 
+    @Override
     public short getPeerSlots()
     {
         return peerSlots;
     }
 
+    @Override
     public int getAlStripes()
     {
         return alStripes;
     }
 
+    @Override
     public long getAlStripeSize()
     {
         return alStripeSize;
@@ -148,7 +151,8 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         return suffixedResourceName;
     }
 
-    public String getResourceNameSuffix()
+    @Override
+    public String getRscNameSuffix()
     {
         return resourceNameSuffix;
     }

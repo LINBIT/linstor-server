@@ -9,8 +9,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgCrtNetInterfaceOuterClass.MsgCrtNetInterface;
-import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.requests.MsgCrtNetInterfaceOuterClass.MsgCrtNetInterface;
+import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 
 import java.io.IOException;
 import java.io.InputStream;

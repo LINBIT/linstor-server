@@ -5,7 +5,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.event.EventProcessor;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgEventOuterClass;
+import com.linbit.linstor.proto.responses.MsgEventOuterClass;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

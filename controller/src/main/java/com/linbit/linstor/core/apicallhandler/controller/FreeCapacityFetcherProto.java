@@ -19,9 +19,9 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
-import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
-import com.linbit.linstor.proto.javainternal.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
+import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
+import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriverKind;
@@ -194,7 +194,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
                     if (freeSpace.getErrorsCount() > 0)
                     {
                         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                        for (MsgApiCallResponse msgApiCallResponse : freeSpace.getErrorsList())
+                        for (ApiCallResponse msgApiCallResponse : freeSpace.getErrorsList())
                         {
                             apiCallRc.addEntry(ProtoDeserializationUtils.parseApiCallRc(
                                 msgApiCallResponse,

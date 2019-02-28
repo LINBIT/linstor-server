@@ -24,7 +24,7 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
 {
     // unmodifiable data, once initialized
     private final VolumeDefinition vlmDfn;
-    private final String suffixedResourceName;
+    private final String rscNameSuffix;
 
     // persisted, serialized
     private final TransactionSimpleObject<SfVlmDfnData, String> vlmOdata;
@@ -39,14 +39,14 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
     public SfVlmDfnData(
         VolumeDefinition vlmDfnRef,
         String vlmOdataRef,
-        String suffixedResourceNameRef,
+        String rscNameSuffixRef,
         SwordfishLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);
-        suffixedResourceName = suffixedResourceNameRef;
+        rscNameSuffix = rscNameSuffixRef;
 
         vlmOdata = transObjFactory.createTransactionSimpleObject(this, vlmOdataRef, dbDriverRef.getVlmDfnOdataDriver());
         vlmDfn = Objects.requireNonNull(vlmDfnRef);
@@ -113,15 +113,21 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
         return vlmDfn;
     }
 
+    @Override
+    public String getRscNameSuffix()
+    {
+        return rscNameSuffix;
+    }
+
     public String getSuffixedResourceName()
     {
-        return suffixedResourceName;
+        return vlmDfn.getResourceDefinition().getName().displayValue + rscNameSuffix;
     }
 
     public SwordfishVlmDfnPojo asPojo(AccessContext accCtxRef)
     {
         return new SwordfishVlmDfnPojo(
-            suffixedResourceName,
+            rscNameSuffix,
             vlmDfn.getVolumeNumber().value,
             vlmOdata.get()
         );

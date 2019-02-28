@@ -58,7 +58,7 @@ public class StorageRscPojo implements RscLayerDataPojo
         return vlms;
     }
 
-    private static abstract class AbsVlmPojo implements VlmLayerDataPojo
+    private abstract static class AbsVlmPojo implements VlmLayerDataPojo
     {
         private final int vlmNr;
         private final String devicePath;
@@ -222,24 +222,24 @@ public class StorageRscPojo implements RscLayerDataPojo
 
     public static class SwordfishVlmDfnPojo
     {
-        private final String suffixedRscName;
+        private final String rscNameSuffix;
         private final int vlmNr;
         private final String vlmOdata;
 
         public SwordfishVlmDfnPojo(
-            String suffixedRscNameRef,
+            String rscNameSuffixRef,
             int vlmNrRef,
             String vlmOdataRef
         )
         {
-            suffixedRscName = suffixedRscNameRef;
+            rscNameSuffix = rscNameSuffixRef;
             vlmNr = vlmNrRef;
             vlmOdata = vlmOdataRef;
         }
 
         public String getSuffixedRscName()
         {
-            return suffixedRscName;
+            return rscNameSuffix;
         }
 
         public int getVlmNr()

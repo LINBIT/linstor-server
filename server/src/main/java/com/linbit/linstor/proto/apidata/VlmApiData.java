@@ -5,8 +5,9 @@ import java.util.Map;
 
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
-import com.linbit.linstor.proto.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
+import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

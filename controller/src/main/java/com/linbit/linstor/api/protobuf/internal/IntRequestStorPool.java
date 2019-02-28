@@ -8,7 +8,7 @@ import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +34,7 @@ public class IntRequestStorPool implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntObjectId storPoolId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        IntObjectId storPoolId = IntObjectId.parseDelimitedFrom(msgDataIn);
         UUID storPoolUuid = UUID.fromString(storPoolId.getUuid());
         String storPoolName = storPoolId.getName();
 

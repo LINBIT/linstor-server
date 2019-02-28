@@ -7,7 +7,7 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgModKvsOuterClass;
+import com.linbit.linstor.proto.requests.MsgModKvsOuterClass;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

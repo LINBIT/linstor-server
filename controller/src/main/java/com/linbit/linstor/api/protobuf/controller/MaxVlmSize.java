@@ -9,7 +9,7 @@ import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlQueryMaxVlmSizeApiCallHandler;
-import com.linbit.linstor.proto.MsgQryMaxVlmSizesOuterClass.MsgQryMaxVlmSizes;
+import com.linbit.linstor.proto.requests.MsgQryMaxVlmSizesOuterClass.MsgQryMaxVlmSizes;
 import com.linbit.linstor.proto.apidata.AutoSelectFilterApiData;
 import com.linbit.locks.LockGuard;
 

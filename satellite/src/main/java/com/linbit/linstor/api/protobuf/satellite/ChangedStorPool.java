@@ -8,7 +8,7 @@ import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
@@ -41,7 +41,7 @@ public class ChangedStorPool implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntObjectId storPoolId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        IntObjectId storPoolId = IntObjectId.parseDelimitedFrom(msgDataIn);
         String storPoolNameStr = storPoolId.getName();
         UUID storPoolUuid = UUID.fromString(storPoolId.getUuid());
 

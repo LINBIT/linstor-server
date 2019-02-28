@@ -7,9 +7,11 @@ import static com.linbit.linstor.api.ApiConsts.MASK_INFO;
 import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
+import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
+import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
+import com.linbit.linstor.proto.responses.MsgGenericResponseOuterClass.MsgGenericResponse;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -432,7 +434,8 @@ public class ProtobufIO
                     {
                         while (bais.available() > 0)
                         {
-                            MsgApiCallResponse response = MsgApiCallResponse.parseDelimitedFrom(bais);
+                            MsgGenericResponse genericResponse = MsgGenericResponse.parseDelimitedFrom(bais);
+                            ApiCallResponse response = genericResponse.getResponse();
                             long retCode = response.getRetCode();
                             String message = response.getMessage();
                             String cause = response.getCause();

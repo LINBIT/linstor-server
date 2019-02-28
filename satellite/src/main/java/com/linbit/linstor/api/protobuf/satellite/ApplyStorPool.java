@@ -7,7 +7,10 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
+import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
+import com.linbit.linstor.proto.common.StorPoolOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -41,31 +44,41 @@ public class ApplyStorPool implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntStorPoolData storPoolData = MsgIntStorPoolData.parseDelimitedFrom(msgDataIn);
+        MsgIntApplyStorPool applyStorPool = MsgIntApplyStorPool.parseDelimitedFrom(msgDataIn);
 
         StorPoolPojo storPoolRaw = asStorPoolPojo(
-            storPoolData,
-            controllerPeerConnector.getLocalNode().getName().displayValue
+            applyStorPool.getStorPool(),
+            controllerPeerConnector.getLocalNode().getName().displayValue,
+            applyStorPool.getFullSyncId(),
+            applyStorPool.getUpdateId()
         );
         apiCallHandler.applyStorPoolChanges(storPoolRaw);
     }
 
-    static StorPoolPojo asStorPoolPojo(MsgIntStorPoolData storPoolData, String nodeName)
+    static StorPoolPojo asStorPoolPojo(
+        IntStorPool intStorPool,
+        String nodeName,
+        long fullSyncId,
+        long updateId
+    )
     {
+        StorPoolOuterClass.StorPool protoStorPool = intStorPool.getStorPool();
+        StorPoolDfnOuterClass.StorPoolDfn protoStorPoolDfn = intStorPool.getStorPoolDfn();
+
         StorPoolPojo storPoolRaw = new StorPoolPojo(
-            UUID.fromString(storPoolData.getStorPoolUuid()),
-            UUID.fromString(storPoolData.getNodeUuid()),
+            UUID.fromString(protoStorPool.getStorPoolUuid()),
+            UUID.fromString(protoStorPool.getNodeUuid()),
             nodeName,
-            storPoolData.getStorPoolName(),
-            UUID.fromString(storPoolData.getStorPoolDfnUuid()),
-            storPoolData.getDriver(),
-            ProtoMapUtils.asMap(storPoolData.getStorPoolPropsList()),
-            ProtoMapUtils.asMap(storPoolData.getStorPoolDfnPropsList()),
+            protoStorPool.getStorPoolName(),
+            UUID.fromString(protoStorPool.getStorPoolDfnUuid()),
+            protoStorPool.getDriver(),
+            ProtoMapUtils.asMap(protoStorPool.getPropsList()),
+            ProtoMapUtils.asMap(protoStorPoolDfn.getPropsList()),
             null, // List<Vlmapi> vlmRefs
             Collections.<String, String>emptyMap(),
-            storPoolData.getFullSyncId(),
-            storPoolData.getUpdateId(),
-            storPoolData.getFreeSpaceMgrName(),
+            fullSyncId,
+            updateId,
+            protoStorPool.getFreeSpaceMgrName(),
             Optional.empty(), // free space
             Optional.empty() // total space
         );

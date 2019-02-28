@@ -24,9 +24,9 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
-import com.linbit.linstor.proto.javainternal.MsgIntVlmAllocatedOuterClass.MsgIntVlmAllocated;
-import com.linbit.linstor.proto.javainternal.MsgIntVlmAllocatedOuterClass.VlmAllocated;
+import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.MsgIntVlmAllocated;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.VlmAllocated;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -240,7 +240,7 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
                     if (vlmAllocated.getErrorsCount() > 0)
                     {
                         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                        for (MsgApiCallResponse msgApiCallResponse : vlmAllocated.getErrorsList())
+                        for (ApiCallResponse msgApiCallResponse : vlmAllocated.getErrorsList())
                         {
                             apiCallRc.addEntry(ProtoDeserializationUtils.parseApiCallRc(
                                 msgApiCallResponse,

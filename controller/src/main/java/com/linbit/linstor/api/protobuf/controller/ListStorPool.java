@@ -9,7 +9,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
-import com.linbit.linstor.proto.FilterOuterClass.Filter;
+import com.linbit.linstor.proto.common.FilterOuterClass.Filter;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;

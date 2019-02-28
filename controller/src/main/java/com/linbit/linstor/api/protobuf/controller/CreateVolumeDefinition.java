@@ -10,8 +10,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgCrtVlmDfnOuterClass.MsgCrtVlmDfn;
-import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
+import com.linbit.linstor.proto.requests.MsgCrtVlmDfnOuterClass.MsgCrtVlmDfn;
+import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.apidata.VlmDfnApiData;
 
 import java.io.IOException;

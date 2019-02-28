@@ -4,7 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.NodeInternalCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -32,7 +32,7 @@ public class IntRequestNode implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntObjectId objId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        IntObjectId objId = IntObjectId.parseDelimitedFrom(msgDataIn);
         UUID nodeUuid = UUID.fromString(objId.getUuid());
         String nodeName = objId.getName();
 

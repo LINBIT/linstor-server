@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
-import com.linbit.linstor.proto.MsgDelNodeOuterClass.MsgDelNode;
+import com.linbit.linstor.proto.requests.MsgDelNodeOuterClass.MsgDelNode;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;

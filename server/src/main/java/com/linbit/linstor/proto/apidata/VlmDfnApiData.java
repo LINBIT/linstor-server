@@ -10,8 +10,8 @@ import java.util.List;
 
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
-import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
+import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
+import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.stateflags.FlagsHelper;
 
 import java.util.ArrayList;

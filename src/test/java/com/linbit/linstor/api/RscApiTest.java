@@ -16,9 +16,9 @@ import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.RscOuterClass;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.VlmApiData;
+import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.security.GenericDbBase;
 import junitparams.JUnitParamsRunner;
 import org.junit.After;
@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 
 @RunWith(JUnitParamsRunner.class)

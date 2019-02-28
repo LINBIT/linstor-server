@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyEnableApiCallHandler;
-import com.linbit.linstor.proto.MsgEnableDrbdProxyOuterClass.MsgEnableDrbdProxy;
+import com.linbit.linstor.proto.requests.MsgEnableDrbdProxyOuterClass.MsgEnableDrbdProxy;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;

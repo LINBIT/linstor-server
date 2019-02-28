@@ -7,5 +7,7 @@ import com.linbit.linstor.VolumeDefinition;
  */
 public interface VlmDfnLayerObject extends LayerObject
 {
+    String getRscNameSuffix();
+
     VolumeDefinition getVolumeDefinition();
 }

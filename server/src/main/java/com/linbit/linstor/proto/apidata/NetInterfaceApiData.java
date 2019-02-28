@@ -1,7 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;

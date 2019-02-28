@@ -16,7 +16,7 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgSignInOuterClass;
+import com.linbit.linstor.proto.requests.MsgSignInOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Authentication;
@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @ProtobufApiCall(
-    name = "SignIn",
+    name = ApiConsts.API_SIGN_IN,
     description = "Performs a sign-in with the specified credentials",
     requiresAuth = false,
     transactional = false

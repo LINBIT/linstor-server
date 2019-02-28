@@ -1,7 +1,10 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
@@ -17,13 +20,17 @@ import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoRscLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.proto.NetInterfaceOuterClass;
-import com.linbit.linstor.proto.NodeOuterClass;
-import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
-import com.linbit.linstor.proto.VlmOuterClass.Vlm;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
-import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.RscConnectionData;
+import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.common.NodeOuterClass;
+import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
+import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfn;
+import com.linbit.linstor.proto.common.RscOuterClass;
+import com.linbit.linstor.proto.common.RscOuterClass.Rsc;
+import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
+import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntOtherRsc;
+import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgIntApplyRsc;
 import com.linbit.linstor.stateflags.FlagsHelper;
 
 import javax.inject.Inject;
@@ -56,48 +63,58 @@ public class ApplyRsc implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntRscData rscData = MsgIntRscData.parseDelimitedFrom(msgDataIn);
+        MsgIntApplyRsc applyMsg = MsgIntApplyRsc.parseDelimitedFrom(msgDataIn);
 
-        RscPojo rscRawData = asRscPojo(rscData);
+        RscPojo rscRawData = asRscPojo(
+            applyMsg.getRsc(),
+            applyMsg.getFullSyncId(),
+            applyMsg.getUpdateId()
+        );
         apiCallHandler.applyResourceChanges(rscRawData);
     }
 
     //deserialize sync msg and put into pojo, extend rsc api and pojo!
-    static RscPojo asRscPojo(MsgIntRscData rscData)
+    static RscPojo asRscPojo(IntRsc intRscData, long fullSyncId, long updateId)
     {
-        List<VolumeDefinition.VlmDfnApi> vlmDfns = extractVlmDfns(rscData.getVlmDfnsList());
-        List<Volume.VlmApi> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
-        List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
+        Rsc localRsc = intRscData.getLocalRsc();
+        RscDfn rscDfn = intRscData.getRscDfn();
+
+        List<VolumeDefinition.VlmDfnApi> vlmDfns = extractVlmDfns(rscDfn.getVlmDfnsList());
+        List<Volume.VlmApi> localVlms = extractRawVolumes(localRsc.getVlmsList());
+        List<OtherRscPojo> otherRscList = extractRawOtherRsc(intRscData.getOtherResourcesList());
         List<ResourceConnection.RscConnApi> rscConns = extractRscConn(
-            rscData.getRscName(),
-            rscData.getRscConnectionsList()
+            rscDfn.getRscName(),
+            intRscData.getRscConnectionsList()
         );
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
-            UUID.fromString(rscData.getRscDfnUuid()),
-            rscData.getRscName(),
-            rscData.getRscDfnPort(),
-            rscData.getRscDfnSecret(),
-            rscData.getRscDfnFlags(),
-            rscData.getRscDfnTransportType(),
-            rscData.getRscDfnDown(),
-            ProtoMapUtils.asMap(rscData.getRscDfnPropsList()),
+            UUID.fromString(rscDfn.getRscDfnUuid()),
+            rscDfn.getRscName(),
+            rscDfn.getRscDfnPort(),
+            rscDfn.getRscDfnSecret(),
+            FlagsHelper.fromStringList(
+                ResourceDefinition.RscDfnFlags.class,
+                rscDfn.getRscDfnFlagsList()
+            ),
+            rscDfn.getRscDfnTransportType(),
+            rscDfn.getRscDfnDown(),
+            ProtoMapUtils.asMap(rscDfn.getRscDfnPropsList()),
             vlmDfns
         );
         RscPojo rscRawData = new RscPojo(
-            rscData.getRscName(),
-            null,
-            null,
+            localRsc.getName(),
+            localRsc.getNodeName(),
+            UUID.fromString(localRsc.getNodeUuid()),
             rscDfnPojo,
-            UUID.fromString(rscData.getLocalRscUuid()),
-            rscData.getLocalRscFlags(),
-            rscData.getLocalRscNodeId(),
-            ProtoMapUtils.asMap(rscData.getLocalRscPropsList()),
+            UUID.fromString(localRsc.getUuid()),
+            FlagsHelper.fromStringList(Resource.RscFlags.class, localRsc.getRscFlagsList()),
+            localRsc.getNodeId(),
+            ProtoMapUtils.asMap(localRsc.getPropsList()),
             localVlms,
             otherRscList,
             rscConns,
-            rscData.getFullSyncId(),
-            rscData.getUpdateId(),
-            ProtoRscLayerUtils.extractLayerData(rscData.getLayerObject())
+            fullSyncId,
+            updateId,
+            ProtoRscLayerUtils.extractLayerData(localRsc.getLayerObject())
         );
         return rscRawData;
     }
@@ -152,46 +169,48 @@ public class ApplyRsc implements ApiCall
 
     private static List<ResourceConnection.RscConnApi> extractRscConn(
         String rscName,
-        List<RscConnectionData> rscConnections
+        List<RscConn> rscConnections
     )
     {
         return rscConnections.stream()
             .map(rscConnData ->
                 new RscConnPojo(
-                    UUID.fromString(rscConnData.getUuid()),
-                    rscConnData.getNode1(),
-                    rscConnData.getNode2(),
+                    UUID.fromString(rscConnData.getRscConnUuid()),
+                    rscConnData.getNodeName1(),
+                    rscConnData.getNodeName2(),
                     rscName,
-                    ProtoMapUtils.asMap(rscConnData.getPropsList()),
-                    rscConnData.getFlags(),
+                    ProtoMapUtils.asMap(rscConnData.getRscConnPropsList()),
+                    FlagsHelper.fromStringList(Volume.VlmFlags.class, rscConnData.getRscConnFlagsList()),
                     rscConnData.getPort() == 0 ? null : rscConnData.getPort()
                 )
             )
             .collect(Collectors.toList());
     }
 
-    static List<OtherRscPojo> extractRawOtherRsc(List<MsgIntOtherRscData> otherResourcesList)
+    static List<OtherRscPojo> extractRawOtherRsc(List<IntOtherRsc> otherResourcesList)
     {
         List<OtherRscPojo> list = new ArrayList<>();
-        for (MsgIntOtherRscData otherRsc : otherResourcesList)
+        for (IntOtherRsc intOtherRsc : otherResourcesList)
         {
-            NodeOuterClass.Node protoNode = otherRsc.getNode();
+            NodeOuterClass.Node protoNode = intOtherRsc.getNode();
+            RscOuterClass.Rsc protoRsc = intOtherRsc.getRsc();
+
             list.add(
                 new OtherRscPojo(
                     protoNode.getName(),
                     UUID.fromString(protoNode.getUuid()),
                     protoNode.getType(),
-                    otherRsc.getNodeFlags(),
+                    FlagsHelper.fromStringList(Node.NodeFlag.class, protoNode.getFlagsList()),
                     ProtoMapUtils.asMap(protoNode.getPropsList()),
                     extractNetIfs(protoNode),
-                    UUID.fromString(otherRsc.getRscUuid()),
-                    otherRsc.getRscNodeId(),
-                    otherRsc.getRscFlags(),
-                    ProtoMapUtils.asMap(otherRsc.getRscPropsList()),
+                    UUID.fromString(protoRsc.getUuid()),
+                    protoRsc.getNodeId(),
+                    FlagsHelper.fromStringList(Resource.RscFlags.class, protoRsc.getRscFlagsList()),
+                    ProtoMapUtils.asMap(protoRsc.getPropsList()),
                     extractRawVolumes(
-                        otherRsc.getLocalVlmsList()
+                        protoRsc.getVlmsList()
                     ),
-                    ProtoRscLayerUtils.extractLayerData(otherRsc.getLayerObject())
+                    ProtoRscLayerUtils.extractLayerData(protoRsc.getLayerObject())
                 )
             );
         }

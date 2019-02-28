@@ -26,6 +26,7 @@ import com.linbit.linstor.netcom.MessageTypes;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader.MsgType;
+import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Authentication;
 import com.linbit.linstor.security.Identity;
@@ -327,8 +328,8 @@ public class CommonMessageProcessor implements MessageProcessor
             msgDataIn.mark(0);
             while (msgDataIn.available() > 0 && error == null)
             {
-                MsgApiCallResponseOuterClass.MsgApiCallResponse apiCallResponse =
-                    MsgApiCallResponseOuterClass.MsgApiCallResponse.parseDelimitedFrom(msgDataIn);
+                ApiCallResponseOuterClass.ApiCallResponse apiCallResponse =
+                    ApiCallResponseOuterClass.ApiCallResponse.parseDelimitedFrom(msgDataIn);
                 if ((apiCallResponse.getRetCode() & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR)
                 {
                     error = new ApiRcException(ProtoDeserializationUtils.parseApiCallRc(

@@ -5,9 +5,9 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
-import com.linbit.linstor.proto.MsgCrtSnapshotOuterClass.MsgCrtSnapshot;
-import com.linbit.linstor.proto.SnapshotDfnOuterClass;
-import com.linbit.linstor.proto.SnapshotDfnOuterClass.SnapshotDfn;
+import com.linbit.linstor.proto.requests.MsgCrtSnapshotOuterClass.MsgCrtSnapshot;
+import com.linbit.linstor.proto.common.SnapshotDfnOuterClass;
+import com.linbit.linstor.proto.common.SnapshotDfnOuterClass.SnapshotDfn;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;

@@ -14,9 +14,10 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
-import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass.MsgIntAuth;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthSuccessOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

@@ -6,7 +6,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgRestoreSnapshotVlmDfnOuterClass.MsgRestoreSnapshotVlmDfn;
+import com.linbit.linstor.proto.requests.MsgRestoreSnapshotVlmDfnOuterClass.MsgRestoreSnapshotVlmDfn;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

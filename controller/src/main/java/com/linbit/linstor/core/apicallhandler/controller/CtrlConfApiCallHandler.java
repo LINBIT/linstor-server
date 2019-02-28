@@ -46,8 +46,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 
@@ -137,6 +141,74 @@ public class CtrlConfApiCallHandler
                 satellitePeer.sendMessage(changedMessage);
             }
         }
+    }
+
+    public ApiCallRc modifyCtrl(
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespacesRef
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        for (Entry<String, String> overrideProp : overridePropsRef.entrySet())
+        {
+            apiCallRc.addEntries(setProp(overrideProp.getKey(), null, overrideProp.getValue()));
+        }
+        for (String deletePropKey : deletePropKeysRef)
+        {
+            apiCallRc.addEntries(deleteProp(deletePropKey, null));
+        }
+        for (String deleteNamespace : deletePropNamespacesRef)
+        {
+            // we should not simply "drop" the namespace here, as we might have special cleanup logic
+            // for some of the deleted keys.
+            apiCallRc.addEntries(deleteNamespace(deleteNamespace));
+        }
+        return apiCallRc;
+    }
+
+
+    private ApiCallRcImpl deleteNamespace(String deleteNamespaceRef)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try
+        {
+            Optional<Props> optNamespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get()).getNamespace(
+                deleteNamespaceRef
+            );
+            if (optNamespace.isPresent())
+            {
+                Iterator<String> keysIterator = optNamespace.get().keysIterator();
+                while (keysIterator.hasNext())
+                {
+                    apiCallRc.addEntries(deleteProp(keysIterator.next(), deleteNamespaceRef));
+                }
+
+                Iterator<String> iterateNamespaces = optNamespace.get().iterateNamespaces();
+                while (iterateNamespaces.hasNext())
+                {
+                    apiCallRc.addEntries(deleteNamespace(deleteNamespaceRef + "/" + iterateNamespaces.next()));
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            String errorMsg = ResponseUtils.getAccDeniedMsg(
+                peerAccCtx.get(),
+                "set a controller config property"
+            );
+            apiCallRc.addEntry(
+                errorMsg,
+                ApiConsts.FAIL_ACC_DENIED_CTRL_CFG | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT
+            );
+            errorReporter.reportError(
+                exc,
+                peerAccCtx.get(),
+                null,
+                errorMsg
+            );
+        }
+        return apiCallRc;
     }
 
     public ApiCallRc setProp(String key, String namespace, String value)

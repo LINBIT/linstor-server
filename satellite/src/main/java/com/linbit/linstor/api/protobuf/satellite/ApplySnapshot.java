@@ -12,7 +12,8 @@ import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.proto.javainternal.MsgIntSnapshotDataOuterClass.MsgIntSnapshotData;
+import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapshot;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -43,13 +44,17 @@ public class ApplySnapshot implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntSnapshotData snapshotData = MsgIntSnapshotData.parseDelimitedFrom(msgDataIn);
+        MsgIntApplySnapshot msgApplySnapshot = MsgIntApplySnapshot.parseDelimitedFrom(msgDataIn);
 
-        SnapshotPojo snapshotRaw = asSnapshotPojo(snapshotData);
+        SnapshotPojo snapshotRaw = asSnapshotPojo(
+            msgApplySnapshot.getSnapshot(),
+            msgApplySnapshot.getFullSyncId(),
+            msgApplySnapshot.getUpdateId()
+        );
         apiCallHandler.applySnapshotChanges(snapshotRaw);
     }
 
-    static SnapshotPojo asSnapshotPojo(MsgIntSnapshotData snapshotData)
+    static SnapshotPojo asSnapshotPojo(IntSnapshot snapshotData, long fullSyncId, long updateId)
     {
         List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns =
             snapshotData.getSnapshotVlmDfnsList().stream()
@@ -95,8 +100,8 @@ public class ApplySnapshot implements ApiCall
             snapshotData.getFlags(),
             snapshotData.getSuspendResource(),
             snapshotData.getTakeSnapshot(),
-            snapshotData.getFullSyncId(),
-            snapshotData.getUpdateId(),
+            fullSyncId,
+            updateId,
             snapshotVlms
         );
     }

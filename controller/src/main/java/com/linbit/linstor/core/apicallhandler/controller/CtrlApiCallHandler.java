@@ -926,12 +926,20 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc setCtrlCfgProp(String key, String namespace, String value)
+    public ApiCallRc modifyCtrl(
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespaces
+    )
     {
         ApiCallRc apiCallRc;
         try (LockGuard lg = lockGuardFactory.build(WRITE, CTRL_CONFIG))
         {
-            apiCallRc = ctrlConfApiCallHandler.setProp(key, namespace, value);
+            apiCallRc = ctrlConfApiCallHandler.modifyCtrl(
+                overridePropsRef,
+                deletePropKeysRef,
+                deletePropNamespaces
+            );
         }
         return apiCallRc;
     }

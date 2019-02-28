@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.protobuf;
 
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
+import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 
 import java.util.ArrayList;
 import java.util.List;

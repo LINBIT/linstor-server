@@ -2,8 +2,8 @@ package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
-import com.linbit.linstor.proto.MsgApiCallResponseOuterClass;
+import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
+import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 import com.linbit.utils.StringUtils;
 
 import java.util.List;
@@ -15,7 +15,7 @@ import com.google.protobuf.ByteString;
 public class ProtoDeserializationUtils
 {
     public static ApiCallRc.RcEntry parseApiCallRc(
-        MsgApiCallResponseOuterClass.MsgApiCallResponse apiCallResponse,
+        ApiCallResponseOuterClass.ApiCallResponse apiCallResponse,
         String messagePrefix
     )
     {

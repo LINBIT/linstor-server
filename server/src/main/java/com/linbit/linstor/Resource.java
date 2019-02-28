@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -175,6 +176,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         long getFlags();
         List<? extends Volume.VlmApi> getVlmList();
         Integer getLocalRscNodeId();
+        RscLayerDataPojo getLayerData();
     }
 
     /**

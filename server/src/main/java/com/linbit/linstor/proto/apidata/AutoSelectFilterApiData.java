@@ -1,7 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.proto.AutoSelectFilterOuterClass.AutoSelectFilter;
+import com.linbit.linstor.proto.common.AutoSelectFilterOuterClass.AutoSelectFilter;
 
 import java.util.List;
 

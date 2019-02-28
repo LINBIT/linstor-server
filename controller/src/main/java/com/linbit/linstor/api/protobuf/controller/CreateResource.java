@@ -6,7 +6,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
-import com.linbit.linstor.proto.MsgCrtRscOuterClass.MsgCrtRsc;
+import com.linbit.linstor.proto.requests.MsgCrtRscOuterClass.MsgCrtRsc;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import reactor.core.publisher.Flux;
 

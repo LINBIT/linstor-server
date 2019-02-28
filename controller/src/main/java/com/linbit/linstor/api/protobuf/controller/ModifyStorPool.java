@@ -10,7 +10,7 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgModStorPoolOuterClass.MsgModStorPool;
+import com.linbit.linstor.proto.requests.MsgModStorPoolOuterClass.MsgModStorPool;
 
 import java.io.IOException;
 import java.io.InputStream;

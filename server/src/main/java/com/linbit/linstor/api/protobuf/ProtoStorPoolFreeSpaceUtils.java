@@ -3,7 +3,7 @@ package com.linbit.linstor.api.protobuf;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
-import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
+import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -16,7 +16,9 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
+import com.linbit.utils.Triple;
 
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME_SUFFIX;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.SF_VLM_ODATA;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS;
@@ -39,7 +41,7 @@ import java.util.Map;
 public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriver
 {
     private static final String VLM_DFN_ALL_FIELDS =
-        RESOURCE_NAME_SUFFIX + ", " + VLM_NR + ", " + SF_VLM_ODATA;
+        RESOURCE_NAME + ", " + RESOURCE_NAME_SUFFIX + ", " + VLM_NR + ", " + SF_VLM_ODATA;
 
     private static final String SELECT_ALL =
         " SELECT " + VLM_DFN_ALL_FIELDS +
@@ -52,14 +54,16 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
 
     private static final String UPDATE_VLM_DFN_ODATA =
         " UPDATE " + TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS +
-        " SET " +   SF_VLM_ODATA           + " = ? " +
-        " WHERE " + RESOURCE_NAME_SUFFIX + " = ? AND " +
-                    VLM_NR                 + " = ?";
+        " SET " +   SF_VLM_ODATA         + " = ? " +
+        " WHERE " + RESOURCE_NAME        + " = ? AND " +
+                    RESOURCE_NAME_SUFFIX + " = ? AND " +
+                    VLM_NR               + " = ?";
 
     private static final String DELETE_VLM_DFN =
         " DELETE FROM " + TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS +
-        " WHERE " + RESOURCE_NAME_SUFFIX + " = ? AND " +
-                    VLM_NR                 + " = ?";
+        " WHERE " + RESOURCE_NAME        + " = ? AND " +
+                    RESOURCE_NAME_SUFFIX + " = ? AND " +
+                    VLM_NR               + " = ?";
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -67,7 +71,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
     private final Provider<TransactionMgr> transMgrProvider;
     private final VlmDfnOdataDriver vlmDfnOdataDriver;
 
-    private Map<Pair<String, Integer>, Pair<SfVlmDfnInfo, SfVlmDfnData>> sfVlmDfnInfoCache;
+    private Map<Triple<String, String, Integer>, Pair<SfVlmDfnInfo, SfVlmDfnData>> sfVlmDfnInfoCache;
 
     @Inject
     public SwordfishLayerGenericDbDriver(
@@ -95,16 +99,18 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             {
                 while (resultSet.next())
                 {
-                    String suffixedRscName = resultSet.getString(RESOURCE_NAME_SUFFIX);
+                    String rscName = resultSet.getString(RESOURCE_NAME);
+                    String rscNameSuffix = resultSet.getString(RESOURCE_NAME_SUFFIX);
                     int vlmNr = resultSet.getInt(VLM_NR);
                     String sfVlmOdataId = resultSet.getString(SF_VLM_ODATA);
                     sfVlmDfnInfoCache.put(
-                        new Pair<>(
-                            suffixedRscName,
+                        new Triple<>(
+                            rscName,
+                            rscNameSuffix,
                             vlmNr
                         ),
                         new Pair<>(
-                            new SfVlmDfnInfo(suffixedRscName, vlmNr, sfVlmOdataId),
+                            new SfVlmDfnInfo(rscName, vlmNr, sfVlmOdataId),
                             null
                         )
                     );
@@ -124,8 +130,9 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         throws AccessDeniedException
     {
         Pair<SfVlmDfnInfo, SfVlmDfnData> sfVlmDfnInfo = sfVlmDfnInfoCache.get(
-            new Pair<>(
-                rscDataRef.getSuffixedResourceName(),
+            new Triple<>(
+                rscDataRef.getResourceName().displayValue,
+                rscDataRef.getResourceNameSuffix(),
                 vlmRef.getVolumeDefinition().getVolumeNumber().value
             )
         );
@@ -146,7 +153,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             vlmDfnData = new SfVlmDfnData(
                 vlmRef.getVolumeDefinition(),
                 sfVlmDfnInfo.objA.sfVlmOdataId,
-                rscDataRef.getSuffixedResourceName(),
+                rscDataRef.getResourceNameSuffix(),
                 this,
                 transObjFactory,
                 transMgrProvider
@@ -195,11 +202,12 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         errorReporter.logTrace("Creating SfVlmDfnData %s", getId(vlmDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM_DFN))
         {
-            stmt.setString(1, vlmDfnData.getSuffixedResourceName());
-            stmt.setInt(2, vlmDfnData.getVolumeDefinition().getVolumeNumber().value);
+            stmt.setString(1, vlmDfnData.getVolumeDefinition().getResourceDefinition().getName().value);
+            stmt.setString(2, vlmDfnData.getRscNameSuffix());
+            stmt.setInt(3, vlmDfnData.getVolumeDefinition().getVolumeNumber().value);
             if (vlmDfnData.getVlmOdata() == null)
             {
-                stmt.setNull(3, Types.VARCHAR);
+                stmt.setNull(4, Types.VARCHAR);
             }
             else
             {
@@ -217,8 +225,9 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         errorReporter.logTrace("Deleting SfVlmDfnData %s", getId(vlmDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM_DFN))
         {
-            stmt.setString(1, vlmDfnData.getSuffixedResourceName());
-            stmt.setInt(2, vlmDfnData.getVolumeDefinition().getVolumeNumber().value);
+            stmt.setString(1, vlmDfnData.getVolumeDefinition().getResourceDefinition().getName().value);
+            stmt.setString(2, vlmDfnData.getRscNameSuffix());
+            stmt.setInt(3, vlmDfnData.getVolumeDefinition().getVolumeNumber().value);
 
             stmt.executeUpdate();
             errorReporter.logTrace("SfVlmDfnData deleted %s", getId(vlmDfnData));
@@ -304,8 +313,9 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_VLM_DFN_ODATA))
             {
                 stmt.setString(1, oData);
-                stmt.setString(2, vlmDfnData.getSuffixedResourceName());
-                stmt.setInt(3, vlmDfnData.getVolumeDefinition().getVolumeNumber().value);
+                stmt.setString(2, vlmDfnData.getVolumeDefinition().getResourceDefinition().getName().value);
+                stmt.setString(3, vlmDfnData.getRscNameSuffix());
+                stmt.setInt(4, vlmDfnData.getVolumeDefinition().getVolumeNumber().value);
                 stmt.executeUpdate();
             }
             errorReporter.logTrace(

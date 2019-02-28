@@ -666,7 +666,7 @@ class StltRscApiCallHandler
                 }
             }
 
-            layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getRscLayerDataPojo());
+            layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getLayerData());
             for (Resource otherRsc : otherRscs)
             {
                 OtherRscPojo otherRscPojo = null;

@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
-import com.linbit.linstor.proto.MsgDelSnapshotOuterClass.MsgDelSnapshot;
+import com.linbit.linstor.proto.requests.MsgDelSnapshotOuterClass.MsgDelSnapshot;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;

@@ -9,9 +9,8 @@ import java.util.UUID;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
-import com.linbit.linstor.proto.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
-import com.linbit.linstor.proto.StorPoolOuterClass;
+import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
+import com.linbit.linstor.proto.common.StorPoolOuterClass;
 
 /**
  *
@@ -126,31 +125,5 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     public Map<String, String> getStorPoolStaticTraits()
     {
         return ProtoMapUtils.asMap(storPool.getStaticTraitsList());
-    }
-
-    public static StorPoolOuterClass.StorPool toStorPoolProto(final StorPool.StorPoolApi apiStorPool)
-    {
-        StorPoolOuterClass.StorPool.Builder storPoolBld = StorPoolOuterClass.StorPool.newBuilder();
-        storPoolBld.setStorPoolName(apiStorPool.getStorPoolName());
-        storPoolBld.setStorPoolUuid(apiStorPool.getStorPoolUuid().toString());
-        storPoolBld.setNodeName(apiStorPool.getNodeName());
-        storPoolBld.setNodeUuid(apiStorPool.getNodeUuid().toString());
-        storPoolBld.setStorPoolDfnUuid(apiStorPool.getStorPoolDfnUuid().toString());
-        storPoolBld.setDriver(apiStorPool.getDriver());
-        storPoolBld.addAllProps(ProtoMapUtils.fromMap(apiStorPool.getStorPoolProps()));
-        storPoolBld.addAllVlms(VlmApiData.toVlmProtoList(apiStorPool.getVlmList()));
-        storPoolBld.addAllStaticTraits(ProtoMapUtils.fromMap(apiStorPool.getStorPoolStaticTraits()));
-        storPoolBld.setFreeSpaceMgrName(apiStorPool.getFreeSpaceManagerName());
-        if (apiStorPool.getFreeCapacity().isPresent())
-        {
-            StorPoolFreeSpace.Builder storPoolFreeSpcBld = StorPoolFreeSpace.newBuilder();
-            storPoolFreeSpcBld.setStorPoolName(apiStorPool.getStorPoolName())
-                .setStorPoolUuid(apiStorPool.getStorPoolUuid().toString())
-                .setFreeCapacity(apiStorPool.getFreeCapacity().get())
-                .setTotalCapacity(apiStorPool.getTotalCapacity().get());
-            storPoolBld.setFreeSpace(storPoolFreeSpcBld.build());
-        }
-
-        return storPoolBld.build();
     }
 }

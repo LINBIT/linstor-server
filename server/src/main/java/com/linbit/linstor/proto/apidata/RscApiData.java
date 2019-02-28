@@ -2,9 +2,10 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.RscOuterClass;
-
+import com.linbit.linstor.api.protobuf.ProtoRscLayerUtils;
+import com.linbit.linstor.proto.common.RscOuterClass;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,10 +18,12 @@ import java.util.stream.Collectors;
 public class RscApiData implements Resource.RscApi
 {
     private final RscOuterClass.Rsc rsc;
+    private final RscLayerDataPojo layerObjectApiData;
 
     public RscApiData(RscOuterClass.Rsc rscRef)
     {
         rsc = rscRef;
+        layerObjectApiData = ProtoRscLayerUtils.extractLayerData(rsc.getLayerObject());
     }
 
     @Override
@@ -77,20 +80,9 @@ public class RscApiData implements Resource.RscApi
         return rsc.getOverrideNodeId() ? rsc.getNodeId() : null;
     }
 
-    public static RscOuterClass.Rsc toRscProto(final Resource.RscApi apiResource)
+    @Override
+    public RscLayerDataPojo getLayerData()
     {
-        RscOuterClass.Rsc.Builder rscBld = RscOuterClass.Rsc.newBuilder();
-
-        rscBld.setName(apiResource.getName());
-        rscBld.setUuid(apiResource.getUuid().toString());
-        rscBld.setNodeName(apiResource.getNodeName());
-        rscBld.setNodeUuid(apiResource.getNodeUuid().toString());
-        rscBld.setRscDfnUuid(apiResource.getRscDfnUuid().toString());
-        rscBld.addAllRscFlags(Resource.RscFlags.toStringList(apiResource.getFlags()));
-        rscBld.addAllProps(ProtoMapUtils.fromMap(apiResource.getProps()));
-        rscBld.addAllVlms(VlmApiData.toVlmProtoList(apiResource.getVlmList()));
-        rscBld.setNodeId(apiResource.getLocalRscNodeId());
-
-        return rscBld.build();
+        return layerObjectApiData;
     }
 }

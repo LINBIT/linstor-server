@@ -7,5 +7,7 @@ import com.linbit.linstor.ResourceDefinition;
  */
 public interface RscDfnLayerObject extends LayerObject
 {
+    String getRscNameSuffix();
+
     ResourceDefinition getResourceDefinition();
 }

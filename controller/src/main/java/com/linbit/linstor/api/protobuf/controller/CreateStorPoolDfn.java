@@ -13,8 +13,8 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn;
-import com.linbit.linstor.proto.StorPoolDfnOuterClass.StorPoolDfn;
+import com.linbit.linstor.proto.requests.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn;
+import com.linbit.linstor.proto.common.StorPoolDfnOuterClass.StorPoolDfn;
 
 @ProtobufApiCall(
     name = ApiConsts.API_CRT_STOR_POOL_DFN,

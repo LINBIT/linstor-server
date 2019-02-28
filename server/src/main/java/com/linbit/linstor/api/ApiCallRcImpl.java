@@ -49,6 +49,7 @@ public class ApiCallRcImpl implements ApiCallRc
         return entries;
     }
 
+    @Override
     public boolean isEmpty()
     {
         return entries.isEmpty();
