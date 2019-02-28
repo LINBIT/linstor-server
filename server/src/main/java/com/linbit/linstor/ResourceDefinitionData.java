@@ -499,6 +499,11 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 tcpPortPool.deallocate(port.get().value);
             }
 
+            for (RscDfnLayerObject rscDfnLayerObject : layerStorage.values())
+            {
+                rscDfnLayerObject.delete();
+            }
+
             objProt.delete(accCtx);
 
             activateTransMgr();

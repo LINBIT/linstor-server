@@ -154,6 +154,7 @@ public class LayerDataFactory
             vlmDfn,
             resourceNameSuffix,
             minorNr,
+            drbdDbDriver,
             transMgrProvider
         );
         drbdDbDriver.persist(drbdVlmDfnData);

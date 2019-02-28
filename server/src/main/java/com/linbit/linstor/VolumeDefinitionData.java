@@ -363,6 +363,11 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                 minorNrPool.deallocate(minorNr.get().value);
             }
 
+            for (VlmDfnLayerObject vlmDfnLayerObject : layerStorage.values())
+            {
+                vlmDfnLayerObject.delete();
+            }
+
             dbDriver.delete(this);
 
             deleted.set(true);

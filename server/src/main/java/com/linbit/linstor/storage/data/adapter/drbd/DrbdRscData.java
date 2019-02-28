@@ -35,6 +35,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     private final short peerSlots;
     private final int alStripes;
     private final long alStripeSize;
+    private final DrbdLayerDatabaseDriver dbDriver;
 
     // persisted, serialized
     private final StateFlags<DrbdRscFlags> flags;
@@ -61,7 +62,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
         @Nullable Integer alStripesRef,
         @Nullable Long alStripeSizeRef,
         long initFlags,
-        DrbdLayerDatabaseDriver dbDriver,
+        DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -72,20 +73,21 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriver.getIdDriver(),
+            dbDriverRef.getIdDriver(),
             vlmLayerObjectsMapRef,
             transObjFactory,
             transMgrProvider
         );
 
         nodeId = nodeIdRef;
+        dbDriver = dbDriverRef;
 
 
         flags = transObjFactory.createStateFlagsImpl(
             rsc.getObjProt(),
             this,
             DrbdRscFlags.class,
-            dbDriver.getRscStateFlagPersistence(),
+            dbDriverRef.getRscStateFlagPersistence(),
             initFlags
         );
         drbdRscDfnData = Objects.requireNonNull(drbdRscDfnDataRef);
@@ -164,9 +166,10 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
         vlmMap.put(data.getVlmNr(), data);
     }
 
-    public void removeVlmLayerObject(VolumeNumber vlmNr)
+    @Override
+    protected void deleteVlmFromDatabase(DrbdVlmData drbdVlmData) throws SQLException
     {
-        vlmMap.remove(vlmNr);
+        dbDriver.delete(drbdVlmData);
     }
 
     public StateFlags<DrbdRscFlags> getFlags()

@@ -27,6 +27,7 @@ public class VlmPojo implements Volume.VlmApi
     private Map<String, String> storPoolDfnProps;
     private Map<String, String> storPoolProps;
     private final Optional<Long> allocated;
+    private Optional<Long> usableSize;
 
     public VlmPojo(
         final String storagePoolNameRef,
@@ -44,7 +45,8 @@ public class VlmPojo implements Volume.VlmApi
         final UUID storPoolDfnUuidRef,
         final Map<String, String> storPoolDfnPropsRef,
         final Map<String, String> storPoolPropsRef,
-        final Optional<Long> allocatedRef
+        final Optional<Long> allocatedRef,
+        final Optional<Long> usableSizeRef
     )
     {
         storagePoolName = storagePoolNameRef;
@@ -63,6 +65,7 @@ public class VlmPojo implements Volume.VlmApi
         storPoolDfnProps = storPoolDfnPropsRef;
         storPoolProps = storPoolPropsRef;
         allocated = allocatedRef;
+        usableSize = usableSizeRef;
     }
 
     @Override
@@ -156,8 +159,14 @@ public class VlmPojo implements Volume.VlmApi
     }
 
     @Override
-    public Optional<Long> getAllocated()
+    public Optional<Long> getAllocatedSize()
     {
         return allocated;
+    }
+
+    @Override
+    public Optional<Long> getUsableSize()
+    {
+        return usableSize;
     }
 }

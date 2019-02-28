@@ -427,6 +427,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                             vlmDfn,
                             rscNameSuffix,
                             minorNr,
+                            this,
                             transMgrProvider
                         );
                         drbdVlmDfnCache.put(vlmDfn, drbdVlmDfnData);
@@ -549,11 +550,9 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         errorReporter.logTrace("Deleting DrbdVlmDfnData %s", getId(drbdVlmDfnDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM_DFN))
         {
-            stmt.setString(1, drbdVlmDfnDataRef.getSuffixedResourceName());
-            stmt.setInt(
-                2,
-                drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber().value
-            );
+            stmt.setString(1, drbdVlmDfnDataRef.getVolumeDefinition().getResourceDefinition().getName().value);
+            stmt.setString(2, drbdVlmDfnDataRef.getRscNameSuffix());
+            stmt.setInt(3, drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber().value);
 
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdVlmDfnData deleted %s", getId(drbdVlmDfnDataRef));

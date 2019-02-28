@@ -19,6 +19,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,8 @@ import java.util.Set;
 
 public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements CryptSetupRscObject
 {
+    private final CryptSetupLayerDatabaseDriver dbDriver;
+
     public CryptSetupRscData(
         int rscLayerIdRef,
         Resource rscRef,
@@ -33,7 +36,7 @@ public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements 
         @Nullable RscLayerObject parentRef,
         Set<RscLayerObject> childrenRef,
         Map<VolumeNumber, CryptSetupVlmData> vlmLayerObjectsRef,
-        CryptSetupLayerDatabaseDriver dbDriver,
+        CryptSetupLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -44,11 +47,12 @@ public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements 
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriver.getIdDriver(),
+            dbDriverRef.getIdDriver(),
             vlmLayerObjectsRef,
             transObjFactory,
             transMgrProvider
         );
+        dbDriver = dbDriverRef;
     }
 
     @Override
@@ -61,6 +65,12 @@ public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements 
     public @Nullable RscDfnLayerObject getRscDfnLayerObject()
     {
         return null;
+    }
+
+    @Override
+    protected void deleteVlmFromDatabase(CryptSetupVlmData vlmRef) throws SQLException
+    {
+        dbDriver.delete(vlmRef);
     }
 
     @Override

@@ -31,6 +31,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     private final long alStripeSize;
     private final String suffixedResourceName;
     private final String resourceNameSuffix;
+    private final DrbdLayerDatabaseDriver dbDriver;
 
     // persisted, serialized, ctrl and stlt
     private final TransactionList<DrbdRscDfnData, DrbdRscData> drbdRscDataList;
@@ -48,25 +49,26 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         TransportType transportTypeRef,
         String secretRef,
         List<DrbdRscData> drbdRscDataListRef,
-        DrbdLayerDatabaseDriver dbDriver,
+        DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);
         resourceNameSuffix = resourceNameSuffixRef;
+        dbDriver = dbDriverRef;
         suffixedResourceName = rscDfnRef.getName().displayValue + resourceNameSuffixRef;
         rscDfn = Objects.requireNonNull(rscDfnRef);
         peerSlots = peerSlotsRef;
         alStripes = alStripesRef;
         alStripeSize = alStripesSizeRef;
-        port = transObjFactory.createTransactionSimpleObject(this, portRef, dbDriver.getTcpPortDriver());
+        port = transObjFactory.createTransactionSimpleObject(this, portRef, dbDriverRef.getTcpPortDriver());
         transportType = transObjFactory.createTransactionSimpleObject(
             this,
             transportTypeRef,
-            dbDriver.getTransportTypeDriver()
+            dbDriverRef.getTransportTypeDriver()
         );
-        secret = transObjFactory.createTransactionSimpleObject(this, secretRef, dbDriver.getRscDfnSecretDriver());
+        secret = transObjFactory.createTransactionSimpleObject(this, secretRef, dbDriverRef.getRscDfnSecretDriver());
         drbdRscDataList = transObjFactory.createTransactionList(this, drbdRscDataListRef, null);
 
         transObjs = Arrays.asList(
@@ -155,6 +157,12 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     public String getRscNameSuffix()
     {
         return resourceNameSuffix;
+    }
+
+    @Override
+    public void delete() throws SQLException
+    {
+        dbDriver.delete(this);
     }
 
     public DrbdRscDfnPojo asPojo(AccessContext accCtxRef)

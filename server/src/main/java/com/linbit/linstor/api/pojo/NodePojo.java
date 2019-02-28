@@ -18,8 +18,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final List<NetInterface.NetInterfaceApi> nodeNetInterfaces;
     private final List<NodeConnPojo> nodeConns;
     private final Map<String, String> nodeProps;
-    private long fullSyncId;
-    private long updateId;
+    private final Long fullSyncId;
+    private final Long updateId;
 
     public NodePojo(
         final UUID nodeUuidRef,
@@ -30,8 +30,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         final List<NodeConnPojo> nodeConnsRef,
         final Map<String, String> nodePropsRef,
         final Peer.ConnectionStatus connectionStatusRef,
-        long fullSyncIdRef,
-        long updateIdRef
+        final Long fullSyncIdRef,
+        final Long updateIdRef
     )
     {
         nodeUuid = nodeUuidRef;
@@ -98,6 +98,12 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         return nodeFlags;
     }
 
+    @Override
+    public int compareTo(NodePojo otherNodePojo)
+    {
+        return nodeName.compareTo(otherNodePojo.nodeName);
+    }
+
     public long getFullSyncId()
     {
         return fullSyncId;
@@ -106,12 +112,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     public long getUpdateId()
     {
         return updateId;
-    }
-
-    @Override
-    public int compareTo(NodePojo otherNodePojo)
-    {
-        return nodeName.compareTo(otherNodePojo.nodeName);
     }
 
     public static class NodeConnPojo

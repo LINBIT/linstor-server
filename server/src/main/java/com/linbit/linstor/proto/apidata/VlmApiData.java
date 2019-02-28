@@ -127,9 +127,19 @@ public class VlmApiData implements VlmApi
     }
 
     @Override
-    public Optional<Long> getAllocated()
+    public Optional<Long> getAllocatedSize()
     {
-        return Optional.empty();
+        return vlm.hasAllocatedSize() ?
+            Optional.of(vlm.getAllocatedSize()) :
+            Optional.empty();
+    }
+
+    @Override
+    public Optional<Long> getUsableSize()
+    {
+        return vlm.hasUsableSize() ?
+            Optional.of(vlm.getUsableSize()) :
+            Optional.empty();
     }
 
     public static Vlm toVlmProto(final VlmApi vlmApi)
@@ -155,7 +165,7 @@ public class VlmApiData implements VlmApi
         }
         builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
         builder.addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()));
-        vlmApi.getAllocated().ifPresent(builder::setAllocatedSize);
+        vlmApi.getAllocatedSize().ifPresent(builder::setAllocatedSize);
 
         return builder.build();
     }

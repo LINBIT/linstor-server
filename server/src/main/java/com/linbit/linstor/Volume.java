@@ -177,7 +177,8 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
         UUID getStorPoolDfnUuid();
         Map<String, String> getStorPoolDfnProps();
         Map<String, String> getStorPoolProps();
-        Optional<Long> getAllocated();
+        Optional<Long> getAllocatedSize();
+        Optional<Long> getUsableSize();
     }
 
 

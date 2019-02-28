@@ -161,6 +161,14 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
                 VolumeNumber vlmNr = new VolumeNumber(vlmInfo.vlmNr);
                 Volume vlm = resourceRef.getVolume(vlmNr);
 
+                if (vlm == null)
+                {
+                    throw new LinStorRuntimeException(
+                        "Storage volume found but linstor volume missing: " +
+                        resourceRef + ", vlmNr: " + vlmNr
+                    );
+                }
+
                 VlmProviderObject vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
                 vlmMap.put(vlmNr, vlmData);
             }

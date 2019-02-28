@@ -11,7 +11,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -23,8 +22,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -504,7 +501,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
             getStorPool(accCtx).getDefinition(accCtx).getUuid(),
             getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
             getStorPool(accCtx).getProps(accCtx).map(),
-            Optional.ofNullable(allocated)
+            Optional.ofNullable(allocated),
+            Optional.ofNullable(usableSize.get())
         );
     }
 

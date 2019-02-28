@@ -752,7 +752,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         List<VlmApi> vlmApiList = new ArrayList<>(volumesRef.size());
         for (Volume vlm : volumesRef)
         {
-            vlmApiList.add(vlm.getApiData(vlm.getAllocatedSize(accCtxRef), accCtxRef));
+            vlmApiList.add(
+                vlm.getApiData(
+                    vlm.isAllocatedSizeSet(accCtxRef) ?
+                        vlm.getAllocatedSize(accCtxRef) :
+                        null,
+                    accCtxRef
+                )
+            );
         }
         return serializeVolumeList(vlmApiList);
     }
@@ -765,12 +772,17 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             Vlm.Builder builder = Vlm.newBuilder()
                 .setVlmUuid(vlmApi.getVlmUuid().toString())
                 .setVlmDfnUuid(vlmApi.getVlmDfnUuid().toString())
-                .setStorPoolName(vlmApi.getStorPoolName())
-                .setStorPoolUuid(vlmApi.getStorPoolUuid().toString())
                 .setVlmNr(vlmApi.getVlmNr())
                 .setVlmMinorNr(vlmApi.getVlmMinorNr())
+                .setStorPoolUuid(vlmApi.getStorPoolUuid().toString())
+                .setStorPoolName(vlmApi.getStorPoolName())
                 .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()))
-                .addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()));
+                .addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()))
+                .setStorPoolDriverName(vlmApi.getStorDriverSimpleClassName())
+                .setStorPoolDfnUuid(vlmApi.getStorPoolDfnUuid().toString())
+                .addAllStorPoolDfnProps(ProtoMapUtils.fromMap(vlmApi.getStorPoolDfnProps()))
+                .addAllStorPoolProps(ProtoMapUtils.fromMap(vlmApi.getStorPoolProps()));
+
             if (vlmApi.getBlockDevice() != null)
             {
                 builder.setBackingDisk(vlmApi.getBlockDevice());
@@ -783,7 +795,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setDevicePath(vlmApi.getDevicePath());
             }
-            vlmApi.getAllocated().ifPresent(builder::setAllocatedSize);
+            vlmApi.getAllocatedSize().ifPresent(builder::setAllocatedSize);
+            vlmApi.getUsableSize().ifPresent(builder::setUsableSize);
 
             protoVlmList.add(builder.build());
         }

@@ -18,6 +18,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,13 +26,15 @@ import java.util.Map;
 
 public class StorageRscData extends AbsRscData<VlmProviderObject>
 {
+    private StorageLayerDatabaseDriver dbDriver;
+
     public StorageRscData(
         int rscLayerIdRef,
         RscLayerObject parentRef,
         Resource rscRef,
         String rscNameSuffixRef,
         Map<VolumeNumber, VlmProviderObject> vlmProviderObjectsRef,
-        StorageLayerDatabaseDriver dbDriver,
+        StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -42,11 +45,12 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
             parentRef,
             Collections.emptySet(), // no children
             rscNameSuffixRef,
-            dbDriver.getIdDriver(),
+            dbDriverRef.getIdDriver(),
             vlmProviderObjectsRef,
             transObjFactory,
             transMgrProvider
         );
+        dbDriver = dbDriverRef;
     }
 
     @Override
@@ -59,6 +63,12 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
     public RscDfnLayerObject getRscDfnLayerObject()
     {
         return null;
+    }
+
+    @Override
+    protected void deleteVlmFromDatabase(VlmProviderObject vlmRef) throws SQLException
+    {
+        dbDriver.delete(vlmRef);
     }
 
     @Override

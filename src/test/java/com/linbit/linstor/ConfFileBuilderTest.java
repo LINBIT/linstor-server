@@ -454,6 +454,7 @@ public class ConfFileBuilderTest
                     vlm.getVolumeDefinition(),
                     "",
                     vlm.getVolumeDefinition().getMinorNr(accessContext),
+                    DRBD_LAYER_NO_OP_DRIVER,
                     transMgrProvider
                 );
                 drbdVlmDfnMap.put(vlmNr, drbdVlmDfnData);

@@ -109,14 +109,17 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     }
 
     @Override
-    public void remove(VolumeNumber vlmNrRef)
+    public void remove(VolumeNumber vlmNrRef) throws SQLException
     {
         for (RscLayerObject rscLayerObject : children)
         {
             rscLayerObject.remove(vlmNrRef);
         }
-        vlmMap.remove(vlmNrRef);
+        VLM_TYPE vlm = vlmMap.remove(vlmNrRef);
+        deleteVlmFromDatabase(vlm);
     }
+
+    protected abstract void deleteVlmFromDatabase(VLM_TYPE vlm) throws SQLException;
 
     @Override
     public void delete()

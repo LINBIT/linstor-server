@@ -127,8 +127,10 @@ public class ProtoRscLayerUtils
                     ret = storageRscPojo;
                 }
                 break;
-            default:
             case LAYERSPECIFICPAYLOAD_NOT_SET:
+                ret = null;
+                break;
+            default:
                 throw new ImplementationError(
                     "Unexpected layer type in proto message: " +
                         protoRscData.getLayerSpecificPayloadCase() +
@@ -136,9 +138,12 @@ public class ProtoRscLayerUtils
                 );
         }
 
-        for (RscLayerData childrenProto : protoRscData.getChildrenList())
+        if (ret != null)
         {
-            ret.getChildren().add(extractLayerData(childrenProto));
+            for (RscLayerData childrenProto : protoRscData.getChildrenList())
+            {
+                ret.getChildren().add(extractLayerData(childrenProto));
+            }
         }
 
         return ret;

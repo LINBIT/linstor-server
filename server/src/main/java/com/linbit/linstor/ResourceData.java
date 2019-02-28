@@ -255,7 +255,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     synchronized void removeVolume(AccessContext accCtx, Volume vol)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);

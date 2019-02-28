@@ -160,6 +160,7 @@ public class ApplyRsc implements ApiCall
                     UUID.fromString(vol.getStorPoolDfnUuid()),
                     ProtoMapUtils.asMap(vol.getStorPoolDfnPropsList()),
                     ProtoMapUtils.asMap(vol.getStorPoolPropsList()),
+                    Optional.empty(),
                     Optional.empty()
                 )
             );

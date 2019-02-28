@@ -76,5 +76,5 @@ public interface RscLayerObject extends LayerObject
 
     void delete();
 
-    void remove(VolumeNumber vlmNrRef);
+    void remove(VolumeNumber vlmNrRef) throws SQLException;
 }
