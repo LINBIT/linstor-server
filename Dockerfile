@@ -10,7 +10,7 @@ RUN useradd -m -g makepkg makepkg # !lbbuild
 
 RUN apt-get update -y # !lbbuild
 
-RUN apt-get install -y debhelper default-jdk-headless dh-systemd # !lbbuild
+RUN apt-get install -y debhelper default-jdk-headless dh-systemd python-all # !lbbuild
 # I saw gradle pulling in a higher java dependency when java was not installed first.
 # so keep it on a extra line
 RUN apt-get install -y gradle javahelper # !lbbuild
