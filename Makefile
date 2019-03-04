@@ -2,7 +2,9 @@ GIT = git
 MAKE = make
 DOCKERREGISTRY = drbd.io
 DOCKERREGPATH_CONTROLLER = $(DOCKERREGISTRY)/linstor-controller
+DOCKERREGPATH_SATELLITE = $(DOCKERREGISTRY)/linstor-satellite
 DOCKERFILE_CONTROLLER = Dockerfile.controller
+DOCKERFILE_SATELLITE = Dockerfile.satellite
 
 GENRES=./server/generated-resources
 GENSRC=./server/generated-src
@@ -73,9 +75,11 @@ ifneq ($(FORCE),1)
 	if ! grep -q "^linstor-server ($(VERSION)" debian/changelog ; then \
 		echo >&2 "debian/changelog needs update"; exit 1; \
 	fi
-	if ! grep -q "^ENV LINSTOR_VERSION $(VERSION)" $(DOCKERFILE_CONTROLLER) ; then \
-		echo >&2 "$(DOCKERFILE_CONTROLLER) needs update"; exit 1; \
-	fi
+	for df in "$(DOCKERFILE_CONTROLLER)" "$(DOCKERFILE_SATELLITE)"; do \
+		if ! grep -q "^ENV LINSTOR_VERSION $(VERSION)" "$$df" ; then \
+			echo >&2 "$$df needs update"; exit 1; \
+		fi; \
+	done
 endif
 
 .PHONY: getprotc
@@ -109,13 +113,18 @@ versioninfo:
 	echo "git.commit.id=$(GITHASH)" >> $(VERSINFO)
 	echo "build.time=$$(date -u --iso-8601=second)" >> $(VERSINFO)
 
-ifneq ($(FORCE),1)
-dockerimage: debrelease
-else
-dockerimage:
-endif
+.PHONY: dockerimage dockerimage.controller dockerimage.satellite dockerpatch
+dockerimage.controller:
 	docker build -f $(DOCKERFILE_CONTROLLER) -t $(DOCKERREGPATH_CONTROLLER) .
 
-.PHONY: dockerpath
+dockerimage.satellite:
+	docker build -f $(DOCKERFILE_SATELLITE) -t $(DOCKERREGPATH_SATELLITE) .
+
+ifneq ($(FORCE),1)
+dockerimage: debrelease dockerimage.controller dockerimage.satellite
+else
+dockerimage: dockerimage.controller dockerimage.satellite
+endif
+
 dockerpath:
-	@echo $(DOCKERREGPATH_CONTROLLER)
+	@echo $(DOCKERREGPATH_CONTROLLER) $(DOCKERREGPATH_SATELLITE)
