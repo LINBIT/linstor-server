@@ -102,7 +102,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             new TreeMap<>(),
             new TreeMap<>(),
             new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
     }
 

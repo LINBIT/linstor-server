@@ -76,7 +76,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            null
+            new TreeMap<>()
         );
     }
 

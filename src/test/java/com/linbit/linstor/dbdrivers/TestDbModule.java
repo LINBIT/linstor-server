@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.CryptSetupLayerGenericDbDriver;
+import com.linbit.linstor.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.NodeConnectionDataGenericDbDriver;
@@ -7,6 +9,7 @@ import com.linbit.linstor.NodeDataGenericDbDriver;
 import com.linbit.linstor.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.ResourceDataGenericDbDriver;
 import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
+import com.linbit.linstor.ResourceLayerIdGenericDbDriver;
 import com.linbit.linstor.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.SnapshotDefinitionDataGenericDbDriver;
 import com.linbit.linstor.SnapshotVolumeDataGenericDbDriver;
@@ -15,12 +18,16 @@ import com.linbit.linstor.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionDataGenericDbDriver;
+import com.linbit.linstor.StorageLayerGenericDbDriver;
+import com.linbit.linstor.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -28,12 +35,15 @@ import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
@@ -82,5 +92,11 @@ public class TestDbModule extends AbstractModule
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionGenericDbDriver.class);
         bind(SnapshotDataDatabaseDriver.class).to(SnapshotDataGenericDbDriver.class);
         bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDataGenericDbDriver.class);
+
+        bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
+        bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
+        bind(CryptSetupLayerDatabaseDriver.class).to(CryptSetupLayerGenericDbDriver.class);
+        bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
+        bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
     }
 }

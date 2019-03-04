@@ -323,6 +323,7 @@ public class ConfFileBuilderTest
         when(storPool.getProps(accessContext)).thenReturn(storPoolProps);
 
         when(volumeDefinition.getVolumeNumber()).thenReturn(new VolumeNumber(volumeNumber));
+        when(volumeDefinition.getResourceDefinition()).thenReturn(resourceDefinition);
         when(volumeDefinition.getMinorNr(any(AccessContext.class))).thenReturn(new MinorNumber(99));
 
         when(
@@ -334,6 +335,7 @@ public class ConfFileBuilderTest
 
         when(volume.getFlags()).thenReturn(volumeFlags);
         when(volume.getVolumeDefinition()).thenReturn(volumeDefinition);
+        when(volume.getResourceDefinition()).thenReturn(resourceDefinition);
         when(volume.getStorPool(accessContext)).thenReturn(storPool);
         when(volume.getProps(accessContext)).thenReturn(vlmProps);
         when(volume.getBackingDiskPath(accessContext)).thenReturn("/dev/foo");
