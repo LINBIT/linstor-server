@@ -113,6 +113,22 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     }
 
     /**
+     * This method is called just to make sure that the reference to a soon deleted volume from this
+     * {@link FreeSpaceMgr} are cleaned up
+     * @throws AccessDeniedException
+     */
+    @Override
+    public void ensureVlmNoLongerCreating(AccessContext accCtx, Volume vlm)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.USE);
+        // no need to update capacity or free space as we are only deleting possible references
+        // from the pendingAdding list. The "estimated space" will no longer consider this volume
+        // and thus will "free up" the until now reserved space.
+        synchronizedRemove(pendingVolumesToAdd, vlm);
+    }
+
+    /**
      * The given volume is removed from the pending list, and the freespace is updated.
      *
      * This method changes the outcome of both {@link #getFreeSpaceCurrentEstimation()} and

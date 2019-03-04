@@ -174,6 +174,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
+        freeSpaceTracker.ensureVlmNoLongerCreating(accCtx, volume);
+
         volumeMap.remove(Volume.getVolumeKey(volume));
     }
 

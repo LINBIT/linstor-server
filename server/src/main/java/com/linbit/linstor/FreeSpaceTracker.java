@@ -16,6 +16,8 @@ public interface FreeSpaceTracker extends TransactionObject
 
     void vlmCreating(AccessContext accCtx, Volume vlm) throws AccessDeniedException;
 
+    void ensureVlmNoLongerCreating(AccessContext accCtxRef, Volume vlmRef) throws AccessDeniedException;
+
     void vlmCreationFinished(AccessContext accCtx, Volume vlm, Long freeCapacityRef, Long totalCapacityRef)
         throws AccessDeniedException;
 
