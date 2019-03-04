@@ -1,7 +1,8 @@
 GIT = git
 MAKE = make
 DOCKERREGISTRY = drbd.io
-DOCKERREGPATH = $(DOCKERREGISTRY)/linstor-controller
+DOCKERREGPATH_CONTROLLER = $(DOCKERREGISTRY)/linstor-controller
+DOCKERFILE_CONTROLLER = Dockerfile.controller
 
 GENRES=./server/generated-resources
 GENSRC=./server/generated-src
@@ -72,8 +73,8 @@ ifneq ($(FORCE),1)
 	if ! grep -q "^linstor-server ($(VERSION)" debian/changelog ; then \
 		echo >&2 "debian/changelog needs update"; exit 1; \
 	fi
-	if ! grep -q "^ENV LINSTOR_VERSION $(VERSION)" Dockerfile ; then \
-		echo >&2 "Dockerfile needs update"; exit 1; \
+	if ! grep -q "^ENV LINSTOR_VERSION $(VERSION)" $(DOCKERFILE_CONTROLLER) ; then \
+		echo >&2 "$(DOCKERFILE_CONTROLLER) needs update"; exit 1; \
 	fi
 endif
 
@@ -113,8 +114,8 @@ dockerimage: debrelease
 else
 dockerimage:
 endif
-	docker build -t $(DOCKERREGPATH) .
+	docker build -f $(DOCKERFILE_CONTROLLER) -t $(DOCKERREGPATH_CONTROLLER) .
 
 .PHONY: dockerpath
 dockerpath:
-	@echo $(DOCKERREGPATH)
+	@echo $(DOCKERREGPATH_CONTROLLER)
