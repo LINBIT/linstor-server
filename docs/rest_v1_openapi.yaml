@@ -1,0 +1,2488 @@
+openapi: 3.0.2
+servers:
+- url: http://localhost:3370
+  description: Local Linstor controller
+info:
+  description: Linstor REST API
+  version: 1.0.0
+  title: Linstor REST API
+  contact:
+    email: rene.peinthor@linbit.com
+  license:
+    name: GPLv3
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+tags:
+- name: developers
+  description: Operations available to regular developers
+paths:
+  /v1/nodes:
+    get:
+      tags:
+      - developers
+      summary: Lists nodes registered to the controller
+      operationId: nodeList
+      description: |
+        Returns an array of all nodes registered to Linstor.
+      parameters:
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Array of all node objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Node'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+    post:
+      tags:
+      - developers
+      summary: add a node to Linstor
+      operationId: nodeAdd
+      description: Adds a node to Linstor
+      responses:
+        '201':
+          description: node created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Node'
+            example:
+              name: nodeA
+              type: SATELLITE
+              net_interfaces:
+              - name: default
+                address: 10.0.0.2
+                stlt_port: '3366'
+                stlt_encryption_type: Plain
+        description: Node to add to Linstor
+  /v1/nodes/{node}:
+    parameters:
+    - $ref: '#/components/parameters/Node'
+    put:
+      tags:
+      - developers
+      summary: modify a node
+      operationId: nodeModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+        - `StorDriver/SwordfishComposedNodeName` - regex[`.*`]
+        - `StorDriver/SwordfishStorSvc` - regex[`.*`]
+        - `StorDriver/SwordfishUserName` - regex[`.*`]
+        - `StorDriver/SwordfishUserPw` - regex[`.*`]
+        - `StorDriver/SwordfishUrl` - regex[`.*`]
+        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
+      responses:
+        '200':
+          description: node modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                node_type:
+                  type: string
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+            example:
+              override_props:
+                Aux/testprop: '1'
+              delete_props:
+              - Aux/deleteprop
+    delete:
+      tags:
+      - developers
+      summary: delete a node
+      operationId: nodeDelete
+      description: Delete a node from Linstor
+      responses:
+        '200':
+          description: node deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/{node}/lost:
+    parameters:
+    - $ref: '#/components/parameters/Node'
+    delete:
+      tags:
+      - developers
+      summary: delete an unrecoverable node
+      operationId: nodeLost
+      description: Delete an unrecoverable node
+      responses:
+        '200':
+          description: node deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/{node}/reconnect:
+    parameters:
+    - $ref: '#/components/parameters/Node'
+    put:
+      tags:
+      - developers
+      summary: reconnect a node to the controller
+      operationId: nodeReconnect
+      description: Reconnect a node to the controller
+      responses:
+        '200':
+          description: node put into reconnect cycle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/{node}/net-interfaces:
+    parameters:
+    - $ref: '#/components/parameters/Node'
+    get:
+      tags:
+      - developers
+      summary: return the list of net-interfaces
+      operationId: netinterfaceList
+      description: Returns the list of netinterfaces for this node
+      parameters:
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Array of net-interfaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NetInterface'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+    post:
+      tags:
+      - developers
+      summary: create a netinterface on a node
+      operationId: netinterfaceCreate
+      description: |
+        Create a netinterface on a node
+
+        If stlt_port and stlt_encryption_type are given
+        the netinterface can also work as connection to the controller
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NetInterface'
+      responses:
+        '201':
+          description: netinterface created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/{node}/net-interfaces/{netinterface}:
+    parameters:
+    - $ref: '#/components/parameters/Node'
+    - $ref: '#/components/parameters/NetInterface'
+    put:
+      tags:
+      - developers
+      summary: modify a netinterface from a node
+      operationId: netinterfaceModified
+      description: Modify a netinterface from a node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NetInterface'
+      responses:
+        '200':
+          description: netinterface modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+    delete:
+      tags:
+      - developers
+      summary: delete a netinterface from a node
+      operationId: netinterfaceDelete
+      description: Delete a netinterface from a node
+      responses:
+        '200':
+          description: netinterface deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/{node}/storage-pools:
+    parameters:
+    - $ref: '#/components/parameters/Node'
+    get:
+      tags:
+      - developers
+      summary: lists all storage pools for a node
+      operationId: nodeStoragePoolList
+      description: Lists all storage pools of a node
+      responses:
+        '200':
+          description: Array list of all storage pools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Storage-Pool'
+    post:
+      tags:
+      - developers
+      summary: creates a new storage pool on this node
+      operationId: nodeStoragePoolCreate
+      description: Creates a new storage pool on this node
+      responses:
+        '201':
+          description: storage pool created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+  /v1/nodes/{node}/storage-pools/{storagepool}:
+    parameters:
+    - $ref: '#/components/parameters/Node'
+    - name: storagepool
+      in: path
+      required: true
+      schema:
+        type: string
+        description: Storage pool to use
+    put:
+      tags:
+      - developers
+      summary: modify a node
+      operationId: nodeStoragePoolModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `StorDriver/LvmVg` - regex[`[a-zA-Z0-9_-]+`]
+        - `StorDriver/ThinPool` - regex[`[a-zA-Z0-9_-]+`]
+        - `StorDriver/ZPool` - regex[`[a-zA-Z0-9_/-]+`]
+        - `StorDriver/ZPoolThin` - regex[`[a-zA-Z0-9_/-]+`]
+        - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+        - `StorDriver/SwordfishStorPool` - regex[`.*`]
+        - `StorDriver/SwordfishVolumeCreateTimeout` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishVolumeCreateRetries` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishAttachVolumeTimeout` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishAttachVolumeRetries` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishGrepNvmeUuidTimeout` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishGrepNvmeUuidRetries` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
+      responses:
+        '200':
+          description: storage pool modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+                delete_namespaces:
+                  type: array
+                  items:
+                    type: string
+            example:
+              override_props:
+                Aux/testprop: '1'
+              delete_props:
+              - Aux/deleteprop
+    delete:
+      tags:
+      - developers
+      summary: delete a storage pool
+      operationId: nodeStoragePoolDelete
+      description: Delete a storage pool
+      responses:
+        '200':
+          description: storage pool deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-definitions:
+    get:
+      tags:
+      - developers
+      summary: lists all resource-definitions
+      operationId: resourceDefinitionList
+      description: |
+        Lists all resource definitions.
+
+        A single resource definition can be queried by adding its name
+        to the resource string like:
+
+        /v1/resource-definitions/rsc1
+      parameters:
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Array of all resource-definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Resource-definition'
+    post:
+      tags:
+      - developers
+      summary: add a resource-definition
+      operationId: resourceDefinitionCreate
+      description: |
+        Adds a resource-definition.
+
+        Only required property is the name of the resource definition.
+        All other properties are optional.
+      responses:
+        '201':
+          description: resource-defintion created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Resource-definition'
+            example:
+              name: rsc1
+  /v1/resource-definitions/{resource}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    put:
+      tags:
+      - developers
+      summary: modify a resource-definition
+      operationId: resourceDefinitionModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+        - `PeerSlotsNewResource` - range[`1-31`]
+        - `DrbdProxy/CompressionType` - enum
+            * zlib
+            * lzma
+            * lz4
+        - `DrbdOptions/Disk/read-balancing` - enum
+            * prefer-local
+            * prefer-remote
+            * round-robin
+            * least-pending
+            * when-congested-remote
+            * 32K-striping
+            * 64K-striping
+            * 128K-striping
+            * 256K-striping
+            * 512K-striping
+            * 1M-striping
+        - `DrbdOptions/Disk/on-io-error` - enum
+            * pass_on
+            * call-local-io-error
+            * detach
+        - `DrbdOptions/Disk/disk-drain` - boolean
+        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
+        - `DrbdOptions/Disk/disable-write-same` - boolean
+        - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
+        - `DrbdOptions/Disk/disk-flushes` - boolean
+        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
+        - `DrbdOptions/Disk/al-updates` - boolean
+        - `DrbdOptions/Disk/md-flushes` - boolean
+        - `DrbdOptions/Disk/disk-barrier` - boolean
+        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+        - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
+        - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-4194304`]
+        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
+        - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
+        - `DrbdOptions/PeerDevice/bitmap` - boolean
+        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
+        - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
+        - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
+        - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
+        - `DrbdOptions/Resource/quorum` - enum [`1-32`]
+            * off
+            * majority
+            * all
+        - `DrbdOptions/Resource/on-no-data-accessible` - enum
+            * io-error
+            * suspend-io
+        - `DrbdOptions/Resource/auto-promote` - boolean
+        - `DrbdOptions/Resource/cpu-mask` - string
+        - `DrbdOptions/Resource/twopc-timeout` - range[`50-600`]
+        - `DrbdOptions/Resource/twopc-retry-timeout` - range[`1-50`]
+        - `DrbdOptions/Resource/peer-ack-window` - range[`2048-204800`]
+        - `DrbdOptions/Resource/on-no-quorum` - enum
+            * io-error
+            * suspend-io
+        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Net/protocol` - enum
+            * A
+            * B
+            * C
+        - `DrbdOptions/Net/allow-two-primaries` - boolean
+        - `DrbdOptions/Net/after-sb-0pri` - enum
+            * disconnect
+            * discard-younger-primary
+            * discard-older-primary
+            * discard-zero-changes
+            * discard-least-changes
+            * discard-local
+            * discard-remote
+        - `DrbdOptions/Net/ko-count` - range[`0-200`]
+        - `DrbdOptions/Net/data-integrity-alg` - string
+        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
+        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/transport` - string
+        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
+        - `DrbdOptions/Net/fencing` - enum
+            * dont-care
+            * resource-only
+            * resource-and-stonith
+        - `DrbdOptions/Net/csums-alg` - string
+        - `DrbdOptions/Net/always-asbp` - boolean
+        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
+        - `DrbdOptions/Net/on-congestion` - enum
+            * block
+            * pull-ahead
+            * disconnect
+        - `DrbdOptions/Net/ping-int` - range[`1-120`]
+        - `DrbdOptions/Net/rr-conflict` - enum
+            * disconnect
+            * call-pri-lost
+            * violently
+        - `DrbdOptions/Net/tcp-cork` - boolean
+        - `DrbdOptions/Net/use-rle` - boolean
+        - `DrbdOptions/Net/csums-after-crash-only` - boolean
+        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
+        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
+        - `DrbdOptions/Net/cram-hmac-alg` - string
+        - `DrbdOptions/Net/verify-alg` - string
+        - `DrbdOptions/Net/shared-secret` - string
+        - `DrbdOptions/Net/connect-int` - range[`1-120`]
+        - `DrbdOptions/Net/timeout` - range[`1-600`]
+        - `DrbdOptions/Net/after-sb-2pri` - enum
+            * disconnect
+            * call-pri-lost-after-sb
+            * violently-as0p
+        - `DrbdOptions/Net/after-sb-1pri` - enum
+            * disconnect
+            * consensus
+            * discard-secondary
+            * call-pri-lost-after-sb
+            * violently-as0p
+      responses:
+        '200':
+          description: resource-definition modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+                delete_namespaces:
+                  type: array
+                  items:
+                    type: string
+            example:
+              override_props:
+                Aux/testprop: '1'
+              delete_props:
+              - Aux/deleteprop
+    delete:
+      tags:
+      - developers
+      summary: delete a resource-definition
+      operationId: resourceDefinitionDelete
+      description: Delete a resource-definition
+      responses:
+        '200':
+          description: resource-definition deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-definitions/{resource}/volume-definitions:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    get:
+      tags:
+      - developers
+      summary: lists all volume-definitions
+      operationId: volumeDefinitionList
+      description: |
+        Lists all volume definitions.
+
+        A single volume definition can be queried by adding its name
+        to the resource string like:
+
+        /v1/resource-definitions/rsc1/volume-definitions/0
+      parameters:
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Array of all volume-definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Volume-definition'
+    post:
+      tags:
+      - developers
+      summary: add a volume-definition to a resource
+      operationId: volumeDefinitionCreate
+      description: |
+        Adds a volume-definition.
+
+        Required properties is only `size`, all other will be auto generated if not given.
+      responses:
+        '201':
+          description: volume-defintion created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Volume-definition'
+            example:
+              size: 262144
+  /v1/resource-definitions/{resource}/volume-definitions/{volume_number}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - name: volume_number
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        description: Volume number of the definition
+    put:
+      tags:
+      - developers
+      summary: modify a resource-definition
+      operationId: volumeDefinitionModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+        - `OverrideVlmId` - regex[`.*`]
+        - `AllowLargerVolumeSize` - boolean_true_false
+        - `DrbdOptions/Disk/read-balancing` - enum
+            * prefer-local
+            * prefer-remote
+            * round-robin
+            * least-pending
+            * when-congested-remote
+            * 32K-striping
+            * 64K-striping
+            * 128K-striping
+            * 256K-striping
+            * 512K-striping
+            * 1M-striping
+        - `DrbdOptions/Disk/on-io-error` - enum
+            * pass_on
+            * call-local-io-error
+            * detach
+        - `DrbdOptions/Disk/disk-drain` - boolean
+        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
+        - `DrbdOptions/Disk/disable-write-same` - boolean
+        - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
+        - `DrbdOptions/Disk/disk-flushes` - boolean
+        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
+        - `DrbdOptions/Disk/al-updates` - boolean
+        - `DrbdOptions/Disk/md-flushes` - boolean
+        - `DrbdOptions/Disk/disk-barrier` - boolean
+        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+      responses:
+        '200':
+          description: resource-definition modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                size:
+                  type: integer
+                  format: int64
+                minor_number:
+                  type: integer
+                  format: int32
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+                delete_namespaces:
+                  type: array
+                  items:
+                    type: string
+            example:
+              override_props:
+                Aux/testprop: '1'
+              delete_props:
+              - Aux/deleteprop
+    delete:
+      tags:
+      - developers
+      summary: delete a volume-definition
+      operationId: volumeDefinitionDelete
+      description: Delete a volume-definition
+      responses:
+        '200':
+          description: volume-definition deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-definitions/{resource}/resources:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    get:
+      tags:
+      - developers
+      summary: lists all resources for a resource-definition
+      operationId: resourceList
+      description: |
+        Lists all resources for a resource-definition.
+
+        A single resource can be queried by adding its name
+        to the resource string like:
+
+        /v1/resource-definitions/rsc1/resource/nodeA
+      parameters:
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Array of all resources for the resource-definition
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Resource'
+    post:
+      tags:
+      - developers
+      summary: create a resource to a node
+      operationId: resourceCreate
+      description: |
+        Adds a resource to a node.
+
+      responses:
+        '201':
+          description: resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Volume-definition'
+            example:
+              size: 262144
+  /v1/resource-definitions/{resource}/resources/{node}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/Node'
+    put:
+      tags:
+      - developers
+      summary: modify a resource
+      operationId: resourceModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+        - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+        - `PeerSlots` - range[`1-31`]
+      responses:
+        '200':
+          description: resource-definition modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+                delete_namespaces:
+                  type: array
+                  items:
+                    type: string
+            example:
+              override_props:
+                Aux/testprop: '1'
+              delete_props:
+              - Aux/deleteprop
+    delete:
+      tags:
+      - developers
+      summary: delete a resource
+      operationId: resourceDelete
+      description: Delete a resource on a node
+      responses:
+        '200':
+          description: resource deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-definitions/{resource}/resources/{node}/volumes:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/Node'
+    get:
+      tags:
+      - developers
+      summary: lists all volumes of a resources
+      operationId: resourceVolumeList
+      description: |
+        Lists all volumes for a resource-definition.
+
+        A single volume can be queried by adding its volume number
+        to the resource string like:
+
+        /v1/resource-definitions/rsc1/resource/nodeA/volumes/0
+      parameters:
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Array of all volume for the resource
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Volume'
+  /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/Node'
+    put:
+      tags:
+      - developers
+      summary: toggle a resource to diskless
+      operationId: resourceToggleDiskless
+      description: toggle a resource to a diskless resource
+
+      responses:
+        '200':
+          description: resource toggled to diskless
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
+  /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless/{disklesspool}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/Node'
+    - name: disklesspool
+      in: path
+      required: true
+      schema:
+        type: string
+        description: diskless pool to use.
+    put:
+      tags:
+      - developers
+      summary: toggle a resource to diskless resource
+      operationId: resourceToggleDisklessDisklesspool
+      description: |
+        toggle a resource to a diskless.
+
+      responses:
+        '200':
+          description: resource toggled to diskless resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskful:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/Node'
+    put:
+      tags:
+      - developers
+      summary: toggle a resource to a diskful resource
+      operationId: resourceToggleDiskful
+      description: |
+        toggle a resource to a diskful resource using the default storage pool
+
+      responses:
+        '200':
+          description: resource toggled to diskful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskful/{storagepool}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/Node'
+    - name: storagepool
+      in: path
+      required: true
+      schema:
+        type: string
+        description: storage pool to use.
+    put:
+      tags:
+      - developers
+      summary: toggle a resource to a diskful resource
+      operationId: resourceToggleDiskfulStoragepool
+      description: toggle a resource to a diskful resource
+
+      responses:
+        '200':
+          description: resource toggled to diskful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/resources/{node}/migrate-disk/{fromnode}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/Node'
+    - name: fromnode
+      in: path
+      required: true
+      schema:
+        type: string
+        description: node that should be deleted after the successful migrate
+    put:
+      tags:
+      - developers
+      summary: migrate a resource to another node
+      operationId: resourceMigrateDisk
+      description: |
+        migrate a resource to another node without reducing the redundency count
+
+      responses:
+        '200':
+          description: resource migrated to another node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/resources/{node}/migrate-disk/{fromnode}/{storagepool}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/Node'
+    - name: fromnode
+      in: path
+      required: true
+      schema:
+        type: string
+        description: node that should be deleted after the successful migrate
+    - name: storagepool
+      in: path
+      required: true
+      schema:
+        type: string
+        description: storage pool to use.
+    put:
+      tags:
+      - developers
+      summary: migrate a resource to another node
+      operationId: resourceMigrateDiskStoragepool
+      description: |
+        migrate a resource to another node without reducing the redundency count
+
+      responses:
+        '200':
+          description: resource migrated to another node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/autoplace:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    post:
+      tags:
+      - developers
+      summary: autoplace resource
+      operationId: resourceAutoplace
+      description: |
+        Auto place the resource on the specified place_count redundency.
+
+      responses:
+        '201':
+          description: resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoPlaceRequest'
+            example:
+              select_filter:
+                place_count: 2
+
+  /v1/resource-definitions/{resource}/resource-connections:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    get:
+      tags:
+      - developers
+      operationId: resourceConnectionsList
+      summary: list all resource connections for resource
+      description: List all resource connections for resource
+      responses:
+        '200':
+          description: list of resource connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceConnection'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/resource-connections/{node_a}/{node_b}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/NodeA'
+    - $ref: '#/components/parameters/NodeB'
+    get:
+      tags:
+      - developers
+      operationId: resourceConnectionList
+      summary: show the specified resource connection
+      description: show the specified resource connection
+      responses:
+        '200':
+          description: list of resource connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceConnection'
+        '404':
+          $ref: '#/components/responses/ObjectNotFound'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+    put:
+      tags:
+      - developers
+      operationId: resourceConnectionModify
+      summary: modify a resource connection
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
+        - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-4194304`]
+        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
+        - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
+        - `DrbdOptions/PeerDevice/bitmap` - boolean
+        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
+        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Net/protocol` - enum
+            * A
+            * B
+            * C
+        - `DrbdOptions/Net/allow-two-primaries` - boolean
+        - `DrbdOptions/Net/after-sb-0pri` - enum
+            * disconnect
+            * discard-younger-primary
+            * discard-older-primary
+            * discard-zero-changes
+            * discard-least-changes
+            * discard-local
+            * discard-remote
+        - `DrbdOptions/Net/ko-count` - range[`0-200`]
+        - `DrbdOptions/Net/data-integrity-alg` - string
+        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
+        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/transport` - string
+        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
+        - `DrbdOptions/Net/fencing` - enum
+            * dont-care
+            * resource-only
+            * resource-and-stonith
+        - `DrbdOptions/Net/csums-alg` - string
+        - `DrbdOptions/Net/always-asbp` - boolean
+        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
+        - `DrbdOptions/Net/on-congestion` - enum
+            * block
+            * pull-ahead
+            * disconnect
+        - `DrbdOptions/Net/ping-int` - range[`1-120`]
+        - `DrbdOptions/Net/rr-conflict` - enum
+            * disconnect
+            * call-pri-lost
+            * violently
+        - `DrbdOptions/Net/tcp-cork` - boolean
+        - `DrbdOptions/Net/use-rle` - boolean
+        - `DrbdOptions/Net/csums-after-crash-only` - boolean
+        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
+        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
+        - `DrbdOptions/Net/cram-hmac-alg` - string
+        - `DrbdOptions/Net/verify-alg` - string
+        - `DrbdOptions/Net/shared-secret` - string
+        - `DrbdOptions/Net/connect-int` - range[`1-120`]
+        - `DrbdOptions/Net/timeout` - range[`1-600`]
+        - `DrbdOptions/Net/after-sb-2pri` - enum
+            * disconnect
+            * call-pri-lost-after-sb
+            * violently-as0p
+        - `DrbdOptions/Net/after-sb-1pri` - enum
+            * disconnect
+            * consensus
+            * discard-secondary
+            * call-pri-lost-after-sb
+            * violently-as0p
+      responses:
+        '200':
+          description: resource connection modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '404':
+          $ref: '#/components/responses/ObjectNotFound'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+                delete_namespaces:
+                  type: array
+                  items:
+                    type: string
+
+  /v1/resource-definitions/{resource}/snapshots:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    get:
+      tags:
+      - developers
+      summary: list snapshots
+      description: List snapshots for a resource
+      operationId: resourceSnapshotsList
+      responses:
+        '200':
+          description: Snapshots for the resource
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Snapshot'
+  /v1/resource-definitions/{resource}/snapshots/{snapshot}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - name: snapshot
+      in: path
+      required: true
+      schema:
+        type: string
+        description: Snapshot name to use
+    get:
+      tags:
+      - developers
+      summary: list a specific snapshot
+      description: List the given snapshot for a resource
+      operationId: resourceSnapshotList
+      responses:
+        '200':
+          description: Snapshot for the resource
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Snapshot'
+    post:
+      tags:
+      - developers
+      summary: create a snapshot
+      description: Create a snapshot for a resource
+      operationId: resourceSnapshotCreate
+      responses:
+        '201':
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Snapshot'
+    delete:
+      tags:
+      - developers
+      summary: delete a snapshot
+      description: Delete a snapshot
+      operationId: resourceSnapshotDelete
+      responses:
+        '200':
+          description: Snapshot deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/snapshot-restore-resource/{snapshot}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - name: snapshot
+      in: path
+      required: true
+      description: Snapshot name to use
+      schema:
+        type: string
+    post:
+      tags:
+      - developers
+      summary: restore a snapshot
+      description: Restore a snapshot to a new resource
+      operationId: resourceSnapshotRestore
+      responses:
+        '200':
+          description: Snapshot restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnapshotRestore'
+  /v1/resource-definitions/{resource}/snapshot-restore-volume-definition/{snapshot}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - name: snapshot
+      in: path
+      required: true
+      description: Snapshot name to use
+      schema:
+        type: string
+    post:
+      tags:
+      - developers
+      summary: restore a snapshot volume definition
+      description: Restore a snapshot volume definition to a new resource
+      operationId: resourceSnapshotsRestoreVolumeDefinition
+      responses:
+        '200':
+          description: Snapshot restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnapshotRestore'
+  /v1/resource-definitions/{resource}/snapshot-rollback/{snapshot}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - name: snapshot
+      in: path
+      required: true
+      description: Snapshot name to use
+      schema:
+        type: string
+    post:
+      tags:
+      - developers
+      summary: rollback a snapshot
+      description: Rollback a resource to the snapshot state
+      operationId: resourceSnapshotRollback
+      responses:
+        '200':
+          description: Snapshot rollbacked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/controller/properties:
+    get:
+      tags:
+      - developers
+      summary: lists all controller properties
+      operationId: controllerPropertyList
+      description: |
+        Lists all controller properties.
+      responses:
+        '200':
+          description: A string to string map with all properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Properties'
+    post:
+      tags:
+      - developers
+      summary: sets or modifies controller properties
+      operationId: controllerPropertyModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `TcpPortAutoRange` - regex[`[0-9]+-[0-9]+`]
+        - `MinorNrAutoRange` - regex[`[0-9]+-[0-9]+`]
+        - `PeerSlotsNewResource` - range[`1-31`]
+        - `StorDriver/DMStats` - boolean_true_false
+        - `StorDriver/SwordfishUserName` - regex[`.*`]
+        - `StorDriver/SwordfishUserPw` - regex[`.*`]
+        - `StorDriver/SwordfishUrl` - regex[`.*`]
+        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
+        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
+        - `GlobSeqApiCalls` - boolean_true_false
+        - `REST/listenAddr` - string
+        - `REST/listenPort` - range[`1-65535`]
+        - `REST/enabled` - boolean_true_false
+        - `DrbdOptions/Disk/read-balancing` - enum
+            * prefer-local
+            * prefer-remote
+            * round-robin
+            * least-pending
+            * when-congested-remote
+            * 32K-striping
+            * 64K-striping
+            * 128K-striping
+            * 256K-striping
+            * 512K-striping
+            * 1M-striping
+        - `DrbdOptions/Disk/on-io-error` - enum
+            * pass_on
+            * call-local-io-error
+            * detach
+        - `DrbdOptions/Disk/disk-drain` - boolean
+        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
+        - `DrbdOptions/Disk/disable-write-same` - boolean
+        - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
+        - `DrbdOptions/Disk/disk-flushes` - boolean
+        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
+        - `DrbdOptions/Disk/al-updates` - boolean
+        - `DrbdOptions/Disk/md-flushes` - boolean
+        - `DrbdOptions/Disk/disk-barrier` - boolean
+        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+        - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
+        - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-4194304`]
+        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
+        - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
+        - `DrbdOptions/PeerDevice/bitmap` - boolean
+        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
+        - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
+        - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
+        - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
+        - `DrbdOptions/Resource/quorum` - enum [`1-32`]
+            * off
+            * majority
+            * all
+        - `DrbdOptions/Resource/on-no-data-accessible` - enum
+            * io-error
+            * suspend-io
+        - `DrbdOptions/Resource/auto-promote` - boolean
+        - `DrbdOptions/Resource/cpu-mask` - string
+        - `DrbdOptions/Resource/twopc-timeout` - range[`50-600`]
+        - `DrbdOptions/Resource/twopc-retry-timeout` - range[`1-50`]
+        - `DrbdOptions/Resource/peer-ack-window` - range[`2048-204800`]
+        - `DrbdOptions/Resource/on-no-quorum` - enum
+            * io-error
+            * suspend-io
+        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Net/protocol` - enum
+            * A
+            * B
+            * C
+        - `DrbdOptions/Net/allow-two-primaries` - boolean
+        - `DrbdOptions/Net/after-sb-0pri` - enum
+            * disconnect
+            * discard-younger-primary
+            * discard-older-primary
+            * discard-zero-changes
+            * discard-least-changes
+            * discard-local
+            * discard-remote
+        - `DrbdOptions/Net/ko-count` - range[`0-200`]
+        - `DrbdOptions/Net/data-integrity-alg` - string
+        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
+        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/transport` - string
+        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
+        - `DrbdOptions/Net/fencing` - enum
+            * dont-care
+            * resource-only
+            * resource-and-stonith
+        - `DrbdOptions/Net/csums-alg` - string
+        - `DrbdOptions/Net/always-asbp` - boolean
+        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
+        - `DrbdOptions/Net/on-congestion` - enum
+            * block
+            * pull-ahead
+            * disconnect
+        - `DrbdOptions/Net/ping-int` - range[`1-120`]
+        - `DrbdOptions/Net/rr-conflict` - enum
+            * disconnect
+            * call-pri-lost
+            * violently
+        - `DrbdOptions/Net/tcp-cork` - boolean
+        - `DrbdOptions/Net/use-rle` - boolean
+        - `DrbdOptions/Net/csums-after-crash-only` - boolean
+        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
+        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
+        - `DrbdOptions/Net/cram-hmac-alg` - string
+        - `DrbdOptions/Net/verify-alg` - string
+        - `DrbdOptions/Net/shared-secret` - string
+        - `DrbdOptions/Net/connect-int` - range[`1-120`]
+        - `DrbdOptions/Net/timeout` - range[`1-600`]
+        - `DrbdOptions/Net/after-sb-2pri` - enum
+            * disconnect
+            * call-pri-lost-after-sb
+            * violently-as0p
+        - `DrbdOptions/Net/after-sb-1pri` - enum
+            * disconnect
+            * consensus
+            * discard-secondary
+            * call-pri-lost-after-sb
+            * violently-as0p
+
+      responses:
+        '201':
+          description: Controller property created/modifed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+                delete_namespaces:
+                  type: array
+                  items:
+                    type: string
+            example:
+              override_props:
+                Aux/testprop: myprop
+  /v1/controller/properties/{key}:
+    parameters:
+    - name: key
+      in: path
+      required: true
+      schema:
+        type: string
+        description: Controller property key to delete
+    delete:
+      tags:
+      - developers
+      summary: Deletes a controller property
+      operationId: controllerPropertyDelete
+      description: Delete a controller property
+      responses:
+        '200':
+          description: property deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/controller/version:
+    get:
+      tags:
+      - developers
+      summary: show controller version info
+      operationId: controllerVersion
+      description: |
+        Show Controller version info
+
+      responses:
+        '200':
+          description: Controller version info object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControllerVersion'
+  /v1/resource-definitions/{resource}/drbd-proxy:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    put:
+      tags:
+      - developers
+      summary: modify drbd proxy option properties
+      operationId: resourceDrbdProxyModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `DrbdOptions/Proxy/memlimit` - range[`16777216-9223372036854775807`]
+        - `DrbdOptions/Proxy/read-loops` - range[`0-2147483647`]
+        - `DrbdOptions/Proxy/sndbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Proxy/rcvbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Proxy/ping-timeout` - range[`1-300`]
+        - `DrbdOptions/ProxyCompression/dict-size` - range[`4096-1610612736`]
+        - `DrbdOptions/ProxyCompression/lc` - range[`0-4`]
+        - `DrbdOptions/ProxyCompression/lp` - range[`0-4`]
+        - `DrbdOptions/ProxyCompression/pb` - range[`0-4`]
+        - `DrbdOptions/ProxyCompression/nice-len` - range[`0-273`]
+        - `DrbdOptions/ProxyCompression/mf` - enum
+            * hc4
+            * hc3
+            * bt2
+            * bt3
+            * bt4
+        - `DrbdOptions/ProxyCompression/mode` - enum
+            * fast
+            * normal
+        - `DrbdOptions/ProxyCompression/depth` - range[`0-1000`]
+        - `DrbdOptions/ProxyCompression/level` - range[`1-9`]
+        - `DrbdOptions/ProxyCompression/contexts` - range[`1-253`]
+        - `DrbdOptions/ProxyCompression/fallback-to-zlib` - enum
+            * off
+            * on
+        - `DrbdOptions/ProxyCompression/numa-threshold` - range[`0-253`]
+        - `DrbdOptions/ProxyCompression/level` - range[`1-9`]
+      responses:
+        '200':
+          description: drbd proxy properties modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+                compression_type:
+                  type: string
+                  description: |
+                    Compression type used by the proxy.
+                  enum:
+                  - none
+                  - zlib
+                  - lzma
+                  - lz4
+                compression_props:
+                  $ref: '#/components/schemas/Properties'
+            example:
+              override_props:
+                compression_type: lz4
+  /v1/resource-definitions/{resource}/drbd-proxy/enable/{node_a}/{node_b}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - $ref: '#/components/parameters/NodeA'
+    - $ref: '#/components/parameters/NodeB'
+    post:
+      tags:
+      - developers
+      summary: enable a drbd proxy on a node connection
+      operationId: resourceDrbdProxyEnable
+      description: Enables a drbd proxy on a node connection
+      responses:
+        '200':
+          description: drbd proxy configuration enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/drbd-proxy/disable/{nodeA}/{nodeB}:
+    parameters:
+    - $ref: '#/components/parameters/Resource'
+    - name: nodeA
+      in: path
+      required: true
+      schema:
+        type: string
+        description: source node of the connection
+    - name: nodeB
+      in: path
+      required: true
+      schema:
+        type: string
+        description: target node of the connection
+    post:
+      tags:
+      - developers
+      summary: disables a drbd proxy on a node connection
+      operationId: resourceDrbdProxyDisable
+      description: Disables a drbd proxy on a node connection
+      responses:
+        '200':
+          description: drbd proxy configuration disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
+  /v1/encryption/passphrase:
+    post:
+      tags:
+      - developers
+      summary: create a encryption passphrase
+      operationId: encryptionPassphraseCreate
+      responses:
+        '200':
+          description: encryption passphrase created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_passphrase:
+                  type: string
+    put:
+      tags:
+      - developers
+      summary: modifies the encryption passphrase
+      operationId: encryptionPassphraseModify
+      responses:
+        '200':
+          description: encryption passphrase modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_passphrase:
+                  type: string
+                old_passphrase:
+                  type: string
+    patch:
+      tags:
+      - developers
+      summary: enter the encryption passphrase
+      operationId: encryptionPassphraseEnter
+      responses:
+        '200':
+          description: encryption passphrase accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+
+  /v1/error-reports:
+    get:
+      tags:
+      - developers
+      operationId: errorReportList
+      summary: list all error reports
+      description: List all error reports
+      parameters:
+      - name: node
+        in: query
+        description: Only show error reports of this node
+        schema:
+          type: string
+      - name: since
+        in: query
+        description: Unix timestamp from the starting interval
+        schema:
+          type: integer
+          format: uint64
+      - name: to
+        in: query
+        description: Unix timestamp to the ending interval
+        schema:
+          type: integer
+          format: uint64
+      - name: withContent
+        in: query
+        description: Include error report text in response.
+        schema:
+          type: boolean
+          default: false
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: list of error reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ErrorReport'
+        '404':
+          description: Query parameter invalid.
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/error-reports/{reportid}:
+    get:
+      tags:
+      - developers
+      operationId: errorReportShow
+      summary: query the specified reportid
+      description: Query the specified reportid
+      parameters:
+      - name: reportid
+        in: path
+        required: true
+        description: Error id to select
+        schema:
+          type: string
+      - name: node
+        in: query
+        description: Only show error reports of this node
+        schema:
+          type: string
+      - name: since
+        in: query
+        description: Unix timestamp from the starting interval
+        schema:
+          type: integer
+          format: uint64
+      - name: to
+        in: query
+        description: Unix timestamp to the ending interval
+        schema:
+          type: integer
+          format: uint64
+      - name: withContent
+        in: query
+        description: Include error report text in response.
+        schema:
+          type: boolean
+          default: true
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: list of error reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ErrorReport'
+        '404':
+          description: Query parameter invalid.
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
+  /v1/key-value-store:
+    get:
+      tags:
+      - developers
+      operationId: keyValueStoresList
+      summary: list all key value stores
+      description: List all known key value store instances
+      responses:
+        '200':
+          description: list of key value stores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KeyValueStore'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/key-value-store/{instance}:
+    parameters:
+    - name: instance
+      in: path
+      required: true
+      schema:
+        type: string
+        description: name of the key value store
+    get:
+      tags:
+      - developers
+      operationId: keyValueStoreList
+      summary: list all key value stores
+      description: List all known key value store instances
+      responses:
+        '200':
+          description: list of key value stores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KeyValueStore'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+    put:
+      tags:
+      - developers
+      operationId: keyValueStoreModify
+      summary: modify a key value store
+      description: Modify a key value store
+      responses:
+        '200':
+          description: key value store modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                override_props:
+                  $ref: '#/components/schemas/Properties'
+                delete_props:
+                  type: array
+                  items:
+                    type: string
+                delete_namespaces:
+                  type: array
+                  items:
+                    type: string
+    delete:
+      tags:
+      - developers
+      operationId: keyValueStoreDelete
+      summary: delete a key value store
+      description: Delete a key value store
+      responses:
+        '200':
+          description: key value store deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
+  /v1/query-max-volume-size:
+    options:
+      tags:
+      - developers
+      operationId: queryMaxVolumeSize
+      summary: query the maximum volume size
+      description: Query the maximum possible volume size storage pools
+      responses:
+        '200':
+          description: list of usable storage pools
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        storage_pool:
+                          type: string
+                          example: DfltStorPool
+                        max_volume_size:
+                          type: integer
+                          format: uint64
+                          description: maximum size in KiB
+                          example: 3194880
+                        node_names:
+                          type: array
+                          items:
+                            type: string
+                        all_thin:
+                          type: boolean
+                  default_max_oversubscription_ratio:
+                    type: number
+                    format: double
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoSelectFilter'
+
+components:
+  parameters:
+    Resource:
+      name: resource
+      in: path
+      required: true
+      description: resource to use
+      schema:
+        type: string
+    Node:
+      name: node
+      in: path
+      required: true
+      description: node to use
+      schema:
+        type: string
+    NetInterface:
+      name: netinterface
+      in: path
+      required: true
+      description: netinterface name to use
+      schema:
+        type: string
+    Offset:
+      name: offset
+      in: query
+      description: number of records to skip for pagination
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    Limit:
+      name: limit
+      in: query
+      description: maximum number of records to return
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+    NodeA:
+      name: node_a
+      in: path
+      required: true
+      description: source node of the connection
+      schema:
+        type: string
+    NodeB:
+      name: node_b
+      in: path
+      required: true
+      description: target node of the connection
+      schema:
+        type: string
+  responses:
+    InvalidInput:
+      description: invalid input, or request failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiCallRc'
+    ObjectNotFound:
+      description: object not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiCallRc'
+    OperationFailed:
+      description: operation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiCallRc'
+  schemas:
+    ApiCallRc:
+      type: object
+      required:
+      - ret_code
+      - message
+      properties:
+        ret_code:
+          type: integer
+          description: A masked error number
+        message:
+          type: string
+          example: Operation result.
+        cause:
+          type: string
+          description: Cause of the error
+        details:
+          type: string
+          description: Details to the error message
+        correction:
+          type: string
+          description: Possible correction options
+        error_report_ids:
+          type: array
+          description: List of error report ids related to this api call return code.
+          items:
+            type: string
+        obj_refs:
+          type: object
+          description: Map of objection that where involved by the operation.
+    Node:
+      type: object
+      required:
+      - name
+      - type
+      properties:
+        name:
+          type: string
+          example: nodeA
+        type:
+          type: string
+          example: Satellite
+          enum:
+          - Controller
+          - Satellite
+          - Combined
+          - Auxiliary
+          - SWORDFISH_TARGET
+        flags:
+          type: array
+          items:
+            type: string
+        props:
+          $ref: '#/components/schemas/Properties'
+        net_interfaces:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetInterface'
+        connection_status:
+          type: string
+          example: ONLINE
+          description: |
+            Enum describing the current connection status.
+          enum:
+          - OFFLINE
+          - CONNECTED
+          - ONLINE
+          - VERSION_MISMATCH
+          - HOSTNAME_MISMATCH
+          - FULL_SYNC_FAILED
+          - AUTHENTICATION_ERROR
+          - UNKNOWN
+    NetInterface:
+      type: object
+      required:
+      - name
+      - address
+      properties:
+        name:
+          type: string
+          example: default
+        address:
+          type: string
+          example: 10.0.0.2
+        stlt_port:
+          type: integer
+          example: 3366
+        stlt_encryption_type:
+          type: string
+          example: Plain
+          enum:
+          - Plain
+          - SSL
+    Properties:
+      type: object
+      required:
+      - key
+      - value
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+    Storage-Pool:
+      type: object
+      required:
+      - storage_pool_name
+      - driver
+      properties:
+        storage_pool_name:
+          type: string
+          example: DfltStorPool
+        node_name:
+          type: string
+        driver:
+          type: string
+          example: LvmDriver
+          enum:
+          - LvmDriver
+          - LvmThinDriver
+          - ZfsDriver
+          - ZfsThinDriver
+          - DisklessDriver
+          - SwordfishTargetDriver
+          - SwordfishInitiatorDriver
+        props:
+          $ref: '#/components/schemas/Properties'
+        static_traits:
+          type: object
+          properties:
+            key:
+              type: string
+            value:
+              type: string
+          description: read only
+        free_capacity:
+          type: integer
+          format: int64
+          example: 882894848
+          description: Kibi - read only
+        total_capacity:
+          type: integer
+          format: int64
+          example: 1056964608
+          description: Kibi - read only
+        free_space_mgr_name:
+          type: string
+          example: drbd1:myfastpool
+          description: read only
+    Resource-definition:
+      type: object
+      properties:
+        rsc_name:
+          type: string
+          example: rsc1
+        port:
+          type: string
+          example: 7000
+          description: used drbd port
+        secret:
+          type: string
+          example: 7sqCWjvGmwAiV5kzg3VF
+          description: drbd resource secret
+        props:
+          $ref: '#/components/schemas/Properties'
+        is_down:
+          type: boolean
+          example: false
+    Volume-definition:
+      type: object
+      required:
+      - size
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int64
+          description: Size of the volume in Kibi.
+        minor_number:
+          type: integer
+          format: int32
+        props:
+          $ref: '#/components/schemas/Properties'
+        flags:
+          type: array
+          items:
+            type: string
+    Resource:
+      type: object
+      properties:
+        name:
+          type: string
+          example: rsc1
+        node_name:
+          type: string
+          example: nodeA
+        node_id:
+          type: integer
+          format: int32
+        override_node_id:
+          type: boolean
+        props:
+          $ref: '#/components/schemas/Properties'
+        flags:
+          type: array
+          items:
+            type: string
+        state:
+          type: object
+          properties:
+            in_use:
+              type: boolean
+    Volume:
+      type: object
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        minor_number:
+          type: integer
+          format: int32
+        device_path:
+          type: string
+        meta_disk:
+          type: string
+        storage_pool:
+          type: string
+        storage_pool_driver:
+          type: string
+        storage_pool_props:
+          $ref: '#/components/schemas/Properties'
+        allocated_size:
+          type: integer
+          format: uint64
+        usable_size:
+          type: integer
+          format: uint64
+        props:
+          $ref: '#/components/schemas/Properties'
+        flags:
+          type: array
+          items:
+            type: string
+        state:
+          $ref: '#/components/schemas/VolumeState'
+    VolumeState:
+      type: object
+      properties:
+        disk_state:
+          type: string
+    AutoPlaceRequest:
+      type: object
+      properties:
+        diskless_on_remaining:
+          type: boolean
+          default: false
+        select_filter:
+          $ref: '#/components/schemas/AutoSelectFilter'
+    AutoSelectFilter:
+      type: object
+      properties:
+        place_count:
+          type: integer
+          format: uint32
+        storage_pool:
+          type: string
+        not_place_with_rsc:
+          type: array
+          items:
+            type: string
+        not_place_with_rsc_regex:
+          type: string
+        replicas_on_same:
+          type: array
+          items:
+            type: string
+        replicas_on_different:
+          type: array
+          items:
+            type: string
+    ControllerVersion:
+      type: object
+      properties:
+        version:
+          type: string
+        git_hash:
+          type: string
+        build_time:
+          type: string
+    ErrorReport:
+      type: object
+      example:
+        node_name: Controller
+        error_time: 1536827504594
+        filename: ErrorReport-5B9A15B7-00000-000000.log
+      required:
+      - error_time
+      properties:
+        node_name:
+          type: string
+        error_time:
+          type: integer
+          format: uint64
+        filename:
+          type: string
+          description: |
+            Filename of the error report on the server.
+
+            Format is:
+            ```ErrorReport-{instanceid}-{nodeid}-{squencenumber}.log```
+        text:
+          type: string
+          description: Contains the full text of the error report file.
+    KeyValueStore:
+      type: object
+      properties:
+        name:
+          type: string
+          description: name of the key value store
+        props:
+          $ref: '#/components/schemas/Properties'
+    ResourceConnection:
+      type: object
+      properties:
+        node_a:
+          type: string
+          description: source node of the connection
+        node_b:
+          type: string
+          description: target node of the connection
+        props:
+          $ref: '#/components/schemas/Properties'
+        flags:
+          type: array
+          items:
+            type: string
+        port:
+          type: integer
+    Snapshot:
+      type: object
+      properties:
+        name:
+          type: string
+        resource_name:
+          type: string
+        nodes:
+          type: array
+          items:
+            type: string
+        props:
+          $ref: '#/components/schemas/Properties'
+        flags:
+          type: array
+          items:
+            type: string
+        volume_definitions:
+          $ref: '#/components/schemas/SnapshotVolumeDefinition'
+    SnapshotVolumeDefinition:
+      type: object
+      properties:
+        volume_number:
+          type: integer
+          format: uint32
+        size:
+          type: integer
+          format: uint64
+          description: Volume size in KiB
+    SnapshotRestore:
+      type: object
+      required:
+      - to_resource
+      properties:
+        to_resource:
+          type: string
+          description: Resource where to restore the snapshot
+          example: rsc2
+        nodes:
+          type: array
+          items:
+            type: string
+          description: List of nodes where to place the restored snapshot

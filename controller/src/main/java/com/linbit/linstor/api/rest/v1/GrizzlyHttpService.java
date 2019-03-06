@@ -11,8 +11,13 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Injector;
+import org.glassfish.grizzly.http.Method;
+import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.Request;
+import org.glassfish.grizzly.http.server.Response;
 import org.glassfish.grizzly.http.server.accesslog.AccessLogBuilder;
+import org.glassfish.grizzly.http.util.HttpStatus;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -20,6 +25,10 @@ public class GrizzlyHttpService implements SystemService
 {
     private final HttpServer httpServer;
     private ServiceName instanceName;
+
+    private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
+        "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/1.0.0\">Documentation</a>" +
+        "</body></html>";
 
     public GrizzlyHttpService(Injector injector, Path logDirectory, String listenAddress, int port)
     {
@@ -30,6 +39,26 @@ public class GrizzlyHttpService implements SystemService
             URI.create(String.format("http://%s:%d/v1/", listenAddress, port)),
             resourceConfig,
             false
+        );
+
+        httpServer.getServerConfiguration().addHttpHandler(
+            new HttpHandler()
+            {
+                @Override
+                public void service(Request request, Response response) throws Exception
+                {
+                    if (request.getMethod() == Method.GET && request.getHttpHandlerPath().equals("/"))
+                    {
+                        response.setContentType("text/html");
+                        response.setContentLength(INDEX_CONTENT.length());
+                        response.getWriter().write(INDEX_CONTENT);
+                    }
+                    else
+                    {
+                        response.setStatus(HttpStatus.NOT_FOUND_404);
+                    }
+                }
+            }
         );
 
         final AccessLogBuilder builder = new AccessLogBuilder(logDirectory.resolve("rest-access.log").toFile());
