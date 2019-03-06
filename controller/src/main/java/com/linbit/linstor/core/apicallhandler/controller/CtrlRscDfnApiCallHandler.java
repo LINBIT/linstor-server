@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -29,8 +30,10 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
@@ -45,6 +48,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.utils.UuidUtils;
+
+import static com.linbit.linstor.api.ApiConsts.API_UUID_NAME_PREFIX;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
@@ -111,6 +117,7 @@ public class CtrlRscDfnApiCallHandler
 
     public ApiCallRc createResourceDefinition(
         String rscNameStr,
+        byte[] extName,
         Integer portInt,
         String secret,
         String transportTypeStr,
@@ -137,6 +144,7 @@ public class CtrlRscDfnApiCallHandler
 
             ResourceDefinitionData rscDfn = createRscDfn(
                 rscNameStr,
+                extName,
                 transportTypeStr,
                 portInt,
                 secret,
@@ -148,7 +156,7 @@ public class CtrlRscDfnApiCallHandler
 
             List<VolumeDefinitionData> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
 
-            resourceDefinitionRepository.put(apiCtx, rscDfn.getName(), rscDfn);
+            resourceDefinitionRepository.put(apiCtx, rscDfn);
 
             ctrlTransactionHelper.commit();
 
@@ -331,11 +339,13 @@ public class CtrlRscDfnApiCallHandler
 
     private ResourceDefinitionData createRscDfn(
         String rscNameStr,
+        byte[] extName,
         String transportTypeStr,
         Integer portInt,
         String secret,
         List<DeviceLayerKind> layerStack
     )
+        throws InvalidNameException
     {
         TransportType transportType;
         if (transportTypeStr == null || transportTypeStr.trim().equals(""))
@@ -356,7 +366,60 @@ public class CtrlRscDfnApiCallHandler
                 ), unknownValueExc);
             }
         }
-        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
+
+        if (rscNameStr == null)
+        {
+            throw new ImplementationError("Resource name must not be null!");
+        }
+
+        ResourceName rscName;
+        if (!rscNameStr.equals(""))
+        {
+            if (extName != null && extName.length != 0)
+            {
+                throw new ApiException("Either a resource name or an external name must be present, but not both!");
+            }
+            else
+            {
+                rscName = LinstorParsingUtils.asRscName(rscNameStr);
+            }
+        }
+        else
+        {
+            if (extName == null)
+            {
+                throw new ApiException("Either a resource name or an external name must be present!");
+            }
+            else if (extName.length == 0)
+            {
+                String uuidStr = API_UUID_NAME_PREFIX + UuidUtils.asUuid(extName).toString().toUpperCase();
+                rscName = new ResourceName(uuidStr);
+            }
+            else
+            {
+                rscName = ApiUtils.createResourceName(extName);
+                try
+                {
+                    if (resourceDefinitionRepository.getMapForViewExtName(peerAccCtx.get()).containsKey(extName))
+                    {
+                        throw new ApiException("External name already taken!");
+                    }
+                    if (resourceDefinitionRepository.getMapForView(peerAccCtx.get()).containsKey(rscName))
+                    {
+                        String uuidStr = API_UUID_NAME_PREFIX + UUID.randomUUID().toString().toUpperCase();
+                        rscName = new ResourceName(uuidStr);
+                    }
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    throw new ApiAccessDeniedException(
+                        accDeniedExc,
+                        "getMapForView " + getRscDfnDescriptionInline(rscName.toString()),
+                        ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+                    );
+                }
+            }
+        }
 
         ResourceDefinitionData rscDfn;
         try
@@ -364,6 +427,7 @@ public class CtrlRscDfnApiCallHandler
             rscDfn = resourceDefinitionDataFactory.create(
                 peerAccCtx.get(),
                 rscName,
+                extName,
                 portInt,
                 null, // RscDfnFlags
                 secret,

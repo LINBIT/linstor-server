@@ -55,6 +55,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // Resource name
     private final ResourceName resourceName;
 
+    // User suggested name
+    private final byte[] externalName;
+
     // Volumes of the resource
     private final TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
 
@@ -85,6 +88,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         UUID objIdRef,
         ObjectProtection objProtRef,
         ResourceName resName,
+        byte[] extName,
         long initialFlags,
         List<DeviceLayerKind> layerStackRef,
         ResourceDefinitionDataDatabaseDriver dbDriverRef,
@@ -106,8 +110,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         resourceName = resName;
+        externalName = extName;
         dbDriver = dbDriverRef;
-
         volumeMap = transObjFactory.createTransactionMap(vlmDfnMapRef, null);
         resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
         snapshotDfnMap = transObjFactory.createTransactionMap(snapshotDfnMapRef, null);
@@ -153,6 +157,13 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         checkDeleted();
         return resourceName;
+    }
+
+    @Override
+    public byte[] getExternalName()
+    {
+        checkDeleted();
+        return externalName;
     }
 
     @Override
@@ -452,9 +463,14 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         }
     }
 
+    public boolean isDeleted()
+    {
+        return deleted.get();
+    }
+
     private void checkDeleted()
     {
-        if (deleted.get())
+        if (isDeleted())
         {
             throw new AccessToDeletedDataException("Access to deleted resource definition");
         }
@@ -487,6 +503,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return new RscDfnPojo(
             getUuid(),
             getName().getDisplayName(),
+            getExternalName(),
             getFlags().getFlagsBits(accCtx),
             getProps(accCtx).map(),
             vlmDfnList,

@@ -12,6 +12,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -29,19 +30,24 @@ import java.util.Map;
 public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataDatabaseDriver
 {
     private static final String TBL_NODE_CON_DFN = DbConstants.TBL_NODE_CONNECTIONS;
-
     private static final String UUID = DbConstants.UUID;
     private static final String NODE_SRC = DbConstants.NODE_NAME_SRC;
     private static final String NODE_DST = DbConstants.NODE_NAME_DST;
+    private static final String[] NODE_CON_FIELDS = {
+        UUID,
+        NODE_SRC,
+        NODE_DST
+    };
 
     private static final String SELECT_ALL =
-        " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST  +
+        " SELECT " + StringUtils.join(", ", NODE_CON_FIELDS) +
         " FROM " + TBL_NODE_CON_DFN;
 
     private static final String INSERT =
         " INSERT INTO " + TBL_NODE_CON_DFN +
-        " (" + UUID + ", " + NODE_SRC + ", " + NODE_DST  + ")" +
-        " VALUES (?, ?, ?)";
+        " (" + StringUtils.join(", ", NODE_CON_FIELDS)  + ")" +
+        " VALUES (" + StringUtils.repeat("?", ", ", NODE_CON_FIELDS.length) + ")";
+
     private static final String DELETE =
         " DELETE FROM " + TBL_NODE_CON_DFN +
         " WHERE " + NODE_SRC + " = ? AND " +

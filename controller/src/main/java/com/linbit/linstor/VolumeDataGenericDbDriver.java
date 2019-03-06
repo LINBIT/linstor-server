@@ -34,37 +34,44 @@ import java.util.TreeMap;
 public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
 {
     private static final String TBL_VOL = DbConstants.TBL_VOLUMES;
-
     private static final String VOL_UUID = DbConstants.UUID;
     private static final String VOL_NODE_NAME = DbConstants.NODE_NAME;
     private static final String VOL_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String VOL_ID = DbConstants.VLM_NR;
     private static final String VOL_STOR_POOL = DbConstants.STOR_POOL_NAME;
     private static final String VOL_FLAGS = DbConstants.VLM_FLAGS;
+    private static final String[] VOL_FIELDS = {
+        VOL_UUID,
+        VOL_NODE_NAME,
+        VOL_RES_NAME,
+        VOL_ID,
+        VOL_STOR_POOL,
+        VOL_FLAGS
+    };
 
     private static final String SELECT_ALL =
-        " SELECT " + VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
-            VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_FLAGS +
+        " SELECT " + StringUtils.join(", ", VOL_FIELDS) +
         " FROM " + TBL_VOL;
 
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL +
-        " (" +
-            VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
-            VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_FLAGS +
-        ") VALUES (?, ?, ?, ?, ?, ?)";
+        " (" + StringUtils.join(", ", VOL_FIELDS) + ")" +
+        " VALUES (" + StringUtils.repeat("?", ", ", VOL_FIELDS.length) + ")";
+
     private static final String UPDATE_FLAGS =
         " UPDATE " + TBL_VOL +
         " SET " + VOL_FLAGS + " = ? " +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ? AND " +
                     VOL_ID        + " = ?";
+
     private static final String UPDATE_STOR_POOL =
         " UPDATE " + TBL_VOL +
             " SET "   + VOL_STOR_POOL + " = ? " +
             " WHERE " + VOL_NODE_NAME + " = ? AND " +
                         VOL_RES_NAME  + " = ? AND " +
                         VOL_ID        + " = ?";
+    
     private static final String DELETE =
         " DELETE FROM " + TBL_VOL +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +

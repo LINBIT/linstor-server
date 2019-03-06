@@ -48,6 +48,12 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
     }
 
     @Override
+    public byte[] getExternalName()
+    {
+        return rscDfn.getExternalName().toByteArray();
+    }
+
+    @Override
     public long getFlags()
     {
         return ResourceDefinition.RscDfnFlags.fromStringList(rscDfn.getRscDfnFlagsList());

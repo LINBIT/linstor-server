@@ -58,6 +58,7 @@ public class ResourceDefinitionDataControllerFactory
     public ResourceDefinitionData create(
         AccessContext accCtx,
         ResourceName rscName,
+        byte[] extName,
         Integer port,
         RscDfnFlags[] flags,
         String secret,
@@ -82,6 +83,7 @@ public class ResourceDefinitionDataControllerFactory
                 true
             ),
             rscName,
+            extName,
             StateFlagsBits.getMask(flags),
             layerStack,
             driver,

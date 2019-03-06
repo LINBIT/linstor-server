@@ -57,7 +57,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         resName = new ResourceName("TestResource");
         resPort = 9001;
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, new ArrayList<>()
+            SYS_CTX, resName, null, resPort, null, "secret", TransportType.IP, new ArrayList<>()
         );
 
         uuid = randomUUID();
@@ -117,6 +117,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.create(
             SYS_CTX,
             new ResourceName("TestResource2"),
+            null,
             resPort + 1, // prevent tcp-port-conflict
             null,
             "secret",

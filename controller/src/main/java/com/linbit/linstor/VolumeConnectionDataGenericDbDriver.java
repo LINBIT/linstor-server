@@ -13,6 +13,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
@@ -31,24 +32,27 @@ import java.util.Map;
 public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionDataDatabaseDriver
 {
     private static final String TBL_VOL_CON_DFN = DbConstants.TBL_VOLUME_CONNECTIONS;
-
     private static final String UUID = DbConstants.UUID;
     private static final String NODE_SRC = DbConstants.NODE_NAME_SRC;
     private static final String NODE_DST = DbConstants.NODE_NAME_DST;
     private static final String RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String VOL_NR = DbConstants.VLM_NR;
+    private static final String[] VOL_CON_FIELDS = {
+        UUID,
+        NODE_SRC,
+        NODE_DST,
+        RES_NAME,
+        VOL_NR
+    };
 
     private static final String SELECT_ALL =
-        " SELECT " + UUID + ", " + NODE_SRC + ", " + NODE_DST + ", " +
-            RES_NAME + ", " + VOL_NR +
+        " SELECT " + StringUtils.join(", ", VOL_CON_FIELDS) +
         " FROM "  + TBL_VOL_CON_DFN;
 
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL_CON_DFN +
-        " (" +
-            UUID + ", " + NODE_SRC + ", " + NODE_DST + ", " +
-            RES_NAME + ", " + VOL_NR +
-        ") VALUES (?, ?, ?, ?, ?)";
+        " (" + StringUtils.join(", ", VOL_CON_FIELDS) + ")" +
+        "VALUES ( " + StringUtils.repeat("?", ", ", VOL_CON_FIELDS.length) + " )";
 
     private static final String DELETE =
         " DELETE FROM " + TBL_VOL_CON_DFN +

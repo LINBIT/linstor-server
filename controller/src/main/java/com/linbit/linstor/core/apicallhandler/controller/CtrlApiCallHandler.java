@@ -209,15 +209,10 @@ public class CtrlApiCallHandler
 
     /**
      * Creates new resource definition
-     *
-     * @param resourceName
-     *            required
-     * @param port
-     *            optional
-     * @param protocolStringListRef
      */
     public ApiCallRc createResourceDefinition(
         String resourceName,
+        byte[] extName,
         Integer port,
         String secretRef,
         String transportType,
@@ -246,6 +241,7 @@ public class CtrlApiCallHandler
         {
             apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
                 resourceName,
+                extName,
                 port,
                 secret,
                 transportType,

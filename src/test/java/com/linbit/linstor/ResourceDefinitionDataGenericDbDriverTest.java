@@ -93,6 +93,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             resDfnUuid,
             resDfnObjProt,
             resName,
+            null,
             RscDfnFlags.DELETE.flagValue,
             new ArrayList<>(),
             driver,
@@ -132,6 +133,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
+            null,
             port,
             new RscDfnFlags[] {RscDfnFlags.DELETE},
             secret,
@@ -247,6 +249,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName2,
+            null,
             port + 1, // prevent tcp-port-conflict
             null,
             "secret",
@@ -272,7 +275,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         rscDfnMap.put(resName, resDfn);
 
         resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, port, null, "secret", transportType, new ArrayList<>()
+            SYS_CTX, resName, null, port, null, "secret", transportType, new ArrayList<>()
         );
     }
 }

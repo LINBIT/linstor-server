@@ -17,6 +17,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
 {
     private final UUID uuid;
     private final String name;
+    private final byte[] externalName;
     private final long flags;
     private final Map<String, String> props;
     private final List<VolumeDefinition.VlmDfnApi> vlmdfns;
@@ -25,6 +26,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
     public RscDfnPojo(
         final UUID uuidRef,
         final String nameRef,
+        final byte[] externalNameRef,
         final long flagsRef,
         final Map<String, String> propsRef,
         final List<VolumeDefinition.VlmDfnApi> vlmdfnsRef,
@@ -33,6 +35,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
     {
         uuid = uuidRef;
         name = nameRef;
+        externalName = externalNameRef;
         flags = flagsRef;
         props = propsRef;
         vlmdfns = vlmdfnsRef;
@@ -49,6 +52,12 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
     public String getResourceName()
     {
         return name;
+    }
+
+    @Override
+    public byte[] getExternalName()
+    {
+        return externalName;
     }
 
     @Override

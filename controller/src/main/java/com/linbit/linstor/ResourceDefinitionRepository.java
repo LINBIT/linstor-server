@@ -17,12 +17,18 @@ public interface ResourceDefinitionRepository extends ProtectedObject
     ResourceDefinitionData get(AccessContext accCtx, ResourceName nameRef)
         throws AccessDeniedException;
 
-    void put(AccessContext accCtx, ResourceName resourceName, ResourceDefinition resourceDefinition)
+    ResourceDefinitionData get(AccessContext accCtx, byte[] externalName)
         throws AccessDeniedException;
 
-    void remove(AccessContext accCtx, ResourceName resourceName)
+    void put(AccessContext accCtx, ResourceDefinition resourceDefinition)
+        throws AccessDeniedException;
+
+    void remove(AccessContext accCtx, ResourceName resourceName, byte[] externalName)
         throws AccessDeniedException;
 
     CoreModule.ResourceDefinitionMap getMapForView(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    CoreModule.ResourceDefinitionMapExtName getMapForViewExtName(AccessContext accCtx)
         throws AccessDeniedException;
 }

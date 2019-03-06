@@ -113,6 +113,7 @@ public class ResourceDefinitions
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.createResourceDefinition(
                 rscDfnCreate.resource_definition.name,
+                null, // TODO: ADD EXTERNAL NAME HERE ISTEAD OF NULL
                 rscDfnCreate.drbd_port,
                 rscDfnCreate.drbd_secret,
                 rscDfnCreate.drbd_transport_type,

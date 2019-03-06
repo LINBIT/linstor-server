@@ -63,6 +63,7 @@ public class ResourceDefinitionDataSatelliteFactory
                     uuid,
                     objectProtectionFactory.getInstance(accCtx, "", false),
                     rscName,
+                    null,
                     StateFlagsBits.getMask(initFlags),
                     new ArrayList<>(), // satellite does not care about the layer stack for new resources
                     // as every resource has already a complete tree of layerdata

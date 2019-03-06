@@ -105,12 +105,13 @@ public class DbConstants
     public static final String INET_TYPE     = "INET_TYPE";
 
     // RESOURCE_DEFINITIONS column names
-    public static final String RESOURCE_NAME     = "RESOURCE_NAME";
-    public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
-    public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
-    public static final String SECRET            = "SECRET";
-    public static final String TRANSPORT_TYPE    = "TRANSPORT_TYPE";
-    public static final String LAYER_STACK       = "LAYER_STACK";
+    public static final String RESOURCE_NAME            = "RESOURCE_NAME";
+    public static final String RESOURCE_DSP_NAME        = "RESOURCE_DSP_NAME";
+    public static final String RESOURCE_FLAGS           = "RESOURCE_FLAGS";
+    public static final String SECRET                   = "SECRET";
+    public static final String TRANSPORT_TYPE           = "TRANSPORT_TYPE";
+    public static final String LAYER_STACK              = "LAYER_STACK";
+    public static final String RESOURCE_EXTERNAL_NAME   = "RESOURCE_EXTERNAL_NAME";
 
     // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";

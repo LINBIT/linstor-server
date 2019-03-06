@@ -16,6 +16,7 @@ import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -33,33 +34,42 @@ import java.util.TreeMap;
 public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
 {
     private static final String TBL_NSP = DbConstants.TBL_NODE_STOR_POOL;
-
     private static final String SP_UUID = DbConstants.UUID;
     private static final String SP_NODE = DbConstants.NODE_NAME;
     private static final String SP_POOL = DbConstants.POOL_NAME;
     private static final String SP_DRIVER = DbConstants.DRIVER_NAME;
     private static final String SP_FSM_NAME = DbConstants.FREE_SPACE_MGR_NAME;
     private static final String SP_FSM_DSP_NAME = DbConstants.FREE_SPACE_MGR_DSP_NAME;
+    private static final String[] SP_FIELDS = {
+        SP_UUID,
+        SP_NODE,
+        SP_POOL,
+        SP_DRIVER,
+        SP_FSM_NAME,
+        SP_FSM_DSP_NAME
+    };
 
     private static final String SELECT_ALL =
-        " SElECT " + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER + ", " +
-                     SP_FSM_NAME + ", " + SP_FSM_DSP_NAME +
+        " SELECT " + StringUtils.join(", ", SP_FIELDS) +
         " FROM " + TBL_NSP;
+
     private static final String SP_SELECT_BY_NODE =
         SELECT_ALL +
         " WHERE " + SP_NODE + " = ?";
+
     private static final String SP_SELECT_BY_NODE_AND_SP =
         SP_SELECT_BY_NODE +
         " AND "  + SP_POOL + " = ?";
+
     private static final String SELECT_ALL_FSM =
         " SELECT DISTINCT " + SP_FSM_DSP_NAME +
         " FROM " + TBL_NSP;
 
     private static final String SP_INSERT =
         " INSERT INTO " + TBL_NSP +
-        " (" + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER + ", " +
-               SP_FSM_NAME + ", " + SP_FSM_DSP_NAME + ")" +
-        " VALUES (?, ?, ?, ?, ?, ?)";
+        " (" + StringUtils.join(", ", SP_FIELDS) + ")" +
+        " VALUES (" + StringUtils.repeat("?", ", ", SP_FIELDS.length) + ")";
+
     private static final String SP_DELETE =
         " DELETE FROM " + TBL_NSP +
         " WHERE " + SP_NODE + " = ? AND " +

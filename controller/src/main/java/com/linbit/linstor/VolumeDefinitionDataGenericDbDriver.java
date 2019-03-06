@@ -37,34 +37,40 @@ import java.util.TreeMap;
 public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionDataDatabaseDriver
 {
     private static final String TBL_VOL_DFN = DbConstants.TBL_VOLUME_DEFINITIONS;
-
     private static final String VD_UUID = DbConstants.UUID;
     private static final String VD_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String VD_ID = DbConstants.VLM_NR;
     private static final String VD_SIZE = DbConstants.VLM_SIZE;
     private static final String VD_FLAGS = DbConstants.VLM_FLAGS;
+    private static final String[] VOL_DFN_FIELDS = {
+        VD_UUID,
+        VD_RES_NAME,
+        VD_ID,
+        VD_SIZE,
+        VD_FLAGS
+    };
 
     private static final String VD_SELECT_ALL =
-        " SELECT " + VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " + VD_SIZE + ", " +
-                     VD_FLAGS +
+        " SELECT " + StringUtils.join(", ", VOL_DFN_FIELDS) +
         " FROM " + TBL_VOL_DFN;
 
     private static final String VD_INSERT =
         " INSERT INTO " + TBL_VOL_DFN +
-        " (" +
-            VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " +
-            VD_SIZE + ", " +  VD_FLAGS +
-        ") VALUES (?, ?, ?, ?, ?)";
+        " (" + StringUtils.join(", ", VOL_DFN_FIELDS) + ")" +
+        "VALUES ( " + StringUtils.repeat("?", ", ", VOL_DFN_FIELDS.length) + " )";
+
     private static final String VD_UPDATE_FLAGS =
         " UPDATE " + TBL_VOL_DFN +
         " SET " + VD_FLAGS + " = ? " +
         " WHERE " + VD_RES_NAME + " = ? AND " +
                     VD_ID       + " = ?";
+
     private static final String VD_UPDATE_SIZE =
         " UPDATE " + TBL_VOL_DFN +
         " SET " + VD_SIZE + " = ? " +
         " WHERE " + VD_RES_NAME + " = ? AND " +
                     VD_ID       + " = ?";
+
     private static final String VD_DELETE =
         " DELETE FROM " + TBL_VOL_DFN +
         " WHERE " + VD_RES_NAME + " = ? AND " +

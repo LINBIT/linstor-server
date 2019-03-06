@@ -337,6 +337,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             ResourceDefinitionData resDfn = resourceDefinitionDataFactory.create(
                 SYS_CTX,
                 resName,
+                null,
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",

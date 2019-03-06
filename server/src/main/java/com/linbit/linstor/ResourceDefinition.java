@@ -34,6 +34,8 @@ public interface ResourceDefinition
 
     ResourceName getName();
 
+    byte[] getExternalName();
+
     int getVolumeDfnCount(AccessContext accCtx)
         throws AccessDeniedException;
 
@@ -213,6 +215,7 @@ public interface ResourceDefinition
     {
         UUID getUuid();
         String getResourceName();
+        byte[] getExternalName();
         long getFlags();
         Map<String, String> getProps();
         List<VolumeDefinition.VlmDfnApi> getVlmDfnList();

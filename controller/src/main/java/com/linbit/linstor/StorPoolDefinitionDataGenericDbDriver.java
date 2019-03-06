@@ -13,6 +13,7 @@ import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -30,22 +31,28 @@ import java.util.UUID;
 public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinitionDataDatabaseDriver
 {
     private static final String TBL_SPD = DbConstants.TBL_STOR_POOL_DEFINITIONS;
-
     private static final String SPD_UUID = DbConstants.UUID;
     private static final String SPD_NAME = DbConstants.POOL_NAME;
     private static final String SPD_DSP_NAME = DbConstants.POOL_DSP_NAME;
+    private static final String[] SPD_FIELDS = {
+        SPD_UUID,
+        SPD_NAME,
+        SPD_DSP_NAME
+    };
+
+    private static final String SPD_SELECT_ALL =
+        " SELECT " + StringUtils.join(", ", SPD_FIELDS) +
+        " FROM " + TBL_SPD;
 
     private static final String SPD_SELECT =
-        " SELECT " + SPD_UUID + ", " + SPD_NAME + ", " + SPD_DSP_NAME +
-        " FROM " + TBL_SPD +
+        SPD_SELECT_ALL +
         " WHERE " + SPD_NAME + " = ?";
-    private static final String SPD_SELECT_ALL =
-        " SELECT " + SPD_UUID + ", " + SPD_NAME + ", " + SPD_DSP_NAME +
-        " FROM " + TBL_SPD;
+
     private static final String SPD_INSERT =
         " INSERT INTO " + TBL_SPD +
-        " (" + SPD_UUID + ", " + SPD_NAME + ", " + SPD_DSP_NAME + ")" +
-        " VALUES (?, ?, ?)";
+        " (" + StringUtils.join(", ", SPD_FIELDS) + ")" +
+        " VALUES (" + StringUtils.repeat("?", ", ", SPD_FIELDS.length) + ")";
+
     private static final String SPD_DELETE =
         " DELETE FROM " + TBL_SPD +
         " WHERE " + SPD_NAME + " = ?";

@@ -83,6 +83,7 @@ public class ApplySnapshot implements ApiCall
                 new RscDfnPojo(
                     UUID.fromString(snapshotData.getRscDfnUuid()),
                     snapshotData.getRscName(),
+                    null,
                     snapshotData.getRscDfnFlags(),
                     ProtoMapUtils.asMap(snapshotData.getRscDfnPropsList()),
                     null,

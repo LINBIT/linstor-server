@@ -38,32 +38,42 @@ import com.linbit.utils.StringUtils;
 public class ResourceConnectionDataGenericDbDriver implements ResourceConnectionDataDatabaseDriver
 {
     private static final String TBL_RES_CON_DFN = DbConstants.TBL_RESOURCE_CONNECTIONS;
-
     private static final String UUID = DbConstants.UUID;
+    private static final String RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String NODE_SRC = DbConstants.NODE_NAME_SRC;
     private static final String NODE_DST = DbConstants.NODE_NAME_DST;
-    private static final String RES_NAME = DbConstants.RESOURCE_NAME;
-    private static final String FLAGS = "FLAGS";
-    private static final String PORT = "TCP_PORT";
+    private static final String FLAGS = DbConstants.FLAGS;
+    private static final String PORT = DbConstants.TCP_PORT;
+    private static final String[] RSC_CON_FIELDS = {
+        UUID,
+        RES_NAME,
+        NODE_SRC,
+        NODE_DST,
+        FLAGS,
+        PORT
+    };
 
     private static final String SELECT_ALL =
-        " SELECT " + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST  + ", " + FLAGS + ", " + PORT +
+        " SELECT " + StringUtils.join(", ", RSC_CON_FIELDS) +
         " FROM " + TBL_RES_CON_DFN;
 
     private static final String INSERT =
         " INSERT INTO " + TBL_RES_CON_DFN +
-        " (" + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST + ", " + FLAGS + ", " + PORT + ")" +
-        " VALUES (?, ?, ?, ?, ?, ?)";
+        " (" + StringUtils.join(", ", RSC_CON_FIELDS) + ")" +
+        " VALUES (" + StringUtils.repeat("?", ", ", RSC_CON_FIELDS.length) + ")";
+
     private static final String DELETE =
         " DELETE FROM " + TBL_RES_CON_DFN +
         " WHERE " + NODE_SRC + " = ? AND " +
                    NODE_DST + " = ? AND " +
                    RES_NAME + " = ?";
+
     private static final String RES_UPDATE_FLAG =
         " UPDATE " + TBL_RES_CON_DFN +
             " SET " + FLAGS + " = ? " +
             " WHERE " + NODE_SRC + " = ? AND " + NODE_DST + " = ? AND " +
             RES_NAME      + " = ?";
+
     private static final String RES_UPDATE_PORT =
         " UPDATE " + TBL_RES_CON_DFN +
             " SET " + PORT + " = ? " +

@@ -7,7 +7,6 @@ import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -23,9 +22,18 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.Pair;
 
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_STACK;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_DSP_NAME;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_EXTERNAL_NAME;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_FLAGS;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_RESOURCE_DEFINITIONS;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import javax.sql.rowset.serial.SerialBlob;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,37 +46,45 @@ import java.util.TreeMap;
 @Singleton
 public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinitionDataDatabaseDriver
 {
-    private static final String TBL_RES_DEF = DbConstants.TBL_RESOURCE_DEFINITIONS;
+    private static final String TBL_RES_DEF = TBL_RESOURCE_DEFINITIONS;
+    private static final String RD_UUID = UUID;
+    private static final String RD_NAME = RESOURCE_NAME;
+    private static final String RD_DSP_NAME = RESOURCE_DSP_NAME;
+    private static final String RD_FLAGS = RESOURCE_FLAGS;
+    private static final String RD_LAYERS = LAYER_STACK;
+    private static final String RD_EXT_NAME = RESOURCE_EXTERNAL_NAME;
+    private static final String[] RSC_DFN_FIELDS = {
+        RD_UUID,
+        RD_NAME,
+        RD_DSP_NAME,
+        RD_FLAGS,
+        RD_LAYERS,
+        RD_EXT_NAME
+    };
 
-    private static final String RD_UUID = DbConstants.UUID;
-    private static final String RD_NAME = DbConstants.RESOURCE_NAME;
-    private static final String RD_DSP_NAME = DbConstants.RESOURCE_DSP_NAME;
-    private static final String RD_FLAGS = DbConstants.RESOURCE_FLAGS;
-    private static final String RD_LAYERS = DbConstants.LAYER_STACK;
+    private static final String RD_SELECT_ALL =
+        " SELECT " + StringUtils.join(", ", RSC_DFN_FIELDS) +
+        " FROM " + TBL_RES_DEF;
 
     private static final String RD_SELECT =
-        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-                     RD_FLAGS + ", " + RD_LAYERS +
-        " FROM " + TBL_RES_DEF +
+        RD_SELECT_ALL +
         " WHERE " + RD_NAME + " = ?";
-    private static final String RD_SELECT_ALL =
-        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-                     RD_FLAGS + ", " + RD_LAYERS +
-        " FROM " + TBL_RES_DEF;
+
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
-        " (" + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-               RD_FLAGS + ", " + RD_LAYERS +
-        " )" +
-        " VALUES (?, ?, ?, ?, ?)";
+        " (" + StringUtils.join(", ", RSC_DFN_FIELDS) + ")" +
+        " VALUES ( " + StringUtils.repeat("?", ", ", RSC_DFN_FIELDS.length) + " )";
+
     private static final String RD_UPDATE_FLAGS =
         " UPDATE " + TBL_RES_DEF +
         " SET " + RD_FLAGS + " = ? " +
         " WHERE " + RD_NAME + " = ?";
+
     private static final String UPDATE_LAYER_STACK =
        " UPDATE " + TBL_RES_DEF +
        " SET " + RD_LAYERS + " = ? " +
        " WHERE " + RD_NAME + " = ?";
+
     private static final String RD_DELETE =
         " DELETE FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
@@ -120,7 +136,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 5,
                 GenericDbDriver.asStrList(resourceDefinition.getLayerStack(dbCtx))
             );
-
+            stmt.setBlob(6, new SerialBlob(resourceDefinition.getExternalName()));
             stmt.executeUpdate();
 
             errorReporter.logTrace("ResourceDefinition created %s", getId(resourceDefinition));
@@ -197,6 +213,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             java.util.UUID.fromString(resultSet.getString(RD_UUID)),
             objProt,
             resourceName,
+            resultSet.getString(RD_EXT_NAME).getBytes(),
             resultSet.getLong(RD_FLAGS),
             GenericDbDriver.asDevLayerKindList(GenericDbDriver.getAsStringList(resultSet, RD_LAYERS)),
             this,

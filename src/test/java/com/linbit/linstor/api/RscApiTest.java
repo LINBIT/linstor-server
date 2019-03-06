@@ -119,6 +119,7 @@ public class RscApiTest extends ApiTestBase
         testRscDfn = resourceDefinitionDataFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testRscName,
+            null,
             testRscDfnPort,
             testRscDfnFlags,
             testRscDfnSecret,

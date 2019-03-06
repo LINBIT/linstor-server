@@ -63,6 +63,7 @@ public class CreateResourceDefinition implements ApiCall
 
         ApiCallRc apiCallRc = apiCallHandler.createResourceDefinition(
             rscDfn.getRscName(),
+            rscDfn.getExternalName().toByteArray(),
             msgCreateRscDfn.hasDrbdPort() ? msgCreateRscDfn.getDrbdPort() : null,
             msgCreateRscDfn.hasDrbdSecret() ? msgCreateRscDfn.getDrbdSecret() : null,
             msgCreateRscDfn.hasDrbdTransportType() ? msgCreateRscDfn.getDrbdTransportType() : null,

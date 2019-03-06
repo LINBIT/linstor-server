@@ -13,6 +13,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
@@ -30,25 +31,30 @@ import java.util.Map;
 public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataDatabaseDriver
 {
     private static final String TBL_SNAPSHOT = DbConstants.TBL_SNAPSHOT_VOLUMES;
-
     private static final String SV_UUID = DbConstants.UUID;
     private static final String SV_NODE_NAME = DbConstants.NODE_NAME;
     private static final String SV_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String SV_SNAPSHOT_NAME = DbConstants.SNAPSHOT_NAME;
     private static final String SV_VLM_NR = DbConstants.VLM_NR;
     private static final String SV_STOR_POOL_NAME = DbConstants.STOR_POOL_NAME;
+    private static final String[] SV_FIELDS = {
+        SV_UUID,
+        SV_NODE_NAME,
+        SV_RES_NAME,
+        SV_SNAPSHOT_NAME,
+        SV_VLM_NR,
+        SV_STOR_POOL_NAME
+    };
 
     private static final String SV_SELECT_ALL =
-        " SELECT " + SV_UUID + ", " + SV_NODE_NAME + ", " + SV_RES_NAME + ", " + SV_SNAPSHOT_NAME + ", " +
-            SV_VLM_NR + ", " + SV_STOR_POOL_NAME +
+        " SELECT " + StringUtils.join(", ", SV_FIELDS) +
         " FROM " + TBL_SNAPSHOT;
 
     private static final String SV_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT +
-        " (" +
-            SV_UUID + ", " + SV_NODE_NAME + ", " + SV_RES_NAME + ", " + SV_SNAPSHOT_NAME + ", " +
-            SV_VLM_NR + ", " + SV_STOR_POOL_NAME +
-        ") VALUES (?, ?, ?, ?, ?, ?)";
+        " (" + StringUtils.join(", ", SV_FIELDS) + ")" +
+        " VALUES (" + StringUtils.repeat("?", ", ", SV_FIELDS.length) + ")";
+
     private static final String SV_DELETE =
         " DELETE FROM " + TBL_SNAPSHOT +
         " WHERE " + SV_NODE_NAME + " = ? AND " +

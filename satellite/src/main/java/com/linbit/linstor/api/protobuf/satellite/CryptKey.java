@@ -2,7 +2,6 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
@@ -34,7 +33,7 @@ public class CryptKey implements ApiCall
         MsgIntCryptKey protoMsg = MsgIntCryptKey.parseDelimitedFrom(msgDataIn);
 
         apiCallHandler.setCryptKey(
-            ProtoDeserializationUtils.extractByteArray(protoMsg.getCryptKey()),
+            protoMsg.getCryptKey().toByteArray(),
             protoMsg.getFullSyncId(),
             protoMsg.getUpdateId()
         );

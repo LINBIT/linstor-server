@@ -831,6 +831,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             new ResourceName(rscNameStr),
+            null,
             tcpPort,
             null,
             "NotTellingYou",

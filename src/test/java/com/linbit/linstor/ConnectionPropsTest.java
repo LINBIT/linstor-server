@@ -80,6 +80,7 @@ public class ConnectionPropsTest extends GenericDbBase
         resDfn = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
+            null,
             resDfnPort,
             null,
             "secret",

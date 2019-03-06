@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -16,13 +17,16 @@ import javax.inject.Singleton;
 @Singleton
 public class ResourceDefinitionProtectionRepository implements ResourceDefinitionRepository
 {
-    private final CoreModule.ResourceDefinitionMap resourceDefinitionMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final CoreModule.ResourceDefinitionMapExtName rscDfnMapExtName;
     private ObjectProtection resourceDefinitionMapObjProt;
 
     @Inject
-    public ResourceDefinitionProtectionRepository(CoreModule.ResourceDefinitionMap resourceDefinitionMapRef)
+    public ResourceDefinitionProtectionRepository(CoreModule.ResourceDefinitionMap rscDfnMapRef,
+                                                  CoreModule.ResourceDefinitionMapExtName rscDfnMapExtNameRef)
     {
-        resourceDefinitionMap = resourceDefinitionMapRef;
+        rscDfnMap = rscDfnMapRef;
+        rscDfnMapExtName = rscDfnMapExtNameRef;
     }
 
     public void setObjectProtection(ObjectProtection resourceDefinitionMapObjProtRef)
@@ -50,42 +54,70 @@ public class ResourceDefinitionProtectionRepository implements ResourceDefinitio
     }
 
     @Override
-    public ResourceDefinitionData get(
-        AccessContext accCtx,
-        ResourceName resourceName
-    )
+    public ResourceDefinitionData get(AccessContext accCtx, ResourceName resourceName)
         throws AccessDeniedException
     {
         checkProtSet();
         resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (ResourceDefinitionData) resourceDefinitionMap.get(resourceName);
+        return (ResourceDefinitionData) rscDfnMap.get(resourceName);
     }
 
     @Override
-    public void put(AccessContext accCtx, ResourceName resourceName, ResourceDefinition resourceDefinition)
+    public ResourceDefinitionData get(AccessContext accCtx, byte[] externalName)
+        throws AccessDeniedException
+    {
+        checkProtSet();
+        resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
+        return (ResourceDefinitionData) rscDfnMapExtName.get(externalName);
+    }
+
+    @Override
+    public void put(AccessContext accCtx, ResourceDefinition resourceDefinition)
         throws AccessDeniedException
     {
         checkProtSet();
         resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.CHANGE);
-        resourceDefinitionMap.put(resourceName, resourceDefinition);
+
+        ResourceDefinition rscDfn = rscDfnMap.put(resourceDefinition.getName(), resourceDefinition);
+        if (rscDfn != null)
+        {
+            throw new ImplementationError("Resource definition name already exists!");
+        }
+        if (resourceDefinition.getExternalName() != null)
+        {
+            rscDfnMapExtName.put(resourceDefinition.getExternalName(), resourceDefinition);
+        }
     }
 
+
     @Override
-    public void remove(AccessContext accCtx, ResourceName resourceName)
+    public void remove(AccessContext accCtx, ResourceName resourceName, byte[] externalName)
         throws AccessDeniedException
     {
         checkProtSet();
         resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.CHANGE);
-        resourceDefinitionMap.remove(resourceName);
+        rscDfnMap.remove(resourceName);
+        if (externalName != null)
+        {
+            rscDfnMapExtName.remove(externalName);
+        }
     }
 
-    @Override
     public CoreModule.ResourceDefinitionMap getMapForView(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkProtSet();
         resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return resourceDefinitionMap;
+        return rscDfnMap;
+    }
+
+    @Override
+    public CoreModule.ResourceDefinitionMapExtName getMapForViewExtName(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkProtSet();
+        resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
+        return rscDfnMapExtName;
     }
 
     private void checkProtSet()

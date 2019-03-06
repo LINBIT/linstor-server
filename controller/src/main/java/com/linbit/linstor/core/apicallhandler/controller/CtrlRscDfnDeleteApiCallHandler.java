@@ -312,12 +312,13 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private ApiCallRc commitDeleteRscDfnData(ResourceDefinitionData rscDfn)
     {
         ResourceName rscName = rscDfn.getName();
+        byte[] externalName = rscDfn.getExternalName();
         UUID rscDfnUuid = rscDfn.getUuid();
         String descriptionFirstLetterCaps = firstLetterCaps(getRscDfnDescriptionInline(rscName));
 
         delete(rscDfn);
 
-        removeResourceDefinitionPrivileged(rscName);
+        removeResourceDefinitionPriveleged(rscName, externalName);
         ctrlTransactionHelper.commit();
 
         return ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
@@ -479,11 +480,11 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
     }
 
-    private void removeResourceDefinitionPrivileged(ResourceName rscName)
+    private void removeResourceDefinitionPriveleged(ResourceName rscName, byte[] externalName)
     {
         try
         {
-            resourceDefinitionRepository.remove(apiCtx, rscName);
+            resourceDefinitionRepository.remove(apiCtx, rscName, externalName);
         }
         catch (AccessDeniedException exc)
         {

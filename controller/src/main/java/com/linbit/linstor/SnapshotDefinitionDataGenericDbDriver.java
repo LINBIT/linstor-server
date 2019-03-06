@@ -32,27 +32,34 @@ import java.util.TreeMap;
 public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinitionDataDatabaseDriver
 {
     private static final String TBL_SNAPSHOT_DFN = DbConstants.TBL_SNAPSHOT_DEFINITIONS;
-
     private static final String SD_UUID = DbConstants.UUID;
     private static final String SD_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String SD_NAME = DbConstants.SNAPSHOT_NAME;
     private static final String SD_DSP_NAME = DbConstants.SNAPSHOT_DSP_NAME;
     private static final String SD_FLAGS = DbConstants.SNAPSHOT_FLAGS;
+    private static final String[] SD_FIELDS = {
+        SD_UUID,
+        SD_RES_NAME,
+        SD_NAME,
+        SD_DSP_NAME,
+        SD_FLAGS
+    };
 
     private static final String SD_SELECT_ALL =
-        " SELECT " + SD_UUID + ", " + SD_RES_NAME + ", " + SD_NAME + ", " + SD_DSP_NAME + ", " + SD_FLAGS +
+        " SELECT " + StringUtils.join(", ", SD_FIELDS) +
         " FROM " + TBL_SNAPSHOT_DFN;
 
     private static final String SD_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT_DFN +
-        " (" +
-            SD_UUID + ", " + SD_RES_NAME + ", " + SD_NAME + ", " + SD_DSP_NAME + ", " +  SD_FLAGS +
-        ") VALUES (?, ?, ?, ?, ?)";
+        " (" + StringUtils.join(", ", SD_FIELDS) + ")" +
+        " VALUES (" + StringUtils.repeat("?", ", ", SD_FIELDS.length) + ")";
+
     private static final String SD_UPDATE_FLAGS =
         " UPDATE " + TBL_SNAPSHOT_DFN +
         " SET " + SD_FLAGS + " = ? " +
         " WHERE " + SD_RES_NAME + " = ? AND " +
             SD_NAME + " = ?";
+
     private static final String SD_DELETE =
         " DELETE FROM " + TBL_SNAPSHOT_DFN +
         " WHERE " + SD_RES_NAME + " = ? AND " +

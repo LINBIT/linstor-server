@@ -514,13 +514,17 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         ResourceDefinition.RscDfnApi rscDfnapi
     )
     {
-        return RscDfnOuterClass.RscDfn.newBuilder()
+        RscDfnOuterClass.RscDfn.Builder builder = RscDfnOuterClass.RscDfn.newBuilder()
             .setRscName(rscDfnapi.getResourceName())
             .setRscDfnUuid(rscDfnapi.getUuid().toString())
             .addAllVlmDfns(serializeVolumeDefinition(rscDfnapi.getVlmDfnList()))
             .addAllRscDfnProps(ProtoMapUtils.fromMap(rscDfnapi.getProps()))
-            .addAllLayerData(LayerObjectSerializer.serializeRscDfnLayerData(rscDfnapi))
-            .build();
+            .addAllLayerData(LayerObjectSerializer.serializeRscDfnLayerData(rscDfnapi));
+        if (rscDfnapi.getExternalName() != null)
+        {
+            builder.setExternalName(ByteString.copyFrom(rscDfnapi.getExternalName()));
+        }
+        return builder.build();
     }
 
     public static List<VlmDfnOuterClass.VlmDfn> serializeVolumeDefinition(

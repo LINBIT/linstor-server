@@ -140,6 +140,7 @@ public class ApplyRsc implements ApiCall
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
             UUID.fromString(rscDfn.getRscDfnUuid()),
             rscDfn.getRscName(),
+            rscDfn.getExternalName().toByteArray(),
             FlagsHelper.fromStringList(
                 ResourceDefinition.RscDfnFlags.class,
                 rscDfn.getRscDfnFlagsList()

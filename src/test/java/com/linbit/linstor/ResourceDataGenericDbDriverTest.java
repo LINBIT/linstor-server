@@ -72,6 +72,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         resDfn = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
+            null,
             resPort,
             null,
             "secret",

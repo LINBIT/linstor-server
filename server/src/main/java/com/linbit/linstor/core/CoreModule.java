@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -59,6 +60,7 @@ public class CoreModule extends AbstractModule
 
         bind(NodesMap.class).to(NodesMapImpl.class);
         bind(ResourceDefinitionMap.class).to(ResourceDefinitionMapImpl.class);
+        bind(ResourceDefinitionMapExtName.class).to(ResourceDefinitionMapExtNameImpl.class);
         bind(StorPoolDefinitionMap.class).to(StorPoolDefinitionMapImpl.class);
         bind(KeyValueStoreMap.class).to(KeyValueStoreMapImpl.class);
 
@@ -96,6 +98,10 @@ public class CoreModule extends AbstractModule
     {
     }
 
+    public interface ResourceDefinitionMapExtName extends Map<byte[], ResourceDefinition>
+    {
+    }
+
     public interface StorPoolDefinitionMap extends Map<StorPoolName, StorPoolDefinition>
     {
     }
@@ -127,6 +133,67 @@ public class CoreModule extends AbstractModule
         public ResourceDefinitionMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
             super(new TreeMap<>(), null, transMgrProvider);
+        }
+    }
+
+    @Singleton
+    public static class ResourceDefinitionMapExtNameImpl
+        extends TransactionMap<byte[], ResourceDefinition> implements ResourceDefinitionMapExtName
+    {
+        private static final int NEW_MAX_BYTE_VALUE = 256;
+        private static final Comparator<? super byte[]> EXT_NAME_COMP = (byte[] extName1, byte[] extName2) ->
+        {
+            int ret;
+            int index = 0;
+            while (true)
+            {
+                index++;
+                if (index > extName1.length - 1 && !(index > extName2.length - 1))
+                {
+                    ret = -1;
+                    break;
+                }
+                else if (index > extName1.length - 1 && index > extName2.length - 1)
+                {
+                    ret = 0;
+                    break;
+                }
+                else if (index > extName2.length - 1 && !(index > extName1.length - 1))
+                {
+                    ret = 1;
+                    break;
+                }
+
+                int intValue1 = byteToUnsignedInt(extName1[index]);
+                int intValue2 = byteToUnsignedInt(extName2[index]);
+                if (intValue1 < intValue2)
+                {
+                    ret = -1;
+                    break;
+                }
+                if (intValue1 > intValue2)
+                {
+                    ret = 1;
+                    break;
+                }
+            }
+            return ret;
+        };
+
+        @Inject
+        public ResourceDefinitionMapExtNameImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<byte[], ResourceDefinition>(EXT_NAME_COMP), null, transMgrProvider);
+        }
+
+        private static int byteToUnsignedInt(byte byteValue)
+        {
+            int intValue = byteValue;
+            if (intValue < 0)
+            {
+                intValue += NEW_MAX_BYTE_VALUE;
+            }
+            return intValue;
         }
     }
 
