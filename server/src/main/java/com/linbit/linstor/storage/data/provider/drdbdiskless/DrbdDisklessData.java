@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.data.provider.drdbdiskless;
 
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DrbdDisklessVlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
@@ -17,6 +17,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -95,6 +96,11 @@ public class DrbdDisklessData extends BaseTransactionObject implements VlmProvid
         return usableSize.get();
     }
 
+    public void setUsableSize(long usableSizeRef) throws SQLException
+    {
+        usableSize.set(usableSizeRef);
+    }
+
     @Override
     public String getDevicePath()
     {
@@ -138,13 +144,14 @@ public class DrbdDisklessData extends BaseTransactionObject implements VlmProvid
     }
 
     @Override
-    public VlmLayerDataPojo asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
     {
         return new DrbdDisklessVlmPojo(
             vlm.getVolumeDefinition().getVolumeNumber().value,
             getDevicePath(),
             getAllocatedSize(),
-            getUsableSize()
+            getUsableSize(),
+            null
         );
     }
 }

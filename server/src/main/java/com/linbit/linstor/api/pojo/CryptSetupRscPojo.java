@@ -1,23 +1,23 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.List;
 
-public class CryptSetupRscPojo implements RscLayerDataPojo
+public class CryptSetupRscPojo implements RscLayerDataApi
 {
     private final int id;
-    private final List<RscLayerDataPojo> children;
+    private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
 
     private final List<CryptVlmPojo> vlms;
 
     public CryptSetupRscPojo(
         int idRef,
-        List<RscLayerDataPojo> childrenRef,
+        List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
         List<CryptVlmPojo> vlmsRef
     )
@@ -41,7 +41,7 @@ public class CryptSetupRscPojo implements RscLayerDataPojo
     }
 
     @Override
-    public List<RscLayerDataPojo> getChildren()
+    public List<RscLayerDataApi> getChildren()
     {
         return children;
     }
@@ -58,7 +58,7 @@ public class CryptSetupRscPojo implements RscLayerDataPojo
         return vlms;
     }
 
-    public static class CryptVlmPojo implements VlmLayerDataPojo
+    public static class CryptVlmPojo implements VlmLayerDataApi
     {
         private final int vlmNr;
         private final byte[] encryptedPassword;
@@ -66,6 +66,8 @@ public class CryptSetupRscPojo implements RscLayerDataPojo
         private final String backingDevice;
         private final long allocatedSize;
         private final long usableSize;
+        private final boolean isOpen;
+        private final String diskState;
 
         public CryptVlmPojo(
             int vlmNrRef,
@@ -73,7 +75,9 @@ public class CryptSetupRscPojo implements RscLayerDataPojo
             String devicePathRef,
             String backingDeviceRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            boolean isOpenRef,
+            String diskStateRef
         )
         {
             vlmNr = vlmNrRef;
@@ -82,6 +86,8 @@ public class CryptSetupRscPojo implements RscLayerDataPojo
             backingDevice = backingDeviceRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
+            isOpen = isOpenRef;
+            diskState = diskStateRef;
         }
 
         @Override
@@ -95,6 +101,7 @@ public class CryptSetupRscPojo implements RscLayerDataPojo
             return encryptedPassword;
         }
 
+        @Override
         public String getDevicePath()
         {
             return devicePath;
@@ -105,20 +112,39 @@ public class CryptSetupRscPojo implements RscLayerDataPojo
             return backingDevice;
         }
 
+        @Override
         public long getAllocatedSize()
         {
             return allocatedSize;
         }
 
+        @Override
         public long getUsableSize()
         {
             return usableSize;
+        }
+
+        public boolean isOpened()
+        {
+            return isOpen;
+        }
+
+        @Override
+        public String getDiskState()
+        {
+            return diskState;
         }
 
         @Override
         public DeviceProviderKind getProviderKind()
         {
             return DeviceProviderKind.FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER;
+        }
+
+        @Override
+        public DeviceLayerKind getLayerKind()
+        {
+            return DeviceLayerKind.CRYPT_SETUP;
         }
     }
 }

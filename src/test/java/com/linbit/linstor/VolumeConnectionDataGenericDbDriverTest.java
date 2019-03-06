@@ -18,6 +18,8 @@ import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +44,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     private final Integer minor;
     private final long volSize;
 
-    private final String volBlockDevSrc;
-    private final String volMetaDiskPathSrc;
-    private final String volBlockDevDst;
-    private final String volMetaDiskPathDst;
-
     private java.util.UUID uuid;
 
     private NodeData nodeSrc;
@@ -63,8 +60,8 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 
     @Inject private VolumeConnectionDataGenericDbDriver driver;
 
-    private NodeId nodeIdSrc;
-    private NodeId nodeIdDst;
+    private Integer nodeIdSrc;
+    private Integer nodeIdDst;
 
     @SuppressWarnings("checkstyle:magicnumber")
     public VolumeConnectionDataGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
@@ -79,10 +76,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         minor = 43;
         volSize = 9001;
 
-        volBlockDevSrc = "/dev/src/vol/block";
-        volMetaDiskPathSrc = "/dev/src/vol/meta";
-        volBlockDevDst = "/dev/dst/vol/block";
-        volMetaDiskPathDst = "/dev/dst/vol/meta";
     }
 
     @Before
@@ -104,16 +97,16 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, new ArrayList<>()
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
 
-        nodeIdSrc = new NodeId(13);
-        nodeIdDst = new NodeId(14);
+        nodeIdSrc = 13;
+        nodeIdDst = 14;
 
-        resSrc = resourceDataFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null);
-        resDst = resourceDataFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null);
+        resSrc = resourceDataFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
+        resDst = resourceDataFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
 
         storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
@@ -130,8 +123,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
             resSrc,
             volDfn,
             storPool1,
-            volBlockDevSrc,
-            volMetaDiskPathSrc,
             null
         );
         volDst = volumeDataFactory.create(
@@ -139,8 +130,6 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
             resDst,
             volDfn,
             storPool2,
-            volBlockDevDst,
-            volMetaDiskPathDst,
             null
         );
     }

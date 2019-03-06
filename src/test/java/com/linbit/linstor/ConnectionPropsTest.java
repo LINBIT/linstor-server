@@ -11,6 +11,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -22,15 +25,11 @@ public class ConnectionPropsTest extends GenericDbBase
     private Integer resDfnPort;
     private TransportType resDfnTransportType;
     private StorPoolName storPoolName;
-    private NodeId nodeId1;
-    private NodeId nodeId2;
+    private Integer nodeId1;
+    private Integer nodeId2;
     private VolumeNumber volNr;
     private Integer minor;
     private long volSize;
-    private String blockDev1;
-    private String metaDisk1;
-    private String blockDev2;
-    private String metaDisk2;
 
     private NodeData node1;
     private NodeData node2;
@@ -66,25 +65,21 @@ public class ConnectionPropsTest extends GenericDbBase
         resDfnPort = 4242;
         resDfnTransportType = TransportType.IP;
         storPoolName = new StorPoolName("StorPool");
-        nodeId1 = new NodeId(1);
-        nodeId2 = new NodeId(2);
+        nodeId1 = 1;
+        nodeId2 = 2;
         volNr = new VolumeNumber(13);
         minor = 12;
         volSize = 9001;
-        blockDev1 = "/dev/vol1/block";
-        metaDisk1 = "/dev/vol1/meta";
-        blockDev2 = "/dev/vol2/block";
-        metaDisk2 = "/dev/vol2/meta";
 
         node1 = nodeDataFactory.create(SYS_CTX, nodeName1, NodeType.SATELLITE, null);
         node2 = nodeDataFactory.create(SYS_CTX, nodeName2, NodeType.SATELLITE, null);
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType
+            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType, new ArrayList<>()
         );
 
-        res1 = resourceDataFactory.create(SYS_CTX, resDfn, node1, nodeId1, null);
-        res2 = resourceDataFactory.create(SYS_CTX, resDfn, node2, nodeId2, null);
+        res1 = resourceDataFactory.create(SYS_CTX, resDfn, node1, nodeId1, null, Collections.emptyList());
+        res2 = resourceDataFactory.create(SYS_CTX, resDfn, node2, nodeId2, null, Collections.emptyList());
 
         storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
 
@@ -102,8 +97,6 @@ public class ConnectionPropsTest extends GenericDbBase
             res1,
             volDfn,
             storPool1,
-            blockDev1,
-            metaDisk1,
             null
         );
         vol2 = volumeDataFactory.create(
@@ -111,8 +104,6 @@ public class ConnectionPropsTest extends GenericDbBase
             res2,
             volDfn,
             storPool2,
-            blockDev2,
-            metaDisk2,
             null
         );
 

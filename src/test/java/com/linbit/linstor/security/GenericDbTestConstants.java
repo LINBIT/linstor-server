@@ -90,6 +90,7 @@ public interface GenericDbTestConstants
     String SECRET            = "SECRET";
     String TCP_PORT          = "TCP_PORT";
     String TRANSPORT_TYPE    = "TRANSPORT_TYPE";
+    String LAYER_STACK_KIND  = "LAYER_STACK_KIND";
 
     // RESOURCES column names
     String NODE_ID        = "NODE_ID";

@@ -197,7 +197,7 @@ public class DrbdLayer implements DeviceLayer
         }
         else
         if (
-            rsc.getDefinition().isDown(workerCtx) ||
+            drbdRscData.getRscDfnLayerObject().isDown() ||
             rsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE)
         )
         {
@@ -779,7 +779,23 @@ public class DrbdLayer implements DeviceLayer
                         {
                             drbdVlmData.setExists(true);
                             DiskState diskState = drbdVlmState.getDiskState();
-                            drbdVlmData.setDiskState(diskState.toString());
+
+                            /*
+                             *  The following line is commented out to prevent confusion
+                             *  The problem is that this will be filled when the resource changes (thats nice)
+                             *  but it will not be updated when an events2 event occurs.
+                             *  Even if we can update this field upon an events2, we would then have to
+                             *  update the whole DrbdVlmData, for which there is currently no mechanism
+                             *  (apart from the EventSystem, but that does not allow such complex data
+                             *  as layerData).
+                             *
+                             *  That means that the EventSystem converts events2 diskChange events as usual
+                             *  (this sets on controller the volume_states accordingly), but
+                             *  drbdVlmData.getDiskState() will stay the same for a long time. To prevent
+                             *  this divergence, we simply do not set the diskstate here (until we might rework
+                             *  the EventSystem somehow)
+                             */
+                            // drbdVlmData.setDiskState(diskState.toString());
                             switch (diskState)
                             {
                                 case DISKLESS:

@@ -1,20 +1,16 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeId;
-import com.linbit.linstor.NodeIdAlloc;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDataFactory;
+import com.linbit.linstor.ResourceDataControllerFactory;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
@@ -32,7 +28,6 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.controller.helpers.LayerConvHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -52,6 +47,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.SwordfishTargetDriverKind;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
@@ -63,7 +60,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -86,9 +82,8 @@ public class CtrlRscCrtApiHelper
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ResourceDataFactory resourceDataFactory;
+    private final ResourceDataControllerFactory resourceDataFactory;
     private final Provider<AccessContext> peerAccCtx;
-    private final LayerConvHelper layerConvHelper;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -101,9 +96,8 @@ public class CtrlRscCrtApiHelper
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        ResourceDataFactory resourceDataFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef,
-        LayerConvHelper layerConvHelperRef
+        ResourceDataControllerFactory resourceDataFactoryRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         apiCtx = apiCtxRef;
@@ -117,7 +111,6 @@ public class CtrlRscCrtApiHelper
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDataFactory = resourceDataFactoryRef;
         peerAccCtx = peerAccCtxRef;
-        layerConvHelper = layerConvHelperRef;
     }
 
     /**
@@ -136,6 +129,7 @@ public class CtrlRscCrtApiHelper
      * @param nodeIdInt
      *
      * @param thinFreeCapacities
+     * @param layerStackStrListRef
      * @return the newly created resource
      */
     public ApiCallRcWith<ResourceData> createResourceDb(
@@ -145,7 +139,8 @@ public class CtrlRscCrtApiHelper
         Map<String, String> rscPropsMap,
         List<? extends Volume.VlmApi> vlmApiList,
         Integer nodeIdInt,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        List<String> layerStackStrListRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -153,9 +148,9 @@ public class CtrlRscCrtApiHelper
         NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
-        NodeId nodeId = resolveNodeId(nodeIdInt, rscDfn);
+        List<DeviceLayerKind> layerStack = LinstorParsingUtils.asLayerStack(layerStackStrListRef);
 
-        ResourceData rsc = createResource(rscDfn, node, nodeId, flags);
+        ResourceData rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
         Props rscProps = ctrlPropsHelper.getProps(rsc);
 
         ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
@@ -180,9 +175,7 @@ public class CtrlRscCrtApiHelper
             VolumeData vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                 rsc,
                 vlmDfn,
-                thinFreeCapacities,
-                vlmApi.getBlockDevice(),
-                vlmApi.getMetaDisk()
+                thinFreeCapacities
             ).extractApiCallRc(responses);
             createdVolumes.add(vlmData);
 
@@ -226,7 +219,6 @@ public class CtrlRscCrtApiHelper
             );
         }
 
-        layerConvHelper.ensureDefaultLayerData(rsc);
         return new ApiCallRcWith<>(responses, rsc);
     }
 
@@ -322,46 +314,12 @@ public class CtrlRscCrtApiHelper
         ), context, true));
     }
 
-    private NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
-    {
-        NodeId freeNodeId;
-        try
-        {
-            Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx.get());
-            int[] occupiedIds = new int[rscDfn.getResourceCount()];
-            int idx = 0;
-            while (rscIterator.hasNext())
-            {
-                occupiedIds[idx] = rscIterator.next().getNodeId().value;
-                ++idx;
-            }
-            Arrays.sort(occupiedIds);
-
-            freeNodeId = NodeIdAlloc.getFreeNodeId(occupiedIds);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        catch (ExhaustedPoolException exhaustedPoolExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_POOL_EXHAUSTED_NODE_ID,
-                "An exception occured during generation of a node ID."
-            ), exhaustedPoolExc);
-        }
-        return freeNodeId;
-    }
-
     ResourceData createResource(
         ResourceDefinitionData rscDfn,
         Node node,
-        NodeId nodeId,
-        long flags
+        Integer nodeIdIntRef,
+        long flags,
+        List<DeviceLayerKind> layerStackRef
     )
     {
         ResourceData rsc;
@@ -374,8 +332,9 @@ public class CtrlRscCrtApiHelper
                 peerAccCtx.get(),
                 rscDfn,
                 node,
-                nodeId,
-                Resource.RscFlags.restoreFlags(flags)
+                nodeIdIntRef,
+                Resource.RscFlags.restoreFlags(flags),
+                layerStackRef
             );
 
             rsc.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_PEER_SLOTS, Short.toString(peerSlots));
@@ -406,53 +365,6 @@ public class CtrlRscCrtApiHelper
         return rsc;
     }
 
-    private NodeId resolveNodeId(Integer nodeIdInt, ResourceDefinitionData rscDfn)
-    {
-        NodeId nodeId;
-
-        if (nodeIdInt == null)
-        {
-            nodeId = getNextFreeNodeId(rscDfn);
-        }
-        else
-        {
-            try
-            {
-                NodeId requestedNodeId = new NodeId(nodeIdInt);
-
-                Iterator<Resource> rscIterator = rscDfn.iterateResource(peerAccCtx.get());
-                while (rscIterator.hasNext())
-                {
-                    if (requestedNodeId.equals(rscIterator.next().getNodeId()))
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_NODE_ID,
-                            "The specified node ID is already in use."
-                        ));
-                    }
-                }
-
-                nodeId = requestedNodeId;
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                throw new ApiAccessDeniedException(
-                    accDeniedExc,
-                    "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
-                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-                );
-            }
-            catch (ValueOutOfRangeException outOfRangeExc)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_NODE_ID,
-                    "The specified node ID is out of range."
-                ), outOfRangeExc);
-            }
-        }
-
-        return nodeId;
-    }
 
     private VolumeDefinitionData loadVlmDfn(
         ResourceDefinitionData rscDfn,

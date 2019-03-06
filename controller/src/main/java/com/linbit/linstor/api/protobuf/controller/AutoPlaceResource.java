@@ -47,7 +47,8 @@ public class AutoPlaceResource implements ApiCallReactive
             .autoPlace(
                 msgAutoPlace.getRscName(),
                 filter,
-                msgAutoPlace.hasDisklessOnRemaining() ? msgAutoPlace.getDisklessOnRemaining() : false
+                msgAutoPlace.hasDisklessOnRemaining() ? msgAutoPlace.getDisklessOnRemaining() : false,
+                msgAutoPlace.getLayerStackList()
             )
             .transform(responseSerializer::transform);
     }

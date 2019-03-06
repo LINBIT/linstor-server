@@ -1,25 +1,35 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.DRBD_DISKLESS;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_INITIATOR;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_TARGET;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
+
 import java.util.List;
 
-public class StorageRscPojo implements RscLayerDataPojo
+public class StorageRscPojo implements RscLayerDataApi
 {
     private final int id;
-    private final List<RscLayerDataPojo> children;
+    private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
 
-    private final List<VlmLayerDataPojo> vlms;
+    private final List<VlmLayerDataApi> vlms;
 
     public StorageRscPojo(
         int idRef,
-        List<RscLayerDataPojo> childrenRef,
+        List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
-        List<VlmLayerDataPojo> vlmsRef
+        List<VlmLayerDataApi> vlmsRef
     )
     {
         id = idRef;
@@ -31,7 +41,7 @@ public class StorageRscPojo implements RscLayerDataPojo
     @Override
     public DeviceLayerKind getLayerKind()
     {
-        return DeviceLayerKind.STORAGE;
+        return STORAGE;
     }
 
     @Override
@@ -41,7 +51,7 @@ public class StorageRscPojo implements RscLayerDataPojo
     }
 
     @Override
-    public List<RscLayerDataPojo> getChildren()
+    public List<RscLayerDataApi> getChildren()
     {
         return children;
     }
@@ -53,24 +63,26 @@ public class StorageRscPojo implements RscLayerDataPojo
     }
 
     @Override
-    public List<VlmLayerDataPojo> getVolumeList()
+    public List<VlmLayerDataApi> getVolumeList()
     {
         return vlms;
     }
 
-    private abstract static class AbsVlmPojo implements VlmLayerDataPojo
+    private abstract static class AbsVlmProviderPojo implements VlmLayerDataApi
     {
         private final int vlmNr;
         private final String devicePath;
         private final long allocatedSize;
         private final long usableSize;
+        private final String diskState;
         private final DeviceProviderKind kind;
 
-        AbsVlmPojo(
+        AbsVlmProviderPojo(
             int vlmNrRef,
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            String diskStateRef,
             DeviceProviderKind kindRef
         )
         {
@@ -78,6 +90,7 @@ public class StorageRscPojo implements RscLayerDataPojo
             devicePath = devicePathRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
+            diskState = diskStateRef;
             kind = kindRef;
         }
 
@@ -86,94 +99,115 @@ public class StorageRscPojo implements RscLayerDataPojo
         {
             return vlmNr;
         }
+
         @Override
         public String getDevicePath()
         {
             return devicePath;
         }
+
         @Override
         public long getAllocatedSize()
         {
             return allocatedSize;
         }
+
         @Override
         public long getUsableSize()
         {
             return usableSize;
         }
+
+        @Override
+        public String getDiskState()
+        {
+            return diskState;
+        }
+
         @Override
         public DeviceProviderKind getProviderKind()
         {
             return kind;
         }
+
+        @Override
+        public DeviceLayerKind getLayerKind()
+        {
+            return STORAGE;
+        }
     }
 
-    public static class DrbdDisklessVlmPojo extends AbsVlmPojo
+    public static class DrbdDisklessVlmPojo extends AbsVlmProviderPojo
     {
         public DrbdDisklessVlmPojo(
             int vlmNrRef,
             String devicePathRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            String diskStateRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, DeviceProviderKind.DRBD_DISKLESS);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, DRBD_DISKLESS);
         }
     }
 
-    public static class LvmVlmPojo extends AbsVlmPojo
+    public static class LvmVlmPojo extends AbsVlmProviderPojo
     {
         public LvmVlmPojo(
             int vlmNrRef,
             String devicePathRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            String diskStateRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, DeviceProviderKind.LVM);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, LVM);
         }
     }
 
-    public static class LvmThinVlmPojo extends AbsVlmPojo
+    public static class LvmThinVlmPojo extends AbsVlmProviderPojo
     {
         public LvmThinVlmPojo(
             int vlmNrRef,
             String devicePathRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            String diskStateRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, DeviceProviderKind.LVM_THIN);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, LVM_THIN);
         }
     }
 
-    public static class ZfsVlmPojo extends AbsVlmPojo
+    public static class ZfsVlmPojo extends AbsVlmProviderPojo
     {
         public ZfsVlmPojo(
             int vlmNrRef,
             String devicePathRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            String diskStateRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, DeviceProviderKind.ZFS);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, ZFS);
         }
     }
 
-    public static class ZfsThinVlmPojo extends AbsVlmPojo
+    public static class ZfsThinVlmPojo extends AbsVlmProviderPojo
     {
         public ZfsThinVlmPojo(
             int vlmNrRef,
             String devicePathRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            String diskStateRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, DeviceProviderKind.ZFS_THIN);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, ZFS_THIN);
         }
     }
 
-    public static class SwordfishTargetVlmPojo extends AbsVlmPojo
+    public static class SwordfishTargetVlmPojo extends AbsVlmProviderPojo
     {
         private final SwordfishVlmDfnPojo vlmDfn;
 
@@ -183,7 +217,7 @@ public class StorageRscPojo implements RscLayerDataPojo
             long usableSizeRef
         )
         {
-            super(vlmDfnRef.vlmNr, null, allocatedSizeRef, usableSizeRef, DeviceProviderKind.SWORDFISH_TARGET);
+            super(vlmDfnRef.vlmNr, null, allocatedSizeRef, usableSizeRef, null, SWORDFISH_TARGET);
             vlmDfn = vlmDfnRef;
         }
 
@@ -193,7 +227,7 @@ public class StorageRscPojo implements RscLayerDataPojo
         }
     }
 
-    public static class SwordfishInitiatorVlmPojo extends AbsVlmPojo
+    public static class SwordfishInitiatorVlmPojo extends AbsVlmProviderPojo
     {
         private final SwordfishVlmDfnPojo vlmDfn;
 
@@ -201,7 +235,8 @@ public class StorageRscPojo implements RscLayerDataPojo
             SwordfishVlmDfnPojo vlmDfnRef,
             String devicePathRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            String diskStateRef
         )
         {
             super(
@@ -209,7 +244,8 @@ public class StorageRscPojo implements RscLayerDataPojo
                 devicePathRef,
                 allocatedSizeRef,
                 usableSizeRef,
-                DeviceProviderKind.SWORDFISH_INITIATOR
+                diskStateRef,
+                SWORDFISH_INITIATOR
             );
             vlmDfn = vlmDfnRef;
         }
@@ -220,7 +256,7 @@ public class StorageRscPojo implements RscLayerDataPojo
         }
     }
 
-    public static class SwordfishVlmDfnPojo
+    public static class SwordfishVlmDfnPojo implements VlmDfnLayerDataApi
     {
         private final String rscNameSuffix;
         private final int vlmNr;
@@ -242,6 +278,7 @@ public class StorageRscPojo implements RscLayerDataPojo
             return rscNameSuffix;
         }
 
+        @Override
         public int getVlmNr()
         {
             return vlmNr;
@@ -250,6 +287,12 @@ public class StorageRscPojo implements RscLayerDataPojo
         public String getVlmOdata()
         {
             return vlmOdata;
+        }
+
+        @Override
+        public DeviceLayerKind getLayerKind()
+        {
+            return STORAGE;
         }
     }
 }

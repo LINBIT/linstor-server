@@ -163,7 +163,6 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
                             vlmDfnRef.getUuid().toString().toUpperCase()
                         )
                         .leaf("Size:     %16d", vlmDfnRef.getVolumeSize(accCtx))
-                        .leaf("Minor Nr: %16d", vlmDfnRef.getMinorNr(accCtx).value)
                         .leaf("Flags:    %016x", vlmDfnRef.getFlags().getFlagsBits(accCtx))
                         .endBranch();
                 }

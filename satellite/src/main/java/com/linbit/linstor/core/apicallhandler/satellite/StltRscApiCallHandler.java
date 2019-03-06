@@ -6,7 +6,6 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
@@ -14,17 +13,15 @@ import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataSatelliteFactory;
-import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionDataSatelliteFactory;
 import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDataFactory;
+import com.linbit.linstor.ResourceDataSatelliteFactory;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
@@ -96,7 +93,7 @@ class StltRscApiCallHandler
     private final VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     private final NodeDataSatelliteFactory nodeDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
-    private final ResourceDataFactory resourceDataFactory;
+    private final ResourceDataSatelliteFactory resourceDataFactory;
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
@@ -119,7 +116,7 @@ class StltRscApiCallHandler
         VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactoryRef,
         NodeDataSatelliteFactory nodeDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
-        ResourceDataFactory resourceDataFactoryRef,
+        ResourceDataSatelliteFactory resourceDataFactoryRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataSatelliteFactory storPoolDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
@@ -201,9 +198,6 @@ class StltRscApiCallHandler
             ResourceDefinitionData rscDfnToRegister = null;
 
             rscName = new ResourceName(rscRawData.getName());
-            String rscDfnSecret = rscRawData.getRscDfnSecret();
-            TransportType rscDfnTransportType = TransportType.byValue(rscRawData.getRscDfnTransportType());
-            TcpPortNumber port = new TcpPortNumber(rscRawData.getRscDfnPort());
             RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
 
             ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
@@ -216,21 +210,16 @@ class StltRscApiCallHandler
                     apiCtx,
                     rscRawData.getRscDfnUuid(),
                     rscName,
-                    port,
-                    rscDfnFlags,
-                    rscDfnSecret,
-                    rscDfnTransportType
+                    rscDfnFlags
                 );
 
                 checkUuid(rscDfn, rscRawData);
                 rscDfnToRegister = rscDfn;
             }
-            rscDfn.setPort(apiCtx, port);
             Props rscDfnProps = rscDfn.getProps(apiCtx);
             rscDfnProps.map().putAll(rscRawData.getRscDfnProps());
             rscDfnProps.keySet().retainAll(rscRawData.getRscDfnProps().keySet());
             rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
-            rscDfn.setDown(apiCtx, rscRawData.getRscDfnDown());
 
             // merge vlmDfns
             {
@@ -247,7 +236,6 @@ class StltRscApiCallHandler
                         rscDfn,
                         vlmNr,
                         vlmDfnRaw.getSize(),
-                        new MinorNumber(vlmDfnRaw.getMinorNr()),
                         VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags())
                     );
                     checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
@@ -293,7 +281,6 @@ class StltRscApiCallHandler
                     rscRawData.getLocalRscUuid(),
                     localNode,
                     rscDfn,
-                    new NodeId(rscRawData.getLocalRscNodeId()),
                     RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
                     rscRawData.getLocalRscProps(),
                     rscRawData.getLocalVlms(),
@@ -330,7 +317,6 @@ class StltRscApiCallHandler
                         otherRscRaw.getRscUuid(),
                         remoteNode,
                         rscDfn,
-                        new NodeId(otherRscRaw.getRscNodeId()),
                         RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
                         otherRscRaw.getRscProps(),
                         otherRscRaw.getVlms(),
@@ -484,7 +470,6 @@ class StltRscApiCallHandler
                             otherRsc.getRscUuid(),
                             remoteNode,
                             rscDfn,
-                            new NodeId(otherRsc.getRscNodeId()),
                             RscFlags.restoreFlags(otherRsc.getRscFlags()),
                             otherRsc.getRscProps(),
                             otherRsc.getVlms(),
@@ -728,7 +713,6 @@ class StltRscApiCallHandler
         UUID rscUuid,
         NodeData node,
         ResourceDefinitionData rscDfn,
-        NodeId nodeId,
         RscFlags[] flags,
         Map<String, String> rscProps,
         List<VolumeData.VlmApi> vlms,
@@ -741,7 +725,6 @@ class StltRscApiCallHandler
             rscUuid,
             node,
             rscDfn,
-            nodeId,
             flags
         );
 
@@ -784,8 +767,6 @@ class StltRscApiCallHandler
             rsc,
             vlmDfn,
             storPool,
-            vlmApi.getBlockDevice(),
-            vlmApi.getMetaDisk(),
             Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
         );
 

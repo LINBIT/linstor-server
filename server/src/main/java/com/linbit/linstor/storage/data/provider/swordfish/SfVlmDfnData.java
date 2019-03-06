@@ -132,7 +132,8 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
         dbDriver.delete(this);
     }
 
-    public SwordfishVlmDfnPojo asPojo(AccessContext accCtxRef)
+    @Override
+    public SwordfishVlmDfnPojo getApiData(AccessContext accCtxRef)
     {
         return new SwordfishVlmDfnPojo(
             rscNameSuffix,

@@ -7,19 +7,19 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public interface RscLayerDataPojo
+public interface RscLayerDataApi
 {
     int getId();
 
-    List<RscLayerDataPojo> getChildren();
+    List<RscLayerDataApi> getChildren();
 
     String getRscNameSuffix();
 
     DeviceLayerKind getLayerKind();
 
-    <T extends VlmLayerDataPojo> List<T> getVolumeList();
+    <T extends VlmLayerDataApi> List<T> getVolumeList();
 
-    default <T extends VlmLayerDataPojo> Map<Integer, T> getVolumeMap()
+    default <T extends VlmLayerDataApi> Map<Integer, T> getVolumeMap()
     {
         return this.<T>getVolumeList().stream().collect(
             Collectors.toMap(

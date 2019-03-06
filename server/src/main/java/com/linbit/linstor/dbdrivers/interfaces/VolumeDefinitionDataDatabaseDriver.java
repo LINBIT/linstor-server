@@ -3,7 +3,6 @@ package com.linbit.linstor.dbdrivers.interfaces;
 import java.sql.SQLException;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
@@ -38,11 +37,6 @@ public interface VolumeDefinitionDataDatabaseDriver
      * A special sub-driver to update the persisted flags.
      */
     StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence();
-
-    /**
-     * A special sub-driver to update the persisted minorNumber.
-     */
-    SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber> getMinorNumberDriver();
 
     /**
      * A special sub-driver to update the persisted volumeSize.

@@ -1,6 +1,8 @@
 package com.linbit.linstor.storage.interfaces.categories;
 
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.linstor.security.AccessContext;
 
 import java.sql.SQLException;
 
@@ -14,4 +16,6 @@ public interface RscDfnLayerObject extends LayerObject
     ResourceDefinition getResourceDefinition();
 
     void delete() throws SQLException;
+
+    RscDfnLayerDataApi getApiData(AccessContext accCtxRef);
 }

@@ -1,10 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.ValueInUseException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
@@ -120,7 +117,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         String rscName,
         int vlmNr,
         Long size,
-        Integer minorNr,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys
     )
@@ -140,7 +136,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                     rscName,
                     vlmNr,
                     size,
-                    minorNr,
                     overrideProps,
                     deletePropKeys
                 )
@@ -153,7 +148,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         String rscNameStr,
         int vlmNrInt,
         Long size,
-        Integer minorNr,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys
     )
@@ -216,11 +210,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                     ));
                 }
             }
-        }
-
-        if (minorNr != null)
-        {
-            setMinorNr(vlmDfn, minorNr);
         }
 
         ctrlTransactionHelper.commit();
@@ -535,36 +524,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             );
         }
         return hasVolumes;
-    }
-
-    private void setMinorNr(VolumeDefinition vlmDfn, Integer minorNr)
-    {
-        try
-        {
-            vlmDfn.setMinorNr(
-                peerAccCtx.get(),
-                new MinorNumber(minorNr)
-            );
-        }
-        catch (ValueOutOfRangeException | ValueInUseException exc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_MINOR_NR, String.format(
-                "The specified minor number '%d' is invalid.",
-                minorNr
-            )), exc);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "set the minor number",
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
     }
 
     private Iterator<Volume> iterateVolumes(VolumeDefinition vlmDfn)

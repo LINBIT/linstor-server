@@ -15,8 +15,8 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.core.CoreModule;
@@ -166,7 +166,7 @@ public class RscInternalCallHandler
 
     public void updateVolumeData(
         String resourceName,
-        RscLayerDataPojo rscLayerDataPojoRef,
+        RscLayerDataApi rscLayerDataPojoRef,
         List<CapacityInfoPojo> capacityInfos
     )
     {
@@ -189,7 +189,7 @@ public class RscInternalCallHandler
             {
                 Volume vlm = iterateVolumes.next();
 
-                VlmLayerDataPojo vlmLayerDataPojo = rscLayerDataPojoRef.getVolumeMap().get(
+                VlmLayerDataApi vlmLayerDataPojo = rscLayerDataPojoRef.getVolumeMap().get(
                     vlm.getVolumeDefinition().getVolumeNumber().value
                 );
 

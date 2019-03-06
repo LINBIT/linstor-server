@@ -169,8 +169,6 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             rsc,
             vlmDfn,
             storPool,
-            null,
-            null,
             resultSet.getLong(VOL_FLAGS),
             this,
             propsContainerFactory,

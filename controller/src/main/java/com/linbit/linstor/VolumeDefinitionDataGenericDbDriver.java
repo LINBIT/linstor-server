@@ -12,8 +12,6 @@ import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -25,7 +23,6 @@ import com.linbit.utils.StringUtils;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -45,32 +42,22 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     private static final String VD_RES_NAME = DbConstants.RESOURCE_NAME;
     private static final String VD_ID = DbConstants.VLM_NR;
     private static final String VD_SIZE = DbConstants.VLM_SIZE;
-    private static final String VD_MINOR_NR = DbConstants.VLM_MINOR_NR;
     private static final String VD_FLAGS = DbConstants.VLM_FLAGS;
 
     private static final String VD_SELECT_ALL =
         " SELECT " + VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " + VD_SIZE + ", " +
-                     VD_MINOR_NR + ", " + VD_FLAGS +
+                     VD_FLAGS +
         " FROM " + TBL_VOL_DFN;
-    private static final String VD_SELECT =
-        VD_SELECT_ALL +
-        " WHERE " + VD_RES_NAME + " = ? AND " +
-                    VD_ID       + " = ?";
 
     private static final String VD_INSERT =
         " INSERT INTO " + TBL_VOL_DFN +
         " (" +
             VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " +
-            VD_SIZE + ", " + VD_MINOR_NR  + ", " +  VD_FLAGS +
-        ") VALUES (?, ?, ?, ?, ?, ?)";
+            VD_SIZE + ", " +  VD_FLAGS +
+        ") VALUES (?, ?, ?, ?, ?)";
     private static final String VD_UPDATE_FLAGS =
         " UPDATE " + TBL_VOL_DFN +
         " SET " + VD_FLAGS + " = ? " +
-        " WHERE " + VD_RES_NAME + " = ? AND " +
-                    VD_ID       + " = ?";
-    private static final String VD_UPDATE_MINOR_NR =
-        " UPDATE " + TBL_VOL_DFN +
-        " SET " + VD_MINOR_NR + " = ? " +
         " WHERE " + VD_RES_NAME + " = ? AND " +
                     VD_ID       + " = ?";
     private static final String VD_UPDATE_SIZE =
@@ -86,10 +73,8 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final PropsContainerFactory propsContainerFactory;
-    private final DynamicNumberPool minorNrPool;
 
     private final FlagDriver flagsDriver;
-    private final MinorNumberDriver minorNumberDriver;
     private final SizeDriver sizeDriver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -99,7 +84,6 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -107,11 +91,9 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         propsContainerFactory = propsContainerFactoryRef;
-        minorNrPool = minorNrPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         flagsDriver = new FlagDriver();
-        minorNumberDriver = new MinorNumberDriver();
         sizeDriver = new SizeDriver();
     }
 
@@ -127,8 +109,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
             stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
             stmt.setInt(3, volumeDefinition.getVolumeNumber().value);
             stmt.setLong(4, volumeDefinition.getVolumeSize(dbCtx));
-            stmt.setInt(5, volumeDefinition.getMinorNr(dbCtx).value);
-            stmt.setLong(6, volumeDefinition.getFlags().getFlagsBits(dbCtx));
+            stmt.setLong(5, volumeDefinition.getFlags().getFlagsBits(dbCtx));
 
             stmt.executeUpdate();
 
@@ -158,8 +139,6 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                 java.util.UUID.fromString(resultSet.getString(VD_UUID)),
                 resDfn,
                 volNr,
-                new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
-                minorNrPool,
                 resultSet.getLong(VD_SIZE),
                 resultSet.getLong(VD_FLAGS),
                 this,
@@ -186,20 +165,6 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                     resultSet.getLong(VD_SIZE)
                 ),
                 mdExc
-            );
-        }
-        catch (ValueOutOfRangeException valueOutOfRangeExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "A MinorNumber of a stored VolumeDefinition in table %s could not be restored. " +
-                        "(ResourceName=%s, VolumeNumber=%d, invalid MinorNumber=%d)",
-                    TBL_VOL_DFN,
-                    resDfn.getName().value,
-                    volNr.value,
-                    resultSet.getLong(VD_MINOR_NR)
-                ),
-                valueOutOfRangeExc
             );
         }
         return retPair;
@@ -282,12 +247,6 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     }
 
     @Override
-    public SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber> getMinorNumberDriver()
-    {
-        return minorNumberDriver;
-    }
-
-    @Override
     public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver()
     {
         return sizeDriver;
@@ -357,40 +316,6 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                     "VolumeDefinition's flags updated from [%s] to [%s] %s",
                     fromFlags,
                     toFlags,
-                    getId(volumeDefinition)
-                );
-            }
-            catch (AccessDeniedException accessDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
-            }
-        }
-    }
-
-    private class MinorNumberDriver implements SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber>
-    {
-        @Override
-        @SuppressWarnings("checkstyle:magicnumber")
-        public void update(VolumeDefinitionData volumeDefinition, MinorNumber newNumber)
-            throws SQLException
-        {
-            try (PreparedStatement stmt = getConnection().prepareStatement(VD_UPDATE_MINOR_NR))
-            {
-                errorReporter.logTrace(
-                    "Updating VolumeDefinition's MinorNumber from [%d] to [%d] %s",
-                    volumeDefinition.getMinorNr(dbCtx).value,
-                    newNumber.value,
-                    getId(volumeDefinition)
-                );
-                stmt.setInt(1, newNumber.value);
-                stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
-                stmt.setInt(3, volumeDefinition.getVolumeNumber().value);
-                stmt.executeUpdate();
-
-                errorReporter.logTrace(
-                    "VolumeDefinition's MinorNumber updated from [%d] to [%d] %s",
-                    volumeDefinition.getMinorNr(dbCtx).value,
-                    newNumber.value,
                     getId(volumeDefinition)
                 );
             }

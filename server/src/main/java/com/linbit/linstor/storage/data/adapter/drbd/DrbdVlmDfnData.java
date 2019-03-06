@@ -1,14 +1,19 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
+import com.linbit.ExhaustedPoolException;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmDfnObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
+
 import javax.inject.Provider;
 
 import java.sql.SQLException;
@@ -23,20 +28,33 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
     private final String suffixedResourceName;
     private final String resourceNameSuffix;
     private final DrbdLayerDatabaseDriver dbDriver;
+    private final DynamicNumberPool minorPool;
 
     public DrbdVlmDfnData(
         VolumeDefinition vlmDfnRef,
         String resourceNameSuffixRef,
-        MinorNumber minorRef,
+        Integer minorRef,
+        DynamicNumberPool minorPoolRef,
         DrbdLayerDatabaseDriver dbDriverRef,
         Provider<TransactionMgr> transMgrProvider
     )
+        throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         super(transMgrProvider);
         resourceNameSuffix = resourceNameSuffixRef;
+        minorPool = minorPoolRef;
         dbDriver = dbDriverRef;
         suffixedResourceName = vlmDfnRef.getResourceDefinition().getName().displayValue + resourceNameSuffixRef;
-        minorNr = Objects.requireNonNull(minorRef);
+
+        if (minorRef == null)
+        {
+            minorNr = new MinorNumber(minorPool.autoAllocate());
+        }
+        else
+        {
+            minorNr = new MinorNumber(minorRef);
+            minorPoolRef.allocate(minorRef);
+        }
 
         vlmDfn = Objects.requireNonNull(vlmDfnRef);
 
@@ -77,10 +95,11 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
     @Override
     public void delete() throws SQLException
     {
+        minorPool.deallocate(minorNr.value);
         dbDriver.delete(this);
     }
 
-    public DrbdVlmDfnPojo asPojo(AccessContext accCtxRef)
+    public DrbdVlmDfnPojo getApiData(AccessContext accCtxRef)
     {
         return new DrbdVlmDfnPojo(
             suffixedResourceName,

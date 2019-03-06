@@ -7,6 +7,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -18,6 +19,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,6 +55,8 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     // Not persisted because we do not resume snapshot creation after a restart
     private TransactionSimpleObject<SnapshotData, Boolean> takeSnapshot;
 
+    private final List<DeviceLayerKind> layerStack;
+
     public SnapshotData(
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
@@ -62,7 +66,8 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         SnapshotDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
-        Map<VolumeNumber, SnapshotVolume> snapshotVlmMapRef
+        Map<VolumeNumber, SnapshotVolume> snapshotVlmMapRef,
+        List<DeviceLayerKind> layerStackRef
     )
     {
         super(transMgrProviderRef);
@@ -89,6 +94,8 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
         suspendResource = transObjFactory.createTransactionSimpleObject(this, false, null);
         takeSnapshot = transObjFactory.createTransactionSimpleObject(this, false, null);
+
+        layerStack = Collections.unmodifiableList(new ArrayList<>(layerStackRef));
 
         transObjs = Arrays.asList(
             snapshotDfn,
@@ -173,6 +180,15 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
     {
         checkDeleted();
         return flags;
+    }
+
+    @Override
+    public List<DeviceLayerKind> getLayerStack(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return layerStack;
     }
 
     @Override

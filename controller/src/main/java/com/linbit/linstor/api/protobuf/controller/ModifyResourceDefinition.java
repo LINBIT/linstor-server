@@ -62,7 +62,8 @@ public class ModifyResourceDefinition implements ApiCall
             port,
             overrideProps,
             delProps,
-            deletePropNamespace
+            deletePropNamespace,
+            modRscDfn.getLayerStackList()
         );
 
         apiCallAnswerer.answerApiCallRc(apiCallRc);

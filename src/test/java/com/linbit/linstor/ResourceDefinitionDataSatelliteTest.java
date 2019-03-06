@@ -88,11 +88,7 @@ public class ResourceDefinitionDataSatelliteTest
             SYS_CTX,
             resDfnUuid,
             resName,
-            port,
-            null,
-            "notTellingYou",
-            transportType
-
+            null
         );
         rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
 
@@ -102,7 +98,6 @@ public class ResourceDefinitionDataSatelliteTest
             rscDfn,
             new VolumeNumber(0),
             1000,
-            new MinorNumber(10),
             null
         );
     }
@@ -117,10 +112,7 @@ public class ResourceDefinitionDataSatelliteTest
             SYS_CTX,
             resDfnUuid,
             resName,
-            port,
-            null,
-            "notTellingYou",
-            transportType
+            null
         );
         rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
         // do not commit

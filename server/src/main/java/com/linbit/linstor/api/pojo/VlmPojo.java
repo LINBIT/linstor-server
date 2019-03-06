@@ -1,6 +1,10 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.utils.Pair;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,11 +19,8 @@ public class VlmPojo implements Volume.VlmApi
     private final UUID storagePoolUuid;
     private final UUID vlmDfnUuid;
     private final UUID vlmUuid;
-    private final String blockDevice;
-    private final String metaDisk;
     private final String devicePath;
     private final int vlmNr;
-    private final int vlmMinorNr;
     private final long vlmFlags;
     private final Map<String, String> vlmProps;
     private final String storDriverName;
@@ -28,17 +29,15 @@ public class VlmPojo implements Volume.VlmApi
     private Map<String, String> storPoolProps;
     private final Optional<Long> allocated;
     private Optional<Long> usableSize;
+    private final List<Pair<String, VlmLayerDataApi>> layerData;
 
     public VlmPojo(
         final String storagePoolNameRef,
         final UUID storagePoolUuidRef,
         final UUID vlmDfnUuidRef,
         final UUID vlmUuidRef,
-        final String blockDeviceRef,
-        final String metaDiskRef,
         final String devicePathRef,
         final int vlmNrRef,
-        final int vlmMinorNrRef,
         final long vlmFlagsRef,
         final Map<String, String> vlmPropsRef,
         final String storDriverNameRef,
@@ -46,18 +45,16 @@ public class VlmPojo implements Volume.VlmApi
         final Map<String, String> storPoolDfnPropsRef,
         final Map<String, String> storPoolPropsRef,
         final Optional<Long> allocatedRef,
-        final Optional<Long> usableSizeRef
+        final Optional<Long> usableSizeRef,
+        final List<Pair<String, VlmLayerDataApi>> layerDataRef
     )
     {
         storagePoolName = storagePoolNameRef;
         storagePoolUuid = storagePoolUuidRef;
         vlmDfnUuid = vlmDfnUuidRef;
         vlmUuid = vlmUuidRef;
-        blockDevice = blockDeviceRef;
-        metaDisk = metaDiskRef;
         devicePath = devicePathRef;
         vlmNr = vlmNrRef;
-        vlmMinorNr = vlmMinorNrRef;
         vlmFlags = vlmFlagsRef;
         vlmProps = vlmPropsRef;
         storDriverName = storDriverNameRef;
@@ -66,6 +63,7 @@ public class VlmPojo implements Volume.VlmApi
         storPoolProps = storPoolPropsRef;
         allocated = allocatedRef;
         usableSize = usableSizeRef;
+        layerData = layerDataRef;
     }
 
     @Override
@@ -93,18 +91,6 @@ public class VlmPojo implements Volume.VlmApi
     }
 
     @Override
-    public String getBlockDevice()
-    {
-        return blockDevice;
-    }
-
-    @Override
-    public String getMetaDisk()
-    {
-        return metaDisk;
-    }
-
-    @Override
     public String getDevicePath()
     {
         return devicePath;
@@ -114,12 +100,6 @@ public class VlmPojo implements Volume.VlmApi
     public int getVlmNr()
     {
         return vlmNr;
-    }
-
-    @Override
-    public int getVlmMinorNr()
-    {
-        return vlmMinorNr;
     }
 
     @Override
@@ -168,5 +148,11 @@ public class VlmPojo implements Volume.VlmApi
     public Optional<Long> getUsableSize()
     {
         return usableSize;
+    }
+
+    @Override
+    public List<Pair<String, VlmLayerDataApi>> getVlmLayerData()
+    {
+        return layerData;
     }
 }

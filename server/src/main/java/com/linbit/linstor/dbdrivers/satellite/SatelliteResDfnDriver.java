@@ -1,19 +1,20 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.ResourceDefinition;
+import com.linbit.CollectionDatabaseDriver;
+import com.linbit.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import javax.inject.Inject;
 
 public class SatelliteResDfnDriver implements ResourceDefinitionDataDatabaseDriver
 {
     private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
-    private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
+    private final CollectionDatabaseDriver<?, ?> noOpColDriver = new NoOpCollectionDatabaseDriver<>();
     private final CoreModule.ResourceDefinitionMap resDfnMap;
 
     @Inject
@@ -27,13 +28,6 @@ public class SatelliteResDfnDriver implements ResourceDefinitionDataDatabaseDriv
     public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence()
     {
         return (StateFlagsPersistence<ResourceDefinitionData>) stateFlagsDriver;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver()
-    {
-        return (SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber>) singleColDriver;
     }
 
     @Override
@@ -56,8 +50,8 @@ public class SatelliteResDfnDriver implements ResourceDefinitionDataDatabaseDriv
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<ResourceDefinitionData, ResourceDefinition.TransportType> getTransportTypeDriver()
+    public CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> getLayerStackDriver()
     {
-        return (SingleColumnDatabaseDriver<ResourceDefinitionData, ResourceDefinition.TransportType>) singleColDriver;
+        return (CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind>) noOpColDriver;
     }
 }

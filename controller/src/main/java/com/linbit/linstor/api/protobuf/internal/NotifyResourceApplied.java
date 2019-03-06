@@ -2,7 +2,7 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.protobuf.ProtoRscLayerUtils;
+import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.RscInternalCallHandler;
@@ -44,7 +44,7 @@ public class NotifyResourceApplied implements ApiCall
 
         rscInternalCallHandler.updateVolumeData(
             msgIntAppliedRsc.getRscId().getName(),
-            ProtoRscLayerUtils.extractLayerData(msgIntAppliedRsc.getLayerObject()),
+            ProtoLayerUtils.extractRscLayerData(msgIntAppliedRsc.getLayerObject()),
             ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
                 msgIntAppliedRsc.getFreeSpaceList()
             )

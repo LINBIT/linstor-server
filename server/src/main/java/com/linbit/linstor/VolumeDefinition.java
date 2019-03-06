@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
-import com.linbit.ValueInUseException;
-import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -10,6 +9,7 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.utils.Pair;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -31,12 +31,6 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
     ResourceDefinition getResourceDefinition();
 
     VolumeNumber getVolumeNumber();
-
-    MinorNumber getMinorNr(AccessContext accCtx)
-        throws AccessDeniedException;
-
-    MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException;
 
     long getVolumeSize(AccessContext accCtx)
         throws AccessDeniedException;
@@ -142,10 +136,16 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
     {
         UUID getUuid();
         Integer getVolumeNr();
-        Integer getMinorNr();
         long getSize();
         long getFlags();
         Map<String, String> getProps();
+        List<Pair<String, VlmDfnLayerDataApi>> getVlmDfnLayerData();
+    }
+
+    public interface VlmDfnWtihCreationPayload
+    {
+        VlmDfnApi getVlmDfn();
+        Integer getDrbdMinorNr();
     }
 
     /**

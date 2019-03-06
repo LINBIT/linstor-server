@@ -711,7 +711,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         setUsableSize(
             (LAYER_DATA) vlmData,
             vlmData.getParentAllocatedSizeOrElse(
-                () -> vlmData.getVlmDfnLayerObject().getVolumeDefinition().getVolumeSize(storDriverAccCtx)
+                () -> vlmData.getVolume().getVolumeDefinition().getVolumeSize(storDriverAccCtx)
             )
         );
     }

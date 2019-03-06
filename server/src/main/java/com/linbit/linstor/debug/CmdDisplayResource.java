@@ -166,7 +166,6 @@ public class CmdDisplayResource extends BaseDebugCmd
                             .leaf("Resource volatile UUID: %s", UuidUtils.dbgInstanceIdString(rsc))
                             .leaf("Resource definition UUID: %s", rscDfn.getUuid().toString().toUpperCase())
                             .leaf("Resource definition volatile UUID: %s", UuidUtils.dbgInstanceIdString(rscDfn))
-                            .leaf("Node-ID: %d", rsc.getNodeId().value)
                             .leaf("Node UUID: %s", peerNode.getUuid().toString().toUpperCase())
                             .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(peerNode));
 
@@ -205,7 +204,6 @@ public class CmdDisplayResource extends BaseDebugCmd
                                 .leaf("Volume UUID: %s", vlm.getUuid().toString().toUpperCase())
                                 .leaf("Volume definition UUID: %s", vlmDfn.getUuid().toString().toUpperCase())
                                 .leaf("Size:     %16d", vlmDfn.getVolumeSize(accCtx))
-                                .leaf("Minor Nr: %16d", vlmDfn.getMinorNr(accCtx).value)
                                 .leaf("Flags:    %016x", vlm.getFlags().getFlagsBits(accCtx))
                                 .leaf("Storage pool: %s", storPoolName)
                                 .endBranch();

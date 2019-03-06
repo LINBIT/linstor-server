@@ -16,9 +16,10 @@ import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.apidata.RscApiData;
+import com.linbit.linstor.proto.apidata.RscWithPayloadApiData;
 import com.linbit.linstor.proto.apidata.VlmApiData;
 import com.linbit.linstor.proto.common.RscOuterClass;
+import com.linbit.linstor.proto.requests.MsgCrtRscOuterClass.RscWithPayload;
 import com.linbit.linstor.security.GenericDbBase;
 import junitparams.JUnitParamsRunner;
 import org.junit.After;
@@ -118,7 +119,8 @@ public class RscApiTest extends ApiTestBase
             testRscDfnPort,
             testRscDfnFlags,
             testRscDfnSecret,
-            tesTRscDfnTransportType
+            tesTRscDfnTransportType,
+            new ArrayList<>()
         );
         rscDfnMap.put(testRscName, testRscDfn);
         commitAndCleanUp(true);
@@ -175,15 +177,24 @@ public class RscApiTest extends ApiTestBase
         public ApiCallRc executeApiCall()
         {
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-            rscCrtApiCallHandler.createResource(Collections.singletonList(new RscApiData(
-                RscOuterClass.Rsc.newBuilder()
-                    .setNodeName(nodeName)
-                    .setName(rscName)
-                    .addAllRscFlags(flags)
-                    .addAllProps(ProtoMapUtils.fromMap(rscPropsMap))
-                    .addAllVlms(VlmApiData.toVlmProtoList(vlmApiDataList))
-                    .build()
-            ))).subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
+            rscCrtApiCallHandler.createResource(
+                Collections.singletonList(
+                    new RscWithPayloadApiData(
+                        RscWithPayload.newBuilder()
+                            .setRsc(
+                                RscOuterClass.Rsc.newBuilder()
+                                    .setNodeName(nodeName)
+                                    .setName(rscName)
+                                    .addAllRscFlags(flags)
+                                    .addAllProps(ProtoMapUtils.fromMap(rscPropsMap))
+                                    .addAllVlms(VlmApiData.toVlmProtoList(vlmApiDataList))
+                                    .build()
+                            )
+                            .build()
+                    )
+                )
+            )
+            .subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
 

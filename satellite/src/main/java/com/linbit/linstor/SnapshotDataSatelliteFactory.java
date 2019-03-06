@@ -9,6 +9,8 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
+import java.util.Collections;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -53,7 +55,10 @@ public class SnapshotDataSatelliteFactory
                     null,
                     StateFlagsBits.getMask(flags),
                     driver, transObjFactory, transMgrProvider,
-                    new TreeMap<>()
+                    new TreeMap<>(),
+                    Collections.emptyList() // satellite does not care about snapshots layer stack
+                // as the resource that will use the restored data will get the layerdata-tree set by the
+                // controller (controller-sided snapshots DO store the layer-stack)
                 );
                 snapshotDfn.addSnapshot(accCtx, snapshot);
             }

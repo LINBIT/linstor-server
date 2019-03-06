@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
@@ -89,6 +90,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
+    private final CtrlStorPoolResolveHelper ctrlStorPoolResolveHelper;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
@@ -105,6 +107,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
+        CtrlStorPoolResolveHelper ctrlStorPoolResolveHelperRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
@@ -121,6 +124,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
+        ctrlStorPoolResolveHelper = ctrlStorPoolResolveHelperRef;
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
@@ -291,7 +295,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             VolumeDefinition vlmDfn = vlmIter.next().getVolumeDefinition();
 
-            ctrlVlmCrtApiHelper.resolveStorPool(rsc, vlmDfn, removeDisk).extractApiCallRc(responses);
+            ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlmDfn, removeDisk).extractApiCallRc(responses);
         }
 
         if (removeDisk)
@@ -483,7 +487,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             Volume vlm = vlmIter.next();
 
-            StorPool storPool = ctrlVlmCrtApiHelper.resolveStorPool(rsc, vlm.getVolumeDefinition(), removeDisk)
+            StorPool storPool = ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlm.getVolumeDefinition(), removeDisk)
                 .extractApiCallRc(responses);
 
             setStorPool(vlm, storPool);

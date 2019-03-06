@@ -1,8 +1,9 @@
 package com.linbit.linstor.core.apicallhandler;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -12,8 +13,8 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.CryptSetupRscPojo;
 import com.linbit.linstor.api.pojo.CryptSetupRscPojo.CryptVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -32,7 +33,13 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
+import com.linbit.linstor.storage.data.provider.drdbdiskless.DrbdDisklessData;
+import com.linbit.linstor.storage.data.provider.lvm.LvmData;
+import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
+import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
+import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
@@ -69,22 +76,24 @@ public class LayerRscDataMerger
     {
         RscLayerObject restore(
             Resource rsc,
-            RscLayerDataPojo rscLayerDataPojo,
+            RscLayerDataApi rscLayerDataPojo,
             RscLayerObject parent
         )
-            throws AccessDeniedException, SQLException, ValueOutOfRangeException;
+            throws SQLException, ValueOutOfRangeException, AccessDeniedException, IllegalArgumentException,
+                ExhaustedPoolException, ValueInUseException;
     }
 
     public void restoreLayerData(
         Resource rsc,
-        RscLayerDataPojo rscLayerDataPojo
+        RscLayerDataApi rscLayerDataPojo
     )
     {
         try
         {
             restore(rsc, rscLayerDataPojo, null);
         }
-        catch (AccessDeniedException | SQLException | ValueOutOfRangeException exc)
+        catch (AccessDeniedException | SQLException | ValueOutOfRangeException | IllegalArgumentException |
+            ExhaustedPoolException | ValueInUseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -92,10 +101,11 @@ public class LayerRscDataMerger
 
     private void restore(
         Resource rsc,
-        RscLayerDataPojo rscLayerDataPojo,
+        RscLayerDataApi rscLayerDataPojo,
         RscLayerObject parent
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException
+        throws AccessDeniedException, SQLException, IllegalArgumentException,
+            ImplementationError, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException
     {
         RscDataExtractor extractor;
         switch (rscLayerDataPojo.getLayerKind())
@@ -113,7 +123,7 @@ public class LayerRscDataMerger
                 throw new ImplementationError("Unexpected layer kind: " + rscLayerDataPojo.getLayerKind());
         }
         RscLayerObject rscLayerObject = extractor.restore(rsc, rscLayerDataPojo, parent);
-        for (RscLayerDataPojo childRscPojo : rscLayerDataPojo.getChildren())
+        for (RscLayerDataApi childRscPojo : rscLayerDataPojo.getChildren())
         {
             restore(rsc, childRscPojo, rscLayerObject);
         }
@@ -121,10 +131,11 @@ public class LayerRscDataMerger
 
     private DrbdRscData restoreDrbdRscData(
         Resource rsc,
-        RscLayerDataPojo rscDataPojo,
+        RscLayerDataApi rscDataPojo,
         RscLayerObject parent
     )
-        throws SQLException, ValueOutOfRangeException, AccessDeniedException
+        throws SQLException, ValueOutOfRangeException, AccessDeniedException, IllegalArgumentException,
+            ExhaustedPoolException, ValueInUseException
     {
         DrbdRscPojo drbdRscPojo = (DrbdRscPojo) rscDataPojo;
 
@@ -195,7 +206,8 @@ public class LayerRscDataMerger
         ResourceDefinition rscDfn,
         DrbdRscDfnPojo drbdRscDfnPojo
     )
-        throws IllegalArgumentException, SQLException, ValueOutOfRangeException, AccessDeniedException
+        throws IllegalArgumentException, SQLException, ValueOutOfRangeException, AccessDeniedException,
+            ExhaustedPoolException, ValueInUseException
     {
         DrbdRscDfnData rscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
         if (rscDfnData == null)
@@ -206,7 +218,7 @@ public class LayerRscDataMerger
                 drbdRscDfnPojo.getPeerSlots(),
                 drbdRscDfnPojo.getAlStripes(),
                 drbdRscDfnPojo.getAlStripeSize(),
-                new TcpPortNumber(drbdRscDfnPojo.getPort()),
+                drbdRscDfnPojo.getPort(),
                 TransportType.valueOfIgnoreCase(drbdRscDfnPojo.getTransportType(), TransportType.IP),
                 drbdRscDfnPojo.getSecret()
             );
@@ -227,7 +239,8 @@ public class LayerRscDataMerger
     }
 
     private void restoreDrbdVlm(Volume vlm, DrbdRscData rscData, List<DrbdVlmPojo> vlmPojos)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+            ValueInUseException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
@@ -259,11 +272,19 @@ public class LayerRscDataMerger
             );
             rscData.getVlmLayerObjects().put(vlmNr, drbdVlmData);
         }
-        // nothing to restore
+        else
+        {
+            drbdVlmData.setAllocatedSize(vlmPojo.getAllocatedSize());
+            drbdVlmData.setDevicePath(vlmPojo.getDevicePath());
+            drbdVlmData.setDiskState(vlmPojo.getDiskState());
+            drbdVlmData.setMetaDiskPath(vlmPojo.getMetaDisk());
+            drbdVlmData.setUsableSize(vlmPojo.getUsableSize());
+        }
     }
 
     private DrbdVlmDfnData restoreDrbdVlmDfn(VolumeDefinition vlmDfn, DrbdVlmDfnPojo drbdVlmDfnPojo)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+            ValueInUseException
     {
         DrbdVlmDfnData drbdVlmDfnData = vlmDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
         if (drbdVlmDfnData == null)
@@ -271,17 +292,20 @@ public class LayerRscDataMerger
             drbdVlmDfnData = layerDataFactory.createDrbdVlmDfnData(
                 vlmDfn,
                 drbdVlmDfnPojo.getRscNameSuffix(),
-                new MinorNumber(drbdVlmDfnPojo.getMinorNr())
+                drbdVlmDfnPojo.getMinorNr()
             );
             vlmDfn.setLayerData(apiCtx, drbdVlmDfnData);
         }
-        // nothing to merge
+        else
+        {
+            // nothing to merge
+        }
         return drbdVlmDfnData;
     }
 
     private CryptSetupRscData restoreCryptSetupRscData(
         Resource rsc,
-        RscLayerDataPojo rscDataPojo,
+        RscLayerDataApi rscDataPojo,
         RscLayerObject parent
     )
         throws AccessDeniedException, SQLException
@@ -369,12 +393,20 @@ public class LayerRscDataMerger
             );
             cryptRscData.getVlmLayerObjects().put(vlmNr, cryptVlmData);
         }
-        // nothing to restore
+        else
+        {
+            cryptVlmData.setAllocatedSize(vlmPojo.getAllocatedSize());
+            cryptVlmData.setBackingDevice(vlmPojo.getBackingDevice());
+            cryptVlmData.setDevicePath(vlmPojo.getDevicePath());
+            cryptVlmData.setOpened(vlmPojo.isOpened());
+            cryptVlmData.setDiskState(vlmPojo.getDiskState());
+            cryptVlmData.setUsableSize(vlmPojo.getUsableSize());
+        }
     }
 
     private StorageRscData restoreStorageRscData(
         Resource rsc,
-        RscLayerDataPojo rscDataPojo,
+        RscLayerDataApi rscDataPojo,
         RscLayerObject parent
     )
         throws AccessDeniedException, SQLException
@@ -434,15 +466,15 @@ public class LayerRscDataMerger
     private void restoreStorVlm(
         Volume vlm,
         StorageRscData storRscData,
-        List<VlmLayerDataPojo> vlmPojos
+        List<VlmLayerDataApi> vlmPojos
     )
         throws AccessDeniedException, SQLException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-        VlmLayerDataPojo vlmPojo = null;
+        VlmLayerDataApi vlmPojo = null;
         {
-            for (VlmLayerDataPojo vlmLayerDataPojo : vlmPojos)
+            for (VlmLayerDataApi vlmLayerDataPojo : vlmPojos)
             {
                 if (vlmLayerDataPojo.getVlmNr() == vlmNr.value)
                 {
@@ -457,24 +489,52 @@ public class LayerRscDataMerger
         }
 
         VlmProviderObject vlmData = storRscData.getVlmLayerObjects().get(vlmNr);
-        if (vlmData == null)
+        switch (vlmPojo.getProviderKind())
         {
-            switch (vlmPojo.getProviderKind())
-            {
-                case DRBD_DISKLESS:
+            case DRBD_DISKLESS:
+                if (vlmData == null)
+                {
                     vlmData = layerDataFactory.createDrbdDisklessData(
                         vlm,
                         vlmPojo.getUsableSize(),
                         storRscData
                     );
-                    break;
-                case LVM:
+                }
+                else
+                {
+                    DrbdDisklessData drbdVlmData = (DrbdDisklessData) vlmData;
+                    drbdVlmData.setUsableSize(vlmPojo.getUsableSize());
+                }
+                break;
+            case LVM:
+                if (vlmData == null)
+                {
                     vlmData = layerDataFactory.createLvmData(vlm, storRscData);
-                    break;
-                case LVM_THIN:
+                }
+                else
+                {
+                    LvmData lvmData = (LvmData) vlmData;
+                    lvmData.setAllocatedSize(vlmPojo.getAllocatedSize());
+                    lvmData.setDevicePath(vlmPojo.getDevicePath());
+                    lvmData.setUsableSize(vlmPojo.getUsableSize());
+                }
+                break;
+            case LVM_THIN:
+                if (vlmData == null)
+                {
                     vlmData = layerDataFactory.createLvmThinData(vlm, storRscData);
-                    break;
-                case SWORDFISH_INITIATOR:
+                }
+                else
+                {
+                    LvmThinData lvmThinData = (LvmThinData) vlmData;
+                    lvmThinData.setAllocatedSize(vlmPojo.getAllocatedSize());
+                    lvmThinData.setDevicePath(vlmPojo.getDevicePath());
+                    lvmThinData.setUsableSize(vlmPojo.getUsableSize());
+                }
+                break;
+            case SWORDFISH_INITIATOR:
+                if (vlmData == null)
+                {
                     vlmData = layerDataFactory.createSfInitData(
                         vlm,
                         storRscData,
@@ -483,8 +543,18 @@ public class LayerRscDataMerger
                             ((SwordfishInitiatorVlmPojo) vlmPojo).getVlmDfn()
                         )
                     );
-                    break;
-                case SWORDFISH_TARGET:
+                }
+                else
+                {
+                    SfInitiatorData sfInitData = (SfInitiatorData) vlmData;
+                    sfInitData.setAllocatedSize(vlmPojo.getAllocatedSize());
+                    sfInitData.setDevicePath(vlmPojo.getDevicePath());
+                    sfInitData.setUsableSize(vlmPojo.getUsableSize());
+                }
+                break;
+            case SWORDFISH_TARGET:
+                if (vlmData == null)
+                {
                     vlmData = layerDataFactory.createSfTargetData(
                         vlm,
                         storRscData,
@@ -493,19 +563,33 @@ public class LayerRscDataMerger
                             ((SwordfishInitiatorVlmPojo) vlmPojo).getVlmDfn()
                         )
                     );
-                    break;
-                case ZFS: // fall-through
-                case ZFS_THIN:
+                }
+                else
+                {
+                    SfTargetData sfTargetData = (SfTargetData) vlmData;
+                    sfTargetData.setAllocatedSize(vlmPojo.getAllocatedSize());
+                }
+                break;
+            case ZFS: // fall-through
+            case ZFS_THIN:
+                if (vlmData == null)
+                {
                     vlmData = layerDataFactory.createZfsData(vlm, storRscData, vlmPojo.getProviderKind());
-                    break;
-                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-                default:
-                    throw new ImplementationError("Unexpected DeviceProviderKind: " + vlmPojo.getProviderKind());
+                }
+                else
+                {
+                    ZfsData zfsData = (ZfsData) vlmData;
+                    zfsData.setAllocatedSize(vlmPojo.getAllocatedSize());
+                    zfsData.setDevicePath(vlmPojo.getDevicePath());
+                    zfsData.setUsableSize(vlmPojo.getUsableSize());
+                }
+                break;
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+            default:
+                throw new ImplementationError("Unexpected DeviceProviderKind: " + vlmPojo.getProviderKind());
 
-            }
-            storRscData.getVlmLayerObjects().put(vlmNr, vlmData);
         }
-        // nothing to restore
+        storRscData.getVlmLayerObjects().put(vlmNr, vlmData);
     }
 
     private SfVlmDfnData restoreSfVlmDfn(

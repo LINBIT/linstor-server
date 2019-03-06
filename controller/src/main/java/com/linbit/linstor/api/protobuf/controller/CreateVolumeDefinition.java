@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.controller;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
@@ -11,8 +12,11 @@ import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.requests.MsgCrtVlmDfnOuterClass.MsgCrtVlmDfn;
+import com.linbit.linstor.proto.requests.MsgCrtVlmDfnOuterClass.VlmDfnWithPayload;
+import com.linbit.utils.Pair;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.apidata.VlmDfnApiData;
+import com.linbit.linstor.proto.apidata.VlmDfnWithPayloadApiData;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,14 +46,14 @@ public class CreateVolumeDefinition implements ApiCall
     {
         MsgCrtVlmDfn msgCrtVlmDfn = MsgCrtVlmDfn.parseDelimitedFrom(msgDataIn);
 
-        List<VlmDfnApi> vlmDfnApiList = new ArrayList<>();
-        for (final VlmDfn vlmDfn : msgCrtVlmDfn.getVlmDfnsList())
+        List<VolumeDefinition.VlmDfnWtihCreationPayload> vlmDfnWithCrtPayloadApiList = new ArrayList<>();
+        for (final VlmDfnWithPayload vlmDfnWithPayload : msgCrtVlmDfn.getVlmDfnsList())
         {
-            vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
+            vlmDfnWithCrtPayloadApiList.add(new VlmDfnWithPayloadApiData(vlmDfnWithPayload));
         }
         ApiCallRc apiCallRc = apiCallHandler.createVlmDfns(
             msgCrtVlmDfn.getRscName(),
-            vlmDfnApiList
+            vlmDfnWithCrtPayloadApiList
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

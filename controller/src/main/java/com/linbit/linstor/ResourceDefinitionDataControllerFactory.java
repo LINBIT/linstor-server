@@ -14,6 +14,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -22,6 +23,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -31,29 +33,29 @@ public class ResourceDefinitionDataControllerFactory
     private final ResourceDefinitionDataDatabaseDriver driver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
-    private final DynamicNumberPool tcpPortPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
+    private final CtrlLayerStackHelper layerStackHelper;
 
     @Inject
     public ResourceDefinitionDataControllerFactory(
         ResourceDefinitionDataDatabaseDriver driverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        ResourceDefinitionRepository resourceDefinitionRepositoryRef
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
+        CtrlLayerStackHelper layerStackHelperRef
     )
     {
         driver = driverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
-        tcpPortPool = tcpPortPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
+        layerStackHelper = layerStackHelperRef;
     }
 
     public ResourceDefinitionData create(
@@ -62,7 +64,8 @@ public class ResourceDefinitionDataControllerFactory
         Integer port,
         RscDfnFlags[] flags,
         String secret,
-        TransportType transType
+        TransportType transType,
+        List<DeviceLayerKind> layerStack
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
@@ -74,17 +77,6 @@ public class ResourceDefinitionDataControllerFactory
             throw new LinStorDataAlreadyExistsException("The ResourceDefinition already exists");
         }
 
-        TcpPortNumber chosenTcpPort;
-        if (port == null)
-        {
-            chosenTcpPort = new TcpPortNumber(tcpPortPool.autoAllocate());
-        }
-        else
-        {
-            chosenTcpPort = new TcpPortNumber(port);
-            tcpPortPool.allocate(port);
-        }
-
         rscDfn = new ResourceDefinitionData(
             UUID.randomUUID(),
             objectProtectionFactory.getInstance(
@@ -93,11 +85,8 @@ public class ResourceDefinitionDataControllerFactory
                 true
             ),
             rscName,
-            chosenTcpPort,
-            tcpPortPool,
             StateFlagsBits.getMask(flags),
-            secret,
-            transType,
+            layerStack,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -107,6 +96,9 @@ public class ResourceDefinitionDataControllerFactory
             new TreeMap<>(),
             new TreeMap<>()
         );
+
+        layerStackHelper.ensureRscDfnLayerDataExits(rscDfn, port, transType, secret);
+
         driver.create(rscDfn);
 
         return rscDfn;

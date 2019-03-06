@@ -4,9 +4,12 @@ import com.linbit.linstor.Volume;
 import java.util.Map;
 
 import com.linbit.linstor.Volume.VlmApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
+import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +19,13 @@ import java.util.stream.Collectors;
 
 public class VlmApiData implements VlmApi
 {
-    private Vlm vlm;
+    private final Vlm vlm;
+    private final List<Pair<String, VlmLayerDataApi>> layerData;
 
     public VlmApiData(Vlm vlmRef)
     {
         vlm = vlmRef;
+        layerData = ProtoLayerUtils.extractVlmLayerData(vlmRef.getLayerDataList());
     }
 
     @Override
@@ -48,18 +53,6 @@ public class VlmApiData implements VlmApi
     }
 
     @Override
-    public String getBlockDevice()
-    {
-        return vlm.getBackingDisk();
-    }
-
-    @Override
-    public String getMetaDisk()
-    {
-        return vlm.getMetaDisk();
-    }
-
-    @Override
     public String getDevicePath()
     {
         return vlm.getDevicePath();
@@ -69,12 +62,6 @@ public class VlmApiData implements VlmApi
     public int getVlmNr()
     {
         return vlm.getVlmNr();
-    }
-
-    @Override
-    public int getVlmMinorNr()
-    {
-        return vlm.getVlmMinorNr();
     }
 
     @Override
@@ -142,6 +129,12 @@ public class VlmApiData implements VlmApi
             Optional.empty();
     }
 
+    @Override
+    public List<Pair<String, VlmLayerDataApi>> getVlmLayerData()
+    {
+        return layerData;
+    }
+
     public static Vlm toVlmProto(final VlmApi vlmApi)
     {
         Vlm.Builder builder = Vlm.newBuilder();
@@ -150,15 +143,6 @@ public class VlmApiData implements VlmApi
         builder.setStorPoolName(vlmApi.getStorPoolName());
         builder.setStorPoolUuid(vlmApi.getStorPoolUuid().toString());
         builder.setVlmNr(vlmApi.getVlmNr());
-        builder.setVlmMinorNr(vlmApi.getVlmMinorNr());
-        if (vlmApi.getBlockDevice() != null)
-        {
-            builder.setBackingDisk(vlmApi.getBlockDevice());
-        }
-        if (vlmApi.getMetaDisk() != null)
-        {
-            builder.setMetaDisk(vlmApi.getMetaDisk());
-        }
         if (vlmApi.getDevicePath() != null)
         {
             builder.setDevicePath(vlmApi.getDevicePath());

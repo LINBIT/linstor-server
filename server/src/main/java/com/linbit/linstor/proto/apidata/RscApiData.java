@@ -2,9 +2,9 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtoRscLayerUtils;
+import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.proto.common.RscOuterClass;
 import java.util.List;
 import java.util.Map;
@@ -18,12 +18,12 @@ import java.util.stream.Collectors;
 public class RscApiData implements Resource.RscApi
 {
     private final RscOuterClass.Rsc rsc;
-    private final RscLayerDataPojo layerObjectApiData;
+    private final RscLayerDataApi layerObjectApiData;
 
     public RscApiData(RscOuterClass.Rsc rscRef)
     {
         rsc = rscRef;
-        layerObjectApiData = ProtoRscLayerUtils.extractLayerData(rsc.getLayerObject());
+        layerObjectApiData = ProtoLayerUtils.extractRscLayerData(rsc.getLayerObject());
     }
 
     @Override
@@ -75,13 +75,7 @@ public class RscApiData implements Resource.RscApi
     }
 
     @Override
-    public Integer getLocalRscNodeId()
-    {
-        return rsc.getOverrideNodeId() ? rsc.getNodeId() : null;
-    }
-
-    @Override
-    public RscLayerDataPojo getLayerData()
+    public RscLayerDataApi getLayerData()
     {
         return layerObjectApiData;
     }

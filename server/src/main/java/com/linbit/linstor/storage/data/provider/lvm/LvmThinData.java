@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.data.provider.lvm;
 
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -10,6 +10,8 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
+
+import java.util.ArrayList;
 
 public class LvmThinData extends LvmData
 {
@@ -43,13 +45,14 @@ public class LvmThinData extends LvmData
     }
 
     @Override
-    public VlmLayerDataPojo asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
     {
         return new LvmThinVlmPojo(
             getVlmNr().value,
             getDevicePath(),
             getAllocatedSize(),
-            getUsableSize()
+            getUsableSize(),
+            new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
         );
     }
 }

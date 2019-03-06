@@ -1,7 +1,9 @@
 package com.linbit.linstor;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.annotation.SystemContext;
@@ -9,6 +11,8 @@ import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -19,6 +23,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -42,6 +47,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_MINOR_NR;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -167,6 +173,8 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
 
     private final Map<ResourceDefinition, Pair<DrbdRscDfnData, List<DrbdRscData>>> drbdRscDfnCache;
     private final Map<VolumeDefinition, DrbdVlmDfnData> drbdVlmDfnCache;
+    private final DynamicNumberPool tcpPortPool;
+    private final DynamicNumberPool minorPool;
 
     @Inject
     public DrbdLayerGenericDbDriver(
@@ -174,7 +182,9 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
+        @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef
     )
     {
         dbCtx = accCtx;
@@ -182,6 +192,8 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         idDriver = idDriverRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        tcpPortPool = tcpPortPoolRef;
+        minorPool = minorPoolRef;
 
         rscStatePersistence = new RscFlagsDriver();
         rscDfnSecretDriver = new RscDfnSecretDriver();
@@ -290,12 +302,17 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                     throw new ImplementationError("Requested id [" + id + "] was not found in the database");
                 }
             }
+            catch (ValueOutOfRangeException | ExhaustedPoolException | ValueInUseException exc)
+            {
+                throw new ImplementationError(exc);
+            }
         }
         return ret;
     }
 
     private Pair<DrbdRscDfnData, List<DrbdRscData>> loadRscDfnData(Resource rscRef, String rscSuffix)
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
+            ValueInUseException
     {
         DrbdRscDfnData drbdRscDfnData;
 
@@ -314,22 +331,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
 
                     if (resultSet.next())
                     {
-
                         short peerSlots = resultSet.getShort(PEER_SLOTS);
                         int alStripes = resultSet.getInt(AL_STRIPES);
                         long alStripeSize = resultSet.getLong(AL_STRIPE_SIZE);
 
-                        TcpPortNumber port;
-                        try
-                        {
-                            port = new TcpPortNumber(resultSet.getInt(TCP_PORT));
-                        }
-                        catch (ValueOutOfRangeException exc)
-                        {
-                            throw new LinStorSqlRuntimeException(
-                                "Failed to restore stored tcp port number [" + resultSet.getInt(TCP_PORT) + "]"
-                            );
-                        }
                         TransportType transportType = TransportType.byValue(resultSet.getString(TRANSPORT_TYPE));
                         String secret = resultSet.getString(SECRET);
 
@@ -340,10 +345,12 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                                 peerSlots,
                                 alStripes,
                                 alStripeSize,
-                                port,
+                                resultSet.getInt(TCP_PORT),
                                 transportType,
                                 secret,
                                 rscDataList,
+                                new TreeMap<>(),
+                                tcpPortPool,
                                 this,
                                 transObjFactory,
                                 transMgrProvider
@@ -367,7 +374,8 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     }
 
     private void restoreDrbdVolumes(DrbdRscData rscData, Map<VolumeNumber, DrbdVlmData> vlmMap)
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
+            ValueInUseException
     {
         Iterator<Volume> vlmIt = rscData.getResource().iterateVolumes();
         while (vlmIt.hasNext())
@@ -396,7 +404,8 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     }
 
     private DrbdVlmDfnData loadDrbdVlmDfnData(VolumeDefinition vlmDfn, String rscNameSuffix)
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
+            ValueInUseException
     {
         DrbdVlmDfnData drbdVlmDfnData = drbdVlmDfnCache.get(vlmDfn);
 
@@ -411,28 +420,19 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                 {
                     if (resultSet.next())
                     {
-                        MinorNumber minorNr;
-                        try
-                        {
-                            minorNr = new MinorNumber(resultSet.getInt(VLM_MINOR_NR));
-                        }
-                        catch (ValueOutOfRangeException exc)
-                        {
-                            throw new LinStorSqlRuntimeException(
-                                "Failed to restore stored minor number [" + resultSet.getInt(VLM_MINOR_NR) + "]"
-                            );
-                        }
-
                         drbdVlmDfnData = new DrbdVlmDfnData(
                             vlmDfn,
                             rscNameSuffix,
-                            minorNr,
+                            resultSet.getInt(VLM_MINOR_NR),
+                            minorPool,
                             this,
                             transMgrProvider
                         );
                         drbdVlmDfnCache.put(vlmDfn, drbdVlmDfnData);
 
                         vlmDfn.setLayerData(dbCtx, drbdVlmDfnData);
+                        ((DrbdRscDfnData) vlmDfn.getResourceDefinition().getLayerData(dbCtx, DeviceLayerKind.DRBD))
+                            .putDrbdVlmDfn(drbdVlmDfnData);
                     }
                     // else: this volume definition is not a drbd volume (or we lost some data)
                 }

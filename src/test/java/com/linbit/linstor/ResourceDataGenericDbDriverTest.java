@@ -15,6 +15,8 @@ import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -27,13 +29,13 @@ import static org.junit.Assert.assertTrue;
 public class ResourceDataGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RESOURCES =
-        " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + NODE_ID + ", " + RESOURCE_FLAGS +
+        " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + RESOURCE_FLAGS +
         " FROM " + TBL_RESOURCES;
 
     private final NodeName nodeName;
     private final ResourceName resName;
     private final Integer resPort;
-    private final NodeId nodeId;
+    private final Integer nodeId;
 
     private NodeData node;
     private ResourceDefinitionData resDfn;
@@ -50,7 +52,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         nodeName = new NodeName("TestNodeName");
         resName = new ResourceName("TestResName");
         resPort = 9001;
-        nodeId = new NodeId(13);
+        nodeId = 13;
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -66,7 +68,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
 
         node = nodeDataFactory.create(SYS_CTX, nodeName, null, null);
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, new ArrayList<>()
         );
 
         resUuid = randomUUID();
@@ -83,7 +85,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             objProt,
             resDfn,
             node,
-            nodeId,
             initFlags,
             driver,
             propsContainerFactory,
@@ -102,7 +103,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resUuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
-        assertEquals(nodeId.value, resultSet.getInt(NODE_ID));
         assertEquals(RscFlags.CLEAN.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
@@ -118,7 +118,8 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             resDfn,
             node,
             nodeId,
-            new RscFlags[] {RscFlags.DELETE}
+            new RscFlags[] {RscFlags.DELETE},
+            Collections.emptyList()
         );
 
         commit();
@@ -130,7 +131,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         // uuid is now != resUuid because getInstance create a new resData object
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
-        assertEquals(nodeId.value, resultSet.getInt(NODE_ID));
         assertEquals(RscFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
@@ -149,7 +149,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             objProt,
             resDfn,
             node,
-            nodeId,
             initFlags,
             driver,
             propsContainerFactory,
@@ -170,7 +169,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName, loadedRes.getAssignedNode().getName());
         assertNotNull(loadedRes.getDefinition());
         assertEquals(resName, loadedRes.getDefinition().getName());
-        assertEquals(nodeId, loadedRes.getNodeId());
         assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
     }
 
@@ -182,7 +180,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             objProt,
             resDfn,
             node,
-            nodeId,
             initFlags,
             driver,
             propsContainerFactory,
@@ -209,7 +206,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName, resData.getAssignedNode().getName());
         assertNotNull(resData.getDefinition());
         assertEquals(resName, resData.getDefinition().getName());
-        assertEquals(nodeId, resData.getNodeId());
         assertEquals(RscFlags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(SYS_CTX));
     }
 
@@ -221,7 +217,8 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             resDfn,
             node,
             nodeId,
-            null
+            null,
+            Collections.emptyList()
         );
 
         // no clearCaches
@@ -237,7 +234,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             objProt,
             resDfn,
             node,
-            nodeId,
             initFlags,
             driver,
             propsContainerFactory,
@@ -268,7 +264,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             objProt,
             resDfn,
             node,
-            nodeId,
             initFlags,
             driver,
             propsContainerFactory,
@@ -309,7 +304,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             objProt,
             resDfn,
             node,
-            nodeId,
             initFlags,
             driver,
             propsContainerFactory,
@@ -346,7 +340,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             objProt,
             resDfn,
             node,
-            nodeId,
             initFlags,
             driver,
             propsContainerFactory,
@@ -359,6 +352,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         node.addResource(SYS_CTX, res);
         resDfn.addResource(SYS_CTX, res);
 
-        resourceDataFactory.create(SYS_CTX, resDfn, node, nodeId, null);
+        resourceDataFactory.create(SYS_CTX, resDfn, node, nodeId, null, Collections.emptyList());
     }
 }

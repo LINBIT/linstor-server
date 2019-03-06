@@ -2,7 +2,7 @@ package com.linbit.linstor.storage.interfaces.categories;
 
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.layers.State;
@@ -77,5 +77,5 @@ public interface VlmProviderObject extends LayerObject
 
     String getIdentifier();
 
-    VlmLayerDataPojo asPojo(AccessContext accCtxRef);
+    VlmLayerDataApi asPojo(AccessContext accCtxRef);
 }

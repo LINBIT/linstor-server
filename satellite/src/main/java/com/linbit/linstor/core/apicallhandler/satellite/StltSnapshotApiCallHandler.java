@@ -2,12 +2,10 @@ package com.linbit.linstor.core.apicallhandler.satellite;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
@@ -23,7 +21,6 @@ import com.linbit.linstor.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.SnapshotVolumeDefinitionSatelliteFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
@@ -43,7 +40,6 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -121,14 +117,10 @@ class StltSnapshotApiCallHandler
     }
 
     private ResourceDefinition mergeResourceDefinition(ResourceDefinition.RscDfnApi rscDfnApi)
-        throws InvalidNameException, ValueOutOfRangeException, DivergentUuidsException,
-        AccessDeniedException, SQLException, ValueInUseException
+        throws InvalidNameException, DivergentUuidsException, AccessDeniedException, SQLException
     {
         ResourceName rscName = new ResourceName(rscDfnApi.getResourceName());
 
-        String rscDfnSecret = rscDfnApi.getSecret();
-        TransportType rscDfnTransportType = TransportType.byValue(rscDfnApi.getTransportType());
-        TcpPortNumber port = new TcpPortNumber(rscDfnApi.getPort());
         RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscDfnApi.getFlags());
 
         ResourceDefinition rscDfn = rscDfnMap.get(rscName);
@@ -138,22 +130,17 @@ class StltSnapshotApiCallHandler
                 apiCtx,
                 rscDfnApi.getUuid(),
                 rscName,
-                port,
-                rscDfnFlags,
-                rscDfnSecret,
-                rscDfnTransportType
+                rscDfnFlags
             );
 
             checkUuid(rscDfn, rscDfnApi);
 
             rscDfnMap.put(rscName, rscDfn);
         }
-        rscDfn.setPort(apiCtx, port);
         Props rscDfnProps = rscDfn.getProps(apiCtx);
         rscDfnProps.map().putAll(rscDfnApi.getProps());
         rscDfnProps.keySet().retainAll(rscDfnApi.getProps().keySet());
         rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
-        rscDfn.setDown(apiCtx, rscDfnApi.isDown());
         return rscDfn;
     }
 

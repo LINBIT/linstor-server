@@ -13,7 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-public class TransactionList<PARENT, VALUE extends TransactionObject>
+public class TransactionList<PARENT, VALUE>
     extends AbsTransactionObject implements List<VALUE>
 {
     private final PARENT parent;
@@ -42,7 +42,13 @@ public class TransactionList<PARENT, VALUE extends TransactionObject>
     protected void postSetConnection(TransactionMgr transMgrRef)
     {
         // forward transaction manager to values
-        backingList.forEach(to -> to.setConnection(transMgrRef));
+        for (VALUE val : backingList)
+        {
+            if (val instanceof TransactionObject)
+            {
+                ((TransactionObject) val).setConnection(transMgrRef);
+            }
+        }
     }
 
     @Override

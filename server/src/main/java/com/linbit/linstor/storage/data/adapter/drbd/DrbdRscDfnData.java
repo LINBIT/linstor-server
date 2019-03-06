@@ -1,15 +1,21 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
+import com.linbit.ExhaustedPoolException;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
+import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
@@ -20,6 +26,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnObject
@@ -32,12 +39,17 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     private final String suffixedResourceName;
     private final String resourceNameSuffix;
     private final DrbdLayerDatabaseDriver dbDriver;
+    private final DynamicNumberPool tcpPortPool;
 
     // persisted, serialized, ctrl and stlt
     private final TransactionList<DrbdRscDfnData, DrbdRscData> drbdRscDataList;
+    private final TransactionMap<VolumeNumber, DrbdVlmDfnData> drbdVlmDfnMap;
     private final TransactionSimpleObject<DrbdRscDfnData, TcpPortNumber> port;
     private final TransactionSimpleObject<DrbdRscDfnData, TransportType> transportType;
     private final TransactionSimpleObject<DrbdRscDfnData, String> secret;
+
+    // not persisted, serialized, ctrl and stlt
+    private final TransactionSimpleObject<DrbdRscDfnData, Boolean> down;
 
     public DrbdRscDfnData(
         ResourceDefinition rscDfnRef,
@@ -45,24 +57,39 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         short peerSlotsRef,
         int alStripesRef,
         long alStripesSizeRef,
-        TcpPortNumber portRef,
+        Integer portRef,
         TransportType transportTypeRef,
         String secretRef,
         List<DrbdRscData> drbdRscDataListRef,
+        Map<VolumeNumber, DrbdVlmDfnData> vlmDfnMap,
+        DynamicNumberPool tcpPortPoolRef,
         DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
+        throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         super(transMgrProvider);
         resourceNameSuffix = resourceNameSuffixRef;
+        tcpPortPool = tcpPortPoolRef;
         dbDriver = dbDriverRef;
         suffixedResourceName = rscDfnRef.getName().displayValue + resourceNameSuffixRef;
         rscDfn = Objects.requireNonNull(rscDfnRef);
         peerSlots = peerSlotsRef;
         alStripes = alStripesRef;
         alStripeSize = alStripesSizeRef;
-        port = transObjFactory.createTransactionSimpleObject(this, portRef, dbDriverRef.getTcpPortDriver());
+
+        TcpPortNumber tmpPort;
+        if (portRef == null)
+        {
+            tmpPort = new TcpPortNumber(tcpPortPool.autoAllocate());
+        }
+        else
+        {
+            tmpPort = new TcpPortNumber(portRef);
+            tcpPortPool.allocate(portRef);
+        }
+        port = transObjFactory.createTransactionSimpleObject(this, tmpPort, dbDriverRef.getTcpPortDriver());
         transportType = transObjFactory.createTransactionSimpleObject(
             this,
             transportTypeRef,
@@ -70,6 +97,10 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         );
         secret = transObjFactory.createTransactionSimpleObject(this, secretRef, dbDriverRef.getRscDfnSecretDriver());
         drbdRscDataList = transObjFactory.createTransactionList(this, drbdRscDataListRef, null);
+
+        down = transObjFactory.createTransactionSimpleObject(this, false, null);
+
+        drbdVlmDfnMap = transObjFactory.createTransactionMap(vlmDfnMap, null);
 
         transObjs = Arrays.asList(
             rscDfn,
@@ -98,9 +129,20 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         return port.get();
     }
 
-    public void setPort(TcpPortNumber portRef) throws SQLException
+    public void setPort(Integer portRef)
+        throws ExhaustedPoolException, SQLException, ValueOutOfRangeException, ValueInUseException
     {
+        tcpPortPool.deallocate(port.get().value);
+        int actualPort = portRef == null ? tcpPortPool.autoAllocate() : portRef;
+        port.set(new TcpPortNumber(actualPort));
+        tcpPortPool.allocate(actualPort);
+    }
+
+    public void setPort(TcpPortNumber portRef) throws SQLException, ValueInUseException
+    {
+        tcpPortPool.deallocate(port.get().value);
         port.set(portRef);
+        tcpPortPool.allocate(portRef.value);
     }
 
     @Override
@@ -148,6 +190,18 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         return alStripeSize;
     }
 
+    @Override
+    public void setDown(boolean downRef) throws SQLException
+    {
+        down.set(downRef);
+    }
+
+    @Override
+    public boolean isDown()
+    {
+        return down.get();
+    }
+
     public String getSuffixedResourceName()
     {
         return suffixedResourceName;
@@ -162,10 +216,25 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     @Override
     public void delete() throws SQLException
     {
+        for (DrbdVlmDfnData vlmDfn : drbdVlmDfnMap.values())
+        {
+            vlmDfn.delete();
+        }
+        tcpPortPool.deallocate(port.get().value);
         dbDriver.delete(this);
     }
 
-    public DrbdRscDfnPojo asPojo(AccessContext accCtxRef)
+    public DrbdVlmDfnData getDrbdVlmDfn(VolumeNumber vlmNr)
+    {
+        return drbdVlmDfnMap.get(vlmNr);
+    }
+
+    public void putDrbdVlmDfn(DrbdVlmDfnData drbdVlmDfnDataRef)
+    {
+        drbdVlmDfnMap.put(drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber(), drbdVlmDfnDataRef);
+    }
+
+    public DrbdRscDfnPojo getApiData(AccessContext accCtxRef)
     {
         return new DrbdRscDfnPojo(
             suffixedResourceName,
@@ -174,8 +243,8 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
             alStripeSize,
             port.get().value,
             transportType.get().name(),
-            secret.get()
+            secret.get(),
+            down.get()
         );
     }
-
 }

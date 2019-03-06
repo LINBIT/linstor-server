@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
@@ -9,6 +10,9 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -16,15 +20,17 @@ import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
+import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.api.protobuf.ProtoRscLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfn;
+import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.RscOuterClass.Rsc;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
@@ -32,9 +38,11 @@ import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntOtherRsc;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgIntApplyRsc;
 import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -86,20 +94,52 @@ public class ApplyRsc implements ApiCall
             rscDfn.getRscName(),
             intRscData.getRscConnectionsList()
         );
+
+        List<Pair<String, RscDfnLayerDataApi>> layerData = new ArrayList<>();
+        for (RscDfnLayerData rscDfnData : rscDfn.getLayerDataList())
+        {
+            Pair<String, RscDfnLayerDataApi> pair = new Pair<>();
+            pair.objA = ProtoLayerUtils.layerType2layerString(rscDfnData.getLayerType());
+
+            RscDfnLayerDataApi rscDfnLayerDataApi;
+            switch (rscDfnData.getDataCase())
+            {
+                case DATA_NOT_SET:
+                    rscDfnLayerDataApi = null;
+                    break;
+                case DRBD:
+                    DrbdRscDfn drbdRscDfn = rscDfnData.getDrbd();
+                    rscDfnLayerDataApi = new DrbdRscDfnPojo(
+                        drbdRscDfn.getRscNameSuffix(),
+                        (short) drbdRscDfn.getPeersSlots(),
+                        drbdRscDfn.getAlStripes(),
+                        drbdRscDfn.getAlSize(),
+                        drbdRscDfn.getPort(),
+                        drbdRscDfn.getTransportType(),
+                        drbdRscDfn.getSecret(),
+                        drbdRscDfn.getDown()
+                    );
+                    break;
+                default:
+                    throw new ImplementationError(
+                        "Unknown resource definition layer (proto) kind: " + rscDfnData.getDataCase()
+                    );
+            }
+            layerData.add(pair);
+        }
+
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
             UUID.fromString(rscDfn.getRscDfnUuid()),
             rscDfn.getRscName(),
-            rscDfn.getRscDfnPort(),
-            rscDfn.getRscDfnSecret(),
             FlagsHelper.fromStringList(
                 ResourceDefinition.RscDfnFlags.class,
                 rscDfn.getRscDfnFlagsList()
             ),
-            rscDfn.getRscDfnTransportType(),
-            rscDfn.getRscDfnDown(),
             ProtoMapUtils.asMap(rscDfn.getRscDfnPropsList()),
-            vlmDfns
+            vlmDfns,
+            layerData
         );
+        RscLayerDataApi rscLayerData = ProtoLayerUtils.extractRscLayerData(localRsc.getLayerObject());
         RscPojo rscRawData = new RscPojo(
             localRsc.getName(),
             localRsc.getNodeName(),
@@ -107,14 +147,13 @@ public class ApplyRsc implements ApiCall
             rscDfnPojo,
             UUID.fromString(localRsc.getUuid()),
             FlagsHelper.fromStringList(Resource.RscFlags.class, localRsc.getRscFlagsList()),
-            localRsc.getNodeId(),
             ProtoMapUtils.asMap(localRsc.getPropsList()),
             localVlms,
             otherRscList,
             rscConns,
             fullSyncId,
             updateId,
-            ProtoRscLayerUtils.extractLayerData(localRsc.getLayerObject())
+            rscLayerData
         );
         return rscRawData;
     }
@@ -128,10 +167,10 @@ public class ApplyRsc implements ApiCall
                 new VlmDfnPojo(
                     UUID.fromString(vlmDfn.getVlmDfnUuid()),
                     vlmDfn.getVlmNr(),
-                    vlmDfn.getVlmMinor(),
                     vlmDfn.getVlmSize(),
                     FlagsHelper.fromStringList(VlmDfnFlags.class, vlmDfn.getVlmFlagsList()),
-                    ProtoMapUtils.asMap(vlmDfn.getVlmPropsList())
+                    ProtoMapUtils.asMap(vlmDfn.getVlmPropsList()),
+                    ProtoLayerUtils.extractVlmDfnLayerData(vlmDfn.getLayerDataList())
                 )
             );
         }
@@ -143,17 +182,15 @@ public class ApplyRsc implements ApiCall
         List<Volume.VlmApi> list = new ArrayList<>();
         for (Vlm vol : localVolumesList)
         {
+
             list.add(
                 new VlmPojo(
                     vol.getStorPoolName(),
                     UUID.fromString(vol.getStorPoolUuid()),
                     UUID.fromString(vol.getVlmDfnUuid()),
                     UUID.fromString(vol.getVlmUuid()),
-                    vol.getBackingDisk(),
-                    vol.getMetaDisk(),
                     vol.getDevicePath(),
                     vol.getVlmNr(),
-                    vol.getVlmMinorNr(),
                     Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
                     ProtoMapUtils.asMap(vol.getVlmPropsList()),
                     vol.getStorPoolDriverName(),
@@ -161,7 +198,8 @@ public class ApplyRsc implements ApiCall
                     ProtoMapUtils.asMap(vol.getStorPoolDfnPropsList()),
                     ProtoMapUtils.asMap(vol.getStorPoolPropsList()),
                     Optional.empty(),
-                    Optional.empty()
+                    Optional.empty(),
+                    ProtoLayerUtils.extractVlmLayerData(vol.getLayerDataList())
                 )
             );
         }
@@ -205,13 +243,12 @@ public class ApplyRsc implements ApiCall
                     ProtoMapUtils.asMap(protoNode.getPropsList()),
                     extractNetIfs(protoNode),
                     UUID.fromString(protoRsc.getUuid()),
-                    protoRsc.getNodeId(),
                     FlagsHelper.fromStringList(Resource.RscFlags.class, protoRsc.getRscFlagsList()),
                     ProtoMapUtils.asMap(protoRsc.getPropsList()),
                     extractRawVolumes(
                         protoRsc.getVlmsList()
                     ),
-                    ProtoRscLayerUtils.extractLayerData(protoRsc.getLayerObject())
+                    ProtoLayerUtils.extractRscLayerData(protoRsc.getLayerObject())
                 )
             );
         }

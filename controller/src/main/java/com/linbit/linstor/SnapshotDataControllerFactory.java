@@ -5,12 +5,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -37,7 +39,8 @@ public class SnapshotDataControllerFactory
         Node node,
         SnapshotDefinition snapshotDfn,
         NodeId nodeId,
-        Snapshot.SnapshotFlags[] initFlags
+        Snapshot.SnapshotFlags[] initFlags,
+        List<DeviceLayerKind> layerStack
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -57,8 +60,9 @@ public class SnapshotDataControllerFactory
             nodeId,
             StateFlagsBits.getMask(initFlags),
             driver, transObjFactory, transMgrProvider,
-            new TreeMap<>()
-            );
+            new TreeMap<>(),
+            layerStack
+        );
 
         driver.create(snapshot);
         snapshotDfn.addSnapshot(accCtx, snapshot);

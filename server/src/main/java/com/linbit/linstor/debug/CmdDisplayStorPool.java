@@ -168,7 +168,6 @@ public class CmdDisplayStorPool extends BaseDebugCmd
                             .branch("Volume %s", volume.getUuid().toString().toUpperCase())
                             .leaf("Flags: %016X", volume.getFlags().getFlagsBits(accCtx))
                             .leaf("Volume number: %s", volume.getVolumeDefinition().getVolumeNumber())
-                            .leaf("Minor number: %s", volume.getVolumeDefinition().getMinorNr(accCtx))
                             .endBranch();
                     }
 

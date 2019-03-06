@@ -2,15 +2,14 @@ package com.linbit.linstor;
 
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
-import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -27,6 +26,7 @@ import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+import com.linbit.utils.Pair;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -57,11 +57,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     // DRBD volume number
     private final VolumeNumber volumeNr;
 
-    // DRBD device minor number
-    private final TransactionSimpleObject<VolumeDefinitionData, MinorNumber> minorNr;
-
-    private final DynamicNumberPool minorNrPool;
-
     // Net volume size in kiB
     private final TransactionSimpleObject<VolumeDefinitionData, Long> volumeSize;
 
@@ -85,8 +80,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         UUID uuid,
         ResourceDefinition resDfnRef,
         VolumeNumber volNr,
-        MinorNumber minor,
-        DynamicNumberPool minorNrPoolRef,
         long volSize,
         long initFlags,
         VolumeDefinitionDataDatabaseDriver dbDriverRef,
@@ -101,7 +94,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         super(transMgrProviderRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, VolumeNumber.class, volNr);
-        ErrorCheck.ctorNotNull(VolumeDefinitionData.class, MinorNumber.class, minor);
 
         checkVolumeSize(volSize);
 
@@ -110,14 +102,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         resourceDfn = resDfnRef;
 
         dbDriver = dbDriverRef;
-        minorNrPool = minorNrPoolRef;
 
         volumeNr = volNr;
-        minorNr = transObjFactory.createTransactionSimpleObject(
-            this,
-            minor,
-            dbDriver.getMinorNumberDriver()
-        );
         volumeSize = transObjFactory.createTransactionSimpleObject(
             this,
             volSize,
@@ -146,7 +132,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         transObjs = Arrays.asList(
             vlmDfnProps,
             resourceDfn,
-            minorNr,
             volumeSize,
             flags,
             deleted,
@@ -211,29 +196,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         checkDeleted();
         return volumeNr;
-    }
-
-    @Override
-    public MinorNumber getMinorNr(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return minorNr.get();
-    }
-
-    @Override
-    public MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
-        throws AccessDeniedException, SQLException, ValueInUseException
-    {
-        checkDeleted();
-        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        if (minorNrPool != null)
-        {
-            minorNrPool.deallocate(minorNr.get().value);
-            minorNrPool.allocate(newMinorNr.value);
-        }
-        return minorNr.set(newMinorNr);
     }
 
     @Override
@@ -330,6 +292,14 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         return (T) layerStorage.get(kind);
     }
 
+    public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        layerStorage.remove(kind).delete();
+    }
+
     @Override
     public void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException
@@ -357,11 +327,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             }
 
             vlmDfnProps.delete();
-
-            if (minorNrPool != null)
-            {
-                minorNrPool.deallocate(minorNr.get().value);
-            }
 
             for (VlmDfnLayerObject vlmDfnLayerObject : layerStorage.values())
             {
@@ -391,13 +356,26 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     @Override
     public VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
+        List<Pair<String, VlmDfnLayerDataApi>> layerData = new ArrayList<>();
+
+        for (DeviceLayerKind kind : resourceDfn.getLayerStack(accCtx))
+        {
+            VlmDfnLayerObject vlmDfnLayerObject = layerStorage.get(kind);
+            layerData.add(
+                new Pair<>(
+                    kind.name(),
+                    vlmDfnLayerObject == null ? null : vlmDfnLayerObject.getApiData(accCtx)
+                )
+            );
+        }
+
         return new VlmDfnPojo(
             getUuid(),
             getVolumeNumber().value,
-            getMinorNr(accCtx).value,
             getVolumeSize(accCtx),
             getFlags().getFlagsBits(accCtx),
-            getProps(accCtx).map()
+            getProps(accCtx).map(),
+            layerData
         );
     }
 

@@ -3,7 +3,7 @@ package com.linbit.linstor.storage.data.adapter.drbd;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
@@ -35,7 +35,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     private final short peerSlots;
     private final int alStripes;
     private final long alStripeSize;
-    private final DrbdLayerDatabaseDriver dbDriver;
+    private final DrbdLayerDatabaseDriver drbdDbDriver;
 
     // persisted, serialized
     private final StateFlags<DrbdRscFlags> flags;
@@ -80,7 +80,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
         );
 
         nodeId = nodeIdRef;
-        dbDriver = dbDriverRef;
+        drbdDbDriver = dbDriverRef;
 
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -166,12 +166,6 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
         vlmMap.put(data.getVlmNr(), data);
     }
 
-    @Override
-    protected void deleteVlmFromDatabase(DrbdVlmData drbdVlmData) throws SQLException
-    {
-        dbDriver.delete(drbdVlmData);
-    }
-
     public StateFlags<DrbdRscFlags> getFlags()
     {
         return flags;
@@ -196,10 +190,22 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     }
 
     @Override
-    public void delete()
+    public void delete() throws SQLException
     {
         super.delete();
         drbdRscDfnData.getDrbdRscDataList().remove(this);
+    }
+
+    @Override
+    protected void deleteVlmFromDatabase(DrbdVlmData drbdVlmData) throws SQLException
+    {
+        drbdDbDriver.delete(drbdVlmData);
+    }
+
+    @Override
+    protected void deleteRscFromDatabase() throws SQLException
+    {
+        drbdDbDriver.delete(this);
     }
 
     /*
@@ -247,7 +253,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     }
 
     @Override
-    public RscLayerDataPojo asPojo(AccessContext accCtx) throws AccessDeniedException
+    public RscLayerDataApi asPojo(AccessContext accCtx) throws AccessDeniedException
     {
         List<DrbdVlmPojo> vlmPojos = new ArrayList<>();
         for (DrbdVlmData drbdVlmData : vlmMap.values())
@@ -258,7 +264,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
             rscLayerId,
             getChildrenPojos(accCtx),
             getResourceNameSuffix(),
-            drbdRscDfnData.asPojo(accCtx),
+            drbdRscDfnData.getApiData(accCtx),
             nodeId.value,
             peerSlots,
             alStripes,

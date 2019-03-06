@@ -1,13 +1,16 @@
 package com.linbit.linstor.api.interfaces;
 
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 /**
  * Marker interface
  */
-public interface VlmLayerDataPojo
+public interface VlmLayerDataApi
 {
     int getVlmNr();
+
+    DeviceLayerKind getLayerKind();
 
     DeviceProviderKind getProviderKind();
 
@@ -16,4 +19,6 @@ public interface VlmLayerDataPojo
     long getAllocatedSize();
 
     long getUsableSize();
+
+    String getDiskState();
 }

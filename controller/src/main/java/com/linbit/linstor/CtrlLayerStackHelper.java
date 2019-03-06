@@ -1,0 +1,721 @@
+package com.linbit.linstor;
+
+import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.ConfigModule;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupRscData;
+import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.data.provider.StorageRscData;
+import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.LayerDataFactory;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+@Singleton
+public class CtrlLayerStackHelper
+{
+    private final ErrorReporter errorReporter;
+    private final AccessContext apiCtx;
+    private final Props stltConf;
+    private final LayerDataFactory layerDataFactory;
+    private final DynamicNumberPool layerRscIdPool;
+    private final CtrlStorPoolResolveHelper storPoolResolveHelper;
+
+    @Inject
+    public CtrlLayerStackHelper(
+        ErrorReporter errorReporterRef,
+        @ApiContext AccessContext apiCtxRef,
+        @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
+        LayerDataFactory layerDataFactoryRef,
+        @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef
+    )
+    {
+        errorReporter = errorReporterRef;
+        apiCtx = apiCtxRef;
+        stltConf = stltConfRef;
+        layerDataFactory = layerDataFactoryRef;
+        layerRscIdPool = layerRscIdPoolRef;
+        storPoolResolveHelper = storPoolResolveHelperRef;
+    }
+
+    public List<DeviceLayerKind> getLayerStack(Resource rscRef)
+    {
+        List<DeviceLayerKind> ret = new ArrayList<>();
+        try
+        {
+            RscLayerObject layerData = rscRef.getLayerData(apiCtx);
+            while (layerData != null)
+            {
+                ret.add(layerData.getLayerKind());
+                layerData = layerData.getFirstChild();
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
+    }
+
+    /**
+     * Creates the linstor default stack, which is {@link DeviceLayerKind#DRBD} on an optional
+     * {@link DeviceLayerKind#CRYPT_SETUP} on a {@link DeviceLayerKind#STORAGE} layer.
+     * A CRYPT_SETUP layer is created if at least one {@link VolumeDefinition}
+     * has the {@link VolumeDefinition.VlmDfnFlags#ENCRYPTED} flag set.
+     * @param rscDfnRef
+     * @return
+     * @return
+     */
+    public List<DeviceLayerKind> createDefaultStack(Resource rscRef)
+    {
+        List<DeviceLayerKind> layerStack;
+        try
+        {
+            boolean hasSwordfish = hasSwordfishKind(rscRef);
+            if (hasSwordfish)
+            {
+                layerStack = Arrays.asList(DeviceLayerKind.STORAGE);
+            }
+            else
+            {
+                // drbd + (crypt) + storage
+                if (needsCryptLayer(rscRef))
+                {
+                    layerStack = Arrays.asList(
+                        DeviceLayerKind.DRBD,
+                        DeviceLayerKind.CRYPT_SETUP,
+                        DeviceLayerKind.STORAGE
+                    );
+                }
+                else
+                {
+                    layerStack = Arrays.asList(
+                        DeviceLayerKind.DRBD,
+                        DeviceLayerKind.STORAGE
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return layerStack;
+    }
+
+    public void ensureRscDfnLayerDataExits(
+        ResourceDefinitionData rscDfn,
+        Integer tcpPortNrInt,
+        TransportType transportTypeRef,
+        String secretRef
+    )
+        throws SQLException, ValueOutOfRangeException,
+            ExhaustedPoolException, ValueInUseException
+    {
+        List<DeviceLayerKind> layerStack;
+        try
+        {
+            layerStack = rscDfn.getLayerStack(apiCtx);
+            if (layerStack.contains(DeviceLayerKind.DRBD))
+            {
+                DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+                if (drbdRscDfnData == null)
+                {
+                    rscDfn.setLayerData(
+                        apiCtx,
+                        layerDataFactory.createDrbdRscDfnData(
+                            rscDfn,
+                            "",
+                            getAndCheckPeerSlotsForNewResource(rscDfn),
+                            ConfigModule.DEFAULT_AL_STRIPES,
+                            ConfigModule.DEFAULT_AL_SIZE,
+                            tcpPortNrInt,
+                            transportTypeRef,
+                            secretRef
+                        )
+                    );
+                }
+                else
+                {
+                    if (tcpPortNrInt != null)
+                    {
+                        drbdRscDfnData.setPort(tcpPortNrInt);
+                    }
+                    if (transportTypeRef != null)
+                    {
+                        drbdRscDfnData.setTransportType(transportTypeRef);
+                    }
+                    if (secretRef != null)
+                    {
+                        drbdRscDfnData.setSecret(secretRef);
+                    }
+                }
+            }
+            else
+            {
+                DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+                if (drbdRscDfnData != null)
+                {
+                    rscDfn.removeLayerData(apiCtx, DeviceLayerKind.DRBD);
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+    public void ensureVlmDfnLayerDataExits(
+        VolumeDefinitionData vlmDfn,
+        Integer minorNrInt
+    )
+        throws SQLException, ValueOutOfRangeException,
+            ExhaustedPoolException, ValueInUseException
+    {
+        try
+        {
+            List<DeviceLayerKind> layerStack = vlmDfn.getResourceDefinition().getLayerStack(apiCtx);
+            if (layerStack.contains(DeviceLayerKind.DRBD))
+            {
+                DrbdRscDfnData drbdRscDfnData = vlmDfn.getResourceDefinition().getLayerData(
+                    apiCtx,
+                    DeviceLayerKind.DRBD
+                );
+                if (drbdRscDfnData == null)
+                {
+                    throw new ImplementationError("No drbd resource definition data found");
+                }
+                DrbdVlmDfnData drbdVlmDfn = drbdRscDfnData.getDrbdVlmDfn(vlmDfn.getVolumeNumber());
+                if (drbdVlmDfn == null)
+                {
+                    vlmDfn.setLayerData(
+                        apiCtx,
+                        layerDataFactory.createDrbdVlmDfnData(
+                            vlmDfn,
+                            "",
+                            minorNrInt
+                        )
+                    );
+                }
+                else
+                {
+                    // minor numer is not changable
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    public void ensureStackDataExists(
+        ResourceData rscDataRef,
+        List<DeviceLayerKind> layerStackRef,
+        Integer nodeIdIntRef
+    )
+    {
+        try
+        {
+            List<DeviceLayerKind> layerStack;
+            if (layerStackRef == null)
+            {
+                layerStack = getLayerStack(rscDataRef);
+            }
+            else
+            {
+                layerStack = layerStackRef;
+            }
+
+            RscLayerObject rscObj = null;
+            for (DeviceLayerKind kind : layerStack)
+            {
+                switch (kind)
+                {
+                    case DRBD:
+                        rscObj = ensureDrbdRscLayerCreated(rscDataRef, nodeIdIntRef);
+                        break;
+                    case CRYPT_SETUP:
+                        rscObj = ensureCryptRscLayerCreated(rscDataRef, rscObj);
+                        break;
+                    case STORAGE:
+                        ensureStorageLayerCreated(rscDataRef, rscObj);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (ExhaustedPoolException exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_POOL_EXHAUSTED_RSC_LAYER_ID,
+                    "Too many layered resources!"
+                )
+            );
+        }
+        catch (SQLException exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SQL,
+                    "An sql excption occured while creating layer data"
+                )
+            );
+        }
+        catch (Exception exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An excption occured while creating layer data"
+                )
+            );
+        }
+    }
+
+    private boolean needsCryptLayer(Resource rscRef) throws AccessDeniedException
+    {
+        boolean needsCryptLayer = false;
+        Iterator<VolumeDefinition> iterateVolumeDefinitions = rscRef.getDefinition().iterateVolumeDfn(apiCtx);
+        while (iterateVolumeDefinitions.hasNext())
+        {
+            VolumeDefinition vlmDfn = iterateVolumeDefinitions.next();
+
+            if (vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.ENCRYPTED))
+            {
+                needsCryptLayer = true;
+                break;
+            }
+        }
+        return needsCryptLayer;
+    }
+
+    private boolean hasSwordfishKind(Resource rscRef)
+        throws AccessDeniedException
+    {
+        boolean foundSwordfishKind = false;
+
+        Iterator<VolumeDefinition> iterateVolumeDfn = rscRef.getDefinition().iterateVolumeDfn(apiCtx);
+        while (iterateVolumeDfn.hasNext())
+        {
+            VolumeDefinition vlmDfn = iterateVolumeDfn.next();
+            StorPool storPool = storPoolResolveHelper.resolveStorPool(
+                rscRef,
+                vlmDfn,
+                rscRef.getStateFlags().isSet(apiCtx, RscFlags.DISKLESS)
+            ).getValue();
+
+            if (storPool != null)
+            {
+                DeviceProviderKind kind = storPool.getDeviceProviderKind();
+                if (kind.equals(DeviceProviderKind.SWORDFISH_INITIATOR) ||
+                    kind.equals(DeviceProviderKind.SWORDFISH_TARGET))
+                {
+                    foundSwordfishKind = true;
+                    break;
+                }
+            }
+        }
+        return foundSwordfishKind;
+    }
+
+    private RscLayerObject ensureDrbdRscLayerCreated(
+        Resource rscRef,
+        Integer nodeIdIntRef
+    )
+        throws AccessDeniedException, SQLException, ExhaustedPoolException, ValueOutOfRangeException,
+            ValueInUseException
+    {
+        ResourceDefinition rscDfn = rscRef.getDefinition();
+        DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+        if (drbdRscDfnData == null)
+        {
+            drbdRscDfnData = layerDataFactory.createDrbdRscDfnData(
+                rscDfn,
+                "",
+                getAndCheckPeerSlotsForNewResource((ResourceDefinitionData) rscDfn),
+                ConfigModule.DEFAULT_AL_STRIPES,
+                ConfigModule.DEFAULT_AL_SIZE,
+                null, // generated tcpPort
+                TransportType.IP,
+                SecretGenerator.generateSharedSecret()
+            );
+            rscDfn.setLayerData(apiCtx, drbdRscDfnData);
+        }
+
+        DrbdRscData drbdRscData = rscRef.getLayerData(apiCtx);
+        if (drbdRscData == null)
+        {
+            NodeId nodeId;
+            if (nodeIdIntRef == null)
+            {
+                try
+                {
+                    int[] occupiedIds = new int[drbdRscDfnData.getDrbdRscDataList().size()];
+                    int idx = 0;
+                    for (DrbdRscData tmpDrbdRscData : drbdRscDfnData.getDrbdRscDataList())
+                    {
+                        occupiedIds[idx] = tmpDrbdRscData.getNodeId().value;
+                        ++idx;
+                    }
+                    Arrays.sort(occupiedIds);
+
+                    nodeId = NodeIdAlloc.getFreeNodeId(occupiedIds);
+                }
+                catch (ExhaustedPoolException exhaustedPoolExc)
+                {
+                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_POOL_EXHAUSTED_NODE_ID,
+                        "An exception occured during generation of a node ID."
+                    ), exhaustedPoolExc);
+                }
+            }
+            else
+            {
+                nodeId = new NodeId(nodeIdIntRef);
+            }
+
+            drbdRscData = layerDataFactory.createDrbdRscData(
+                layerRscIdPool.autoAllocate(),
+                rscRef,
+                "",
+                null, // no parent
+                drbdRscDfnData,
+                nodeId,
+                null,
+                null,
+                null,
+                rscRef.getStateFlags().getFlagsBits(apiCtx)
+            );
+            rscRef.setLayerData(apiCtx, drbdRscData);
+            drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
+        }
+        else
+        {
+            drbdRscData.getFlags().resetFlagsTo(
+                apiCtx,
+                DrbdRscFlags.restoreFlags(rscRef.getStateFlags().getFlagsBits(apiCtx))
+            );
+        }
+
+        Map<VolumeNumber, DrbdVlmData> drbdVlmDataMap = drbdRscData.getVlmLayerObjects();
+        List<VolumeNumber> vlmsExistingButShouldNot = new ArrayList<>(
+            drbdVlmDataMap.keySet()
+        );
+
+        Iterator<Volume> iterateVolumes = rscRef.iterateVolumes();
+        while (iterateVolumes.hasNext())
+        {
+            Volume vlm = iterateVolumes.next();
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+
+            vlmsExistingButShouldNot.remove(vlmDfn.getVolumeNumber());
+
+            if (!drbdVlmDataMap.containsKey(vlmDfn.getVolumeNumber()))
+            {
+                DrbdVlmDfnData drbdVlmDfnData = vlmDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+                if (drbdVlmDfnData == null)
+                {
+                    drbdVlmDfnData = layerDataFactory.createDrbdVlmDfnData(
+                        vlmDfn,
+                        "",
+                        null // generated minor
+                    );
+                    vlmDfn.setLayerData(apiCtx, drbdVlmDfnData);
+                }
+
+                DrbdVlmData drbdVlmData = layerDataFactory.createDrbdVlmData(vlm, drbdRscData, drbdVlmDfnData);
+                drbdVlmDataMap.put(vlmDfn.getVolumeNumber(), drbdVlmData);
+            }
+        }
+
+        for (VolumeNumber vlmNr : vlmsExistingButShouldNot)
+        {
+            drbdVlmDataMap.remove(vlmNr);
+        }
+
+        return drbdRscData;
+    }
+
+    private RscLayerObject ensureCryptRscLayerCreated(
+        Resource rscRef,
+        RscLayerObject parentRscData
+    )
+        throws ExhaustedPoolException, AccessDeniedException, SQLException
+    {
+        CryptSetupRscData cryptRscData = null;
+        if (parentRscData == null)
+        {
+            cryptRscData = rscRef.getLayerData(apiCtx);
+        }
+        else
+        {
+            if (!parentRscData.getChildren().isEmpty())
+            {
+                cryptRscData = (CryptSetupRscData) parentRscData.getChildren().iterator().next();
+            }
+        }
+        if (cryptRscData == null)
+        {
+            cryptRscData = layerDataFactory.createCryptSetupRscData(
+                layerRscIdPool.autoAllocate(),
+                rscRef,
+                "",
+                parentRscData
+            );
+            if (parentRscData == null)
+            {
+                rscRef.setLayerData(apiCtx, cryptRscData);
+            }
+            else
+            {
+                parentRscData.getChildren().add(cryptRscData);
+            }
+        }
+
+        Map<VolumeNumber, CryptSetupVlmData> vlmLayerObjects = cryptRscData.getVlmLayerObjects();
+        List<VolumeNumber> existingVlmsDataToBeDeleted = new ArrayList<>(vlmLayerObjects.keySet());
+
+        Iterator<Volume> iterateVolumes = rscRef.iterateVolumes();
+        while (iterateVolumes.hasNext())
+        {
+            Volume vlm = iterateVolumes.next();
+
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+
+            VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+            if (!vlmLayerObjects.containsKey(vlmNr))
+            {
+                CryptSetupVlmData cryptVlmData = layerDataFactory.createCryptSetupVlmData(
+                    vlm,
+                    cryptRscData,
+                    // TODO: remove vlmDfn.getCryptKey and allocate and store that information only in cryptVlmData
+                    vlmDfn.getCryptKey(apiCtx).getBytes()
+                );
+                vlmLayerObjects.put(vlmNr, cryptVlmData);
+            }
+            existingVlmsDataToBeDeleted.remove(vlmNr);
+        }
+
+        for (VolumeNumber vlmNr : existingVlmsDataToBeDeleted)
+        {
+            vlmLayerObjects.remove(vlmNr);
+        }
+
+        return cryptRscData;
+    }
+
+    private void ensureStorageLayerCreated(
+        Resource rscRef,
+        RscLayerObject parentRscData
+    )
+        throws SQLException, AccessDeniedException, ExhaustedPoolException
+    {
+        StorageRscData rscData = null;
+        if (parentRscData == null)
+        {
+            rscData = rscRef.getLayerData(apiCtx);
+        }
+        else
+        {
+            if (!parentRscData.getChildren().isEmpty())
+            {
+                rscData = (StorageRscData) parentRscData.getChildren().iterator().next();
+            }
+        }
+
+        if (rscData == null)
+        {
+            rscData = layerDataFactory.createStorageRscData(
+                layerRscIdPool.autoAllocate(),
+                parentRscData,
+                rscRef,
+                ""
+            );
+            if (parentRscData == null)
+            {
+                rscRef.setLayerData(apiCtx, rscData);
+            }
+            else
+            {
+                parentRscData.getChildren().add(rscData);
+            }
+        }
+
+        Map<VolumeNumber, VlmProviderObject> vlmDataMap = rscData.getVlmLayerObjects();
+        List<VolumeNumber> existingVlmsDataToBeDeleted = new ArrayList<>(vlmDataMap.keySet());
+
+        Iterator<Volume> iterateVolumes = rscRef.iterateVolumes();
+        while (iterateVolumes.hasNext())
+        {
+            Volume vlm = iterateVolumes.next();
+            VlmDfnLayerObject vlmDfnData = vlm.getVolumeDefinition().getLayerData(
+                apiCtx,
+                DeviceLayerKind.STORAGE
+            );
+
+            DeviceProviderKind kind = vlm.getStorPool(apiCtx).getDeviceProviderKind();
+            VlmProviderObject vlmData = rscData.getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber());
+            if (vlmData == null)
+            {
+                switch (kind)
+                {
+                    case SWORDFISH_INITIATOR:
+                        {
+                            if (vlmDfnData == null)
+                            {
+                                vlmDfnData = layerDataFactory.createSfVlmDfnData(vlm.getVolumeDefinition(), null, "");
+                                vlm.getVolumeDefinition().setLayerData(apiCtx, vlmDfnData);
+                            }
+                            if (!(vlmDfnData instanceof SfVlmDfnData))
+                            {
+                                throw new ImplementationError(
+                                    "Unexpected type of volume definition storage data: " +
+                                        vlmDfnData.getClass().getSimpleName()
+                                );
+                            }
+
+                            vlmData = layerDataFactory.createSfInitData(
+                                vlm,
+                                rscData,
+                                (SfVlmDfnData) vlmDfnData
+                            );
+                        }
+                        break;
+                    case SWORDFISH_TARGET:
+                        {
+                            if (vlmDfnData == null)
+                            {
+                                vlmDfnData = layerDataFactory.createSfVlmDfnData(vlm.getVolumeDefinition(), null, "");
+                                vlm.getVolumeDefinition().setLayerData(apiCtx, vlmDfnData);
+                            }
+                            if (!(vlmDfnData instanceof SfVlmDfnData))
+                            {
+                                throw new ImplementationError(
+                                    "Unexpected type of volume definition storage data: " +
+                                        vlmDfnData.getClass().getSimpleName()
+                                );
+                            }
+                            vlmData = layerDataFactory.createSfTargetData(
+                                vlm,
+                                rscData,
+                                (SfVlmDfnData) vlmDfnData
+                            );
+                        }
+                        break;
+                    case DRBD_DISKLESS:
+                        vlmData = layerDataFactory.createDrbdDisklessData(
+                            vlm,
+                            vlm.getVolumeDefinition().getVolumeSize(apiCtx),
+                            rscData
+                        );
+                        break;
+                    case LVM:
+                        vlmData = layerDataFactory.createLvmData(vlm, rscData);
+                        break;
+                    case LVM_THIN:
+                        vlmData = layerDataFactory.createLvmThinData(vlm, rscData);
+                        break;
+                    case ZFS: // fall-through
+                    case ZFS_THIN:
+                        vlmData = layerDataFactory.createZfsData(vlm, rscData, kind);
+                        break;
+                    case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
+                    default:
+                        throw new ImplementationError("Unexpected kind: " + kind);
+                }
+            }
+
+            VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+            existingVlmsDataToBeDeleted.remove(vlmNr);
+            vlmDataMap.put(
+                vlmNr,
+                vlmData
+            );
+        }
+
+        for (VolumeNumber vlmNr : existingVlmsDataToBeDeleted)
+        {
+            vlmDataMap.remove(vlmNr);
+        }
+    }
+
+    private short getAndCheckPeerSlotsForNewResource(ResourceDefinitionData rscDfn)
+        throws AccessDeniedException
+    {
+        short peerSlots;
+
+        try
+        {
+            int resourceCount = rscDfn.getResourceCount();
+            String peerSlotsNewResourceProp = new PriorityProps(rscDfn.getProps(apiCtx), stltConf)
+                .getProp(ApiConsts.KEY_PEER_SLOTS_NEW_RESOURCE);
+            peerSlots = peerSlotsNewResourceProp == null ?
+                InternalApiConsts.DEFAULT_PEER_SLOTS :
+                Short.valueOf(peerSlotsNewResourceProp);
+
+            if (peerSlots < resourceCount)
+            {
+                String detailsMsg = (peerSlotsNewResourceProp == null ? "Default" : "Configured") +
+                    " peer slot count " + peerSlots + " too low";
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS, "Insufficient peer slots to create resource")
+                    .setDetails(detailsMsg)
+                    .setCorrection("Configure a higher peer slot count on the resource definition or controller")
+                    .build()
+                );
+            }
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return peerSlots;
+    }
+}

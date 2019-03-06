@@ -1,11 +1,8 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import javax.inject.Inject;
 
@@ -13,12 +10,10 @@ public class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
 {
     private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
     private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
-    private final AccessContext dbCtx;
 
     @Inject
-    public SatelliteVolDfnDriver(@SystemContext AccessContext dbCtxRef)
+    public SatelliteVolDfnDriver()
     {
-        dbCtx = dbCtxRef;
     }
 
     @SuppressWarnings("unchecked")
@@ -26,13 +21,6 @@ public class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
     public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence()
     {
         return (StateFlagsPersistence<VolumeDefinitionData>) stateFlagsDriver;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber> getMinorNumberDriver()
-    {
-        return (SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber>) singleColDriver;
     }
 
     @SuppressWarnings("unchecked")

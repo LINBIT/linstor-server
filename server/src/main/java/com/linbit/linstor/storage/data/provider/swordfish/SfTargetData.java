@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.data.provider.swordfish;
 
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishTargetVlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -164,10 +164,10 @@ public class SfTargetData extends BaseTransactionObject implements SfTargetVlmPr
     }
 
     @Override
-    public VlmLayerDataPojo asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
     {
         return new SwordfishTargetVlmPojo(
-            vlmDfnData.asPojo(accCtxRef),
+            vlmDfnData.getApiData(accCtxRef),
             getAllocatedSize(),
             getUsableSize()
         );

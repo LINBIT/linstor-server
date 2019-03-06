@@ -1,16 +1,18 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.List;
 
-public class DrbdRscPojo implements RscLayerDataPojo
+public class DrbdRscPojo implements RscLayerDataApi
 {
     private final int id;
-    private final List<RscLayerDataPojo> children;
+    private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
 
     private final DrbdRscDfnPojo drbdRscDfn;
@@ -23,7 +25,7 @@ public class DrbdRscPojo implements RscLayerDataPojo
 
     public DrbdRscPojo(
         int idRef,
-        List<RscLayerDataPojo> childrenRef,
+        List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
         DrbdRscDfnPojo drbdRscDfnRef,
         int nodeIdRef,
@@ -59,7 +61,7 @@ public class DrbdRscPojo implements RscLayerDataPojo
     }
 
     @Override
-    public List<RscLayerDataPojo> getChildren()
+    public List<RscLayerDataApi> getChildren()
     {
         return children;
     }
@@ -106,7 +108,7 @@ public class DrbdRscPojo implements RscLayerDataPojo
         return vlms;
     }
 
-    public static class DrbdRscDfnPojo
+    public static class DrbdRscDfnPojo implements RscDfnLayerDataApi
     {
         private final String rscNameSuffix;
         private final short peerSlots;
@@ -115,6 +117,7 @@ public class DrbdRscPojo implements RscLayerDataPojo
         private final int port;
         private final String transportType;
         private final String secret;
+        private final boolean down;
 
         public DrbdRscDfnPojo(
             String rscNameSuffixRef,
@@ -123,7 +126,8 @@ public class DrbdRscPojo implements RscLayerDataPojo
             long alStripeSizeRef,
             int portRef,
             String transportTypeRef,
-            String secretRef
+            String secretRef,
+            boolean downRef
         )
         {
             rscNameSuffix = rscNameSuffixRef;
@@ -133,8 +137,10 @@ public class DrbdRscPojo implements RscLayerDataPojo
             port = portRef;
             transportType = transportTypeRef;
             secret = secretRef;
+            down = downRef;
         }
 
+        @Override
         public String getRscNameSuffix()
         {
             return rscNameSuffix;
@@ -169,9 +175,20 @@ public class DrbdRscPojo implements RscLayerDataPojo
         {
             return secret;
         }
+
+        public boolean isDown()
+        {
+            return down;
+        }
+
+        @Override
+        public DeviceLayerKind getLayerKind()
+        {
+            return DeviceLayerKind.DRBD;
+        }
     }
 
-    public static class DrbdVlmPojo implements VlmLayerDataPojo
+    public static class DrbdVlmPojo implements VlmLayerDataApi
     {
         private final DrbdVlmDfnPojo drbdVlmDfn;
         private final String devicePath;
@@ -179,6 +196,7 @@ public class DrbdRscPojo implements RscLayerDataPojo
         private final String metaDisk;
         private final long allocatedSize;
         private final long usableSize;
+        private final String diskState;
 
         public DrbdVlmPojo(
             DrbdVlmDfnPojo drbdVlmDfnRef,
@@ -186,7 +204,8 @@ public class DrbdRscPojo implements RscLayerDataPojo
             String backingDiskRef,
             String metaDiskRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            String diskStateRef
         )
         {
             super();
@@ -196,12 +215,14 @@ public class DrbdRscPojo implements RscLayerDataPojo
             metaDisk = metaDiskRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
+            diskState = diskStateRef;
         }
         public DrbdVlmDfnPojo getDrbdVlmDfn()
         {
             return drbdVlmDfn;
         }
 
+        @Override
         public String getDevicePath()
         {
             return devicePath;
@@ -217,11 +238,13 @@ public class DrbdRscPojo implements RscLayerDataPojo
             return metaDisk;
         }
 
+        @Override
         public long getAllocatedSize()
         {
             return allocatedSize;
         }
 
+        @Override
         public long getUsableSize()
         {
             return usableSize;
@@ -233,14 +256,24 @@ public class DrbdRscPojo implements RscLayerDataPojo
             return drbdVlmDfn.vlmNr;
         }
 
+        public String getDiskState()
+        {
+            return diskState;
+        }
+
         @Override
         public DeviceProviderKind getProviderKind()
         {
             return DeviceProviderKind.FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER;
         }
+        @Override
+        public DeviceLayerKind getLayerKind()
+        {
+            return DeviceLayerKind.DRBD;
+        }
     }
 
-    public static class DrbdVlmDfnPojo
+    public static class DrbdVlmDfnPojo implements VlmDfnLayerDataApi
     {
         private final String rscNameSuffix;
         private final int vlmNr;
@@ -262,6 +295,7 @@ public class DrbdRscPojo implements RscLayerDataPojo
             return rscNameSuffix;
         }
 
+        @Override
         public int getVlmNr()
         {
             return vlmNr;
@@ -270,6 +304,12 @@ public class DrbdRscPojo implements RscLayerDataPojo
         public int getMinorNr()
         {
             return minorNr;
+        }
+
+        @Override
+        public DeviceLayerKind getLayerKind()
+        {
+            return DeviceLayerKind.DRBD;
         }
     }
 }

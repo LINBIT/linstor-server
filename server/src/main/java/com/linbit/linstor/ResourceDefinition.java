@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
-import com.linbit.ValueInUseException;
-import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -12,6 +11,8 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.utils.Pair;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,11 +33,6 @@ public interface ResourceDefinition
     UUID getUuid();
 
     ResourceName getName();
-
-    TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException;
-
-    TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException;
 
     int getVolumeDfnCount(AccessContext accCtx)
         throws AccessDeniedException;
@@ -84,15 +80,6 @@ public interface ResourceDefinition
     void removeSnapshotDfn(AccessContext accCtx, SnapshotName snapshotName)
         throws AccessDeniedException;
 
-    String getSecret(AccessContext accCtx)
-        throws AccessDeniedException;
-
-    TransportType getTransportType(AccessContext accCtx)
-        throws AccessDeniedException;
-
-    TransportType setTransportType(AccessContext accCtx, TransportType type)
-        throws AccessDeniedException, SQLException;
-
     boolean hasDiskless(AccessContext accCtx)
         throws AccessDeniedException;
 
@@ -101,10 +88,10 @@ public interface ResourceDefinition
 
     StateFlags<RscDfnFlags> getFlags();
 
-    void setDown(AccessContext accCtx, boolean down)
-        throws AccessDeniedException, SQLException;
+    List<DeviceLayerKind> getLayerStack(AccessContext accCtx)
+        throws AccessDeniedException;
 
-    boolean isDown(AccessContext accCtx)
+    void setLayerStack(AccessContext accCtx, List<DeviceLayerKind> list)
         throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx)
@@ -226,13 +213,10 @@ public interface ResourceDefinition
     {
         UUID getUuid();
         String getResourceName();
-        int getPort();
-        String getSecret();
         long getFlags();
         Map<String, String> getProps();
         List<VolumeDefinition.VlmDfnApi> getVlmDfnList();
-        String getTransportType();
-        boolean isDown();
+        List<Pair<String, RscDfnLayerDataApi>> getLayerData();
     }
 
     public interface InitMaps

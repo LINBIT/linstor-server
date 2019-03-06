@@ -180,7 +180,7 @@ public class ConfFileBuilder
                     {
                         appendVlmIfPresent(vlmData, accCtx, false);
                     }
-                    appendLine("node-id    %d;", localRsc.getNodeId().value);
+                    appendLine("node-id    %d;", localRscData.getNodeId().value);
                 }
             }
 

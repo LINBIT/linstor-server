@@ -13,6 +13,8 @@ import org.junit.Test;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +45,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
 
     @Inject private ResourceConnectionDataGenericDbDriver driver;
 
-    private NodeId nodeIdSrc;
-    private NodeId nodeIdDst;
+    private Integer nodeIdSrc;
+    private Integer nodeIdDst;
 
     private ResourceData resSrc;
     private ResourceData resDst;
@@ -72,17 +74,17 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         uuid = randomUUID();
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, new ArrayList<>()
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);
         nodeDst = nodeDataFactory.create(SYS_CTX, targetName, null, null);
 
-        nodeIdSrc = new NodeId(13);
-        nodeIdDst = new NodeId(14);
+        nodeIdSrc = 13;
+        nodeIdDst = 14;
 
-        resSrc = resourceDataFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null);
-        resDst = resourceDataFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null);
+        resSrc = resourceDataFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
+        resDst = resourceDataFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
 
         resCon = new ResourceConnectionData(
             uuid,

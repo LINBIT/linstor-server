@@ -1,6 +1,5 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 
 import java.util.HashMap;
@@ -9,20 +8,22 @@ import java.util.UUID;
 import java.util.List;
 
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
+import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.stateflags.FlagsHelper;
-
-import java.util.ArrayList;
+import com.linbit.utils.Pair;
 
 public class VlmDfnApiData implements VlmDfnApi
 {
-    private VlmDfn vlmDfn;
+    private final VlmDfn vlmDfn;
+    private final List<Pair<String, VlmDfnLayerDataApi>> layerData;
 
     public VlmDfnApiData(VlmDfn vlmDfnRef)
     {
         vlmDfn = vlmDfnRef;
+        layerData = ProtoLayerUtils.extractVlmDfnLayerData(vlmDfnRef.getLayerDataList());
     }
 
     @Override
@@ -54,17 +55,6 @@ public class VlmDfnApiData implements VlmDfnApi
     }
 
     @Override
-    public Integer getMinorNr()
-    {
-        Integer ret = null;
-        if (vlmDfn.hasVlmMinor())
-        {
-            ret = vlmDfn.getVlmMinor();
-        }
-        return ret;
-    }
-
-    @Override
     public UUID getUuid()
     {
         return UUID.fromString(vlmDfn.getVlmDfnUuid());
@@ -79,41 +69,9 @@ public class VlmDfnApiData implements VlmDfnApi
         );
     }
 
-    public static VlmDfn fromVlmDfnApi(final VlmDfnApi vlmDfnApi)
+    @Override
+    public List<Pair<String, VlmDfnLayerDataApi>> getVlmDfnLayerData()
     {
-        VlmDfn.Builder bld = VlmDfn.newBuilder();
-        bld.setVlmDfnUuid(vlmDfnApi.getUuid().toString());
-        if (vlmDfnApi.getVolumeNr() != null)
-        {
-            bld.setVlmNr(vlmDfnApi.getVolumeNr());
-        }
-        if (vlmDfnApi.getMinorNr() != null)
-        {
-            bld.setVlmMinor(vlmDfnApi.getMinorNr());
-        }
-        bld.setVlmSize(vlmDfnApi.getSize());
-        bld.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmDfnApi.getFlags()));
-        bld.addAllVlmProps(ProtoMapUtils.fromMap(vlmDfnApi.getProps()));
-        return bld.build();
-    }
-
-    public static List<VlmDfn> fromApiList(List<VlmDfnApi> volumedefs)
-    {
-        ArrayList<VlmDfn> protoVlmDfs = new ArrayList<>();
-        for (VlmDfnApi vlmdfnapi : volumedefs)
-        {
-            protoVlmDfs.add(VlmDfnApiData.fromVlmDfnApi(vlmdfnapi));
-        }
-        return protoVlmDfs;
-    }
-
-    public static List<VlmDfnApi> toApiList(List<VlmDfn> volumedefs)
-    {
-        ArrayList<VlmDfnApi> apiVlmDfns = new ArrayList<>();
-        for (VlmDfn vlmdfn : volumedefs)
-        {
-            apiVlmDfns.add(new VlmDfnApiData(vlmdfn));
-        }
-        return apiVlmDfns;
+        return layerData;
     }
 }

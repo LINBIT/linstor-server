@@ -2,6 +2,9 @@ package com.linbit.linstor.storage.interfaces.layers.drbd;
 
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
+
+import java.sql.SQLException;
+
 import com.linbit.linstor.TcpPortNumber;
 
 public interface DrbdRscDfnObject extends RscDfnLayerObject
@@ -17,4 +20,8 @@ public interface DrbdRscDfnObject extends RscDfnLayerObject
     int getAlStripes();
 
     long getAlStripeSize();
+
+    boolean isDown();
+
+    void setDown(boolean downRef) throws SQLException;
 }

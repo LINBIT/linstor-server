@@ -1,11 +1,10 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ValueInUseException;
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -19,16 +18,20 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.locks.LockGuard;
+import com.linbit.utils.Pair;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,12 +55,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // Resource name
     private final ResourceName resourceName;
 
-    // Tcp Port
-    // TODO: should be moved to DrbdRscData once controller knows about it
-    private final TransactionSimpleObject<ResourceDefinitionData, TcpPortNumber> port;
-
-    private final DynamicNumberPool tcpPortPool;
-
     // Volumes of the resource
     private final TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
 
@@ -70,36 +67,26 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // State flags
     private final StateFlags<RscDfnFlags> flags;
 
-    // TODO: should be moved to DrbdRscData once controller knows about it
-    private final TransactionSimpleObject<ResourceDefinitionData, TransportType> transportType;
-
     // Object access controls
     private final ObjectProtection objProt;
 
     // Properties container for this resource definition
     private final Props rscDfnProps;
 
-    // TODO: should be moved to DrbdRscData once controller knows about it
-    private final String secret;
-
     private final ResourceDefinitionDataDatabaseDriver dbDriver;
-
-    // TODO: should be moved to DrbdRscData once controller knows about it
-    private final TransactionSimpleObject<ResourceDefinitionData, Boolean> down;
 
     private final TransactionMap<DeviceLayerKind, RscDfnLayerObject> layerStorage;
 
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
+    private final TransactionList<ResourceDefinitionData, DeviceLayerKind> layerStack;
+
     ResourceDefinitionData(
         UUID objIdRef,
         ObjectProtection objProtRef,
         ResourceName resName,
-        TcpPortNumber portRef,
-        DynamicNumberPool tcpPortPoolRef,
         long initialFlags,
-        String secretRef,
-        TransportType transTypeRef,
+        List<DeviceLayerKind> layerStackRef,
         ResourceDefinitionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -119,19 +106,16 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         resourceName = resName;
-        secret = secretRef;
         dbDriver = dbDriverRef;
-        tcpPortPool = tcpPortPoolRef;
 
-        port = transObjFactory.createTransactionSimpleObject(
-            this,
-            portRef,
-            this.dbDriver.getPortDriver()
-        );
         volumeMap = transObjFactory.createTransactionMap(vlmDfnMapRef, null);
         resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
         snapshotDfnMap = transObjFactory.createTransactionMap(snapshotDfnMapRef, null);
-        down = transObjFactory.createTransactionSimpleObject(this, false, null);
+        layerStack = transObjFactory.createTransactionListPrimitive(
+            this,
+            layerStackRef,
+            dbDriver.getLayerStackDriver()
+        );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         rscDfnProps = propsContainerFactory.getInstance(
@@ -145,12 +129,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             initialFlags
         );
 
-        transportType = transObjFactory.createTransactionSimpleObject(
-            this,
-            transTypeRef,
-            this.dbDriver.getTransportTypeDriver()
-        );
-
         layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
 
         transObjs = Arrays.asList(
@@ -159,8 +137,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             volumeMap,
             resourceMap,
             rscDfnProps,
-            port,
-            transportType,
             deleted
         );
     }
@@ -304,26 +280,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException
-    {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-        return port.get();
-    }
-
-    @Override
-    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber portNr)
-        throws AccessDeniedException, SQLException, ValueInUseException
-    {
-        objProt.requireAccess(accCtx, AccessType.USE);
-        if (tcpPortPool != null)
-        {
-            tcpPortPool.deallocate(port.get().value);
-            tcpPortPool.allocate(portNr.value);
-        }
-        return this.port.set(portNr);
-    }
-
-    @Override
     public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
         checkDeleted();
@@ -386,49 +342,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public void setDown(AccessContext accCtx, boolean downRef)
-        throws AccessDeniedException, SQLException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.USE);
-
-        down.set(downRef);
-    }
-
-    @Override
-    public boolean isDown(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-        return down.get();
-    }
-
-    @Override
-    public String getSecret(AccessContext accCtx) throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-        return secret;
-    }
-
-    @Override
-    public TransportType getTransportType(AccessContext accCtx) throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-        return transportType.get();
-    }
-
-    @Override
-    public TransportType setTransportType(AccessContext accCtx, TransportType type)
-        throws AccessDeniedException, SQLException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
-        return transportType.set(type);
-    }
-
-    @Override
     public boolean hasDiskless(AccessContext accCtx) throws AccessDeniedException
     {
         boolean hasDiskless = false;
@@ -469,6 +382,37 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return (T) layerStorage.get(kind);
     }
 
+    public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        layerStorage.remove(kind).delete();
+        for (VolumeDefinition vlmDfn : volumeMap.values())
+        {
+            ((VolumeDefinitionData) vlmDfn).removeLayerData(accCtx, kind);
+        }
+    }
+
+    @Override
+    public void setLayerStack(AccessContext accCtx, List<DeviceLayerKind> list)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        layerStack.clear();
+        layerStack.addAll(list);
+    }
+
+    @Override
+    public List<DeviceLayerKind> getLayerStack(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        return layerStack;
+    }
+
     @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
@@ -493,11 +437,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             }
 
             rscDfnProps.delete();
-
-            if (tcpPortPool != null)
-            {
-                tcpPortPool.deallocate(port.get().value);
-            }
 
             for (RscDfnLayerObject rscDfnLayerObject : layerStorage.values())
             {
@@ -532,16 +471,26 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             VolumeDefinition vd = vlmDfnIter.next();
             vlmDfnList.add(vd.getApiData(accCtx));
         }
+
+        List<Pair<String, RscDfnLayerDataApi>> layerData = new ArrayList<>();
+        for (DeviceLayerKind kind : layerStack)
+        {
+            RscDfnLayerObject rscDfnLayerObject = layerStorage.get(kind);
+            layerData.add(
+                new Pair<>(
+                    kind.name(),
+                    rscDfnLayerObject == null ? null : rscDfnLayerObject.getApiData(accCtx)
+                )
+            );
+        }
+
         return new RscDfnPojo(
             getUuid(),
             getName().getDisplayName(),
-            getPort(accCtx).value,
-            getSecret(accCtx),
             getFlags().getFlagsBits(accCtx),
-            getTransportType(accCtx).name(),
-            isDown(accCtx),
             getProps(accCtx).map(),
-            vlmDfnList
+            vlmDfnList,
+            layerData
         );
     }
 

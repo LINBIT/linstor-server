@@ -1,19 +1,15 @@
 package com.linbit.linstor;
 
+import com.linbit.CollectionDatabaseDriver;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -21,13 +17,13 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -35,6 +31,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -46,38 +43,32 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     private static final String RD_UUID = DbConstants.UUID;
     private static final String RD_NAME = DbConstants.RESOURCE_NAME;
     private static final String RD_DSP_NAME = DbConstants.RESOURCE_DSP_NAME;
-    private static final String RD_PORT = DbConstants.TCP_PORT;
-    private static final String RD_SECRET = DbConstants.SECRET;
-    private static final String RD_TRANS_TYPE = DbConstants.TRANSPORT_TYPE;
     private static final String RD_FLAGS = DbConstants.RESOURCE_FLAGS;
+    private static final String RD_LAYERS = DbConstants.LAYER_STACK;
 
     private static final String RD_SELECT =
         " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-                     RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT + ", " + RD_TRANS_TYPE +
+                     RD_FLAGS + ", " + RD_LAYERS +
         " FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
     private static final String RD_SELECT_ALL =
         " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-                     RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT + ", " + RD_TRANS_TYPE +
+                     RD_FLAGS + ", " + RD_LAYERS +
         " FROM " + TBL_RES_DEF;
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
         " (" + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-               RD_PORT + ", " + RD_FLAGS + ", " + RD_SECRET + ", " + RD_TRANS_TYPE +
+               RD_FLAGS + ", " + RD_LAYERS +
         " )" +
-        " VALUES (?, ?, ?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?)";
     private static final String RD_UPDATE_FLAGS =
         " UPDATE " + TBL_RES_DEF +
         " SET " + RD_FLAGS + " = ? " +
         " WHERE " + RD_NAME + " = ?";
-    private static final String RD_UPDATE_PORT =
-        " UPDATE " + TBL_RES_DEF +
-        " SET " + RD_PORT + " = ? " +
-        " WHERE " + RD_NAME + " = ?";
-    private static final String RD_UPDATE_TRANS_TYPE =
-        " UPDATE " + TBL_RES_DEF +
-        " SET " + RD_TRANS_TYPE + " = ? " +
-        " WHERE " + RD_NAME + " = ?";
+    private static final String UPDATE_LAYER_STACK =
+       " UPDATE " + TBL_RES_DEF +
+       " SET " + RD_LAYERS + " = ? " +
+       " WHERE " + RD_NAME + " = ?";
     private static final String RD_DELETE =
         " DELETE FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
@@ -86,12 +77,10 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     private final ErrorReporter errorReporter;
 
     private final StateFlagsPersistence<ResourceDefinitionData> resDfnFlagPersistence;
-    private final SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> portDriver;
-    private final SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> transTypeDriver;
+    private final CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> layerStackDriver;
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
-    private final DynamicNumberPool tcpPortPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
@@ -101,7 +90,6 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
-        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -110,12 +98,10 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         errorReporter = errorReporterRef;
         objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
-        tcpPortPool = tcpPortPoolRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
-        portDriver = new PortDriver();
-        transTypeDriver = new TransportTypeDriver();
+        layerStackDriver = new LayerStackDriver();
     }
 
     @Override
@@ -128,10 +114,13 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             stmt.setString(1, resourceDefinition.getUuid().toString());
             stmt.setString(2, resourceDefinition.getName().value);
             stmt.setString(3, resourceDefinition.getName().displayValue);
-            stmt.setInt(4, resourceDefinition.getPort(dbCtx).value);
-            stmt.setLong(5, resourceDefinition.getFlags().getFlagsBits(dbCtx));
-            stmt.setString(6, resourceDefinition.getSecret(dbCtx));
-            stmt.setString(7, resourceDefinition.getTransportType(dbCtx).name());
+            stmt.setLong(4, resourceDefinition.getFlags().getFlagsBits(dbCtx));
+            GenericDbDriver.setJsonIfNotNull(
+                stmt,
+                5,
+                GenericDbDriver.asStrList(resourceDefinition.getLayerStack(dbCtx))
+            );
+
             stmt.executeUpdate();
 
             errorReporter.logTrace("ResourceDefinition created %s", getId(resourceDefinition));
@@ -181,11 +170,9 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         Pair<ResourceDefinitionData, InitMaps> retPair = new Pair<>();
         ResourceDefinitionData resDfn;
         ResourceName resourceName;
-        TcpPortNumber port;
         try
         {
             resourceName = new ResourceName(resultSet.getString(RD_DSP_NAME));
-            port = new TcpPortNumber(resultSet.getInt(RD_PORT));
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -199,19 +186,6 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 invalidNameExc
             );
         }
-        catch (ValueOutOfRangeException valOutOfRangeExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "The port number of a stored ResourceDefinition in the table %s could not be restored. " +
-                        "(ResName=%s, invalid port=%d)",
-                        TBL_RES_DEF,
-                        resultSet.getString(RD_DSP_NAME),
-                        resultSet.getInt(RD_PORT)
-                    ),
-                valOutOfRangeExc
-            );
-        }
 
         ObjectProtection objProt = getObjectProtection(resourceName);
 
@@ -223,11 +197,8 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             java.util.UUID.fromString(resultSet.getString(RD_UUID)),
             objProt,
             resourceName,
-            port,
-            tcpPortPool,
             resultSet.getLong(RD_FLAGS),
-            resultSet.getString(RD_SECRET),
-            TransportType.byValue(resultSet.getString(RD_TRANS_TYPE)),
+            GenericDbDriver.asDevLayerKindList(GenericDbDriver.getAsStringList(resultSet, RD_LAYERS)),
             this,
             propsContainerFactory,
             transObjFactory,
@@ -281,15 +252,9 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver()
+    public CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> getLayerStackDriver()
     {
-        return portDriver;
-    }
-
-    @Override
-    public SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> getTransportTypeDriver()
-    {
-        return transTypeDriver;
+        return layerStackDriver;
     }
 
     private Connection getConnection()
@@ -360,72 +325,52 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         }
     }
 
-    private class PortDriver implements SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber>
+    private class LayerStackDriver implements CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind>
     {
         @Override
-        public void update(ResourceDefinitionData resourceDefinition, TcpPortNumber port)
-            throws SQLException
-        {
-            try
-            {
-                errorReporter.logTrace(
-                    "Updating ResourceDefinition's port from [%d] to [%d] %s",
-                    resourceDefinition.getPort(dbCtx).value,
-                    port.value,
-                    getId(resourceDefinition)
-                );
-                try (PreparedStatement stmt = getConnection().prepareStatement(RD_UPDATE_PORT))
-                {
-                    stmt.setInt(1, port.value);
-                    stmt.setString(2, resourceDefinition.getName().value);
-                    stmt.executeUpdate();
-                }
-                errorReporter.logTrace(
-                    "ResourceDefinition's port updated from [%d] to [%d] %s",
-                    resourceDefinition.getPort(dbCtx).value,
-                    port.value,
-                    getId(resourceDefinition)
-                );
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-            }
-        }
-    }
-
-    private class TransportTypeDriver implements SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType>
-    {
-
-        @Override
-        public void update(
-            ResourceDefinitionData resourceDefinition,
-            TransportType transType
+        public void insert(
+            ResourceDefinitionData rscDfn,
+            DeviceLayerKind newElem,
+            Collection<DeviceLayerKind> backingCollection
         )
             throws SQLException
         {
+            update(rscDfn, backingCollection);
+        }
+
+        @Override
+        public void remove(
+            ResourceDefinitionData rscDfn,
+            DeviceLayerKind newElem,
+            Collection<DeviceLayerKind> backingCollection
+        )
+            throws SQLException
+        {
+            update(rscDfn, backingCollection);
+        }
+
+        public void update(ResourceDefinitionData rscDfn, Collection<DeviceLayerKind> backingCollection)
+            throws SQLException
+        {
             try
             {
                 errorReporter.logTrace(
-                    "Updating ResourceDefinition's transport type from [%s] to [%s] %s",
-                    resourceDefinition.getTransportType(dbCtx).name(),
-                    transType.name(),
-                    getId(resourceDefinition)
+                    "Updating ResourceDefinition's layer stack from %s to %s %s",
+                    rscDfn.getLayerStack(dbCtx),
+                    backingCollection.toString(),
+                    getId(rscDfn)
                 );
-                try (
-                    PreparedStatement stmt =
-                        getConnection().prepareStatement(RD_UPDATE_TRANS_TYPE)
-                )
+                try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_LAYER_STACK))
                 {
-                    stmt.setString(1, transType.name());
-                    stmt.setString(2, resourceDefinition.getName().value);
+                    GenericDbDriver.setJsonIfNotNull(stmt, 1, GenericDbDriver.asStrList(backingCollection));
+                    stmt.setString(2, rscDfn.getName().value);
                     stmt.executeUpdate();
                 }
                 errorReporter.logTrace(
-                    "ResourceDefinition's transport type updated from [%s] to [%s] %s",
-                    resourceDefinition.getTransportType(dbCtx).name(),
-                    transType.name(),
-                    getId(resourceDefinition)
+                    "ResourceDefinition's layer stack updated from %s to %s %s",
+                    rscDfn.getLayerStack(dbCtx),
+                    backingCollection.toString(),
+                    getId(rscDfn)
                 );
             }
             catch (AccessDeniedException accDeniedExc)

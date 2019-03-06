@@ -2,9 +2,14 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
+import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
+import com.linbit.utils.Pair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +21,13 @@ import java.util.UUID;
  */
 public class RscDfnApiData implements ResourceDefinition.RscDfnApi
 {
-    private RscDfnOuterClass.RscDfn rscDfn;
+    private final RscDfnOuterClass.RscDfn rscDfn;
+    private final List<Pair<String, RscDfnLayerDataApi>> layerData;
 
-    public RscDfnApiData(RscDfnOuterClass.RscDfn refRscDfn)
+    public RscDfnApiData(RscDfnOuterClass.RscDfn rscDfnRef)
     {
-        rscDfn = refRscDfn;
+        rscDfn = rscDfnRef;
+        layerData = ProtoLayerUtils.extractRscDfnLayerData(rscDfnRef);
     }
 
     @Override
@@ -38,30 +45,6 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
     public String getResourceName()
     {
         return rscDfn.getRscName();
-    }
-
-    @Override
-    public int getPort()
-    {
-        return rscDfn.getRscDfnPort();
-    }
-
-    @Override
-    public String getSecret()
-    {
-        return rscDfn.getRscDfnSecret();
-    }
-
-    @Override
-    public String getTransportType()
-    {
-        return rscDfn.getRscDfnTransportType();
-    }
-
-    @Override
-    public boolean isDown()
-    {
-        return rscDfn.getRscDfnDown();
     }
 
     @Override
@@ -84,6 +67,17 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
     @Override
     public List<VolumeDefinition.VlmDfnApi> getVlmDfnList()
     {
-        return VlmDfnApiData.toApiList(rscDfn.getVlmDfnsList());
+        List<VolumeDefinition.VlmDfnApi> ret = new ArrayList<>();
+        for (VlmDfn vlmDfn : rscDfn.getVlmDfnsList())
+        {
+            ret.add(new VlmDfnApiData(vlmDfn));
+        }
+        return ret;
+    }
+
+    @Override
+    public List<Pair<String, RscDfnLayerDataApi>> getLayerData()
+    {
+        return layerData;
     }
 }

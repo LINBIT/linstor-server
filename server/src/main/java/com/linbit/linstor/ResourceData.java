@@ -63,9 +63,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
     // Access control for this resource
     private final ObjectProtection objProt;
 
-    // DRBD node id for this resource
-    private final NodeId resNodeId;
-
     // Properties container for this resource
     private final Props resourceProps;
 
@@ -84,7 +81,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
         ObjectProtection objProtRef,
         ResourceDefinition resDfnRef,
         Node nodeRef,
-        NodeId nodeIdRef,
         long initFlags,
         ResourceDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
@@ -100,7 +96,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(ResourceData.class, Node.class, nodeRef);
-        resNodeId = nodeIdRef;
         resourceDfn = resDfnRef;
         assgNode = nodeRef;
         objId = objIdRef;
@@ -287,13 +282,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public NodeId getNodeId()
-    {
-        checkDeleted();
-        return resNodeId;
-    }
-
-    @Override
     public StateFlags<RscFlags> getStateFlags()
     {
         checkDeleted();
@@ -450,7 +438,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
             getDefinition().getApiData(accCtx),
             getUuid(),
             getStateFlags().getFlagsBits(accCtx),
-            getNodeId().value,
             getProps(accCtx).map(),
             volumes,
             null, // otherRscList

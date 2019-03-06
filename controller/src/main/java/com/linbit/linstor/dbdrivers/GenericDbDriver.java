@@ -10,6 +10,7 @@ import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.KeyValueStoreName;
+import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.Node;
@@ -56,6 +57,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
 
@@ -64,7 +66,12 @@ import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,6 +84,8 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
@@ -84,12 +93,14 @@ import java.util.stream.Collectors;
 public class GenericDbDriver implements DatabaseDriver
 {
     public static final ServiceName DFLT_SERVICE_INSTANCE_NAME;
+    private static final ObjectMapper OBJ_MAPPER;
 
     static
     {
         try
         {
             DFLT_SERVICE_INSTANCE_NAME = new ServiceName("GernericDatabaseService");
+            OBJ_MAPPER = new ObjectMapper();
         }
         catch (InvalidNameException nameExc)
         {
@@ -547,6 +558,26 @@ public class GenericDbDriver implements DatabaseDriver
         return DFLT_SERVICE_INSTANCE_NAME;
     }
 
+    public static List<String> asStrList(Collection<DeviceLayerKind> layerStackRef)
+    {
+        List<String> ret = new ArrayList<>();
+        for (DeviceLayerKind kind : layerStackRef)
+        {
+            ret.add(kind.name());
+        }
+        return ret;
+    }
+
+    public static List<DeviceLayerKind> asDevLayerKindList(Collection<String> strList)
+    {
+        List<DeviceLayerKind> ret = new ArrayList<>();
+        for (String str : strList)
+        {
+            ret.add(DeviceLayerKind.valueOf(str));
+        }
+        return ret;
+    }
+
     public static void handleAccessDeniedException(AccessDeniedException accDeniedExc)
         throws ImplementationError
     {
@@ -610,4 +641,72 @@ public class GenericDbDriver implements DatabaseDriver
             );
         };
     }
+
+    public static void setStringIfNotNull(PreparedStatement stmt, int idx, String str) throws SQLException
+    {
+        if (str != null)
+        {
+            stmt.setString(idx, str);
+        }
+        else
+        {
+            stmt.setNull(idx, Types.VARCHAR);
+        }
+    }
+
+    public static void setIntIfNotNull(PreparedStatement stmt, int idx, Integer val) throws SQLException
+    {
+        if (val != null)
+        {
+            stmt.setInt(idx, val);
+        }
+        else
+        {
+            stmt.setNull(idx, Types.INTEGER);
+        }
+    }
+
+    public static void setJsonIfNotNull(PreparedStatement stmt, int idx, Object obj) throws SQLException
+    {
+        if (obj != null)
+        {
+            try
+            {
+                stmt.setString(idx, OBJ_MAPPER.writeValueAsString(obj));
+            }
+            catch (IOException exc)
+            {
+                throw new LinStorSqlRuntimeException(
+                    "Exception occured while serializing to json array: " + obj.toString(),
+                    exc
+                );
+            }
+        }
+        else
+        {
+            stmt.setNull(idx, Types.VARCHAR);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<String> getAsStringList(ResultSet resultSet, String columnName)
+    {
+        List<String> list;
+        try
+        {
+            list = OBJ_MAPPER.readValue(
+                resultSet.getString(columnName),
+                List.class
+            );
+        }
+        catch (IOException | SQLException exc)
+        {
+            throw new LinStorSqlRuntimeException(
+                "Exception occured while deserializing from json array",
+                exc
+            );
+        }
+        return list;
+    }
+
 }

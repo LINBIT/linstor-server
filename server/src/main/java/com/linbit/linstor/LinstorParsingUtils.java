@@ -6,6 +6,10 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LinstorParsingUtils
 {
@@ -241,5 +245,45 @@ public class LinstorParsingUtils
             ), invalidNameExc);
         }
         return kvsName;
+    }
+
+    public static DeviceLayerKind asLayerStack(final String layerName)
+    {
+        DeviceLayerKind kind;
+        switch (layerName.toUpperCase())
+        {
+            case "DRBD":
+                kind = DeviceLayerKind.DRBD;
+                break;
+            case "CRYPT": // fall-through
+            case "CRYPT_SETUP": // fall-through
+            case "LUKS":
+                kind = DeviceLayerKind.CRYPT_SETUP;
+                break;
+            case "STORAGE": // fall-through
+            case "LVM": // fall-through
+            case "ZFS": // fall-through
+            case "SWORDFISH":
+                kind = DeviceLayerKind.STORAGE;
+                break;
+            default:
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_LAYER_KIND,
+                        "Given layer kind '" + layerName + "' is invalid"
+                    )
+                );
+        }
+        return kind;
+    }
+
+    public static List<DeviceLayerKind> asLayerStack(List<String> layerStackStrListRef)
+    {
+        List<DeviceLayerKind> ret = new ArrayList<>();
+        for (String layerStr : layerStackStrListRef)
+        {
+            ret.add(asLayerStack(layerStr));
+        }
+        return ret;
     }
 }

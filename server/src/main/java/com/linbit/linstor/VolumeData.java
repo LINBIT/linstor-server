@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -11,17 +12,20 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
+import com.linbit.utils.Pair;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,11 +64,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionMap<Volume.Key, VolumeConnection> volumeConnections;
 
-    private final TransactionSimpleObject<VolumeData, String> backingDiskPath;
-
-    @RemoveAfterDevMgrRework
-    private final TransactionSimpleObject<VolumeData, String> metaDiskPath;
-
     private final TransactionSimpleObject<VolumeData, String> devicePath;
 
     private final TransactionSimpleObject<VolumeData, Long> usableSize;
@@ -82,8 +81,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Resource resRef,
         VolumeDefinition volDfnRef,
         StorPool storPoolRef,
-        String backingDiskPathRef,
-        String metaDiskPathRef,
         long initFlags,
         VolumeDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
@@ -100,8 +97,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resource = resRef;
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfnRef;
-        backingDiskPath = transObjFactory.createTransactionSimpleObject(this, backingDiskPathRef, null);
-        metaDiskPath = transObjFactory.createTransactionSimpleObject(this, metaDiskPathRef, null);
         devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         dbDriver = dbDriverRef;
 
@@ -141,8 +136,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
             volumeProps,
             usableSize,
             flags,
-            backingDiskPath,
-            metaDiskPath,
             deleted
         );
     }
@@ -280,21 +273,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         return flags;
     }
 
-    @Override
-    public String getBackingDiskPath(AccessContext accCtx) throws AccessDeniedException
-    {
-        checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return backingDiskPath.get();
-    }
-
-    @Override
-    public String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException
-    {
-        checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return metaDiskPath.get();
-    }
 
     @Override
     public String getDevicePath(AccessContext accCtx) throws AccessDeniedException
@@ -302,36 +280,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return devicePath.get();
-    }
-
-    @Override
-    public void setBackingDiskPath(AccessContext accCtx, String path) throws AccessDeniedException
-    {
-        checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        try
-        {
-            backingDiskPath.set(path);
-        }
-        catch (SQLException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
-    @Override
-    public void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException
-    {
-        checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        try
-        {
-            metaDiskPath.set(path);
-        }
-        catch (SQLException exc)
-        {
-            throw new ImplementationError(exc);
-        }
     }
 
     @Override
@@ -485,16 +433,33 @@ public class VolumeData extends BaseTransactionObject implements Volume
     @Override
     public Volume.VlmApi getApiData(Long allocated, AccessContext accCtx) throws AccessDeniedException
     {
+        List<Pair<String, VlmLayerDataApi>> layerDataList = new ArrayList<>();
+
+        LinkedList<RscLayerObject> rscLayersToExpand = new LinkedList<>();
+        rscLayersToExpand.add(resource.getLayerData(accCtx));
+        while (!rscLayersToExpand.isEmpty())
+        {
+            RscLayerObject rscLayer = rscLayersToExpand.removeFirst();
+
+            for (VlmProviderObject vlmProvider : rscLayer.getVlmLayerObjects().values())
+            {
+                layerDataList.add(
+                    new Pair<>(
+                        vlmProvider.getLayerKind().name(),
+                        vlmProvider.asPojo(accCtx)
+                    )
+                );
+            }
+            rscLayersToExpand.addAll(rscLayer.getChildren());
+        }
+
         return new VlmPojo(
             getStorPool(accCtx).getName().getDisplayName(),
             getStorPool(accCtx).getUuid(),
             getVolumeDefinition().getUuid(),
             getUuid(),
-            getBackingDiskPath(accCtx),
-            getMetaDiskPath(accCtx),
             getDevicePath(accCtx),
             getVolumeDefinition().getVolumeNumber().value,
-            getVolumeDefinition().getMinorNr(accCtx).value,
             getFlags().getFlagsBits(accCtx),
             getProps(accCtx).map(),
             getStorPool(accCtx).getDriverName(),
@@ -502,7 +467,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
             getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
             getStorPool(accCtx).getProps(accCtx).map(),
             Optional.ofNullable(allocated),
-            Optional.ofNullable(usableSize.get())
+            Optional.ofNullable(usableSize.get()),
+            layerDataList
         );
     }
 

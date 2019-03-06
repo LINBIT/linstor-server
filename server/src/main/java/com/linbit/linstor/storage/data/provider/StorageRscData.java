@@ -2,8 +2,8 @@ package com.linbit.linstor.storage.data.provider;
 
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class StorageRscData extends AbsRscData<VlmProviderObject>
 {
-    private StorageLayerDatabaseDriver dbDriver;
+    private StorageLayerDatabaseDriver storageDbDriver;
 
     public StorageRscData(
         int rscLayerIdRef,
@@ -50,7 +50,7 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
             transObjFactory,
             transMgrProvider
         );
-        dbDriver = dbDriverRef;
+        storageDbDriver = dbDriverRef;
     }
 
     @Override
@@ -68,13 +68,19 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
     @Override
     protected void deleteVlmFromDatabase(VlmProviderObject vlmRef) throws SQLException
     {
-        dbDriver.delete(vlmRef);
+        storageDbDriver.delete(vlmRef);
     }
 
     @Override
-    public RscLayerDataPojo asPojo(AccessContext accCtxRef) throws AccessDeniedException
+    protected void deleteRscFromDatabase() throws SQLException
     {
-        List<VlmLayerDataPojo> vlmPojos = new ArrayList<>();
+        storageDbDriver.delete(this);
+    }
+
+    @Override
+    public RscLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
+    {
+        List<VlmLayerDataApi> vlmPojos = new ArrayList<>();
         for (VlmProviderObject vlmProviderObject : vlmMap.values())
         {
             vlmPojos.add(vlmProviderObject.asPojo(accCtxRef));

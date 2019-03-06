@@ -51,6 +51,7 @@ import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.numberpool.SatelliteNumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -412,7 +413,8 @@ public final class Satellite
                 new EventModule(eventSerializers, Collections.emptyList()),
                 new DebugModule(),
                 new SatelliteDebugModule(),
-                new SatelliteTransactionMgrModule()
+                new SatelliteTransactionMgrModule(),
+                new SatelliteNumberPoolModule()
             );
             errorLog.logInfo(String.format(
                 "Dependency injection finished: %dms",

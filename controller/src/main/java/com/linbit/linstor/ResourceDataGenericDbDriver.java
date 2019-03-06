@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Resource.InitMaps;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.SystemContext;
@@ -42,12 +41,11 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     private static final String RES_UUID = DbConstants.UUID;
     private static final String RES_NODE_NAME = DbConstants.NODE_NAME;
     private static final String RES_NAME = DbConstants.RESOURCE_NAME;
-    private static final String RES_NODE_ID = DbConstants.NODE_ID;
     private static final String RES_FLAGS = DbConstants.RESOURCE_FLAGS;
 
     private static final String RES_SELECT_ALL =
         " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
-                     RES_NODE_ID + ", " + RES_FLAGS +
+                     RES_FLAGS +
         " FROM " + TBL_RES;
     private static final String RES_SELECT =
         RES_SELECT_ALL +
@@ -58,8 +56,8 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         " INSERT INTO " + TBL_RES +
         " (" +
             RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
-            RES_NODE_ID + ", " + RES_FLAGS +
-        ") VALUES (?, ?, ?, ?, ?)";
+            RES_FLAGS +
+        ") VALUES (?, ?, ?, ?)";
     private static final String RES_DELETE =
         " DELETE FROM " + TBL_RES +
         " WHERE " + RES_NODE_NAME + " = ? AND " +
@@ -114,8 +112,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             stmt.setString(1, res.getUuid().toString());
             stmt.setString(2, res.getAssignedNode().getName().value);
             stmt.setString(3, res.getDefinition().getName().value);
-            stmt.setInt(4, res.getNodeId().value);
-            stmt.setLong(5, res.getStateFlags().getFlagsBits(accCtx));
+            stmt.setLong(4, res.getStateFlags().getFlagsBits(accCtx));
             stmt.executeUpdate();
         }
         catch (AccessDeniedException accessDeniedExc)
@@ -199,8 +196,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     )
         throws SQLException
     {
-        NodeId nodeId = getNodeId(resultSet, node, rscDfn);
-
         Map<Resource.Key, ResourceConnection> rscConnMap = new TreeMap<>();
         Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
         ResourceInitMaps initMaps = new ResourceInitMaps(rscConnMap, vlmMap);
@@ -210,7 +205,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             getObjectProection(node, rscDfn.getName()),
             rscDfn,
             node,
-            nodeId,
             resultSet.getLong(RES_FLAGS),
             this,
             propsContainerFactory,
@@ -221,32 +215,6 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         );
         return new Pair<ResourceData, InitMaps>(rscData, initMaps);
     }
-
-    private NodeId getNodeId(ResultSet resultSet, Node node, ResourceDefinition rscDfn)
-        throws SQLException
-    {
-        NodeId nodeId;
-        try
-        {
-            nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
-        }
-        catch (ValueOutOfRangeException valueOutOfRangeExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "A NodeId of a stored Resource in the table %s could not be restored. " +
-                        "(NodeName=%s, ResName=%s, invalid NodeId=%d)",
-                    TBL_RES,
-                    node.getName().displayValue,
-                    rscDfn.getName().displayValue,
-                    resultSet.getInt(RES_NODE_ID)
-                ),
-                valueOutOfRangeExc
-            );
-        }
-        return nodeId;
-    }
-
 
     private ObjectProtection getObjectProection(Node node, ResourceName resName)
         throws SQLException

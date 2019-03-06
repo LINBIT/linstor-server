@@ -1,11 +1,13 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -141,22 +143,6 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
                         String rdSecret = resultSet.getString(11);
                         String rdTransportType = resultSet.getString(12);
                         String spDriverName = resultSet.getString(13);
-
-                        System.out.println(
-                            nodeName + ", " +
-                            rscName + ", " +
-                            vlmNr + ", " +
-                            vlmFlags + ", " +
-                            storPoolName + ", " +
-                            vlmDfnMinor + ", " +
-                            vlmDfnFlags + ", " +
-                            rNodeId + ", " +
-                            rFlags + ", " +
-                            rdTcpPort + ", " +
-                            rdSecret + ", " +
-                            rdTransportType + ", " +
-                            spDriverName
-                        );
 
                         // first, check if this is a drbd or a swordfish volume
 
@@ -346,6 +332,37 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
             }
 
             // now that the data are copied, we can remove the old columns
+            String[] tablesToCopy = {
+                "RESOURCE_DEFINITIONS",
+                "RESOURCES",
+                "VOLUME_DEFINITIONS"
+            };
+            String format;
+            DatabaseInfo.DbProduct database = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
+            if (database == DatabaseInfo.DbProduct.DB2 ||
+                database == DatabaseInfo.DbProduct.DB2_I ||
+                database == DatabaseInfo.DbProduct.DB2_Z)
+            {
+                format = "CREATE TABLE %s_TMP AS (SELECT * FROM %s) WITH DATA";
+            }
+            else
+            {
+                format = "CREATE TABLE %s_TMP AS SELECT * FROM %s";
+            }
+
+            Statement stmt = connection.createStatement();
+            for (String table : tablesToCopy)
+            {
+                stmt.executeUpdate(String.format(format, table, table));
+            }
+            stmt.close();
+
+            GenericDbDriver.runSql(
+                connection,
+                MigrationUtils.loadResource(
+                    "2019_02_20_delete-old-columns.sql"
+                )
+            );
         }
     }
 

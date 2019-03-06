@@ -14,6 +14,8 @@ import org.junit.Test;
 import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -38,7 +40,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     private Integer resPort;
     private ResourceDefinitionData resDfn;
 
-    private NodeId nodeId;
+    private Integer nodeId;
     private ResourceData res;
 
     private StorPoolName storPoolName;
@@ -51,8 +53,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     private VolumeDefinitionData volDfn;
 
     private java.util.UUID uuid;
-    private String blockDevicePath;
-    private String metaDiskPath;
 
     @Inject private VolumeDataGenericDbDriver driver;
 
@@ -82,16 +82,18 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             resPort,
             null,
             "secret",
-            TransportType.IP
+            TransportType.IP,
+            new ArrayList<>()
         );
 
-        nodeId = new NodeId(7);
+        nodeId = 7;
         res = resourceDataFactory.create(
             SYS_CTX,
             resDfn,
             node,
             nodeId,
-            null
+            null,
+            Collections.emptyList()
         );
 
         storPoolName = new StorPoolName("TestStorPoolName");
@@ -121,8 +123,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         );
 
         uuid = randomUUID();
-        blockDevicePath = null;
-        metaDiskPath = null;
     }
 
     @Test
@@ -133,8 +133,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            null,
-            null,
             VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
@@ -153,8 +151,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
-        assertEquals(blockDevicePath, null);
-        assertEquals(metaDiskPath, null);
         assertEquals(VlmFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
@@ -171,16 +167,12 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             new VlmFlags[] {VlmFlags.DELETE}
         );
         commit();
 
         assertNotNull(volData);
         assertNotNull(volData.getUuid());
-        assertEquals(blockDevicePath, volData.getBackingDiskPath(SYS_CTX));
-        assertEquals(metaDiskPath, volData.getMetaDiskPath(SYS_CTX));
         assertNotNull(volData.getFlags());
         assertTrue(volData.getFlags().isSet(SYS_CTX, VlmFlags.DELETE));
         assertNotNull(volData.getProps(SYS_CTX));
@@ -195,8 +187,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
-        assertEquals(blockDevicePath, null);
-        assertEquals(metaDiskPath, null);
         assertEquals(VlmFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
@@ -213,8 +203,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
@@ -248,8 +236,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
@@ -273,8 +259,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             null
         );
 
@@ -291,8 +275,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             0L,
             driver,
             propsContainerFactory,
@@ -330,8 +312,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             0L,
             driver,
             propsContainerFactory,
@@ -360,8 +340,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             0L,
             driver,
             propsContainerFactory,
@@ -398,13 +376,10 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         {
             assertEquals(uuid, loadedVol.getUuid());
         }
-        assertEquals(blockDevicePath, loadedVol.getBackingDiskPath(SYS_CTX));
-        assertEquals(metaDiskPath, loadedVol.getMetaDiskPath(SYS_CTX));
         assertNotNull(loadedVol.getFlags());
         assertTrue(loadedVol.getFlags().isSet(SYS_CTX, VlmFlags.DELETE));
         assertNotNull(loadedVol.getProps(SYS_CTX));
         assertEquals(res.getDefinition().getName(), loadedVol.getResource().getDefinition().getName());
-        assertEquals(volDfn.getMinorNr(SYS_CTX), loadedVol.getVolumeDefinition().getMinorNr(SYS_CTX));
         assertEquals(volDfn.getVolumeNumber(), loadedVol.getVolumeDefinition().getVolumeNumber());
         assertEquals(volDfn.getVolumeSize(SYS_CTX), loadedVol.getVolumeDefinition().getVolumeSize(SYS_CTX));
         assertEquals(volDfn.getUuid(), loadedVol.getVolumeDefinition().getUuid());
@@ -418,8 +393,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             0L,
             driver,
             propsContainerFactory,
@@ -436,8 +409,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             res,
             volDfn,
             storPool,
-            blockDevicePath,
-            metaDiskPath,
             null
         );
     }

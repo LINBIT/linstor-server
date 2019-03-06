@@ -64,8 +64,6 @@ public class VolumeDataFactory
             rsc,
             vlmDfn,
             storPool,
-            blockDevicePathRef,
-            metaDiskPathRef,
             StateFlagsBits.getMask(flags),
             driver,
             propsContainerFactory,
@@ -87,8 +85,6 @@ public class VolumeDataFactory
         Resource rsc,
         VolumeDefinition vlmDfn,
         StorPool storPoolRef,
-        String blockDevicePathRef,
-        String metaDiskPathRef,
         Volume.VlmFlags[] flags
     )
     {
@@ -103,8 +99,6 @@ public class VolumeDataFactory
                     rsc,
                     vlmDfn,
                     storPoolRef,
-                    blockDevicePathRef,
-                    metaDiskPathRef,
                     StateFlagsBits.getMask(flags),
                     driver,
                     propsContainerFactory,

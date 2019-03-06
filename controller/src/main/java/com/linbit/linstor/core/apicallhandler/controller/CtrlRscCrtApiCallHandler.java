@@ -3,6 +3,8 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscApi;
+import com.linbit.linstor.Resource.RscWithPayloadApi;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
@@ -63,10 +65,12 @@ public class CtrlRscCrtApiCallHandler
         freeCapacityFetcher = freeCapacityFetcherRef;
     }
 
-    public Flux<ApiCallRc> createResource(List<Resource.RscApi> rscApiList)
+    public Flux<ApiCallRc> createResource(
+        List<Resource.RscWithPayloadApi> rscApiList
+    )
     {
         List<String> rscNames = rscApiList.stream()
-            .map(Resource.RscApi::getName)
+            .map(rscWithPayLoad -> rscWithPayLoad.getRscApi().getName())
             .sorted()
             .distinct()
             .collect(Collectors.toList());
@@ -91,7 +95,7 @@ public class CtrlRscCrtApiCallHandler
             ResponseContext context = makeRscCrtContext(rscApiList, rscNames.get(0));
 
             Set<NodeName> nodeNames = rscApiList.stream()
-                .map(Resource.RscApi::getNodeName)
+                .map(rscWithPayload -> rscWithPayload.getRscApi().getNodeName())
                 .map(LinstorParsingUtils::asNodeName)
                 .collect(Collectors.toSet());
             response = freeCapacityFetcher.fetchThinFreeCapacities(nodeNames)
@@ -113,9 +117,10 @@ public class CtrlRscCrtApiCallHandler
 
     /**
      * @param rscApiList Resources to create; at least one; all must belong to the same resource definition
+     * @param layerStackStrListRef
      */
     private Flux<ApiCallRc> createResourceInTransaction(
-        List<Resource.RscApi> rscApiList,
+        List<Resource.RscWithPayloadApi> rscApiList,
         ResponseContext context,
         Map<StorPool.Key, Long> thinFreeCapacities
     )
@@ -123,16 +128,18 @@ public class CtrlRscCrtApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         List<Resource> deployedResources = new ArrayList<>();
-        for (Resource.RscApi rscApi : rscApiList)
+        for (Resource.RscWithPayloadApi rscWithPayloadApi : rscApiList)
         {
+            RscApi rscapi = rscWithPayloadApi.getRscApi();
             deployedResources.add(ctrlRscCrtApiHelper.createResourceDb(
-                rscApi.getNodeName(),
-                rscApi.getName(),
-                rscApi.getFlags(),
-                rscApi.getProps(),
-                rscApi.getVlmList(),
-                rscApi.getLocalRscNodeId(),
-                thinFreeCapacities
+                rscapi.getNodeName(),
+                rscapi.getName(),
+                rscapi.getFlags(),
+                rscapi.getProps(),
+                rscapi.getVlmList(),
+                rscWithPayloadApi.getDrbdNodeId(),
+                thinFreeCapacities,
+                rscWithPayloadApi.getLayerStack()
             ).extractApiCallRc(responses));
         }
 
@@ -186,10 +193,10 @@ public class CtrlRscCrtApiCallHandler
         return responses;
     }
 
-    private ResponseContext makeRscCrtContext(List<Resource.RscApi> rscApiList, String rscNameStr)
+    private ResponseContext makeRscCrtContext(List<RscWithPayloadApi> rscApiListRef, String rscNameStr)
     {
-        String nodeNamesStr = rscApiList.stream()
-            .map(Resource.RscApi::getNodeName)
+        String nodeNamesStr = rscApiListRef.stream()
+            .map(rscWithPayload -> rscWithPayload.getRscApi().getNodeName())
             .map(nodeNameStr -> "'" + nodeNameStr + "'")
             .collect(Collectors.joining(", "));
 

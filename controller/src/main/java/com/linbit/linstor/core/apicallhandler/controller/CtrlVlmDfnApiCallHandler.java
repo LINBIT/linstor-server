@@ -10,6 +10,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
@@ -96,7 +97,7 @@ class CtrlVlmDfnApiCallHandler
 
     ApiCallRc createVolumeDefinitions(
         String rscNameStr,
-        List<VlmDfnApi> vlmDfnApiList
+        List<VlmDfnWtihCreationPayload> vlmDfnWithPayloadApiListRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -114,7 +115,7 @@ class CtrlVlmDfnApiCallHandler
 
         try
         {
-            if (vlmDfnApiList.isEmpty())
+            if (vlmDfnWithPayloadApiListRef.isEmpty())
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(
@@ -135,7 +136,7 @@ class CtrlVlmDfnApiCallHandler
                 rscList.add(iterateResource.next());
             }
 
-            List<VolumeDefinitionData> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnApiList);
+            List<VolumeDefinitionData> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnWithPayloadApiListRef);
 
             for (VolumeDefinitionData vlmDfn : vlmDfnsCreated)
             {
@@ -167,11 +168,11 @@ class CtrlVlmDfnApiCallHandler
 
     List<VolumeDefinitionData> createVlmDfns(
         ResourceDefinition rscDfn,
-        List<VlmDfnApi> vlmDfnApis
+        List<VlmDfnWtihCreationPayload> vlmDfnWithPayloadApiListRef
     )
     {
         List<VolumeDefinitionData> vlmDfns = new ArrayList<>();
-        for (VolumeDefinition.VlmDfnApi vlmDfnApi : vlmDfnApis)
+        for (VlmDfnWtihCreationPayload vlmDfnApi : vlmDfnWithPayloadApiListRef)
         {
             vlmDfns.add(createVlmDfn(rscDfn, vlmDfnApi));
         }
@@ -183,11 +184,11 @@ class CtrlVlmDfnApiCallHandler
      */
     VolumeDefinitionData createVlmDfn(
         ResourceDefinition rscDfn,
-        VlmDfnApi vlmDfnApi
+        VlmDfnWtihCreationPayload vlmDfnApiRef
     )
     {
         VolumeNumber volNr = getOrGenerateVlmNr(
-            vlmDfnApi,
+            vlmDfnApiRef.getVlmDfn(),
             rscDfn,
             apiCtx
         );
@@ -201,21 +202,21 @@ class CtrlVlmDfnApiCallHandler
         VolumeDefinitionData vlmDfn;
         try
         {
-            long size = vlmDfnApi.getSize();
+            long size = vlmDfnApiRef.getVlmDfn().getSize();
 
-            VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApi.getFlags());
+            VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApiRef.getVlmDfn().getFlags());
 
             vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
                 peerAccCtx.get(),
                 rscDfn,
                 volNr,
-                vlmDfnApi.getMinorNr(),
+                vlmDfnApiRef.getDrbdMinorNr(),
                 size,
                 vlmDfnInitFlags
             );
             Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
 
-            ctrlPropsHelper.fillProperties(LinStorObject.VOLUME_DEFINITION, vlmDfnApi.getProps(),
+            ctrlPropsHelper.fillProperties(LinStorObject.VOLUME_DEFINITION, vlmDfnApiRef.getVlmDfn().getProps(),
                 getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
             // Set an initial DRBD current generation identifier for use when creating volumes
@@ -317,28 +318,17 @@ class CtrlVlmDfnApiCallHandler
     private ApiCallRcEntry createVlmDfnCrtSuccessEntry(VolumeDefinition vlmDfn, String rscNameStr)
     {
         ApiCallRcEntry vlmDfnCrtSuccessEntry = new ApiCallRcEntry();
-        try
-        {
-            vlmDfnCrtSuccessEntry.setReturnCode(ApiConsts.CREATED);
-            String successMessage = String.format(
-                "New volume definition with number '%d' of resource definition '%s' created.",
-                vlmDfn.getVolumeNumber().value,
-                rscNameStr
-            );
-            vlmDfnCrtSuccessEntry.setMessage(successMessage);
-            vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
-            vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-            vlmDfnCrtSuccessEntry.putObjRef(
-                ApiConsts.KEY_MINOR_NR,
-                Integer.toString(vlmDfn.getMinorNr(apiCtx).value)
-            );
+        vlmDfnCrtSuccessEntry.setReturnCode(ApiConsts.CREATED);
+        String successMessage = String.format(
+            "New volume definition with number '%d' of resource definition '%s' created.",
+            vlmDfn.getVolumeNumber().value,
+            rscNameStr
+        );
+        vlmDfnCrtSuccessEntry.setMessage(successMessage);
+        vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+        vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
-            errorReporter.logInfo(successMessage);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
+        errorReporter.logInfo(successMessage);
         return vlmDfnCrtSuccessEntry;
     }
 

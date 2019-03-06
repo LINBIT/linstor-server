@@ -2,6 +2,9 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.utils.Pair;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -12,38 +15,28 @@ import java.util.UUID;
  */
 public class RscDfnPojo implements ResourceDefinition.RscDfnApi
 {
-
     private final UUID uuid;
     private final String name;
-    private final int port;
-    private final String secret;
     private final long flags;
-    private final String transportType;
-    private final boolean down;
     private final Map<String, String> props;
     private final List<VolumeDefinition.VlmDfnApi> vlmdfns;
+    private final List<Pair<String, RscDfnLayerDataApi>> layerData;
 
     public RscDfnPojo(
         final UUID uuidRef,
         final String nameRef,
-        final int portRef,
-        final String secretRef,
         final long flagsRef,
-        final String transportTypeRef,
-        boolean downRef,
         final Map<String, String> propsRef,
-        final List<VolumeDefinition.VlmDfnApi> vlmdfnsRef
+        final List<VolumeDefinition.VlmDfnApi> vlmdfnsRef,
+        final List<Pair<String, RscDfnLayerDataApi>> layerDataRef
     )
     {
         uuid = uuidRef;
         name = nameRef;
-        port = portRef;
-        secret = secretRef;
         flags = flagsRef;
-        transportType = transportTypeRef;
-        down = downRef;
         props = propsRef;
         vlmdfns = vlmdfnsRef;
+        layerData = layerDataRef;
     }
 
     @Override
@@ -56,18 +49,6 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
     public String getResourceName()
     {
         return name;
-    }
-
-    @Override
-    public int getPort()
-    {
-        return port;
-    }
-
-    @Override
-    public String getSecret()
-    {
-        return secret;
     }
 
     @Override
@@ -89,14 +70,8 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi
     }
 
     @Override
-    public String getTransportType()
+    public List<Pair<String, RscDfnLayerDataApi>> getLayerData()
     {
-        return transportType;
-    }
-
-    @Override
-    public boolean isDown()
-    {
-        return down;
+        return layerData;
     }
 }

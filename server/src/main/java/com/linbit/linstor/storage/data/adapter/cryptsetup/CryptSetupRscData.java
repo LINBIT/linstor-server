@@ -2,7 +2,7 @@ package com.linbit.linstor.storage.data.adapter.cryptsetup;
 
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.CryptSetupRscPojo;
 import com.linbit.linstor.api.pojo.CryptSetupRscPojo.CryptVlmPojo;
 import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
@@ -27,7 +27,7 @@ import java.util.Set;
 
 public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements CryptSetupRscObject
 {
-    private final CryptSetupLayerDatabaseDriver dbDriver;
+    private final CryptSetupLayerDatabaseDriver cryptDbDriver;
 
     public CryptSetupRscData(
         int rscLayerIdRef,
@@ -52,7 +52,7 @@ public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements 
             transObjFactory,
             transMgrProvider
         );
-        dbDriver = dbDriverRef;
+        cryptDbDriver = dbDriverRef;
     }
 
     @Override
@@ -70,11 +70,17 @@ public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements 
     @Override
     protected void deleteVlmFromDatabase(CryptSetupVlmData vlmRef) throws SQLException
     {
-        dbDriver.delete(vlmRef);
+        cryptDbDriver.delete(vlmRef);
     }
 
     @Override
-    public RscLayerDataPojo asPojo(AccessContext accCtxRef) throws AccessDeniedException
+    protected void deleteRscFromDatabase() throws SQLException
+    {
+        cryptDbDriver.delete(this);
+    }
+
+    @Override
+    public RscLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         List<CryptVlmPojo> vlmPojos = new ArrayList<>();
         for (CryptSetupVlmData cryptSetupVlmData : vlmMap.values())

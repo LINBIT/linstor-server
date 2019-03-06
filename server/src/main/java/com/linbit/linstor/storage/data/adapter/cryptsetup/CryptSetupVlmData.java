@@ -35,6 +35,7 @@ public class CryptSetupVlmData extends BaseTransactionObject implements CryptSet
     private long usableSize;
     private @Nullable String devicePath;
     private String backingDevice;
+    private String diskState;
 
     // not persisted, not serialized, stlt only
     private boolean exists;
@@ -161,6 +162,16 @@ public class CryptSetupVlmData extends BaseTransactionObject implements CryptSet
         sizeState = sizeStateRef;
     }
 
+    public String getDiskState()
+    {
+        return diskState;
+    }
+
+    public void setDiskState(String diskStateRef)
+    {
+        diskState = diskStateRef;
+    }
+
     @Override
     public List<? extends State> getStates()
     {
@@ -227,7 +238,9 @@ public class CryptSetupVlmData extends BaseTransactionObject implements CryptSet
             devicePath,
             backingDevice,
             allocatedSize,
-            usableSize
+            usableSize,
+            opened,
+            diskState
         );
     }
 }

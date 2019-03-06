@@ -44,7 +44,6 @@ public class VolumeDefinitionDataSatelliteFactory
         ResourceDefinition rscDfn,
         VolumeNumber vlmNr,
         long vlmSize,
-        MinorNumber minorNumber,
         VolumeDefinition.VlmDfnFlags[] flags
     )
         throws ImplementationError
@@ -59,8 +58,6 @@ public class VolumeDefinitionDataSatelliteFactory
                     vlmDfnUuid,
                     rscDfn,
                     vlmNr,
-                    minorNumber,
-                    null,
                     vlmSize,
                     StateFlagsBits.getMask(flags),
                     driver,

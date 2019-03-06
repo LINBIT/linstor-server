@@ -54,7 +54,7 @@ public class ModifyVolumeDefinition implements ApiCallReactive
         Set<String> deletePropKeys = new HashSet<>(msgModVlmDfn.getDeletePropKeysList());
 
         Long size = msgModVlmDfn.hasVlmSize() ? msgModVlmDfn.getVlmSize() : null;
-        Integer minorNr = msgModVlmDfn.hasVlmMinor() ? msgModVlmDfn.getVlmMinor() : null;
+        // minor number is not modifyable
 
         return ctrlVlmDfnModifyApiCallHandler
             .modifyVlmDfn(
@@ -62,7 +62,6 @@ public class ModifyVolumeDefinition implements ApiCallReactive
                 rscName,
                 vlmNr,
                 size,
-                minorNr,
                 overrideProps,
                 deletePropKeys
             )

@@ -62,6 +62,12 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
+    public void ensureVlmNoLongerCreating(AccessContext accCtxRef, Volume vlmRef) throws AccessDeniedException
+    {
+        // I'm positive
+    }
+
+    @Override
     public void vlmCreationFinished(AccessContext accCtx, Volume vlm, Long freeCapacityRef, Long totalCapacityRef)
         throws AccessDeniedException
     {
@@ -94,11 +100,5 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
         throws AccessDeniedException
     {
         throw new UnsupportedOperationException("Satellite does not track free space");
-    }
-
-    @Override
-    public void ensureVlmNoLongerCreating(AccessContext accCtxRef, Volume vlmRef) throws AccessDeniedException
-    {
-        // Ignore
     }
 }

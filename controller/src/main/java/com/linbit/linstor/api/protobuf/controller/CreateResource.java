@@ -8,6 +8,8 @@ import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.proto.requests.MsgCrtRscOuterClass.MsgCrtRsc;
 import com.linbit.linstor.proto.apidata.RscApiData;
+import com.linbit.linstor.proto.apidata.RscWithPayloadApiData;
+
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
@@ -43,8 +45,8 @@ public class CreateResource implements ApiCallReactive
     {
         MsgCrtRsc msgCrtRsc = MsgCrtRsc.parseDelimitedFrom(msgDataIn);
 
-        List<Resource.RscApi> rscApiList = msgCrtRsc.getRscsList().stream()
-            .map(RscApiData::new)
+        List<Resource.RscWithPayloadApi> rscApiList = msgCrtRsc.getRscsList().stream()
+            .map(RscWithPayloadApiData::new)
             .collect(Collectors.toList());
 
         return ctrlRscCrtApiCallHandler

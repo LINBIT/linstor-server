@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.data.provider.swordfish;
 
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -180,13 +180,14 @@ public class SfInitiatorData extends BaseTransactionObject implements SfInitiato
     }
 
     @Override
-    public VlmLayerDataPojo asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
     {
         return new SwordfishInitiatorVlmPojo(
-            vlmDfnData.asPojo(accCtxRef),
+            vlmDfnData.getApiData(accCtxRef),
             getDevicePath(),
             getAllocatedSize(),
-            getUsableSize()
+            getUsableSize(),
+            new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
         );
     }
 }

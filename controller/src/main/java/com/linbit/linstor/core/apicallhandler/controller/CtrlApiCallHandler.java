@@ -8,7 +8,7 @@ import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
+import com.linbit.linstor.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
@@ -214,6 +214,7 @@ public class CtrlApiCallHandler
      *            required
      * @param port
      *            optional
+     * @param protocolStringListRef
      */
     public ApiCallRc createResourceDefinition(
         String resourceName,
@@ -221,7 +222,8 @@ public class CtrlApiCallHandler
         String secretRef,
         String transportType,
         Map<String, String> propsRef,
-        List<VlmDfnApi> vlmDescrMapRef
+        List<VlmDfnWtihCreationPayload> vlmDescrMapRef,
+        List<String> layerStackRef
     )
     {
         ApiCallRc apiCallRc;
@@ -235,7 +237,7 @@ public class CtrlApiCallHandler
         {
             props = Collections.emptyMap();
         }
-        List<VlmDfnApi> vlmDescrMap = vlmDescrMapRef;
+        List<VlmDfnWtihCreationPayload> vlmDescrMap = vlmDescrMapRef;
         if (vlmDescrMap == null)
         {
             vlmDescrMap = Collections.emptyList();
@@ -248,7 +250,8 @@ public class CtrlApiCallHandler
                 secret,
                 transportType,
                 props,
-                vlmDescrMapRef
+                vlmDescrMapRef,
+                layerStackRef
             );
         }
         return apiCallRc;
@@ -268,6 +271,7 @@ public class CtrlApiCallHandler
      *            required (can be empty) - overrides the given property key-value pairs
      * @param deletePropKeys
      *            required (can be empty) - deletes the given property keys
+     * @param layerStackStrList
      */
     public ApiCallRc modifyRscDfn(
         UUID rscDfnUuid,
@@ -275,7 +279,8 @@ public class CtrlApiCallHandler
         Integer port,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deletePropNamespaces
+        Set<String> deletePropNamespaces,
+        List<String> layerStackStrList
     )
     {
         ApiCallRc apiCallRc;
@@ -287,7 +292,8 @@ public class CtrlApiCallHandler
                 port,
                 overrideProps,
                 deletePropKeys,
-                deletePropNamespaces
+                deletePropNamespaces,
+                layerStackStrList
             );
         }
         return apiCallRc;
@@ -311,20 +317,20 @@ public class CtrlApiCallHandler
      */
     public ApiCallRc createVlmDfns(
         String rscName,
-        List<VlmDfnApi> vlmDfnApiListRef
+        List<VlmDfnWtihCreationPayload> vlmDfnWithCrtPayloadApiListRef
     )
     {
         ApiCallRc apiCallRc;
-        List<VlmDfnApi> vlmDfnApiList = vlmDfnApiListRef;
-        if (vlmDfnApiList == null)
+        List<VlmDfnWtihCreationPayload> vlmDfnWithPayloadApiList = vlmDfnWithCrtPayloadApiListRef;
+        if (vlmDfnWithPayloadApiList == null)
         {
-            vlmDfnApiList = Collections.emptyList();
+            vlmDfnWithPayloadApiList = Collections.emptyList();
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
         {
             apiCallRc = vlmDfnApiCallHandler.createVolumeDefinitions(
                 rscName,
-                vlmDfnApiList
+                vlmDfnWithPayloadApiList
             );
         }
         return apiCallRc;

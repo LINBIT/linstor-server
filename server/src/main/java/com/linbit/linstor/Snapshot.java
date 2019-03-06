@@ -5,6 +5,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import java.sql.SQLException;
@@ -77,6 +78,9 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable
         throws AccessDeniedException;
 
     SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException;
+
+    List<DeviceLayerKind> getLayerStack(AccessContext accCtx)
         throws AccessDeniedException;
 
     @Override

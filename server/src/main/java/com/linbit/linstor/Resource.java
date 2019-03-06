@@ -1,6 +1,6 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -40,9 +40,6 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     Stream<Volume> streamVolumes();
 
     Node getAssignedNode();
-
-    @RemoveAfterDevMgrRework
-    NodeId getNodeId();
 
     Stream<ResourceConnection> streamResourceConnections(AccessContext accCtx)
         throws AccessDeniedException;
@@ -175,8 +172,14 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         Map<String, String> getProps();
         long getFlags();
         List<? extends Volume.VlmApi> getVlmList();
-        Integer getLocalRscNodeId();
-        RscLayerDataPojo getLayerData();
+        RscLayerDataApi getLayerData();
+    }
+
+    public interface RscWithPayloadApi
+    {
+        RscApi getRscApi();
+        List<String> getLayerStack();
+        Integer getDrbdNodeId();
     }
 
     /**

@@ -2,7 +2,8 @@ package com.linbit.linstor.storage;
 
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.dbdrivers.Db2DatabaseInfo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessContext;
@@ -32,6 +33,7 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     protected final int rscLayerId;
     protected final Resource rsc;
     protected final String rscSuffix;
+    protected final ResourceLayerIdDatabaseDriver dbDriver;
 
     // persisted, serialized
     protected final TransactionMap<VolumeNumber, VLM_TYPE> vlmMap;
@@ -44,7 +46,7 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
         @Nullable RscLayerObject parentRef,
         Set<RscLayerObject> childrenRef,
         String rscNameSuffixRef,
-        ResourceLayerIdDatabaseDriver dbDriver,
+        ResourceLayerIdDatabaseDriver dbDriverRef,
         Map<VolumeNumber, VLM_TYPE> vlmProviderObjectsRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
@@ -52,10 +54,11 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     {
         super(transMgrProviderRef);
         rscLayerId = rscLayerIdRef;
+        dbDriver = dbDriverRef;
         rsc = Objects.requireNonNull(rscRef);
         rscSuffix = rscNameSuffixRef == null ? "" : rscNameSuffixRef;
 
-        parent = transObjFactory.createTransactionSimpleObject(this, parentRef, dbDriver.getParentDriver());
+        parent = transObjFactory.createTransactionSimpleObject(this, parentRef, dbDriverRef.getParentDriver());
         children = transObjFactory.createTransactionSet(this, childrenRef, null);
         vlmMap = transObjFactory.createTransactionMap(vlmProviderObjectsRef, null);
 
@@ -121,18 +124,23 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
 
     protected abstract void deleteVlmFromDatabase(VLM_TYPE vlm) throws SQLException;
 
+    protected abstract void deleteRscFromDatabase() throws SQLException;
+
     @Override
-    public void delete()
+    public void delete() throws SQLException
     {
         for (RscLayerObject rscLayerObject : children)
         {
             rscLayerObject.delete();
         }
+        deleteRscFromDatabase();
+        dbDriver.delete(this);
     }
 
-    protected List<RscLayerDataPojo> getChildrenPojos(AccessContext accCtx) throws AccessDeniedException
+
+    protected List<RscLayerDataApi> getChildrenPojos(AccessContext accCtx) throws AccessDeniedException
     {
-        List<RscLayerDataPojo> childrenPojos = new ArrayList<>();
+        List<RscLayerDataApi> childrenPojos = new ArrayList<>();
         for (RscLayerObject rscLayerObject : children)
         {
             childrenPojos.add(rscLayerObject.asPojo(accCtx));

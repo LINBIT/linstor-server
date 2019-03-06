@@ -13,6 +13,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -47,10 +48,7 @@ public class ResourceDefinitionDataSatelliteFactory
         AccessContext accCtx,
         UUID uuid,
         ResourceName rscName,
-        TcpPortNumber portRef,
-        ResourceDefinition.RscDfnFlags[] initFlags,
-        String secret,
-        ResourceDefinition.TransportType transType
+        ResourceDefinition.RscDfnFlags[] initFlags
     )
         throws ImplementationError
     {
@@ -65,11 +63,9 @@ public class ResourceDefinitionDataSatelliteFactory
                     uuid,
                     objectProtectionFactory.getInstance(accCtx, "", false),
                     rscName,
-                    portRef,
-                    null,
                     StateFlagsBits.getMask(initFlags),
-                    secret,
-                    transType,
+                    new ArrayList<>(), // satellite does not care about the layer stack for new resources
+                    // as every resource has already a complete tree of layerdata
                     driver,
                     propsContainerFactory,
                     transObjFactory,

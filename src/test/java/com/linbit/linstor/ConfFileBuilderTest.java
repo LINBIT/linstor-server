@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ConfigModule;
@@ -11,6 +10,7 @@ import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdLayerDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatellitePropDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteStorageLayerDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -90,6 +91,8 @@ public class ConfFileBuilderTest
     private TransactionObjectFactory transObjFactory;
 
     private AtomicInteger idGenerator = new AtomicInteger(0);
+    private DynamicNumberPool mockedTcpPool;
+    private DynamicNumberPool mockedMinorPool;
 
     @Before
     public void setUp() throws Exception
@@ -108,7 +111,8 @@ public class ConfFileBuilderTest
         transMgrProvider = () -> dummyTransMgr;
         transObjFactory = new TransactionObjectFactory(transMgrProvider);
         props = new PropsContainerFactory(
-                new SatellitePropDriver(), transMgrProvider).getInstance("TESTINSTANCE");
+                new SatellitePropDriver(), transMgrProvider)
+            .getInstance("TESTINSTANCE");
         localRscData = makeMockResource(101, "alpha", "1.2.3.4", false, false, false);
         peerRscData = makeMockResource(202, "bravo", "5.6.7.8", false, false, false);
         when(localRscData.getResource().getAssignedNode().getNodeConnection(
@@ -123,6 +127,12 @@ public class ConfFileBuilderTest
             .thenReturn(rscConn);
         when(peerRscData.getResource().getResourceConnection(accessContext, localRscData.getResource()))
             .thenReturn(rscConn);
+
+        mockedTcpPool = Mockito.mock(DynamicNumberPool.class);
+        mockedMinorPool = Mockito.mock(DynamicNumberPool.class);
+
+        when(mockedTcpPool.autoAllocate()).thenReturn(9001);
+        when(mockedMinorPool.autoAllocate()).thenReturn(99);
     }
 
     private void setProps(String[] nodeNames, String... nicNames)
@@ -324,7 +334,6 @@ public class ConfFileBuilderTest
 
         when(volumeDefinition.getVolumeNumber()).thenReturn(new VolumeNumber(volumeNumber));
         when(volumeDefinition.getResourceDefinition()).thenReturn(resourceDefinition);
-        when(volumeDefinition.getMinorNr(any(AccessContext.class))).thenReturn(new MinorNumber(99));
 
         when(
                 volumeFlags.isUnset(
@@ -338,7 +347,6 @@ public class ConfFileBuilderTest
         when(volume.getResourceDefinition()).thenReturn(resourceDefinition);
         when(volume.getStorPool(accessContext)).thenReturn(storPool);
         when(volume.getProps(accessContext)).thenReturn(vlmProps);
-        when(volume.getBackingDiskPath(accessContext)).thenReturn("/dev/foo");
         when(volume.getResource()).thenReturn(resource);
 
         when(netInterface.getAddress(any(AccessContext.class)))
@@ -372,10 +380,6 @@ public class ConfFileBuilderTest
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
         when(resourceDefinition.getProps(accessContext)).thenReturn(rscDfnProps);
         when(rscDfnProps.getNamespace(any(String.class))).thenReturn(Optional.empty());
-        when(resourceDefinition.getPort(any(AccessContext.class)))
-                .thenReturn(new TcpPortNumber(42));
-        when(resourceDefinition.getTransportType(accessContext)).thenReturn(TransportType.IP);
-        when(resourceDefinition.getSecret(accessContext)).thenReturn("SuperSecretPassword");
 
         when(volumeDefinition.getProps(accessContext)).thenReturn(vlmDfnProps);
         when(vlmDfnProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS)).thenReturn(drbdprops);
@@ -387,7 +391,6 @@ public class ConfFileBuilderTest
         when(resource.getAssignedNode()).thenReturn(assignedNode);
         when(resource.iterateVolumes()).thenAnswer(makeIteratorAnswer(volume));
         when(resource.streamVolumes()).thenAnswer(makeStreamAnswer(volume));
-        when(resource.getNodeId()).thenReturn(new NodeId(12));
         when(resource.getProps(accessContext)).thenReturn(rscProps);
         when(resource.disklessForPeers(accessContext)).thenReturn(diskless);
 
@@ -402,10 +405,12 @@ public class ConfFileBuilderTest
             ConfigModule.DEFAULT_PEER_COUNT,
             ConfigModule.DEFAULT_AL_STRIPES,
             ConfigModule.DEFAULT_AL_SIZE,
-            resourceDefinition.getPort(accessContext),
-            resourceDefinition.getTransportType(accessContext),
-            resourceDefinition.getSecret(accessContext),
+            42,
+            null,
+            "SuperSecretPassword",
             rscDataList,
+            new TreeMap<>(),
+            mockedTcpPool,
             DRBD_LAYER_NO_OP_DRIVER,
             transObjFactory,
             transMgrProvider
@@ -425,7 +430,7 @@ public class ConfFileBuilderTest
                 drbdRscDataChildren,
                 drbdRscDataVlmMap,
                 "",
-                resource.getNodeId(),
+                new NodeId(13),
                 null, // copied from rscDfnData
                 null, // copied from rscDfnData
                 null, // copied from rscDfnData
@@ -455,7 +460,8 @@ public class ConfFileBuilderTest
                 DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
                     vlm.getVolumeDefinition(),
                     "",
-                    vlm.getVolumeDefinition().getMinorNr(accessContext),
+                    99,
+                    mockedMinorPool,
                     DRBD_LAYER_NO_OP_DRIVER,
                     transMgrProvider
                 );

@@ -831,7 +831,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             tcpPort,
             null,
             "NotTellingYou",
-            ResourceDefinition.TransportType.IP
+            ResourceDefinition.TransportType.IP,
+            new ArrayList<>()
         );
 
         rscDfnMap.put(rscDfn.getName(), rscDfn);
@@ -969,7 +970,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                         return doNotPlaceWithRscList;
                     }
                 },
-                disklessOnRemaining
+                disklessOnRemaining,
+                Collections.emptyList()
             ).subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
@@ -1061,7 +1063,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     rscPropsMap,
                     Collections.emptyList(),
                     null,
-                    null
+                    null,
+                    Collections.emptyList()
                 );
             }
 

@@ -105,7 +105,8 @@ public class CtrlRscAutoPlaceApiCallHandler
     public Flux<ApiCallRc> autoPlace(
         String rscNameStr,
         AutoSelectFilterApi selectFilter,
-        boolean disklessOnRemainingNodes
+        boolean disklessOnRemainingNodes,
+        List<String> layerStackStrList
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -126,7 +127,13 @@ public class CtrlRscAutoPlaceApiCallHandler
                     LockType.WRITE,
                     LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
                 ),
-                () -> autoPlaceInTransaction(rscNameStr, selectFilter, disklessOnRemainingNodes, context)
+                () -> autoPlaceInTransaction(
+                    rscNameStr,
+                    selectFilter,
+                    disklessOnRemainingNodes,
+                    context,
+                    layerStackStrList
+                )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -135,7 +142,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         String rscNameStr,
         AutoSelectFilterApi selectFilter,
         boolean disklessOnRemainingNodes,
-        ResponseContext context
+        ResponseContext context, List<String> layerStackStrList
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -225,7 +232,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                     rscNameStr,
                     disklessOnRemainingNodes,
                     candidate,
-                    null
+                    null,
+                    layerStackStrList
                 );
 
                 ctrlTransactionHelper.commit();
@@ -245,7 +253,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                     storPoolName,
                     rscSize,
                     autoStorPoolSelectorConfig,
-                    disklessOnRemainingNodes
+                    disklessOnRemainingNodes,
+                    layerStackStrList
                 );
             }
         }
@@ -266,7 +275,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         String storPoolName,
         long rscSize,
         AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
-        boolean disklessOnRemainingNodes
+        boolean disklessOnRemainingNodes,
+        List<String> layerStackStrList
     )
     {
         return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
@@ -283,7 +293,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                         rscSize,
                         autoStorPoolSelectorConfig,
                         disklessOnRemainingNodes,
-                        freeCapacities
+                        freeCapacities,
+                        layerStackStrList
                     )
                 ));
     }
@@ -295,7 +306,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         long rscSize,
         AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
         boolean disklessOnRemainingNodes,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        List<String> layerStackStrList
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -316,7 +328,8 @@ public class CtrlRscAutoPlaceApiCallHandler
             rscNameStr,
             disklessOnRemainingNodes,
             candidate,
-            thinFreeCapacities
+            thinFreeCapacities,
+            layerStackStrList
         );
 
         ctrlTransactionHelper.commit();
@@ -381,7 +394,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         String rscNameStr,
         boolean disklessOnRemainingNodes,
         Candidate bestCandidate,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        List<String> layerStackStr
     )
     {
         Map<String, String> rscPropsMap = new TreeMap<>();
@@ -398,7 +412,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                 rscPropsMap,
                 Collections.emptyList(),
                 null,
-                thinFreeCapacities
+                thinFreeCapacities,
+                layerStackStr
             ).extractApiCallRc(responses);
             deployedResources.add(rsc);
 
@@ -430,7 +445,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 rscPropsMap,
                                 Collections.emptyList(),
                                 null,
-                                thinFreeCapacities
+                                thinFreeCapacities,
+                                layerStackStr
                             ).extractApiCallRc(responses)
                         );
                     }

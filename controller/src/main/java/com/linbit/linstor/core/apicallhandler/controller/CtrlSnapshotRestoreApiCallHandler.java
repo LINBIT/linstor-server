@@ -178,7 +178,13 @@ public class CtrlSnapshotRestoreApiCallHandler
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
 
-        ResourceData rsc = ctrlRscCrtApiHelper.createResource(toRscDfn, node, snapshot.getNodeId(), 0L);
+        ResourceData rsc = ctrlRscCrtApiHelper.createResource(
+            toRscDfn,
+            node,
+            snapshot.getNodeId().value,
+            0L,
+            snapshot.getLayerStack(peerAccCtx.get())
+        );
 
         Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(toRscDfn);
         while (toVlmDfnIter.hasNext())

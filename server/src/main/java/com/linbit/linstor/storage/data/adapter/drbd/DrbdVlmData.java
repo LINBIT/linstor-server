@@ -236,15 +236,17 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         return rscData.getSuffixedResourceName() + "/" + getVlmNr().value;
     }
 
+    @Override
     public DrbdVlmPojo asPojo(AccessContext accCtxRef)
     {
         return new DrbdVlmPojo(
-            vlmDfnData.asPojo(accCtxRef),
+            vlmDfnData.getApiData(accCtxRef),
             devicePath,
             getBackingDevice(),
             metaDiskPath,
             allocatedSize,
-            usableSize
+            usableSize,
+            diskState
         );
     }
 }

@@ -5,17 +5,20 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -90,11 +93,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             resDfnUuid,
             resDfnObjProt,
             resName,
-            new TcpPortNumber(port),
-            tcpPortPoolMock,
             RscDfnFlags.DELETE.flagValue,
-            secret,
-            transportType,
+            new ArrayList<>(),
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -138,7 +138,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             port,
             new RscDfnFlags[] {RscDfnFlags.DELETE},
             secret,
-            transportType
+            transportType,
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
         );
 
         commit();
@@ -155,6 +156,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(secret, resultSet.getString(SECRET));
         assertEquals(transportType.name(), resultSet.getString(TRANSPORT_TYPE));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
+        assertThat(GenericDbDriver.getAsStringList(resultSet, LAYER_STACK_KIND))
+            .containsExactly(DeviceLayerKind.DRBD.name(), DeviceLayerKind.STORAGE.name());
 
         resultSet.close();
         stmt.close();
@@ -218,45 +221,6 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         stmt.close();
     }
 
-    @SuppressWarnings("checkstyle:magicnumber")
-    @Test
-    public void testUpdatePort() throws Exception
-    {
-        driver.create(resDfn);
-
-        TcpPortNumber otherPort = new TcpPortNumber(9001);
-        resDfn.setPort(SYS_CTX, otherPort);
-        commit();
-
-        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertTrue(resultSet.next());
-        assertEquals(otherPort.value, resultSet.getInt(TCP_PORT));
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testUpdateTransportType() throws Exception
-    {
-        driver.create(resDfn);
-
-        TransportType newTransportType = TransportType.RDMA;
-        resDfn.setTransportType(SYS_CTX, newTransportType);
-        commit();
-
-        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertTrue(resultSet.next());
-        assertEquals(newTransportType.name(), resultSet.getString(TRANSPORT_TYPE));
-
-        resultSet.close();
-        stmt.close();
-    }
-
     @Test
     public void testExists() throws Exception
     {
@@ -292,7 +256,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             port + 1, // prevent tcp-port-conflict
             null,
             "secret",
-            transportType
+            transportType,
+            new ArrayList<>()
         );
         objProtDriver.insertOp(resDfnObjProt);
 
@@ -313,47 +278,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         rscDfnMap.put(resName, resDfn);
 
         resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, port, null, "secret", transportType
+            SYS_CTX, resName, port, null, "secret", transportType, new ArrayList<>()
         );
-    }
-
-    @Test
-    public void testAutoAllocateTcpPort() throws Exception
-    {
-        final int testTcpPort = 9876;
-
-        Mockito.when(tcpPortPoolMock.autoAllocate()).thenReturn(testTcpPort);
-
-        ResourceDefinitionData newRscDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX,
-            resName,
-            null, // auto allocate
-            null,
-            "secret",
-            transportType
-        );
-
-        assertThat(newRscDfn.getPort(SYS_CTX).value).isEqualTo(testTcpPort);
-    }
-
-    @Test
-    public void testDeleteDeallocateTcpPort() throws Exception
-    {
-        driver.create(resDfn);
-        resDfn.delete(SYS_CTX);
-
-        Mockito.verify(tcpPortPoolMock).deallocate(port);
-    }
-
-    @Test
-    public void testModifyTcpPort() throws Exception
-    {
-        final int newTcpPort = 9876;
-
-        driver.create(resDfn);
-        resDfn.setPort(SYS_CTX, new TcpPortNumber(newTcpPort));
-
-        Mockito.verify(tcpPortPoolMock).deallocate(port);
-        Mockito.verify(tcpPortPoolMock).allocate(newTcpPort);
     }
 }

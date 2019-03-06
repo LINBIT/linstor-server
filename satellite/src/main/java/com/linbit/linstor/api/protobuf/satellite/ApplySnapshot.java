@@ -19,6 +19,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -82,13 +83,10 @@ public class ApplySnapshot implements ApiCall
                 new RscDfnPojo(
                     UUID.fromString(snapshotData.getRscDfnUuid()),
                     snapshotData.getRscName(),
-                    snapshotData.getRscDfnPort(),
-                    snapshotData.getRscDfnSecret(),
                     snapshotData.getRscDfnFlags(),
-                    snapshotData.getRscDfnTransportType(),
-                    snapshotData.getRscDfnDown(),
                     ProtoMapUtils.asMap(snapshotData.getRscDfnPropsList()),
-                    null
+                    null,
+                    Collections.emptyList()
                 ),
                 UUID.fromString(snapshotData.getSnapshotDfnUuid()),
                 snapshotData.getSnapshotName(),

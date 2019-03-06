@@ -9,7 +9,7 @@ import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.api.interfaces.RscLayerDataPojo;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 
 public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
 {
@@ -19,14 +19,13 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     private final ResourceDefinition.RscDfnApi rscDefinition;
     private final UUID localRscUuid;
     private final long localRscFlags;
-    private final int localRscNodeId;
     private final Map<String, String> localRscProps;
     private final List<Volume.VlmApi> localVlms;
     private final List<OtherRscPojo> otherRscs;
     private final List<ResourceConnection.RscConnApi> rscConnections;
     private final Long fullSyncId;
     private final Long updateId;
-    private final RscLayerDataPojo rscLayerDataPojo;
+    private final RscLayerDataApi rscLayerDataPojo;
 
     public RscPojo(
         final String rscNameRef,
@@ -35,14 +34,13 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         final ResourceDefinition.RscDfnApi rscDefinitionRef,
         final UUID localRscUuidRef,
         final long localRscFlagsRef,
-        final int localRscNodeIdRef,
         final Map<String, String> localRscPropsRef,
         final List<Volume.VlmApi> localVlmsRef,
         final List<OtherRscPojo> otherRscListRef,
         final List<ResourceConnection.RscConnApi> rscConnectionsRef,
         final Long fullSyncIdRef,
         final Long updateIdRef,
-        final RscLayerDataPojo rscLayerDataPojoRef
+        final RscLayerDataApi rscLayerDataPojoRef
     )
     {
         rscName = rscNameRef;
@@ -51,7 +49,6 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         rscDefinition = rscDefinitionRef;
         localRscUuid = localRscUuidRef;
         localRscFlags = localRscFlagsRef;
-        localRscNodeId = localRscNodeIdRef;
         localRscProps = localRscPropsRef;
         rscConnections = rscConnectionsRef;
         localVlms = localVlmsRef;
@@ -91,34 +88,14 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         return rscDefinition.getUuid();
     }
 
-    public int getRscDfnPort()
-    {
-        return rscDefinition.getPort();
-    }
-
     public long getRscDfnFlags()
     {
         return rscDefinition.getFlags();
     }
 
-    public String getRscDfnSecret()
-    {
-        return rscDefinition.getSecret();
-    }
-
-    public String getRscDfnTransportType()
-    {
-        return rscDefinition.getTransportType();
-    }
-
     public Map<String, String> getRscDfnProps()
     {
         return rscDefinition.getProps();
-    }
-
-    public boolean getRscDfnDown()
-    {
-        return rscDefinition.isDown();
     }
 
     public UUID getLocalRscUuid()
@@ -135,12 +112,6 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     public long getFlags()
     {
         return localRscFlags;
-    }
-
-    @Override
-    public Integer getLocalRscNodeId()
-    {
-        return localRscNodeId;
     }
 
     public Map<String, String> getLocalRscProps()
@@ -191,7 +162,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     }
 
     @Override
-    public RscLayerDataPojo getLayerData()
+    public RscLayerDataApi getLayerData()
     {
         return rscLayerDataPojo;
     }
@@ -210,12 +181,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         private final long nodeFlags;
         private final Map<String, String> nodeProps;
         private final UUID rscUuid;
-        private final int rscNodeId;
         private final long rscFlags;
         private final Map<String, String> rscProps;
         private final List<Volume.VlmApi> vlms;
         private final List<OtherNodeNetInterfacePojo> netInterfacefPojos;
-        private final RscLayerDataPojo rscLayerDataPojo;
+        private final RscLayerDataApi rscLayerDataPojo;
 
         public OtherRscPojo(
             String nodeNameRef,
@@ -225,11 +195,10 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             Map<String, String> nodePropsRef,
             List<OtherNodeNetInterfacePojo> netIfPojosRef,
             UUID rscUuidRef,
-            int rscNodeIdRef,
             long rscFlagsRef,
             Map<String, String> rscPropsRef,
             List<Volume.VlmApi> vlmsRef,
-            RscLayerDataPojo rscLayerDataPojoRef
+            RscLayerDataApi rscLayerDataPojoRef
         )
         {
             nodeName = nodeNameRef;
@@ -239,7 +208,6 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             nodeProps = nodePropsRef;
             netInterfacefPojos = netIfPojosRef;
             rscUuid = rscUuidRef;
-            rscNodeId = rscNodeIdRef;
             rscFlags = rscFlagsRef;
             rscProps = rscPropsRef;
             vlms = vlmsRef;
@@ -281,11 +249,6 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             return rscUuid;
         }
 
-        public int getRscNodeId()
-        {
-            return rscNodeId;
-        }
-
         public long getRscFlags()
         {
             return rscFlags;
@@ -301,7 +264,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             return vlms;
         }
 
-        public RscLayerDataPojo getRscLayerDataPojo()
+        public RscLayerDataApi getRscLayerDataPojo()
         {
             return rscLayerDataPojo;
         }

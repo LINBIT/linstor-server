@@ -2,8 +2,8 @@ package com.linbit.linstor.storage.data.provider.zfs;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.interfaces.VlmLayerDataPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -223,16 +223,17 @@ public class ZfsData extends BaseTransactionObject implements ZfsProviderObject
     }
 
     @Override
-    public VlmLayerDataPojo asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
     {
-        VlmLayerDataPojo pojo;
+        VlmLayerDataApi pojo;
         if (providerKind.equals(DeviceProviderKind.ZFS))
         {
             pojo = new ZfsVlmPojo(
                 getVlmNr().value,
                 getDevicePath(),
                 getAllocatedSize(),
-                getUsableSize()
+                getUsableSize(),
+                new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
             );
         }
         else
@@ -241,7 +242,8 @@ public class ZfsData extends BaseTransactionObject implements ZfsProviderObject
                 getVlmNr().value,
                 getDevicePath(),
                 getAllocatedSize(),
-                getUsableSize()
+                getUsableSize(),
+                new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
             );
         }
         return pojo;

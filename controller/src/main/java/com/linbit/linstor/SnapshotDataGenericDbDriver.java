@@ -39,10 +39,11 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
     private static final String S_NAME = DbConstants.SNAPSHOT_NAME;
     private static final String S_NODE_ID = DbConstants.NODE_ID;
     private static final String S_FLAGS = DbConstants.SNAPSHOT_FLAGS;
+    private static final String S_LAYER_STACK = DbConstants.LAYER_STACK;
 
     private static final String S_SELECT_ALL =
         " SELECT " + S_UUID + ", " + S_NODE_NAME + ", " + S_RES_NAME + ", " + S_NAME + ", " +
-            S_NODE_ID + ", " + S_FLAGS +
+            S_NODE_ID + ", " + S_FLAGS + ", " + S_LAYER_STACK +
         " FROM " + TBL_SNAPSHOT;
 
     private static final String S_INSERT =
@@ -129,7 +130,10 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             nodeId,
             resultSet.getLong(S_FLAGS),
             this, transObjFactory, transMgrProvider,
-            snapshotVlmMap
+            snapshotVlmMap,
+            GenericDbDriver.asDevLayerKindList(
+                GenericDbDriver.getAsStringList(resultSet, S_LAYER_STACK)
+            )
         );
 
         errorReporter.logTrace("Snapshot %s created during restore", getId(snapshot));

@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -7,8 +8,7 @@ import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.TransactionObject;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
+import com.linbit.utils.Pair;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,21 +53,9 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
     void setStorPool(AccessContext accCtx, StorPool storPool)
         throws AccessDeniedException, SQLException;
 
-    @RemoveAfterDevMgrRework
-    String getBackingDiskPath(AccessContext accCtx) throws AccessDeniedException;
-
-    @RemoveAfterDevMgrRework
-    String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
-
     String getDevicePath(AccessContext accCtx) throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
-
-    @RemoveAfterDevMgrRework
-    void setBackingDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
-
-    @RemoveAfterDevMgrRework
-    void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
     void setDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
 
@@ -167,11 +155,8 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
         String getStorPoolName();
         UUID getStorPoolUuid();
         String getStorDriverSimpleClassName();
-        String getBlockDevice();
-        String getMetaDisk();
         String getDevicePath();
         int getVlmNr();
-        int getVlmMinorNr();
         long getFlags();
         Map<String, String> getVlmProps();
         UUID getStorPoolDfnUuid();
@@ -179,6 +164,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
         Map<String, String> getStorPoolProps();
         Optional<Long> getAllocatedSize();
         Optional<Long> getUsableSize();
+        List<Pair<String, VlmLayerDataApi>> getVlmLayerData();
     }
 
 

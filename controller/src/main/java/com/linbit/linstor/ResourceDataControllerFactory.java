@@ -9,32 +9,34 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class ResourceDataFactory
+public class ResourceDataControllerFactory
 {
     private final ResourceDataDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final CtrlLayerStackHelper layerStackHelper;
 
     @Inject
-    public ResourceDataFactory(
+    public ResourceDataControllerFactory(
         ResourceDataDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        CtrlLayerStackHelper layerStackHelperRef
     )
     {
         dbDriver = dbDriverRef;
@@ -42,15 +44,16 @@ public class ResourceDataFactory
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        layerStackHelper = layerStackHelperRef;
     }
 
     public ResourceData create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
-        @RemoveAfterDevMgrRework
-        NodeId nodeId,
-        Resource.RscFlags[] initFlags
+        Integer nodeIdIntRef,
+        Resource.RscFlags[] initFlags,
+        List<DeviceLayerKind> layerStackRef
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -74,7 +77,6 @@ public class ResourceDataFactory
             ),
             rscDfn,
             node,
-            nodeId,
             StateFlagsBits.getMask(initFlags),
             dbDriver,
             propsContainerFactory,
@@ -83,54 +85,28 @@ public class ResourceDataFactory
             new TreeMap<>(),
             new TreeMap<>()
         );
+
+
         dbDriver.create(rscData);
         ((NodeData) node).addResource(accCtx, rscData);
         ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
 
-        return rscData;
-    }
-
-    public ResourceData getInstanceSatellite(
-        AccessContext accCtx,
-        UUID uuid,
-        Node node,
-        ResourceDefinition rscDfn,
-        NodeId nodeId,
-        Resource.RscFlags[] initFlags
-    )
-        throws ImplementationError
-    {
-        ResourceData rscData;
-        try
+        List<DeviceLayerKind> layerStack = layerStackRef;
+        if (layerStack.isEmpty())
         {
-            rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());
-            if (rscData == null)
+            layerStack = rscDfn.getLayerStack(accCtx);
+            if (layerStack.isEmpty())
             {
-                rscData = new ResourceData(
-                    uuid,
-                    objectProtectionFactory.getInstance(accCtx, "", false),
-                    rscDfn,
-                    node,
-                    nodeId,
-                    StateFlagsBits.getMask(initFlags),
-                    dbDriver,
-                    propsContainerFactory,
-                    transObjFactory,
-                    transMgrProvider,
-                    new TreeMap<>(),
-                    new TreeMap<>()
-                );
-                ((NodeData) node).addResource(accCtx, rscData);
-                ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
+                layerStack = layerStackHelper.createDefaultStack(rscData);
+                rscDfn.setLayerStack(accCtx, layerStack);
             }
         }
-        catch (Exception exc)
+        if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
         {
-            throw new ImplementationError(
-                "This method should only be called with a satellite db in background!",
-                exc
-            );
+            throw new ImplementationError("Lowest layer has to be a STORAGE layer. " + layerStack);
         }
+        layerStackHelper.ensureStackDataExists(rscData, layerStack, nodeIdIntRef);
+
         return rscData;
     }
 }

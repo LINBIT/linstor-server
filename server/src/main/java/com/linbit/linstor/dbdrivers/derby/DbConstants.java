@@ -110,6 +110,7 @@ public class DbConstants
     public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
     public static final String SECRET            = "SECRET";
     public static final String TRANSPORT_TYPE    = "TRANSPORT_TYPE";
+    public static final String LAYER_STACK       = "LAYER_STACK";
 
     // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";

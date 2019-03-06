@@ -27,7 +27,7 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionDataControllerFactory;
-import com.linbit.linstor.ResourceDataFactory;
+import com.linbit.linstor.ResourceDataControllerFactory;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.ResourceDefinitionRepository;
@@ -39,10 +39,11 @@ import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeConnectionDataFactory;
-import com.linbit.linstor.VolumeDataFactory;
+import com.linbit.linstor.VolumeDataControllerFactory;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DbDataInitializer;
@@ -148,13 +149,13 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected PropsContainerFactory propsContainerFactory;
     @Inject protected NodeDataControllerFactory nodeDataFactory;
     @Inject protected ResourceConnectionDataControllerFactory resourceConnectionDataFactory;
-    @Inject protected ResourceDataFactory resourceDataFactory;
+    @Inject protected ResourceDataControllerFactory resourceDataFactory;
     @Inject protected StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;
     @Inject protected NodeConnectionDataFactory nodeConnectionDataFactory;
     @Inject protected StorPoolDataControllerFactory storPoolDataFactory;
     @Inject protected FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
-    @Inject protected VolumeDataFactory volumeDataFactory;
+    @Inject protected VolumeDataControllerFactory volumeDataFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     @Inject protected ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     @Inject protected NetInterfaceDataFactory netInterfaceDataFactory;
@@ -214,6 +215,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new ControllerTransactionMgrModule(),
             new TestApiModule(),
             new ControllerSecurityModule(),
+            new ConfigModule(),
             additionalModule,
             BoundFieldModule.of(this)
         );

@@ -154,7 +154,6 @@ public class CtrlVlmListApiCallHandler
                                     rscDfn.getApiData(peerAccCtx.get()),
                                     rsc.getUuid(),
                                     rsc.getStateFlags().getFlagsBits(peerAccCtx.get()),
-                                    rsc.getNodeId().value,
                                     rsc.getProps(peerAccCtx.get()).map(),
                                     volumes,
                                     null,

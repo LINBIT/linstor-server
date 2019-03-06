@@ -30,7 +30,8 @@ public class VolumeDefinitionDataControllerFactory
     private final DynamicNumberPool minorNrPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-    private CtrlSecurityObjects secObjs;
+    private final CtrlSecurityObjects secObjs;
+    private final CtrlLayerStackHelper layerStackHelper;
 
     @Inject
     public VolumeDefinitionDataControllerFactory(
@@ -39,7 +40,8 @@ public class VolumeDefinitionDataControllerFactory
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CtrlSecurityObjects secObjsRef
+        CtrlSecurityObjects secObjsRef,
+        CtrlLayerStackHelper layerStackHelperRef
     )
     {
         driver = driverRef;
@@ -48,6 +50,7 @@ public class VolumeDefinitionDataControllerFactory
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         secObjs = secObjsRef;
+        layerStackHelper = layerStackHelperRef;
     }
 
     public VolumeDefinitionData create(
@@ -86,8 +89,6 @@ public class VolumeDefinitionDataControllerFactory
             UUID.randomUUID(),
             rscDfn,
             vlmNr,
-            chosenMinorNr,
-            minorNrPool,
             vlmSize,
             StateFlagsBits.getMask(initFlags),
             driver,
@@ -97,6 +98,8 @@ public class VolumeDefinitionDataControllerFactory
             new TreeMap<>(),
             new TreeMap<>()
         );
+
+        layerStackHelper.ensureVlmDfnLayerDataExits(vlmDfnData, minor);
 
         driver.create(vlmDfnData);
         ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);

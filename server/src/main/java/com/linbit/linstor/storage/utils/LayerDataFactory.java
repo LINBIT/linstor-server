@@ -1,11 +1,12 @@
 package com.linbit.linstor.storage.utils;
 
-import com.linbit.linstor.MinorNumber;
+import com.linbit.ExhaustedPoolException;
+import com.linbit.ValueInUseException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
@@ -13,6 +14,8 @@ import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupRscData;
 import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -34,6 +37,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -51,9 +55,12 @@ public class LayerDataFactory
     private final DrbdLayerDatabaseDriver drbdDbDriver;
     private final StorageLayerDatabaseDriver storageDbDriver;
     private final SwordfishLayerDatabaseDriver swordfishDbDriver;
+    private final DynamicNumberPool tcpPortPool;
+    private final DynamicNumberPool minorPool;
 
     private final Provider<TransactionMgr> transMgrProvider;
     private final TransactionObjectFactory transObjFactory;
+
 
     @Inject
     public LayerDataFactory(
@@ -62,6 +69,8 @@ public class LayerDataFactory
         DrbdLayerDatabaseDriver drbdDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
         SwordfishLayerDatabaseDriver swordfishDbDriverRef,
+        @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
+        @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
 
         Provider<TransactionMgr> transMgrProviderRef,
         TransactionObjectFactory transObjFactoryRef
@@ -72,6 +81,8 @@ public class LayerDataFactory
         drbdDbDriver = drbdDbDriverRef;
         storageDbDriver = storageDbDriverRef;
         swordfishDbDriver = swordfishDbDriverRef;
+        tcpPortPool = tcpPortPoolRef;
+        minorPool = minorPoolRef;
 
         transMgrProvider = transMgrProviderRef;
         transObjFactory = transObjFactoryRef;
@@ -119,11 +130,11 @@ public class LayerDataFactory
         short peerSlots,
         int alStripes,
         long alStripeSize,
-        TcpPortNumber port,
+        Integer portInt,
         TransportType transportType,
         String secret
     )
-        throws SQLException
+        throws SQLException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         DrbdRscDfnData drbdRscDfnData = new DrbdRscDfnData(
             rscDfn,
@@ -131,10 +142,12 @@ public class LayerDataFactory
             peerSlots,
             alStripes,
             alStripeSize,
-            port,
+            portInt,
             transportType,
             secret,
             new ArrayList<>(),
+            new TreeMap<>(),
+            tcpPortPool,
             drbdDbDriver,
             transObjFactory,
             transMgrProvider
@@ -146,14 +159,15 @@ public class LayerDataFactory
     public DrbdVlmDfnData createDrbdVlmDfnData(
         VolumeDefinition vlmDfn,
         String resourceNameSuffix,
-        MinorNumber minorNr
+        Integer minorNrInt
     )
-        throws SQLException
+        throws SQLException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
             vlmDfn,
             resourceNameSuffix,
-            minorNr,
+            minorNrInt,
+            minorPool,
             drbdDbDriver,
             transMgrProvider
         );
@@ -184,14 +198,17 @@ public class LayerDataFactory
         long usableSize,
         RscLayerObject rscData
     )
+        throws SQLException
     {
-        return new DrbdDisklessData(
+        DrbdDisklessData drbdDisklessData = new DrbdDisklessData(
             vlm,
             rscData,
             usableSize,
             transObjFactory,
             transMgrProvider
         );
+        storageDbDriver.persist(drbdDisklessData);
+        return drbdDisklessData;
     }
 
     public CryptSetupRscData createCryptSetupRscData(
@@ -298,6 +315,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
+        storageDbDriver.persist(sfInitiatorData);
         swordfishDbDriver.persist(sfInitiatorData);
         return sfInitiatorData;
     }
@@ -316,6 +334,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
+        storageDbDriver.persist(sfTargetData);
         swordfishDbDriver.persist(sfTargetData);
         return sfTargetData;
     }

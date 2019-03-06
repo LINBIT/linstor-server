@@ -15,9 +15,9 @@ import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinition;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
+import com.linbit.linstor.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeNumberAlloc;
@@ -42,6 +42,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
@@ -110,7 +112,8 @@ public class CtrlRscDfnApiCallHandler
         String secret,
         String transportTypeStr,
         Map<String, String> props,
-        List<VlmDfnApi> volDescrMap
+        List<VlmDfnWtihCreationPayload> volDescrMap,
+        List<String> layerStackStrList
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -122,7 +125,14 @@ public class CtrlRscDfnApiCallHandler
         try
         {
             requireRscDfnMapChangeAccess();
-            ResourceDefinitionData rscDfn = createRscDfn(rscNameStr, transportTypeStr, portInt, secret);
+
+            ResourceDefinitionData rscDfn = createRscDfn(
+                rscNameStr,
+                transportTypeStr,
+                portInt,
+                secret,
+                LinstorParsingUtils.asLayerStack(layerStackStrList)
+            );
 
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, props,
                 ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
@@ -146,7 +156,6 @@ public class CtrlRscDfnApiCallHandler
                 volSuccessEntry.setMessage(successMessage);
                 volSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
                 volSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-                volSuccessEntry.putObjRef(ApiConsts.KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
 
                 responses.addEntry(volSuccessEntry);
 
@@ -170,7 +179,8 @@ public class CtrlRscDfnApiCallHandler
         Integer portInt,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deletePropNamespacesRef
+        Set<String> deletePropNamespacesRef,
+        List<String> layerStackStrListRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -199,8 +209,11 @@ public class CtrlRscDfnApiCallHandler
             }
             if (portInt != null)
             {
-                TcpPortNumber port = LinstorParsingUtils.asTcpPortNumber(portInt);
-                rscDfn.setPort(peerAccCtx.get(), port);
+                DrbdRscDfnData drbdRscDfn = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+                if (drbdRscDfn != null)
+                {
+                    drbdRscDfn.setPort(portInt);
+                }
             }
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
@@ -209,6 +222,23 @@ public class CtrlRscDfnApiCallHandler
                 ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, overrideProps,
                     rscDfnProps, ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
                 ctrlPropsHelper.remove(rscDfnProps, deletePropKeys, deletePropNamespacesRef);
+            }
+
+            if (!layerStackStrListRef.isEmpty())
+            {
+                List<DeviceLayerKind> layerStack = LinstorParsingUtils.asLayerStack(layerStackStrListRef);
+
+                if (!layerStack.equals(rscDfn.getLayerStack(peerAccCtx.get())) && rscDfn.getResourceCount() > 0)
+                {
+                    throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_EXISTS_RSC,
+                            "Changing the layer stack with already deployed resource is not supported"
+                        )
+                        .build()
+                    );
+                }
+                rscDfn.setLayerStack(peerAccCtx.get(), layerStack);
             }
 
             ctrlTransactionHelper.commit();
@@ -273,7 +303,8 @@ public class CtrlRscDfnApiCallHandler
         String rscNameStr,
         String transportTypeStr,
         Integer portInt,
-        String secret
+        String secret,
+        List<DeviceLayerKind> layerStack
     )
     {
         TransportType transportType;
@@ -306,7 +337,8 @@ public class CtrlRscDfnApiCallHandler
                 portInt,
                 null, // RscDfnFlags
                 secret,
-                transportType
+                transportType,
+                layerStack
             );
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)

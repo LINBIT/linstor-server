@@ -77,6 +77,28 @@ public class CryptSetupLayer implements DeviceLayer
     }
 
     @Override
+    public void resourceFinished(RscLayerObject layerDataRef) throws AccessDeniedException
+    {
+        if (layerDataRef.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+        {
+            resourceProcessorProvider.get().sendResourceDeletedEvent(layerDataRef);
+        }
+        else
+        {
+            resourceProcessorProvider.get().sendResourceCreatedEvent(
+                layerDataRef,
+                new UsageState(
+                    true,
+                    // we could check here if one of your CryptVlms is open - but this method is only called
+                    // right after the creation, where nothing can be in use now.
+                    false,
+                    true
+                )
+            );
+        }
+    }
+
+    @Override
     public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
     {
         CryptSetupVlmData cryptData = (CryptSetupVlmData) vlmData;

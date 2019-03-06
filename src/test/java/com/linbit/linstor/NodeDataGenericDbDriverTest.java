@@ -25,6 +25,8 @@ import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -242,13 +244,13 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         java.util.UUID res1Uuid;
         String res1TestKey = "res1TestKey";
         String res1TestValue = "res1TestValue";
-        NodeId node1Id = new NodeId(13);
+        Integer node1Id = 13;
 
         // node2 res
         java.util.UUID res2Uuid;
         String res2TestKey = "res2TestKey";
         String res2TestValue = "res2TestValue";
-        NodeId node2Id = new NodeId(14);
+        Integer node2Id = 14;
 
         // volDfn
         java.util.UUID volDfnUuid;
@@ -260,15 +262,11 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
 
         // node1 vol
         java.util.UUID vol1Uuid;
-        String vol1TestBlockDev = "/dev/do/not/use/me1";
-        String vol1TestMetaDisk = "/dev/do/not/use/me1/neither";
         String vol1TestKey = "vol1TestKey";
         String vol1TestValue = "vol1TestValue";
 
         // node1 vol
         java.util.UUID vol2Uuid;
-        String vol2TestBlockDev = "/dev/do/not/use/me2";
-        String vol2TestMetaDisk = "/dev/do/not/use/me2/neither";
         String vol2TestKey = "vol2TestKey";
         String vol2TestValue = "vol2TestValue";
 
@@ -342,7 +340,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",
-                transportType
+                transportType,
+                new ArrayList<>()
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();
@@ -396,7 +395,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 resDfn,
                 node1,
                 node1Id,
-                new RscFlags[] {RscFlags.CLEAN}
+                new RscFlags[] {RscFlags.CLEAN},
+                Collections.emptyList()
             );
             res1.getProps(SYS_CTX).setProp(res1TestKey, res1TestValue);
             res1Uuid = res1.getUuid();
@@ -407,8 +407,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 res1,
                 volDfn,
                 storPool1,
-                vol1TestBlockDev,
-                vol1TestMetaDisk,
                 new VlmFlags[] {}
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
@@ -420,7 +418,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 resDfn,
                 node2,
                 node2Id,
-                new RscFlags[] {RscFlags.CLEAN}
+                new RscFlags[] {RscFlags.CLEAN},
+                Collections.emptyList()
             );
             res2.getProps(SYS_CTX).setProp(res2TestKey, res2TestValue);
             res2Uuid = res2.getUuid();
@@ -431,8 +430,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 res2,
                 volDfn,
                 storPool2,
-                vol2TestBlockDev,
-                vol2TestMetaDisk,
                 new VlmFlags[] {}
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);
@@ -506,7 +503,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 assertNotNull(resDfn);
                 assertEquals(RscDfnFlags.DELETE.flagValue, resDfn.getFlags().getFlagsBits(SYS_CTX));
                 assertEquals(resName, resDfn.getName());
-                assertEquals(resPort, resDfn.getPort(SYS_CTX).value);
                 assertNotNull(resDfn.getObjProt());
                 {
                     Props resDfnProps = resDfn.getProps(SYS_CTX);
@@ -519,7 +515,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 assertEquals(resDfnUuid, resDfn.getUuid());
                 assertEquals(res.getVolume(volDfnNr).getVolumeDefinition(), resDfn.getVolumeDfn(SYS_CTX, volDfnNr));
             }
-            assertEquals(node1Id, res.getNodeId());
             assertNotNull(res.getObjProt());
             {
                 Props resProps = res.getProps(SYS_CTX);
@@ -550,7 +545,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 {
                     VolumeDefinition volDfn = vol.getVolumeDefinition();
                     assertTrue(volDfn.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
-                    assertEquals(volDfnMinorNr, volDfn.getMinorNr(SYS_CTX).value);
                     {
                         Props volDfnProps = volDfn.getProps(SYS_CTX);
                         assertNotNull(volDfnProps);

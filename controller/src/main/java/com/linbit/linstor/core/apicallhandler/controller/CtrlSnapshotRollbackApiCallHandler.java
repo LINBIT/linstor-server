@@ -30,6 +30,8 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -513,7 +515,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         try
         {
-            rscDfn.setDown(peerAccCtx.get(), true);
+            DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(peerAccCtx.get(), DeviceLayerKind.DRBD);
+            drbdRscDfnData.setDown(true);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -547,7 +550,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         try
         {
-            rscDfn.setDown(peerAccCtx.get(), false);
+            DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(peerAccCtx.get(), DeviceLayerKind.DRBD);
+            drbdRscDfnData.setDown(false);
         }
         catch (AccessDeniedException accDeniedExc)
         {

@@ -8,16 +8,14 @@ import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
-
 import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -56,7 +54,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         resName = new ResourceName("TestResource");
         resPort = 9001;
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, new ArrayList<>()
         );
 
         uuid = randomUUID();
@@ -67,8 +65,6 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             uuid,
             resDfn,
             volNr,
-            new MinorNumber(minor),
-            minorNrPoolMock,
             volSize,
             VlmDfnFlags.DELETE.flagValue,
             driver,
@@ -122,7 +118,8 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             resPort + 1, // prevent tcp-port-conflict
             null,
             "secret",
-            TransportType.IP
+            TransportType.IP,
+            new ArrayList<>()
         );
 
         volumeDefinitionDataFactory.create(
@@ -161,7 +158,6 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
-        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX).value);
         assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
     }
 
@@ -181,7 +177,6 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
-        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX).value);
         assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
     }
 
@@ -223,49 +218,6 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         Map<String, String> map = new HashMap<>();
         map.put(testKey, testValue);
         testProps(PropsContainer.buildPath(resName, volNr), map);
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    @Test
-    public void testMinorNrDriverUpdate() throws Exception
-    {
-        driver.create(volDfn);
-        MinorNumber newMinorNr = new MinorNumber(32);
-        driver.getMinorNumberDriver().update(volDfn, newMinorNr);
-
-        commit();
-
-        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertTrue(resultSet.next());
-        assertEquals(newMinorNr.value, resultSet.getInt(VLM_MINOR_NR));
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    @Test
-    public void testMinorNrInstanceUpdate() throws Exception
-    {
-        driver.create(volDfn);
-
-        MinorNumber minor2 = new MinorNumber(32);
-        volDfn.setMinorNr(SYS_CTX, minor2);
-
-        commit();
-
-        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertTrue(resultSet.next());
-        assertEquals(minor2.value, resultSet.getInt(VLM_MINOR_NR));
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
     }
 
     @Test
@@ -356,46 +308,5 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         ((ResourceDefinitionData) resDfn).putVolumeDefinition(SYS_CTX, volDfn);
 
         volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
-    }
-
-    @Test
-    public void testAutoAllocateMinorNumber() throws Exception
-    {
-        final int testMinorNumber = 9876;
-        final VolumeNumber testVolumeNumber = new VolumeNumber(99);
-
-        Mockito.when(minorNrPoolMock.autoAllocate()).thenReturn(testMinorNumber);
-
-        VolumeDefinitionData newvolDfn = volumeDefinitionDataFactory.create(
-            SYS_CTX,
-            resDfn,
-            testVolumeNumber,
-            null, // auto allocate
-            volSize,
-            null
-        );
-
-        assertThat(newvolDfn.getMinorNr(SYS_CTX).value).isEqualTo(testMinorNumber);
-    }
-
-    @Test
-    public void testDeleteDeallocateMinorNumber() throws Exception
-    {
-        driver.create(volDfn);
-        volDfn.delete(SYS_CTX);
-
-        Mockito.verify(minorNrPoolMock).deallocate(minor);
-    }
-
-    @Test
-    public void testModifyMinorNumber() throws Exception
-    {
-        final int newMinorNumber = 9876;
-
-        driver.create(volDfn);
-        volDfn.setMinorNr(SYS_CTX, new MinorNumber(newMinorNumber));
-
-        Mockito.verify(minorNrPoolMock).deallocate(minor);
-        Mockito.verify(minorNrPoolMock).allocate(newMinorNumber);
     }
 }

@@ -2,12 +2,11 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import java.sql.SQLException;
 
-import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.CollectionDatabaseDriver;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 /**
  * Database driver for {@link ResourceDefinitionData}.
@@ -42,16 +41,6 @@ public interface ResourceDefinitionDataDatabaseDriver
     StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence();
 
     /**
-     * A special sub-driver to update the port
-     */
-    SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver();
-
-    /**
-     * A special sub-driver to update the transport type
-     */
-    SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> getTransportTypeDriver();
-
-    /**
      * Checks if the stored primary key already exists in the database.
      *
      * @param resourceName
@@ -62,5 +51,10 @@ public interface ResourceDefinitionDataDatabaseDriver
      * @throws SQLException
      */
     boolean exists(ResourceName resourceName) throws SQLException;
+
+    /**
+     * A special sub-driver to update the layer stack
+     */
+    CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> getLayerStackDriver();
 
 }

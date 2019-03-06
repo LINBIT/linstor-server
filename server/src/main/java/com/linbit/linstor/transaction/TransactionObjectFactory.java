@@ -71,6 +71,15 @@ public class TransactionObjectFactory
         return new TransactionList<PARENT, VALUE>(parent, backingList, dbDriver, transMgrProvider);
     }
 
+    public <PARENT, VALUE> TransactionList<PARENT, VALUE> createTransactionListPrimitive(
+        PARENT parent,
+        List<VALUE> backingList,
+        CollectionDatabaseDriver<PARENT, VALUE> dbDriver
+    )
+    {
+        return new TransactionList<PARENT, VALUE>(parent, backingList, dbDriver, transMgrProvider);
+    }
+
     public <PARENT, FLAG extends Enum<FLAG> & Flags> StateFlags<FLAG> createStateFlagsImpl(
         ObjectProtection objProt,
         PARENT parentObj,
