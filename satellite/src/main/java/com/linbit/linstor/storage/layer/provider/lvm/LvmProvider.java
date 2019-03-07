@@ -31,7 +31,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -376,7 +375,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                 volumeGroup = getVolumeGroup(vlmData.getVolume().getStorPool(storDriverAccCtx));
                 vlmData.setVolumeGroup(volumeGroup);
             }
-            volumeGroups.add(volumeGroup);
+            if (volumeGroup != null)
+            {
+                volumeGroups.add(volumeGroup);
+            }
         }
         for (SnapshotVolume snapVlm : snapVlms)
         {
