@@ -15,7 +15,10 @@ public class LayerUtils
     )
     {
         LinkedList<RscLayerObject> rscDataToExplore = new LinkedList<>();
-        rscDataToExplore.add(rscDataRef);
+        if (rscDataRef != null)
+        {
+            rscDataToExplore.add(rscDataRef);
+        }
 
         List<RscLayerObject> ret = new ArrayList<>();
 

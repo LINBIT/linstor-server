@@ -175,7 +175,7 @@ public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDr
         {
             stmt.setInt(1, cryptVlmDataRef.getRscLayerObject().getRscLayerId());
             stmt.setInt(2, cryptVlmDataRef.getVlmNr().value);
-            stmt.setBytes(3, cryptVlmDataRef.getEncryptedPassword());
+            stmt.setBytes(3, cryptVlmDataRef.getEncryptedKey());
 
             stmt.executeUpdate();
             errorReporter.logTrace("CryptSetupVlmData created %s", getId(cryptVlmDataRef));

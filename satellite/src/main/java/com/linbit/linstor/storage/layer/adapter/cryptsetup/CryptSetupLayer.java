@@ -147,69 +147,90 @@ public class CryptSetupLayer implements DeviceLayer
             )
         );
 
-        for (CryptSetupVlmData vlmData : groupedByDeleteFlag.get(true))
+        boolean allVolumeKeysDecrypted = true;
+        for (CryptSetupVlmData vlmData : cryptRscData.getVlmLayerObjects().values())
         {
-            String identifier = getIdentifier(vlmData);
-
-            if (cryptSetup.isOpen(identifier))
+            if (vlmData.getDecryptedPassword() == null)
             {
-                cryptSetup.closeCryptDevice(identifier);
-                vlmData.setOpened(false);
+                allVolumeKeysDecrypted = false;
+                break;
             }
         }
 
-        resourceProcessorProvider.get().process(
-            rscData.getSingleChild(),
-            snapshots,
-            apiCallRc
-        );
-
-        for (CryptSetupVlmData vlmData : groupedByDeleteFlag.get(false))
+        if (allVolumeKeysDecrypted) // otherwise do not even process children.
         {
-            String identifier = getIdentifier(vlmData);
-
-            boolean isOpen = cryptSetup.isOpen(identifier);
-
-            vlmData.setBackingDevice(vlmData.getSingleChild().getDevicePath());
-
-            boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
-
-            if (!alreadyLuks)
+            for (CryptSetupVlmData vlmData : groupedByDeleteFlag.get(true))
             {
-                String providedDev = cryptSetup.createCryptDevice(
-                    vlmData.getBackingDevice(),
-                    vlmData.getEncryptedPassword(),
-                    identifier
-                );
-                vlmData.setDevicePath(providedDev);
-            }
-            else
-            {
-                /*
-                 * TODO: this step should not be necessary
-                 *
-                 * currently it is, because LayeredResourceHelper re-creates the  CryptSetupStltData
-                 * in every iteration. Once those data live longer (or are restored from props)
-                 * the next command can be removed
-                 */
-                vlmData.setDevicePath(cryptSetup.getCryptVolumePath(identifier));
+                String identifier = getIdentifier(vlmData);
+
+                if (cryptSetup.isOpen(identifier))
+                {
+                    cryptSetup.closeCryptDevice(identifier);
+                    vlmData.setOpened(false);
+                }
             }
 
-            if (!isOpen)
+            resourceProcessorProvider.get().process(
+                rscData.getSingleChild(),
+                snapshots,
+                apiCallRc
+            );
+
+            for (CryptSetupVlmData vlmData : groupedByDeleteFlag.get(false))
             {
-                cryptSetup.openCryptDevice(vlmData.getBackingDevice(), identifier, vlmData.getEncryptedPassword());
+                String identifier = getIdentifier(vlmData);
+
+                boolean isOpen = cryptSetup.isOpen(identifier);
+
+                vlmData.setBackingDevice(vlmData.getSingleChild().getDevicePath());
+
+                boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
+
+                if (!alreadyLuks)
+                {
+                    String providedDev = cryptSetup.createCryptDevice(
+                        vlmData.getBackingDevice(),
+                        vlmData.getDecryptedPassword(),
+                        identifier
+                    );
+                    vlmData.setDevicePath(providedDev);
+                }
+                else
+                {
+                    /*
+                     * TODO: this step should not be necessary
+                     *
+                     * currently it is, because LayeredResourceHelper re-creates the  CryptSetupStltData
+                     * in every iteration. Once those data live longer (or are restored from props)
+                     * the next command can be removed
+                     */
+                    vlmData.setDevicePath(cryptSetup.getCryptVolumePath(identifier));
+                }
+
+                if (!isOpen)
+                {
+                    cryptSetup.openCryptDevice(vlmData.getBackingDevice(), identifier, vlmData.getDecryptedPassword());
+                }
+
+                vlmData.setAllocatedSize(Commands.getBlockSizeInKib(
+                    extCmdFactory.create(),
+                    vlmData.getBackingDevice()
+                ));
+                vlmData.setUsableSize(Commands.getBlockSizeInKib(
+                    extCmdFactory.create(),
+                    vlmData.getDevicePath()
+                ));
+
+                vlmData.setOpened(true);
             }
-
-            vlmData.setAllocatedSize(Commands.getBlockSizeInKib(
-                extCmdFactory.create(),
-                vlmData.getBackingDevice()
-            ));
-            vlmData.setUsableSize(Commands.getBlockSizeInKib(
-                extCmdFactory.create(),
-                vlmData.getDevicePath()
-            ));
-
-            vlmData.setOpened(true);
+        }
+        else
+        {
+            errorReporter.logWarning(
+                "Crypt layer cannot process resource '%s' because some volumes " +
+                    "are missing the decrypted key. Is the master key set?",
+                cryptRscData.getSuffixedResourceName()
+            );
         }
     }
 

@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
@@ -11,6 +12,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ConfigModule;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -50,12 +52,15 @@ import java.util.Map;
 @Singleton
 public class CtrlLayerStackHelper
 {
+    private static final int SECRET_KEY_BYTES = 20;
+
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final Props stltConf;
     private final LayerDataFactory layerDataFactory;
     private final DynamicNumberPool layerRscIdPool;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
+    private final CtrlSecurityObjects secObjs;
 
     @Inject
     public CtrlLayerStackHelper(
@@ -64,7 +69,8 @@ public class CtrlLayerStackHelper
         @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
-        CtrlStorPoolResolveHelper storPoolResolveHelperRef
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef,
+        CtrlSecurityObjects secObjsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -73,6 +79,7 @@ public class CtrlLayerStackHelper
         layerDataFactory = layerDataFactoryRef;
         layerRscIdPool = layerRscIdPoolRef;
         storPoolResolveHelper = storPoolResolveHelperRef;
+        secObjs = secObjsRef;
     }
 
     public List<DeviceLayerKind> getLayerStack(Resource rscRef)
@@ -487,7 +494,7 @@ public class CtrlLayerStackHelper
         Resource rscRef,
         RscLayerObject parentRscData
     )
-        throws ExhaustedPoolException, AccessDeniedException, SQLException
+        throws ExhaustedPoolException, SQLException, LinStorException
     {
         CryptSetupRscData cryptRscData = null;
         if (parentRscData == null)
@@ -532,11 +539,28 @@ public class CtrlLayerStackHelper
             VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
             if (!vlmLayerObjects.containsKey(vlmNr))
             {
+                byte[] masterKey = secObjs.getCryptKey();
+                if (masterKey == null || masterKey.length == 0)
+                {
+                    throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                            "Unable to create an encrypted volume definition without having a master key")
+                        .setCause("The masterkey was not initialized yet")
+                        .setCorrection("Create or enter the master passphrase")
+                        .build()
+                    );
+                }
+
+                String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
+                SymmetricKeyCipher cipher;
+                cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+
+                byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
+
                 CryptSetupVlmData cryptVlmData = layerDataFactory.createCryptSetupVlmData(
                     vlm,
                     cryptRscData,
-                    // TODO: remove vlmDfn.getCryptKey and allocate and store that information only in cryptVlmData
-                    vlmDfn.getCryptKey(apiCtx).getBytes()
+                    encryptedVlmDfnKey
                 );
                 vlmLayerObjects.put(vlmNr, cryptVlmData);
             }

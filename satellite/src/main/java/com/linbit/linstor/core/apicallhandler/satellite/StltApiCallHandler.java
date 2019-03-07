@@ -117,7 +117,7 @@ public class StltApiCallHandler
 
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObj;
-    private final StltVlmDfnApiCallHandler vlmDfnHandler;
+    private final StltCryptApiCallHelper vlmDfnHandler;
     private final Props stltConf;
     private final EventBroker eventBroker;
     private final DeviceProviderMapper deviceProviderMapper;
@@ -157,7 +157,7 @@ public class StltApiCallHandler
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
-        StltVlmDfnApiCallHandler vlmDfnHandlerRef,
+        StltCryptApiCallHelper vlmDfnHandlerRef,
         EventBroker eventBrokerRef,
         WhitelistProps whiteListPropsRef,
         WhitelistPropsReconfigurator whiteListPropsReconfiguratorRef,
@@ -390,7 +390,7 @@ public class StltApiCallHandler
                 {
                     stltSecObj.setCryptKey(cryptKey);
 
-                    vlmDfnHandler.decryptAllVlmDfnKeys();
+                    vlmDfnHandler.decryptAllNewCryptSetupVlmKeys(true);
                 }
 
                 whiteListPropsReconfigurator.reconfigure();
@@ -1172,10 +1172,8 @@ public class StltApiCallHandler
             {
                 stltSecObj.setCryptKey(cryptKey);
 
-                vlmDfnHandler.decryptAllVlmDfnKeys();
+                vlmDfnHandler.decryptAllNewCryptSetupVlmKeys(true);
             }
         }
-
-
     }
 }

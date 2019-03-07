@@ -28,6 +28,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -44,7 +45,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
@@ -73,6 +73,7 @@ public class CtrlRscDfnApiCallHandler
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
+    private final CtrlSecurityObjects secObjs;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
 
@@ -88,6 +89,7 @@ public class CtrlRscDfnApiCallHandler
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
+        CtrlSecurityObjects secObjsRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
@@ -102,6 +104,7 @@ public class CtrlRscDfnApiCallHandler
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
+        secObjs = secObjsRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
     }
@@ -126,12 +129,18 @@ public class CtrlRscDfnApiCallHandler
         {
             requireRscDfnMapChangeAccess();
 
+            List<DeviceLayerKind> layerStack = LinstorParsingUtils.asLayerStack(layerStackStrList);
+            if (layerStack.contains(DeviceLayerKind.CRYPT_SETUP))
+            {
+                warnIfMasterKeyIsNotSet(responses);
+            }
+
             ResourceDefinitionData rscDfn = createRscDfn(
                 rscNameStr,
                 transportTypeStr,
                 portInt,
                 secret,
-                LinstorParsingUtils.asLayerStack(layerStackStrList)
+                layerStack
             );
 
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, props,
@@ -171,6 +180,27 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return responses;
+    }
+
+    private void warnIfMasterKeyIsNotSet(ApiCallRcImpl responsesRef)
+    {
+        byte[] masterKey = secObjs.getCryptKey();
+        if ((masterKey == null || masterKey.length == 0))
+        {
+            String warnMsg = "The master key has not yet been set. Creating volume definitions within \n" +
+                "an encrypted resource definitionto will fail!";
+
+            errorReporter.logWarning(warnMsg);
+
+            responsesRef.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.WARN_NOT_FOUND_CRYPT_KEY,
+                    warnMsg
+                )
+                .setCorrection("Create or enter the master passphrase, or remove the crypt layer from the stack")
+                .build()
+            );
+        }
     }
 
     public ApiCallRc modifyRscDfn(

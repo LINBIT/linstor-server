@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.satellite;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterfaceDataFactory;
@@ -41,7 +40,6 @@ import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
@@ -58,8 +56,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.utils.Base64;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -102,6 +98,7 @@ class StltRscApiCallHandler
     private final StltSecurityObjects stltSecObjs;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
     private final LayerRscDataMerger layerRscDataMerger;
+    private final StltCryptApiCallHelper cryptHelper;
 
     @Inject
     StltRscApiCallHandler(
@@ -124,7 +121,8 @@ class StltRscApiCallHandler
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionDataSatelliteFactory resourceConnectionDataFactoryRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
-        LayerRscDataMerger layerRscDataMergerRef
+        LayerRscDataMerger layerRscDataMergerRef,
+        StltCryptApiCallHelper cryptHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -147,6 +145,7 @@ class StltRscApiCallHandler
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
         layerRscDataMerger = layerRscDataMergerRef;
+        cryptHelper = cryptHelperRef;
     }
 
     /**
@@ -622,36 +621,10 @@ class StltRscApiCallHandler
                 }
             }
 
-            // decrypt all new volume definition keys
-            byte[] masterKey = stltSecObjs.getCryptKey();
-            if (masterKey != null)
-            {
-                for (ResourceDefinition tmpRscDfn : rscDfnMap.values())
-                {
-                    Iterator<VolumeDefinition> vlmDfnIt = tmpRscDfn.iterateVolumeDfn(apiCtx);
-                    while (vlmDfnIt.hasNext())
-                    {
-                        VolumeDefinition tmpVlmDfn = vlmDfnIt.next();
-
-                        if (tmpVlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.ENCRYPTED))
-                        {
-                            String key = tmpVlmDfn.getCryptKey(apiCtx);
-                            if (key == null)
-                            {
-                                String encryptedKey = tmpVlmDfn.getProps(apiCtx)
-                                    .getProp(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
-
-                                SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
-                                String decrpytedKey = new String(cipher.decrypt(Base64.decode(encryptedKey)));
-
-                                tmpVlmDfn.setCryptKey(apiCtx, decrpytedKey);
-                            }
-                        }
-                    }
-                }
-            }
-
             layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getLayerData());
+
+            cryptHelper.decryptAllNewCryptSetupVlmKeys(false);
+
             for (Resource otherRsc : otherRscs)
             {
                 OtherRscPojo otherRscPojo = null;

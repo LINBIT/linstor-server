@@ -185,7 +185,7 @@ public class CryptSetupVlmData extends BaseTransactionObject implements CryptSet
     }
 
     @Override
-    public byte[] getEncryptedPassword()
+    public byte[] getEncryptedKey()
     {
         return encryptedPassword.get();
     }
