@@ -21,6 +21,8 @@ import com.linbit.linstor.proto.apidata.VlmApiData;
 import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.requests.MsgCrtRscOuterClass.RscWithPayload;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import junitparams.JUnitParamsRunner;
 import org.junit.After;
 import org.junit.Before;
@@ -33,6 +35,7 @@ import reactor.core.publisher.Mono;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +123,7 @@ public class RscApiTest extends ApiTestBase
             testRscDfnFlags,
             testRscDfnSecret,
             tesTRscDfnTransportType,
-            new ArrayList<>()
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
         );
         rscDfnMap.put(testRscName, testRscDfn);
         commitAndCleanUp(true);

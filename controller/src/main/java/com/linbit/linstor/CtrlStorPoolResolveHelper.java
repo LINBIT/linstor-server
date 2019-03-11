@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
@@ -23,6 +24,7 @@ import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.sql.SQLException;
@@ -34,19 +36,24 @@ public class CtrlStorPoolResolveHelper
     private final AccessContext apiCtx;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final String defaultStorPoolName;
+    private final Provider<AccessContext> peerCtxProvider;
 
     @Inject
     public CtrlStorPoolResolveHelper(
         @ApiContext AccessContext apiCtxRef,
+        @PeerContext Provider<AccessContext> peerCtxProviderRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
 
     )
     {
         apiCtx = apiCtxRef;
+        peerCtxProvider = peerCtxProviderRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         defaultStorPoolName = defaultStorPoolNameRef;
     }
+
+
 
     /**
      * Resolves the correct storage pool and also handles error/warnings in diskless modes.
@@ -57,15 +64,29 @@ public class CtrlStorPoolResolveHelper
         boolean isRscDiskless
     )
     {
+        return resolveStorPool(peerCtxProvider.get(), rsc, vlmDfn, isRscDiskless, true);
+    }
+
+    /**
+     * Resolves the correct storage pool and also handles error/warnings in diskless modes.
+     */
+    public ApiCallRcWith<StorPool> resolveStorPool(
+        AccessContext accCtx,
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        boolean isRscDiskless,
+        boolean throwExcIfStorPoolIsNull
+    )
+    {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         StorPool storPool;
         try
         {
-            Props rscProps = ctrlPropsHelper.getProps(rsc);
-            Props vlmDfnProps = ctrlPropsHelper.getProps(vlmDfn);
-            Props rscDfnProps = ctrlPropsHelper.getProps(rsc.getDefinition());
-            Props nodeProps = ctrlPropsHelper.getProps(rsc.getAssignedNode());
+            Props rscProps = ctrlPropsHelper.getProps(accCtx, rsc);
+            Props vlmDfnProps = ctrlPropsHelper.getProps(accCtx, vlmDfn);
+            Props rscDfnProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition());
+            Props nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getAssignedNode());
 
             PriorityProps vlmPrioProps = new PriorityProps(
                 rscProps, vlmDfnProps, rscDfnProps, nodeProps
@@ -116,7 +137,10 @@ public class CtrlStorPoolResolveHelper
                 }
             }
 
-            checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
+            if (throwExcIfStorPoolIsNull)
+            {
+                checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
+            }
         }
         catch (InvalidKeyException | AccessDeniedException exc)
         {

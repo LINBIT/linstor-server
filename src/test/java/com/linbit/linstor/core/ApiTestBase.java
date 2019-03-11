@@ -5,7 +5,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import java.util.List;
 
-import com.google.inject.Key;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.util.Modules;
 import com.linbit.ServiceName;
@@ -13,7 +12,6 @@ import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
@@ -21,7 +19,6 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
-import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
@@ -34,12 +31,10 @@ import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
-import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import reactor.core.scheduler.Scheduler;
@@ -50,20 +45,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class ApiTestBase extends GenericDbBase
 {
-    protected static final AccessContext ALICE_ACC_CTX;
-    protected static final AccessContext BOB_ACC_CTX;
-    static
-    {
-        ALICE_ACC_CTX = TestAccessContextProvider.ALICE_ACC_CTX;
-        BOB_ACC_CTX = TestAccessContextProvider.BOB_ACC_CTX;
-    }
-
-    @Rule
-    public final SeedDefaultPeerRule seedDefaultPeerRule = new SeedDefaultPeerRule();
-
-    @Mock
-    protected Peer mockPeer;
-
     @Mock
     protected TcpConnector tcpConnectorMock;
 
@@ -90,7 +71,6 @@ public abstract class ApiTestBase extends GenericDbBase
     public void setUp() throws Exception
     {
         super.setUpWithoutEnteringScope(Modules.combine(
-            new ApiCallHandlerModule(),
             new CtrlApiCallHandlerModule(),
             new ConfigModule()
         ));
@@ -151,18 +131,6 @@ public abstract class ApiTestBase extends GenericDbBase
             storPoolDefinitionRepository.get(SYS_CTX, new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)).getObjProt();
         disklessStorPoolDfnProt.setConnection(transMgr);
         disklessStorPoolDfnProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
-    }
-
-    @Override
-    protected void enterScope()
-        throws Exception
-    {
-        super.enterScope();
-        if (seedDefaultPeerRule.shouldSeedDefaultPeer())
-        {
-            testScope.seed(Key.get(AccessContext.class, PeerContext.class), BOB_ACC_CTX);
-            testScope.seed(Peer.class, mockPeer);
-        }
     }
 
     protected Context subscriberContext()

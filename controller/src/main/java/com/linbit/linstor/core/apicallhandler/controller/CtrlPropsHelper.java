@@ -66,10 +66,15 @@ public class CtrlPropsHelper
 
     public Props getProps(Node node)
     {
+        return getProps(peerAccCtx.get(), node);
+    }
+
+    public Props getProps(AccessContext accCtx, Node node)
+    {
         Props props;
         try
         {
-            props = node.getProps(peerAccCtx.get());
+            props = node.getProps(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -84,10 +89,15 @@ public class CtrlPropsHelper
 
     public Props getProps(StorPoolData storPool)
     {
+        return getProps(peerAccCtx.get(), storPool);
+    }
+
+    public Props getProps(AccessContext accCtx, StorPoolData storPool)
+    {
         Props props;
         try
         {
-            props = storPool.getProps(peerAccCtx.get());
+            props = storPool.getProps(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -103,10 +113,15 @@ public class CtrlPropsHelper
 
     public Props getProps(ResourceDefinition rscDfn)
     {
+        return getProps(peerAccCtx.get(), rscDfn);
+    }
+
+    public Props getProps(AccessContext accCtx, ResourceDefinition rscDfn)
+    {
         Props props;
         try
         {
-            props = rscDfn.getProps(peerAccCtx.get());
+            props = rscDfn.getProps(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -121,10 +136,14 @@ public class CtrlPropsHelper
 
     public Props getProps(VolumeDefinition vlmDfn)
     {
+        return getProps(peerAccCtx.get(), vlmDfn);
+    }
+    public Props getProps(AccessContext accCtx, VolumeDefinition vlmDfn)
+    {
         Props props;
         try
         {
-            props = vlmDfn.getProps(peerAccCtx.get());
+            props = vlmDfn.getProps(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -140,10 +159,15 @@ public class CtrlPropsHelper
 
     public Props getProps(Resource rsc)
     {
+        return getProps(peerAccCtx.get(), rsc);
+    }
+
+    public Props getProps(AccessContext accCtx, Resource rsc)
+    {
         Props props;
         try
         {
-            props = rsc.getProps(peerAccCtx.get());
+            props = rsc.getProps(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -159,10 +183,15 @@ public class CtrlPropsHelper
 
     public Props getProps(Volume vlm)
     {
+        return getProps(peerAccCtx.get(), vlm);
+    }
+
+    public Props getProps(AccessContext accCtx, Volume vlm)
+    {
         Props props;
         try
         {
-            props = vlm.getProps(peerAccCtx.get());
+            props = vlm.getProps(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -179,10 +208,15 @@ public class CtrlPropsHelper
 
     public Props getProps(KeyValueStore kvs)
     {
+        return getProps(peerAccCtx.get(), kvs);
+    }
+
+    public Props getProps(AccessContext accCtx, KeyValueStore kvs)
+    {
         Props props;
         try
         {
-            props = kvs.getProps(peerAccCtx.get());
+            props = kvs.getProps(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

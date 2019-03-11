@@ -97,7 +97,7 @@ public class ResourceDataControllerFactory
             layerStack = rscDfn.getLayerStack(accCtx);
             if (layerStack.isEmpty())
             {
-                layerStack = layerStackHelper.createDefaultStack(rscData);
+                layerStack = layerStackHelper.createDefaultStack(accCtx, rscData);
                 rscDfn.setLayerStack(accCtx, layerStack);
             }
         }

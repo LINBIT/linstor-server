@@ -11,6 +11,7 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
@@ -18,7 +19,7 @@ import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -97,7 +98,13 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, new ArrayList<>()
+            SYS_CTX,
+            resName,
+            resPort,
+            null,
+            "secret",
+            TransportType.IP,
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);

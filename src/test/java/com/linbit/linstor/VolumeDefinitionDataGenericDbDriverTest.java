@@ -6,12 +6,15 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import org.junit.Before;
 import org.junit.Test;
 import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -25,7 +28,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VOL_DFN =
         " SELECT " + UUID + ", " + RESOURCE_NAME + ", " + VLM_NR + ", " +
-                     VLM_SIZE + ", " + VLM_MINOR_NR + ", " + VLM_FLAGS +
+                     VLM_SIZE + ", " + VLM_FLAGS +
         " FROM " + TBL_VOLUME_DEFINITIONS;
 
     private ResourceName resName;
@@ -94,7 +97,6 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
-        assertEquals(minor, resultSet.getInt(VLM_MINOR_NR));
         assertEquals(VlmDfnFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
@@ -119,7 +121,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             null,
             "secret",
             TransportType.IP,
-            new ArrayList<>()
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
         );
 
         volumeDefinitionDataFactory.create(
@@ -137,7 +139,6 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals("TESTRESOURCE2", resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
-        assertEquals(minor, resultSet.getInt(VLM_MINOR_NR));
         assertEquals(VlmDfnFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());

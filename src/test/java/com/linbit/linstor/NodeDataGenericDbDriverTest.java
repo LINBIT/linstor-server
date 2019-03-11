@@ -20,12 +20,13 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -73,8 +74,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     {
         nodeName = new NodeName("TestNodeName");
     }
-
-    @SuppressWarnings("checkstyle:magicnumber")
 
     @Before
     public void setUp() throws Exception
@@ -341,7 +340,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",
                 transportType,
-                new ArrayList<>()
+                Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();

@@ -10,12 +10,14 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
@@ -68,7 +70,13 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
 
         node = nodeDataFactory.create(SYS_CTX, nodeName, null, null);
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, new ArrayList<>()
+            SYS_CTX,
+            resName,
+            resPort,
+            null,
+            "secret",
+            TransportType.IP,
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
         );
 
         resUuid = randomUUID();

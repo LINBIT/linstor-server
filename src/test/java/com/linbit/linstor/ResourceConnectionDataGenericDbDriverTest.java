@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.Pair;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,7 +14,7 @@ import org.junit.Test;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +57,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         resName = new ResourceName("testResourceName");
         resPort = 9001;
+
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
     }
@@ -74,7 +76,13 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         uuid = randomUUID();
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, new ArrayList<>()
+            SYS_CTX,
+            resName,
+            resPort,
+            null,
+            "secret",
+            TransportType.IP,
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);

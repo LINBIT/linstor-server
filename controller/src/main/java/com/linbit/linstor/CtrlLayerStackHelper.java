@@ -106,16 +106,17 @@ public class CtrlLayerStackHelper
      * {@link DeviceLayerKind#CRYPT_SETUP} on a {@link DeviceLayerKind#STORAGE} layer.
      * A CRYPT_SETUP layer is created if at least one {@link VolumeDefinition}
      * has the {@link VolumeDefinition.VlmDfnFlags#ENCRYPTED} flag set.
+     * @param accCtxRef
      * @param rscDfnRef
      * @return
      * @return
      */
-    public List<DeviceLayerKind> createDefaultStack(Resource rscRef)
+    public List<DeviceLayerKind> createDefaultStack(AccessContext accCtxRef, Resource rscRef)
     {
         List<DeviceLayerKind> layerStack;
         try
         {
-            boolean hasSwordfish = hasSwordfishKind(rscRef);
+            boolean hasSwordfish = hasSwordfishKind(accCtxRef, rscRef);
             if (hasSwordfish)
             {
                 layerStack = Arrays.asList(DeviceLayerKind.STORAGE);
@@ -123,7 +124,7 @@ public class CtrlLayerStackHelper
             else
             {
                 // drbd + (crypt) + storage
-                if (needsCryptLayer(rscRef))
+                if (needsCryptLayer(accCtxRef, rscRef))
                 {
                     layerStack = Arrays.asList(
                         DeviceLayerKind.DRBD,
@@ -301,7 +302,8 @@ public class CtrlLayerStackHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_POOL_EXHAUSTED_RSC_LAYER_ID,
                     "Too many layered resources!"
-                )
+                ),
+                exc
             );
         }
         catch (SQLException exc)
@@ -311,7 +313,8 @@ public class CtrlLayerStackHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_SQL,
                     "An sql excption occured while creating layer data"
-                )
+                ),
+                exc
             );
         }
         catch (Exception exc)
@@ -321,12 +324,14 @@ public class CtrlLayerStackHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR,
                     "An excption occured while creating layer data"
-                )
+                ),
+                exc
             );
         }
     }
 
-    private boolean needsCryptLayer(Resource rscRef) throws AccessDeniedException
+    private boolean needsCryptLayer(AccessContext accCtxRef, Resource rscRef)
+        throws AccessDeniedException
     {
         boolean needsCryptLayer = false;
         Iterator<VolumeDefinition> iterateVolumeDefinitions = rscRef.getDefinition().iterateVolumeDfn(apiCtx);
@@ -343,7 +348,7 @@ public class CtrlLayerStackHelper
         return needsCryptLayer;
     }
 
-    private boolean hasSwordfishKind(Resource rscRef)
+    private boolean hasSwordfishKind(AccessContext accCtxRef, Resource rscRef)
         throws AccessDeniedException
     {
         boolean foundSwordfishKind = false;
@@ -353,9 +358,11 @@ public class CtrlLayerStackHelper
         {
             VolumeDefinition vlmDfn = iterateVolumeDfn.next();
             StorPool storPool = storPoolResolveHelper.resolveStorPool(
+                accCtxRef,
                 rscRef,
                 vlmDfn,
-                rscRef.getStateFlags().isSet(apiCtx, RscFlags.DISKLESS)
+                rscRef.getStateFlags().isSet(apiCtx, RscFlags.DISKLESS),
+                false
             ).getValue();
 
             if (storPool != null)

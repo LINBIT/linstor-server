@@ -113,6 +113,13 @@ public class ConfFileBuilderTest
         props = new PropsContainerFactory(
                 new SatellitePropDriver(), transMgrProvider)
             .getInstance("TESTINSTANCE");
+
+        mockedTcpPool = Mockito.mock(DynamicNumberPool.class);
+        mockedMinorPool = Mockito.mock(DynamicNumberPool.class);
+
+        when(mockedTcpPool.autoAllocate()).thenReturn(9001);
+        when(mockedMinorPool.autoAllocate()).thenReturn(99);
+
         localRscData = makeMockResource(101, "alpha", "1.2.3.4", false, false, false);
         peerRscData = makeMockResource(202, "bravo", "5.6.7.8", false, false, false);
         when(localRscData.getResource().getAssignedNode().getNodeConnection(
@@ -128,11 +135,6 @@ public class ConfFileBuilderTest
         when(peerRscData.getResource().getResourceConnection(accessContext, localRscData.getResource()))
             .thenReturn(rscConn);
 
-        mockedTcpPool = Mockito.mock(DynamicNumberPool.class);
-        mockedMinorPool = Mockito.mock(DynamicNumberPool.class);
-
-        when(mockedTcpPool.autoAllocate()).thenReturn(9001);
-        when(mockedMinorPool.autoAllocate()).thenReturn(99);
     }
 
     private void setProps(String[] nodeNames, String... nicNames)

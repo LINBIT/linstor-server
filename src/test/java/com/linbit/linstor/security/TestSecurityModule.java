@@ -2,7 +2,6 @@ package com.linbit.linstor.security;
 
 import com.google.inject.AbstractModule;
 
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
 
@@ -21,7 +20,6 @@ public class TestSecurityModule extends AbstractModule
     protected void configure()
     {
         bind(AccessContext.class).annotatedWith(SystemContext.class).toInstance(initCtx);
-        bind(AccessContext.class).annotatedWith(ApiContext.class).toInstance(initCtx);
         bind(AccessContext.class).annotatedWith(PublicContext.class).toInstance(PUBLIC_CTX);
     }
 }

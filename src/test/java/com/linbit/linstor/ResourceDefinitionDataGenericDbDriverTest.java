@@ -34,7 +34,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RESOURCE_DEFINITIONS =
         " SELECT " + UUID + ", " + RESOURCE_NAME + ", " + RESOURCE_DSP_NAME + ", " +
-                     TCP_PORT + ", " + SECRET + ", " + RESOURCE_FLAGS + ", " + TRANSPORT_TYPE +
+                     RESOURCE_FLAGS + ", " + LAYER_STACK +
         " FROM " + TBL_RESOURCE_DEFINITIONS;
 
     private final ResourceName resName;
@@ -119,10 +119,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resDfnUuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
-        assertEquals(port, resultSet.getInt(TCP_PORT));
-        assertEquals(secret, resultSet.getString(SECRET));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
-        assertEquals(ResourceDefinition.TransportType.IP.name(), resultSet.getString(TRANSPORT_TYPE));
         assertFalse("Database persisted too many resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -151,13 +148,10 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         // uuid is now != resUuid because getInstance create a new resData object
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
-        assertEquals(port, resultSet.getInt(TCP_PORT));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
-        assertEquals(secret, resultSet.getString(SECRET));
-        assertEquals(transportType.name(), resultSet.getString(TRANSPORT_TYPE));
-        assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
-        assertThat(GenericDbDriver.getAsStringList(resultSet, LAYER_STACK_KIND))
+        assertThat(GenericDbDriver.getAsStringList(resultSet, LAYER_STACK))
             .containsExactly(DeviceLayerKind.DRBD.name(), DeviceLayerKind.STORAGE.name());
+        assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
         stmt.close();

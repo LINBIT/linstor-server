@@ -7,11 +7,13 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
@@ -75,7 +77,13 @@ public class ConnectionPropsTest extends GenericDbBase
         node2 = nodeDataFactory.create(SYS_CTX, nodeName2, NodeType.SATELLITE, null);
 
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType, new ArrayList<>()
+            SYS_CTX,
+            resName,
+            resDfnPort,
+            null,
+            "secret",
+            resDfnTransportType,
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
         );
 
         res1 = resourceDataFactory.create(SYS_CTX, resDfn, node1, nodeId1, null, Collections.emptyList());

@@ -29,6 +29,8 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -832,7 +834,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             null,
             "NotTellingYou",
             ResourceDefinition.TransportType.IP,
-            new ArrayList<>()
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
         );
 
         rscDfnMap.put(rscDfn.getName(), rscDfn);

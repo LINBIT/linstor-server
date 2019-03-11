@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import javax.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
@@ -38,6 +39,7 @@ import com.linbit.linstor.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.VolumeConnectionDataFactory;
 import com.linbit.linstor.VolumeDataControllerFactory;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
@@ -47,6 +49,8 @@ import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DbDataInitializer;
+import com.linbit.linstor.core.SeedDefaultPeerRule;
+import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
@@ -54,6 +58,7 @@ import com.linbit.linstor.dbdrivers.TestDbModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -70,6 +75,7 @@ import org.junit.rules.TestName;
 import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import javax.inject.Named;
@@ -85,6 +91,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -114,12 +121,26 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     protected static final AccessContext SYS_CTX = DummySecurityInitializer.getSystemAccessContext();
     protected static final AccessContext PUBLIC_CTX = DummySecurityInitializer.getPublicAccessContext();
 
+    protected static final AccessContext ALICE_ACC_CTX;
+    protected static final AccessContext BOB_ACC_CTX;
+    static
+    {
+        ALICE_ACC_CTX = TestAccessContextProvider.ALICE_ACC_CTX;
+        BOB_ACC_CTX = TestAccessContextProvider.BOB_ACC_CTX;
+    }
+
     // This connection pool is shared between the tests
     protected static DbConnectionPool dbConnPool;
+
+    @Rule
+    public final SeedDefaultPeerRule seedDefaultPeerRule = new SeedDefaultPeerRule();
 
     private List<Statement> statements = new ArrayList<>();
     private Connection con;
     private List<Connection> connections = new ArrayList<>();
+
+    @Mock
+    protected Peer mockPeer;
 
     @Mock @Bind @Named(NumberPoolModule.MINOR_NUMBER_POOL)
     protected DynamicNumberPool minorNrPoolMock;
@@ -132,6 +153,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @Mock @Bind @Named(NumberPoolModule.LAYER_RSC_ID_POOL)
     protected DynamicNumberPool layerRscIdPoolMock;
+    protected AtomicInteger layerRscIdAtomicId = new AtomicInteger();
 
     @Inject private DbAccessor secureDbDriver;
     @Inject private DatabaseDriver persistenceDbDriver;
@@ -216,12 +238,15 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new TestApiModule(),
             new ControllerSecurityModule(),
             new ConfigModule(),
+            new ApiCallHandlerModule(),
             additionalModule,
             BoundFieldModule.of(this)
         );
 
         injector.getInstance(DbCoreObjProtInitializer.class).initialize();
         injector.getInstance(DbDataInitializer.class).initialize();
+
+        Mockito.when(layerRscIdPoolMock.autoAllocate()).then(ignoredContext -> layerRscIdAtomicId.getAndIncrement());
 
         injector.injectMembers(this);
     }
@@ -231,6 +256,11 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
         testScope.enter();
         testScope.seed(TransactionMgr.class, transMgr);
+        if (seedDefaultPeerRule.shouldSeedDefaultPeer())
+        {
+            testScope.seed(Key.get(AccessContext.class, PeerContext.class), BOB_ACC_CTX);
+            testScope.seed(Peer.class, mockPeer);
+        }
     }
 
     @After
@@ -241,7 +271,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     public void commitAndCleanUp(boolean inScope) throws Exception
     {
-        if (inScope)
+        if (inScope && transMgrProvider != null && transMgrProvider.get() != null)
         {
             transMgrProvider.get().commit();
         }
