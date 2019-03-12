@@ -186,7 +186,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
             if (nodeDeleted)
             {
-                Peer nodePeer = getPeerPriveleged(node);
+                Peer nodePeer = getPeerPrivileged(node);
 
                 responses.addEntry(disconnectNode(nodeUuid, nodeDescription, nodePeer));
 
@@ -203,13 +203,13 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 Collection<Node> affectedNodes = CtrlSatelliteUpdater.findNodesToContact(apiCtx, node);
                 for (Node affectedNode: affectedNodes)
                 {
-                    if (getPeerPriveleged(affectedNode).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
+                    if (getPeerPrivileged(affectedNode).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
                     {
                         responses.addEntry(ResponseUtils.makeNotConnectedWarning(affectedNode.getName()));
                     }
                 }
 
-                List<Flux<ApiCallRc>> resourceDeletionResponses = getRscStreamPriveleged(node)
+                List<Flux<ApiCallRc>> resourceDeletionResponses = getRscStreamPrivileged(node)
                     .map(rsc -> updateSatellites(nodeName, rsc.getDefinition().getName()))
                     .collect(toList());
 
@@ -302,14 +302,14 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             String nodeDescription = firstLetterCaps(getNodeDescriptionInline(node));
             ResourceDefinition rscDfn = rsc.getDefinition();
 
-            deletePriveleged(rsc);
+            deletePrivileged(rsc);
 
             boolean nodeDeleted = deleteNodeIfEmpty(node);
             ctrlTransactionHelper.commit();
 
             if (nodeDeleted)
             {
-                Peer nodePeer = getPeerPriveleged(node);
+                Peer nodePeer = getPeerPrivileged(node);
 
                 ApiCallRcImpl.ApiCallRcEntry response = disconnectNode(nodeUuid, nodeDescription, nodePeer);
 
@@ -356,13 +356,13 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
             // If the node has no resources, then there should not be any volumes referenced
             // by the storage pool -- double check
-            Iterator<StorPool> storPoolIterator = getStorPoolIteratorPriveleged(node);
+            Iterator<StorPool> storPoolIterator = getStorPoolIteratorPrivileged(node);
             while (storPoolIterator.hasNext())
             {
                 StorPool storPool = storPoolIterator.next();
-                if (!hasVolumesPriveleged(storPool))
+                if (!hasVolumesPrivileged(storPool))
                 {
-                    deletePriveleged(storPool);
+                    deletePrivileged(storPool);
                 }
                 else
                 {
@@ -379,8 +379,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             }
 
             NodeName nodeName = node.getName();
-            deletePriveleged(node);
-            removeNodePriveleged(nodeName);
+            deletePrivileged(node);
+            removeNodePrivileged(nodeName);
         }
         return canDelete;
     }
@@ -422,7 +422,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         return hasSnapshots;
     }
 
-    private Peer getPeerPriveleged(Node node)
+    private Peer getPeerPrivileged(Node node)
     {
         Peer nodePeer;
         try
@@ -436,7 +436,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         return nodePeer;
     }
 
-    private boolean hasVolumesPriveleged(StorPool storPool)
+    private boolean hasVolumesPrivileged(StorPool storPool)
     {
         boolean hasVolumes;
         try
@@ -450,7 +450,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         return hasVolumes;
     }
 
-    private Stream<Resource> getRscStreamPriveleged(Node node)
+    private Stream<Resource> getRscStreamPrivileged(Node node)
     {
         Stream<Resource> stream;
         try
@@ -464,7 +464,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         return stream;
     }
 
-    private Iterator<StorPool> getStorPoolIteratorPriveleged(Node node)
+    private Iterator<StorPool> getStorPoolIteratorPrivileged(Node node)
     {
         Iterator<StorPool> iterateStorPools;
         try
@@ -541,7 +541,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         }
     }
 
-    private void deletePriveleged(Node node)
+    private void deletePrivileged(Node node)
     {
         try
         {
@@ -557,7 +557,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         }
     }
 
-    private void deletePriveleged(StorPool storPool)
+    private void deletePrivileged(StorPool storPool)
     {
         try
         {
@@ -573,7 +573,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         }
     }
 
-    private void deletePriveleged(Resource rsc)
+    private void deletePrivileged(Resource rsc)
     {
         try
         {
@@ -589,7 +589,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         }
     }
 
-    private void removeNodePriveleged(NodeName nodeName)
+    private void removeNodePrivileged(NodeName nodeName)
     {
         try
         {

@@ -52,7 +52,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPriveleged;
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPrivileged;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -160,10 +160,10 @@ public class CtrlRscCrtApiHelper
             rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
         }
 
-        boolean hasAlreadySwordfishTargetVolume = execPriveleged(() -> rscDfn.streamResource(apiCtx))
+        boolean hasAlreadySwordfishTargetVolume = execPrivileged(() -> rscDfn.streamResource(apiCtx))
             .flatMap(tmpRsc -> tmpRsc.streamVolumes())
             .anyMatch(vlm ->
-                execPriveleged(() -> vlm.getStorPool(apiCtx)).getDriverKind() instanceof SwordfishTargetDriverKind
+                execPrivileged(() -> vlm.getStorPool(apiCtx)).getDriverKind() instanceof SwordfishTargetDriverKind
             );
 
         List<VolumeData> createdVolumes = new ArrayList<>();
@@ -206,7 +206,7 @@ public class CtrlRscCrtApiHelper
 
         boolean createsNewSwordfishTargetVolume = createdVolumes.stream()
             .anyMatch(vlm ->
-                execPriveleged(() -> vlm.getStorPool(apiCtx)).getDriverKind() instanceof SwordfishTargetDriverKind
+                execPrivileged(() -> vlm.getStorPool(apiCtx)).getDriverKind() instanceof SwordfishTargetDriverKind
             );
 
         if (createsNewSwordfishTargetVolume && hasAlreadySwordfishTargetVolume)
@@ -260,7 +260,7 @@ public class CtrlRscCrtApiHelper
             ));
 
         Publisher<ApiCallRc> readyResponses;
-        if (getVolumeDfnCountPriveleged(rscDfn) == 0)
+        if (getVolumeDfnCountPrivileged(rscDfn) == 0)
         {
             // No DRBD resource is created when no volumes are present, so do not wait for it to be ready
             readyResponses = Mono.just(responseConverter.addContextAll(
@@ -479,7 +479,7 @@ public class CtrlRscCrtApiHelper
         return iterator;
     }
 
-    private int getVolumeDfnCountPriveleged(ResourceDefinition rscDfn)
+    private int getVolumeDfnCountPrivileged(ResourceDefinition rscDfn)
     {
         int volumeDfnCount;
         try

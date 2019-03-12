@@ -167,7 +167,7 @@ public class CtrlRscDeleteApiHelper
             String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
             ResourceDefinition rscDfn = rsc.getDefinition();
 
-            deletePriveleged(rsc);
+            deletePrivileged(rsc);
 
             if (rscDfn.getResourceCount() == 0)
             {
@@ -175,7 +175,7 @@ public class CtrlRscDeleteApiHelper
                 errorReporter.logDebug(
                     String.format("Resource definition '%s' empty, deleting primary flag.", rscName)
                 );
-                removePropPrimarySetPriveleged(rscDfn);
+                removePropPrimarySetPrivileged(rscDfn);
             }
 
             ctrlTransactionHelper.commit();
@@ -196,7 +196,7 @@ public class CtrlRscDeleteApiHelper
         NodeName nodeName = rsc.getAssignedNode().getName();
 
         Boolean inUse;
-        Peer peer = getPeerPriveleged(rsc.getAssignedNode());
+        Peer peer = getPeerPrivileged(rsc.getAssignedNode());
         try (LockGuard ignored = LockGuard.createLocked(peer.getSatelliteStateLock().readLock()))
         {
             inUse = peer.getSatelliteState().getFromResource(
@@ -217,7 +217,7 @@ public class CtrlRscDeleteApiHelper
         }
     }
 
-    private Peer getPeerPriveleged(Node node)
+    private Peer getPeerPrivileged(Node node)
     {
         Peer nodePeer;
         try
@@ -231,7 +231,7 @@ public class CtrlRscDeleteApiHelper
         return nodePeer;
     }
 
-    private void deletePriveleged(Resource rsc)
+    private void deletePrivileged(Resource rsc)
     {
         try
         {
@@ -247,7 +247,7 @@ public class CtrlRscDeleteApiHelper
         }
     }
 
-    private void removePropPrimarySetPriveleged(ResourceDefinition rscDfn)
+    private void removePropPrimarySetPrivileged(ResourceDefinition rscDfn)
     {
         try
         {

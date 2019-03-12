@@ -128,7 +128,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             ));
         }
 
-        if (hasSnapshotsPriveleged(rscDfn))
+        if (hasSnapshotsPrivileged(rscDfn))
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN,
@@ -137,7 +137,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
 
         Optional<Resource> rscInUse = null;
-        rscInUse = anyResourceInUsePriveleged(rscDfn);
+        rscInUse = anyResourceInUsePrivileged(rscDfn);
         if (rscInUse.isPresent())
         {
             NodeName nodeName = rscInUse.get().getAssignedNode().getName();
@@ -210,7 +210,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             boolean hasDisklessResources = false;
             for (Resource rsc : getRscStreamPrivileged(rscDfn).collect(Collectors.toList()))
             {
-                if (isDisklessPriveleged(rsc))
+                if (isDisklessPrivileged(rsc))
                 {
                     markDeletedPrivileged(rsc);
                     hasDisklessResources = true;
@@ -266,9 +266,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         {
             for (Resource rsc : getRscStreamPrivileged(rscDfn).collect(Collectors.toList()))
             {
-                if (isDisklessPriveleged(rsc))
+                if (isDisklessPrivileged(rsc))
                 {
-                    deletePriveleged(rsc);
+                    deletePrivileged(rsc);
                 }
                 else
                 {
@@ -317,7 +317,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         delete(rscDfn);
 
-        removeResourceDefinitionPriveleged(rscName);
+        removeResourceDefinitionPrivileged(rscName);
         ctrlTransactionHelper.commit();
 
         return ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
@@ -359,7 +359,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return stream;
     }
 
-    private boolean hasSnapshotsPriveleged(ResourceDefinition rscDfn)
+    private boolean hasSnapshotsPrivileged(ResourceDefinition rscDfn)
     {
         boolean hasSnapshots;
         try
@@ -373,7 +373,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return hasSnapshots;
     }
 
-    private Optional<Resource> anyResourceInUsePriveleged(ResourceDefinition rscDfn)
+    private Optional<Resource> anyResourceInUsePrivileged(ResourceDefinition rscDfn)
     {
         Optional<Resource> rscInUse;
         try
@@ -387,7 +387,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return rscInUse;
     }
 
-    private boolean isDisklessPriveleged(Resource rsc)
+    private boolean isDisklessPrivileged(Resource rsc)
     {
         boolean isDiskless;
         try
@@ -463,7 +463,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
     }
 
-    private void deletePriveleged(Resource rsc)
+    private void deletePrivileged(Resource rsc)
     {
         try
         {
@@ -479,7 +479,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
     }
 
-    private void removeResourceDefinitionPriveleged(ResourceName rscName)
+    private void removeResourceDefinitionPrivileged(ResourceName rscName)
     {
         try
         {

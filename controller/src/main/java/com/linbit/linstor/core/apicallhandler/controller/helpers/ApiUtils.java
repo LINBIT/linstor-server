@@ -7,15 +7,15 @@ public class ApiUtils
 {
     public interface AccessCheckedRunnable<T>
     {
-        T execPriveleged() throws AccessDeniedException;
+        T execPrivileged() throws AccessDeniedException;
     }
 
-    public static <T> T execPriveleged(AccessCheckedRunnable<T> runnable)
+    public static <T> T execPrivileged(AccessCheckedRunnable<T> runnable)
     {
         T ret;
         try
         {
-            ret = runnable.execPriveleged();
+            ret = runnable.execPrivileged();
         }
         catch (AccessDeniedException accDeniedExc)
         {

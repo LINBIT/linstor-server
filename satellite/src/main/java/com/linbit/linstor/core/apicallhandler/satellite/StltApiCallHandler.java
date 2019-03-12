@@ -641,7 +641,7 @@ public class StltApiCallHandler
         }
         catch (AccessDeniedException exc)
         {
-            throw new ImplementationError("Priveleged API context has not enough rights");
+            throw new ImplementationError("Privileged API context has insufficient privileges");
         }
     }
 

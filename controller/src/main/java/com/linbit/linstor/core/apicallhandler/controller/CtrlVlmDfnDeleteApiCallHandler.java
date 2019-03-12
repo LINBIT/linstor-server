@@ -141,7 +141,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         UUID vlmDfnUuid = vlmDfn.getUuid();
         ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
 
-        Optional<Resource> rscInUse = anyResourceInUsePriveleged(rscDfn);
+        Optional<Resource> rscInUse = anyResourceInUsePrivileged(rscDfn);
         if (rscInUse.isPresent())
         {
             NodeName nodeName = rscInUse.get().getAssignedNode().getName();
@@ -161,7 +161,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         failIfDependentSnapshot(vlmDfn);
 
         // mark volumes to delete or check if all a 'CLEAN'
-        Iterator<Volume> itVolumes = getVolumeIteratorPriveleged(vlmDfn);
+        Iterator<Volume> itVolumes = getVolumeIteratorPrivileged(vlmDfn);
         while (itVolumes.hasNext())
         {
             Volume vlm = itVolumes.next();
@@ -248,7 +248,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             UUID vlmDfnUuid = vlmDfn.getUuid();
             String descriptionFirstLetterCaps = firstLetterCaps(getVlmDfnDescriptionInline(vlmDfn));
 
-            deletePriveleged(vlmDfn);
+            deletePrivileged(vlmDfn);
 
             ctrlTransactionHelper.commit();
 
@@ -262,7 +262,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return flux;
     }
 
-    private Optional<Resource> anyResourceInUsePriveleged(ResourceDefinition rscDfn)
+    private Optional<Resource> anyResourceInUsePrivileged(ResourceDefinition rscDfn)
     {
         Optional<Resource> rscInUse;
         try
@@ -311,7 +311,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
     }
 
-    private Iterator<Volume> getVolumeIteratorPriveleged(VolumeDefinition vlmDfn)
+    private Iterator<Volume> getVolumeIteratorPrivileged(VolumeDefinition vlmDfn)
     {
         Iterator<Volume> iterator;
         try
@@ -365,7 +365,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
     }
 
-    private void deletePriveleged(VolumeDefinition vlmDfn)
+    private void deletePrivileged(VolumeDefinition vlmDfn)
     {
         try
         {
