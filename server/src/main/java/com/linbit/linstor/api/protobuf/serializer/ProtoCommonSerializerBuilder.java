@@ -89,6 +89,7 @@ import com.linbit.linstor.proto.common.VlmOuterClass.VlmLayerData;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
+import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
@@ -307,10 +308,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setReady(usageState.getResourceReady());
             }
-            if (usageState.getInUse() != null)
-            {
-                builder.setInUse(usageState.getInUse());
-            }
+            builder.setInUse(asProtoInUse(usageState.getInUse()));
             if (usageState.getUpToDate() != null)
             {
                 builder.setUpToDate(usageState.getUpToDate());
@@ -323,6 +321,22 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             handleIOException(exc);
         }
         return this;
+    }
+
+    private InUse asProtoInUse(Boolean inUseRef)
+    {
+        // we could also simply NOT set the inUse proto field which would default to
+        // UNKNOWN, but this way it is more explicit and maybe easier to follow / understand
+        InUse ret;
+        if (inUseRef != null)
+        {
+            ret = inUseRef ? InUse.TRUE : InUse.FALSE;
+        }
+        else
+        {
+            ret = InUse.UNKNOWN;
+        }
+        return ret;
     }
 
     @Override

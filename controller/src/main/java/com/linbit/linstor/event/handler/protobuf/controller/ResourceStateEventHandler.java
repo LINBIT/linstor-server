@@ -1,5 +1,6 @@
 package com.linbit.linstor.event.handler.protobuf.controller;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -45,18 +46,34 @@ public class ResourceStateEventHandler implements EventHandler
             EventRscStateOuterClass.EventRscState eventRscState =
                 EventRscStateOuterClass.EventRscState.parseDelimitedFrom(eventDataIn);
 
+            Boolean inUse;
+            switch (eventRscState.getInUse())
+            {
+                case FALSE:
+                    inUse = false;
+                    break;
+                case TRUE:
+                    inUse = true;
+                    break;
+                case UNKNOWN:
+                    inUse = null;
+                    break;
+                default:
+                    throw new ImplementationError("Unexpected proto InUse enum: " + eventRscState.getInUse());
+            }
+
             satelliteStateHelper.onSatelliteState(
                 eventIdentifier.getNodeName(),
                 satelliteState -> satelliteState.setOnResource(
                     eventIdentifier.getResourceName(),
                     SatelliteResourceState::setInUse,
-                    eventRscState.getInUse()
+                    inUse
                 )
             );
 
             usageState = new UsageState(
                 eventRscState.getReady(),
-                eventRscState.getInUse(),
+                inUse,
                 eventRscState.getUpToDate()
             );
         }

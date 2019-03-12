@@ -5,12 +5,15 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -26,6 +29,7 @@ import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.sql.SQLException;
@@ -46,17 +50,20 @@ public class StorageLayer implements DeviceLayer
     private final AccessContext storDriverAccCtx;
     private final DeviceProviderMapper deviceProviderMapper;
     private final ExtCmdFactory extCmdFactory;
+    private final Provider<DeviceHandler> resourceProcessorProvider;
 
     @Inject
     public StorageLayer(
         @DeviceManagerContext AccessContext storDriverAccCtxRef,
         DeviceProviderMapper deviceProviderMapperRef,
-        ExtCmdFactory extCmdFactoryRef
+        ExtCmdFactory extCmdFactoryRef,
+        Provider<DeviceHandler> resourceProcessorProviderRef
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;
         deviceProviderMapper = deviceProviderMapperRef;
         extCmdFactory = extCmdFactoryRef;
+        resourceProcessorProvider = resourceProcessorProviderRef;
     }
 
     @Override
@@ -65,6 +72,26 @@ public class StorageLayer implements DeviceLayer
         for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())
         {
             devProvider.setLocalNodeProps(localNodeProps);
+        }
+    }
+
+    @Override
+    public void resourceFinished(RscLayerObject layerDataRef) throws AccessDeniedException
+    {
+        if (layerDataRef.getResource().getStateFlags().isSet(storDriverAccCtx, RscFlags.DELETE))
+        {
+            resourceProcessorProvider.get().sendResourceDeletedEvent(layerDataRef);
+        }
+        else
+        {
+            resourceProcessorProvider.get().sendResourceCreatedEvent(
+                layerDataRef,
+                new UsageState(
+                    true,
+                    null, // will be mapped to unknown
+                    true
+                )
+            );
         }
     }
 

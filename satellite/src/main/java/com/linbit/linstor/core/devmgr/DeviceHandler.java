@@ -3,6 +3,7 @@ package com.linbit.linstor.core.devmgr;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
@@ -26,4 +27,8 @@ public interface DeviceHandler
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,
             SQLException;
+
+    void sendResourceCreatedEvent(RscLayerObject layerDataRef, UsageState usageStateRef);
+
+    void sendResourceDeletedEvent(RscLayerObject layerDataRef);
 }

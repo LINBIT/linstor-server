@@ -19,6 +19,9 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ResourceStateEvent;
+import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -65,6 +68,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private final ControllerPeerConnector controllerPeerConnector;
     private final CtrlStltSerializer interComSerializer;
+    private final ResourceStateEvent resourceStateEvent;
 
     private final LayerFactory layerFactory;
     private final AtomicBoolean fullSyncApplied;
@@ -78,7 +82,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         CtrlStltSerializer interComSerializerRef,
         Provider<NotificationListener> notificationListenerRef,
         LayerFactory layerFactoryRef,
-        StorageLayer storageLayerRef
+        StorageLayer storageLayerRef,
+        ResourceStateEvent resourceStateEventRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -89,6 +94,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
         layerFactory = layerFactoryRef;
         storageLayer = storageLayerRef;
+        resourceStateEvent = resourceStateEventRef;
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -282,6 +288,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                         // snapshot.delete is done by the deviceManager
                     }
                 }
+
+                // give the layer the opportunity to send a "resource ready" event (DrbdLayer will ignore it
+                // as it will send that event asynchronously when the corresponding events2 events show up)
+                resourceFinished(rsc.getLayerData(wrkCtx));
             }
             catch (AccessDeniedException | SQLException exc)
             {
@@ -524,6 +534,46 @@ public class DeviceHandlerImpl implements DeviceHandler
         return success;
     }
 
+    private void resourceFinished(RscLayerObject layerDataRef)
+    {
+        DeviceLayer rootLayer = layerFactory.getDeviceLayer(layerDataRef.getLayerKind());
+        if (!layerDataRef.isFailed())
+        {
+            try
+            {
+                rootLayer.resourceFinished(layerDataRef);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+        else
+        {
+            errorReporter.logDebug(
+                "Not calling resourceFinished for layer %s as the resource '%s' failed",
+                rootLayer.getName(),
+                layerDataRef.getSuffixedResourceName()
+            );
+        }
+    }
+
+    @Override
+    public void sendResourceCreatedEvent(RscLayerObject layerDataRef, UsageState usageStateRef)
+    {
+        resourceStateEvent.get().triggerEvent(
+            ObjectIdentifier.resourceDefinition(layerDataRef.getResourceName()),
+            usageStateRef
+        );
+    }
+
+    @Override
+    public void sendResourceDeletedEvent(RscLayerObject layerDataRef)
+    {
+        resourceStateEvent.get().closeStream(
+            ObjectIdentifier.resourceDefinition(layerDataRef.getResourceName())
+        );
+    }
 
     @Override
     public void process(

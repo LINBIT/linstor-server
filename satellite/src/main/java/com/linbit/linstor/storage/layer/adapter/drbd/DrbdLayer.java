@@ -133,6 +133,12 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
+    public void resourceFinished(RscLayerObject layerDataRef)
+    {
+        // ignored, the resourceReady event will be send asynchronously with the corresponding events2 event.
+    }
+
+    @Override
     public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
     {
         try

@@ -59,6 +59,8 @@ public interface DeviceLayer
 
     void setLocalNodeProps(Props localNodeProps);
 
+    void resourceFinished(RscLayerObject layerDataRef) throws AccessDeniedException;
+
     public interface NotificationListener
     {
         void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response);

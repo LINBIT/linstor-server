@@ -53,8 +53,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
 import com.linbit.utils.Either;
-import com.linbit.utils.Pair;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
