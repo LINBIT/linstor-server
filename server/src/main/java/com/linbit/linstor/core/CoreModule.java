@@ -140,60 +140,52 @@ public class CoreModule extends AbstractModule
     public static class ResourceDefinitionMapExtNameImpl
         extends TransactionMap<byte[], ResourceDefinition> implements ResourceDefinitionMapExtName
     {
-        private static final int NEW_MAX_BYTE_VALUE = 256;
-        private static final Comparator<? super byte[]> EXT_NAME_COMP = (byte[] extName1, byte[] extName2) ->
+        private static final int UNSIGNED_BYTE_MAX = 0xFF;
+
+        private static final Comparator<? super byte[]> EXT_NAME_COMP = (final byte[] data1st, final byte[] data2nd) ->
         {
-            int ret;
-            int index = 0;
-            while (true)
+            int result = 0;
+
+            final int cmpLength = Math.min(data1st.length, data2nd.length);
+            int idx = 0;
+            while (idx < cmpLength && result == 0)
             {
-                index++;
-                if (index > extName1.length - 1 && !(index > extName2.length - 1))
+                final int unsigned1st = ((int) data1st[idx]) & UNSIGNED_BYTE_MAX;
+                final int unsigned2nd = ((int) data2nd[idx]) & UNSIGNED_BYTE_MAX;
+
+                if (unsigned1st < unsigned2nd)
                 {
-                    ret = -1;
-                    break;
+                    result = -1;
                 }
-                else if (index > extName1.length - 1 && index > extName2.length - 1)
+                else
+                if (unsigned1st > unsigned2nd)
                 {
-                    ret = 0;
-                    break;
-                }
-                else if (index > extName2.length - 1 && !(index > extName1.length - 1))
-                {
-                    ret = 1;
-                    break;
+                    result = 1;
                 }
 
-                int intValue1 = byteToUnsignedInt(extName1[index]);
-                int intValue2 = byteToUnsignedInt(extName2[index]);
-                if (intValue1 < intValue2)
+                ++idx;
+            }
+
+            if (result == 0)
+            {
+                if (data1st.length < data2nd.length)
                 {
-                    ret = -1;
-                    break;
+                    result = -1;
                 }
-                if (intValue1 > intValue2)
+                else
+                if (data1st.length > data2nd.length)
                 {
-                    ret = 1;
-                    break;
+                    result = 1;
                 }
             }
-            return ret;
+
+            return result;
         };
 
         @Inject
         public ResourceDefinitionMapExtNameImpl(Provider<TransactionMgr> transMgrProvider)
         {
             super(new TreeMap<byte[], ResourceDefinition>(EXT_NAME_COMP), null, transMgrProvider);
-        }
-
-        private static int byteToUnsignedInt(byte byteValue)
-        {
-            int intValue = byteValue;
-            if (intValue < 0)
-            {
-                intValue += NEW_MAX_BYTE_VALUE;
-            }
-            return intValue;
         }
     }
 
