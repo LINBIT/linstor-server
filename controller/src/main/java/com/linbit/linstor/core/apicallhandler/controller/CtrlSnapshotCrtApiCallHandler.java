@@ -825,7 +825,11 @@ public class CtrlSnapshotCrtApiCallHandler
                 DrbdRscData drbdRscData = (DrbdRscData) rscLayerObject;
                 for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
-                    metaDiskPaths.add(drbdVlmData.getMetaDiskPath());
+                    String meta = drbdVlmData.getMetaDiskPath();
+                    if (meta != null && !meta.isEmpty() && !meta.equalsIgnoreCase("internal"))
+                    {
+                        metaDiskPaths.add(meta);
+                    }
                 }
             }
         }

@@ -49,8 +49,9 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
     private static final String S_INSERT =
         " INSERT INTO " + TBL_SNAPSHOT +
         " (" +
-            S_UUID + ", " + S_NODE_NAME + ", " + S_RES_NAME + ", " + S_NAME + ", " + S_NODE_ID + ", " + S_FLAGS +
-        ") VALUES (?, ?, ?, ?, ?, ?)";
+            S_UUID + ", " + S_NODE_NAME + ", " + S_RES_NAME + ", " + S_NAME + ", " + S_NODE_ID + ", " +
+            S_FLAGS + ", " + S_LAYER_STACK +
+        ") VALUES (?, ?, ?, ?, ?, ?, ?)";
     private static final String S_UPDATE_FLAGS =
         " UPDATE " + TBL_SNAPSHOT +
         " SET " + S_FLAGS + " = ? " +
@@ -99,7 +100,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             stmt.setString(4, snapshot.getSnapshotName().value);
             stmt.setInt(5, snapshot.getNodeId().value);
             stmt.setLong(6, snapshot.getFlags().getFlagsBits(dbCtx));
-
+            GenericDbDriver.setJsonIfNotNull(stmt, 7, snapshot.getLayerStack(dbCtx));
             stmt.executeUpdate();
 
             errorReporter.logTrace("Snapshot created %s", getId(snapshot));
