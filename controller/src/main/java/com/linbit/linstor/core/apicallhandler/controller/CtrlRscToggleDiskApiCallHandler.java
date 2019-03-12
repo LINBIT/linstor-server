@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.CtrlLayerStackHelper;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
@@ -40,6 +41,10 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -93,6 +98,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final CtrlStorPoolResolveHelper ctrlStorPoolResolveHelper;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+    private final CtrlLayerStackHelper ctrlLayerStackHelper;
     private final ResponseConverter responseConverter;
     private final ResourceStateEvent resourceStateEvent;
     private final EventWaiter eventWaiter;
@@ -110,6 +116,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         CtrlStorPoolResolveHelper ctrlStorPoolResolveHelperRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        CtrlLayerStackHelper ctrlLayerStackHelperRef,
         ResponseConverter responseConverterRef,
         ResourceStateEvent resourceStateEventRef,
         EventWaiter eventWaiterRef,
@@ -127,6 +134,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ctrlStorPoolResolveHelper = ctrlStorPoolResolveHelperRef;
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        ctrlLayerStackHelper = ctrlLayerStackHelperRef;
         responseConverter = responseConverterRef;
         resourceStateEvent = resourceStateEventRef;
         eventWaiter = eventWaiterRef;
@@ -293,9 +301,20 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
         while (vlmIter.hasNext())
         {
-            VolumeDefinition vlmDfn = vlmIter.next().getVolumeDefinition();
+            Volume vlm = vlmIter.next();
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
 
-            ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlmDfn, removeDisk).extractApiCallRc(responses);
+            StorPool storPool = ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlmDfn, removeDisk)
+                .extractApiCallRc(responses);
+
+            if (!removeDisk)
+            {
+                setStorPool(vlm, storPool);
+                removeStorageLayerData(rsc);
+                ctrlLayerStackHelper.ensureStackDataExists(rsc, null, null);
+            }
+            // else (if we are removing disk) we first have to remove the actual disk. that means we can only update the storage layer
+            // when the deviceManager already got rid of the actual volume(s)
         }
 
         if (removeDisk)
@@ -491,6 +510,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 .extractApiCallRc(responses);
 
             setStorPool(vlm, storPool);
+            if (removeDisk)
+            {
+                removeStorageLayerData(rsc);
+                ctrlLayerStackHelper.ensureStackDataExists(rsc, null, null);
+            }
         }
 
         ctrlTransactionHelper.commit();
@@ -653,6 +677,38 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "mark " + getRscDescription(rsc) + " adding disk",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+    }
+
+    private void removeStorageLayerData(ResourceData rscRef)
+    {
+        try
+        {
+            List<RscLayerObject> storageDataList = LayerUtils.getChildLayerDataByKind(
+                rscRef.getLayerData(peerAccCtx.get()),
+                DeviceLayerKind.STORAGE
+            );
+            for (RscLayerObject rscLayerObject : storageDataList)
+            {
+                List<VlmProviderObject> vlmDataList = new ArrayList<>(rscLayerObject.getVlmLayerObjects().values());
+                for (VlmProviderObject vlmData : vlmDataList)
+                {
+                    rscLayerObject.remove(vlmData.getVlmNr());
+                }
+            }
+
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "update the storage layer data of " + getRscDescription(rscRef),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }

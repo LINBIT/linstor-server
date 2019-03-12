@@ -492,7 +492,7 @@ public class LayerRscDataMerger
         switch (vlmPojo.getProviderKind())
         {
             case DRBD_DISKLESS:
-                if (vlmData == null)
+                if (vlmData == null || !(vlmData instanceof DrbdDisklessData))
                 {
                     vlmData = layerDataFactory.createDrbdDisklessData(
                         vlm,
@@ -507,7 +507,7 @@ public class LayerRscDataMerger
                 }
                 break;
             case LVM:
-                if (vlmData == null)
+                if (vlmData == null || !(vlmData instanceof LvmData))
                 {
                     vlmData = layerDataFactory.createLvmData(vlm, storRscData);
                 }
@@ -520,7 +520,7 @@ public class LayerRscDataMerger
                 }
                 break;
             case LVM_THIN:
-                if (vlmData == null)
+                if (vlmData == null || !(vlmData instanceof LvmThinData))
                 {
                     vlmData = layerDataFactory.createLvmThinData(vlm, storRscData);
                 }
@@ -533,7 +533,7 @@ public class LayerRscDataMerger
                 }
                 break;
             case SWORDFISH_INITIATOR:
-                if (vlmData == null)
+                if (vlmData == null || !(vlmData instanceof SfInitiatorData))
                 {
                     vlmData = layerDataFactory.createSfInitData(
                         vlm,
@@ -553,7 +553,7 @@ public class LayerRscDataMerger
                 }
                 break;
             case SWORDFISH_TARGET:
-                if (vlmData == null)
+                if (vlmData == null || !(vlmData instanceof SfTargetData))
                 {
                     vlmData = layerDataFactory.createSfTargetData(
                         vlm,
@@ -572,7 +572,7 @@ public class LayerRscDataMerger
                 break;
             case ZFS: // fall-through
             case ZFS_THIN:
-                if (vlmData == null)
+                if (vlmData == null || !(vlmData instanceof ZfsData))
                 {
                     vlmData = layerDataFactory.createZfsData(vlm, storRscData, vlmPojo.getProviderKind());
                 }

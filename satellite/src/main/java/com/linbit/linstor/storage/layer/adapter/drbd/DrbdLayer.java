@@ -352,11 +352,15 @@ public class DrbdLayer implements DeviceLayer
 
             // hasMetaData needs to be run after child-resource processed
             List<DrbdVlmData> createMetaData = new ArrayList<>();
-            for (DrbdVlmData drbdVlmData : checkMetaData)
+            if (!drbdRscData.getResource().isDiskless(workerCtx))
             {
-                if (!hasMetaData(drbdVlmData))
+                // do not try to create meta data while the resource is diskless....
+                for (DrbdVlmData drbdVlmData : checkMetaData)
                 {
-                    createMetaData.add(drbdVlmData);
+                    if (!hasMetaData(drbdVlmData))
+                    {
+                        createMetaData.add(drbdVlmData);
+                    }
                 }
             }
 

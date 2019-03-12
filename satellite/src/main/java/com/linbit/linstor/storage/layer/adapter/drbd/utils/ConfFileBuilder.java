@@ -717,13 +717,12 @@ public class ConfFileBuilder
             final String disk;
             if ((!isPeerRsc && vlmData.getBackingDevice() == null) ||
                 (isPeerRsc &&
-                    (vlmData.getRscLayerObject().isDisklessForPeers(accCtx) ||
-                     vlmData.getVolume().getResource().disklessForPeers(accCtx)) // FIXME: this should not be necessary...
+                // FIXME: vlmData.getRscLayerObject().getFlags should be used here
+                     vlmData.getVolume().getResource().disklessForPeers(accCtx)
                 ) ||
                 (!isPeerRsc &&
-                    (vlmData.getRscLayerObject().isDiskless(accCtx) ||
-                     vlmData.getVolume().getResource().isDiskless(accCtx) // FIXME: this should not be necessary...
-                    )
+                // FIXME: vlmData.getRscLayerObject().getFlags should be used here
+                     vlmData.getVolume().getResource().isDiskless(accCtx)
                 )
             )
             {
