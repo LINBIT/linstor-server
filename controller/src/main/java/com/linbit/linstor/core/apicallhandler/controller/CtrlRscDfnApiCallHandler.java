@@ -129,7 +129,7 @@ public class CtrlRscDfnApiCallHandler
         {
             requireRscDfnMapChangeAccess();
 
-            List<DeviceLayerKind> layerStack = LinstorParsingUtils.asLayerStack(layerStackStrList);
+            List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrList);
             if (layerStack.contains(DeviceLayerKind.CRYPT_SETUP))
             {
                 warnIfMasterKeyIsNotSet(responses);
@@ -256,7 +256,7 @@ public class CtrlRscDfnApiCallHandler
 
             if (!layerStackStrListRef.isEmpty())
             {
-                List<DeviceLayerKind> layerStack = LinstorParsingUtils.asLayerStack(layerStackStrListRef);
+                List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
 
                 if (!layerStack.equals(rscDfn.getLayerStack(peerAccCtx.get())) && rscDfn.getResourceCount() > 0)
                 {

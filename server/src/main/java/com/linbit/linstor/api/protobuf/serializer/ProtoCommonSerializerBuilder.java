@@ -868,7 +868,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 RscDfnLayerDataApi rscDfnLayerDataApi = pair.objB;
 
                 RscDfnLayerData.Builder builder = RscDfnLayerData.newBuilder()
-                    .setLayerType(layerKind2LayerType(LinstorParsingUtils.asLayerStack(kind)));
+                    .setLayerType(layerKind2LayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
                 if (rscDfnLayerDataApi != null)
                 {
                     switch (rscDfnLayerDataApi.getLayerKind())
@@ -905,7 +905,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 VlmDfnLayerDataApi vlmDfnLayerDataApi = pair.objB;
 
                 VlmDfnLayerData.Builder builder = VlmDfnLayerData.newBuilder()
-                    .setLayerType(layerKind2LayerType(LinstorParsingUtils.asLayerStack(kind)));
+                    .setLayerType(layerKind2LayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
                 if (vlmDfnLayerDataApi != null)
                 {
                     switch (vlmDfnLayerDataApi.getLayerKind())
@@ -982,7 +982,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 String kind = pair.objA;
                 VlmLayerDataApi vlmLayerDataApi = pair.objB;
 
-                builder.setLayerType(layerKind2LayerType(LinstorParsingUtils.asLayerStack(kind)));
+                builder.setLayerType(layerKind2LayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
 
                 if (vlmLayerDataApi != null)
                 {

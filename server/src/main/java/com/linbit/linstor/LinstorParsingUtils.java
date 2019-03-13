@@ -247,7 +247,7 @@ public class LinstorParsingUtils
         return kvsName;
     }
 
-    public static DeviceLayerKind asLayerStack(final String layerName)
+    public static DeviceLayerKind asDeviceLayerKind(final String layerName)
     {
         DeviceLayerKind kind;
         switch (layerName.toUpperCase())
@@ -277,12 +277,12 @@ public class LinstorParsingUtils
         return kind;
     }
 
-    public static List<DeviceLayerKind> asLayerStack(List<String> layerStackStrListRef)
+    public static List<DeviceLayerKind> asDeviceLayerKind(List<String> layerStackStrListRef)
     {
         List<DeviceLayerKind> ret = new ArrayList<>();
         for (String layerStr : layerStackStrListRef)
         {
-            ret.add(asLayerStack(layerStr));
+            ret.add(asDeviceLayerKind(layerStr));
         }
         return ret;
     }

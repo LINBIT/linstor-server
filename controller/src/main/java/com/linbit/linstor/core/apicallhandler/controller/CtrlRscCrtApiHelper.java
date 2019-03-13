@@ -148,7 +148,7 @@ public class CtrlRscCrtApiHelper
         NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
-        List<DeviceLayerKind> layerStack = LinstorParsingUtils.asLayerStack(layerStackStrListRef);
+        List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
 
         ResourceData rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
         Props rscProps = ctrlPropsHelper.getProps(rsc);
