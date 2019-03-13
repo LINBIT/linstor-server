@@ -219,7 +219,10 @@ public class ApplyRsc implements ApiCall
                     rscConnData.getNodeName2(),
                     rscName,
                     ProtoMapUtils.asMap(rscConnData.getRscConnPropsList()),
-                    FlagsHelper.fromStringList(Volume.VlmFlags.class, rscConnData.getRscConnFlagsList()),
+                    FlagsHelper.fromStringList(
+                        ResourceConnection.RscConnFlags.class,
+                        rscConnData.getRscConnFlagsList()
+                    ),
                     rscConnData.getPort() == 0 ? null : rscConnData.getPort()
                 )
             )
