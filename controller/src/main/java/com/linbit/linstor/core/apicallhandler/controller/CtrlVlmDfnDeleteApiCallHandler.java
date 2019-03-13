@@ -288,7 +288,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                     SnapshotVolume snapshotVlm = snapshot.getSnapshotVolume(peerAccCtx.get(), vlmDfn.getVolumeNumber());
                     if (snapshotVlm != null)
                     {
-                        if (snapshotVlm.getStorPool(peerAccCtx.get()).getDriverKind().isSnapshotDependent())
+                        if (snapshotVlm.getStorPool(peerAccCtx.get()).getDeviceProviderKind().isSnapshotDependent())
                         {
                             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                                 ApiConsts.FAIL_EXISTS_SNAPSHOT,

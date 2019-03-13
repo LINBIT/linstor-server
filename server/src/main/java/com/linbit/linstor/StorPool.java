@@ -9,11 +9,8 @@ import java.util.UUID;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObject;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
 import java.util.List;
 import java.util.Map;
 
@@ -44,15 +41,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     StorPoolDefinition getDefinition(AccessContext accCtx)
         throws AccessDeniedException;
 
-    @RemoveAfterDevMgrRework
-    StorageDriverKind getDriverKind();
-
     DeviceProviderKind getDeviceProviderKind();
-
-    /**
-     * Returns the simple class name of the used driver (not null on both, Controller and Satellite)
-     */
-    String getDriverName();
 
     /**
      * Returns the configuration {@link Props}. This {@link Props} is also used to configure the {@link StorageDriver}.
@@ -110,7 +99,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         UUID getStorPoolDfnUuid();
         String getNodeName();
         UUID getNodeUuid();
-        String getDriver();
+        DeviceProviderKind getDeviceProviderKind();
         String getFreeSpaceManagerName();
         Optional<Long> getFreeCapacity();
         Optional<Long> getTotalCapacity();

@@ -23,7 +23,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -216,8 +216,8 @@ public class CtrlVlmListApiCallHandler
         throws AccessDeniedException
     {
         Long allocated;
-        StorageDriverKind driverKind = vlm.getStorPool(peerAccCtx.get()).getDriverKind();
-        if (driverKind.hasBackingStorage())
+        DeviceProviderKind driverKind = vlm.getStorPool(peerAccCtx.get()).getDeviceProviderKind();
+        if (driverKind.hasBackingDevice())
         {
             allocated = getDiskAllocated(vlmAllocatedCapacities, vlm);
         }
@@ -251,8 +251,8 @@ public class CtrlVlmListApiCallHandler
         }
         else
         {
-            StorageDriverKind driverKind = vlm.getStorPool(peerAccCtx.get()).getDriverKind();
-            if (driverKind.usesThinProvisioning() || !driverKind.hasBackingStorage())
+            DeviceProviderKind driverKind = vlm.getStorPool(peerAccCtx.get()).getDeviceProviderKind();
+            if (driverKind.usesThinProvisioning() || !driverKind.hasBackingDevice())
             {
                 allocated = null;
             }

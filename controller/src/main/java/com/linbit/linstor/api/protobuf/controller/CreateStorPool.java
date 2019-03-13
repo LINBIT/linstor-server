@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.controller;
 
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
@@ -46,7 +47,7 @@ public class CreateStorPool implements ApiCallReactive
             .createStorPool(
                 storPool.getNodeName(),
                 storPool.getStorPoolName(),
-                storPool.getDriver(),
+                ProtoDeserializationUtils.parseProviderKind(storPool.getProviderKind()),
                 storPool.getFreeSpaceMgrName(),
                 ProtoMapUtils.asMap(storPool.getPropsList())
             )

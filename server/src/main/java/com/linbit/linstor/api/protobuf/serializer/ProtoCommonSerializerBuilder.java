@@ -51,8 +51,10 @@ import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.common.FilterOuterClass;
+import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NodeOuterClass;
+import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
@@ -71,7 +73,6 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishTarget;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsVlm;
-import com.linbit.linstor.proto.common.TypesOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
@@ -102,6 +103,7 @@ import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
 public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSerializerBuilder
@@ -671,10 +673,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeName(storPool.getNode().getName().displayValue)
             .setStorPoolDfnUuid(storPool.getDefinition(accCtx).getUuid().toString())
             .setStorPoolName(storPool.getName().displayValue)
-            .setDriver(storPool.getDriverName())
+            .setProviderKind(getProviderType(storPool.getDeviceProviderKind()))
             .addAllProps(ProtoMapUtils.fromMap(storPool.getProps(accCtx).map()))
             .addAllVlms(serializeVolumeList(accCtx, storPool.getVolumes(accCtx)))
-            .addAllStaticTraits(ProtoMapUtils.fromMap(storPool.getDriverKind().getStaticTraits()));
+            .addAllStaticTraits(
+                ProtoMapUtils.fromMap(
+                    storPool.getDeviceProviderKind().getStorageDriverKind().getStaticTraits()
+                )
+            );
         FreeSpaceTracker freeSpaceTracker = storPool.getFreeSpaceTracker();
         if (freeSpaceTracker.getTotalCapacity(accCtx).isPresent())
         {
@@ -693,6 +699,39 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .build();
     }
 
+    private static ProviderType getProviderType(DeviceProviderKind deviceProviderKindRef)
+    {
+        ProviderType type;
+        switch (deviceProviderKindRef)
+        {
+            case DRBD_DISKLESS:
+                type = ProviderType.DISKLESS;
+                break;
+            case LVM:
+                type = ProviderType.LVM;
+                break;
+            case LVM_THIN:
+                type = ProviderType.LVM_THIN;
+                break;
+            case SWORDFISH_INITIATOR:
+                type = ProviderType.SWORDFISH_INITIATOR;
+                break;
+            case SWORDFISH_TARGET:
+                type = ProviderType.SWORDFISH_TARGET;
+                break;
+            case ZFS:
+                type = ProviderType.ZFS;
+                break;
+            case ZFS_THIN:
+                type = ProviderType.ZFS_THIN;
+                break;
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+            default:
+                throw new ImplementationError("Unknown storage driver: " + deviceProviderKindRef);
+        }
+        return type;
+    }
+
     public static StorPoolOuterClass.StorPool serializeStorPool(
         final StorPool.StorPoolApi apiStorPool
     )
@@ -703,7 +742,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeName(apiStorPool.getNodeName())
             .setNodeUuid(apiStorPool.getNodeUuid().toString())
             .setStorPoolDfnUuid(apiStorPool.getStorPoolDfnUuid().toString())
-            .setDriver(apiStorPool.getDriver())
+            .setProviderKind(getProviderType(apiStorPool.getDeviceProviderKind()))
             .addAllProps(ProtoMapUtils.fromMap(apiStorPool.getStorPoolProps()))
             .addAllVlms(serializeVolumeList(apiStorPool.getVlmList()))
             .addAllStaticTraits(ProtoMapUtils.fromMap(apiStorPool.getStorPoolStaticTraits()))
@@ -782,7 +821,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setStorPoolName(vlmApi.getStorPoolName())
                 .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()))
                 .addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()))
-                .setStorPoolDriverName(vlmApi.getStorDriverSimpleClassName())
+                .setProviderKind(getProviderType(vlmApi.getStorPoolDeviceProviderKind()))
                 .setStorPoolDfnUuid(vlmApi.getStorPoolDfnUuid().toString())
                 .addAllStorPoolDfnProps(ProtoMapUtils.fromMap(vlmApi.getStorPoolDfnProps()))
                 .addAllStorPoolProps(ProtoMapUtils.fromMap(vlmApi.getStorPoolProps()))
@@ -837,19 +876,19 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return list;
     }
 
-    private static TypesOuterClass.Types.LayerType layerKind2LayerType(final DeviceLayerKind kind)
+    private static LayerType layerKind2LayerType(final DeviceLayerKind kind)
     {
-        TypesOuterClass.Types.LayerType layerType; // WOHOOO checkstyle
+        LayerType layerType; // WOHOOO checkstyle
         switch (kind)
         {
             case CRYPT_SETUP:
-                layerType = TypesOuterClass.Types.LayerType.LUKS;
+                layerType = LayerType.LUKS;
                 break;
             case DRBD:
-                layerType = TypesOuterClass.Types.LayerType.DRBD;
+                layerType = LayerType.DRBD;
                 break;
             case STORAGE:
-                layerType = TypesOuterClass.Types.LayerType.STORAGE;
+                layerType = LayerType.STORAGE;
                 break;
             default: throw new RuntimeException("Not implemented.");
         }

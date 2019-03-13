@@ -28,13 +28,13 @@ import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
+import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlmDfn;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
-import com.linbit.linstor.proto.common.TypesOuterClass;
-import com.linbit.linstor.proto.common.TypesOuterClass.Types.LayerType;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.VlmOuterClass.VlmLayerData;
 import com.linbit.utils.Pair;
@@ -131,7 +131,7 @@ public class ProtoLayerUtils
         return ret;
     }
 
-    public static List<String> layerTypeList2LayerStringList(List<TypesOuterClass.Types.LayerType> layerTypeList)
+    public static List<String> layerTypeList2LayerStringList(List<LayerType> layerTypeList)
     {
         List<String> ret = new ArrayList<>();
         for (LayerType type : layerTypeList)
@@ -141,7 +141,7 @@ public class ProtoLayerUtils
         return ret;
     }
 
-    public static String layerType2layerString(TypesOuterClass.Types.LayerType layerType)
+    public static String layerType2layerString(LayerType layerType)
     {
         String str;
         switch (layerType)
@@ -248,6 +248,9 @@ public class ProtoLayerUtils
                 case DRBD:
                     vlmDfnLayerDataApi = extractDrbdVlmDfn(vlmDfnLayerData.getDrbd());
                     break;
+                case STORAGE:
+                    vlmDfnLayerDataApi = extractStorageVlmDfn(vlmDfnLayerData.getStorage());
+                    break;
                 default:
                     throw new ImplementationError(
                         "Unknown volume definition layer (proto) kind: " + vlmDfnLayerData.getDataCase()
@@ -309,7 +312,6 @@ public class ProtoLayerUtils
             protoCryptVlm.getDiskState()
         );
     }
-
 
     private static VlmLayerDataApi extractStorageVolume(
         StorageVlm protoVlm
@@ -378,5 +380,31 @@ public class ProtoLayerUtils
                 );
         }
         return ret;
+    }
+
+    private static VlmDfnLayerDataApi extractStorageVlmDfn(StorageVlmDfn storageVlmDfnRef)
+    {
+        VlmDfnLayerDataApi vlmDfnApi;
+        switch (storageVlmDfnRef.getProviderType())
+        {
+            case SWORDFISH_INITIATOR: // fall-trough
+            case SWORDFISH_TARGET:
+                SwordfishVlmDfn protoSfVlmDfn = storageVlmDfnRef.getSwordfish();
+                vlmDfnApi = new SwordfishVlmDfnPojo(
+                    protoSfVlmDfn.getRscNameSuffix(),
+                    protoSfVlmDfn.getVlmNr(),
+                    protoSfVlmDfn.getVlmOdata()
+                );
+                break;
+            case DISKLESS: // fall-trough
+            case LVM: // fall-trough
+            case LVM_THIN: // fall-trough
+            case ZFS: // fall-trough
+            case ZFS_THIN: // fall-trough
+            default:
+                vlmDfnApi = null;
+                break;
+        }
+        return vlmDfnApi;
     }
 }

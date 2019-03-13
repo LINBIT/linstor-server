@@ -49,7 +49,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.DisklessDriverKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
 import javax.inject.Inject;
@@ -260,7 +260,7 @@ public class CtrlNodeApiCallHandler
 
             nodeRepository.put(apiCtx, nodeName, node);
 
-            if (type.isStorageKindAllowed(DisklessDriverKind.class))
+            if (type.isDeviceProviderKindAllowed(DeviceProviderKind.DRBD_DISKLESS))
             {
                 // create default diskless storage pool
                 // this has to happen AFTER we added the node into the nodeRepository
@@ -268,7 +268,7 @@ public class CtrlNodeApiCallHandler
                 storPoolHelper.createStorPool(
                     nodeNameStr,
                     LinStor.DISKLESS_STOR_POOL_NAME,
-                    "DisklessDriver",
+                    DeviceProviderKind.DRBD_DISKLESS,
                     (String) null
                 );
             }
@@ -689,8 +689,8 @@ public class CtrlNodeApiCallHandler
         try
         {
             if (!node.streamStorPools(apiCtx)
-                .map(StorPool::getDriverKind)
-                .allMatch(nodeType::isStorageKindAllowed)
+                .map(StorPool::getDeviceProviderKind)
+                .allMatch(nodeType::isDeviceProviderKindAllowed)
             )
             {
                 throw new ApiRcException(

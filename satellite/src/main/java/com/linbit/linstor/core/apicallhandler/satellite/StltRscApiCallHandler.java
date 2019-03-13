@@ -796,7 +796,7 @@ class StltRscApiCallHandler
                     vlmApi.getStorPoolUuid(),
                     rsc.getAssignedNode(),
                     storPoolDfn,
-                    vlmApi.getStorDriverSimpleClassName(),
+                    vlmApi.getStorPoolDeviceProviderKind(),
                     freeSpaceMgrFactory.getInstance()
                 );
                 storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());

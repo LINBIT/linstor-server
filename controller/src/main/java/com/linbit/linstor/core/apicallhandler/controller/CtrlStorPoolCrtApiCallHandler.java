@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -77,7 +78,7 @@ public class CtrlStorPoolCrtApiCallHandler
     public Flux<ApiCallRc> createStorPool(
         String nodeNameStr,
         String storPoolNameStr,
-        String driver,
+        DeviceProviderKind providerKindRef,
         String freeSpaceMgrNameStr,
         Map<String, String> storPoolPropsMap
     )
@@ -95,7 +96,7 @@ public class CtrlStorPoolCrtApiCallHandler
                 () -> createStorPoolInTransaction(
                     nodeNameStr,
                     storPoolNameStr,
-                    driver,
+                    providerKindRef,
                     freeSpaceMgrNameStr,
                     storPoolPropsMap,
                     context
@@ -107,7 +108,7 @@ public class CtrlStorPoolCrtApiCallHandler
     private Flux<ApiCallRc> createStorPoolInTransaction(
         String nodeNameStr,
         String storPoolNameStr,
-        String driver,
+        DeviceProviderKind deviceProviderKindRef,
         String freeSpaceMgrNameStr,
         Map<String, String> storPoolPropsMap,
         ResponseContext context
@@ -123,7 +124,7 @@ public class CtrlStorPoolCrtApiCallHandler
         StorPoolData storPool = storPoolHelper.createStorPool(
             nodeNameStr,
             storPoolNameStr,
-            driver,
+            deviceProviderKindRef,
             freeSpaceMgrNameStr
         );
         ctrlPropsHelper.fillProperties(

@@ -2,6 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     private final String nodeName;
     private final String storPoolName;
     private final UUID storPoolDfnUuid;
-    private final String driver;
+    private final DeviceProviderKind deviceProviderKind;
     private final Map<String, String> storPoolProps;
     private final Map<String, String> storPoolDfnProps;
     private final List<Volume.VlmApi> vlms;
@@ -32,7 +33,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         final String nodeNameRef,
         final String storPoolNameRef,
         final UUID storPoolDfnUuidRef,
-        final String driverRef,
+        final DeviceProviderKind deviceProviderKindRef,
         final Map<String, String> storPoolPropsRef,
         final Map<String, String> storPoolDfnPropsRef,
         final List<Volume.VlmApi> vlmsRef,
@@ -49,7 +50,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         nodeName = nodeNameRef;
         storPoolName = storPoolNameRef;
         storPoolDfnUuid = storPoolDfnUuidRef;
-        driver = driverRef;
+        deviceProviderKind = deviceProviderKindRef;
         storPoolProps = storPoolPropsRef;
         storPoolDfnProps = storPoolDfnPropsRef;
         vlms = vlmsRef;
@@ -92,9 +93,9 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     }
 
     @Override
-    public String getDriver()
+    public DeviceProviderKind getDeviceProviderKind()
     {
-        return driver;
+        return deviceProviderKind;
     }
 
     @Override

@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class LvmDriverKind implements StorageDriverKind
 {
-    LvmDriverKind()
+    public LvmDriverKind()
     {
     }
 

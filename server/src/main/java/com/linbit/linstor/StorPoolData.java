@@ -11,8 +11,6 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -41,8 +39,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final transient UUID dbgInstanceId;
 
     private final StorPoolDefinition storPoolDef;
-    @RemoveAfterDevMgrRework
-    private final StorageDriverKind storageDriverKind;
     private final DeviceProviderKind deviceProviderKind;
 
     private final Props props;
@@ -59,7 +55,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         @RemoveAfterDevMgrRework
-        StorageDriverKind storageDriverKindRef,
+        DeviceProviderKind providerKindRef,
         FreeSpaceTracker freeSpaceTrackerRef,
         StorPoolDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
@@ -75,8 +71,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         uuid = id;
         dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
-        storageDriverKind = storageDriverKindRef;
-        deviceProviderKind = StorageDriverLoader.getDeviceProviderKind(storageDriverKindRef);
+        deviceProviderKind = providerKindRef;
         freeSpaceTracker = freeSpaceTrackerRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
@@ -132,12 +127,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public StorageDriverKind getDriverKind()
-    {
-        return storageDriverKind;
-    }
-
-    @Override
     public DeviceProviderKind getDeviceProviderKind()
     {
         return deviceProviderKind;
@@ -148,13 +137,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtx, node.getObjProt(), storPoolDef.getObjProt(), props);
-    }
-
-    @Override
-    public String getDriverName()
-    {
-        checkDeleted();
-        return storageDriverKind.getDriverName();
     }
 
     @Override
@@ -238,11 +220,11 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     {
         node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        Map<String, String> traits = new HashMap<>(storageDriverKind.getStaticTraits());
+        Map<String, String> traits = new HashMap<>(deviceProviderKind.getStorageDriverKind().getStaticTraits());
 
         traits.put(
             KEY_STOR_POOL_SUPPORTS_SNAPSHOTS,
-            String.valueOf(storageDriverKind.isSnapshotSupported())
+            String.valueOf(deviceProviderKind.getStorageDriverKind().isSnapshotSupported())
         );
 
         return traits;
@@ -276,7 +258,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             node.getName().getDisplayName(),
             getName().getDisplayName(),
             getDefinition(accCtx).getUuid(),
-            getDriverName(),
+            getDeviceProviderKind(),
             getProps(accCtx).map(),
             getDefinition(accCtx).getProps(accCtx).map(),
             vlms,

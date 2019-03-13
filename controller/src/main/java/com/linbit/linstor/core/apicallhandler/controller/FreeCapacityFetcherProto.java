@@ -24,7 +24,7 @@ import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeS
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -121,8 +121,8 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     private boolean hasThinPools(Node node)
     {
         return streamStorPools(node)
-            .map(StorPool::getDriverKind)
-            .anyMatch(StorageDriverKind::usesThinProvisioning);
+            .map(StorPool::getDeviceProviderKind)
+            .anyMatch(DeviceProviderKind::usesThinProvisioning);
     }
 
     private Flux<ByteArrayInputStream> prepareFreeSpaceApiCall(Node node)

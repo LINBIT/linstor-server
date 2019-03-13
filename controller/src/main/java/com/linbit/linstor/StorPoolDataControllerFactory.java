@@ -7,8 +7,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.StorageDriverLoader;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -18,7 +17,6 @@ import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class StorPoolDataControllerFactory
 {
@@ -45,7 +43,7 @@ public class StorPoolDataControllerFactory
         AccessContext accCtx,
         Node node,
         StorPoolDefinition storPoolDef,
-        String storDriverSimpleClassNameRef,
+        DeviceProviderKind deviceProviderKindRef,
         FreeSpaceTracker freeSpaceTrackerRef
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException, IllegalStorageDriverException
@@ -61,30 +59,16 @@ public class StorPoolDataControllerFactory
             throw new LinStorDataAlreadyExistsException("The StorPool already exists");
         }
 
-        StorageDriverKind storageDriverKind = StorageDriverLoader.getKind(storDriverSimpleClassNameRef);
         NodeType nodeType = node.getNodeType(accCtx);
-        if (!nodeType.isStorageKindAllowed(storageDriverKind))
+        if (!nodeType.isDeviceProviderKindAllowed(deviceProviderKindRef))
         {
             throw new IllegalStorageDriverException(
                 "Illegal storage driver.",
                 "The current node type '" + nodeType.name() + "' does not support the " +
-                "storage driver '" + storDriverSimpleClassNameRef + "'.",
+                "storage driver '" + deviceProviderKindRef + "'.",
                 null,
                 "The allowed storage drivers for the current node type are:\n   " +
-                nodeType.getAllowedKindClasses().stream()
-                    .map(
-                        clazz ->
-                        {
-                            String simpleName = clazz.getSimpleName();
-                            int kindIdx = simpleName.lastIndexOf("Kind");
-                            if (kindIdx > 0)
-                            {
-                                simpleName = simpleName.substring(0, kindIdx);
-                            }
-                            return simpleName;
-                        }
-                    )
-                    .collect(Collectors.joining("\n   ")),
+                nodeType.getAllowedKindClasses(),
                 null
             );
         }
@@ -92,7 +76,7 @@ public class StorPoolDataControllerFactory
             UUID.randomUUID(),
             node,
             storPoolDef,
-            storageDriverKind,
+            deviceProviderKindRef,
             freeSpaceTrackerRef,
             driver,
             propsContainerFactory,

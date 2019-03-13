@@ -13,7 +13,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
-import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -103,7 +102,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
             stmt.setString(1, storPoolData.getUuid().toString());
             stmt.setString(2, storPoolData.getNode().getName().value);
             stmt.setString(3, storPoolData.getName().value);
-            stmt.setString(4, storPoolData.getDriverName());
+            stmt.setString(4, storPoolData.getDeviceProviderKind().name());
             stmt.setString(5, fsmName.value);
             stmt.setString(6, fsmName.displayValue);
             stmt.executeUpdate();
@@ -209,7 +208,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
             java.util.UUID.fromString(resultSet.getString(SP_UUID)),
             node,
             storPoolDfn,
-            StorageDriverLoader.getKind(resultSet.getString(SP_DRIVER)),
+            LinstorParsingUtils.asProviderKind(resultSet.getString(SP_DRIVER)),
             freeSpaceMgr,
             this,
             propsContainerFactory,

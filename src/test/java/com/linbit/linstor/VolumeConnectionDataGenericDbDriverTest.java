@@ -12,6 +12,7 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
@@ -119,10 +120,10 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
         storPool1 = storPoolDataFactory.create(
-            SYS_CTX, nodeSrc, storPoolDfn, "LvmDriver", getFreeSpaceMgr(storPoolDfn, nodeSrc)
+            SYS_CTX, nodeSrc, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, nodeSrc)
         );
         storPool2 = storPoolDataFactory.create(
-            SYS_CTX, nodeDst, storPoolDfn, "LvmDriver", getFreeSpaceMgr(storPoolDfn, nodeDst)
+            SYS_CTX, nodeDst, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, nodeDst)
         );
 
         volSrc = volumeDataFactory.create(

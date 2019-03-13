@@ -8,14 +8,7 @@ import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.DisklessDriverKind;
-import com.linbit.linstor.storage.LvmDriverKind;
-import com.linbit.linstor.storage.LvmThinDriverKind;
-import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
-import com.linbit.linstor.storage.SwordfishTargetDriverKind;
-import com.linbit.linstor.storage.ZfsDriverKind;
-import com.linbit.linstor.storage.ZfsThinDriverKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -136,37 +129,37 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         SATELLITE(
             2,
             Arrays.asList(
-                DisklessDriverKind.class,
-                LvmDriverKind.class,
-                LvmThinDriverKind.class,
-                SwordfishInitiatorDriverKind.class,
-                ZfsDriverKind.class,
-                ZfsThinDriverKind.class
+                DeviceProviderKind.DRBD_DISKLESS,
+                DeviceProviderKind.LVM,
+                DeviceProviderKind.LVM_THIN,
+                DeviceProviderKind.SWORDFISH_INITIATOR,
+                DeviceProviderKind.ZFS,
+                DeviceProviderKind.ZFS_THIN
             )
         ),
         COMBINED(
             3,
             Arrays.asList(
-                DisklessDriverKind.class,
-                LvmDriverKind.class,
-                LvmThinDriverKind.class,
-                SwordfishInitiatorDriverKind.class,
-                ZfsDriverKind.class,
-                ZfsThinDriverKind.class
+                DeviceProviderKind.DRBD_DISKLESS,
+                DeviceProviderKind.LVM,
+                DeviceProviderKind.LVM_THIN,
+                DeviceProviderKind.SWORDFISH_INITIATOR,
+                DeviceProviderKind.ZFS,
+                DeviceProviderKind.ZFS_THIN
             )
         ),
         AUXILIARY(4, Collections.emptyList()),
         SWORDFISH_TARGET(
             5,
             Arrays.asList(
-                SwordfishTargetDriverKind.class
+                DeviceProviderKind.SWORDFISH_TARGET
             )
         );
 
         private final int flag;
-        private final List<Class<? extends StorageDriverKind>> allowedKindClasses;
+        private final List<DeviceProviderKind> allowedKindClasses;
 
-        NodeType(int flagValue, List<Class<? extends StorageDriverKind>> allowedKindClassesRef)
+        NodeType(int flagValue, List<DeviceProviderKind> allowedKindClassesRef)
         {
 
             flag = flagValue;
@@ -208,19 +201,14 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
             return ret;
         }
 
-        public List<Class<? extends StorageDriverKind>> getAllowedKindClasses()
+        public List<DeviceProviderKind> getAllowedKindClasses()
         {
             return allowedKindClasses;
         }
 
-        public boolean isStorageKindAllowed(Class<? extends StorageDriverKind> kindClass)
+        public boolean isDeviceProviderKindAllowed(DeviceProviderKind kindRef)
         {
-            return allowedKindClasses.contains(kindClass);
-        }
-
-        public boolean isStorageKindAllowed(StorageDriverKind storageDriverKind)
-        {
-            return isStorageKindAllowed(storageDriverKind.getClass());
+            return allowedKindClasses.contains(kindRef);
         }
     }
 

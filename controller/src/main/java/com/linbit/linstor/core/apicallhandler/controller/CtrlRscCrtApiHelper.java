@@ -46,8 +46,10 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.SwordfishTargetDriverKind;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -163,7 +165,11 @@ public class CtrlRscCrtApiHelper
         boolean hasAlreadySwordfishTargetVolume = execPrivileged(() -> rscDfn.streamResource(apiCtx))
             .flatMap(tmpRsc -> tmpRsc.streamVolumes())
             .anyMatch(vlm ->
-                execPrivileged(() -> vlm.getStorPool(apiCtx)).getDriverKind() instanceof SwordfishTargetDriverKind
+                execPrivileged(
+                    () -> DeviceProviderKind.SWORDFISH_TARGET.equals(
+                        vlm.getStorPool(apiCtx).getDeviceProviderKind()
+                    )
+                )
             );
 
         List<VolumeData> createdVolumes = new ArrayList<>();
@@ -206,7 +212,11 @@ public class CtrlRscCrtApiHelper
 
         boolean createsNewSwordfishTargetVolume = createdVolumes.stream()
             .anyMatch(vlm ->
-                execPrivileged(() -> vlm.getStorPool(apiCtx)).getDriverKind() instanceof SwordfishTargetDriverKind
+                execPrivileged(
+                    () -> DeviceProviderKind.SWORDFISH_TARGET.equals(
+                        vlm.getStorPool(apiCtx).getDeviceProviderKind()
+                    )
+                )
             );
 
         if (createsNewSwordfishTargetVolume && hasAlreadySwordfishTargetVolume)
@@ -276,7 +286,7 @@ public class CtrlRscCrtApiHelper
             for (Resource rsc : deployedResources)
             {
                 NodeName nodeName = rsc.getAssignedNode().getName();
-                if (supportsDrbd(rsc))
+                if (containsDrbdLayerData(rsc))
                 {
                     resourceReadyResponses.add(eventWaiter
                         .waitForStream(
@@ -518,22 +528,25 @@ public class CtrlRscCrtApiHelper
         return allDiskless;
     }
 
-    private boolean supportsDrbd(Resource rsc)
+    private boolean containsDrbdLayerData(Resource rsc)
     {
-        boolean supportsDrbd;
+        List<RscLayerObject> drbdLayerData;
         try
         {
-            supportsDrbd = rsc.supportsDrbd(peerAccCtx.get());
+            drbdLayerData = LayerUtils.getChildLayerDataByKind(
+                rsc.getLayerData(peerAccCtx.get()),
+                DeviceLayerKind.DRBD
+            );
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "check DRBD support of " + getRscDescriptionInline(rsc),
-                ApiConsts.FAIL_ACC_DENIED_RSC
+                "scan layer data for DRBD layer " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
-        return supportsDrbd;
+        return !drbdLayerData.isEmpty();
     }
 
     private ApiCallRc makeResourceReadyMessage(

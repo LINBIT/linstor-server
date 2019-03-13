@@ -7,6 +7,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.Pair;
 import java.sql.SQLException;
@@ -154,7 +155,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
         UUID getVlmDfnUuid();
         String getStorPoolName();
         UUID getStorPoolUuid();
-        String getStorDriverSimpleClassName();
+        DeviceProviderKind getStorPoolDeviceProviderKind();
         String getDevicePath();
         int getVlmNr();
         long getFlags();

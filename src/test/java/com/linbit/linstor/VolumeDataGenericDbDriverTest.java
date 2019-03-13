@@ -8,6 +8,7 @@ import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,7 +108,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             node,
             storPoolDfn,
-            "LvmDriver",
+            DeviceProviderKind.LVM,
             getFreeSpaceMgr(storPoolDfn, node)
         );
 

@@ -5,10 +5,12 @@ import java.util.Map;
 
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
@@ -71,14 +73,14 @@ public class VlmApiData implements VlmApi
     }
 
     @Override
-    public String getStorDriverSimpleClassName()
+    public DeviceProviderKind getStorPoolDeviceProviderKind()
     {
-        String storPoolDriverName = null;
-        if (vlm.hasStorPoolDriverName())
+        DeviceProviderKind kind = null;
+        if (vlm.hasProviderKind())
         {
-            storPoolDriverName = vlm.getStorPoolDriverName();
+            kind = ProtoDeserializationUtils.parseProviderKind(vlm.getProviderKind());
         }
-        return storPoolDriverName;
+        return kind;
     }
 
     @Override

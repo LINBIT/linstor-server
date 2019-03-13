@@ -134,7 +134,7 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
     )
     {
         return streamStorPools(node)
-            .filter(storPool -> storPool.getDriverKind().usesThinProvisioning())
+            .filter(storPool -> storPool.getDeviceProviderKind().usesThinProvisioning())
             .filter(storPool -> storPoolFilter.isEmpty() || storPoolFilter.contains(storPool.getName()))
             .flatMap(this::streamVolumes)
             .map(Volume::getResourceDefinition)

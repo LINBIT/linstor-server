@@ -8,9 +8,11 @@ import java.util.UUID;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 /**
  *
@@ -71,9 +73,14 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     }
 
     @Override
-    public String getDriver()
+    public DeviceProviderKind getDeviceProviderKind()
     {
-        return storPool.getDriver();
+        DeviceProviderKind kind = null;
+        if (storPool.hasProviderKind())
+        {
+            kind = ProtoDeserializationUtils.parseProviderKind(storPool.getProviderKind());
+        }
+        return kind;
     }
 
     @Override

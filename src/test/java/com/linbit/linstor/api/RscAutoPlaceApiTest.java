@@ -30,6 +30,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -1008,7 +1009,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 BOB_ACC_CTX,
                 stlt,
                 dfltDisklessStorPoolDfn,
-                "DisklessDriver",
+                DeviceProviderKind.DRBD_DISKLESS,
                 fsm
             );
 
@@ -1141,7 +1142,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiTestBase.BOB_ACC_CTX,
                 stlt,
                 storPoolDfn,
-                (thin ? "LvmThinDriver" : "LvmDriver"),
+                (thin ? DeviceProviderKind.LVM_THIN : DeviceProviderKind.LVM),
                 fsm
             );
 

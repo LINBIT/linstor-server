@@ -472,12 +472,12 @@ public class CtrlSnapshotCrtApiCallHandler
                 Volume vlm = vlmIterator.next();
                 StorPool storPool = getStorPool(vlm);
 
-                if (!storPool.getDriverKind().isSnapshotSupported())
+                if (!storPool.getDeviceProviderKind().isSnapshotSupported())
                 {
                     throw new ApiRcException(ApiCallRcImpl
                         .entryBuilder(
                             ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
-                            "Storage driver '" + storPool.getDriverName() + "' " + "does not support snapshots."
+                            "Storage driver '" + storPool.getDeviceProviderKind() + "' " + "does not support snapshots."
                         )
                         .setDetails("Used for storage pool '" + storPool.getName() + "'" +
                             " on '" + rsc.getAssignedNode().getName() + "'.")

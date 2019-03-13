@@ -38,7 +38,7 @@ public class FreeCapacityAutoPoolSelectorUtils
         StorPool storPool = getStorPoolPrivileged(apiCtx, node, storPoolName);
 
         Optional<Boolean> usable;
-        if (storPool.getDriverKind().usesThinProvisioning() && !includeThin)
+        if (storPool.getDeviceProviderKind().usesThinProvisioning() && !includeThin)
         {
             usable = Optional.of(false);
         }
@@ -59,7 +59,7 @@ public class FreeCapacityAutoPoolSelectorUtils
     )
     {
         Comparator<StorPool> thickComparator = Comparator.<StorPool, Boolean>comparing(
-            storPool -> storPool.getDriverKind().usesThinProvisioning()
+            storPool -> storPool.getDeviceProviderKind().usesThinProvisioning()
         ).reversed();
 
         Comparator<StorPool> freeCapacityComparator = Comparator.comparingLong(
@@ -112,7 +112,7 @@ public class FreeCapacityAutoPoolSelectorUtils
             Optional.of(freeCapacityOverride) : getFreeSpaceLastUpdatedPrivileged(accCtx, storPool);
 
         Optional<Long> usableCapacity = freeCapacity.map(
-            capacity -> storPool.getDriverKind().usesThinProvisioning() ?
+            capacity -> storPool.getDeviceProviderKind().usesThinProvisioning() ?
                 (long) (capacity * getMaxOversubscriptionRatio(accCtx, storPool)) :
                 capacity
         );

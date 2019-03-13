@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.satellite;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -71,7 +72,7 @@ public class ApplyStorPool implements ApiCall
             nodeName,
             protoStorPool.getStorPoolName(),
             UUID.fromString(protoStorPool.getStorPoolDfnUuid()),
-            protoStorPool.getDriver(),
+            ProtoDeserializationUtils.parseProviderKind(protoStorPool.getProviderKind()),
             ProtoMapUtils.asMap(protoStorPool.getPropsList()),
             ProtoMapUtils.asMap(protoStorPoolDfn.getPropsList()),
             null, // List<Vlmapi> vlmRefs

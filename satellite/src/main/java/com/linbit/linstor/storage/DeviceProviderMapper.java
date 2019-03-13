@@ -66,42 +66,33 @@ public class DeviceProviderMapper
 
     public DeviceProvider getDeviceProviderByStorPool(StorPool storPool)
     {
-        StorageDriverKind driverKind = storPool.getDriverKind();
-
         DeviceProvider devProvider;
-        if (driverKind instanceof LvmDriverKind)
+        switch (storPool.getDeviceProviderKind())
         {
-            devProvider = lvmProvider;
-        }
-        else if (driverKind instanceof LvmThinDriverKind)
-        {
-            devProvider = lvmThinProvider;
-        }
-        else if (driverKind instanceof ZfsDriverKind)
-        {
-            devProvider = zfsProvider;
-        }
-        else if (driverKind instanceof ZfsThinDriverKind)
-        {
-            devProvider = zfsThinProvider;
-        }
-        else if (driverKind instanceof SwordfishTargetDriverKind)
-        {
-            devProvider = sfTargetProvider;
-        }
-        else if (driverKind instanceof SwordfishInitiatorDriverKind)
-        {
-            devProvider = sfInitProvider;
-        }
-        else if (driverKind instanceof DisklessDriverKind)
-        {
-            devProvider = disklessProvider;
-        }
-        else
-        {
-            throw new ImplementationError("Unknown storage provider found: " +
-                driverKind.getDriverName() + " " + driverKind.getClass().getSimpleName()
-            );
+            case DRBD_DISKLESS:
+                devProvider = disklessProvider;
+                break;
+            case LVM:
+                devProvider = lvmProvider;
+                break;
+            case LVM_THIN:
+                devProvider = lvmThinProvider;
+                break;
+            case SWORDFISH_INITIATOR:
+                devProvider = sfInitProvider;
+                break;
+            case SWORDFISH_TARGET:
+                devProvider = sfTargetProvider;
+                break;
+            case ZFS:
+                devProvider = zfsProvider;
+                break;
+            case ZFS_THIN:
+                devProvider = zfsThinProvider;
+                break;
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+            default:
+                throw new ImplementationError("Unknown DeviceProviderKind: " + storPool.getDeviceProviderKind());
         }
         return devProvider;
     }

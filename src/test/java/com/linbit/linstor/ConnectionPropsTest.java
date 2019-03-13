@@ -8,6 +8,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -92,10 +93,10 @@ public class ConnectionPropsTest extends GenericDbBase
         storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
 
         storPool1 = storPoolDataFactory.create(
-            SYS_CTX, node1, storPoolDfn, "LvmDriver", getFreeSpaceMgr(storPoolDfn, node1)
+            SYS_CTX, node1, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, node1)
         );
         storPool2 = storPoolDataFactory.create(
-            SYS_CTX, node2, storPoolDfn, "LvmDriver", getFreeSpaceMgr(storPoolDfn, node2)
+            SYS_CTX, node2, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, node2)
         );
 
         volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);

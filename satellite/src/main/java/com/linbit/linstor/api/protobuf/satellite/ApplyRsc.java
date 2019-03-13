@@ -20,6 +20,7 @@ import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -193,7 +194,7 @@ public class ApplyRsc implements ApiCall
                     vol.getVlmNr(),
                     Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
                     ProtoMapUtils.asMap(vol.getVlmPropsList()),
-                    vol.getStorPoolDriverName(),
+                    ProtoDeserializationUtils.parseProviderKind(vol.getProviderKind()),
                     UUID.fromString(vol.getStorPoolDfnUuid()),
                     ProtoMapUtils.asMap(vol.getStorPoolDfnPropsList()),
                     ProtoMapUtils.asMap(vol.getStorPoolPropsList()),

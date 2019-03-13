@@ -22,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -54,7 +55,7 @@ public class StorPoolHelper
     public StorPoolData createStorPool(
         String nodeNameStr,
         String storPoolNameStr,
-        String driver,
+        DeviceProviderKind deviceProviderKindRef,
         String freeSpaceMgrNameStr
     )
     {
@@ -81,7 +82,7 @@ public class StorPoolHelper
                 peerAccCtx.get(),
                 node,
                 storPoolDef,
-                driver,
+                deviceProviderKindRef,
                 freeSpaceMgrFactory.getInstance(peerAccCtx.get(), fsmName)
             );
         }

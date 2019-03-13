@@ -210,7 +210,7 @@ public class RscInternalCallHandler
                         capacityInfo == null ? null : capacityInfo.getTotalCapacity()
                     );
 
-                    if (capacityInfo == null && !storPool.getDriverKind().usesThinProvisioning())
+                    if (capacityInfo == null && !storPool.getDeviceProviderKind().usesThinProvisioning())
                     {
                         errorReporter.logWarning(
                             String.format(

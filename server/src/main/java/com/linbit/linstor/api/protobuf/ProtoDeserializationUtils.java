@@ -1,9 +1,12 @@
 package com.linbit.linstor.api.protobuf;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
+import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.StringUtils;
 
 import java.util.List;
@@ -59,6 +62,41 @@ public class ProtoDeserializationUtils
         byte[] arr = new byte[protoBytes.size()];
         protoBytes.copyTo(arr, 0);
         return arr;
+    }
+
+    public static DeviceProviderKind parseProviderKind(ProviderType providerKindRef)
+    {
+        DeviceProviderKind kind = null;
+        if (providerKindRef != null)
+        {
+            switch (providerKindRef)
+            {
+                case DISKLESS:
+                    kind = DeviceProviderKind.DRBD_DISKLESS;
+                    break;
+                case LVM:
+                    kind = DeviceProviderKind.LVM;
+                    break;
+                case LVM_THIN:
+                    kind = DeviceProviderKind.LVM_THIN;
+                    break;
+                case SWORDFISH_INITIATOR:
+                    kind = DeviceProviderKind.SWORDFISH_INITIATOR;
+                    break;
+                case SWORDFISH_TARGET:
+                    kind = DeviceProviderKind.SWORDFISH_TARGET;
+                    break;
+                case ZFS:
+                    kind = DeviceProviderKind.ZFS;
+                    break;
+                case ZFS_THIN:
+                    kind = DeviceProviderKind.ZFS_THIN;
+                    break;
+                default:
+                    throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);
+            }
+        }
+        return kind;
     }
 
     private ProtoDeserializationUtils()

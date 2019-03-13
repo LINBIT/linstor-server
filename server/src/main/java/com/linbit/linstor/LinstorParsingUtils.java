@@ -7,7 +7,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -285,5 +285,10 @@ public class LinstorParsingUtils
             ret.add(asDeviceLayerKind(layerStr));
         }
         return ret;
+    }
+
+    public static DeviceProviderKind asProviderKind(String stringRef)
+    {
+        return DeviceProviderKind.valueOf(stringRef.toUpperCase());
     }
 }

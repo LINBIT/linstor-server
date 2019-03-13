@@ -14,7 +14,8 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
@@ -123,7 +124,7 @@ public class CtrlStorPoolResolveHelper
 
                 if (storPool != null)
                 {
-                    if (storPool.getDriverKind().hasBackingStorage())
+                    if (storPool.getDeviceProviderKind().hasBackingDevice())
                     {
                         // If the storage pool has backing storage, check that it is of the same kind as the peers
                         checkSameKindAsPeers(vlmDfn, rsc.getAssignedNode().getName(), storPool);
@@ -156,7 +157,7 @@ public class CtrlStorPoolResolveHelper
     private void checkSameKindAsPeers(VolumeDefinition vlmDfn, NodeName nodeName, StorPool storPool)
         throws AccessDeniedException
     {
-        StorageDriverKind driverKind = storPool.getDriverKind();
+        DeviceProviderKind driverKind = storPool.getDeviceProviderKind();
 
         for (Resource rsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
@@ -166,7 +167,7 @@ public class CtrlStorPoolResolveHelper
                 if (vlm != null)
                 {
                     StorPool peerStorPool = vlm.getStorPool(apiCtx);
-                    StorageDriverKind peerKind = peerStorPool.getDriverKind();
+                    DeviceProviderKind peerKind = peerStorPool.getDeviceProviderKind();
                     if (!driverKind.getClass().equals(peerKind.getClass()))
                     {
                         throw new ApiRcException(makeInvalidDriverKindError(driverKind, peerKind));
@@ -178,7 +179,7 @@ public class CtrlStorPoolResolveHelper
 
     private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
     {
-        if (storPool != null && storPool.getDriverKind().hasBackingStorage())
+        if (storPool != null && storPool.getDeviceProviderKind().hasBackingDevice())
         {
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(FAIL_INVLD_STOR_POOL_NAME,
@@ -234,18 +235,18 @@ public class CtrlStorPoolResolveHelper
     }
 
     private ApiCallRcImpl.ApiCallRcEntry makeInvalidDriverKindError(
-        StorageDriverKind driverKind,
-        StorageDriverKind peerKind
+        DeviceProviderKind driverKind,
+        DeviceProviderKind peerKind
     )
     {
         return ApiCallRcImpl
             .entryBuilder(
                 ApiConsts.FAIL_INVLD_STOR_DRIVER,
-                String.format("Storage driver '%s' not allowed for volume.", driverKind.getDriverName())
+                String.format("Storage driver '%s' not allowed for volume.", driverKind)
             )
             .setDetails("Using storage pools with different storage drivers on the same volume definition " +
                 "is not supported.")
-            .setCorrection(String.format("Use a storage pool with the driver '%s'", peerKind.getDriverName()))
+            .setCorrection(String.format("Use a storage pool with the driver '%s'", peerKind))
             .build();
     }
 }

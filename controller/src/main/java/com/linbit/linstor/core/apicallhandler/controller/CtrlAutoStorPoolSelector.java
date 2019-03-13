@@ -21,8 +21,6 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.DisklessDriverKind;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -77,7 +75,7 @@ public class CtrlAutoStorPoolSelector
             .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
             .flatMap(this::getStorPoolStream)
             // filter for diskless
-            .filter(storPool -> !(storPool.getDriverKind() instanceof DisklessDriverKind))
+            .filter(storPool -> !storPool.getDeviceProviderKind().hasBackingDevice())
             // filter for user access on node
             .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
             // filter for node connected
@@ -413,7 +411,7 @@ public class CtrlAutoStorPoolSelector
                     nodeList,
                     nodeList.stream()
                         .allMatch(node ->
-                            getStorPoolPrivileged(node, storPoolName).getDriverKind().usesThinProvisioning())
+                            getStorPoolPrivileged(node, storPoolName).getDeviceProviderKind().usesThinProvisioning())
                 )
             );
         }

@@ -155,7 +155,7 @@ public class CmdDisplayStorPool extends BaseDebugCmd
                         .leaf("Node name: %s", storPool.getNode().getName().displayValue)
                         .leaf("Node UUID: %s", storPool.getNode().getUuid().toString().toUpperCase())
                         .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(storPool.getNode()))
-                        .leaf("Driver name: %s", storPool.getDriverName());
+                        .leaf("Driver name: %s", storPool.getDeviceProviderKind());
 
                     Collection<Volume> volumes = storPool.getVolumes(accCtx);
 

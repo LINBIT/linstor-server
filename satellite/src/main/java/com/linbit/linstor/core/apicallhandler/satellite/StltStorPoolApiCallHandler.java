@@ -181,7 +181,7 @@ class StltStorPoolApiCallHandler
                     storPoolRaw.getStorPoolUuid(),
                     controllerPeerConnector.getLocalNode(),
                     storPoolDfn,
-                    storPoolRaw.getDriver(),
+                    storPoolRaw.getDeviceProviderKind(),
                     freeSpaceMgrFactory.getInstance()
                 );
 
@@ -207,7 +207,7 @@ class StltStorPoolApiCallHandler
             storPoolSet.add(storPoolName);
 
             SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool);
-            if (spaceInfo != null && !storPool.getDriverKind().usesThinProvisioning())
+            if (spaceInfo != null && !storPool.getDeviceProviderKind().usesThinProvisioning())
             {
                 Map<StorPool, SpaceInfo> tmpMap = new HashMap<>();
                 tmpMap.put(storPool, spaceInfo);

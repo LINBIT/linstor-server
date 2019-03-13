@@ -21,6 +21,7 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.inject.Inject;
 
@@ -274,12 +275,12 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         StorPoolName poolName = new StorPoolName("TestPoolName");
 
         // storPool
-        String storPoolDriver1 = "LvmDriver";
+        DeviceProviderKind storPoolDriver1 = DeviceProviderKind.LVM;
         String storPool1TestKey = "storPool1TestKey";
         String storPool1TestValue = "storPool1TestValue";
 
         // storPool
-        String storPoolDriver2 = "LvmDriver";
+        DeviceProviderKind storPoolDriver2 = DeviceProviderKind.LVM;
         String storPool2TestKey = "storPool2TestKey";
         String storPool2TestValue = "storPool2TestValue";
 
@@ -608,11 +609,11 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 assertEquals(storPoolDfnUuid, storPoolDefinition.getUuid());
             }
             {
-                assertNotNull(storPool.getDriverKind());
+                assertNotNull(storPool.getDeviceProviderKind());
                 // in controller storDriver HAS to be null (as we are testing database, we
                 // have to be testing the controller)
             }
-            assertEquals(storPoolDriver2, storPool.getDriverName());
+            assertEquals(storPoolDriver2, storPool.getDeviceProviderKind());
             assertEquals(poolName, storPool.getName());
         }
         assertEquals(node1Uuid, loadedNode.getUuid());

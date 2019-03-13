@@ -2,6 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class VlmPojo implements Volume.VlmApi
     private final int vlmNr;
     private final long vlmFlags;
     private final Map<String, String> vlmProps;
-    private final String storDriverName;
+    private final DeviceProviderKind deviceProviderKind;
     private final UUID storPoolDfnUuid;
     private Map<String, String> storPoolDfnProps;
     private Map<String, String> storPoolProps;
@@ -40,7 +41,7 @@ public class VlmPojo implements Volume.VlmApi
         final int vlmNrRef,
         final long vlmFlagsRef,
         final Map<String, String> vlmPropsRef,
-        final String storDriverNameRef,
+        final DeviceProviderKind deviceProviderKindRef,
         final UUID storPoolDfnUuidRef,
         final Map<String, String> storPoolDfnPropsRef,
         final Map<String, String> storPoolPropsRef,
@@ -57,7 +58,7 @@ public class VlmPojo implements Volume.VlmApi
         vlmNr = vlmNrRef;
         vlmFlags = vlmFlagsRef;
         vlmProps = vlmPropsRef;
-        storDriverName = storDriverNameRef;
+        deviceProviderKind = deviceProviderKindRef;
         storPoolDfnUuid = storPoolDfnUuidRef;
         storPoolDfnProps = storPoolDfnPropsRef;
         storPoolProps = storPoolPropsRef;
@@ -115,9 +116,9 @@ public class VlmPojo implements Volume.VlmApi
     }
 
     @Override
-    public String getStorDriverSimpleClassName()
+    public DeviceProviderKind getStorPoolDeviceProviderKind()
     {
-        return storDriverName;
+        return deviceProviderKind;
     }
 
     @Override

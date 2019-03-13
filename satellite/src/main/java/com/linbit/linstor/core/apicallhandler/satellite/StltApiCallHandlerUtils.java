@@ -79,7 +79,7 @@ public class StltApiCallHandlerUtils
         {
             for (StorPool storPool : controllerPeerConnector.getLocalNode().streamStorPools(apiCtx).collect(toList()))
             {
-                if (storPool.getDriverKind().usesThinProvisioning() &&
+                if (storPool.getDeviceProviderKind().usesThinProvisioning() &&
                     (storPoolFilter.isEmpty() || storPoolFilter.contains(storPool.getName())))
                 {
                     for (Volume vlm : storPool.getVolumes(apiCtx))
@@ -114,7 +114,7 @@ public class StltApiCallHandlerUtils
 
             for (StorPool storPool : controllerPeerConnector.getLocalNode().streamStorPools(apiCtx).collect(toList()))
             {
-                if (storPool.getDriverKind().usesThinProvisioning() == thin)
+                if (storPool.getDeviceProviderKind().usesThinProvisioning() == thin)
                 {
                     spaceMap.put(storPool, getStoragePoolSpaceInfoOrError(storPool));
                 }

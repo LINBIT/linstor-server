@@ -203,7 +203,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 {
                     for (SnapshotVolume snapshotVlm : snapshot.getAllSnapshotVolumes(peerAccCtx.get()))
                     {
-                        if (snapshotVlm.getStorPool(peerAccCtx.get()).getDriverKind().isSnapshotDependent())
+                        if (snapshotVlm.getStorPool(peerAccCtx.get()).getDeviceProviderKind().isSnapshotDependent())
                         {
                             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                                 ApiConsts.FAIL_EXISTS_SNAPSHOT,
