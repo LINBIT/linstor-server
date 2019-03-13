@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.controller;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
@@ -48,7 +49,7 @@ public class AutoPlaceResource implements ApiCallReactive
                 msgAutoPlace.getRscName(),
                 filter,
                 msgAutoPlace.hasDisklessOnRemaining() ? msgAutoPlace.getDisklessOnRemaining() : false,
-                msgAutoPlace.getLayerStackList()
+                ProtoLayerUtils.layerTypeList2LayerStringList(msgAutoPlace.getLayerStackList())
             )
             .transform(responseSerializer::transform);
     }

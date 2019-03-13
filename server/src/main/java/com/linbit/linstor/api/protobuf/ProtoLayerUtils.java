@@ -34,6 +34,7 @@ import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 import com.linbit.linstor.proto.common.TypesOuterClass;
+import com.linbit.linstor.proto.common.TypesOuterClass.Types.LayerType;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.VlmOuterClass.VlmLayerData;
 import com.linbit.utils.Pair;
@@ -127,6 +128,16 @@ public class ProtoLayerUtils
             }
         }
 
+        return ret;
+    }
+
+    public static List<String> layerTypeList2LayerStringList(List<TypesOuterClass.Types.LayerType> layerTypeList)
+    {
+        List<String> ret = new ArrayList<>();
+        for (LayerType type : layerTypeList)
+        {
+            ret.add(layerType2layerString(type));
+        }
         return ret;
     }
 
