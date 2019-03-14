@@ -289,6 +289,38 @@ public class LinstorParsingUtils
 
     public static DeviceProviderKind asProviderKind(String stringRef)
     {
-        return DeviceProviderKind.valueOf(stringRef.toUpperCase());
+        DeviceProviderKind kind;
+        switch (stringRef.toUpperCase()) {
+            case "DRBD_DISKLESS":
+            case "DISKLESS":
+                kind = DeviceProviderKind.DRBD_DISKLESS;
+                break;
+            case "LVM":
+                kind = DeviceProviderKind.LVM;
+                break;
+            case "LVM_THIN":
+                kind = DeviceProviderKind.LVM_THIN;
+                break;
+            case "ZFS":
+                kind = DeviceProviderKind.ZFS;
+                break;
+            case "ZFS_THIN":
+                kind = DeviceProviderKind.ZFS_THIN;
+                break;
+            case "SWORDFISH_TARGET":
+                kind = DeviceProviderKind.SWORDFISH_TARGET;
+                break;
+            case "SWORDFISH_INITIATOR":
+                kind = DeviceProviderKind.SWORDFISH_INITIATOR;
+                break;
+            default:
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_LAYER_KIND,
+                        "Given provider kind '" + stringRef + "' is invalid"
+                    )
+                );
+        }
+        return kind;
     }
 }

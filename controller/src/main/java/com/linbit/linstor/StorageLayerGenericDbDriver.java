@@ -119,7 +119,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
                         new StorVlmInfoData(
                             rscLayerId,
                             resultSet.getInt(VLM_NR),
-                            DeviceProviderKind.valueOf(resultSet.getString(PROVIDER_KIND))
+                            LinstorParsingUtils.asProviderKind(resultSet.getString(PROVIDER_KIND))
                         )
                     );
                 }
