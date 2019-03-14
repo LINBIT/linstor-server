@@ -21,6 +21,10 @@ OLD_DB_LOCATION="/opt/linstor-server/linstordb.mv.db"
     echo "Please review the new configuration file: ${DEF_DB_CFG}";
 }
 
+# always create a backup of the current DB
+CURRENT_DB=${DEF_DB}.mv.db
+[ -f "$CURRENT_DB" ] && cp "$CURRENT_DB" "${CURRENT_DB}.bak"
+
 [ -f ${DEF_DB_CFG} ] && { echo "Database config already created, exiting"; exit 0; }
 
 ${DEF_LOCATION}/bin/linstor-config create-db-file --dbtype=${DEF_DB_TYPE} ${DEF_DB} > ${DEF_DB_CFG}

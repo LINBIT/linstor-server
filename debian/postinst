@@ -1,0 +1,12 @@
+#!/bin/sh
+
+. /usr/share/debconf/confmodule
+
+DEF_VARLIB_LINSTOR="/var/lib/linstor"
+DEF_DB="${DEF_VARLIB_LINSTOR}/linstordb"
+
+# always create a backup of the current DB
+CURRENT_DB=${DEF_DB}.mv.db
+[ -f "$CURRENT_DB" ] && cp "$CURRENT_DB" "${CURRENT_DB}.bak"
+
+exit 0
