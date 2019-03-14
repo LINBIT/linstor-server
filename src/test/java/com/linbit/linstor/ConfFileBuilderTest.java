@@ -464,6 +464,7 @@ public class ConfFileBuilderTest
                     "",
                     99,
                     mockedMinorPool,
+                    rscDfnData,
                     DRBD_LAYER_NO_OP_DRIVER,
                     transMgrProvider
                 );

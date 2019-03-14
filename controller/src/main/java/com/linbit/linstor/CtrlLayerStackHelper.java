@@ -238,7 +238,8 @@ public class CtrlLayerStackHelper
                         layerDataFactory.createDrbdVlmDfnData(
                             vlmDfn,
                             "",
-                            minorNrInt
+                            minorNrInt,
+                            drbdRscDfnData
                         )
                     );
                 }
@@ -479,7 +480,8 @@ public class CtrlLayerStackHelper
                     drbdVlmDfnData = layerDataFactory.createDrbdVlmDfnData(
                         vlmDfn,
                         "",
-                        null // generated minor
+                        null, // generated minor
+                        drbdRscDfnData
                     );
                     vlmDfn.setLayerData(apiCtx, drbdVlmDfnData);
                 }

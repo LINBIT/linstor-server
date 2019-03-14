@@ -292,7 +292,8 @@ public class LayerRscDataMerger
             drbdVlmDfnData = layerDataFactory.createDrbdVlmDfnData(
                 vlmDfn,
                 drbdVlmDfnPojo.getRscNameSuffix(),
-                drbdVlmDfnPojo.getMinorNr()
+                drbdVlmDfnPojo.getMinorNr(),
+                vlmDfn.getResourceDefinition().getLayerData(apiCtx, DeviceLayerKind.DRBD)
             );
             vlmDfn.setLayerData(apiCtx, drbdVlmDfnData);
         }

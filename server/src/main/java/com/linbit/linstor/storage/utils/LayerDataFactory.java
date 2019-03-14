@@ -159,7 +159,8 @@ public class LayerDataFactory
     public DrbdVlmDfnData createDrbdVlmDfnData(
         VolumeDefinition vlmDfn,
         String resourceNameSuffix,
-        Integer minorNrInt
+        Integer minorNrInt,
+        DrbdRscDfnData drbdRscDfnData
     )
         throws SQLException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
@@ -168,6 +169,7 @@ public class LayerDataFactory
             resourceNameSuffix,
             minorNrInt,
             minorPool,
+            drbdRscDfnData,
             drbdDbDriver,
             transMgrProvider
         );

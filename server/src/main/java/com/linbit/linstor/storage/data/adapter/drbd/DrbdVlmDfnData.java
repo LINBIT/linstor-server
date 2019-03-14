@@ -29,12 +29,14 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
     private final String resourceNameSuffix;
     private final DrbdLayerDatabaseDriver dbDriver;
     private final DynamicNumberPool minorPool;
+    private final DrbdRscDfnData drbdRscDfn;
 
     public DrbdVlmDfnData(
         VolumeDefinition vlmDfnRef,
         String resourceNameSuffixRef,
         Integer minorRef,
         DynamicNumberPool minorPoolRef,
+        DrbdRscDfnData drbdRscDfnRef,
         DrbdLayerDatabaseDriver dbDriverRef,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -43,6 +45,7 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
         super(transMgrProvider);
         resourceNameSuffix = resourceNameSuffixRef;
         minorPool = minorPoolRef;
+        drbdRscDfn = drbdRscDfnRef;
         dbDriver = dbDriverRef;
         suffixedResourceName = vlmDfnRef.getResourceDefinition().getName().displayValue + resourceNameSuffixRef;
 
@@ -97,8 +100,10 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
     {
         minorPool.deallocate(minorNr.value);
         dbDriver.delete(this);
+        drbdRscDfn.delete(this);
     }
 
+    @Override
     public DrbdVlmDfnPojo getApiData(AccessContext accCtxRef)
     {
         return new DrbdVlmDfnPojo(

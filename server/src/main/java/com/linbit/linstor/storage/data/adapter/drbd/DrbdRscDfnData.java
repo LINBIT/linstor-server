@@ -23,6 +23,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -216,12 +217,19 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     @Override
     public void delete() throws SQLException
     {
-        for (DrbdVlmDfnData vlmDfn : drbdVlmDfnMap.values())
+        Collection<DrbdVlmDfnData> drbdVlmDfns = new ArrayList<>(drbdVlmDfnMap.values());
+        for (DrbdVlmDfnData drbdVlmDfn : drbdVlmDfns)
         {
-            vlmDfn.delete();
+            drbdVlmDfn.delete();
         }
         tcpPortPool.deallocate(port.get().value);
         dbDriver.delete(this);
+    }
+
+
+    public void delete(DrbdVlmDfnData drbdVlmDfnDataRef)
+    {
+        drbdVlmDfnMap.remove(drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber());
     }
 
     public DrbdVlmDfnData getDrbdVlmDfn(VolumeNumber vlmNr)
@@ -234,6 +242,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         drbdVlmDfnMap.put(drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber(), drbdVlmDfnDataRef);
     }
 
+    @Override
     public DrbdRscDfnPojo getApiData(AccessContext accCtxRef)
     {
         return new DrbdRscDfnPojo(
