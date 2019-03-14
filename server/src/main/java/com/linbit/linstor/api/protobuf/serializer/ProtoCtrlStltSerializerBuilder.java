@@ -43,6 +43,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
+import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf.Builder;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNodeConn;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntOtherRsc;
@@ -655,15 +656,19 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             ArrayList<IntNetIf> netIfs = new ArrayList<>();
             for (NetInterface netIf : node.streamNetInterfaces(serializerCtx).collect(toList()))
             {
-                netIfs.add(
-                    IntNetIf.newBuilder()
-                        .setUuid(netIf.getUuid().toString())
-                        .setName(netIf.getName().displayValue)
-                        .setAddr(netIf.getAddress(serializerCtx).getAddress())
-                        .setStltConnPort(netIf.getStltConnPort(serializerCtx).value)
-                        .setStltConnEncrType(netIf.getStltConnEncryptionType(serializerCtx).name())
-                        .build()
-                );
+                Builder builder = IntNetIf.newBuilder()
+                    .setUuid(netIf.getUuid().toString())
+                    .setName(netIf.getName().displayValue)
+                    .setAddr(netIf.getAddress(serializerCtx).getAddress());
+                if (netIf.getStltConnPort(serializerCtx) != null)
+                {
+                    builder.setStltConnPort(netIf.getStltConnPort(serializerCtx).value);
+                }
+                if (netIf.getStltConnEncryptionType(serializerCtx) != null)
+                {
+                    builder.setStltConnEncrType(netIf.getStltConnEncryptionType(serializerCtx).name());
+                }
+                netIfs.add(builder.build());
             }
             return netIfs;
         }
