@@ -75,7 +75,7 @@ public class CtrlAutoStorPoolSelector
             .filter(storPoolDfn -> storPoolDfn.getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
             .flatMap(this::getStorPoolStream)
             // filter for diskless
-            .filter(storPool -> !storPool.getDeviceProviderKind().hasBackingDevice())
+            .filter(storPool -> storPool.getDeviceProviderKind().hasBackingDevice())
             // filter for user access on node
             .filter(storPool -> storPool.getNode().getObjProt().queryAccess(peerAccCtx.get()).hasAccess(AccessType.USE))
             // filter for node connected
