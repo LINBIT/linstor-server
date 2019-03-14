@@ -168,7 +168,7 @@ public class CtrlStorPoolResolveHelper
                 {
                     StorPool peerStorPool = vlm.getStorPool(apiCtx);
                     DeviceProviderKind peerKind = peerStorPool.getDeviceProviderKind();
-                    if (!driverKind.getClass().equals(peerKind.getClass()))
+                    if (!driverKind.equals(peerKind))
                     {
                         throw new ApiRcException(makeInvalidDriverKindError(driverKind, peerKind));
                     }
