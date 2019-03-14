@@ -81,7 +81,7 @@ public final class Controller
 {
     private static final String PROPSCON_KEY_NETCOM = "netcom";
 
-    public static final int API_VERSION = 3;
+    public static final int API_VERSION = 4;
     public static final int API_MIN_VERSION = API_VERSION;
 
     private static final String DEFAULT_HTTP_LISTEN_ADDRESS = "127.0.0.1";
