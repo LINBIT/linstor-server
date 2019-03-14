@@ -26,6 +26,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.drbdstate.DrbdConnection;
+import com.linbit.linstor.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateStore;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
@@ -83,6 +84,7 @@ public class DrbdLayer implements DeviceLayer
     private final AccessContext workerCtx;
     private final DrbdAdm drbdUtils;
     private final DrbdStateStore drbdState;
+    private final DrbdEventPublisher drbdEventPublisher;
     private final ErrorReporter errorReporter;
     private final WhitelistProps whitelistProps;
     private final CtrlStltSerializer interComSerializer;
@@ -102,6 +104,7 @@ public class DrbdLayer implements DeviceLayer
         @DeviceManagerContext AccessContext workerCtxRef,
         DrbdAdm drbdUtilsRef,
         DrbdStateStore drbdStateRef,
+        DrbdEventPublisher drbdEventPublisherRef,
         ErrorReporter errorReporterRef,
         WhitelistProps whiltelistPropsRef,
         CtrlStltSerializer interComSerializerRef,
@@ -112,6 +115,7 @@ public class DrbdLayer implements DeviceLayer
         workerCtx = workerCtxRef;
         drbdUtils = drbdUtilsRef;
         drbdState = drbdStateRef;
+        drbdEventPublisher = drbdEventPublisherRef;
         errorReporter = errorReporterRef;
         whitelistProps = whiltelistPropsRef;
         interComSerializer = interComSerializerRef;
@@ -135,7 +139,29 @@ public class DrbdLayer implements DeviceLayer
     @Override
     public void resourceFinished(RscLayerObject layerDataRef)
     {
-        // ignored, the resourceReady event will be send asynchronously with the corresponding events2 event.
+        /*
+         * Although the corresponding events2 event will also trigger the "resource created"
+         * linstor event, we still trigger it here in case the resource already existed before
+         * we did anything (migration).
+         *
+         * If we do not do that, the controller will wait for the resource-ready event, which should
+         * be triggered by the events2. However, that events2 will not come, as we already received it
+         * at startup of the satellite.
+         */
+        DrbdResource drbdResource;
+        try
+        {
+            drbdResource = drbdState.getDrbdResource(layerDataRef.getSuffixedResourceName());
+            if (drbdResource != null)
+            {
+                drbdEventPublisher.resourceCreated(drbdResource);
+            }
+        }
+        catch (NoInitialStateException exc)
+        {
+            // we should not have been called
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override
