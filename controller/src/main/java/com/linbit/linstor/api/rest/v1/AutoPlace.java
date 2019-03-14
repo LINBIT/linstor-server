@@ -56,7 +56,8 @@ public class AutoPlace
             Flux<ApiCallRc> flux = ctrlRscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
                 autoPlaceRequest.select_filter,
-                autoPlaceRequest.diskless_on_remaining
+                autoPlaceRequest.diskless_on_remaining,
+                autoPlaceRequest.layer_list
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_AUTO_PLACE_RSC, request));
 

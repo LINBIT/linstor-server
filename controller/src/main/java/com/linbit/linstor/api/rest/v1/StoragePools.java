@@ -1,14 +1,16 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.Json.StorPoolData;
+import com.linbit.linstor.api.rest.v1.serializer.Json.StorPoolModifyData;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
-import com.linbit.linstor.api.rest.v1.serializer.Json.StorPoolData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.StorPoolModifyData;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -135,7 +137,9 @@ public class StoragePools
                         StorPoolData storPoolData = new StorPoolData();
                         storPoolData.storage_pool_name = storPoolApi.getStorPoolName();
                         storPoolData.node_name = storPoolApi.getNodeName();
-                        storPoolData.driver = storPoolApi.getDriver();
+                        storPoolData.provider_kind = Json.deviceProviderKindAsString(
+                            storPoolApi.getDeviceProviderKind()
+                        );
                         storPoolData.props = storPoolApi.getStorPoolProps();
                         storPoolData.static_traits = storPoolApi.getStorPoolStaticTraits();
                         storPoolData.free_capacity = storPoolApi.getFreeCapacity().orElse(null);
@@ -181,7 +185,7 @@ public class StoragePools
             Flux<ApiCallRc> responses = ctrlStorPoolCrtApiCallHandler.createStorPool(
                 nodeName,
                 storPoolData.storage_pool_name,
-                storPoolData.driver,
+                LinstorParsingUtils.asProviderKind(storPoolData.provider_kind),
                 storPoolData.free_space_mgr_name,
                 storPoolData.props
             )

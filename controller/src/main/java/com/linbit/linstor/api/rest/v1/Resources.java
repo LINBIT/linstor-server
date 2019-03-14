@@ -8,14 +8,11 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceModifyData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceStateData;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
@@ -24,7 +21,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandl
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
-import com.linbit.linstor.stateflags.FlagsHelper;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -123,34 +119,8 @@ public class Resources
                 rscApiStream = rscApiStream.skip(offset).limit(limit);
             }
 
-            final List<ResourceData> rscs = rscApiStream.map(rscApi ->
-                {
-                    ResourceData rscData = new ResourceData();
-                    rscData.name = rscApi.getName();
-                    rscData.node_name = rscApi.getNodeName();
-                    rscData.node_id = rscApi.getLocalRscNodeId();
-                    rscData.flags = FlagsHelper.toStringList(Resource.RscFlags.class, rscApi.getFlags());
-                    rscData.props = rscApi.getProps();
-                    ResourceStateData rscState = null;
-                    try
-                    {
-                        final ResourceName rscNameRes = new ResourceName(rscApi.getName());
-                        final NodeName linNodeName = new NodeName(rscApi.getNodeName());
-                        if (resourceList.getSatelliteStates().containsKey(linNodeName) &&
-                            resourceList.getSatelliteStates().get(linNodeName)
-                                .getResourceStates().containsKey(rscNameRes))
-                        {
-                            rscState = new ResourceStateData();
-                            rscState.in_use = resourceList.getSatelliteStates().get(linNodeName)
-                                .getResourceStates().get(rscNameRes).isInUse();
-                        }
-                    }
-                    catch (InvalidNameException ignored)
-                    {
-                    }
-                    rscData.state = rscState;
-                    return rscData;
-                })
+            final List<ResourceData> rscs = rscApiStream
+                .map(rscApi -> new ResourceData(rscApi, resourceList.getSatelliteStates()))
                 .collect(Collectors.toList());
 
             return Response
@@ -307,6 +277,35 @@ public class Resources
         }).next();
     }
 
+    private class ResourceDataWithPayload implements Resource.RscWithPayloadApi
+    {
+        private final Json.ResourceCreateData rscPayload;
+
+        ResourceDataWithPayload(Json.ResourceCreateData rsc, String rscName)
+        {
+            rscPayload = rsc;
+            rscPayload.resource.name = rscName;
+        }
+
+        @Override
+        public Resource.RscApi getRscApi()
+        {
+            return rscPayload.resource.toRscApi();
+        }
+
+        @Override
+        public List<String> getLayerStack()
+        {
+            return rscPayload.layer_list;
+        }
+
+        @Override
+        public Integer getDrbdNodeId()
+        {
+            return rscPayload.drbd_node_id;
+        }
+    }
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void createResource(
@@ -318,22 +317,15 @@ public class Resources
     {
         try
         {
-            List<ResourceData> rscDatas = Arrays.asList(objectMapper.readValue(jsonData, ResourceData[].class));
-            List<Resource.RscApi> rscApiList = new ArrayList<>();
+            List<Json.ResourceCreateData> rscDatas = Arrays.asList(
+                objectMapper.readValue(jsonData, Json.ResourceCreateData[].class)
+            );
 
-            for (ResourceData rscData : rscDatas)
-            {
-                RscPojo rsc = new RscPojo(
-                    rscName,
-                    rscData.node_name,
-                    FlagsHelper.fromStringList(Resource.RscFlags.class, rscData.flags),
-                    rscData.props,
-                    Boolean.TRUE.equals(rscData.override_node_id) ? rscData.node_id : null
-                );
-                rscApiList.add(rsc);
-            }
+            List<Resource.RscWithPayloadApi> rscWithPayloadApiList = rscDatas.stream()
+                .map(resourceCreateData -> new ResourceDataWithPayload(resourceCreateData, rscName))
+                .collect(Collectors.toList());
 
-            Flux<ApiCallRc> flux = ctrlRscCrtApiCallHandler.createResource(rscApiList)
+            Flux<ApiCallRc> flux = ctrlRscCrtApiCallHandler.createResource(rscWithPayloadApiList)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_RSC, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
@@ -358,9 +350,9 @@ public class Resources
         try
         {
             // stuff single resource in a array and forward to the multiple resource creator
-            ResourceData rscData = objectMapper.readValue(jsonData, ResourceData.class);
-            rscData.node_name = nodeName;
-            ArrayList<ResourceData> rscDatas = new ArrayList<>();
+            Json.ResourceCreateData rscData = objectMapper.readValue(jsonData, Json.ResourceCreateData.class);
+            rscData.resource.node_name = nodeName;
+            ArrayList<Json.ResourceCreateData> rscDatas = new ArrayList<>();
             rscDatas.add(rscData);
 
             createResource(request, asyncResponse, rscName, objectMapper.writeValueAsString(rscDatas));

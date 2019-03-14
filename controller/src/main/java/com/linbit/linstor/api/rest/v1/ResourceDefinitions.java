@@ -3,11 +3,11 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceDefinitionData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceDefinitionModifyData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.VolumeDefinitionData;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -84,17 +84,7 @@ public class ResourceDefinitions
             {
                 rscDfnStream = rscDfnStream.skip(offset).limit(limit);
             }
-            final List<ResourceDefinitionData> rscDfns = rscDfnStream.map(apiRscDfn ->
-            {
-                ResourceDefinitionData data = new ResourceDefinitionData();
-                data.name = apiRscDfn.getResourceName();
-                data.port = apiRscDfn.getPort();
-                data.props = apiRscDfn.getProps();
-                data.secret = apiRscDfn.getSecret();
-                data.flags = ResourceDefinition.RscDfnFlags.toStringList(apiRscDfn.getFlags());
-                data.is_down = apiRscDfn.isDown();
-                return data;
-            })
+            final List<ResourceDefinitionData> rscDfns = rscDfnStream.map(ResourceDefinitionData::new)
                 .collect(Collectors.toList());
 
             return Response
@@ -110,18 +100,25 @@ public class ResourceDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_RSC_DFN, request), () ->
         {
-            ResourceDefinitionData rscDfnData = objectMapper.readValue(jsonData, ResourceDefinitionData.class);
-            final List<VolumeDefinitionData> vlmDfns =
-                rscDfnData.volume_definitions != null ? rscDfnData.volume_definitions : new ArrayList<>();
+            Json.ResourceDefinitionCreateData rscDfnCreate = objectMapper.readValue(
+                jsonData,
+                Json.ResourceDefinitionCreateData.class
+            );
+//            final List<VolumeDefinitionData> vlmDfns =
+//                rscDfnCreate.resource_definition.volume_definitions != null ?
+//                    rscDfnCreate.resource_definition.volume_definitions : new ArrayList<>();
+
+            List<Json.ResourceDefinitionLayerData> layerDataList = rscDfnCreate.resource_definition.layer_data;
+            // currently we ignore the possible payload, only extract the layer-stack
+
             ApiCallRc apiCallRc = ctrlApiCallHandler.createResourceDefinition(
-                rscDfnData.name,
-                rscDfnData.port,
-                rscDfnData.secret,
-                null, // will be removed
-                rscDfnData.props,
-                vlmDfns.stream()
-                    .map(VolumeDefinitionData::toVlmDfnApi)
-                    .collect(Collectors.toList())
+                rscDfnCreate.resource_definition.name,
+                rscDfnCreate.drbd_port,
+                rscDfnCreate.drbd_secret,
+                rscDfnCreate.drbd_transport_type,
+                rscDfnCreate.resource_definition.props,
+                new ArrayList<>(), // do not allow volume definition creations
+                layerDataList.stream().map(rscDfnData -> rscDfnData.type).collect(Collectors.toList())
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
@@ -143,10 +140,11 @@ public class ResourceDefinitions
             ApiCallRc apiCallRc = ctrlApiCallHandler.modifyRscDfn(
                 null,
                 rscName,
-                modifyData.port,
+                modifyData.drbd_port,
                 modifyData.override_props,
                 modifyData.delete_props,
-                modifyData.delete_namespaces
+                modifyData.delete_namespaces,
+                modifyData.layer_stack
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
         }, true);

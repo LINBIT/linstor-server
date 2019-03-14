@@ -66,21 +66,18 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
      * @param nodeNameRef Node name.
      * @param flagsRef Flags mask value.
      * @param propsRef Property map.
-     * @param nodeIdRef Node id, can be null if auto assign.
      */
     public RscPojo(
         final String rscNameRef,
         final String nodeNameRef,
         final long flagsRef,
-        final Map<String, String> propsRef,
-        final Integer nodeIdRef
+        final Map<String, String> propsRef
     )
     {
         rscName = rscNameRef;
         nodeName = nodeNameRef;
         localRscFlags = flagsRef;
         localRscProps = propsRef;
-        localRscNodeId = nodeIdRef;
 
 
         nodeUuid = null;

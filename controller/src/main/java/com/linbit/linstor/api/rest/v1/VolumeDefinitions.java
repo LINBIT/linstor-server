@@ -5,12 +5,12 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.Json.VolumeDefinitionData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.VolumeDefinitionModifyData;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
-import com.linbit.linstor.stateflags.FlagsHelper;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -28,7 +28,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -93,16 +92,7 @@ public class VolumeDefinitions
                         .filter(vlmDfnApi -> vlmNumber == null || vlmDfnApi.getVolumeNr().equals(vlmNumber))
                         .collect(Collectors.toList()))
                 {
-                    VolumeDefinitionData vlmDfnData = new VolumeDefinitionData();
-                    vlmDfnData.volume_number = vlmDfnApi.getVolumeNr();
-                    vlmDfnData.minor_number = vlmDfnApi.getMinorNr();
-                    vlmDfnData.size = vlmDfnApi.getSize();
-                    vlmDfnData.props = vlmDfnApi.getProps();
-                    vlmDfnData.flags = FlagsHelper.toStringList(
-                        VolumeDefinition.VlmDfnFlags.class,
-                        vlmDfnApi.getFlags()
-                    );
-                    data.add(vlmDfnData);
+                    data.add(new VolumeDefinitionData(vlmDfnApi));
                 }
 
                 if (data.isEmpty())
@@ -147,6 +137,28 @@ public class VolumeDefinitions
         }, false);
     }
 
+    private static class VlmDfnCreationWithPayload implements VolumeDefinition.VlmDfnWtihCreationPayload
+    {
+        Json.VolumeDefinitionCreateData vlmCreateData;
+
+        public VlmDfnCreationWithPayload(Json.VolumeDefinitionCreateData data)
+        {
+            vlmCreateData = data;
+        }
+
+        @Override
+        public VolumeDefinition.VlmDfnApi getVlmDfn()
+        {
+            return vlmCreateData.volume_definition.toVlmDfnApi();
+        }
+
+        @Override
+        public Integer getDrbdMinorNr()
+        {
+            return vlmCreateData.drbd_minor_number;
+        }
+    }
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createVolumeDefinition(
@@ -157,11 +169,12 @@ public class VolumeDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_VLM_DFN, request), () ->
         {
-            VolumeDefinitionData vlmDfnData = objectMapper.readValue(dataJson, VolumeDefinitionData.class);
-            vlmDfnData.flags = vlmDfnData.flags != null ? vlmDfnData.flags : new ArrayList<>();
-            vlmDfnData.props = vlmDfnData.props != null ? vlmDfnData.props : new HashMap<>();
-            List<VolumeDefinition.VlmDfnApi> vlmList = new ArrayList<>();
-            vlmList.add(vlmDfnData.toVlmDfnApi());
+            Json.VolumeDefinitionCreateData vlmDfnData = objectMapper.readValue(
+                dataJson,
+                Json.VolumeDefinitionCreateData.class
+            );
+            List<VolumeDefinition.VlmDfnWtihCreationPayload> vlmList = new ArrayList<>();
+            vlmList.add(new VlmDfnCreationWithPayload(vlmDfnData));
             ApiCallRc apiCallRc = ctrlApiCallHandler.createVlmDfns(rscName, vlmList);
 
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
@@ -188,7 +201,6 @@ public class VolumeDefinitions
                 rscName,
                 vlmNr,
                 vlmDfnData.size,
-                vlmDfnData.minor_number,
                 vlmDfnData.override_props,
                 vlmDfnData.delete_props)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN, request));
