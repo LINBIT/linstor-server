@@ -97,7 +97,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         assertEquals(uuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(spName.value, resultSet.getString(POOL_NAME));
-        assertEquals("LvmDriver", resultSet.getString(DRIVER_NAME));
+        assertEquals("LVM", resultSet.getString(DRIVER_NAME));
         assertFalse("Database persisted too many storPools", resultSet.next());
 
         resultSet.close();
@@ -124,7 +124,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         assertEquals(pool.getUuid(), java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(pool.getName().value, resultSet.getString(POOL_NAME));
-        assertEquals("LvmDriver", resultSet.getString(DRIVER_NAME));
+        assertEquals("LVM", resultSet.getString(DRIVER_NAME));
         assertFalse("Database persisted too many storPools", resultSet.next());
 
         resultSet.close();
