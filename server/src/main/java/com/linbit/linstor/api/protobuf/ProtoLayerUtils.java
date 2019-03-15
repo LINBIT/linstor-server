@@ -47,75 +47,93 @@ public class ProtoLayerUtils
     public static RscLayerDataApi extractRscLayerData(RscLayerData protoRscData)
     {
         RscLayerDataApi ret;
-        switch (protoRscData.getLayerSpecificPayloadCase())
+        switch (protoRscData.getLayerType())
         {
             case DRBD:
                 {
-                    DrbdRsc protoDrbdRsc = protoRscData.getDrbd();
-
-                    DrbdRscDfn protoDrbdRscDfn = protoDrbdRsc.getDrbdRscDfn();
-                    // rscDfn does not have to be the same reference, just contain the data
-                    DrbdRscDfnPojo drbdRscDfnPojo = extractDrbdRscDfn(protoDrbdRscDfn);
-                    DrbdRscPojo drbdRscPojo = new DrbdRscPojo(
-                        protoRscData.getId(),
-                        new ArrayList<>(),
-                        protoRscData.getRscNameSuffix(),
-                        drbdRscDfnPojo,
-                        protoDrbdRsc.getNodeId(),
-                        (short) protoDrbdRsc.getPeersSlots(),
-                        protoDrbdRsc.getAlStripes(),
-                        protoDrbdRsc.getAlSize(),
-                        protoDrbdRsc.getFlags(),
-                        new ArrayList<>()
-                    );
-
-                    for (DrbdVlm protoDrbdVlm : protoDrbdRsc.getDrbdVlmsList())
+                    if (protoRscData.hasDrbd())
                     {
-                        drbdRscPojo.getVolumeList().add(extractDrbdVlm(protoDrbdVlm));
-                    }
+                        DrbdRsc protoDrbdRsc = protoRscData.getDrbd();
 
-                    ret = drbdRscPojo;
+                        DrbdRscDfn protoDrbdRscDfn = protoDrbdRsc.getDrbdRscDfn();
+                        // rscDfn does not have to be the same reference, just contain the data
+                        DrbdRscDfnPojo drbdRscDfnPojo = extractDrbdRscDfn(protoDrbdRscDfn);
+                        DrbdRscPojo drbdRscPojo = new DrbdRscPojo(
+                            protoRscData.getId(),
+                            new ArrayList<>(),
+                            protoRscData.getRscNameSuffix(),
+                            drbdRscDfnPojo,
+                            protoDrbdRsc.getNodeId(),
+                            (short) protoDrbdRsc.getPeersSlots(),
+                            protoDrbdRsc.getAlStripes(),
+                            protoDrbdRsc.getAlSize(),
+                            protoDrbdRsc.getFlags(),
+                            new ArrayList<>()
+                        );
+
+                        for (DrbdVlm protoDrbdVlm : protoDrbdRsc.getDrbdVlmsList())
+                        {
+                            drbdRscPojo.getVolumeList().add(extractDrbdVlm(protoDrbdVlm));
+                        }
+
+                        ret = drbdRscPojo;
+                    }
+                    else
+                    {
+                        ret = null;
+                    }
                 }
                 break;
-            case CRYPT:
+            case LUKS:
                 {
-                    CryptSetupRscPojo cryptRscPojo = new CryptSetupRscPojo(
-                        protoRscData.getId(),
-                        new ArrayList<>(),
-                        protoRscData.getRscNameSuffix(),
-                        new ArrayList<>()
-                    );
-                    for (CryptVlm protoCryptVlm : protoRscData.getCrypt().getCryptVlmsList())
+                    if (protoRscData.hasCrypt())
                     {
-                        cryptRscPojo.getVolumeList().add(extractCryptVlm(protoCryptVlm));
-                    }
+                        CryptSetupRscPojo cryptRscPojo = new CryptSetupRscPojo(
+                            protoRscData.getId(),
+                            new ArrayList<>(),
+                            protoRscData.getRscNameSuffix(),
+                            new ArrayList<>()
+                        );
+                        for (CryptVlm protoCryptVlm : protoRscData.getCrypt().getCryptVlmsList())
+                        {
+                            cryptRscPojo.getVolumeList().add(extractCryptVlm(protoCryptVlm));
+                        }
 
-                    ret = cryptRscPojo;
+                        ret = cryptRscPojo;
+                    }
+                    else
+                    {
+                        ret = null;
+                    }
                 }
                 break;
             case STORAGE:
                 {
-                    StorageRscPojo storageRscPojo = new StorageRscPojo(
-                        protoRscData.getId(),
-                        new ArrayList<>(),
-                        protoRscData.getRscNameSuffix(),
-                        new ArrayList<>()
-                    );
-                    for (StorageVlm protoVlm : protoRscData.getStorage().getStorageVlmsList())
+                    if (protoRscData.hasStorage())
                     {
-                        storageRscPojo.getVolumeList().add(extractStorageVolume(protoVlm));
-                    }
+                        StorageRscPojo storageRscPojo = new StorageRscPojo(
+                            protoRscData.getId(),
+                            new ArrayList<>(),
+                            protoRscData.getRscNameSuffix(),
+                            new ArrayList<>()
+                        );
+                        for (StorageVlm protoVlm : protoRscData.getStorage().getStorageVlmsList())
+                        {
+                            storageRscPojo.getVolumeList().add(extractStorageVolume(protoVlm));
+                        }
 
-                    ret = storageRscPojo;
+                        ret = storageRscPojo;
+                    }
+                    else
+                    {
+                        ret = null;
+                    }
                 }
-                break;
-            case LAYERSPECIFICPAYLOAD_NOT_SET:
-                ret = null;
                 break;
             default:
                 throw new ImplementationError(
                     "Unexpected layer type in proto message: " +
-                        protoRscData.getLayerSpecificPayloadCase() +
+                        protoRscData.getLayerType() +
                         " Layered rsc id: " + protoRscData.getId()
                 );
         }
@@ -180,23 +198,41 @@ public class ProtoLayerUtils
 
             VlmLayerDataApi vlmLayerDataApi;
 
-            switch (vlmLayerData.getDataCase())
+            switch (vlmLayerData.getLayerType())
             {
-                case CRYPT:
-                    vlmLayerDataApi = extractCryptVlm(vlmLayerData.getCrypt());
-                    break;
-                case DATA_NOT_SET:
-                    vlmLayerDataApi = null;
+                case LUKS:
+                    if (vlmLayerData.hasCrypt())
+                    {
+                        vlmLayerDataApi = extractCryptVlm(vlmLayerData.getCrypt());
+                    }
+                    else
+                    {
+                        vlmLayerDataApi = null;
+                    }
                     break;
                 case DRBD:
-                    vlmLayerDataApi = extractDrbdVlm(vlmLayerData.getDrbd());
+                    if (vlmLayerData.hasDrbd())
+                    {
+                        vlmLayerDataApi = extractDrbdVlm(vlmLayerData.getDrbd());
+                    }
+                    else
+                    {
+                        vlmLayerDataApi = null;
+                    }
                     break;
                 case STORAGE:
-                    vlmLayerDataApi = extractStorageVolume(vlmLayerData.getStorage());
+                    if (vlmLayerData.hasStorage())
+                    {
+                        vlmLayerDataApi = extractStorageVolume(vlmLayerData.getStorage());
+                    }
+                    else
+                    {
+                        vlmLayerDataApi = null;
+                    }
                     break;
                 default:
                     throw new ImplementationError(
-                        "Unknown VlmLayerData (proto) kind: " + vlmLayerData.getDataCase()
+                        "Unknown VlmLayerData (proto) kind: " + vlmLayerData.getLayerType()
                     );
             }
             pair.objB = vlmLayerDataApi;
@@ -212,17 +248,25 @@ public class ProtoLayerUtils
         for (RscDfnLayerData rscDfnLayerData : rscDfnRef.getLayerDataList())
         {
             RscDfnLayerDataApi rscDfnLayerDataApi;
-            switch (rscDfnLayerData.getDataCase())
+            switch (rscDfnLayerData.getLayerType())
             {
-                case DATA_NOT_SET:
-                    rscDfnLayerDataApi = null;
-                    break;
                 case DRBD:
-                    rscDfnLayerDataApi = extractDrbdRscDfn(rscDfnLayerData.getDrbd());
+                    if (rscDfnLayerData.hasDrbd())
+                    {
+                        rscDfnLayerDataApi = extractDrbdRscDfn(rscDfnLayerData.getDrbd());
+                    }
+                    else
+                    {
+                        rscDfnLayerDataApi = null;
+                    }
+                    break;
+                case LUKS:
+                case STORAGE:
+                    rscDfnLayerDataApi = null;
                     break;
                 default:
                     throw new ImplementationError(
-                        "Unknown resource definition layer (proto) kind: " + rscDfnLayerData.getDataCase()
+                        "Unknown resource definition layer (proto) kind: " + rscDfnLayerData.getLayerType()
                         );
             }
             ret.add(new Pair<>(layerType2layerString(rscDfnLayerData.getLayerType()), rscDfnLayerDataApi));
@@ -240,20 +284,34 @@ public class ProtoLayerUtils
         for (VlmDfnLayerData vlmDfnLayerData : layerDataListRef)
         {
             VlmDfnLayerDataApi vlmDfnLayerDataApi;
-            switch (vlmDfnLayerData.getDataCase())
+            switch (vlmDfnLayerData.getLayerType())
             {
-                case DATA_NOT_SET:
-                    vlmDfnLayerDataApi = null;
-                    break;
                 case DRBD:
-                    vlmDfnLayerDataApi = extractDrbdVlmDfn(vlmDfnLayerData.getDrbd());
+                    if (vlmDfnLayerData.hasDrbd())
+                    {
+                        vlmDfnLayerDataApi = extractDrbdVlmDfn(vlmDfnLayerData.getDrbd());
+                    }
+                    else
+                    {
+                        vlmDfnLayerDataApi = null;
+                    }
                     break;
                 case STORAGE:
-                    vlmDfnLayerDataApi = extractStorageVlmDfn(vlmDfnLayerData.getStorage());
+                    if (vlmDfnLayerData.hasStorage())
+                    {
+                        vlmDfnLayerDataApi = extractStorageVlmDfn(vlmDfnLayerData.getStorage());
+                    }
+                    else
+                    {
+                        vlmDfnLayerDataApi = null;
+                    }
+                    break;
+                case LUKS:
+                    vlmDfnLayerDataApi = null;
                     break;
                 default:
                     throw new ImplementationError(
-                        "Unknown volume definition layer (proto) kind: " + vlmDfnLayerData.getDataCase()
+                        "Unknown volume definition layer (proto) kind: " + vlmDfnLayerData.getLayerType()
                     );
             }
             ret.add(new Pair<>(layerType2layerString(vlmDfnLayerData.getLayerType()), vlmDfnLayerDataApi));
@@ -324,9 +382,9 @@ public class ProtoLayerUtils
         long allocatedSize = protoVlm.getAllocatedSize();
         long usableSize = protoVlm.getUsableSize();
         String diskState = protoVlm.getDiskState();
-        switch (protoVlm.getProviderCase())
+        switch (protoVlm.getProviderKind())
         {
-            case DRBD_DISKLESS:
+            case DISKLESS:
                 ret = new DrbdDisklessVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, null);
                 break;
             case LVM:
@@ -335,34 +393,52 @@ public class ProtoLayerUtils
             case LVM_THIN:
                 ret = new LvmThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState);
                 break;
-            case SF_INIT:
+            case SWORDFISH_INITIATOR:
                 {
-                    SwordfishVlmDfn protoSfVlmDfn = protoVlm.getSfInit().getSfVlmDfn();
-                    ret = new SwordfishInitiatorVlmPojo(
-                        new SwordfishVlmDfnPojo(
-                            protoSfVlmDfn.getRscNameSuffix(),
-                            protoSfVlmDfn.getVlmNr(),
-                            protoSfVlmDfn.getVlmOdata()
-                        ),
-                        devicePath,
-                        allocatedSize,
-                        usableSize,
-                        diskState
-                    );
+                    if (protoVlm.hasSfInit())
+                    {
+                        SwordfishVlmDfn protoSfVlmDfn = protoVlm.getSfInit().getSfVlmDfn();
+                        ret = new SwordfishInitiatorVlmPojo(
+                            new SwordfishVlmDfnPojo(
+                                protoSfVlmDfn.getRscNameSuffix(),
+                                protoSfVlmDfn.getVlmNr(),
+                                protoSfVlmDfn.getVlmOdata()
+                            ),
+                            devicePath,
+                            allocatedSize,
+                            usableSize,
+                            diskState
+                        );
+                    }
+                    else
+                    {
+                        throw new ImplementationError(
+                            "Expected swordfish initiator data not set. vlm nr :" + protoVlm.getVlmNr()
+                        );
+                    }
                 }
                 break;
-            case SF_TARGET:
+            case SWORDFISH_TARGET:
                 {
-                    SwordfishVlmDfn protoSfVlmDfn = protoVlm.getSfTarget().getSfVlmDfn();
-                    ret = new SwordfishTargetVlmPojo(
-                        new SwordfishVlmDfnPojo(
-                            protoSfVlmDfn.getRscNameSuffix(),
-                            protoSfVlmDfn.getVlmNr(),
-                            protoSfVlmDfn.getVlmOdata()
-                        ),
-                        allocatedSize,
-                        usableSize
-                    );
+                    if (protoVlm.hasSfTarget())
+                    {
+                        SwordfishVlmDfn protoSfVlmDfn = protoVlm.getSfTarget().getSfVlmDfn();
+                        ret = new SwordfishTargetVlmPojo(
+                            new SwordfishVlmDfnPojo(
+                                protoSfVlmDfn.getRscNameSuffix(),
+                                protoSfVlmDfn.getVlmNr(),
+                                protoSfVlmDfn.getVlmOdata()
+                            ),
+                            allocatedSize,
+                            usableSize
+                        );
+                    }
+                    else
+                    {
+                        throw new ImplementationError(
+                            "Expected swordfish target data not set. vlm nr :" + protoVlm.getVlmNr()
+                        );
+                    }
                 }
                 break;
             case ZFS:
@@ -371,11 +447,10 @@ public class ProtoLayerUtils
             case ZFS_THIN:
                 ret = new ZfsThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState);
                 break;
-            case PROVIDER_NOT_SET:
             default:
                 throw new ImplementationError(
                     "Unexpected provider type in proto message: " +
-                        protoVlm.getProviderCase() +
+                        protoVlm.getProviderKind() +
                         " vlm nr :" + protoVlm.getVlmNr()
                 );
         }
@@ -385,7 +460,7 @@ public class ProtoLayerUtils
     private static VlmDfnLayerDataApi extractStorageVlmDfn(StorageVlmDfn storageVlmDfnRef)
     {
         VlmDfnLayerDataApi vlmDfnApi;
-        switch (storageVlmDfnRef.getProviderType())
+        switch (storageVlmDfnRef.getProviderKind())
         {
             case SWORDFISH_INITIATOR: // fall-trough
             case SWORDFISH_TARGET:

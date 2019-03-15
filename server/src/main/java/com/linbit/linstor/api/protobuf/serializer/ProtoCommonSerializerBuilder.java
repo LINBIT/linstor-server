@@ -1007,6 +1007,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 default:
                     break;
             }
+            builder.setLayerType(layerKind2LayerType(rscLayerPojo.getLayerKind()));
             return builder.build();
         }
 
@@ -1237,7 +1238,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 default:
                     throw new ImplementationError("Unexpected provider kind: " + vlmPojo.getProviderKind());
             }
-            StorageVlm storageVlm = builder.build();
+            StorageVlm storageVlm = builder.setProviderKind(getProviderType(vlmPojo.getProviderKind())).build();
             return storageVlm;
         }
     }

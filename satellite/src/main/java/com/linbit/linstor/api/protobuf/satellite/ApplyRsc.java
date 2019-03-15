@@ -103,27 +103,35 @@ public class ApplyRsc implements ApiCall
             pair.objA = ProtoLayerUtils.layerType2layerString(rscDfnData.getLayerType());
 
             RscDfnLayerDataApi rscDfnLayerDataApi;
-            switch (rscDfnData.getDataCase())
+            switch (rscDfnData.getLayerType())
             {
-                case DATA_NOT_SET:
-                    rscDfnLayerDataApi = null;
-                    break;
                 case DRBD:
-                    DrbdRscDfn drbdRscDfn = rscDfnData.getDrbd();
-                    rscDfnLayerDataApi = new DrbdRscDfnPojo(
-                        drbdRscDfn.getRscNameSuffix(),
-                        (short) drbdRscDfn.getPeersSlots(),
-                        drbdRscDfn.getAlStripes(),
-                        drbdRscDfn.getAlSize(),
-                        drbdRscDfn.getPort(),
-                        drbdRscDfn.getTransportType(),
-                        drbdRscDfn.getSecret(),
-                        drbdRscDfn.getDown()
-                    );
+                    if (rscDfnData.hasDrbd())
+                    {
+                        DrbdRscDfn drbdRscDfn = rscDfnData.getDrbd();
+                        rscDfnLayerDataApi = new DrbdRscDfnPojo(
+                            drbdRscDfn.getRscNameSuffix(),
+                            (short) drbdRscDfn.getPeersSlots(),
+                            drbdRscDfn.getAlStripes(),
+                            drbdRscDfn.getAlSize(),
+                            drbdRscDfn.getPort(),
+                            drbdRscDfn.getTransportType(),
+                            drbdRscDfn.getSecret(),
+                            drbdRscDfn.getDown()
+                        );
+                    }
+                    else
+                    {
+                        rscDfnLayerDataApi = null;
+                    }
+                    break;
+                case LUKS:
+                case STORAGE:
+                    rscDfnLayerDataApi = null;
                     break;
                 default:
                     throw new ImplementationError(
-                        "Unknown resource definition layer (proto) kind: " + rscDfnData.getDataCase()
+                        "Unknown resource definition layer (proto) kind: " + rscDfnData.getLayerType()
                     );
             }
             layerData.add(pair);
