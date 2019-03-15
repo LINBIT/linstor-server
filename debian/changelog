@@ -1,3 +1,14 @@
+linstor-server (0.7.5-1) experimental; urgency=medium
+
+  [ Joel Colledge ]
+  * Fix node lost API when the node had snapshots
+  * Do not check current storage pool when validating whether a new volume [...]
+
+  [ Rene Peinthor ]
+  * fix resource folder leak of Files.list()
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 21 Dec 2018 09:08:38 +0100
+
 linstor-server (0.7.4-1) experimental; urgency=medium
 
   [ Robert Altnoeder ]
