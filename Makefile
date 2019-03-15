@@ -5,6 +5,7 @@ DOCKERREGPATH_CONTROLLER = $(DOCKERREGISTRY)/linstor-controller
 DOCKERREGPATH_SATELLITE = $(DOCKERREGISTRY)/linstor-satellite
 DOCKERFILE_CONTROLLER = Dockerfile.controller
 DOCKERFILE_SATELLITE = Dockerfile.satellite
+DOCKER_TAG ?= latest
 
 GENRES=./server/generated-resources
 GENSRC=./server/generated-src
@@ -115,10 +116,12 @@ versioninfo:
 
 .PHONY: dockerimage dockerimage.controller dockerimage.satellite dockerpatch
 dockerimage.controller:
-	docker build -f $(DOCKERFILE_CONTROLLER) -t $(DOCKERREGPATH_CONTROLLER) .
+	docker build -f $(DOCKERFILE_CONTROLLER) -t $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) .
+	docker tag $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) $(DOCKERREGPATH_CONTROLLER):latest
 
 dockerimage.satellite:
-	docker build -f $(DOCKERFILE_SATELLITE) -t $(DOCKERREGPATH_SATELLITE) .
+	docker build -f $(DOCKERFILE_SATELLITE) -t $(DOCKERREGPATH_SATELLITE):$(DOCKER_TAG) .
+	docker tag $(DOCKERREGPATH_SATELLITE):$(DOCKER_TAG) $(DOCKERREGPATH_SATELLITE):latest
 
 ifneq ($(FORCE),1)
 dockerimage: debrelease dockerimage.controller dockerimage.satellite
@@ -127,4 +130,4 @@ dockerimage: dockerimage.controller dockerimage.satellite
 endif
 
 dockerpath:
-	@echo $(DOCKERREGPATH_CONTROLLER) $(DOCKERREGPATH_SATELLITE)
+	@echo $(DOCKERREGPATH_CONTROLLER):latest $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) $(DOCKERREGPATH_SATELLITE):latest $(DOCKERREGPATH_SATELLITE):$(DOCKER_TAG)
