@@ -1,3 +1,208 @@
+linstor-server (0.9.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gradle-tests: use powermock 2.0.0rc4 and mockito 2.23.4
+  * fix resource folder leak of Files.list()
+  * ControllerCoreModule: remove unused constant
+  * list-api: move protobuf specific serialization to upper layer
+  * reqrscconnlst: move protobuf parts to upper layer
+  * api: separate public and internal API's
+  * error-report: move serialization to the upper layer
+  * apicallrcwith: add hasApiCallRc
+  * maxvlmsize: move seralization to upper layer
+  * ctrlstorpooldfnapi: remove unused injections
+  * liststorpool: move serialization to upper layer
+  * list-volumes: move serialization to upper layer
+  * whitelistprops: prefixed keys can now be ignored
+  * resource-conn: allow and check Path properties
+  * fix typo
+  * KeyValueStore: rename modify message field names
+  * ApiCallRc: add isEmpty() and isError()
+  * gradle: update all kinds of third party libs
+  * keyvaluestore: load entries on startup from database
+  * keyvaluestore: do not throw NPE on accessing yet non existing KV
+  * storpoolapi: serialize freeSpaceMgrName
+  * conffilebuilder: fix broken drbd proxy configs
+  * snapshots: do not try to delete already removed snapshots
+  * KeyValueStore: use Set for deletePropKeys and deleteNamespaces
+  * unittests: fix nullpointer and guice related errors
+  * stltfreespacemgr: fix build
+  * satellite/preparedisks: PrepareDisks API
+  * rename asLayerStack to asDeviceLayerKind
+  * rest-api: Service startup and nodes resource
+  * rest-api: Add /resource-definitions
+  * rest-api: Add /resource-definitions/{rscname}/volume-definitions
+  * rest-api: Add /resource-definitions/{rscname}/resources
+  * rest-api: Add autoplace resource
+  * rest-api: Add /nodes/{node}/storage-pools
+  * rest-api: Add /error-reports resource
+  * rest-api: Add /controller resource
+  * rest-api: Add /encryption/passphrase resource
+  * rest-api: Add /resource-definition/{rscname}/snapshots resource
+  * rest-api: Add /resource-definitions/{rscname}/resource-connections resource
+  * rest-api: Add /resource-definitions/{rsc}/drbd-proxy resource
+  * rest-api: Add toggle-disk and migrate-disk to resource resource
+  * rest-api: add volume list getter
+  * rest-api: Add query-max-volume-size resource
+  * rest-api: Add key-value-store resource
+  * rest-api: add grizzly configuration properties
+  * rest-api: add openapi documentation and an index page
+  * rest-api: update to work with layer-stacks and deviceproviderkinds
+  * apiversion: raise API_VERSION to 4
+  * remove oneof as we have to support protobuf 2.5.0
+
+  [ Gabor Hernadi ]
+  * First version of new device manager
+  * Changed submodule to BK instead of GH
+  * Added basic LvmThin support (no snapshots yet)
+  * Implemented feedback for new devMgr + DRBD diskless support
+  * Added zfs and zfsthin support
+  * Applied changes made on original DeviceManagerImpl
+  * Minor refactoring
+  * Added ZFS (+thin) snapshot support
+  * Added objRef to responses from AbsStorageProvider
+  * Added LvmThin snapshot support
+  * Bug- and race-condition fixes and cleanup
+  * Fixed hanging rsc-del in case of broken storPool
+  * Removed debug outputs
+  * LvmProvider checkConfig
+  * Made Layers and DevMgr injectable
+  * Redirected getFreeSpace / getTotalCapacity to new DevMgr methods
+  * Fixed external command for query ThinTotalSize
+  * Fixed: layeredRscHelper now also converts Resource- and VolumeConnections
+  * Fixed free space reporting from LvmThin
+  * Fixed some NullPointerExceptions
+  * Fixed NPE when updating DRBD-diskless volume
+  * Fixed: Exending vlmSize if converted rsc has DRBD type
+  * Fixed: DevHandler now processes snapshots without resources if needed
+  * Added Swordfish support
+  * Minor cleanup
+  * Fixed: Swordfish bugs
+  * Fixed: implemented all "not implemented yet" methods
+  * Fixed bugs in ZfsProvider and when converting resources
+  * Fixed: added missing delete call
+  * Fixed: removed unnecessary parameter for compatibility
+  * Fixed zfs device path format for compatibility with older zfs versions
+  * Added CryptLayer
+  * DRBD layer now correclty reports devicePath
+  * Fixed Tests
+  * Updated submodule reference
+  * Deleted old deviceManager and its helper classes
+  * Renamed some classes
+  * Fixed JUnit tests
+  * Fixed false-positive warning about unknown resources
+  * Minor cleanup
+  * Renamed storage2 package to storage
+  * Fixed priority order of preferred nics
+  * Fixed bug where retCode's OP and OBJ mask was overriden
+  * Added RetryResourceTask
+  * Fixed: DrbdLayer now resizes volume if needed
+  * Added toString methods for Transaction* classes
+  * Fixed wrong resource-name case for wait-connect-resource call
+  * DrbdLayer now correctly sets / uses configured maxPeerSlots
+  * Split DeviceHandler#dispatchResources into sub-methods
+  * Fixed missing reported FreeSpace after modifying storage pool
+  * Added "HOSTNAME_MISMATCH" status to peer connection
+  * Added LockGuardFactory
+  * Added KeyValueStore
+  * Fixed overriding controllers PlainPort for CI-tests
+  * Fixed invalid input for %d formatting
+  * Improved handling of out-of-order drbd-events
+  * Added two more PropsContainerTest
+  * Restarting events2 stream in case of Exception
+  * Extract LayerdData into LayeredDataStorage
+  * Removed unused classes
+  * Fixed small bugs
+  * Fixed: non-existent storPools now return -1 as capacity and free space
+  * Added deleteNamespace for existing APIs
+  * Fixed some bugs repoted by FindBugs
+  * Controller now has full control over layer data
+  * Fixed: NoSuchElementExc in ConfFileBuilder with volume-less resources
+  * Fixed RetryResourceTask not incrementing retry-count
+  * Fixed resizing bug
+  * Fixed StorageLayer removing snapshots with no resources
+  * Added LayerUtils
+  * Reorganized protobuf messages
+  * LayerData are now also deleting themselves from DB
+  * Fixed access to deleted Volume
+  * Added layerStack to RscDfn
+  * Fix: CryptSetupLayer missing key bug
+  * Small bugfixes and a workaround
+  * Fixing unit tests
+  * Fix: non-drbd resources now also send the ready event
+  * Fix: minor number autoallocated twice
+  * Fixed minor snapshot related bugs
+  * Fixed toggle disk
+  * Added missing TransactionList impl
+  * Fixed Proxy deserialization bug
+  * AutoPlaceResource: changed input type of layer_stack
+  * Replaced string based storPool.driver with enum
+  * Fixed "access to deleted vlmDfn"
+  * Added missing DB-Migration for string-2-enum driver
+  * Fixed auto-place not finding storPools
+  * Fixed hung migrating drbd resource
+  * Fixed unit tests
+  * Fixed check of different storPool types
+  * Fixed: Reconstructed LayerStack when migrating
+  * Fixed NPE when serializing non-stlt netIfs
+
+  [ Joel Colledge ]
+  * ZFS 0.6.5 does not support a -o option to zpool get
+  * Extract mapping from StorageDriverKind to DeviceProvider into its own class
+  * Delete storage volumes when deleting resource definition
+  * Restore deployment status and error responses
+  * Fix removal of rollback property when rollback is successful
+  * Fix RscApiTest to expect deployment modification response which is now [...]
+  * Fix node lost API when the node had snapshots
+  * Revert "Changed submodule to BK instead of GH"
+  * Do not check current storage pool when validating whether a new volume [...]
+  * Update the reactor-test version to match the reactor-core version
+  * Include error report ID in error response from snapshot operations
+  * Fix addition of disks
+  * Fix removal of disks
+  * Make API calls even when we ignore the responses to them
+  * Do not process snapshots twice if an error occurred the first time
+  * Only take snapshots if the snapshot is marked to be taken
+  * Reduce the severity of unknown resource warnings
+  * Remove some unused classes
+
+  [ Rainer Laschober ]
+  * do not generate error report when creating storage-pool on disconnecte [...]
+  * fix javadoc issues
+  * implement multiple network path functionality and test cases
+  * cleanup code
+  * change error into warning when deleting non-existent snapshot
+  * implement prefNic check
+  * Fixed NPEs when updating satellite-connections
+  * fix setAllProps to do proper rollback on error and cleanup code
+  * adapt method calls to perform retain operations instead of full delete
+  * added method for deleting namespace
+  * implement api for listing all key-value-stores, code cleanup
+  * replace modifyKvsProps with modifyKvs and adjust corresponding .proto files
+  * Added DeleteKeyValueStore API
+
+  [ Roland Kammerer ]
+  * build: add sles15 support
+  * docker,controller: add python-all as dep
+  * docker: prepare for multiple Dockerfiles
+  * docker: dockerize satellite
+  * packaging: try to create backup file
+  * docker: allow specific version tags
+
+  [ Robert Altnoeder ]
+  * LockGuardFactory interface change, fixes & optimization
+  * Added interface ProtectedObject
+  * Changed ShutdownProtHolder so it implements the new ProtectedObject in [...]
+  * Added command CmdChangeObjProt
+  * Track connections in connecting state
+  * CmdDisplayConnections: Add option to display pending connections
+  * CmdDisplayConnections: Added attached debug console notice to ID details
+  * Refactor: Rebranded a few method & variable names
+  * Refactor spelling: priveleged -> privileged
+  * Some database migration script fixes
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 15 Mar 2019 13:22:27 +0100
+
 linstor-server (0.7.5-1) experimental; urgency=medium
 
   [ Joel Colledge ]
