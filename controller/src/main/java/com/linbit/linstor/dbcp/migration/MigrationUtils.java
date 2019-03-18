@@ -198,7 +198,8 @@ public class MigrationUtils
     public static String addColumnConstraintNotNull(
         DbProduct databaseRef,
         String table,
-        String column
+        String column,
+        String typeRef
     )
     {
         String sql;
@@ -220,7 +221,12 @@ public class MigrationUtils
                 break;
             case MARIADB:
             case MYSQL:
-                sql = String.format("ALTER TABLE %s CHANGE COLUMN %s %s SET NOT NULL;", table, column, column);
+                sql = String.format(
+                    "ALTER TABLE %s MODIFY COLUMN %s %s NOT NULL;",
+                    table,
+                    column,
+                    getDialectType(databaseRef, typeRef)
+                );
                 break;
             case UNKNOWN:
             default:

@@ -162,14 +162,16 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
                 MigrationUtils.addColumnConstraintNotNull(
                     database,
                     "RESOURCE_DEFINITIONS",
-                    "LAYER_STACK"
+                    "LAYER_STACK",
+                    "VARCHAR(1024)"
                 )
             );
             sqlStatements.add(
                 MigrationUtils.addColumnConstraintNotNull(
                     database,
                     "SNAPSHOTS",
-                    "LAYER_STACK"
+                    "LAYER_STACK",
+                    "VARCHAR(1024)"
                 )
             );
 
