@@ -130,7 +130,7 @@ public class Json
     public static class DrbdResourceDefinitionLayerData
     {
         public String resource_name_suffix;
-        public Short peers_slots;
+        public Short peer_slots;
         public Integer al_stripes;
         public Long al_size;
         public Integer port;
@@ -145,7 +145,7 @@ public class Json
         public DrbdResourceDefinitionLayerData(DrbdRscPojo.DrbdRscDfnPojo drbdRscDfnPojo)
         {
             resource_name_suffix = drbdRscDfnPojo.getRscNameSuffix();
-            peers_slots = drbdRscDfnPojo.getPeerSlots();
+            peer_slots = drbdRscDfnPojo.getPeerSlots();
             al_stripes = drbdRscDfnPojo.getAlStripes();
             al_size = drbdRscDfnPojo.getAlStripeSize();
             port = drbdRscDfnPojo.getPort();
@@ -167,7 +167,7 @@ public class Json
         public String name;
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
-        public List<VolumeDefinitionData> volume_definitions;
+        public List<VolumeDefinitionData> volume_definitions; // do not use for now
 
         public List<ResourceDefinitionLayerData> layer_data = Collections.emptyList();
 
