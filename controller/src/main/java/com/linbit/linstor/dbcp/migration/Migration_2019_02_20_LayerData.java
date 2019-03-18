@@ -3,19 +3,20 @@ package com.linbit.linstor.dbcp.migration;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-@SuppressWarnings({"checkstyle:typename", "checkstyle:magicnumber"})
 @Migration(
     version = "2019.02.20.09.26",
     description = "Add tables for layer data and move old layer-specifc data to new tables (drbd-port, -minor,...)"
@@ -44,7 +45,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
 
     private static final String SELECT_VOLUMES =
         "SELECT " +
-            "V.NODE_NAME, V.RESOURCE_NAME, V.VLM_NR, V.VLM_FLAGS, V.STOR_POOL_NAME, " +
+            "V.NODE_NAME, V.RESOURCE_NAME, V.VLM_NR, " +
             "VD.VLM_MINOR_NR, VD.VLM_FLAGS, " +
             "R.NODE_ID, R.RESOURCE_FLAGS, " +
             "RD.TCP_PORT, RD.SECRET, RD.TRANSPORT_TYPE, " +
@@ -130,19 +131,17 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
                 {
                     while (resultSet.next())
                     {
-                        String nodeName = resultSet.getString(1);
-                        String rscName = resultSet.getString(2);
-                        int vlmNr = resultSet.getInt(3);
-                        long vlmFlags = resultSet.getLong(4);
-                        String storPoolName = resultSet.getString(5);
-                        int vlmDfnMinor = resultSet.getInt(6);
-                        long vlmDfnFlags = resultSet.getLong(7);
-                        int rNodeId = resultSet.getInt(8);
-                        long rFlags = resultSet.getLong(9);
-                        int rdTcpPort = resultSet.getInt(10);
-                        String rdSecret = resultSet.getString(11);
-                        String rdTransportType = resultSet.getString(12);
-                        String spDriverName = resultSet.getString(13);
+                        String nodeName = resultSet.getString("NODE_NAME");
+                        String rscName = resultSet.getString("RESOURCE_NAME");
+                        int vlmNr = resultSet.getInt("VLM_NR");
+                        int vlmDfnMinor = resultSet.getInt("VLM_MINOR_NR");
+                        long vlmDfnFlags = resultSet.getLong("VLM_FLAGS");
+                        int rNodeId = resultSet.getInt("NODE_ID");
+                        long rFlags = resultSet.getLong("RESOURCE_FLAGS");
+                        int rdTcpPort = resultSet.getInt("TCP_PORT");
+                        String rdSecret = resultSet.getString("SECRET");
+                        String rdTransportType = resultSet.getString("TRANSPORT_TYPE");
+                        String spDriverName = resultSet.getString("DRIVER_NAME");
 
                         // first, check if this is a drbd or a swordfish volume
 
@@ -332,37 +331,21 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
             }
 
             // now that the data are copied, we can remove the old columns
-            String[] tablesToCopy = {
-                "RESOURCE_DEFINITIONS",
-                "RESOURCES",
-                "VOLUME_DEFINITIONS"
-            };
-            String format;
             DatabaseInfo.DbProduct database = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
-            if (database == DatabaseInfo.DbProduct.DB2 ||
-                database == DatabaseInfo.DbProduct.DB2_I ||
-                database == DatabaseInfo.DbProduct.DB2_Z)
-            {
-                format = "CREATE TABLE %s_TMP AS (SELECT * FROM %s) WITH DATA";
-            }
-            else
-            {
-                format = "CREATE TABLE %s_TMP AS SELECT * FROM %s";
-            }
 
-            Statement stmt = connection.createStatement();
-            for (String table : tablesToCopy)
-            {
-                stmt.executeUpdate(String.format(format, table, table));
-            }
-            stmt.close();
+            List<String> sqlStatements = new ArrayList<>();
+            sqlStatements.add(MigrationUtils.dropColumn(database, "RESOURCE_DEFINITIONS", "TCP_PORT"));
+            sqlStatements.add(MigrationUtils.dropColumn(database, "RESOURCE_DEFINITIONS", "SECRET"));
+            sqlStatements.add(MigrationUtils.dropColumn(database, "RESOURCE_DEFINITIONS", "TRANSPORT_TYPE"));
 
-            GenericDbDriver.runSql(
-                connection,
-                MigrationUtils.loadResource(
-                    "2019_02_20_delete-old-columns.sql"
-                )
-            );
+            sqlStatements.add(MigrationUtils.dropColumn(database, "RESOURCES", "NODE_ID"));
+
+            sqlStatements.add(MigrationUtils.dropColumn(database, "VOLUME_DEFINITIONS", "VLM_MINOR_NR"));
+
+            for (String sql : sqlStatements)
+            {
+                GenericDbDriver.runSql(connection, sql);
+            }
         }
     }
 
@@ -452,10 +435,6 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
         A objA;
         B objB;
 
-        Pair()
-        {
-        }
-
         Pair(A objARef, B objBRef)
         {
             objA = objARef;
@@ -481,49 +460,6 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
                 Pair<?, ?> other = (Pair<?, ?>) obj;
                 eq = Objects.equals(objA, other.objA) &&
                      Objects.equals(objB, other.objB);
-            }
-            return eq;
-        }
-    }
-
-    private static class Tripple<A, B, C>
-    {
-        A objA;
-        B objB;
-        C objC;
-
-        Tripple()
-        {
-        }
-
-        Tripple(A objARef, B objBRef, C objCRef)
-        {
-            objA = objARef;
-            objB = objBRef;
-            objC = objCRef;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((objA == null) ? 0 : objA.hashCode());
-            result = prime * result + ((objB == null) ? 0 : objB.hashCode());
-            result = prime * result + ((objC == null) ? 0 : objC.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            boolean eq = obj != null && obj instanceof Tripple;
-            if (eq)
-            {
-                Tripple<?, ?, ?> other = (Tripple<?, ?, ?>) obj;
-                eq = Objects.equals(objA, other.objA) &&
-                     Objects.equals(objB, other.objB) &&
-                     Objects.equals(objC, other.objC);
             }
             return eq;
         }

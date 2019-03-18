@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 public interface DatabaseInfo
 {
-    public enum DbProduct
+    enum DbProduct
     {
         UNKNOWN,
         H2,
@@ -22,6 +22,6 @@ public interface DatabaseInfo
         ASE
     }
 
-    public DbProduct getDbProduct(DatabaseMetaData dbMd)
+    DbProduct getDbProduct(DatabaseMetaData dbMd)
         throws SQLException;
 }

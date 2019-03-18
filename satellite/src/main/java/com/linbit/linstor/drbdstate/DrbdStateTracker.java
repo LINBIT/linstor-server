@@ -6,6 +6,7 @@ import com.linbit.linstor.core.DrbdStateChange;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -109,6 +110,7 @@ public class DrbdStateTracker
         OBS_CONN_SLOT        = initBitToSlot(OBS_CONN);
     }
 
+    @SuppressWarnings("unchecked")
     @Inject
     public DrbdStateTracker()
     {
