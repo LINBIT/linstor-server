@@ -26,6 +26,7 @@ import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
@@ -50,11 +51,27 @@ public class Json
                 str = "DISKLESS";
                 break;
             default:
-                str = deviceProviderKind.toString();
+                str = deviceProviderKind.name();
                 break;
         }
         return str;
     }
+
+    private static String getLayerTypeString(DeviceLayerKind deviceLayerKind)
+    {
+        String str;
+        switch (deviceLayerKind)
+        {
+            case CRYPT_SETUP:
+                str = "LUKS";
+                break;
+                default:
+                    str = deviceLayerKind.name();
+                    break;
+        }
+        return str;
+    }
+
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class NetInterfaceData
@@ -186,7 +203,7 @@ public class Json
             for (Pair<String, RscDfnLayerDataApi> layer : rscDfnApi.getLayerData())
             {
                 ResourceDefinitionLayerData rscDfnLayerData = new ResourceDefinitionLayerData();
-                rscDfnLayerData.type = layer.objA;
+                rscDfnLayerData.type = layer.objA.equals(DeviceLayerKind.CRYPT_SETUP.name()) ? "LUKS" : layer.objA;
 
                 if (layer.objB != null)
                 {
@@ -282,7 +299,8 @@ public class Json
             for (Pair<String, VlmDfnLayerDataApi> layer : vlmDfnApi.getVlmDfnLayerData())
             {
                 VolumeDefinitionLayerData volumeDefinitionLayerData = new VolumeDefinitionLayerData();
-                volumeDefinitionLayerData.type = layer.objA;
+                volumeDefinitionLayerData.type =
+                    layer.objA.equals(DeviceLayerKind.CRYPT_SETUP.name()) ? "LUKS" : layer.objA;
 
                 if (layer.objB != null)
                 {
@@ -334,7 +352,7 @@ public class Json
     {
         public DrbdResourceDefinitionLayerData drbd_resource_definition;
         public Integer node_id;
-        public Short peers_slots;
+        public Short peer_slots;
         public Integer al_stripes;
         public Long al_size;
         public List<String> flags;
@@ -348,7 +366,7 @@ public class Json
         {
             drbd_resource_definition = new DrbdResourceDefinitionLayerData(drbdRscPojo.getDrbdRscDfn());
             node_id = drbdRscPojo.getNodeId();
-            peers_slots = drbdRscPojo.getPeerSlots();
+            peer_slots = drbdRscPojo.getPeerSlots();
             al_stripes = drbdRscPojo.getAlStripes();
             al_size = drbdRscPojo.getAlStripeSize();
             flags = FlagsHelper.toStringList(DrbdRscObject.DrbdRscFlags.class, drbdRscPojo.getFlags());
@@ -395,6 +413,7 @@ public class Json
     {
         public List<ResourceLayerData> children = Collections.emptyList();
         public String resource_name_suffix;
+        public String type;
         public DrbdResourceData drbd;
         public LUKSResourceData luks;
         public StorageResourceData storage;
@@ -407,6 +426,7 @@ public class Json
         {
             resource_name_suffix = rscLayerDataApi.getRscNameSuffix();
             children = rscLayerDataApi.getChildren().stream().map(ResourceLayerData::new).collect(Collectors.toList());
+            type = getLayerTypeString(rscLayerDataApi.getLayerKind());
             switch (rscLayerDataApi.getLayerKind())
             {
                 case DRBD:
@@ -617,7 +637,7 @@ public class Json
         public List<String> flags = Collections.emptyList();
 
         public VolumeStateData state;
-        public List<VolumeLayerData> layer_data = Collections.emptyList();
+        public List<VolumeLayerData> layer_data_list = Collections.emptyList();
 
         public VolumeData()
         {
@@ -635,12 +655,12 @@ public class Json
             props = vlmApi.getVlmProps();
             flags = FlagsHelper.toStringList(Volume.VlmFlags.class, vlmApi.getFlags());
 
-            layer_data = new ArrayList<>();
+            layer_data_list = new ArrayList<>();
 
             for (Pair<String, VlmLayerDataApi> layerData : vlmApi.getVlmLayerData())
             {
                 VolumeLayerData volumeLayerData = new VolumeLayerData();
-                volumeLayerData.type = layerData.objA;
+                volumeLayerData.type = getLayerTypeString(layerData.objB.getLayerKind());
 
                 switch (layerData.objB.getLayerKind())
                 {
@@ -658,7 +678,7 @@ public class Json
                     default:
                 }
 
-                layer_data.add(volumeLayerData);
+                layer_data_list.add(volumeLayerData);
             }
         }
     }
