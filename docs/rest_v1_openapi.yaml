@@ -383,7 +383,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Resource-definition'
+                  $ref: '#/components/schemas/ResourceDefinition'
     post:
       tags:
       - developers
@@ -409,9 +409,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Resource-definition'
+              $ref: '#/components/schemas/ResourceDefinitionCreate'
             example:
-              name: rsc1
+              resource_definition:
+                name: rsc1
   /v1/resource-definitions/{resource}:
     parameters:
     - $ref: '#/components/parameters/Resource'
@@ -550,18 +551,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                delete_namespaces:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/ResourceDefinitionModify'
             example:
               override_props:
                 Aux/testprop: '1'
@@ -606,7 +596,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Volume-definition'
+                  $ref: '#/components/schemas/VolumeDefinition'
     post:
       tags:
       - developers
@@ -631,9 +621,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Volume-definition'
+              $ref: '#/components/schemas/VolumeDefinitionCreate'
             example:
-              size: 262144
+              volume_definition:
+                size: 262144
   /v1/resource-definitions/{resource}/volume-definitions/{volume_number}:
     parameters:
     - $ref: '#/components/parameters/Resource'
@@ -685,7 +676,7 @@ paths:
         - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
       responses:
         '200':
-          description: resource-definition modified
+          description: volume-definition modified
           content:
             application/json:
               schema:
@@ -694,24 +685,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                size:
-                  type: integer
-                  format: int64
-                minor_number:
-                  type: integer
-                  format: int32
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                delete_namespaces:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/VolumeDefinitionModify'
             example:
               override_props:
                 Aux/testprop: '1'
@@ -760,10 +734,10 @@ paths:
     post:
       tags:
       - developers
-      summary: create a resource to a node
+      summary: create one or more resources.
       operationId: resourceCreate
       description: |
-        Adds a resource to a node.
+        Adds one or more resource(s).
 
       responses:
         '201':
@@ -780,13 +754,42 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Volume-definition'
+              type: array
+              items:
+                $ref: '#/components/schemas/ResourceCreate'
             example:
-              size: 262144
+              - resource:
+                  name: rsc1
+                  node_name: alpha
   /v1/resource-definitions/{resource}/resources/{node}:
     parameters:
     - $ref: '#/components/parameters/Resource'
     - $ref: '#/components/parameters/Node'
+    post:
+      tags:
+      - developers
+      summary: create a resource on a node
+      operationId: resourceCreateOnNode
+      description: |
+        Adds a resource on a node.
+      responses:
+        '201':
+          description: resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceCreate'
+            example:
+              {}
     put:
       tags:
       - developers
@@ -2198,36 +2201,30 @@ components:
           - SSL
     Properties:
       type: object
-      required:
-      - key
-      - value
-      properties:
-        key:
-          type: string
-        value:
-          type: string
+      description: A string to string property map.
+    ProviderKind:
+      type: string
+      enum:
+        - DISKLESS
+        - LVM
+        - LVM_THIN
+        - ZFS
+        - ZFS_THIN
+        - SWORDFISH_TARGET
+        - SWORDFISH_INITIATOR
     Storage-Pool:
       type: object
       required:
       - storage_pool_name
-      - driver
+      - provider_kind
       properties:
         storage_pool_name:
           type: string
           example: DfltStorPool
         node_name:
           type: string
-        driver:
-          type: string
-          example: LvmDriver
-          enum:
-          - LvmDriver
-          - LvmThinDriver
-          - ZfsDriver
-          - ZfsThinDriver
-          - DisklessDriver
-          - SwordfishTargetDriver
-          - SwordfishInitiatorDriver
+        provider_kind:
+          $ref: '#/components/schemas/ProviderKind'
         props:
           $ref: '#/components/schemas/Properties'
         static_traits:
@@ -2252,26 +2249,122 @@ components:
           type: string
           example: drbd1:myfastpool
           description: read only
-    Resource-definition:
+    LayerType:
+      type: string
+      enum:
+        - DRBD
+        - LUKS
+        - STORAGE
+    DrbdResourceDefinitionLayer:
       type: object
       properties:
-        rsc_name:
+        resource_name_suffix:
           type: string
-          example: rsc1
+        peer_slots:
+          type: number
+          format: int16
+        al_stripes:
+          type: number
+          format: uint64
         port:
-          type: string
+          type: number
+          format: uint32
           example: 7000
-          description: used drbd port
+          description: used drbd port for this resource
+        transport_type:
+          type: string
         secret:
           type: string
           example: 7sqCWjvGmwAiV5kzg3VF
           description: drbd resource secret
+        down:
+          type: boolean
+    ResourceDefinitionLayer:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/LayerType'
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/DrbdResourceDefinitionLayer'
+    ResourceDefinition:
+      type: object
+      properties:
+        name:
+          type: string
+          example: rsc1
         props:
           $ref: '#/components/schemas/Properties'
-        is_down:
-          type: boolean
-          example: false
-    Volume-definition:
+        flags:
+          type: array
+          items:
+            type: string
+        layer_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceDefinitionLayer'
+    ResourceDefinitionCreate:
+      type: object
+      required:
+        - resource_definition
+      properties:
+        drbd_port:
+          type: number
+          format: uint32
+          description: drbd port for resources
+        drbd_secret:
+          type: string
+          example: 7sqCWjvGmwAiV5kzg3VF
+          description: drbd resource secret
+        drbd_transport_type:
+          type: string
+          example: IP
+        resource_definition:
+          $ref: '#/components/schemas/ResourceDefinition'
+    ResourceDefinitionModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
+        drbd_port:
+          type: number
+          format: uint32
+          description: drbd port for resources
+        layer_stack:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
+
+    DrbdVolumeDefinition:
+      type: object
+      properties:
+        resource_name_suffix:
+          type: string
+        volume_number:
+          type: number
+          format: uint32
+        minor_number:
+          type: number
+          format: uint32
+    VolumeDefinitionLayer:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+            $ref: '#/components/schemas/LayerType'
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/DrbdVolumeDefinition'
+    VolumeDefinition:
       type: object
       required:
       - size
@@ -2283,15 +2376,97 @@ components:
           type: integer
           format: int64
           description: Size of the volume in Kibi.
-        minor_number:
-          type: integer
-          format: int32
         props:
           $ref: '#/components/schemas/Properties'
         flags:
           type: array
           items:
             type: string
+        layer_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VolumeDefinitionLayer'
+    VolumeDefinitionCreate:
+      type: object
+      required:
+        - volume_definition
+      properties:
+        volume_definition:
+          $ref: '#/components/schemas/VolumeDefinition'
+        drbd_minor_number:
+          type: number
+          format: uint32
+    VolumeDefinitionModify:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
+
+    DrbdResource:
+      type: object
+      properties:
+        drbd_resource_definition:
+          $ref: '#/components/schemas/DrbdResourceDefinitionLayer'
+        node_id:
+          type: number
+          format: uint32
+        peer_slots:
+          type: number
+          format: uint16
+        al_stripes:
+          type: number
+          format: uint32
+        al_size:
+          type: number
+          format: uint64
+        flags:
+          type: array
+          items:
+            type: string
+        drbd_volumes:
+          $ref: '#/components/schemas/DrbdVolume'
+    StorageResource:
+      type: object
+      properties:
+        storage_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/StorageVolume'
+    LUKSResource:
+      type: object
+      properties:
+        storage_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LUKSVolume'
+    ResourceLayer:
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLayer'
+        resource_name_suffix:
+          type: string
+        type:
+          $ref: '#/components/schemas/LayerType'
+        drbd:
+          $ref: '#/components/schemas/DrbdResource'
+        luks:
+          $ref: '#/components/schemas/LUKSResource'
+        storage:
+          $ref: '#/components/schemas/StorageResource'
     Resource:
       type: object
       properties:
@@ -2301,41 +2476,121 @@ components:
         node_name:
           type: string
           example: nodeA
-        node_id:
-          type: integer
-          format: int32
-        override_node_id:
-          type: boolean
         props:
           $ref: '#/components/schemas/Properties'
         flags:
           type: array
           items:
             type: string
+        layer_object:
+          $ref: '#/components/schemas/ResourceLayer'
         state:
           type: object
           properties:
             in_use:
               type: boolean
+    ResourceCreate:
+      type: object
+      properties:
+        resource:
+          $ref: '#/components/schemas/Resource'
+        layer_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
+        drbd_node_id:
+          type: number
+          format: uint32
+
+    DrbdVolume:
+      type: object
+      properties:
+        drbd_volume_definition:
+          $ref: '#/components/schemas/DrbdVolumeDefinition'
+        device_path:
+          type: string
+          description: drbd device path e.g. '/dev/drbd1000'
+        backing_device:
+          type: string
+          description: block device used by drbd
+        meta_disk:
+          type: string
+        allocated_size:
+          type: integer
+          format: uint64
+        usable_size:
+          type: integer
+          format: uint64
+        disk_state:
+          type: string
+          description: String describing current volume state
+
+    LUKSVolume:
+      type: object
+      properties:
+        volume_number:
+          type: number
+          format: uint32
+        device_path:
+          type: string
+          description: block device path
+        backing_device:
+          type: string
+          description: block device used by luks
+        allocated_size:
+          type: integer
+          format: uint64
+        usable_size:
+          type: integer
+          format: uint64
+        disk_state:
+          type: string
+          description: String describing current volume state
+        opened:
+          type: boolean
+
+    StorageVolume:
+      type: object
+      properties:
+        volume_number:
+          type: number
+          format: uint32
+        device_path:
+          type: string
+          description: block device path
+        allocated_size:
+          type: integer
+          format: uint64
+        usable_size:
+          type: integer
+          format: uint64
+        disk_state:
+          type: string
+          description: String describing current volume state
+
+    VolumeLayer:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/LayerType'
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/DrbdVolume'
+            - $ref: '#/components/schemas/LUKSVolume'
+            - $ref: '#/components/schemas/StorageVolume'
+
     Volume:
       type: object
       properties:
         volume_number:
           type: integer
           format: int32
-        minor_number:
-          type: integer
-          format: int32
-        device_path:
-          type: string
-        meta_disk:
-          type: string
         storage_pool:
           type: string
-        storage_pool_driver:
+        provider_kind:
+          $ref: '#/components/schemas/ProviderKind'
+        device_path:
           type: string
-        storage_pool_props:
-          $ref: '#/components/schemas/Properties'
         allocated_size:
           type: integer
           format: uint64
@@ -2350,6 +2605,10 @@ components:
             type: string
         state:
           $ref: '#/components/schemas/VolumeState'
+        layer_data_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/VolumeLayer'
     VolumeState:
       type: object
       properties:
@@ -2363,6 +2622,10 @@ components:
           default: false
         select_filter:
           $ref: '#/components/schemas/AutoSelectFilter'
+        layer_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
     AutoSelectFilter:
       type: object
       properties:
