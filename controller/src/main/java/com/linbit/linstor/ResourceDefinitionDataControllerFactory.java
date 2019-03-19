@@ -6,8 +6,6 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -19,7 +17,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -97,9 +94,8 @@ public class ResourceDefinitionDataControllerFactory
             new TreeMap<>()
         );
 
-        layerStackHelper.ensureRscDfnLayerDataExits(rscDfn, port, transType, secret);
-
         driver.create(rscDfn);
+        layerStackHelper.ensureRscDfnLayerDataExits(rscDfn, port, transType, secret);
 
         return rscDfn;
     }

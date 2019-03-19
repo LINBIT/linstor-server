@@ -82,10 +82,9 @@ public class VolumeDefinitionDataControllerFactory
             new TreeMap<>()
         );
 
-        layerStackHelper.ensureVlmDfnLayerDataExits(vlmDfnData, minor);
-
         driver.create(vlmDfnData);
         ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
+        layerStackHelper.ensureVlmDfnLayerDataExits(vlmDfnData, minor);
 
         return vlmDfnData;
     }
