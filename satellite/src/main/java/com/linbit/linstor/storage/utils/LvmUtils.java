@@ -77,7 +77,7 @@ public class LvmUtils
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
-            if (data.length == expectedFatColCount || data.length == expectedThinColCount)
+            if (data.length >= expectedFatColCount && data.length <= expectedThinColCount)
             {
                 final String identifier = data[LVS_COL_IDENTIFIER];
                 final String path = data[LVS_COL_PATH];
