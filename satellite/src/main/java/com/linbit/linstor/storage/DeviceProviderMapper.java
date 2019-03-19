@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
-import com.linbit.linstor.storage.layer.provider.diskless.DrbdDisklessProvider;
+import com.linbit.linstor.storage.layer.provider.diskless.DisklessProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
@@ -26,7 +26,7 @@ public class DeviceProviderMapper
     private final ZfsThinProvider zfsThinProvider;
     private final SwordfishTargetProvider sfTargetProvider;
     private final SwordfishInitiatorProvider sfInitProvider;
-    private final DrbdDisklessProvider disklessProvider;
+    private final DisklessProvider disklessProvider;
     private final List<DeviceProvider> driverList;
 
     @Inject
@@ -37,7 +37,7 @@ public class DeviceProviderMapper
         ZfsThinProvider zfsThinProviderRef,
         SwordfishTargetProvider sfTargetProviderRef,
         SwordfishInitiatorProvider sfInitProviderRef,
-        DrbdDisklessProvider disklessProviderRef
+        DisklessProvider disklessProviderRef
     )
     {
         lvmProvider = lvmProviderRef;
@@ -69,7 +69,7 @@ public class DeviceProviderMapper
         DeviceProvider devProvider;
         switch (storPool.getDeviceProviderKind())
         {
-            case DRBD_DISKLESS:
+            case DISKLESS:
                 devProvider = disklessProvider;
                 break;
             case LVM:
@@ -120,7 +120,7 @@ public class DeviceProviderMapper
             case ZFS_THIN:
                 devProvider = zfsThinProvider;
                 break;
-            case DRBD_DISKLESS:
+            case DISKLESS:
                 devProvider = disklessProvider;
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:

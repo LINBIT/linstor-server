@@ -45,7 +45,7 @@ public class StorageDriverLoader
         DeviceProviderKind newKind;
         if (oldKind instanceof DisklessDriverKind)
         {
-            newKind = DeviceProviderKind.DRBD_DISKLESS;
+            newKind = DeviceProviderKind.DISKLESS;
         }
         else if (oldKind instanceof LvmDriverKind)
         {

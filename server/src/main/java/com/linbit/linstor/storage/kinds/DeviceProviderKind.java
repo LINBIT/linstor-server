@@ -11,7 +11,7 @@ import com.linbit.linstor.storage.SwordfishTargetDriverKind;
 
 public enum DeviceProviderKind
 {
-    DRBD_DISKLESS(
+    DISKLESS(
         false,
         false,
         true,

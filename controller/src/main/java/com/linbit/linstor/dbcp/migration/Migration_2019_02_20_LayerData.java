@@ -35,7 +35,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
     private static final String LAYER_KIND_LUKS = "LUKS";
     private static final String LAYER_KIND_STORAGE = "STORAGE";
 
-    private static final String PROVIDER_KIND_DRBD_DISKLESS = "DRBD_DISKLESS";
+    private static final String PROVIDER_KIND_DISKLESS = "DISKLESS";
     private static final String PROVIDER_KIND_LVM = "LVM";
     private static final String PROVIDER_KIND_LVM_THIN = "LVM_THIN";
     private static final String PROVIDER_KIND_ZFS = "ZFS";
@@ -293,7 +293,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
                             switch (spDriverName)
                             {
                                 case "DisklessDriver":
-                                    providerKind = PROVIDER_KIND_DRBD_DISKLESS;
+                                    providerKind = PROVIDER_KIND_DISKLESS;
                                     break;
                                 case "LvmDriver":
                                     providerKind = PROVIDER_KIND_LVM;

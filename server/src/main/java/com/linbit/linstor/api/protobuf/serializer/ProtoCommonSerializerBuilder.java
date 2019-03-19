@@ -65,7 +65,7 @@ import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.DrbdDisklessVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.DisklessVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
@@ -704,7 +704,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         ProviderType type;
         switch (deviceProviderKindRef)
         {
-            case DRBD_DISKLESS:
+            case DISKLESS:
                 type = ProviderType.DISKLESS;
                 break;
             case LVM:
@@ -1187,8 +1187,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
             switch (vlmPojo.getProviderKind())
             {
-                case DRBD_DISKLESS:
-                    builder.setDrbdDiskless(DrbdDisklessVlm.newBuilder().build());
+                case DISKLESS:
+                    builder.setDiskless(DisklessVlm.newBuilder().build());
                     break;
                 case LVM:
                     builder.setLvm(LvmVlm.newBuilder().build());

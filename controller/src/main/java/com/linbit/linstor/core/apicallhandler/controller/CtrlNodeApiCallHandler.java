@@ -260,7 +260,7 @@ public class CtrlNodeApiCallHandler
 
             nodeRepository.put(apiCtx, nodeName, node);
 
-            if (type.isDeviceProviderKindAllowed(DeviceProviderKind.DRBD_DISKLESS))
+            if (type.isDeviceProviderKindAllowed(DeviceProviderKind.DISKLESS))
             {
                 // create default diskless storage pool
                 // this has to happen AFTER we added the node into the nodeRepository
@@ -268,7 +268,7 @@ public class CtrlNodeApiCallHandler
                 storPoolHelper.createStorPool(
                     nodeNameStr,
                     LinStor.DISKLESS_STOR_POOL_NAME,
-                    DeviceProviderKind.DRBD_DISKLESS,
+                    DeviceProviderKind.DISKLESS,
                     (String) null
                 );
             }

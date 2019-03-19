@@ -293,7 +293,7 @@ public class LinstorParsingUtils
         switch (stringRef.toUpperCase()) {
             case "DRBD_DISKLESS":
             case "DISKLESS":
-                kind = DeviceProviderKind.DRBD_DISKLESS;
+                kind = DeviceProviderKind.DISKLESS;
                 break;
             case "LVM":
                 kind = DeviceProviderKind.LVM;

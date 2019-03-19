@@ -11,7 +11,7 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.DrbdDisklessVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
@@ -385,7 +385,7 @@ public class ProtoLayerUtils
         switch (protoVlm.getProviderKind())
         {
             case DISKLESS:
-                ret = new DrbdDisklessVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, null);
+                ret = new DisklessVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, null);
                 break;
             case LVM:
                 ret = new LvmVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState);

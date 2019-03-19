@@ -72,7 +72,7 @@ public class ProtoDeserializationUtils
             switch (providerKindRef)
             {
                 case DISKLESS:
-                    kind = DeviceProviderKind.DRBD_DISKLESS;
+                    kind = DeviceProviderKind.DISKLESS;
                     break;
                 case LVM:
                     kind = DeviceProviderKind.LVM;

@@ -9,7 +9,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.data.provider.drdbdiskless.DrbdDisklessData;
+import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
@@ -200,9 +200,9 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         VlmProviderObject vlmProviderObj;
         switch (vlmInfo.kind)
         {
-            case DRBD_DISKLESS:
+            case DISKLESS:
                 // no special database table for diskless DRBD.
-                vlmProviderObj = new DrbdDisklessData(
+                vlmProviderObj = new DisklessData(
                     vlmRef,
                     rscDataRef,
                     vlmRef.getVolumeDefinition().getVolumeSize(dbCtx),

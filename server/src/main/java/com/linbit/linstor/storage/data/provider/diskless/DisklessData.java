@@ -1,8 +1,8 @@
-package com.linbit.linstor.storage.data.provider.drdbdiskless;
+package com.linbit.linstor.storage.data.provider.diskless;
 
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.pojo.StorageRscPojo.DrbdDisklessVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
@@ -24,19 +24,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class DrbdDisklessData extends BaseTransactionObject implements VlmProviderObject
+public class DisklessData extends BaseTransactionObject implements VlmProviderObject
 {
     private final Volume vlm;
     private final RscLayerObject rscData;
     private final List<? extends State> unmodStates;
 
-    private final TransactionSimpleObject<DrbdDisklessData, Long> usableSize;
+    private final TransactionSimpleObject<DisklessData, Long> usableSize;
 
     private final boolean exists = true;
     private final boolean failed = false;
     private final List<? extends State> states;
 
-    public DrbdDisklessData(
+    public DisklessData(
         Volume vlmRef,
         RscLayerObject rscDataRef,
         long usableSizeRef,
@@ -69,7 +69,7 @@ public class DrbdDisklessData extends BaseTransactionObject implements VlmProvid
     @Override
     public DeviceProviderKind getProviderKind()
     {
-        return DeviceProviderKind.DRBD_DISKLESS;
+        return DeviceProviderKind.DISKLESS;
     }
 
     @Override
@@ -104,7 +104,7 @@ public class DrbdDisklessData extends BaseTransactionObject implements VlmProvid
     @Override
     public String getDevicePath()
     {
-        return "none";
+        return null;
     }
 
     @Override
@@ -146,7 +146,7 @@ public class DrbdDisklessData extends BaseTransactionObject implements VlmProvid
     @Override
     public VlmLayerDataApi asPojo(AccessContext accCtxRef)
     {
-        return new DrbdDisklessVlmPojo(
+        return new DisklessVlmPojo(
             vlm.getVolumeDefinition().getVolumeNumber().value,
             getDevicePath(),
             getAllocatedSize(),

@@ -183,7 +183,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
                     transMgrProvider
                 );
                 break;
-            case DRBD_DISKLESS:
+            case DISKLESS:
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             case LVM:
             case LVM_THIN:

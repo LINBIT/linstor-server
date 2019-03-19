@@ -33,7 +33,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.data.provider.drdbdiskless.DrbdDisklessData;
+import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
@@ -492,10 +492,10 @@ public class LayerRscDataMerger
         VlmProviderObject vlmData = storRscData.getVlmLayerObjects().get(vlmNr);
         switch (vlmPojo.getProviderKind())
         {
-            case DRBD_DISKLESS:
-                if (vlmData == null || !(vlmData instanceof DrbdDisklessData))
+            case DISKLESS:
+                if (vlmData == null || !(vlmData instanceof DisklessData))
                 {
-                    vlmData = layerDataFactory.createDrbdDisklessData(
+                    vlmData = layerDataFactory.createDisklessData(
                         vlm,
                         vlmPojo.getUsableSize(),
                         storRscData
@@ -503,7 +503,7 @@ public class LayerRscDataMerger
                 }
                 else
                 {
-                    DrbdDisklessData drbdVlmData = (DrbdDisklessData) vlmData;
+                    DisklessData drbdVlmData = (DisklessData) vlmData;
                     drbdVlmData.setUsableSize(vlmPojo.getUsableSize());
                 }
                 break;

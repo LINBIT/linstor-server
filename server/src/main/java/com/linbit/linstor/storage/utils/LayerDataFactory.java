@@ -23,7 +23,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.data.provider.drdbdiskless.DrbdDisklessData;
+import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
@@ -195,22 +195,22 @@ public class LayerDataFactory
         return drbdVlmData;
     }
 
-    public DrbdDisklessData createDrbdDisklessData(
+    public DisklessData createDisklessData(
         Volume vlm,
         long usableSize,
         RscLayerObject rscData
     )
         throws SQLException
     {
-        DrbdDisklessData drbdDisklessData = new DrbdDisklessData(
+        DisklessData disklessData = new DisklessData(
             vlm,
             rscData,
             usableSize,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(drbdDisklessData);
-        return drbdDisklessData;
+        storageDbDriver.persist(disklessData);
+        return disklessData;
     }
 
     public LuksRscData createLuksRscData(

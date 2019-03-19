@@ -129,7 +129,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         SATELLITE(
             2,
             Arrays.asList(
-                DeviceProviderKind.DRBD_DISKLESS,
+                DeviceProviderKind.DISKLESS,
                 DeviceProviderKind.LVM,
                 DeviceProviderKind.LVM_THIN,
                 DeviceProviderKind.SWORDFISH_INITIATOR,
@@ -140,7 +140,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         COMBINED(
             3,
             Arrays.asList(
-                DeviceProviderKind.DRBD_DISKLESS,
+                DeviceProviderKind.DISKLESS,
                 DeviceProviderKind.LVM,
                 DeviceProviderKind.LVM_THIN,
                 DeviceProviderKind.SWORDFISH_INITIATOR,

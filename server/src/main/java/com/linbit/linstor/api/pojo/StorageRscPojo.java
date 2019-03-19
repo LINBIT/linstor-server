@@ -7,7 +7,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.DRBD_DISKLESS;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.DISKLESS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_INITIATOR;
@@ -137,9 +137,9 @@ public class StorageRscPojo implements RscLayerDataApi
         }
     }
 
-    public static class DrbdDisklessVlmPojo extends AbsVlmProviderPojo
+    public static class DisklessVlmPojo extends AbsVlmProviderPojo
     {
-        public DrbdDisklessVlmPojo(
+        public DisklessVlmPojo(
             int vlmNrRef,
             String devicePathRef,
             long allocatedSizeRef,
@@ -147,7 +147,7 @@ public class StorageRscPojo implements RscLayerDataApi
             String diskStateRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, DRBD_DISKLESS);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, DISKLESS);
         }
     }
 

@@ -47,7 +47,7 @@ public class Json
         String str;
         switch (deviceProviderKind)
         {
-            case DRBD_DISKLESS:
+            case DISKLESS:
                 str = "DISKLESS";
                 break;
             default:

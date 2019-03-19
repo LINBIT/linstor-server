@@ -682,8 +682,8 @@ public class CtrlLayerStackHelper
                             );
                         }
                         break;
-                    case DRBD_DISKLESS:
-                        vlmData = layerDataFactory.createDrbdDisklessData(
+                    case DISKLESS:
+                        vlmData = layerDataFactory.createDisklessData(
                             vlm,
                             vlm.getVolumeDefinition().getVolumeSize(apiCtx),
                             rscData

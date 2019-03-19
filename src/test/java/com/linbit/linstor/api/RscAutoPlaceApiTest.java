@@ -1009,7 +1009,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 BOB_ACC_CTX,
                 stlt,
                 dfltDisklessStorPoolDfn,
-                DeviceProviderKind.DRBD_DISKLESS,
+                DeviceProviderKind.DISKLESS,
                 fsm
             );
 

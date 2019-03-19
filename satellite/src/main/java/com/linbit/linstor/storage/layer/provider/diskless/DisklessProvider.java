@@ -17,10 +17,10 @@ import java.util.Collections;
 import java.util.List;
 
 @Singleton
-public class DrbdDisklessProvider implements DeviceProvider
+public class DisklessProvider implements DeviceProvider
 {
     @Inject
-    public DrbdDisklessProvider()
+    public DisklessProvider()
     {
         // this class definitely needs dependency injection!
     }
