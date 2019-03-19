@@ -39,6 +39,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
@@ -136,7 +137,14 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 5,
                 GenericDbDriver.asStrList(resourceDefinition.getLayerStack(dbCtx))
             );
-            stmt.setBlob(6, new SerialBlob(resourceDefinition.getExternalName()));
+            if (resourceDefinition.getExternalName() == null)
+            {
+                stmt.setNull(6, Types.BLOB);
+            }
+            else
+            {
+                stmt.setBlob(6, new SerialBlob(resourceDefinition.getExternalName()));
+            }
             stmt.executeUpdate();
 
             errorReporter.logTrace("ResourceDefinition created %s", getId(resourceDefinition));
