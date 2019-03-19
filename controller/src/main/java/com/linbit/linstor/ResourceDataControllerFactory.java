@@ -16,6 +16,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -103,7 +104,7 @@ public class ResourceDataControllerFactory
         }
         if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
         {
-            throw new ImplementationError("Lowest layer has to be a STORAGE layer. " + layerStack);
+            throw new ImplementationError("Lowest layer has to be a STORAGE layer. " + new ArrayList<>(layerStack));
         }
         layerStackHelper.ensureStackDataExists(rscData, layerStack, nodeIdIntRef);
 
