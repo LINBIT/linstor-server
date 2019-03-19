@@ -44,17 +44,7 @@ public class Json
 {
     public static String deviceProviderKindAsString(DeviceProviderKind deviceProviderKind)
     {
-        String str;
-        switch (deviceProviderKind)
-        {
-            case DISKLESS:
-                str = "DISKLESS";
-                break;
-            default:
-                str = deviceProviderKind.name();
-                break;
-        }
-        return str;
+        return deviceProviderKind.name();
     }
 
     private static String getLayerTypeString(DeviceLayerKind deviceLayerKind)
