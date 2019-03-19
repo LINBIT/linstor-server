@@ -55,6 +55,7 @@ import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksRsc;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.common.NetInterfaceOuterClass.NetInterface.Builder;
 import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
@@ -479,13 +480,19 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     )
         throws AccessDeniedException
     {
-        return NetInterfaceOuterClass.NetInterface.newBuilder()
+        Builder builder = NetInterfaceOuterClass.NetInterface.newBuilder()
             .setUuid(netIf.getUuid().toString())
             .setName(netIf.getName().displayValue)
-            .setAddress(netIf.getAddress(accCtx).getAddress())
-            .setStltPort(netIf.getStltConnPort(accCtx).value)
-            .setStltEncryptionType(netIf.getStltConnEncryptionType(accCtx).name())
-            .build();
+            .setAddress(netIf.getAddress(accCtx).getAddress());
+        if (netIf.getStltConnPort(accCtx) != null)
+        {
+            builder.setStltPort(netIf.getStltConnPort(accCtx).value);
+        }
+        if (netIf.getStltConnEncryptionType(accCtx) != null)
+        {
+            builder.setStltEncryptionType(netIf.getStltConnEncryptionType(accCtx).name());
+        }
+        return builder.build();
     }
 
 
