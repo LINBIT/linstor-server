@@ -4,11 +4,14 @@ import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +39,13 @@ public class DrbdDisklessProvider implements DeviceProvider
 
     @Override
     public void updateGrossSize(VlmProviderObject vlmObj)
+    {
+        // no-op
+    }
+
+    @Override
+    public void updateAllocatedSize(VlmProviderObject vlmDataRef)
+        throws AccessDeniedException, SQLException, StorageException
     {
         // no-op
     }

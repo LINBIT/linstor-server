@@ -13,6 +13,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 
+import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_DATA_PERCENT;
 import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_IDENTIFIER;
 import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_PATH;
 import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_POOL_LV;
@@ -26,6 +27,7 @@ public class LvmUtils
 {
     // DO NOT USE "," or "." AS DELIMITER due to localization issues
     public static final String DELIMITER = ";";
+    private static final float LVM_DEFAULT_DATA_PERCENT = 100;
 
     private LvmUtils()
     {
@@ -38,14 +40,23 @@ public class LvmUtils
         public final String identifier;
         public final String path;
         public final long size;
+        public final float dataPercent;
 
-        LvsInfo(String volumeGroupRef, String thinPoolRef, String identifierRef, String pathRef, long sizeRef)
+        LvsInfo(
+            String volumeGroupRef,
+            String thinPoolRef,
+            String identifierRef,
+            String pathRef,
+            long sizeRef,
+            float dataPercentRef
+        )
         {
             volumeGroup = volumeGroupRef;
             thinPool = thinPoolRef;
             identifier = identifierRef;
             path = pathRef;
             size = sizeRef;
+            dataPercent = dataPercentRef;
         }
     }
 
@@ -62,7 +73,7 @@ public class LvmUtils
 
         final String[] lines = stdOut.split("\n");
         final int expectedFatColCount = 4;
-        final int expectedThinColCount = 5;
+        final int expectedThinColCount = 6;
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
@@ -73,13 +84,42 @@ public class LvmUtils
                 final String sizeStr = data[LVS_COL_SIZE];
                 final String vgStr = data[LVS_COL_VG];
                 final String thinPoolStr;
-                if (data.length <= LVS_COL_POOL_LV)
+                final float dataPercent;
+                if (data.length <= LVS_COL_DATA_PERCENT ||
+                    data[LVS_COL_POOL_LV] == null ||
+                    data[LVS_COL_POOL_LV].isEmpty()
+                )
                 {
                     thinPoolStr = null;
                 }
                 else
                 {
                     thinPoolStr = data[LVS_COL_POOL_LV];
+                }
+
+                if (data.length <= LVS_COL_DATA_PERCENT)
+                {
+                    dataPercent = LVM_DEFAULT_DATA_PERCENT;
+                }
+                else
+                {
+                    String dataPercentStr = data[LVS_COL_DATA_PERCENT].trim();
+                    try
+                    {
+                        dataPercent = StorageUtils.parseDecimalAsFloat(dataPercentStr);
+                    }
+                    catch (NumberFormatException nfExc)
+                    {
+                        throw new StorageException(
+                            "Unable to parse data_percent of thin lv",
+                            "Data percent to parse: '" + dataPercentStr + "'",
+                            null,
+                            null,
+                            "External command used to query logical volume info: " +
+                                String.join(" ", output.executedCommand),
+                            nfExc
+                        );
+                    }
                 }
 
                 long size;
@@ -105,7 +145,8 @@ public class LvmUtils
                     thinPoolStr,
                     identifier,
                     path,
-                    size
+                    size,
+                    dataPercent
                 );
                 infoByIdentifier.put(identifier, state);
             }

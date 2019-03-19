@@ -17,6 +17,7 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.utils.HttpHeader;
@@ -368,5 +369,17 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     {
         // we don't have usable size... but we need allocated size
         vlmData.setAllocatedSize(size);
+    }
+
+    @Override
+    public void updateAllocatedSize(VlmProviderObject vlmObjRef)
+        throws AccessDeniedException, SQLException, StorageException
+    {
+        SfTargetData vlmData = (SfTargetData) vlmObjRef;
+        vlmData.setAllocatedSize(
+            vlmData.getParentAllocatedSizeOrElse(
+                () -> vlmData.getVlmDfnLayerObject().getVolumeDefinition().getVolumeSize(sysCtx)
+            )
+        );
     }
 }

@@ -1,6 +1,8 @@
 package com.linbit.linstor.storage.layer.provider.lvm;
 
 import com.linbit.ImplementationError;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
@@ -64,13 +66,16 @@ public class LvmThinProvider extends LvmProvider
     protected void updateInfo(LvmData vlmDataRef, LvsInfo infoRef) throws AccessDeniedException, SQLException
     {
         super.updateInfo(vlmDataRef, infoRef);
+        LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
         if (infoRef == null)
         {
-            ((LvmThinData) vlmDataRef).setThinPool(getThinPool(vlmDataRef.getVolume().getStorPool(storDriverAccCtx)));
+            lvmThinData.setThinPool(getThinPool(vlmDataRef.getVolume().getStorPool(storDriverAccCtx)));
+            lvmThinData.setAllocatedPercent(0);
         }
         else
         {
-            ((LvmThinData) vlmDataRef).setThinPool(infoRef.thinPool);
+            lvmThinData.setThinPool(infoRef.thinPool);
+            lvmThinData.setAllocatedPercent(infoRef.dataPercent);
         }
     }
 
@@ -239,6 +244,18 @@ public class LvmThinProvider extends LvmProvider
             extCmdFactory.create(),
             Collections.singleton(vgForLvs)
         ).get(thinPool);
+    }
+
+    @Override
+    protected long getAllocatedSize(LvmData vlmDataRef) throws StorageException
+    {
+        LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
+        long allocatedSize = super.getAllocatedSize(vlmDataRef);
+        return SizeConv.convert(
+            (long) (allocatedSize * lvmThinData.getDataPercent()),
+            SizeUnit.UNIT_B,
+            SizeUnit.UNIT_kB
+        );
     }
 
     private String getVolumeGroupForLvs(StorPool storPool) throws StorageException

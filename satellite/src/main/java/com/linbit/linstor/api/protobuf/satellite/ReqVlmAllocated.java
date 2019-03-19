@@ -34,7 +34,8 @@ import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBu
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_VLM_ALLOCATED,
-    description = "Returns volume allocated"
+    description = "Returns volume allocated",
+    transactional = true
 )
 @Singleton
 public class ReqVlmAllocated implements ApiCallReactive
@@ -61,7 +62,7 @@ public class ReqVlmAllocated implements ApiCallReactive
     @Override
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
     {
-        return scopeRunner.fluxInTransactionlessScope(
+        return scopeRunner.fluxInTransactionalScope(
             "Query volume allocated capacity",
             LockGuard.createDeferred(),
             () -> executeInScope(msgDataIn)

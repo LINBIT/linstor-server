@@ -17,6 +17,7 @@ public class LvmThinData extends LvmData
 {
     // not persisted, not serialized, stlt only (copied from storpool)
     private transient String thinPool;
+    private transient float dataPercent;
 
     public LvmThinData(
         Volume vlm,
@@ -54,5 +55,15 @@ public class LvmThinData extends LvmData
             getUsableSize(),
             new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
         );
+    }
+
+    public void setAllocatedPercent(float dataPercentRef)
+    {
+        dataPercent = dataPercentRef;
+    }
+
+    public float getDataPercent()
+    {
+        return dataPercent;
     }
 }

@@ -20,15 +20,28 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
+import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Either;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -44,6 +57,7 @@ public class StltApiCallHandlerUtils
     private final ReadWriteLock rscDfnMapLock;
     private final StorageLayer storageLayer;
     private final DeviceProviderMapper deviceProviderMapper;
+    private LockGuardFactory lockGuardFactory;
 
     @Inject
     public StltApiCallHandlerUtils(
@@ -54,7 +68,8 @@ public class StltApiCallHandlerUtils
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         StorageLayer storageLayerRef,
-        DeviceProviderMapper deviceProviderMapperRef
+        DeviceProviderMapper deviceProviderMapperRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -65,6 +80,7 @@ public class StltApiCallHandlerUtils
         rscDfnMapLock = rscDfnMapLockRef;
         storageLayer = storageLayerRef;
         deviceProviderMapper = deviceProviderMapperRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
     public Map<Volume.Key, Either<Long, ApiRcException>> getVlmAllocatedCapacities(
@@ -74,25 +90,117 @@ public class StltApiCallHandlerUtils
     {
         Map<Volume.Key, Either<Long, ApiRcException>> allocatedMap = new HashMap<>();
 
-        try (LockGuard ignored = LockGuard.createLocked(
-            nodesMapLock.readLock(), rscDfnMapLock.readLock(), storPoolDfnMapLock.readLock()))
+        try (LockGuard ignored = lockGuardFactory.build(
+            LockType.READ,
+            LockObj.NODES_MAP,
+            LockObj.RSC_DFN_MAP,
+            LockObj.STOR_POOL_DFN_MAP
+            )
+        )
         {
+            Map<DeviceProvider, List<StorPool>> storPoolsPerDeviceProvider = new HashMap<>();
             for (StorPool storPool : controllerPeerConnector.getLocalNode().streamStorPools(apiCtx).collect(toList()))
             {
                 if (storPool.getDeviceProviderKind().usesThinProvisioning() &&
                     (storPoolFilter.isEmpty() || storPoolFilter.contains(storPool.getName())))
                 {
+
+                    DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
+                    if (deviceProvider == null)
+                    {
+                        ApiRcException apiRcException = new ApiRcException(ApiCallRcImpl
+                            .entryBuilder(
+                                ApiConsts.FAIL_UNKNOWN_ERROR,
+                                "Device provider for pool '" + storPool.getName() + "' not found"
+                            )
+                            .build()
+                        );
+
+                        for (Volume vlm : storPool.getVolumes(apiCtx))
+                        {
+                            if (
+                                resourceFilter.isEmpty() ||
+                                resourceFilter.contains(vlm.getResourceDefinition().getName())
+                            )
+                            {
+                                allocatedMap.put(vlm.getKey(), Either.right(apiRcException));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        List<StorPool> list = storPoolsPerDeviceProvider.get(deviceProvider);
+                        if (list == null)
+                        {
+                            list = new ArrayList<>();
+                            storPoolsPerDeviceProvider.put(deviceProvider, list);
+                        }
+                        list.add(storPool);
+
+                    }
+                }
+            }
+
+            for (Entry<DeviceProvider, List<StorPool>> entry : storPoolsPerDeviceProvider.entrySet())
+            {
+                DeviceProvider deviceProvider = entry.getKey();
+                List<VlmProviderObject> vlmDataList = new ArrayList<>();
+
+                for (StorPool storPool : entry.getValue())
+                {
                     for (Volume vlm : storPool.getVolumes(apiCtx))
                     {
                         if (resourceFilter.isEmpty() || resourceFilter.contains(vlm.getResourceDefinition().getName()))
                         {
-                            allocatedMap.put(vlm.getKey(), getVlmAllocatedOrError(vlm));
+                            List<RscLayerObject> rscLayerData = LayerUtils.getChildLayerDataByKind(
+                                vlm.getResource().getLayerData(apiCtx),
+                                DeviceLayerKind.STORAGE
+                            );
+                            for (RscLayerObject rlo : rscLayerData)
+                            {
+                                vlmDataList.add(rlo.getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber()));
+                            }
                         }
+                    }
+                }
+
+                try
+                {
+                    deviceProvider.prepare(vlmDataList, Collections.emptyList());
+                    for (VlmProviderObject vlmProviderObject : vlmDataList)
+                    {
+                        deviceProvider.updateAllocatedSize(vlmProviderObject);
+                    }
+                    for (VlmProviderObject vlmProviderObject : vlmDataList)
+                    {
+                        allocatedMap.put(
+                            vlmProviderObject.getVolume().getKey(),
+                            Either.left(vlmProviderObject.getAllocatedSize())
+                        );
+                    }
+                }
+                catch (StorageException exc)
+                {
+                    ApiRcException apiRcException = new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            "Device provider threw a storage exception"
+                        )
+                        .setCause(exc.getCauseText())
+                        .setDetails(exc.getDetailsText())
+                        .build()
+                    );
+                    for (VlmProviderObject vlmProviderObject : vlmDataList)
+                    {
+                        allocatedMap.put(
+                            vlmProviderObject.getVolume().getKey(),
+                            Either.right(apiRcException)
+                        );
                     }
                 }
             }
         }
-        catch (AccessDeniedException exc)
+        catch (AccessDeniedException | SQLException exc)
         {
             errorReporter.reportError(new ImplementationError(exc));
         }

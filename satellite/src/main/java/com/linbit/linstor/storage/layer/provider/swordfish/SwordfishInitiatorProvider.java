@@ -18,6 +18,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.storage.SfInitiatorVlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
@@ -554,5 +555,13 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     protected void setUsableSize(SfInitiatorData vlmData, long size) throws SQLException
     {
         vlmData.setUsableSize(size);
+    }
+
+    @Override
+    public void updateAllocatedSize(VlmProviderObject vlmDataRef)
+        throws AccessDeniedException, SQLException, StorageException
+    {
+        SfInitiatorData vlmData = (SfInitiatorData) vlmDataRef;
+        vlmData.setAllocatedSize(StltProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create()));
     }
 }

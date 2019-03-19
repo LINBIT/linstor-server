@@ -470,7 +470,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         }
     }
 
-    private long getAllocatedSize(LAYER_DATA vlmData) throws StorageException
+    /**
+     * Default implementation performs a 'blockdev --getsize64 $devicePath'.
+     * This method can be overridden by thin-providers to do different calculations
+     *
+     * @param vlmData
+     * @return
+     * @throws StorageException
+     */
+    protected long getAllocatedSize(LAYER_DATA vlmData) throws StorageException
     {
         return StltProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create());
     }
@@ -714,6 +722,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 () -> vlmData.getVolume().getVolumeDefinition().getVolumeSize(storDriverAccCtx)
             )
         );
+    }
+
+    @Override
+    public void updateAllocatedSize(VlmProviderObject vlmDataRef)
+        throws AccessDeniedException, SQLException, StorageException
+    {
+        LAYER_DATA vlmData = (LAYER_DATA) vlmDataRef;
+        setAllocatedSize(vlmData, getAllocatedSize(vlmData));
     }
 
     @Override

@@ -59,4 +59,7 @@ public interface DeviceProvider
 
     void updateGrossSize(VlmProviderObject vlmObj)
         throws AccessDeniedException, SQLException;
+
+    void updateAllocatedSize(VlmProviderObject vlmObj)
+        throws AccessDeniedException, SQLException, StorageException;
 }

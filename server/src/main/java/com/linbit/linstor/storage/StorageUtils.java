@@ -29,7 +29,13 @@ public class StorageUtils
         return parseDecimal(raw).toBigInteger().longValueExact();
     }
 
+    public static float parseDecimalAsFloat(String raw)
+    {
+        return parseDecimal(raw).floatValue();
+    }
+
     private StorageUtils()
     {
     }
+
 }

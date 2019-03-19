@@ -23,7 +23,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
-import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
 import com.linbit.linstor.storage.utils.ZfsUtils;
@@ -386,7 +385,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
                 updateInfo(vlmData, info);
 
                 final long expectedSize = vlmData.getUsableSize();
-                final long actualSize = info.size;
+                final long actualSize = info.allocatedSize;
                 if (actualSize != expectedSize)
                 {
                     if (actualSize < expectedSize)
@@ -416,7 +415,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
                         }
                     }
                 }
-                vlmData.setAllocatedSize(StltProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create()));
             }
             else
             {
@@ -432,8 +430,15 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
         vlmData.setExists(true);
         vlmData.setZPool(zfsInfo.poolName);
         vlmData.setIdentifier(zfsInfo.identifier);
-        vlmData.setAllocatedSize(zfsInfo.size);
+        vlmData.setAllocatedSize(zfsInfo.allocatedSize);
+        vlmData.setUsableSize(zfsInfo.usableSize);
         vlmData.setDevicePath(zfsInfo.path);
+    }
+
+    @Override
+    protected long getAllocatedSize(ZfsData vlmDataRef) throws StorageException
+    {
+        return vlmDataRef.getAllocatedSize();
     }
 
     @Override
