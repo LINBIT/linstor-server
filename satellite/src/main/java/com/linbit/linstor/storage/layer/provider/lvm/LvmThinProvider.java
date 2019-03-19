@@ -229,10 +229,15 @@ public class LvmThinProvider extends LvmProvider
     {
         String vgForLvs = getVolumeGroupForLvs(storPool);
         String thinPool = getThinPool(storPool);
-        return LvmUtils.getThinTotalSize(
+        Long ret = LvmUtils.getThinTotalSize(
             extCmdFactory.create(),
             Collections.singleton(vgForLvs)
         ).get(thinPool);
+        if (ret == null)
+        {
+            throw new StorageException("Thin pool \'" + thinPool + "\' does not exist.");
+        }
+        return ret;
     }
 
     @Override
@@ -240,10 +245,15 @@ public class LvmThinProvider extends LvmProvider
     {
         String vgForLvs = getVolumeGroupForLvs(storPool);
         String thinPool = getThinPool(storPool);
-        return LvmUtils.getThinFreeSize(
+        Long ret = LvmUtils.getThinFreeSize(
             extCmdFactory.create(),
             Collections.singleton(vgForLvs)
         ).get(thinPool);
+        if (ret == null)
+        {
+            throw new StorageException("Thin pool \'" + thinPool + "\' does not exist.");
+        }
+        return ret;
     }
 
     @Override
