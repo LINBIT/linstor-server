@@ -1,17 +1,17 @@
-package com.linbit.linstor.storage.data.adapter.cryptsetup;
+package com.linbit.linstor.storage.data.adapter.luks;
 
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo.CryptVlmPojo;
-import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.layers.cryptsetup.CryptSetupRscObject;
+import com.linbit.linstor.storage.interfaces.layers.luks.LuksRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -25,18 +25,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements CryptSetupRscObject
+public class LuksRscData extends AbsRscData<LuksVlmData> implements LuksRscObject
 {
-    private final CryptSetupLayerDatabaseDriver cryptDbDriver;
+    private final LuksLayerDatabaseDriver luksDbDriver;
 
-    public CryptSetupRscData(
+    public LuksRscData(
         int rscLayerIdRef,
         Resource rscRef,
         String rscNameSuffixRef,
         @Nullable RscLayerObject parentRef,
         Set<RscLayerObject> childrenRef,
-        Map<VolumeNumber, CryptSetupVlmData> vlmLayerObjectsRef,
-        CryptSetupLayerDatabaseDriver dbDriverRef,
+        Map<VolumeNumber, LuksVlmData> vlmLayerObjectsRef,
+        LuksLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -52,13 +52,13 @@ public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements 
             transObjFactory,
             transMgrProvider
         );
-        cryptDbDriver = dbDriverRef;
+        luksDbDriver = dbDriverRef;
     }
 
     @Override
     public DeviceLayerKind getLayerKind()
     {
-        return DeviceLayerKind.CRYPT_SETUP;
+        return DeviceLayerKind.LUKS;
     }
 
     @Override
@@ -68,26 +68,26 @@ public class CryptSetupRscData extends AbsRscData<CryptSetupVlmData> implements 
     }
 
     @Override
-    protected void deleteVlmFromDatabase(CryptSetupVlmData vlmRef) throws SQLException
+    protected void deleteVlmFromDatabase(LuksVlmData vlmRef) throws SQLException
     {
-        cryptDbDriver.delete(vlmRef);
+        luksDbDriver.delete(vlmRef);
     }
 
     @Override
     protected void deleteRscFromDatabase() throws SQLException
     {
-        cryptDbDriver.delete(this);
+        luksDbDriver.delete(this);
     }
 
     @Override
     public RscLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
-        List<CryptVlmPojo> vlmPojos = new ArrayList<>();
-        for (CryptSetupVlmData cryptSetupVlmData : vlmMap.values())
+        List<LuksVlmPojo> vlmPojos = new ArrayList<>();
+        for (LuksVlmData luksVlmData : vlmMap.values())
         {
-            vlmPojos.add(cryptSetupVlmData.asPojo(accCtxRef));
+            vlmPojos.add(luksVlmData.asPojo(accCtxRef));
         }
-        return new CryptSetupRscPojo(
+        return new LuksRscPojo(
             rscLayerId,
             getChildrenPojos(accCtxRef),
             rscSuffix,

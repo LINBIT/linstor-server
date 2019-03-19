@@ -2,8 +2,8 @@ package com.linbit.linstor.storage;
 
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
-import com.linbit.linstor.storage.layer.adapter.cryptsetup.CryptSetupLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
+import com.linbit.linstor.storage.layer.adapter.luks.LuksLayer;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 
 import javax.inject.Inject;
@@ -23,13 +23,13 @@ public class LayerFactory
     public LayerFactory(
         DrbdLayer drbdLayer,
         StorageLayer storageLayer,
-        CryptSetupLayer cryptSetupLayer
+        LuksLayer luksLayer
     )
     {
         devLayerLookupTable = new HashMap<>();
 
         devLayerLookupTable.put(DeviceLayerKind.DRBD, drbdLayer);
-        devLayerLookupTable.put(DeviceLayerKind.CRYPT_SETUP, cryptSetupLayer);
+        devLayerLookupTable.put(DeviceLayerKind.LUKS, luksLayer);
         devLayerLookupTable.put(DeviceLayerKind.STORAGE, storageLayer);
     }
 

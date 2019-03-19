@@ -130,7 +130,7 @@ public class CtrlRscDfnApiCallHandler
             requireRscDfnMapChangeAccess();
 
             List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrList);
-            if (layerStack.contains(DeviceLayerKind.CRYPT_SETUP))
+            if (layerStack.contains(DeviceLayerKind.LUKS))
             {
                 warnIfMasterKeyIsNotSet(responses);
             }
@@ -197,7 +197,7 @@ public class CtrlRscDfnApiCallHandler
                     ApiConsts.WARN_NOT_FOUND_CRYPT_KEY,
                     warnMsg
                 )
-                .setCorrection("Create or enter the master passphrase, or remove the crypt layer from the stack")
+                .setCorrection("Create or enter the master passphrase, or remove the luks layer from the stack")
                 .build()
             );
         }

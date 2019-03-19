@@ -16,7 +16,7 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -62,7 +62,7 @@ public class Json
         String str;
         switch (deviceLayerKind)
         {
-            case CRYPT_SETUP:
+            case LUKS:
                 str = "LUKS";
                 break;
                 default:
@@ -203,7 +203,7 @@ public class Json
             for (Pair<String, RscDfnLayerDataApi> layer : rscDfnApi.getLayerData())
             {
                 ResourceDefinitionLayerData rscDfnLayerData = new ResourceDefinitionLayerData();
-                rscDfnLayerData.type = layer.objA.equals(DeviceLayerKind.CRYPT_SETUP.name()) ? "LUKS" : layer.objA;
+                rscDfnLayerData.type = layer.objA.equals(DeviceLayerKind.LUKS.name()) ? "LUKS" : layer.objA;
 
                 if (layer.objB != null)
                 {
@@ -300,7 +300,7 @@ public class Json
             {
                 VolumeDefinitionLayerData volumeDefinitionLayerData = new VolumeDefinitionLayerData();
                 volumeDefinitionLayerData.type =
-                    layer.objA.equals(DeviceLayerKind.CRYPT_SETUP.name()) ? "LUKS" : layer.objA;
+                    layer.objA.equals(DeviceLayerKind.LUKS.name()) ? "LUKS" : layer.objA;
 
                 if (layer.objB != null)
                 {
@@ -400,9 +400,9 @@ public class Json
         {
         }
 
-        public LUKSResourceData(CryptSetupRscPojo cryptSetupRscPojo)
+        public LUKSResourceData(LuksRscPojo luksRscPojo)
         {
-            luks_volumes = cryptSetupRscPojo.getVolumeList().stream()
+            luks_volumes = luksRscPojo.getVolumeList().stream()
                 .map(LUKSVolume::new)
                 .collect(Collectors.toList());
         }
@@ -437,9 +437,9 @@ public class Json
                     StorageRscPojo storageRscPojo = (StorageRscPojo) rscLayerDataApi;
                     storage = new StorageResourceData(storageRscPojo);
                     break;
-                case CRYPT_SETUP:
-                    CryptSetupRscPojo cryptSetupRscPojo = (CryptSetupRscPojo) rscLayerDataApi;
-                    luks = new LUKSResourceData(cryptSetupRscPojo);
+                case LUKS:
+                    LuksRscPojo luksRscPojo = (LuksRscPojo) rscLayerDataApi;
+                    luks = new LUKSResourceData(luksRscPojo);
                     break;
                 default:
             }
@@ -580,15 +580,15 @@ public class Json
         {
         }
 
-        public LUKSVolume(CryptSetupRscPojo.CryptVlmPojo cryptVlmPojo)
+        public LUKSVolume(LuksRscPojo.LuksVlmPojo luksVlmPojo)
         {
-            volume_number = cryptVlmPojo.getVlmNr();
-            device_path = cryptVlmPojo.getDevicePath();
-            backing_device = cryptVlmPojo.getBackingDevice();
-            allocated_size = cryptVlmPojo.getAllocatedSize();
-            usable_size = cryptVlmPojo.getUsableSize();
-            opened = cryptVlmPojo.isOpened();
-            disk_state = cryptVlmPojo.getDiskState();
+            volume_number = luksVlmPojo.getVlmNr();
+            device_path = luksVlmPojo.getDevicePath();
+            backing_device = luksVlmPojo.getBackingDevice();
+            allocated_size = luksVlmPojo.getAllocatedSize();
+            usable_size = luksVlmPojo.getUsableSize();
+            opened = luksVlmPojo.isOpened();
+            disk_state = luksVlmPojo.getDiskState();
         }
     }
 
@@ -671,9 +671,9 @@ public class Json
                     case STORAGE:
                         volumeLayerData.data = new StorageVolume(layerData.objB);
                         break;
-                    case CRYPT_SETUP:
-                        CryptSetupRscPojo.CryptVlmPojo cryptVlmPojo = (CryptSetupRscPojo.CryptVlmPojo) layerData.objB;
-                        volumeLayerData.data = new LUKSVolume(cryptVlmPojo);
+                    case LUKS:
+                        LuksRscPojo.LuksVlmPojo luksVlmPojo = (LuksRscPojo.LuksVlmPojo) layerData.objB;
+                        volumeLayerData.data = new LUKSVolume(luksVlmPojo);
                         break;
                     default:
                 }

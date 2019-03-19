@@ -44,7 +44,7 @@ public class DbConstants
     public static final String TBL_LAYER_DRBD_RESOURCE_DEFINITIONS = "LAYER_DRBD_RESOURCE_DEFINITIONS";
     public static final String TBL_LAYER_DRBD_RESOURCES  = "LAYER_DRBD_RESOURCES";
     public static final String TBL_LAYER_DRBD_VOLUME_DEFINITIONS = "LAYER_DRBD_VOLUME_DEFINITIONS";
-    public static final String TBL_LAYER_CRYPT_SETUP_VOLUMES = "LAYER_CRYPT_SETUP_VOLUMES";
+    public static final String TBL_LAYER_LUKS_VOLUMES    = "LAYER_LUKS_VOLUMES";
     public static final String TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS = "LAYER_SWORDFISH_VOLUME_DEFINITIONS";
     public static final String TBL_LAYER_STORAGE_VOLUMES = "LAYER_STORAGE_VOLUMES";
 
@@ -167,7 +167,7 @@ public class DbConstants
     // LAYER_DRBD_RESOURCE_DEFINIITONS column names
     public static final String RESOURCE_NAME_SUFFIX = "RESOURCE_NAME_SUFFIX";
 
-    // LAYER_CRYPT_SETUP_VOLUMES column names
+    // LAYER_LUKS_VOLUMES column names
     public static final String ENCRYPTED_PASSWORD = "ENCRYPTED_PASSWORD";
 
     // LAYER_SWORDFISH_VOLUME_DEFINITIONS column names

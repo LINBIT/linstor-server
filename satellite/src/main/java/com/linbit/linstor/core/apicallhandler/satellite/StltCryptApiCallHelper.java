@@ -12,7 +12,7 @@ import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -54,7 +54,7 @@ public class StltCryptApiCallHelper
         devMgr = devMgrRef;
     }
 
-    public void decryptAllNewCryptSetupVlmKeys(boolean updateDevMgr)
+    public void decryptAllNewLuksVlmKeys(boolean updateDevMgr)
     {
         try
         {
@@ -72,14 +72,14 @@ public class StltCryptApiCallHelper
                         RscLayerObject layerData = rsc.getLayerData(apiCtx);
                         List<RscLayerObject> rscDataList = LayerUtils.getChildLayerDataByKind(
                             layerData,
-                            DeviceLayerKind.CRYPT_SETUP
+                            DeviceLayerKind.LUKS
                         );
 
                         for (RscLayerObject rscData : rscDataList)
                         {
                             for (VlmProviderObject vlmData : rscData.getVlmLayerObjects().values())
                             {
-                                CryptSetupVlmData cryptVlmData = (CryptSetupVlmData) vlmData;
+                                LuksVlmData cryptVlmData = (LuksVlmData) vlmData;
                                 if (cryptVlmData.getDecryptedPassword() == null)
                                 {
                                     byte[] encryptedKey = cryptVlmData.getEncryptedKey();

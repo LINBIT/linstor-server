@@ -7,8 +7,8 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo.CryptVlmPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DrbdDisklessVlmPojo;
@@ -23,12 +23,12 @@ import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.proto.common.CryptRscOuterClass.CryptVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
+import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
@@ -86,20 +86,20 @@ public class ProtoLayerUtils
                 break;
             case LUKS:
                 {
-                    if (protoRscData.hasCrypt())
+                    if (protoRscData.hasLuks())
                     {
-                        CryptSetupRscPojo cryptRscPojo = new CryptSetupRscPojo(
+                        LuksRscPojo luksRscPojo = new LuksRscPojo(
                             protoRscData.getId(),
                             new ArrayList<>(),
                             protoRscData.getRscNameSuffix(),
                             new ArrayList<>()
                         );
-                        for (CryptVlm protoCryptVlm : protoRscData.getCrypt().getCryptVlmsList())
+                        for (LuksVlm protoLuksVlm : protoRscData.getLuks().getLuksVlmsList())
                         {
-                            cryptRscPojo.getVolumeList().add(extractCryptVlm(protoCryptVlm));
+                            luksRscPojo.getVolumeList().add(extractLuksVlm(protoLuksVlm));
                         }
 
-                        ret = cryptRscPojo;
+                        ret = luksRscPojo;
                     }
                     else
                     {
@@ -201,9 +201,9 @@ public class ProtoLayerUtils
             switch (vlmLayerData.getLayerType())
             {
                 case LUKS:
-                    if (vlmLayerData.hasCrypt())
+                    if (vlmLayerData.hasLuks())
                     {
-                        vlmLayerDataApi = extractCryptVlm(vlmLayerData.getCrypt());
+                        vlmLayerDataApi = extractLuksVlm(vlmLayerData.getLuks());
                     }
                     else
                     {
@@ -357,17 +357,17 @@ public class ProtoLayerUtils
         );
     }
 
-    private static CryptVlmPojo extractCryptVlm(CryptVlm protoCryptVlm)
+    private static LuksVlmPojo extractLuksVlm(LuksVlm protoLuksVlm)
     {
-        return new CryptVlmPojo(
-            protoCryptVlm.getVlmNr(),
-            ProtoDeserializationUtils.extractByteArray(protoCryptVlm.getEncryptedPassword()),
-            protoCryptVlm.getDevicePath(),
-            protoCryptVlm.getBackingDevice(),
-            protoCryptVlm.getAllocatedSize(),
-            protoCryptVlm.getUsableSize(),
-            protoCryptVlm.getOpened(),
-            protoCryptVlm.getDiskState()
+        return new LuksVlmPojo(
+            protoLuksVlm.getVlmNr(),
+            ProtoDeserializationUtils.extractByteArray(protoLuksVlm.getEncryptedPassword()),
+            protoLuksVlm.getDevicePath(),
+            protoLuksVlm.getBackingDevice(),
+            protoLuksVlm.getAllocatedSize(),
+            protoLuksVlm.getUsableSize(),
+            protoLuksVlm.getOpened(),
+            protoLuksVlm.getDiskState()
         );
     }
 

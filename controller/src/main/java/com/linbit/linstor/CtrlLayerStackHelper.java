@@ -23,12 +23,12 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupRscData;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
@@ -103,8 +103,8 @@ public class CtrlLayerStackHelper
 
     /**
      * Creates the linstor default stack, which is {@link DeviceLayerKind#DRBD} on an optional
-     * {@link DeviceLayerKind#CRYPT_SETUP} on a {@link DeviceLayerKind#STORAGE} layer.
-     * A CRYPT_SETUP layer is created if at least one {@link VolumeDefinition}
+     * {@link DeviceLayerKind#LUKS} on a {@link DeviceLayerKind#STORAGE} layer.
+     * A LUKS layer is created if at least one {@link VolumeDefinition}
      * has the {@link VolumeDefinition.VlmDfnFlags#ENCRYPTED} flag set.
      * @param accCtxRef
      * @param rscDfnRef
@@ -123,12 +123,12 @@ public class CtrlLayerStackHelper
             }
             else
             {
-                // drbd + (crypt) + storage
-                if (needsCryptLayer(accCtxRef, rscRef))
+                // drbd + (luks) + storage
+                if (needsLuksLayer(accCtxRef, rscRef))
                 {
                     layerStack = Arrays.asList(
                         DeviceLayerKind.DRBD,
-                        DeviceLayerKind.CRYPT_SETUP,
+                        DeviceLayerKind.LUKS,
                         DeviceLayerKind.STORAGE
                     );
                 }
@@ -281,8 +281,8 @@ public class CtrlLayerStackHelper
                     case DRBD:
                         rscObj = ensureDrbdRscLayerCreated(rscDataRef, nodeIdIntRef);
                         break;
-                    case CRYPT_SETUP:
-                        rscObj = ensureCryptRscLayerCreated(rscDataRef, rscObj);
+                    case LUKS:
+                        rscObj = ensureLuksRscLayerCreated(rscDataRef, rscObj);
                         break;
                     case STORAGE:
                         ensureStorageLayerCreated(rscDataRef, rscObj);
@@ -331,10 +331,10 @@ public class CtrlLayerStackHelper
         }
     }
 
-    private boolean needsCryptLayer(AccessContext accCtxRef, Resource rscRef)
+    private boolean needsLuksLayer(AccessContext accCtxRef, Resource rscRef)
         throws AccessDeniedException
     {
-        boolean needsCryptLayer = false;
+        boolean needsLuksLayer = false;
         Iterator<VolumeDefinition> iterateVolumeDefinitions = rscRef.getDefinition().iterateVolumeDfn(apiCtx);
         while (iterateVolumeDefinitions.hasNext())
         {
@@ -342,11 +342,11 @@ public class CtrlLayerStackHelper
 
             if (vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.ENCRYPTED))
             {
-                needsCryptLayer = true;
+                needsLuksLayer = true;
                 break;
             }
         }
-        return needsCryptLayer;
+        return needsLuksLayer;
     }
 
     private boolean hasSwordfishKind(AccessContext accCtxRef, Resource rscRef)
@@ -499,27 +499,27 @@ public class CtrlLayerStackHelper
         return drbdRscData;
     }
 
-    private RscLayerObject ensureCryptRscLayerCreated(
+    private RscLayerObject ensureLuksRscLayerCreated(
         Resource rscRef,
         RscLayerObject parentRscData
     )
         throws ExhaustedPoolException, SQLException, LinStorException
     {
-        CryptSetupRscData cryptRscData = null;
+        LuksRscData luksRscData = null;
         if (parentRscData == null)
         {
-            cryptRscData = rscRef.getLayerData(apiCtx);
+            luksRscData = rscRef.getLayerData(apiCtx);
         }
         else
         {
             if (!parentRscData.getChildren().isEmpty())
             {
-                cryptRscData = (CryptSetupRscData) parentRscData.getChildren().iterator().next();
+                luksRscData = (LuksRscData) parentRscData.getChildren().iterator().next();
             }
         }
-        if (cryptRscData == null)
+        if (luksRscData == null)
         {
-            cryptRscData = layerDataFactory.createCryptSetupRscData(
+            luksRscData = layerDataFactory.createLuksRscData(
                 layerRscIdPool.autoAllocate(),
                 rscRef,
                 "",
@@ -527,15 +527,15 @@ public class CtrlLayerStackHelper
             );
             if (parentRscData == null)
             {
-                rscRef.setLayerData(apiCtx, cryptRscData);
+                rscRef.setLayerData(apiCtx, luksRscData);
             }
             else
             {
-                parentRscData.getChildren().add(cryptRscData);
+                parentRscData.getChildren().add(luksRscData);
             }
         }
 
-        Map<VolumeNumber, CryptSetupVlmData> vlmLayerObjects = cryptRscData.getVlmLayerObjects();
+        Map<VolumeNumber, LuksVlmData> vlmLayerObjects = luksRscData.getVlmLayerObjects();
         List<VolumeNumber> existingVlmsDataToBeDeleted = new ArrayList<>(vlmLayerObjects.keySet());
 
         Iterator<Volume> iterateVolumes = rscRef.iterateVolumes();
@@ -566,12 +566,12 @@ public class CtrlLayerStackHelper
 
                 byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
 
-                CryptSetupVlmData cryptVlmData = layerDataFactory.createCryptSetupVlmData(
+                LuksVlmData luksVlmData = layerDataFactory.createLuksVlmData(
                     vlm,
-                    cryptRscData,
+                    luksRscData,
                     encryptedVlmDfnKey
                 );
-                vlmLayerObjects.put(vlmNr, cryptVlmData);
+                vlmLayerObjects.put(vlmNr, luksVlmData);
             }
             existingVlmsDataToBeDeleted.remove(vlmNr);
         }
@@ -581,7 +581,7 @@ public class CtrlLayerStackHelper
             vlmLayerObjects.remove(vlmNr);
         }
 
-        return cryptRscData;
+        return luksRscData;
     }
 
     private void ensureStorageLayerCreated(

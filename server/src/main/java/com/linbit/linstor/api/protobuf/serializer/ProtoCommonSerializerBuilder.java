@@ -38,8 +38,8 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo.CryptVlmPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
@@ -52,6 +52,8 @@ import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.common.FilterOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
+import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksRsc;
+import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
@@ -78,8 +80,6 @@ import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmOuterClass;
-import com.linbit.linstor.proto.common.CryptRscOuterClass.CryptRsc;
-import com.linbit.linstor.proto.common.CryptRscOuterClass.CryptVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
@@ -881,7 +881,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         LayerType layerType; // WOHOOO checkstyle
         switch (kind)
         {
-            case CRYPT_SETUP:
+            case LUKS:
                 layerType = LayerType.LUKS;
                 break;
             case DRBD:
@@ -912,7 +912,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 {
                     switch (rscDfnLayerDataApi.getLayerKind())
                     {
-                        case CRYPT_SETUP:
+                        case LUKS:
                             // no rsc-dfn related data
                             break;
                         case DRBD:
@@ -949,7 +949,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 {
                     switch (vlmDfnLayerDataApi.getLayerKind())
                     {
-                        case CRYPT_SETUP:
+                        case LUKS:
                             // no vlm-dfn related data
                             break;
                         case DRBD:
@@ -998,8 +998,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 case DRBD:
                     builder.setDrbd(buildDrbdRscData((DrbdRscPojo) rscLayerPojo));
                     break;
-                case CRYPT_SETUP:
-                    builder.setCrypt(buildCryptRscData((CryptSetupRscPojo) rscLayerPojo));
+                case LUKS:
+                    builder.setLuks(buildLuksRscData((LuksRscPojo) rscLayerPojo));
                     break;
                 case STORAGE:
                     builder.setStorage(buildStorageRscData((StorageRscPojo) rscLayerPojo));
@@ -1028,8 +1028,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 {
                     switch (vlmLayerDataApi.getLayerKind())
                     {
-                        case CRYPT_SETUP:
-                            builder.setCrypt(buildCryptVlm((CryptVlmPojo) vlmLayerDataApi));
+                        case LUKS:
+                            builder.setLuks(buildLuksVlm((LuksVlmPojo) vlmLayerDataApi));
                             break;
                         case DRBD:
                             builder.setDrbd(buildDrbdVlm((DrbdVlmPojo) vlmLayerDataApi));
@@ -1121,38 +1121,38 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .build();
         }
 
-        private static CryptRsc buildCryptRscData(CryptSetupRscPojo rscLayerPojoRef)
+        private static LuksRsc buildLuksRscData(LuksRscPojo rscLayerPojoRef)
         {
-            List<CryptVlm> cryptVlms = new ArrayList<>();
-            for (CryptVlmPojo cryptSetupVlmPojo : rscLayerPojoRef.getVolumeList())
+            List<LuksVlm> luksVlms = new ArrayList<>();
+            for (LuksVlmPojo luksVlmPojo : rscLayerPojoRef.getVolumeList())
             {
-                cryptVlms.add(buildCryptVlm(cryptSetupVlmPojo));
+                luksVlms.add(buildLuksVlm(luksVlmPojo));
             }
 
-            return CryptRsc.newBuilder()
-                .addAllCryptVlms(cryptVlms)
+            return LuksRsc.newBuilder()
+                .addAllLuksVlms(luksVlms)
                 .build();
         }
 
-        private static CryptVlm buildCryptVlm(CryptVlmPojo cryptSetupVlmPojo)
+        private static LuksVlm buildLuksVlm(LuksVlmPojo luksVlmPojo)
         {
-            CryptVlm.Builder builder = CryptVlm.newBuilder()
-                .setVlmNr(cryptSetupVlmPojo.getVlmNr())
-                .setEncryptedPassword(ByteString.copyFrom(cryptSetupVlmPojo.getEncryptedPassword()))
-                .setAllocatedSize(cryptSetupVlmPojo.getAllocatedSize())
-                .setUsableSize(cryptSetupVlmPojo.getUsableSize())
-                .setOpened(cryptSetupVlmPojo.isOpened());
-            if (cryptSetupVlmPojo.getDevicePath() != null)
+            LuksVlm.Builder builder = LuksVlm.newBuilder()
+                .setVlmNr(luksVlmPojo.getVlmNr())
+                .setEncryptedPassword(ByteString.copyFrom(luksVlmPojo.getEncryptedPassword()))
+                .setAllocatedSize(luksVlmPojo.getAllocatedSize())
+                .setUsableSize(luksVlmPojo.getUsableSize())
+                .setOpened(luksVlmPojo.isOpened());
+            if (luksVlmPojo.getDevicePath() != null)
             {
-                builder.setDevicePath(cryptSetupVlmPojo.getDevicePath());
+                builder.setDevicePath(luksVlmPojo.getDevicePath());
             }
-            if (cryptSetupVlmPojo.getBackingDevice() != null)
+            if (luksVlmPojo.getBackingDevice() != null)
             {
-                builder.setBackingDevice(cryptSetupVlmPojo.getBackingDevice());
+                builder.setBackingDevice(luksVlmPojo.getBackingDevice());
             }
-            if (cryptSetupVlmPojo.getDiskState() != null)
+            if (luksVlmPojo.getDiskState() != null)
             {
-                builder.setDiskState(cryptSetupVlmPojo.getDiskState());
+                builder.setDiskState(luksVlmPojo.getDiskState());
             }
             return builder.build();
         }

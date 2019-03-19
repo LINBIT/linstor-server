@@ -15,8 +15,8 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo.CryptVlmPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
@@ -26,12 +26,12 @@ import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupRscData;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.drdbdiskless.DrbdDisklessData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -113,8 +113,8 @@ public class LayerRscDataMerger
             case DRBD:
                 extractor = this::restoreDrbdRscData;
                 break;
-            case CRYPT_SETUP:
-                extractor = this::restoreCryptSetupRscData;
+            case LUKS:
+                extractor = this::restoreLuksRscData;
                 break;
             case STORAGE:
                 extractor = this::restoreStorageRscData;
@@ -304,104 +304,104 @@ public class LayerRscDataMerger
         return drbdVlmDfnData;
     }
 
-    private CryptSetupRscData restoreCryptSetupRscData(
+    private LuksRscData restoreLuksRscData(
         Resource rsc,
         RscLayerDataApi rscDataPojo,
         RscLayerObject parent
     )
         throws AccessDeniedException, SQLException
     {
-        CryptSetupRscPojo cryptRscPojo = (CryptSetupRscPojo) rscDataPojo;
+        LuksRscPojo luksRscPojo = (LuksRscPojo) rscDataPojo;
 
-        CryptSetupRscData cryptRscData = null;
+        LuksRscData luksRscData = null;
         if (parent == null)
         {
-            cryptRscData = rsc.getLayerData(apiCtx);
+            luksRscData = rsc.getLayerData(apiCtx);
         }
         else
         {
-            cryptRscData = findChild(parent, rscDataPojo.getId());
+            luksRscData = findChild(parent, rscDataPojo.getId());
         }
 
-        if (cryptRscData == null)
+        if (luksRscData == null)
         {
-            cryptRscData = layerDataFactory.createCryptSetupRscData(
-                cryptRscPojo.getId(),
+            luksRscData = layerDataFactory.createLuksRscData(
+                luksRscPojo.getId(),
                 rsc,
-                cryptRscPojo.getRscNameSuffix(),
+                luksRscPojo.getRscNameSuffix(),
                 parent
             );
             if (parent == null)
             {
-                rsc.setLayerData(apiCtx, cryptRscData);
+                rsc.setLayerData(apiCtx, luksRscData);
             }
             else
             {
-                updateChildsParent(cryptRscData, parent);
+                updateChildsParent(luksRscData, parent);
             }
         }
 
-        Set<VolumeNumber> vlmNrsToDelete = new HashSet<>(cryptRscData.getVlmLayerObjects().keySet());
+        Set<VolumeNumber> vlmNrsToDelete = new HashSet<>(luksRscData.getVlmLayerObjects().keySet());
 
         Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
         while (iterateVolumes.hasNext())
         {
             Volume vlm = iterateVolumes.next();
-            restoreCryptVlm(vlm, cryptRscData, cryptRscPojo.getVolumeList());
+            restoreLuksVlm(vlm, luksRscData, luksRscPojo.getVolumeList());
 
             vlmNrsToDelete.remove(vlm.getVolumeDefinition().getVolumeNumber());
         }
 
         for (VolumeNumber vlmNrToDelete : vlmNrsToDelete)
         {
-            cryptRscData.remove(vlmNrToDelete);
+            luksRscData.remove(vlmNrToDelete);
         }
-        return cryptRscData;
+        return luksRscData;
     }
 
-    private void restoreCryptVlm(
+    private void restoreLuksVlm(
         Volume vlm,
-        CryptSetupRscData cryptRscData,
-        List<CryptVlmPojo> vlmPojos
+        LuksRscData luksRscData,
+        List<LuksVlmPojo> vlmPojos
     )
         throws SQLException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-        CryptVlmPojo vlmPojo = null;
+        LuksVlmPojo vlmPojo = null;
         {
-            for (CryptVlmPojo cryptVlmPojo : vlmPojos)
+            for (LuksVlmPojo luksVlmPojo : vlmPojos)
             {
-                if (cryptVlmPojo.getVlmNr() == vlmNr.value)
+                if (luksVlmPojo.getVlmNr() == vlmNr.value)
                 {
-                    vlmPojo = cryptVlmPojo;
+                    vlmPojo = luksVlmPojo;
                     break;
                 }
             }
             if (vlmPojo == null)
             {
-                throw new ImplementationError("No CryptVlmPojo found for " + vlm);
+                throw new ImplementationError("No LuksVlmPojo found for " + vlm);
             }
         }
 
-        CryptSetupVlmData cryptVlmData = cryptRscData.getVlmLayerObjects().get(vlmNr);
-        if (cryptVlmData == null)
+        LuksVlmData luksVlmData = luksRscData.getVlmLayerObjects().get(vlmNr);
+        if (luksVlmData == null)
         {
-            cryptVlmData = layerDataFactory.createCryptSetupVlmData(
+            luksVlmData = layerDataFactory.createLuksVlmData(
                 vlm,
-                cryptRscData,
+                luksRscData,
                 vlmPojo.getEncryptedPassword()
             );
-            cryptRscData.getVlmLayerObjects().put(vlmNr, cryptVlmData);
+            luksRscData.getVlmLayerObjects().put(vlmNr, luksVlmData);
         }
         else
         {
-            cryptVlmData.setAllocatedSize(vlmPojo.getAllocatedSize());
-            cryptVlmData.setBackingDevice(vlmPojo.getBackingDevice());
-            cryptVlmData.setDevicePath(vlmPojo.getDevicePath());
-            cryptVlmData.setOpened(vlmPojo.isOpened());
-            cryptVlmData.setDiskState(vlmPojo.getDiskState());
-            cryptVlmData.setUsableSize(vlmPojo.getUsableSize());
+            luksVlmData.setAllocatedSize(vlmPojo.getAllocatedSize());
+            luksVlmData.setBackingDevice(vlmPojo.getBackingDevice());
+            luksVlmData.setDevicePath(vlmPojo.getDevicePath());
+            luksVlmData.setOpened(vlmPojo.isOpened());
+            luksVlmData.setDiskState(vlmPojo.getDiskState());
+            luksVlmData.setUsableSize(vlmPojo.getUsableSize());
         }
     }
 

@@ -3,7 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.linstor.CryptSetupLayerGenericDbDriver;
+import com.linbit.linstor.LuksLayerGenericDbDriver;
 import com.linbit.linstor.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.FreeSpaceMgr;
 import com.linbit.linstor.FreeSpaceMgrName;
@@ -130,7 +130,7 @@ public class GenericDbDriver implements DatabaseDriver
     private final KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriver;
     private final ResourceLayerIdGenericDbDriver rscLayerObjDriver;
     private final DrbdLayerGenericDbDriver drbdLayerDriver;
-    private final CryptSetupLayerGenericDbDriver cryptLayerDriver;
+    private final LuksLayerGenericDbDriver luksLayerDriver;
     private final StorageLayerGenericDbDriver storageLayerDriver;
 
     private final CoreModule.NodesMap nodesMap;
@@ -160,7 +160,7 @@ public class GenericDbDriver implements DatabaseDriver
         KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriverRef,
         ResourceLayerIdGenericDbDriver rscLayerObjDriverRef,
         DrbdLayerGenericDbDriver drbdLayerDriverRef,
-        CryptSetupLayerGenericDbDriver cryptLayerDriverRef,
+        LuksLayerGenericDbDriver luksLayerDriverRef,
         StorageLayerGenericDbDriver storageLayerDriverRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -188,7 +188,7 @@ public class GenericDbDriver implements DatabaseDriver
         keyValueStoreDataGenericDbDriver = keyValueStoreDataGenericDbDriverRef;
         rscLayerObjDriver = rscLayerObjDriverRef;
         drbdLayerDriver = drbdLayerDriverRef;
-        cryptLayerDriver = cryptLayerDriverRef;
+        luksLayerDriver = luksLayerDriverRef;
         storageLayerDriver = storageLayerDriverRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
@@ -495,8 +495,8 @@ public class GenericDbDriver implements DatabaseDriver
                             parent
                         );
                         break;
-                    case CRYPT_SETUP:
-                        rscLayerObjectPair = cryptLayerDriver.load(
+                    case LUKS:
+                        rscLayerObjectPair = luksLayerDriver.load(
                             rsc,
                             rli.id,
                             rli.rscSuffix,

@@ -390,7 +390,7 @@ public class StltApiCallHandler
                 {
                     stltSecObj.setCryptKey(cryptKey);
 
-                    vlmDfnHandler.decryptAllNewCryptSetupVlmKeys(true);
+                    vlmDfnHandler.decryptAllNewLuksVlmKeys(true);
                 }
 
                 whiteListPropsReconfigurator.reconfigure();
@@ -1172,7 +1172,7 @@ public class StltApiCallHandler
             {
                 stltSecObj.setCryptKey(cryptKey);
 
-                vlmDfnHandler.decryptAllNewCryptSetupVlmKeys(true);
+                vlmDfnHandler.decryptAllNewLuksVlmKeys(true);
             }
         }
     }

@@ -2,7 +2,7 @@ package com.linbit.linstor.dbdrivers;
 
 import com.google.inject.AbstractModule;
 import com.linbit.linstor.SatelliteDbDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -23,7 +23,7 @@ import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.satellite.SatelliteCryptSetupDriver;
+import com.linbit.linstor.dbdrivers.satellite.SatelliteLuksDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdLayerDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteResourceLayerIdDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteNiDriver;
@@ -78,7 +78,7 @@ public class SatelliteDbModule extends AbstractModule
 
         bind(ResourceLayerIdDatabaseDriver.class).to(SatelliteResourceLayerIdDriver.class);
         bind(DrbdLayerDatabaseDriver.class).to(SatelliteDrbdLayerDriver.class);
-        bind(CryptSetupLayerDatabaseDriver.class).to(SatelliteCryptSetupDriver.class);
+        bind(LuksLayerDatabaseDriver.class).to(SatelliteLuksDriver.class);
         bind(StorageLayerDatabaseDriver.class).to(SatelliteStorageLayerDriver.class);
         bind(SwordfishLayerDatabaseDriver.class).to(SatelliteSwordfishLayerDriver.class);
     }

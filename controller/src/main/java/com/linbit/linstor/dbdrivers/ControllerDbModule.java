@@ -2,7 +2,7 @@ package com.linbit.linstor.dbdrivers;
 
 import com.google.inject.AbstractModule;
 
-import com.linbit.linstor.CryptSetupLayerGenericDbDriver;
+import com.linbit.linstor.LuksLayerGenericDbDriver;
 import com.linbit.linstor.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
@@ -23,7 +23,7 @@ import com.linbit.linstor.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
@@ -82,7 +82,7 @@ public class ControllerDbModule extends AbstractModule
 
         bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
         bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
-        bind(CryptSetupLayerDatabaseDriver.class).to(CryptSetupLayerGenericDbDriver.class);
+        bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
         bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
         bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
     }

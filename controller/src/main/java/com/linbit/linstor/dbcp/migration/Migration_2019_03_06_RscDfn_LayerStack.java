@@ -94,7 +94,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
                             {
                                 if (encrypted)
                                 {
-                                    stack.add("CRYPT_SETUP");
+                                    stack.add("LUKS");
                                 }
                                 stack.add("STORAGE");
                             }
@@ -103,7 +103,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
                                 stack.add("DRBD");
                                 if (encrypted)
                                 {
-                                    stack.add("CRYPT_SETUP");
+                                    stack.add("LUKS");
                                 }
                                 stack.add("STORAGE");
                             }
@@ -145,7 +145,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
                             stack.add("DRBD");
                             if (encrypted)
                             {
-                                stack.add("CRYPT_SETUP");
+                                stack.add("LUKS");
                             }
                             stack.add("STORAGE");
 

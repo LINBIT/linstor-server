@@ -7,19 +7,19 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.List;
 
-public class CryptSetupRscPojo implements RscLayerDataApi
+public class LuksRscPojo implements RscLayerDataApi
 {
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
 
-    private final List<CryptVlmPojo> vlms;
+    private final List<LuksVlmPojo> vlms;
 
-    public CryptSetupRscPojo(
+    public LuksRscPojo(
         int idRef,
         List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
-        List<CryptVlmPojo> vlmsRef
+        List<LuksVlmPojo> vlmsRef
     )
     {
         id = idRef;
@@ -31,7 +31,7 @@ public class CryptSetupRscPojo implements RscLayerDataApi
     @Override
     public DeviceLayerKind getLayerKind()
     {
-        return DeviceLayerKind.CRYPT_SETUP;
+        return DeviceLayerKind.LUKS;
     }
 
     @Override
@@ -53,12 +53,12 @@ public class CryptSetupRscPojo implements RscLayerDataApi
     }
 
     @Override
-    public List<CryptVlmPojo> getVolumeList()
+    public List<LuksVlmPojo> getVolumeList()
     {
         return vlms;
     }
 
-    public static class CryptVlmPojo implements VlmLayerDataApi
+    public static class LuksVlmPojo implements VlmLayerDataApi
     {
         private final int vlmNr;
         private final byte[] encryptedPassword;
@@ -69,7 +69,7 @@ public class CryptSetupRscPojo implements RscLayerDataApi
         private final boolean isOpen;
         private final String diskState;
 
-        public CryptVlmPojo(
+        public LuksVlmPojo(
             int vlmNrRef,
             byte[] encryptedPasswordRef,
             String devicePathRef,
@@ -144,7 +144,7 @@ public class CryptSetupRscPojo implements RscLayerDataApi
         @Override
         public DeviceLayerKind getLayerKind()
         {
-            return DeviceLayerKind.CRYPT_SETUP;
+            return DeviceLayerKind.LUKS;
         }
     }
 }

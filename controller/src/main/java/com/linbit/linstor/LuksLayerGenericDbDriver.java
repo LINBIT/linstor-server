@@ -3,23 +3,23 @@ package com.linbit.linstor;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupRscData;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.ENCRYPTED_PASSWORD;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_CRYPT_SETUP_VOLUMES;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_LUKS_VOLUMES;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 
 import javax.inject.Inject;
@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDriver
+public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
 {
     // no special table for resource-data
     private static final String VLM_ALL_FIELDS =
@@ -42,21 +42,21 @@ public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDr
 
     private static final String SELECT_ALL_VLMS_BY_RSC_ID =
         " SELECT " + VLM_ALL_FIELDS +
-        " FROM " + TBL_LAYER_CRYPT_SETUP_VOLUMES +
+        " FROM " + TBL_LAYER_LUKS_VOLUMES +
         " WHERE " + LAYER_RESOURCE_ID + " = ?";
 
     private static final String INSERT_VLM =
-        " INSERT INTO " + TBL_LAYER_CRYPT_SETUP_VOLUMES +
+        " INSERT INTO " + TBL_LAYER_LUKS_VOLUMES +
         " ( " + VLM_ALL_FIELDS + " ) " +
         " VALUES ( " + VLM_ALL_FIELDS.replaceAll("[^, ]+", "?") + " )";
 
     private static final String DELETE_VLM =
-        " DELETE FROM " + TBL_LAYER_CRYPT_SETUP_VOLUMES +
+        " DELETE FROM " + TBL_LAYER_LUKS_VOLUMES +
         " WHERE " + LAYER_RESOURCE_ID + " = ? AND " +
                     VLM_NR            + " = ? ";
 
     private static final String UPDATE_VLM_PW =
-        " UPDATE " + TBL_LAYER_CRYPT_SETUP_VOLUMES +
+        " UPDATE " + TBL_LAYER_LUKS_VOLUMES +
         " SET " + ENCRYPTED_PASSWORD + " = ? " +
         " WHERE " + LAYER_RESOURCE_ID + " = ? AND " +
                     VLM_NR            + " = ? ";
@@ -71,7 +71,7 @@ public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDr
     private final VlmPwDriver vlmPwDriver;
 
     @Inject
-    public CryptSetupLayerGenericDbDriver(
+    public LuksLayerGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,
@@ -99,7 +99,7 @@ public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDr
      * @throws SQLException
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public Pair<CryptSetupRscData, Set<RscLayerObject>> load(
+    public Pair<LuksRscData, Set<RscLayerObject>> load(
         Resource rsc,
         int id,
         String rscSuffixRef,
@@ -109,8 +109,8 @@ public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDr
     {
         Pair<DrbdRscData, Set<RscLayerObject>> ret;
         Set<RscLayerObject> childrenRscDataList = new HashSet<>();
-        Map<VolumeNumber, CryptSetupVlmData> vlmDataMap = new TreeMap<>();
-        CryptSetupRscData rscData = new CryptSetupRscData(
+        Map<VolumeNumber, LuksVlmData> vlmDataMap = new TreeMap<>();
+        LuksRscData rscData = new LuksRscData(
             id,
             rsc,
             rscSuffixRef,
@@ -143,7 +143,7 @@ public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDr
                     }
                     vlmDataMap.put(
                         vlmNr,
-                        new CryptSetupVlmData(
+                        new LuksVlmData(
                             rsc.getVolume(vlmNr),
                             rscData,
                             resultSet.getString(ENCRYPTED_PASSWORD).getBytes(),
@@ -160,51 +160,51 @@ public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDr
     }
 
     @Override
-    public void persist(CryptSetupRscData cryptRscDataRef) throws SQLException
+    public void persist(LuksRscData luksRscDataRef) throws SQLException
     {
         // no-op - there is no special database table.
-        // this method only exists if CryptSetupRscData will get a database table in future.
+        // this method only exists if LuksRscData will get a database table in future.
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Override
-    public void persist(CryptSetupVlmData cryptVlmDataRef) throws SQLException
+    public void persist(LuksVlmData luksVlmDataRef) throws SQLException
     {
-        errorReporter.logTrace("Creating CryptSetupVlmData %s", getId(cryptVlmDataRef));
+        errorReporter.logTrace("Creating LuksVlmData %s", getId(luksVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
         {
-            stmt.setInt(1, cryptVlmDataRef.getRscLayerObject().getRscLayerId());
-            stmt.setInt(2, cryptVlmDataRef.getVlmNr().value);
-            stmt.setBytes(3, cryptVlmDataRef.getEncryptedKey());
+            stmt.setInt(1, luksVlmDataRef.getRscLayerObject().getRscLayerId());
+            stmt.setInt(2, luksVlmDataRef.getVlmNr().value);
+            stmt.setBytes(3, luksVlmDataRef.getEncryptedKey());
 
             stmt.executeUpdate();
-            errorReporter.logTrace("CryptSetupVlmData created %s", getId(cryptVlmDataRef));
+            errorReporter.logTrace("LuksVlmData created %s", getId(luksVlmDataRef));
         }
     }
 
     @Override
-    public void delete(CryptSetupRscData cryptRscDataRef) throws SQLException
+    public void delete(LuksRscData luksRscDataRef) throws SQLException
     {
         // no-op - there is no special database table.
-        // this method only exists if DrbdVlmData will get a database table in future.
+        // this method only exists if LuksRscData will get a database table in future.
     }
 
     @Override
-    public void delete(CryptSetupVlmData cryptVlmDataRef) throws SQLException
+    public void delete(LuksVlmData luksVlmDataRef) throws SQLException
     {
-        errorReporter.logTrace("Deleting CryptSetupVlmData %s", getId(cryptVlmDataRef));
+        errorReporter.logTrace("Deleting LuksVlmData %s", getId(luksVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
         {
-            stmt.setInt(1, cryptVlmDataRef.getRscLayerObject().getRscLayerId());
-            stmt.setInt(2, cryptVlmDataRef.getVlmNr().value);
+            stmt.setInt(1, luksVlmDataRef.getRscLayerObject().getRscLayerId());
+            stmt.setInt(2, luksVlmDataRef.getVlmNr().value);
 
             stmt.executeUpdate();
-            errorReporter.logTrace("CryptSetupVlmData deleted %s", getId(cryptVlmDataRef));
+            errorReporter.logTrace("LuksVlmData deleted %s", getId(luksVlmDataRef));
         }
     }
 
     @Override
-    public SingleColumnDatabaseDriver<CryptSetupVlmData, byte[]> getVlmEncryptedPasswordDriver()
+    public SingleColumnDatabaseDriver<LuksVlmData, byte[]> getVlmEncryptedPasswordDriver()
     {
         return vlmPwDriver;
     }
@@ -220,35 +220,35 @@ public class CryptSetupLayerGenericDbDriver implements CryptSetupLayerDatabaseDr
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(CryptSetupVlmData cryptVlmDataRef)
+    private String getId(LuksVlmData luksVlmDataRef)
     {
-        return "(LayerRscId=" + cryptVlmDataRef.getRscLayerId() +
-            ", VlmNr=" + cryptVlmDataRef.getVlmNr().value +
+        return "(LayerRscId=" + luksVlmDataRef.getRscLayerId() +
+            ", VlmNr=" + luksVlmDataRef.getVlmNr().value +
             ")";
     }
 
-    private class VlmPwDriver implements SingleColumnDatabaseDriver<CryptSetupVlmData, byte[]>
+    private class VlmPwDriver implements SingleColumnDatabaseDriver<LuksVlmData, byte[]>
     {
         @SuppressWarnings("checkstyle:magicnumber")
         @Override
-        public void update(CryptSetupVlmData cryptVlmDataRef, byte[] encryptedPassword)
+        public void update(LuksVlmData luksVlmDataRef, byte[] encryptedPassword)
             throws SQLException
         {
             errorReporter.logTrace(
-                "Updating CryptSetupVlmData's encrypted password %s",
-                getId(cryptVlmDataRef)
+                "Updating LuksVlmData's encrypted password %s",
+                getId(luksVlmDataRef)
             );
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_VLM_PW))
             {
                 stmt.setBytes(1, encryptedPassword);
-                stmt.setInt(2, cryptVlmDataRef.getRscLayerObject().getRscLayerId());
-                stmt.setInt(3, cryptVlmDataRef.getVlmNr().value);
+                stmt.setInt(2, luksVlmDataRef.getRscLayerObject().getRscLayerId());
+                stmt.setInt(3, luksVlmDataRef.getVlmNr().value);
 
                 stmt.executeUpdate();
             }
             errorReporter.logTrace(
-                "CryptSetupVlmData's secret updated %s",
-                getId(cryptVlmDataRef)
+                "LuksVlmData's secret updated %s",
+                getId(luksVlmDataRef)
             );
         }
     }

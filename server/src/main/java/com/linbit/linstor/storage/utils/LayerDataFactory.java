@@ -9,19 +9,19 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupRscData;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.drdbdiskless.DrbdDisklessData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -51,7 +51,7 @@ public class LayerDataFactory
 {
     private final ResourceLayerIdDatabaseDriver resourceLayerIdDatabaseDriver;
 
-    private final CryptSetupLayerDatabaseDriver cryptSetupDbDriver;
+    private final LuksLayerDatabaseDriver luksDbDriver;
     private final DrbdLayerDatabaseDriver drbdDbDriver;
     private final StorageLayerDatabaseDriver storageDbDriver;
     private final SwordfishLayerDatabaseDriver swordfishDbDriver;
@@ -65,7 +65,7 @@ public class LayerDataFactory
     @Inject
     public LayerDataFactory(
         ResourceLayerIdDatabaseDriver resourceLayerIdDatabaseDriverRef,
-        CryptSetupLayerDatabaseDriver cryptSetupDbDriverRef,
+        LuksLayerDatabaseDriver luksDbDriverRef,
         DrbdLayerDatabaseDriver drbdDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
         SwordfishLayerDatabaseDriver swordfishDbDriverRef,
@@ -77,7 +77,7 @@ public class LayerDataFactory
     )
     {
         resourceLayerIdDatabaseDriver = resourceLayerIdDatabaseDriverRef;
-        cryptSetupDbDriver = cryptSetupDbDriverRef;
+        luksDbDriver = luksDbDriverRef;
         drbdDbDriver = drbdDbDriverRef;
         storageDbDriver = storageDbDriverRef;
         swordfishDbDriver = swordfishDbDriverRef;
@@ -213,7 +213,7 @@ public class LayerDataFactory
         return drbdDisklessData;
     }
 
-    public CryptSetupRscData createCryptSetupRscData(
+    public LuksRscData createLuksRscData(
         int rscLayerId,
         Resource rsc,
         String rscNameSuffix,
@@ -221,39 +221,39 @@ public class LayerDataFactory
     )
         throws SQLException
     {
-        CryptSetupRscData cryptSetupRscData = new CryptSetupRscData(
+        LuksRscData luksRscData = new LuksRscData(
             rscLayerId,
             rsc,
             rscNameSuffix,
             parentData,
             new HashSet<>(),
             new TreeMap<>(),
-            cryptSetupDbDriver,
+            luksDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(cryptSetupRscData);
-        cryptSetupDbDriver.persist(cryptSetupRscData);
-        return cryptSetupRscData;
+        resourceLayerIdDatabaseDriver.persist(luksRscData);
+        luksDbDriver.persist(luksRscData);
+        return luksRscData;
     }
 
-    public CryptSetupVlmData createCryptSetupVlmData(
+    public LuksVlmData createLuksVlmData(
         Volume vlm,
-        CryptSetupRscData rscData,
+        LuksRscData rscData,
         byte[] password
     )
         throws SQLException
     {
-        CryptSetupVlmData cryptSetupVlmData = new CryptSetupVlmData(
+        LuksVlmData luksVlmData = new LuksVlmData(
             vlm,
             rscData,
             password,
-            cryptSetupDbDriver,
+            luksDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        cryptSetupDbDriver.persist(cryptSetupVlmData);
-        return cryptSetupVlmData;
+        luksDbDriver.persist(luksVlmData);
+        return luksVlmData;
     }
 
     public StorageRscData createStorageRscData(

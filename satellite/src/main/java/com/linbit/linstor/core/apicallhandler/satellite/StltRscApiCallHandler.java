@@ -623,7 +623,7 @@ class StltRscApiCallHandler
 
             layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getLayerData());
 
-            cryptHelper.decryptAllNewCryptSetupVlmKeys(false);
+            cryptHelper.decryptAllNewLuksVlmKeys(false);
 
             for (Resource otherRsc : otherRscs)
             {

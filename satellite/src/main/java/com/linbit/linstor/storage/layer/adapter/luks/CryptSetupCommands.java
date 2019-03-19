@@ -1,4 +1,4 @@
-package com.linbit.linstor.storage.layer.adapter.cryptsetup;
+package com.linbit.linstor.storage.layer.adapter.luks;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
@@ -7,8 +7,8 @@ import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.data.adapter.cryptsetup.CryptSetupVlmData;
-import com.linbit.linstor.storage.utils.Crypt;
+import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
+import com.linbit.linstor.storage.utils.Luks;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
@@ -21,7 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Singleton
-public class CryptSetupCommands implements Crypt
+public class CryptSetupCommands implements Luks
 {
     private static final String CRYPTSETUP = "cryptsetup";
 
@@ -49,7 +49,7 @@ public class CryptSetupCommands implements Crypt
     }
 
     @Override
-    public String createCryptDevice(
+    public String createLuksDevice(
         String dev,
         byte[] cryptKey,
         String identifier
@@ -98,11 +98,11 @@ public class CryptSetupCommands implements Crypt
                 exc
             );
         }
-        return getCryptVolumePath(identifier);
+        return getLuksVolumePath(identifier);
     }
 
     @Override
-    public void openCryptDevice(String dev, String targetIdentifier, byte[] cryptKey) throws StorageException
+    public void openLuksDevice(String dev, String targetIdentifier, byte[] cryptKey) throws StorageException
     {
         try
         {
@@ -111,7 +111,7 @@ public class CryptSetupCommands implements Crypt
             // open cryptsetup
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
-                CRYPTSETUP, "open", dev, CRYPT_PREFIX + targetIdentifier
+                CRYPTSETUP, "open", dev, LUKS_PREFIX + targetIdentifier
             );
             outputStream.write(cryptKey);
             outputStream.write('\n');
@@ -137,17 +137,17 @@ public class CryptSetupCommands implements Crypt
     }
 
     @Override
-    public void closeCryptDevice(String identifier) throws StorageException
+    public void closeLuksDevice(String identifier) throws StorageException
     {
         try
         {
             final ExtCmd extCommand = extCmdFactory.create();
 
-            OutputData outputData = extCommand.exec(CRYPTSETUP, "close", CRYPT_PREFIX + identifier);
+            OutputData outputData = extCommand.exec(CRYPTSETUP, "close", LUKS_PREFIX + identifier);
             ExtCmdUtils.checkExitCode(
                 outputData,
                 StorageException::new,
-                "Failed to close dm-crypt device '" + CRYPT_PREFIX + identifier + "'"
+                "Failed to close dm-crypt device '" + LUKS_PREFIX + identifier + "'"
             );
         }
         catch (IOException ioExc)
@@ -166,7 +166,7 @@ public class CryptSetupCommands implements Crypt
         }
     }
 
-    public boolean hasLuksFormat(CryptSetupVlmData vlmData) throws StorageException
+    public boolean hasLuksFormat(LuksVlmData vlmData) throws StorageException
     {
         boolean hasLuks = false;
 
@@ -210,7 +210,7 @@ public class CryptSetupCommands implements Crypt
 
             // just to make sure that "foo" does not match "foobar"
             Pattern pattern = Pattern.compile(
-                "^" + Pattern.quote(CRYPT_PREFIX + identifier) + "\\s+"
+                "^" + Pattern.quote(LUKS_PREFIX + identifier) + "\\s+"
             );
 
             String stdOut = new String(outputData.stdoutData);
@@ -235,8 +235,8 @@ public class CryptSetupCommands implements Crypt
     }
 
     @Override
-    public String getCryptVolumePath(String identifier)
+    public String getLuksVolumePath(String identifier)
     {
-        return "/dev/mapper/" + CRYPT_PREFIX + identifier;
+        return "/dev/mapper/" + LUKS_PREFIX + identifier;
     }
 }

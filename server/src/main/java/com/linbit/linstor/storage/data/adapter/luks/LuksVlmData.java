@@ -1,13 +1,13 @@
-package com.linbit.linstor.storage.data.adapter.cryptsetup;
+package com.linbit.linstor.storage.data.adapter.luks;
 
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.pojo.CryptSetupRscPojo.CryptVlmPojo;
-import com.linbit.linstor.dbdrivers.interfaces.CryptSetupLayerDatabaseDriver;
+import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
-import com.linbit.linstor.storage.interfaces.layers.cryptsetup.CryptSetupVlmObject;
+import com.linbit.linstor.storage.interfaces.layers.luks.LuksVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -21,14 +21,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class CryptSetupVlmData extends BaseTransactionObject implements CryptSetupVlmObject
+public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
 {
     // unmodifiable data, once initialized
     private final Volume vlm;
     private final RscLayerObject rscData;
 
     // persisted, serialized, ctrl and stlt
-    private final TransactionSimpleObject<CryptSetupVlmData, byte[]> encryptedPassword;
+    private final TransactionSimpleObject<LuksVlmData, byte[]> encryptedPassword;
 
     // not persisted, serialized, ctrl and stlt
     private long allocatedSize;
@@ -48,11 +48,11 @@ public class CryptSetupVlmData extends BaseTransactionObject implements CryptSet
 
     // TODO maybe introduce States like "OPEN", "CLOSED", "UNINITIALIZED" or something...
 
-    public CryptSetupVlmData(
+    public LuksVlmData(
         Volume vlmRef,
-        CryptSetupRscData rscDataRef,
+        LuksRscData rscDataRef,
         byte[] encryptedPasswordRef,
-        CryptSetupLayerDatabaseDriver dbDriver,
+        LuksLayerDatabaseDriver dbDriver,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -181,7 +181,7 @@ public class CryptSetupVlmData extends BaseTransactionObject implements CryptSet
     @Override
     public DeviceLayerKind getLayerKind()
     {
-        return DeviceLayerKind.CRYPT_SETUP;
+        return DeviceLayerKind.LUKS;
     }
 
     @Override
@@ -230,9 +230,9 @@ public class CryptSetupVlmData extends BaseTransactionObject implements CryptSet
     }
 
     @Override
-    public CryptVlmPojo asPojo(AccessContext accCtxRef)
+    public LuksVlmPojo asPojo(AccessContext accCtxRef)
     {
-        return new CryptVlmPojo(
+        return new LuksVlmPojo(
             getVlmNr().value,
             encryptedPassword.get(),
             devicePath,

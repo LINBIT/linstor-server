@@ -32,7 +32,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
     private static final String TBL_LAYER_RESOURCE_IDS = "LAYER_RESOURCE_IDS";
 
     private static final String LAYER_KIND_DRBD = "DRBD";
-    private static final String LAYER_KIND_CRYPT_SETUP = "CRYPT_SETUP";
+    private static final String LAYER_KIND_LUKS = "LUKS";
     private static final String LAYER_KIND_STORAGE = "STORAGE";
 
     private static final String PROVIDER_KIND_DRBD_DISKLESS = "DRBD_DISKLESS";
@@ -87,8 +87,8 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
         "INSERT INTO LAYER_DRBD_RESOURCES " +
         "(LAYER_RESOURCE_ID, PEER_SLOTS, AL_STRIPES, AL_STRIPE_SIZE, FLAGS, NODE_ID) " +
         "VALUES (?, ?, ?, ?, ?, ?)";
-    private static final String INSERT_CRYPT_VLM =
-        "INSERT INTO LAYER_CRYPT_SETUP_VOlUMES " +
+    private static final String INSERT_LUKS_VLM =
+        "INSERT INTO LAYER_LUKS_VOlUMES " +
         "(LAYER_RESOURCE_ID, VLM_NR, ENCRYPTED_PASSWORD) " +
         "VALUES (?, ?, ?)";
     private static final String INSERT_SF_VLM_DFN =
@@ -254,14 +254,14 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
 
                             int parentRscLayerId = drbdRscLayerId;
 
-                            // crypt setup tables
+                            // luks tables
                             if ((vlmDfnFlags & FLAG_VLM_DFN_ENCRYPTED) == FLAG_VLM_DFN_ENCRYPTED)
                             {
-                                int cryptRscLayerId = getOrCreateLayerRscIdEntry(
+                                int luksRscLayerId = getOrCreateLayerRscIdEntry(
                                     connection,
                                     nodeName,
                                     rscName,
-                                    LAYER_KIND_CRYPT_SETUP,
+                                    LAYER_KIND_LUKS,
                                     parentRscLayerId
                                 );
 
@@ -273,12 +273,12 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
                                 );
                                 executeUpdate(
                                     connection,
-                                    INSERT_CRYPT_VLM,
-                                    cryptRscLayerId,
+                                    INSERT_LUKS_VLM,
+                                    luksRscLayerId,
                                     vlmNr,
                                     encryptedPw
                                 );
-                                parentRscLayerId = cryptRscLayerId;
+                                parentRscLayerId = luksRscLayerId;
                             }
 
                             int storRscLayerId = getOrCreateLayerRscIdEntry(

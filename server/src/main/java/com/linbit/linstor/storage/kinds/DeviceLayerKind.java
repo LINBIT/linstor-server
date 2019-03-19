@@ -12,7 +12,7 @@ public enum DeviceLayerKind
     //        false,
     //        StartupVerifications.DRBD_PROXY
     //    ),
-    CRYPT_SETUP(
+    LUKS(
         StartupVerifications.CRYPT_SETUP
     ),
     STORAGE();

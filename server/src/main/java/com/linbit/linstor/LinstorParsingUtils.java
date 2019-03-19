@@ -258,7 +258,7 @@ public class LinstorParsingUtils
             case "CRYPT": // fall-through
             case "CRYPT_SETUP": // fall-through
             case "LUKS":
-                kind = DeviceLayerKind.CRYPT_SETUP;
+                kind = DeviceLayerKind.LUKS;
                 break;
             case "STORAGE": // fall-through
             case "LVM": // fall-through
