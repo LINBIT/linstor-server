@@ -990,7 +990,7 @@ paths:
       summary: migrate a resource to another node
       operationId: resourceMigrateDisk
       description: |
-        migrate a resource to another node without reducing the redundency count
+        migrate a resource to another node without reducing the redundancy count
 
       responses:
         '200':
@@ -2293,6 +2293,12 @@ components:
         name:
           type: string
           example: rsc1
+        external_name:
+          type: string
+          description: |
+            External name can be used to have native resource names.
+            If you need to store a non Linstor compatible resource name use this field
+            and Linstor will generate a compatible name.
         props:
           $ref: '#/components/schemas/Properties'
         flags:
