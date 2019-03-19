@@ -65,8 +65,8 @@ paths:
               net_interfaces:
               - name: default
                 address: 10.0.0.2
-                stlt_port: '3366'
-                stlt_encryption_type: Plain
+                satellite_port: 3366
+                satellite_encryption_type: Plain
         description: Node to add to Linstor
   /v1/nodes/{node}:
     parameters:
@@ -196,7 +196,7 @@ paths:
       description: |
         Create a netinterface on a node
 
-        If stlt_port and stlt_encryption_type are given
+        If satellite_port and satellite_encryption_type are given
         the netinterface can also work as connection to the controller
       requestBody:
         content:
@@ -2190,10 +2190,10 @@ components:
         address:
           type: string
           example: 10.0.0.2
-        stlt_port:
+        satellite_port:
           type: integer
           example: 3366
-        stlt_encryption_type:
+        satellite_encryption_type:
           type: string
           example: Plain
           enum:

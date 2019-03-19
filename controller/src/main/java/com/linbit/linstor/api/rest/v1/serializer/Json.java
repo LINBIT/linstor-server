@@ -59,8 +59,8 @@ public class Json
     {
         public String name;
         public String address;
-        public Integer stlt_port;
-        public String stlt_encryption_type;
+        public Integer satellite_port;
+        public String satellite_encryption_type;
 
         public NetInterfaceData()
         {
@@ -72,14 +72,14 @@ public class Json
             address = netIfApi.getAddress();
             if (netIfApi.isUsableAsSatelliteConnection())
             {
-                stlt_encryption_type = netIfApi.getSatelliteConnectionEncryptionType();
-                stlt_port = netIfApi.getSatelliteConnectionPort();
+                satellite_encryption_type = netIfApi.getSatelliteConnectionEncryptionType();
+                satellite_port = netIfApi.getSatelliteConnectionPort();
             }
         }
 
         public NetInterface.NetInterfaceApi toApi()
         {
-            return new NetInterfacePojo(null, name, address, stlt_port, stlt_encryption_type);
+            return new NetInterfacePojo(null, name, address, satellite_port, satellite_encryption_type);
         }
     }
 

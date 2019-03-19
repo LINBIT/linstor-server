@@ -294,8 +294,8 @@ public class Nodes
                 nodeName,
                 netInterfaceData.name,
                 netInterfaceData.address,
-                netInterfaceData.stlt_port,
-                netInterfaceData.stlt_encryption_type
+                netInterfaceData.satellite_port,
+                netInterfaceData.satellite_encryption_type
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
@@ -318,8 +318,8 @@ public class Nodes
                 nodeName,
                 netIfName,
                 netInterfaceData.address,
-                netInterfaceData.stlt_port,
-                netInterfaceData.stlt_encryption_type
+                netInterfaceData.satellite_port,
+                netInterfaceData.satellite_encryption_type
             );
 
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
