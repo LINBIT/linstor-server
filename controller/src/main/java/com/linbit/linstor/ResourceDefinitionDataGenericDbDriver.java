@@ -209,11 +209,14 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         Map<NodeName, Resource> rscMap = new TreeMap<>();
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
 
+        String externalName = resultSet.getString(RD_EXT_NAME);
+        byte[] externalNameBytes = externalName != null ? externalName.getBytes() : null;
+
         resDfn = new ResourceDefinitionData(
             java.util.UUID.fromString(resultSet.getString(RD_UUID)),
             objProt,
             resourceName,
-            resultSet.getString(RD_EXT_NAME).getBytes(),
+            externalNameBytes,
             resultSet.getLong(RD_FLAGS),
             GenericDbDriver.asDevLayerKindList(GenericDbDriver.getAsStringList(resultSet, RD_LAYERS)),
             this,
