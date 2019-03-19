@@ -25,6 +25,8 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -111,9 +113,13 @@ public class ResourceDefinitions
             List<Json.ResourceDefinitionLayerData> layerDataList = rscDfnCreate.resource_definition.layer_data;
             // currently we ignore the possible payload, only extract the layer-stack
 
+            byte[] externalNameBytes = rscDfnCreate.resource_definition.external_name != null ?
+                rscDfnCreate.resource_definition.external_name.getBytes(StandardCharsets.UTF_8) : null;
+
+
             ApiCallRc apiCallRc = ctrlApiCallHandler.createResourceDefinition(
                 rscDfnCreate.resource_definition.name,
-                null, // TODO: ADD EXTERNAL NAME HERE ISTEAD OF NULL
+                externalNameBytes,
                 rscDfnCreate.drbd_port,
                 rscDfnCreate.drbd_secret,
                 rscDfnCreate.drbd_transport_type,

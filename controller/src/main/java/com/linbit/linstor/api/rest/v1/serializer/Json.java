@@ -30,6 +30,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -161,7 +162,8 @@ public class Json
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceDefinitionData
     {
-        public String name;
+        public String name = "";
+        public String external_name = null;
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
         public List<VolumeDefinitionData> volume_definitions; // do not use for now
@@ -175,6 +177,10 @@ public class Json
         public ResourceDefinitionData(ResourceDefinition.RscDfnApi rscDfnApi)
         {
             name = rscDfnApi.getResourceName();
+            if (rscDfnApi.getExternalName() != null)
+            {
+                external_name = new String(rscDfnApi.getExternalName(), StandardCharsets.UTF_8);
+            }
             flags = ResourceDefinition.RscDfnFlags.toStringList(rscDfnApi.getFlags());
             props = rscDfnApi.getProps();
 
