@@ -59,17 +59,7 @@ public class Json
 
     private static String getLayerTypeString(DeviceLayerKind deviceLayerKind)
     {
-        String str;
-        switch (deviceLayerKind)
-        {
-            case LUKS:
-                str = "LUKS";
-                break;
-                default:
-                    str = deviceLayerKind.name();
-                    break;
-        }
-        return str;
+        return deviceLayerKind.name();
     }
 
 
@@ -203,7 +193,7 @@ public class Json
             for (Pair<String, RscDfnLayerDataApi> layer : rscDfnApi.getLayerData())
             {
                 ResourceDefinitionLayerData rscDfnLayerData = new ResourceDefinitionLayerData();
-                rscDfnLayerData.type = layer.objA.equals(DeviceLayerKind.LUKS.name()) ? "LUKS" : layer.objA;
+                rscDfnLayerData.type = layer.objA;
 
                 if (layer.objB != null)
                 {
@@ -299,8 +289,7 @@ public class Json
             for (Pair<String, VlmDfnLayerDataApi> layer : vlmDfnApi.getVlmDfnLayerData())
             {
                 VolumeDefinitionLayerData volumeDefinitionLayerData = new VolumeDefinitionLayerData();
-                volumeDefinitionLayerData.type =
-                    layer.objA.equals(DeviceLayerKind.LUKS.name()) ? "LUKS" : layer.objA;
+                volumeDefinitionLayerData.type = layer.objA;
 
                 if (layer.objB != null)
                 {
