@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1.serializer;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NodeName;
@@ -199,7 +200,10 @@ public class Json
                             DrbdRscPojo.DrbdRscDfnPojo drbdRscDfnPojo = (DrbdRscPojo.DrbdRscDfnPojo) layer.objB;
                             rscDfnLayerData.data = new DrbdResourceDefinitionLayerData(drbdRscDfnPojo);
                             break;
+                        case LUKS:
+                        case STORAGE:
                         default:
+                            throw new ImplementationError("Not implemented Kind case");
                     }
                 }
                 layer_data.add(rscDfnLayerData);
@@ -295,7 +299,10 @@ public class Json
                             DrbdRscPojo.DrbdVlmDfnPojo drbdVlmDfnPojo = (DrbdRscPojo.DrbdVlmDfnPojo) layer.objB;
                             volumeDefinitionLayerData.data = new DrbdVolumeDefinitionLayerData(drbdVlmDfnPojo);
                             break;
+                        case LUKS:
+                        case STORAGE:
                         default:
+                            throw new ImplementationError("Not implemented Kind case");
                     }
                 }
                 layer_data.add(volumeDefinitionLayerData);

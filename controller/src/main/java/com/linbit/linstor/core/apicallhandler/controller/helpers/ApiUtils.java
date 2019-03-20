@@ -3,10 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.helpers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.utils.UuidUtils;
-
 import static com.linbit.linstor.api.ApiConsts.API_UUID_NAME_PREFIX;
 
 import java.util.UUID;
@@ -98,6 +95,7 @@ public class ApiUtils
                     // to other characters that are valid
                     rscName = translateGenInput(genInput);
                     break;
+                case FAIL:
                 default:
                     throw new ImplementationError(
                         "Unhandled enumeration value " + genMode.name()
