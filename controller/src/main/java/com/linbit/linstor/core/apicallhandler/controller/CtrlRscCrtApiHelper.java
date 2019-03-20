@@ -40,6 +40,7 @@ import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -76,6 +77,7 @@ import reactor.core.publisher.Mono;
 public class CtrlRscCrtApiHelper
 {
     private final AccessContext apiCtx;
+    private final ErrorReporter errorReporter;
     private final Props stltConf;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
@@ -90,6 +92,7 @@ public class CtrlRscCrtApiHelper
     @Inject
     CtrlRscCrtApiHelper(
         @ApiContext AccessContext apiCtxRef,
+        ErrorReporter errorReporterRef,
         @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
@@ -103,6 +106,7 @@ public class CtrlRscCrtApiHelper
     )
     {
         apiCtx = apiCtxRef;
+        errorReporter = errorReporterRef;
         stltConf = stltConfRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
@@ -151,6 +155,12 @@ public class CtrlRscCrtApiHelper
         ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
         List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
+
+        if (!layerStack.isEmpty() && !layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
+        {
+            layerStack.add(DeviceLayerKind.STORAGE);
+            warnAddedStorageLayer(responses);
+        }
 
         ResourceData rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
         Props rscProps = ctrlPropsHelper.getProps(rsc);
@@ -230,6 +240,22 @@ public class CtrlRscCrtApiHelper
         }
 
         return new ApiCallRcWith<>(responses, rsc);
+    }
+
+    private void warnAddedStorageLayer(ApiCallRcImpl responsesRef)
+    {
+        String warnMsg = "The layerstack was extended with STORAGE kind.";
+        errorReporter.logWarning(warnMsg);
+
+        responsesRef.addEntry(
+            ApiCallRcImpl.entryBuilder(
+                ApiConsts.WARN_STORAGE_KIND_ADDED,
+                warnMsg
+            )
+            .setDetails("Layer stacks have to be based on STORAGE kind. Layers configured to be diskless\n" +
+                "will not use the additional STORAGE layer.")
+            .build()
+        );
     }
 
     /**

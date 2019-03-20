@@ -137,9 +137,17 @@ public class CtrlRscDfnApiCallHandler
             requireRscDfnMapChangeAccess();
 
             List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrList);
-            if (layerStack.contains(DeviceLayerKind.LUKS))
+            if (!layerStack.isEmpty())
             {
-                warnIfMasterKeyIsNotSet(responses);
+                if (layerStack.contains(DeviceLayerKind.LUKS))
+                {
+                    warnIfMasterKeyIsNotSet(responses);
+                }
+                if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
+                {
+                    warnAddedStorageLayer(responses);
+                    layerStack.add(DeviceLayerKind.STORAGE);
+                }
             }
 
             ResourceDefinitionData rscDfn = createRscDfn(
@@ -209,6 +217,22 @@ public class CtrlRscDfnApiCallHandler
                 .build()
             );
         }
+    }
+
+    private void warnAddedStorageLayer(ApiCallRcImpl responsesRef)
+    {
+        String warnMsg = "The layerstack was extended with STORAGE kind.";
+        errorReporter.logWarning(warnMsg);
+
+        responsesRef.addEntry(
+            ApiCallRcImpl.entryBuilder(
+                ApiConsts.WARN_STORAGE_KIND_ADDED,
+                warnMsg
+            )
+            .setDetails("Layer stacks have to be based on STORAGE kind. Layers configured to be diskless\n" +
+                "will not use the additional STORAGE layer.")
+            .build()
+        );
     }
 
     public ApiCallRc modifyRscDfn(
