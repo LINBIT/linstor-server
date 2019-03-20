@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
+import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CMDLINE_ERROR;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 
 public class LinstorConfig
@@ -103,7 +104,7 @@ public class LinstorConfig
                         dbtype,
                         String.join("', '", supportedDbs))
                 );
-                System.exit(1);
+                System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
             return null;
         }
@@ -136,7 +137,7 @@ public class LinstorConfig
             {
                 System.err.println(String.format("Unable to parse `database.cfg` file '%s':", dbCfgFile.toString()));
                 System.err.println(ioExc.getMessage());
-                System.exit(1);
+                System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
             return null;
         }
@@ -170,7 +171,7 @@ public class LinstorConfig
             {
                 System.err.println(String.format("Unable to parse `database.cfg` file '%s':", dbCfgFile.toString()));
                 System.err.println(ioExc.getMessage());
-                System.exit(1);
+                System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
 
             return null;
@@ -204,19 +205,19 @@ public class LinstorConfig
                 catch (IOException ioExc)
                 {
                     System.err.println(String.format("Error reading sql script '%s'", sqlFile.toString()));
-                    System.exit(1);
+                    System.exit(EXIT_CODE_CMDLINE_ERROR);
                 }
                 catch (SQLException sqlExc)
                 {
                     System.err.println(sqlExc.getMessage());
-                    System.exit(1);
+                    System.exit(EXIT_CODE_CMDLINE_ERROR);
                 }
             }
             catch (IOException ioExc)
             {
                 System.err.println(String.format("Unable to parse `database.cfg` file '%s':", dbCfgFile.toString()));
                 System.err.println(ioExc.getMessage());
-                System.exit(1);
+                System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
 
             return null;
