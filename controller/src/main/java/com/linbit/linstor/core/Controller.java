@@ -257,13 +257,13 @@ public final class Controller
     private void initializeRestServer(Injector injector) throws InvalidKeyException
     {
         boolean restEnabled = Boolean.parseBoolean(
-            ctrlConf.getPropWithDefault(ApiConsts.KEY_REST_ENABLED, ApiConsts.NAMESPC_REST, "true")
+            ctrlConf.getPropWithDefault(ApiConsts.KEY_ENABLED, ApiConsts.NAMESPC_REST, "true")
         );
         String restListenAddr = ctrlConf.getPropWithDefault(
-            ApiConsts.KEY_REST_LISTEN_ADDR, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_LISTEN_ADDRESS
+            ApiConsts.KEY_BIND_ADDR, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_LISTEN_ADDRESS
         );
         int restListenPort = Integer.parseInt(
-            ctrlConf.getPropWithDefault(ApiConsts.KEY_REST_LISTEN_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT)
+            ctrlConf.getPropWithDefault(ApiConsts.KEY_BIND_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT)
         );
 
         if (restEnabled)
