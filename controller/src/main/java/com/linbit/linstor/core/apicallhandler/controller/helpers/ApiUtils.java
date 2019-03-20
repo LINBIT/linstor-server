@@ -96,6 +96,7 @@ public class ApiUtils
                     rscName = translateGenInput(genInput);
                     break;
                 case FAIL:
+                    // fall-through
                 default:
                     throw new ImplementationError(
                         "Unhandled enumeration value " + genMode.name()
