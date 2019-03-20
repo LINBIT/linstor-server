@@ -272,13 +272,23 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Storage-Pool'
+                  $ref: '#/components/schemas/StoragePool'
     post:
       tags:
       - developers
       summary: creates a new storage pool on this node
       operationId: nodeStoragePoolCreate
-      description: Creates a new storage pool on this node
+      description: |
+        Creates a new storage pool on this node.
+
+        `provider_kind` has to be specified and additional to that
+        the linked `StorDriver` property that has the value to the backing pool:
+
+          * `LVM`: `StorDriver/LvmVg`
+          * `LVM_THIN`: `StorDriver/LvmVg` and `StorDriver/ThinPool`
+          * `ZFS`: `StorDriver/ZPool`
+          * `ZFS_THIN`: `StorDriver/ZPoolThin`
+          * `DISKLESS`: Does not need a property as it has no backing pool
       responses:
         '201':
           description: storage pool created
@@ -286,6 +296,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoragePool'
+            example:
+              storage_pool_name: DfltStorPool
+              provider_kind: LVM_THIN
+              props:
+                StorDriver/LvmVg: mylvmpool
+                StorDriver/ThinPool: thin
   /v1/nodes/{node}/storage-pools/{storagepool}:
     parameters:
     - $ref: '#/components/parameters/Node'
@@ -2212,7 +2233,7 @@ components:
         - ZFS_THIN
         - SWORDFISH_TARGET
         - SWORDFISH_INITIATOR
-    Storage-Pool:
+    StoragePool:
       type: object
       required:
       - storage_pool_name
@@ -2229,12 +2250,8 @@ components:
           $ref: '#/components/schemas/Properties'
         static_traits:
           type: object
-          properties:
-            key:
-              type: string
-            value:
-              type: string
-          description: read only
+          readOnly: true
+          description: read only map of static storage pool traits
         free_capacity:
           type: integer
           format: int64
