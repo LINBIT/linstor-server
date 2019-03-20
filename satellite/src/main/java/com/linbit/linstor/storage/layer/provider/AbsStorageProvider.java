@@ -76,6 +76,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
     protected final DeviceProviderKind kind;
 
     private final Set<StorPool> changedStorPools = new HashSet<>();
+    private boolean prepared;
 
     public AbsStorageProvider(
         ErrorReporter errorReporterRef,
@@ -128,6 +129,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
         changedStoragePoolStrings.clear();
         postRunVolumeNotifications.clear();
+        prepared = false;
     }
 
     @SuppressWarnings("unchecked")
@@ -142,6 +144,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         infoListCache.putAll(getInfoListImpl(vlmDataList, snapVlms));
 
         updateStates(vlmDataList, snapVlms);
+        prepared = true;
     }
 
     @Override
@@ -153,6 +156,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
     )
         throws AccessDeniedException, SQLException, StorageException
     {
+        if (!prepared)
+        {
+            throw new ImplementationError("Process was called without previous prepare()");
+        }
         List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) rawVlmDataList;
 
         Map<Boolean, List<SnapshotVolume>> groupedSnapshotVolumesByDeletingFlag = snapshotVlms.stream()

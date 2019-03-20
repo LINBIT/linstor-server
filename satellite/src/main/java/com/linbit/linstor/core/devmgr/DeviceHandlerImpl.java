@@ -234,7 +234,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private void processResourcesAndTheirSnapshots(
         Collection<Snapshot> snapshots,
-        Collection<Resource> rootResources,
+        Collection<Resource> resourceList,
         Map<ResourceName, Set<Snapshot>> snapshotsByRscName,
         List<Snapshot> unprocessedSnapshots,
         List<Resource> rscListNotifyApplied,
@@ -243,7 +243,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     )
         throws ImplementationError
     {
-        for (Resource rsc : rootResources)
+        for (Resource rsc : resourceList)
         {
             ResourceName rscName = rsc.getDefinition().getName();
 
