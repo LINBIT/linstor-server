@@ -265,7 +265,7 @@ public class Json
     public static class VolumeDefinitionData
     {
         public Integer volume_number;
-        public Long size;
+        public Long size_kib;
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
 
@@ -278,7 +278,7 @@ public class Json
         public VolumeDefinitionData(VolumeDefinition.VlmDfnApi vlmDfnApi)
         {
             volume_number = vlmDfnApi.getVolumeNr();
-            size = vlmDfnApi.getSize();
+            size_kib = vlmDfnApi.getSize();
             props = vlmDfnApi.getProps();
             flags = FlagsHelper.toStringList(
                 VolumeDefinition.VlmDfnFlags.class,
@@ -315,7 +315,7 @@ public class Json
             return new VlmDfnPojo(
                 null,
                 volume_number,
-                size,
+                size_kib,
                 FlagsHelper.fromStringList(VolumeDefinition.VlmDfnFlags.class, flags),
                 props,
                 layerData
@@ -333,7 +333,7 @@ public class Json
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class VolumeDefinitionModifyData
     {
-        public Long size;
+        public Long size_kib;
         public Map<String, String> override_props = Collections.emptyMap();
         public Set<String> delete_props = Collections.emptySet();
         public Set<String> delete_namespaces = Collections.emptySet();
@@ -537,8 +537,8 @@ public class Json
         public String device_path;
         public String backing_device;
         public String meta_disk;
-        public Long allocated_size;
-        public Long usable_size;
+        public Long allocated_size_kib;
+        public Long usable_size_kib;
         public String disk_state;
 
         public DrbdVolumeData()
@@ -551,8 +551,8 @@ public class Json
             device_path = drbdVlmPojo.getDevicePath();
             backing_device = drbdVlmPojo.getBackingDisk();
             meta_disk = drbdVlmPojo.getMetaDisk();
-            allocated_size = drbdVlmPojo.getAllocatedSize();
-            usable_size = drbdVlmPojo.getUsableSize();
+            allocated_size_kib = drbdVlmPojo.getAllocatedSize();
+            usable_size_kib = drbdVlmPojo.getUsableSize();
             disk_state = drbdVlmPojo.getDiskState();
         }
     }
@@ -563,8 +563,8 @@ public class Json
         public Integer volume_number;
         public String device_path;
         public String backing_device;
-        public Long allocated_size;
-        public Long usable_size;
+        public Long allocated_size_kib;
+        public Long usable_size_kib;
         public Boolean opened;
         public String disk_state;
 
@@ -577,8 +577,8 @@ public class Json
             volume_number = luksVlmPojo.getVlmNr();
             device_path = luksVlmPojo.getDevicePath();
             backing_device = luksVlmPojo.getBackingDevice();
-            allocated_size = luksVlmPojo.getAllocatedSize();
-            usable_size = luksVlmPojo.getUsableSize();
+            allocated_size_kib = luksVlmPojo.getAllocatedSize();
+            usable_size_kib = luksVlmPojo.getUsableSize();
             opened = luksVlmPojo.isOpened();
             disk_state = luksVlmPojo.getDiskState();
         }
@@ -589,8 +589,8 @@ public class Json
     {
         public Integer volume_number;
         public String device_path;
-        public Long allocated_size;
-        public Long usable_size;
+        public Long allocated_size_kib;
+        public Long usable_size_kib;
         public String disk_state;
 
         // ignore provider for now
@@ -603,8 +603,8 @@ public class Json
         {
             volume_number = vlmLayerDataApi.getVlmNr();
             device_path = vlmLayerDataApi.getDevicePath();
-            allocated_size = vlmLayerDataApi.getAllocatedSize();
-            usable_size = vlmLayerDataApi.getUsableSize();
+            allocated_size_kib = vlmLayerDataApi.getAllocatedSize();
+            usable_size_kib = vlmLayerDataApi.getUsableSize();
             disk_state = vlmLayerDataApi.getDiskState();
         }
     }
@@ -623,8 +623,8 @@ public class Json
         public String storage_pool_name;
         public String provider_kind;
         public String device_path;
-        public Long allocated_size;
-        public Long usable_size;
+        public Long allocated_size_kib;
+        public Long usable_size_kib;
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
 
@@ -642,7 +642,7 @@ public class Json
             provider_kind = deviceProviderKindAsString(vlmApi.getStorPoolDeviceProviderKind());
 
             device_path = vlmApi.getDevicePath();
-            allocated_size = vlmApi.getAllocatedSize().orElse(null);
+            allocated_size_kib = vlmApi.getAllocatedSize().orElse(null);
 
             props = vlmApi.getVlmProps();
             flags = FlagsHelper.toStringList(Volume.VlmFlags.class, vlmApi.getFlags());
@@ -772,7 +772,7 @@ public class Json
     public static class SnapshotVolumeDfnData
     {
         public Integer volume_number;
-        public long size;
+        public long size_kib;
 
         public SnapshotVolumeDfnData()
         {
@@ -781,7 +781,7 @@ public class Json
         public SnapshotVolumeDfnData(SnapshotVolumeDefinition.SnapshotVlmDfnApi snapshotVlmDfnApi)
         {
             volume_number = snapshotVlmDfnApi.getVolumeNr();
-            size = snapshotVlmDfnApi.getSize();
+            size_kib = snapshotVlmDfnApi.getSize();
         }
     }
 
@@ -872,7 +872,7 @@ public class Json
     public static class Candidate
     {
         public String storage_pool;
-        public Long max_volume_size;
+        public Long max_volume_size_kib;
         public List<String> node_names;
         public boolean all_thin;
 
@@ -883,7 +883,7 @@ public class Json
         public Candidate(MaxVlmSizeCandidatePojo pojo)
         {
             storage_pool = pojo.getStorPoolDfnApi().getName();
-            max_volume_size = pojo.getMaxVlmSize();
+            max_volume_size_kib = pojo.getMaxVlmSize();
             node_names = pojo.getNodeNames();
             all_thin = pojo.areAllThin();
         }

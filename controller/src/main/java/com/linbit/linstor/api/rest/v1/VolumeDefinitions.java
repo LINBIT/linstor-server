@@ -200,7 +200,7 @@ public class VolumeDefinitions
                 null,
                 rscName,
                 vlmNr,
-                vlmDfnData.size,
+                vlmDfnData.size_kib,
                 vlmDfnData.override_props,
                 vlmDfnData.delete_props)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN, request));

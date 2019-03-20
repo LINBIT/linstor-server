@@ -624,7 +624,7 @@ paths:
               $ref: '#/components/schemas/VolumeDefinitionCreate'
             example:
               volume_definition:
-                size: 262144
+                size_kib: 262144
   /v1/resource-definitions/{resource}/volume-definitions/{volume_number}:
     parameters:
     - $ref: '#/components/parameters/Resource'
@@ -2011,7 +2011,7 @@ paths:
                         storage_pool:
                           type: string
                           example: DfltStorPool
-                        max_volume_size:
+                        max_volume_size_kib:
                           type: integer
                           format: uint64
                           description: maximum size in KiB
@@ -2373,12 +2373,12 @@ components:
     VolumeDefinition:
       type: object
       required:
-      - size
+      - size_kib
       properties:
         volume_number:
           type: integer
           format: int32
-        size:
+        size_kib:
           type: integer
           format: int64
           description: Size of the volume in Kibi.
@@ -2405,7 +2405,7 @@ components:
     VolumeDefinitionModify:
       type: object
       properties:
-        size:
+        size_kib:
           type: integer
           format: int64
         override_props:
@@ -2521,10 +2521,10 @@ components:
           description: block device used by drbd
         meta_disk:
           type: string
-        allocated_size:
+        allocated_size_kib:
           type: integer
           format: uint64
-        usable_size:
+        usable_size_kib:
           type: integer
           format: uint64
         disk_state:
@@ -2543,10 +2543,10 @@ components:
         backing_device:
           type: string
           description: block device used by luks
-        allocated_size:
+        allocated_size_kib:
           type: integer
           format: uint64
-        usable_size:
+        usable_size_kib:
           type: integer
           format: uint64
         disk_state:
@@ -2564,10 +2564,10 @@ components:
         device_path:
           type: string
           description: block device path
-        allocated_size:
+        allocated_size_kib:
           type: integer
           format: uint64
-        usable_size:
+        usable_size_kib:
           type: integer
           format: uint64
         disk_state:
@@ -2597,10 +2597,10 @@ components:
           $ref: '#/components/schemas/ProviderKind'
         device_path:
           type: string
-        allocated_size:
+        allocated_size_kib:
           type: integer
           format: uint64
-        usable_size:
+        usable_size_kib:
           type: integer
           format: uint64
         props:
@@ -2737,7 +2737,7 @@ components:
         volume_number:
           type: integer
           format: uint32
-        size:
+        size_kib:
           type: integer
           format: uint64
           description: Volume size in KiB
