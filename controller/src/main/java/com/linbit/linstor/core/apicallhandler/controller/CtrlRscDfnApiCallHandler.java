@@ -445,6 +445,11 @@ public class CtrlRscDfnApiCallHandler
             }
         }
 
+        if (!layerStack.isEmpty())
+        {
+            CtrlRscCrtApiHelper.ensureLayerStackIsAllowed(layerStack);
+        }
+
         ResourceDefinitionData rscDfn;
         try
         {

@@ -358,6 +358,11 @@ public class CtrlRscCrtApiHelper
         List<DeviceLayerKind> layerStackRef
     )
     {
+        if (!layerStackRef.isEmpty())
+        {
+            ensureLayerStackIsAllowed(layerStackRef);
+        }
+
         ResourceData rsc;
         try
         {
@@ -401,6 +406,18 @@ public class CtrlRscCrtApiHelper
         return rsc;
     }
 
+    static void ensureLayerStackIsAllowed(List<DeviceLayerKind> layerStackRef)
+    {
+        if (!LayerUtils.isLayerKindStackAllowed(layerStackRef))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_LAYER_STACK,
+                    "The layer stack " + layerStackRef + " is invalid"
+                )
+            );
+        }
+    }
 
     private VolumeDefinitionData loadVlmDfn(
         ResourceDefinitionData rscDfn,
