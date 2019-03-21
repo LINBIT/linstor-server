@@ -30,10 +30,8 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
@@ -48,9 +46,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.utils.UuidUtils;
 
-import static com.linbit.linstor.api.ApiConsts.API_UUID_NAME_PREFIX;
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
@@ -396,12 +393,15 @@ public class CtrlRscDfnApiCallHandler
             throw new ImplementationError("Resource name must not be null!");
         }
 
-        ResourceName rscName;
+        ResourceName rscName = null;
         if (!rscNameStr.equals(""))
         {
             if (extName != null && extName.length != 0)
             {
-                throw new ApiException("Either a resource name or an external name must be present, but not both!");
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_EXT_NAME,
+                    "Either a resource name or an external name must be present, but not both!")
+                );
             }
             else
             {
@@ -412,33 +412,30 @@ public class CtrlRscDfnApiCallHandler
         {
             if (extName == null)
             {
-                throw new ApiException("Either a resource name or an external name must be present!");
-            }
-            else if (extName.length == 0)
-            {
-                String uuidStr = API_UUID_NAME_PREFIX + UuidUtils.asUuid(extName).toString().toUpperCase();
-                rscName = new ResourceName(uuidStr);
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_MISSING_EXT_NAME,
+                    "Either a resource name or an external name must be present!")
+                );
             }
             else
             {
-                rscName = ApiUtils.createResourceName(extName);
                 try
                 {
+                    rscName = createResourceName(extName, resourceDefinitionRepository.getMapForView(peerAccCtx.get()));
+
                     if (resourceDefinitionRepository.getMapForViewExtName(peerAccCtx.get()).containsKey(extName))
                     {
-                        throw new ApiException("External name already taken!");
-                    }
-                    if (resourceDefinitionRepository.getMapForView(peerAccCtx.get()).containsKey(rscName))
-                    {
-                        String uuidStr = API_UUID_NAME_PREFIX + UUID.randomUUID().toString().toUpperCase();
-                        rscName = new ResourceName(uuidStr);
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_EXISTS_EXT_NAME,
+                            "External name " + new String(extName) + " already taken!")
+                        );
                     }
                 }
                 catch (AccessDeniedException accDeniedExc)
                 {
                     throw new ApiAccessDeniedException(
                         accDeniedExc,
-                        "getMapForView " + getRscDfnDescriptionInline(rscName.toString()),
+                        "getMapForView / getMapForViewExtName",
                         ApiConsts.FAIL_ACC_DENIED_RSC_DFN
                     );
                 }
