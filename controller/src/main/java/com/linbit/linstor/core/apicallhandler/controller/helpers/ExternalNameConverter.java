@@ -102,6 +102,7 @@ public class ExternalNameConverter
                         // to other characters that are valid
                         rscName = translateGenInput(genInput);
                         break;
+                    case FAIL: // fall-through
                     default:
                         throw new ImplementationError("Unhandled enumeration value " + genMode.name());
                 }
