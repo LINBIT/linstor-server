@@ -8,6 +8,7 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
@@ -27,6 +28,8 @@ public interface CommonSerializer
     interface CommonSerializerBuilder
     {
         byte[] build();
+
+        CommonSerializerBuilder authError(ApiCallRcImpl apiCallRcRef);
 
         CommonSerializerBuilder bytes(byte[] bytes);
 

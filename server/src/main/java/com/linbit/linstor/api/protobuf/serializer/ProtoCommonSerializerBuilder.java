@@ -33,11 +33,13 @@ import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -92,6 +94,7 @@ import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthErrorOuterClass.MsgIntAuthError;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
@@ -214,6 +217,25 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         try
         {
             baos.write(bytes);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder authError(ApiCallRcImpl apiCallRc)
+    {
+        try
+        {
+            MsgIntAuthError.Builder builder = MsgIntAuthError.newBuilder();
+            for (ApiCallResponseOuterClass.ApiCallResponse protoMsg : serializeApiCallRc(apiCallRc))
+            {
+                builder.addResponses(protoMsg);
+            }
+            builder.build().writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

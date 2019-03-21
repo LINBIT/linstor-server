@@ -90,7 +90,7 @@ public class CtrlAuth implements ApiCall
             // whatever happened should be in the apiCallRc
             controllerPeer.sendMessage(
                 commonSerializer.onewayBuilder(InternalApiConsts.API_AUTH_ERROR)
-                    .apiCallRcSeries(apiCallRc)
+                    .authError(apiCallRc)
                     .build()
             );
         }

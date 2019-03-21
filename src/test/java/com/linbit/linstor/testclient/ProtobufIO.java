@@ -10,7 +10,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
-import com.linbit.linstor.proto.responses.MsgGenericResponseOuterClass.MsgGenericResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -434,8 +433,7 @@ public class ProtobufIO
                     {
                         while (bais.available() > 0)
                         {
-                            MsgGenericResponse genericResponse = MsgGenericResponse.parseDelimitedFrom(bais);
-                            ApiCallResponse response = genericResponse.getResponse();
+                            ApiCallResponse response = ApiCallResponse.parseDelimitedFrom(bais);
                             long retCode = response.getRetCode();
                             String message = response.getMessage();
                             String cause = response.getCause();

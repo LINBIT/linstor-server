@@ -10,10 +10,11 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
-import com.linbit.linstor.proto.responses.MsgGenericResponseOuterClass.MsgGenericResponse;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthErrorOuterClass.MsgIntAuthError;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  *
@@ -44,18 +45,22 @@ public class IntAuthError implements ApiCall
     {
         Peer client = clientProvider.get();
         client.setAuthenticated(false);
-        MsgGenericResponse msgGenericResponse = MsgGenericResponse.parseDelimitedFrom(msgDataIn);
-        ApiCallResponse response = msgGenericResponse.getResponse();
-        if (response.getRetCode() == InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH)
+        MsgIntAuthError msgGenericResponse = MsgIntAuthError.parseDelimitedFrom(msgDataIn);
+        List<ApiCallResponse> responseList = msgGenericResponse.getResponsesList();
+
+        for (ApiCallResponse response : responseList)
         {
-            client.setConnectionStatus(Peer.ConnectionStatus.HOSTNAME_MISMATCH);
-        }
-        else
-        {
-            client.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
+            if (response.getRetCode() == InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH)
+            {
+                client.setConnectionStatus(Peer.ConnectionStatus.HOSTNAME_MISMATCH);
+            }
+            else
+            {
+                client.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
+            }
+            errorReporter.logError("Satellite authentication error: " + response.getCause());
         }
 
-        errorReporter.logError("Satellite authentication error: " + response.getCause());
     }
 
 }
