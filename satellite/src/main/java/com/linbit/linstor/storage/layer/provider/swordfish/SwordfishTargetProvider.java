@@ -132,7 +132,6 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
 
                 // DELETE to volumes collection
                 restClient.execute(
-                    null,
                     vlmData,
                     RestOp.DELETE,
                     sfUrl + vlmOdataId,
@@ -184,7 +183,6 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
         String volumeCollUrl = sfUrl + SF_BASE + SF_STORAGE_SERVICES + "/" + sfStorSvcId + SF_VOLUMES;
         String sfStorPoolId = getSfStorPoolId(storPool);
         RestResponse<Map<String, Object>> crtVlmResp = restClient.execute(
-            null,
             vlmData,
             RestOp.POST,
             volumeCollUrl,
@@ -270,7 +268,6 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
             Thread.sleep(pollVlmCrtTimeout);
 
             RestResponse<Map<String, Object>> crtVlmTaskResp = restClient.execute(
-                null,
                 vlmData,
                 RestOp.GET,
                 sfUrl  + taskMonitorLocation,

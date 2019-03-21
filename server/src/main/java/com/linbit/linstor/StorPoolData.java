@@ -18,8 +18,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
 import javax.inject.Provider;
 
 import java.sql.SQLException;
@@ -54,7 +52,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         UUID id,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
-        @RemoveAfterDevMgrRework
         DeviceProviderKind providerKindRef,
         FreeSpaceTracker freeSpaceTrackerRef,
         StorPoolDataDatabaseDriver dbDriverRef,

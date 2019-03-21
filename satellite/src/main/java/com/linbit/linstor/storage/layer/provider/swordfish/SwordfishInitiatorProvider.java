@@ -283,7 +283,6 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
             Thread.sleep(pollAttachVlmTimeout);
 
             RestResponse<Map<String, Object>> attachRscInfoResp = restClient.execute(
-                null,
                 vlmData,
                 RestOp.GET,
                 sfUrl  + attachInfoAction,
@@ -342,7 +341,6 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
             SF_COMPOSED_NODE_ATTACH_RESOURCE;
 
         restClient.execute(
-            null,
             vlmData, // compatibility only...
             RestOp.POST,
             sfUrl + attachAction,
@@ -454,7 +452,6 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         return path;
     }
 
-
     @SuppressWarnings("unchecked")
     private String detatchSfVlm(SfInitiatorData vlmData)
         throws IOException, StorageException
@@ -471,7 +468,6 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
                 SF_COMPOSED_NODE_DETACH_RESOURCE;
             // POST to Node/$id/Action/ComposedNode.DetachResource
             RestResponse<Map<String, Object>> detachVlmResp = restClient.execute(
-                null,
                 vlmData,
                 RestOp.POST,
                 sfUrl + detachAction,

@@ -300,7 +300,6 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
                 expectedRcs.add(HttpHeader.HTTP_NOT_FOUND);
             }
             rscInfo = restClient.execute(
-                null,
                 vlmData,
                 RestOp.GET,
                 sfUrl + odataId,

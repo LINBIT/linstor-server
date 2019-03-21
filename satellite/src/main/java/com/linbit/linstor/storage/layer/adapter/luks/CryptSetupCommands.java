@@ -9,9 +9,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.utils.Luks;
-import com.linbit.linstor.timer.CoreTimer;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -25,6 +22,7 @@ public class CryptSetupCommands implements Luks
 {
     private static final String CRYPTSETUP = "cryptsetup";
 
+    @SuppressWarnings("unused")
     private final ErrorReporter errorReporter;
     private final ExtCmdFactory extCmdFactory;
 
@@ -35,16 +33,6 @@ public class CryptSetupCommands implements Luks
     )
     {
         extCmdFactory = extCmdFactoryRef;
-        errorReporter = errorReporterRef;
-    }
-
-    @RemoveAfterDevMgrRework
-    public CryptSetupCommands(
-        CoreTimer timer,
-        ErrorReporter errorReporterRef
-    )
-    {
-        extCmdFactory = new ExtCmdFactory(timer, errorReporterRef);
         errorReporter = errorReporterRef;
     }
 

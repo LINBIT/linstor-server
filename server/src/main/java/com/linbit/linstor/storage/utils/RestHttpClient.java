@@ -4,8 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -266,13 +264,6 @@ public class RestHttpClient implements RestClient
         public Map<String, String> getHeaders()
         {
             return headers;
-        }
-
-        @Override
-        @RemoveAfterDevMgrRework
-        public String getLinstorVlmId()
-        {
-            return request.linstorVlmId;
         }
 
         @Override

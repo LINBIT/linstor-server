@@ -2,8 +2,6 @@ package com.linbit.linstor.storage.utils;
 
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
-import com.linbit.utils.RemoveAfterDevMgrRework;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +18,6 @@ public interface RestClient
     void addFailHandler(UnexpectedReturnCodeHandler handler);
 
     default RestResponse<Map<String, Object>> execute(
-        @RemoveAfterDevMgrRework String linstorVlmId,
         VlmProviderObject vlmData,
         RestOp op,
         String restURL,
@@ -32,7 +29,6 @@ public interface RestClient
     {
         return execute(
             new RestHttpRequest(
-                linstorVlmId,
                 vlmData,
                 op,
                 restURL,
@@ -44,7 +40,6 @@ public interface RestClient
     }
 
     default RestResponse<Map<String, Object>> execute(
-        @RemoveAfterDevMgrRework String linstorVlmId,
         VlmProviderObject vlmData,
         RestOp op,
         String restURL,
@@ -55,7 +50,7 @@ public interface RestClient
         throws IOException, StorageException
     {
         return execute(
-            new RestHttpRequest(linstorVlmId, vlmData, op, restURL, httpHeaders, jsonString, expectedRcs)
+            new RestHttpRequest(vlmData, op, restURL, httpHeaders, jsonString, expectedRcs)
         );
     }
 
@@ -63,9 +58,6 @@ public interface RestClient
 
     class RestHttpRequest
     {
-        @RemoveAfterDevMgrRework
-        final String linstorVlmId;
-
         final RestOp op;
         final String restURL;
         final Map<String, String> httpHeaders;
@@ -75,7 +67,6 @@ public interface RestClient
         final VlmProviderObject vlmData;
 
         RestHttpRequest(
-            @RemoveAfterDevMgrRework String linstorVlmIdRef,
             VlmProviderObject vlmDataRef,
             RestOp opRef,
             String restURLRef,
@@ -84,7 +75,6 @@ public interface RestClient
             List<Integer> expectedRcsRef
         )
         {
-            linstorVlmId = linstorVlmIdRef;
             vlmData = vlmDataRef;
             op = opRef;
             restURL = restURLRef;
