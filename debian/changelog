@@ -1,3 +1,54 @@
+linstor-server (0.9.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rest-api: fix peer_slots typo
+  * rest-api: fix a few inconsistencies
+  * rest-api: update documentation to layer_stack changes
+  * rest-api: document resource-definition external_name
+  * rest-api: remove CRYPT_SETUP -> LUKS workarounds
+  * rest-api: remove DRBD_DISKLESS workaround
+  * rscDfn-load: do not crash on null external name
+  * rest-api: add external name support for resource-definitions
+  * rest-api: rename stlt_* to satellite_*
+  * rest-api: suffix sizes with their units
+  * rest-api: finalize rest server controller properties
+  * rest-api: docu update on storage pools
+
+  [ Gabor Hernadi ]
+  * Replaced DROP and CREATE table with ALTER statements
+  * Fixed small bug when migrating MariaDB
+  * Fixed incorrect reporting of allocated thin-sizes
+  * Fixed order of persisting layer objects of *DefinitionData
+  * Renamed Crypt(Setup) to Luks
+  * Renamed DrbdDiskless to Diskless
+  * Fixed: Snapshots are now found again
+  * Fixed Nullpointer when persisting null extName
+  * Fixed (another) NPE when serializing non-stlt netIfs
+  * Removed "TransactionList" from an exception message
+  * Added warning that STORAGE kind was automatically added
+  * Extended switches with missing enum-cases
+  * Added safety check if prepare was called before process (StorageLayer)
+  * Added check for valid layerstack
+  * Fixed minor extName database-related bug
+  * Removed some unused classes and methods
+  * Added missing enum case with fall-through comment
+  * Fixed incorrectly expected message
+  * Fixed serialization bug for RscDfn and VlmDfn
+  * Fixed missing errorMessage when devHandler catches unknown exception
+
+  [ Rainer Laschober ]
+  * Added external name functionality
+  * LvmThinProvider: add missing null check for getPoolCapacity and getPoo [...]
+  * LinstorConfig: replace exit codes with corresponding constants
+  * relocate ExternalNameConverter, fix control flow and logic
+
+  [ Robert Altnoeder ]
+  * Fixed EXT_NAME_COMP implementation
+  * Added fall-through comment to empty switch case
+  * Satellite: Fixed LINSTOR node name vs. locally determined node name co [...]
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 25 Mar 2019 09:59:04 +0100
+
 linstor-server (0.9.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
