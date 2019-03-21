@@ -167,16 +167,22 @@ public class MigrationUtils
         switch (databaseRef)
         {
             case ASE:
+                type = typeRef.replaceAll("BLOB", "BINARY");
+                break;
             case DB2:
             case DB2_I:
             case DB2_Z:
             case DERBY:
             case H2:
             case MARIADB:
-            case MSFT_SQLSERVER:
             case MYSQL:
-            case POSTGRESQL:
                 type = typeRef;
+                break;
+            case POSTGRESQL:
+                type = typeRef.replaceAll("BLOB", "BYTEA");
+                break;
+            case MSFT_SQLSERVER:
+                type = typeRef.replaceAll("BLOB", "BINARY");
                 break;
             case INFORMIX:
                 type = typeRef.replaceAll("VARCHAR", "LVARCHAR");

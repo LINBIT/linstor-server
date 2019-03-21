@@ -33,13 +33,10 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import javax.sql.rowset.serial.SerialBlob;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
@@ -137,14 +134,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 5,
                 GenericDbDriver.asStrList(resourceDefinition.getLayerStack(dbCtx))
             );
-            if (resourceDefinition.getExternalName() == null)
-            {
-                stmt.setNull(6, Types.BLOB);
-            }
-            else
-            {
-                stmt.setBlob(6, new SerialBlob(resourceDefinition.getExternalName()));
-            }
+            stmt.setBytes(6, resourceDefinition.getExternalName());
             stmt.executeUpdate();
 
             errorReporter.logTrace("ResourceDefinition created %s", getId(resourceDefinition));
@@ -217,14 +207,11 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         Map<NodeName, Resource> rscMap = new TreeMap<>();
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
 
-        String externalName = resultSet.getString(RD_EXT_NAME);
-        byte[] externalNameBytes = externalName != null ? externalName.getBytes() : null;
-
         resDfn = new ResourceDefinitionData(
             java.util.UUID.fromString(resultSet.getString(RD_UUID)),
             objProt,
             resourceName,
-            externalNameBytes,
+            resultSet.getBytes(RD_EXT_NAME),
             resultSet.getLong(RD_FLAGS),
             GenericDbDriver.asDevLayerKindList(GenericDbDriver.getAsStringList(resultSet, RD_LAYERS)),
             this,
