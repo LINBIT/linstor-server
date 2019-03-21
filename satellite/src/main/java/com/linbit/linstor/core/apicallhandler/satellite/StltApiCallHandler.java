@@ -217,7 +217,11 @@ public class StltApiCallHandler
         final String hostName = getHostname();
 
         // Check if satellite hostname is equal to the given nodename
-        if (Satellite.checkHostname() && !hostName.toLowerCase().equals(nodeName))
+        //
+        // The controller sends the display name, and the locally determined
+        // hostname may have different capitalization
+        // Perform a case-insensitive check
+        if (Satellite.checkHostname() && !hostName.equalsIgnoreCase(nodeName))
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
             entry.setReturnCode(InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH);
