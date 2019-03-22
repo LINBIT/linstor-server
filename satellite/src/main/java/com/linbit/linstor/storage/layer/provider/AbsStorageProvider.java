@@ -619,15 +619,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             if (restoreFromResourceName != null)
             {
                 restoreVlmName =
-                    getMigrationId(vlmData.getVlmDfnLayerObject().getVolumeDefinition())
-                    .orElse(asLvIdentifier(vlmData));
+                    getMigrationId(vlmData.getVolume().getVolumeDefinition())
+                    .orElse(asLvIdentifier(
+                        new ResourceName(restoreFromResourceName),
+                        vlmData.getRscLayerObject().getResourceNameSuffix(),
+                        vlmData.getVlmNr())
+                    );
             }
             else
             {
                 restoreVlmName = null;
             }
         }
-        catch (InvalidKeyException exc)
+        catch (InvalidKeyException | InvalidNameException exc)
         {
             throw new ImplementationError(exc);
         }

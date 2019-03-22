@@ -178,6 +178,10 @@ public class CtrlSnapshotRestoreApiCallHandler
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
 
+        // this will set the layerstack multiple times on the resource definition
+        // but it is the easiest way to ensure it is set, should be the same anyway
+        toRscDfn.setLayerStack(peerAccCtx.get(), snapshot.getLayerStack(peerAccCtx.get()));
+
         ResourceData rsc = ctrlRscCrtApiHelper.createResource(
             toRscDfn,
             node,
