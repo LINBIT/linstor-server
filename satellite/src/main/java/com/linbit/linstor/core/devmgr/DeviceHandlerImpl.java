@@ -331,6 +331,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                 {
                     rc = ApiConsts.FAIL_UNKNOWN_ERROR;
                     errMsg = exc.getMessage();
+                    if (errMsg == null)
+                    {
+                        errMsg = "An unknown exception occured while processing the resource " + rscName.displayValue;
+                    }
 
                     cause = null;
                     correction = null;
