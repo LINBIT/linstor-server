@@ -1,3 +1,14 @@
+linstor-server (0.9.2-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rest-api-docu: info no server bindings and storpoolname
+
+  [ Gabor Hernadi ]
+  * Fixed incorrect persisting of layerStack to db
+  * Removed duplicated layer-data from RscDfn and VlmDfn
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 25 Mar 2019 14:01:44 +0100
+
 linstor-server (0.9.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
