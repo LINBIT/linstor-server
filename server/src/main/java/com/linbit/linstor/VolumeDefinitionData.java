@@ -31,6 +31,7 @@ import com.linbit.utils.Pair;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -358,7 +359,20 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         List<Pair<String, VlmDfnLayerDataApi>> layerData = new ArrayList<>();
 
-        for (DeviceLayerKind kind : resourceDfn.getLayerStack(accCtx))
+        /*
+         * Satellite should not care about this layerStack (and especially not about its ordering)
+         * as the satellite should only take the resource's tree-structured layerData into account
+         *
+         * This means, this serialization is basically only for clients.
+         *
+         * Sorting an enum by default orders by its ordinal number, not alphanumerically.
+         */
+
+        List<DeviceLayerKind> layerStack = new ArrayList<>(resourceDfn.getLayerStack(accCtx));
+        layerStack.addAll(layerStorage.keySet());
+        Collections.sort(layerStack);
+
+        for (DeviceLayerKind kind : layerStack)
         {
             VlmDfnLayerObject vlmDfnLayerObject = layerStorage.get(kind);
             layerData.add(

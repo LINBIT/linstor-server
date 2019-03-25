@@ -30,6 +30,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -488,8 +489,20 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             vlmDfnList.add(vd.getApiData(accCtx));
         }
 
+        /*
+         * Satellite should not care about this layerData (and especially not about its ordering)
+         * as the satellite should only take the resource's tree-structured layerData into account
+         *
+         * This means, this serialization is basically only for clients.
+         *
+         * Sorting an enum by default orders by its ordinal number, not alphanumerically.
+         */
+        List<DeviceLayerKind> sortedLayerStack = new ArrayList<>(layerStack);
+        sortedLayerStack.addAll(layerStorage.keySet());
+        Collections.sort(sortedLayerStack);
+
         List<Pair<String, RscDfnLayerDataApi>> layerData = new ArrayList<>();
-        for (DeviceLayerKind kind : layerStack)
+        for (DeviceLayerKind kind : sortedLayerStack)
         {
             RscDfnLayerObject rscDfnLayerObject = layerStorage.get(kind);
             layerData.add(
