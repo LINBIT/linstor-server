@@ -124,8 +124,12 @@ public class TransactionList<PARENT, VALUE>
     public boolean add(VALUE val)
     {
         markDirty();
-        dbInsert(val);
-        return backingList.add(val);
+        boolean add = backingList.add(val);
+        if (add)
+        {
+            dbInsert(val);
+        }
+        return add;
     }
 
     @Override
@@ -243,8 +247,8 @@ public class TransactionList<PARENT, VALUE>
     public void add(int index, VALUE element)
     {
         markDirty();
-        dbInsert(element);
         backingList.add(index, element);
+        dbInsert(element);
     }
 
     @Override

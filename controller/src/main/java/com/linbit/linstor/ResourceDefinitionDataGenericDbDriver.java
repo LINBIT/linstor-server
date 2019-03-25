@@ -367,31 +367,22 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         public void update(ResourceDefinitionData rscDfn, Collection<DeviceLayerKind> backingCollection)
             throws SQLException
         {
-            try
+            errorReporter.logTrace(
+                "Updating ResourceDefinition's layer stack to %s %s",
+                backingCollection.toString(),
+                getId(rscDfn)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_LAYER_STACK))
             {
-                errorReporter.logTrace(
-                    "Updating ResourceDefinition's layer stack from %s to %s %s",
-                    rscDfn.getLayerStack(dbCtx),
-                    backingCollection.toString(),
-                    getId(rscDfn)
-                );
-                try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_LAYER_STACK))
-                {
-                    GenericDbDriver.setJsonIfNotNull(stmt, 1, GenericDbDriver.asStrList(backingCollection));
-                    stmt.setString(2, rscDfn.getName().value);
-                    stmt.executeUpdate();
-                }
-                errorReporter.logTrace(
-                    "ResourceDefinition's layer stack updated from %s to %s %s",
-                    rscDfn.getLayerStack(dbCtx),
-                    backingCollection.toString(),
-                    getId(rscDfn)
-                );
+                GenericDbDriver.setJsonIfNotNull(stmt, 1, GenericDbDriver.asStrList(backingCollection));
+                stmt.setString(2, rscDfn.getName().value);
+                stmt.executeUpdate();
             }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
-            }
+            errorReporter.logTrace(
+                "ResourceDefinition's layer stack updated to %s %s",
+                backingCollection.toString(),
+                getId(rscDfn)
+            );
         }
     }
 
