@@ -3,7 +3,18 @@ servers:
 - url: http://localhost:3370
   description: Local Linstor controller
 info:
-  description: Linstor REST API
+  description: |
+    Linstor REST API
+
+    Server runs per default on port `3370` on `localhost`.
+
+    To change the bind address or port you can use the following linstor client commands:
+    ```
+    linstor controller set-property REST/bindAddress 0.0.0.0
+    linstor controller set-property REST/port 8080
+    ```
+
+    After setting this properties restart the controller and the new values should be used.
   version: 1.0.0
   title: Linstor REST API
   contact:
@@ -793,6 +804,19 @@ paths:
       operationId: resourceCreateOnNode
       description: |
         Adds a resource on a node.
+
+        To use a specific storage pool add the `StorPoolName` property
+        and use the storage pool name as value.
+        If the `StorPoolName` property is not set, the `DfltStorPool` will be used.
+
+        To create a diskless resource you have to set the "DISKLESS" flag in the flags list.
+        ```
+        {
+          "resource": {
+            "flags": ["DISKLESS"]
+          }
+        }
+        ```
       responses:
         '201':
           description: resource created
