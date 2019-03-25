@@ -31,10 +31,10 @@ import com.linbit.utils.Pair;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -368,9 +368,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
          * Sorting an enum by default orders by its ordinal number, not alphanumerically.
          */
 
-        List<DeviceLayerKind> layerStack = new ArrayList<>(resourceDfn.getLayerStack(accCtx));
+        TreeSet<DeviceLayerKind> layerStack = new TreeSet<>(resourceDfn.getLayerStack(accCtx));
         layerStack.addAll(layerStorage.keySet());
-        Collections.sort(layerStack);
 
         for (DeviceLayerKind kind : layerStack)
         {

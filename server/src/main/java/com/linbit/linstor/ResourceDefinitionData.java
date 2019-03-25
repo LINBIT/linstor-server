@@ -30,11 +30,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -497,9 +497,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
          *
          * Sorting an enum by default orders by its ordinal number, not alphanumerically.
          */
-        List<DeviceLayerKind> sortedLayerStack = new ArrayList<>(layerStack);
+        TreeSet<DeviceLayerKind> sortedLayerStack = new TreeSet<>(layerStack);
         sortedLayerStack.addAll(layerStorage.keySet());
-        Collections.sort(sortedLayerStack);
 
         List<Pair<String, RscDfnLayerDataApi>> layerData = new ArrayList<>();
         for (DeviceLayerKind kind : sortedLayerStack)
