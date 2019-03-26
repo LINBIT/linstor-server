@@ -30,13 +30,13 @@ public class GrizzlyHttpService implements SystemService
         "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/1.0.0\">Documentation</a>" +
         "</body></html>";
 
-    public GrizzlyHttpService(Injector injector, Path logDirectory, String listenAddress, int port)
+    public GrizzlyHttpService(Injector injector, Path logDirectory, String listenAddress)
     {
         ResourceConfig resourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
         resourceConfig.register(new CORSFilter());
 
         httpServer = GrizzlyHttpServerFactory.createHttpServer(
-            URI.create(String.format("http://%s:%d/v1/", listenAddress, port)),
+            URI.create(String.format("http://%s/v1/", listenAddress)),
             resourceConfig,
             false
         );

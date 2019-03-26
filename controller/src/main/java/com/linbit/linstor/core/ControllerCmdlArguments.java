@@ -5,12 +5,14 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
     private String inMemoryDbType;
     private int inMemoryDbPort;
     private String inMemoryDbAddress;
+    private String restBindAddress;
 
     public ControllerCmdlArguments()
     {
         inMemoryDbType = null;
         inMemoryDbAddress = null;
         inMemoryDbPort = 0;
+        restBindAddress = null;
     }
 
     public void setInMemoryDbType(final String inMemoryDbTypeRef)
@@ -41,5 +43,15 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
     public String getInMemoryDbAddress()
     {
         return inMemoryDbAddress;
+    }
+
+    public String getRESTBindAddress()
+    {
+        return restBindAddress;
+    }
+
+    public void setRESTBindAddress(String restBindAddress)
+    {
+        this.restBindAddress = restBindAddress;
     }
 }

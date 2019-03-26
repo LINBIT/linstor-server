@@ -28,6 +28,12 @@ class ControllerArgumentParser
     @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
     private String logDirectory = "./logs";
 
+    @CommandLine.Option(
+        names = {"--rest-bind"},
+        description = "Bind address for the REST HTTP server. e.g. 0.0.0.0:3370"
+    )
+    private String restBindAddress = null;
+
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
 
@@ -86,6 +92,11 @@ class ControllerArgumentParser
             {
                 cArgs.setInMemoryDbAddress(memopts[2]);
             }
+        }
+
+        if (linArgParser.restBindAddress != null)
+        {
+            cArgs.setRESTBindAddress(linArgParser.restBindAddress);
         }
 
         cArgs.setPrintStacktraces(linArgParser.printStackTrace);

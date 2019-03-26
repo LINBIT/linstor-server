@@ -84,6 +84,7 @@ public final class Controller
     public static final int API_VERSION = 4;
     public static final int API_MIN_VERSION = API_VERSION;
 
+    private static final String ENV_REST_BIND_ADDRESS = "LS_REST_BIND_ADDRESS";
     private static final String DEFAULT_HTTP_LISTEN_ADDRESS = "127.0.0.1";
     private static final String DEFAULT_HTTP_REST_PORT = "3370";
 
@@ -183,7 +184,7 @@ public final class Controller
         whitelistProps = whitelistPropsRef;
     }
 
-    public void start(Injector injector)
+    public void start(Injector injector, ControllerCmdlArguments cArgs)
         throws SystemServiceStartException, InitializationException
     {
         applicationLifecycleManager.installShutdownHook();
@@ -215,7 +216,7 @@ public final class Controller
             dbDataInitializer.initialize();
             dbNumberPoolInitializer.initialize();
 
-            initializeRestServer(injector);
+            initializeRestServer(injector, cArgs);
 
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
@@ -254,22 +255,41 @@ public final class Controller
         }
     }
 
-    private void initializeRestServer(Injector injector) throws InvalidKeyException
+    private void initializeRestServer(Injector injector, ControllerCmdlArguments cArgs) throws InvalidKeyException
     {
-        boolean restEnabled = Boolean.parseBoolean(
-            ctrlConf.getPropWithDefault(ApiConsts.KEY_ENABLED, ApiConsts.NAMESPC_REST, "true")
-        );
-        String restListenAddr = ctrlConf.getPropWithDefault(
-            ApiConsts.KEY_BIND_ADDR, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_LISTEN_ADDRESS
-        );
-        int restListenPort = Integer.parseInt(
-            ctrlConf.getPropWithDefault(ApiConsts.KEY_BIND_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT)
-        );
+        boolean restEnabled = true;
+        String restBindAddress; // = String.format("%s:%d", DEFAULT_HTTP_LISTEN_ADDRESS, DEFAULT_HTTP_REST_PORT);
+
+        if (cArgs.getRESTBindAddress() != null)
+        {
+            restBindAddress = cArgs.getRESTBindAddress();
+        }
+        else
+        {
+            final String envRESTBindAddress = System.getenv(ENV_REST_BIND_ADDRESS);
+            if (envRESTBindAddress != null)
+            {
+                restBindAddress = envRESTBindAddress;
+            }
+            else
+            {
+                restEnabled = Boolean.parseBoolean(
+                    ctrlConf.getPropWithDefault(ApiConsts.KEY_ENABLED, ApiConsts.NAMESPC_REST, "true")
+                );
+                String restListenAddr = ctrlConf.getPropWithDefault(
+                    ApiConsts.KEY_BIND_ADDR, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_LISTEN_ADDRESS
+                );
+                int restListenPort = Integer.parseInt(
+                    ctrlConf.getPropWithDefault(ApiConsts.KEY_BIND_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT)
+                );
+                restBindAddress = String.format("%s:%d", restListenAddr, restListenPort);
+            }
+        }
 
         if (restEnabled)
         {
             final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(
-                injector, errorReporter.getLogDirectory(), restListenAddr, restListenPort
+                injector, errorReporter.getLogDirectory(), restBindAddress
             );
             systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
         }
@@ -424,7 +444,7 @@ public final class Controller
             );
 
             Controller instance = injector.getInstance(Controller.class);
-            instance.start(injector);
+            instance.start(injector, cArgs);
 
             if (cArgs.startDebugConsole())
             {
