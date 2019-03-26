@@ -144,4 +144,12 @@ public class LayerUtils
 
         return ret;
     }
+
+    public static boolean hasLayer(
+        RscLayerObject rscData,
+        DeviceLayerKind kind
+    )
+    {
+        return !LayerUtils.getChildLayerDataByKind(rscData, kind).isEmpty();
+    }
 }

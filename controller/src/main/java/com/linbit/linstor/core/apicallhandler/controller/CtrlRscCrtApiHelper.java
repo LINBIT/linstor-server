@@ -217,6 +217,8 @@ public class CtrlRscCrtApiHelper
                     thinFreeCapacities
                 ).extractApiCallRc(responses);
                 createdVolumes.add(vlm);
+
+                setDrbdPropsForThinVolumesIfNeeded(vlm);
             }
         }
 
@@ -256,6 +258,57 @@ public class CtrlRscCrtApiHelper
                 "will not use the additional STORAGE layer.")
             .build()
         );
+    }
+
+    private void setDrbdPropsForThinVolumesIfNeeded(VolumeData vlmRef)
+    {
+        try
+        {
+            DeviceProviderKind deviceProviderKind = vlmRef.getStorPool(peerAccCtx.get()).getDeviceProviderKind();
+            if (
+                deviceProviderKind.usesThinProvisioning() &&
+                LayerUtils.hasLayer(vlmRef.getResource().getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD)
+            )
+            {
+                //TODO: make these default drbd-properties configurable (provider-specific?)
+
+                Props props = vlmRef.getVolumeDefinition().getProps(peerAccCtx.get());
+                if (props.getProp("rs-discard-granularity", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
+                {
+                    String dflt;
+                    if (deviceProviderKind.equals(DeviceProviderKind.ZFS_THIN))
+                    {
+                        dflt = "8192";
+                    }
+                    else
+                    {
+                        dflt = "65536";
+                    }
+                    props.setProp("rs-discard-granularity", dflt,  ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                }
+                if (props.getProp("discard-zeroes-if-aligned", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
+                {
+                    props.setProp("discard-zeroes-if-aligned", "yes",  ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_ACC_DENIED_VLM_DFN,
+                    "Linstor currently only allows one swordfish target per resource definition"
+                )
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError("Invalid hardcoded thin-volume related properties", exc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
     }
 
     /**
