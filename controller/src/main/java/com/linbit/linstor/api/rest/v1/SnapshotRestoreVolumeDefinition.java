@@ -15,7 +15,7 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 
-@Path("snapshot-restore-volume-definition")
+@Path("resource-definitions/{rscName}/snapshot-restore-volume-definition")
 public class SnapshotRestoreVolumeDefinition
 {
     private final ObjectMapper objectMapper;
