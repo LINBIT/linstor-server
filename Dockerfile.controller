@@ -31,5 +31,5 @@ RUN apt-get update -y && apt-get install -y default-jre-headless && \
 	dpkg -i /tmp/linstor-common*.deb && dpkg -i /tmp/linstor-controller*.deb && \
 	rm /tmp/*.deb && apt-get clean -y
 
-EXPOSE 3376/tcp 3377/tcp
+EXPOSE 3376/tcp 3377/tcp 3370/tcp
 ENTRYPOINT ["/usr/share/linstor-server/bin/Controller", "--logs=/var/log/linstor-controller", "--config-directory=/etc/linstor"]
