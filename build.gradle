@@ -482,15 +482,15 @@ task copyToLibs(dependsOn: 'deleteLibs') {
         ['compile', 'runtime'].each { scope ->
             copy {
                 from configurations.getByName(scope).files
-                into "libs/${scope}"
+                into "libs"
             }
         }
         subprojects.each { prj ->
             ['compile', 'runtime'].each { scope ->
                 mkdir "${prj.name}/libs/${scope}"
                 prj.configurations.getByName(scope).files.each { f ->
-                    if (file("libs/${scope}/" + f.getName()).exists()) {
-                        ant.symlink(resource: "../../../libs/${scope}/" + f.getName(), link: "${prj.name}/libs/${scope}/${f.getName()}")
+                    if (file("libs/" + f.getName()).exists()) {
+                        ant.symlink(resource: "../../../libs/" + f.getName(), link: "${prj.name}/libs/${scope}/${f.getName()}")
                     }
                     else {
                         copy {
