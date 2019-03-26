@@ -25,7 +25,7 @@ public interface DatabaseDriverInfo
                 dbdriver = new MariaDBInfo(dbType);
                 break;
             default:
-                break;
+                throw new RuntimeException(String.format("Database type '%s' not implemented.", dbType));
         }
 
         return dbdriver;
