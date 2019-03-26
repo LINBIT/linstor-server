@@ -69,16 +69,16 @@ debrelease:
 
 .PHONY: check-all-committed
 check-all-committed:
+ifneq ($(FORCE),1)
 	if ! tmp=$$(git diff --name-status HEAD 2>&1) || test -n "$$tmp" ; then \
 		echo >&2 "$$tmp"; echo >&2 "Uncommitted changes"; exit 1; \
 	fi
-ifneq ($(FORCE),1)
 	if ! grep -q "^linstor-server ($(VERSION)" debian/changelog ; then \
 		echo >&2 "debian/changelog needs update"; exit 1; \
 	fi
 	for df in "$(DOCKERFILE_CONTROLLER)" "$(DOCKERFILE_SATELLITE)"; do \
-		if ! grep -q "^ENV LINSTOR_VERSION $(VERSION)" "$$df" ; then \
-			echo >&2 "$$df needs update"; exit 1; \
+		if test "$$(grep -c "ENV LINSTOR_VERSION $(VERSION)" "$$df")" -ne 2 ; then \
+			echo >&2 "LINSTOR_VERSION in $$df needs update"; exit 1; \
 		fi; \
 	done
 endif
