@@ -20,81 +20,127 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.event.EventStreamClosedException;
+import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlSnapshotRestoreApiCallHandler
 {
+    private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlSnapshotHelper ctrlSnapshotHelper;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
+        ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlSnapshotHelper ctrlSnapshotHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
+        scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlSnapshotHelper = ctrlSnapshotHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
-    public ApiCallRc restoreSnapshot(
+    private ResponseContext makeSnapshotRestoreContext(String rscNameStr)
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+
+        return new ResponseContext(
+            ApiOperation.makeRegisterOperation(),
+            "Resource: '" + rscNameStr + "'",
+            "resource '" + rscNameStr,
+            ApiConsts.MASK_SNAPSHOT,
+            objRefs
+        );
+    }
+
+    public Flux<ApiCallRc> restoreSnapshot(
         List<String> nodeNameStrs,
         String fromRscNameStr,
         String fromSnapshotNameStr,
         String toRscNameStr
     )
     {
+        ResponseContext context = makeSnapshotRestoreContext(toRscNameStr);
+        return scopeRunner.fluxInTransactionalScope(
+            "Restore Snapshot Resource",
+            lockGuardFactory.createDeferred()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .build(),
+            () -> restoreResourceInTransaction(nodeNameStrs, fromRscNameStr, fromSnapshotNameStr, toRscNameStr)
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> restoreResourceInTransaction(
+        List<String> nodeNameStrs,
+        String fromRscNameStr,
+        String fromSnapshotNameStr,
+        String toRscNameStr
+    )
+    {
+        Flux<ApiCallRc> deploymentResponses = Flux.just();
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = new ResponseContext(
             new ApiOperation(ApiConsts.MASK_CRT, new OperationDescription("restore", "restoring")),
             getSnapshotRestoreDescription(nodeNameStrs, toRscNameStr),
             getSnapshotRestoreDescriptionInline(nodeNameStrs, toRscNameStr),
-            ApiConsts.MASK_SNAPSHOT,
+            ApiConsts.MASK_RSC,
             Collections.emptyMap()
         );
 
@@ -111,17 +157,19 @@ public class CtrlSnapshotRestoreApiCallHandler
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_EXISTS_RSC,
-                    "Cannot restore to resource defintion which already has resources"
+                    "Cannot restore to resource definition which already has resources"
                 ));
             }
 
             ctrlSnapshotHelper.ensureSnapshotSuccessful(fromSnapshotDfn);
 
+            List<Resource> restoredResources = new ArrayList<>();
+
             if (nodeNameStrs.isEmpty())
             {
                 for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
-                    restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode());
+                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode()));
                 }
             }
             else
@@ -129,7 +177,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 for (String nodeNameStr : nodeNameStrs)
                 {
                     NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-                    restoreOnNode(fromSnapshotDfn, toRscDfn, node);
+                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node));
                 }
             }
 
@@ -149,7 +197,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 );
             }
 
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(toRscDfn));
+            deploymentResponses = ctrlRscCrtApiHelper.deployResources(context, restoredResources);
 
             responseConverter.addWithOp(responses, context, ApiCallRcImpl
                 .entryBuilder(
@@ -164,16 +212,23 @@ public class CtrlSnapshotRestoreApiCallHandler
                         .collect(Collectors.joining(", ")))
                 .build()
             );
+
         }
         catch (Exception | ImplementationError exc)
         {
             responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return responses;
+        return Flux.<ApiCallRc>just(responses)
+            .concatWith(deploymentResponses)
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
+            .onErrorResume(EventStreamTimeoutException.class,
+                ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
+            .onErrorResume(EventStreamClosedException.class,
+                ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
     }
 
-    private void restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinitionData toRscDfn, Node node)
+    private Resource restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinitionData toRscDfn, Node node)
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
@@ -243,6 +298,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                     ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID, overrideId);
             }
         }
+
+        return rsc;
     }
 
     private static String getSnapshotRestoreDescription(List<String> nodeNameStrs, String toRscNameStr)

@@ -48,7 +48,6 @@ public class CtrlApiCallHandler
     private final CtrlNetIfApiCallHandler netIfApiCallHandler;
     private final CtrlWatchApiCallHandler watchApiCallHandler;
     private final CtrlSnapshotApiCallHandler snapshotApiCallHandler;
-    private final CtrlSnapshotRestoreApiCallHandler snapshotRestoreApiCallHandler;
     private final CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandler;
     private final CtrlDrbdProxyModifyApiCallHandler drbdProxyModifyApiCallHandler;
     private final CtrlKvsApiCallHandler kvsApiCallHandler;
@@ -70,7 +69,6 @@ public class CtrlApiCallHandler
         CtrlNetIfApiCallHandler netIfApiCallHandlerRef,
         CtrlWatchApiCallHandler watchApiCallHandlerRef,
         CtrlSnapshotApiCallHandler snapshotApiCallHandlerRef,
-        CtrlSnapshotRestoreApiCallHandler snapshotRestoreApiCallHandlerRef,
         CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandlerRef,
         CtrlDrbdProxyModifyApiCallHandler drbdProxyModifyApiCallHandlerRef,
         CtrlKvsApiCallHandler kvsApiCallHandlerRef,
@@ -90,7 +88,6 @@ public class CtrlApiCallHandler
         netIfApiCallHandler = netIfApiCallHandlerRef;
         watchApiCallHandler = watchApiCallHandlerRef;
         snapshotApiCallHandler = snapshotApiCallHandlerRef;
-        snapshotRestoreApiCallHandler = snapshotRestoreApiCallHandlerRef;
         snapshotRestoreVlmDfnApiCallHandler = snapshotRestoreVlmDfnApiCallHandlerRef;
         drbdProxyModifyApiCallHandler = drbdProxyModifyApiCallHandlerRef;
         kvsApiCallHandler = kvsApiCallHandlerRef;
@@ -1069,32 +1066,6 @@ public class CtrlApiCallHandler
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
         {
             apiCallRc = snapshotRestoreVlmDfnApiCallHandler.restoreVlmDfn(
-                fromRscName,
-                fromSnapshotName,
-                toRscName
-            );
-        }
-        return apiCallRc;
-    }
-
-    public ApiCallRc restoreSnapshot(
-        List<String> nodeNames,
-        String fromRscName,
-        String fromSnapshotName,
-        String toRscName
-    )
-    {
-        ApiCallRc apiCallRc;
-
-        try (
-            LockGuard lg = lockGuardFactory.create()
-                .read(NODES_MAP)
-                .write(RSC_DFN_MAP)
-                .build()
-        )
-        {
-            apiCallRc = snapshotRestoreApiCallHandler.restoreSnapshot(
-                nodeNames,
                 fromRscName,
                 fromSnapshotName,
                 toRscName
