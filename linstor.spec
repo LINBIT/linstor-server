@@ -101,7 +101,6 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 Summary: Linstor satellite specific files
 Requires: linstor-common = %{version}
 Requires: lvm2
-Requires: drbd-utils >= 9.7.0
 
 %description satellite
 Linstor satellite, communicates with linstor-controller
