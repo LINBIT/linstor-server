@@ -1,13 +1,10 @@
 package com.linbit.linstor.storage.layer.provider.zfs;
 
-import com.linbit.Checks;
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -301,28 +298,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
             );
         }
         zpoolName = zpoolName.trim();
-        try
-        {
-            Checks.nameCheck(
-                zpoolName,
-                1,
-                Integer.MAX_VALUE,
-                StorPoolName.VALID_CHARS,
-                StorPoolName.VALID_INNER_CHARS
-            );
-        }
-        catch (InvalidNameException ine)
-        {
-            final String cause = String.format("Invalid pool name: %s", zpoolName);
-            throw new StorageException(
-                "Invalid configuration, " + cause,
-                null,
-                cause,
-                "Specify a valid and existing pool name",
-                null
-            );
-        }
-
         Set<String> zpoolList = ZfsUtils.getZPoolList(extCmdFactory.create());
         if (!zpoolList.contains(zpoolName))
         {
@@ -350,7 +325,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
         String zPool = getZPool(storPool);
         if (zPool == null)
         {
-            throw new StorageException("Unset volume group for " + storPool);
+            throw new StorageException("Unset zpool for " + storPool);
         }
         return ZfsUtils.getZPoolFreeSize(
             extCmdFactory.create(),

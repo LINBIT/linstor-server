@@ -17,12 +17,17 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
+import com.linbit.linstor.storage.utils.ZfsUtils;
+import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
 import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.File;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
 
 @Singleton
 public class ZfsThinProvider extends ZfsProvider
@@ -82,4 +87,62 @@ public class ZfsThinProvider extends ZfsProvider
         }
         return zPool;
     }
+
+    @Override
+    public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        String thinZpoolName = getZPool(storPool);
+        if (thinZpoolName == null)
+        {
+            throw new StorageException(
+                "zPool name not given for storPool '" +
+                    storPool.getName().displayValue + "'"
+            );
+        }
+        thinZpoolName = thinZpoolName.trim();
+        HashMap<String, ZfsInfo> zfsList = ZfsUtils.getThinZPoolsList(extCmdFactory.create());
+        if (!zfsList.containsKey(thinZpoolName))
+        {
+            throw new StorageException("no zfs dataset found with name '" + thinZpoolName + "'");
+        }
+    }
+
+    @Override
+    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        String thinZpoolName = getZPool(storPool);
+        if (thinZpoolName == null)
+        {
+            throw new StorageException("Unset thin zfs dataset for " + storPool);
+        }
+
+        int idx = thinZpoolName.indexOf(File.separator);
+        if (idx == -1)
+        {
+            idx = thinZpoolName.length() - 1;
+        }
+        String zPoolName = thinZpoolName.substring(0, idx);
+
+        // do not use the thin version, we have to ask the actual zpool, not the thin "pool"
+        return ZfsUtils.getZPoolTotalSize(
+            extCmdFactory.create(),
+            Collections.singleton(zPoolName)
+        ).get(zPoolName);
+    }
+
+    @Override
+    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        String thinZpoolName = getZPool(storPool);
+        if (thinZpoolName == null)
+        {
+            throw new StorageException("Unset thin zfs dataset for " + storPool);
+        }
+
+        return ZfsUtils.getThinZPoolsList(
+            extCmdFactory.create()
+        ).get(thinZpoolName).usableSize;
+    }
+
+
 }

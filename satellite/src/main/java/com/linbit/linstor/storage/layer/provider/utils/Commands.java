@@ -1,6 +1,8 @@
 package com.linbit.linstor.storage.layer.provider.utils;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.extproc.ExtCmd.OutputData;
@@ -20,8 +22,6 @@ public class Commands
 
     public static final RetryHandler NO_RETRY = new NoRetryHandler();
     public static final RetryHandler SKIP_EXIT_CODE_CHECK = new SkipExitCodeRetryHandler();
-
-    private static final int KIB = 1024;
 
     public static OutputData genericExecutor(
         ExtCmd extCmd,
@@ -128,7 +128,11 @@ public class Commands
             "Failed to get block size of " + devicePath
         );
         String outRaw = new String(output.stdoutData);
-        return Long.parseLong(outRaw.trim()) / KIB;
+        return SizeConv.convert(
+            Long.parseLong(outRaw.trim()),
+            SizeUnit.UNIT_B,
+            SizeUnit.UNIT_KiB
+        );
     }
 
     public static class NoRetryHandler implements RetryHandler

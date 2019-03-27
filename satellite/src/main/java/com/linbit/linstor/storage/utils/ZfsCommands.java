@@ -259,4 +259,21 @@ public class ZfsCommands
             "Failed to query free size of zPools(s) " + zPools
         );
     }
+
+    public static OutputData listThinPools(ExtCmd extCmd) throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "zfs",
+                "list",
+                "-H",   // no headers, single tab instead of spaces
+                "-p",   // sizes in bytes
+                "-o", "name,available,type", // columns: name, available space, type
+                "-t", "filesystem"
+            },
+            "Failed to list zfs filesystem types",
+            "Failed to query 'zfs' info"
+        );
+    }
 }
