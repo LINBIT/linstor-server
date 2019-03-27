@@ -30,6 +30,8 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 
@@ -249,7 +251,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         else
         {
             Flux<ApiCallRc> nextStep;
-            if (resize)
+            if (resize && hasDrbd(vlmDfn))
             {
                 nextStep = resizeDrbd(rscName, vlmNr);
             }
@@ -269,6 +271,37 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         }
 
         return flux;
+    }
+
+    private boolean hasDrbd(VolumeDefinitionData vlmDfnRef)
+    {
+        boolean anyResourceHasDrbdLayer;
+        try
+        {
+            anyResourceHasDrbdLayer = vlmDfnRef.streamVolumes(apiCtx).anyMatch(this::hasDrbd);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return anyResourceHasDrbdLayer;
+    }
+
+    private boolean hasDrbd(Volume vlm)
+    {
+        boolean hasDrbdLayer;
+        try
+        {
+            hasDrbdLayer = !LayerUtils.getChildLayerDataByKind(
+                vlm.getResource().getLayerData(apiCtx),
+                DeviceLayerKind.DRBD
+            ).isEmpty();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return hasDrbdLayer;
     }
 
     private Flux<ApiCallRc> resizeDrbd(ResourceName rscName, VolumeNumber vlmNr)
@@ -295,7 +328,9 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         {
             streamVolumesPrivileged(vlmDfn).forEach(this::unmarkVlmResizePrivileged);
 
-            Optional<Volume> drbdResizeVlm = streamVolumesPrivileged(vlmDfn).findAny();
+            Optional<Volume> drbdResizeVlm = streamVolumesPrivileged(vlmDfn)
+                .filter(this::isDiskful)
+                .findAny();
             drbdResizeVlm.ifPresent(this::markVlmDrbdResize);
 
             ctrlTransactionHelper.commit();
@@ -315,6 +350,20 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         }
 
         return flux;
+    }
+
+    private boolean isDiskful(Volume vlm)
+    {
+        boolean diskless;
+        try
+        {
+            diskless = vlm.getResource().isDiskless(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return !diskless;
     }
 
     private Flux<ApiCallRc> finishResize(ResourceName rscName, VolumeNumber vlmNr)
