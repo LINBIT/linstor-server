@@ -78,7 +78,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi
         DeviceProviderKind kind = null;
         if (storPool.hasProviderKind())
         {
-            kind = ProtoDeserializationUtils.parseProviderKind(storPool.getProviderKind());
+            kind = ProtoDeserializationUtils.parseDeviceProviderKind(storPool.getProviderKind());
         }
         return kind;
     }

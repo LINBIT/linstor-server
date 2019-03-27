@@ -130,6 +130,9 @@ public class ProtoLayerUtils
                     }
                 }
                 break;
+            case UNKNOWN_LAYER:
+                ret = null;
+                break;
             default:
                 throw new ImplementationError(
                     "Unexpected layer type in proto message: " +
@@ -173,13 +176,14 @@ public class ProtoLayerUtils
             case STORAGE:
                 str = "STORAGE";
                 break;
-                default:
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_LAYER_KIND,
-                            "Given layer type '" + layerType + "' is invalid"
-                        )
-                    );
+            case UNKNOWN_LAYER: // fall-through
+            default:
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_LAYER_KIND,
+                        "Given layer type '" + layerType + "' is invalid"
+                    )
+                );
         }
 
         return str;
@@ -230,6 +234,7 @@ public class ProtoLayerUtils
                         vlmLayerDataApi = null;
                     }
                     break;
+                case UNKNOWN_LAYER: // fall-through
                 default:
                     throw new ImplementationError(
                         "Unknown VlmLayerData (proto) kind: " + vlmLayerData.getLayerType()
@@ -264,6 +269,7 @@ public class ProtoLayerUtils
                 case STORAGE:
                     rscDfnLayerDataApi = null;
                     break;
+                case UNKNOWN_LAYER: // fall-through
                 default:
                     throw new ImplementationError(
                         "Unknown resource definition layer (proto) kind: " + rscDfnLayerData.getLayerType()
@@ -309,6 +315,7 @@ public class ProtoLayerUtils
                 case LUKS:
                     vlmDfnLayerDataApi = null;
                     break;
+                case UNKNOWN_LAYER: // fall-through
                 default:
                     throw new ImplementationError(
                         "Unknown volume definition layer (proto) kind: " + vlmDfnLayerData.getLayerType()
@@ -447,6 +454,7 @@ public class ProtoLayerUtils
             case ZFS_THIN:
                 ret = new ZfsThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState);
                 break;
+            case UNKNOWN_PROVIDER: // fall-through
             default:
                 throw new ImplementationError(
                     "Unexpected provider type in proto message: " +
@@ -476,9 +484,13 @@ public class ProtoLayerUtils
             case LVM_THIN: // fall-trough
             case ZFS: // fall-trough
             case ZFS_THIN: // fall-trough
-            default:
                 vlmDfnApi = null;
                 break;
+            case UNKNOWN_PROVIDER: // fall-through
+            default:
+                throw new ImplementationError(
+                    "Unexpected provider: " + storageVlmDfnRef.getProviderKind()
+                );
         }
         return vlmDfnApi;
     }

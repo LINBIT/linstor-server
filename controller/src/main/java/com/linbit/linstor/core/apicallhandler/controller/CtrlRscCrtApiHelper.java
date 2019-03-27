@@ -431,6 +431,17 @@ public class CtrlRscCrtApiHelper
                 layerStackRef
             );
 
+            Set<DeviceLayerKind> unsupportedLayers = getUnsupportedLayers(rsc);
+            if (!unsupportedLayers.isEmpty())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_STLT_DOES_NOT_SUPPORT_LAYER,
+                        "Satellite '" + node.getName() + "' does not support the following layers: " + unsupportedLayers
+                    )
+                );
+            }
+
             rsc.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_PEER_SLOTS, Short.toString(peerSlots));
         }
         catch (AccessDeniedException accDeniedExc)
@@ -457,6 +468,20 @@ public class CtrlRscCrtApiHelper
             throw new ImplementationError(exc);
         }
         return rsc;
+    }
+
+    private Set<DeviceLayerKind> getUnsupportedLayers(ResourceData rsc) throws AccessDeniedException
+    {
+        Set<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
+            rsc.getLayerData(peerAccCtx.get())
+        );
+        usedDeviceLayerKinds.removeAll(
+            rsc.getAssignedNode()
+                .getPeer(peerAccCtx.get())
+                .getSupportedLayers()
+        );
+
+        return usedDeviceLayerKinds;
     }
 
     static void ensureLayerStackIsAllowed(List<DeviceLayerKind> layerStackRef)

@@ -11,8 +11,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import org.slf4j.event.Level;
 
+@Singleton
 public class DrbdVersion
 {
     public static final String DRBD_UTILS_CMD = "drbdadm";
@@ -69,8 +72,7 @@ public class DrbdVersion
         {
             restoreDefaults();
             OutputData cmdData = cmd.exec(VSN_QUERY_COMMAND);
-            try
-                    (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdData.getStdoutStream())))
+            try (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdData.getStdoutStream())))
             {
                 String key = KEY_VSN_CODE + "=";
                 for (String vsnLine = vsnReader.readLine(); vsnLine != null; vsnLine = vsnReader.readLine())
@@ -98,22 +100,22 @@ public class DrbdVersion
         catch (NumberFormatException nfExc)
         {
             errorLogRef.reportProblem(
-                    Level.ERROR,
-                    new LinStorException(
-                            LOG_TXT_CHECK_FAILED,
-                            ERR_DSC_CHECK_FAILED,
-                            "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
-                                    "utility is unparsable",
-                            ERR_CORR_TXT,
-                            "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
-                            nfExc
-                    ),
-                    null, null, null
+                Level.ERROR,
+                new LinStorException(
+                    LOG_TXT_CHECK_FAILED,
+                    ERR_DSC_CHECK_FAILED,
+                    "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
+                            "utility is unparsable",
+                    ERR_CORR_TXT,
+                    "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
+                    nfExc
+                ),
+                null, null, null
             );
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
-            errorLogRef.reportError(Level.ERROR, exc);
+            errorLogRef.logWarning("Unable to check drbdadm version. '" + exc.getMessage() + "'");
         }
     }
 

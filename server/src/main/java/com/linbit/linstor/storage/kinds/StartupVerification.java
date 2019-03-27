@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.kinds;
 
-public enum StartupVerifications
+public enum StartupVerification
 {
     UNAME,
     DRBD9, DRBD_PROXY,

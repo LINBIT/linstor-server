@@ -3,9 +3,8 @@ package com.linbit.linstor.netcom;
 import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.function.Supplier;
-
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.Node;
@@ -14,6 +13,9 @@ import com.linbit.linstor.api.protobuf.common.Ping;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
@@ -396,4 +398,38 @@ public interface Peer
      * @return
      */
     Message nextCurrentMsgIn();
+
+    /**
+     * Sets the list of device layers supported by the satellite of this peer.
+     * @param parseDeviceLayerKindListRef
+     */
+    void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerList);
+
+    /**
+     * Gets the list of device layers supported by the satellite of this peer.
+     * @param parseDeviceLayerKindListRef
+     */
+    List<DeviceLayerKind> getSupportedLayers();
+
+    default boolean isDeviceLayerSupported(DeviceLayerKind kind)
+    {
+        return getSupportedLayers().contains(kind);
+    }
+
+    /**
+     * Sets the list of device providers supported by the satellite of this peer.
+     * @param parseDeviceLayerKindListRef
+     */
+    void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderList);
+
+    /**
+     * Gets the list of device providers supported by the satellite of this peer.
+     * @param parseDeviceLayerKindListRef
+     */
+    List<DeviceProviderKind> getSupportedProviders();
+
+    default boolean isDeviceProviderSupported(DeviceProviderKind kind)
+    {
+        return getSupportedProviders().contains(kind);
+    }
 }

@@ -26,7 +26,6 @@ import com.linbit.SystemService;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiModule;
@@ -61,7 +60,6 @@ import com.linbit.linstor.security.StltCoreObjProtInitializer;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
-import org.slf4j.event.Level;
 
 /**
  * linstor satellite prototype
@@ -148,44 +146,25 @@ public final class Satellite
         {
             skipHostnameCheck = satelliteCmdlArguments.isSkipHostnameCheck();
 
-            if (!satelliteCmdlArguments.isSkipDrbdCheck())
+            DrbdVersion vsnCheck = new DrbdVersion(timerEventSvc, errorReporter);
+            vsnCheck.checkVersion();
+            if (vsnCheck.hasDrbd9())
             {
-                DrbdVersion vsnCheck = new DrbdVersion(timerEventSvc, errorReporter);
-                vsnCheck.checkVersion();
-                if (!vsnCheck.hasDrbd9())
-                {
-                    errorReporter.reportProblem(
-                        Level.ERROR,
-                        new LinStorException(
-                            "Satellite startup failed, unable to verify the presence of a supported DRBD installation",
-                            "Satellite startup failed",
-                            LinStor.PROGRAM + " could not verify that a supported version of DRBD is installed\n" +
-                            "on this system",
-                            "- Ensure that DRBD is installed and accessible by " + LinStor.PROGRAM + "\n" +
-                            "- " + LinStor.PROGRAM + " requires DRBD version 9 (or higher). DRBD version 8 is NOT supported.\n" +
-                            "- If you intend to run " + LinStor.PROGRAM + " without using DRBD, refer to\n" +
-                            "  product documentation or command line options help for information on how\n" +
-                            "  to skip the check for a supported DRBD installation",
-                            null
-                        ),
-                        null, null, null
-                    );
-                    reconfigurationLock.writeLock().unlock();
-                    System.exit(InternalApiConsts.EXIT_CODE_DRBD_ERROR);
-                }
+                ensureDrbdConfigSetup();
             }
-
-            ensureDrbdConfigSetup();
 
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
-            systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
+            if (vsnCheck.hasDrbd9())
+            {
+                systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
+                systemServicesMap.put(drbdEventPublisher.getInstanceName(), drbdEventPublisher);
+            }
             SystemService devMgrService = (SystemService) devMgr;
             systemServicesMap.put(devMgrService.getInstanceName(), devMgrService);
-            systemServicesMap.put(drbdEventPublisher.getInstanceName(), drbdEventPublisher);
 
             stltCoreObjProtInitializer.initialize();
 

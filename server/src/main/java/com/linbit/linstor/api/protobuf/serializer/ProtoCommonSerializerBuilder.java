@@ -54,12 +54,14 @@ import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.common.FilterOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
+import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksRsc;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass.NetInterface.Builder;
 import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
+import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
@@ -95,6 +97,7 @@ import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthErrorOuterClass.MsgIntAuthError;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
@@ -242,6 +245,55 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             handleIOException(exc);
         }
         return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder authSuccess(
+        long expectedFullSyncIdRef,
+        int[] stltVersionRef,
+        List<DeviceLayerKind> supportedDeviceLayerRef,
+        List<DeviceProviderKind> supportedDeviceProviderRef
+    )
+    {
+        try
+        {
+            MsgIntAuthSuccess.newBuilder()
+                .setExpectedFullSyncId(expectedFullSyncIdRef)
+                .setVersionMajor(stltVersionRef[0])
+                .setVersionMinor(stltVersionRef[1])
+                .setVersionPatch(stltVersionRef[2])
+                .addAllSupportedLayer(asProtoLayerTypeWrapperList(supportedDeviceLayerRef))
+                .addAllSupportedProvider(asProtoProviderTypeWrapperList(supportedDeviceProviderRef))
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    private static List<LayerTypeWrapper> asProtoLayerTypeWrapperList(List<DeviceLayerKind> devLayerKindList)
+    {
+        List<LayerTypeWrapper> layerTypes = new ArrayList<>();
+        for (DeviceLayerKind devLayerKind : devLayerKindList)
+        {
+            layerTypes.add(asLayerTypeWrapper(devLayerKind));
+        }
+        return layerTypes;
+    }
+
+    private static List<ProviderTypeWrapper> asProtoProviderTypeWrapperList(
+        List<DeviceProviderKind> devProviderKindList
+    )
+    {
+        List<ProviderTypeWrapper> providerTypes = new ArrayList<>();
+        for (DeviceProviderKind devProviderKind : devProviderKindList)
+        {
+            providerTypes.add(asProviderTypeWrapper(devProviderKind));
+        }
+        return providerTypes;
     }
 
     @Override
@@ -706,7 +758,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeName(storPool.getNode().getName().displayValue)
             .setStorPoolDfnUuid(storPool.getDefinition(accCtx).getUuid().toString())
             .setStorPoolName(storPool.getName().displayValue)
-            .setProviderKind(getProviderType(storPool.getDeviceProviderKind()))
+            .setProviderKind(asProviderType(storPool.getDeviceProviderKind()))
             .addAllProps(ProtoMapUtils.fromMap(storPool.getProps(accCtx).map()))
             .addAllVlms(serializeVolumeList(accCtx, storPool.getVolumes(accCtx)))
             .addAllStaticTraits(
@@ -732,7 +784,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .build();
     }
 
-    private static ProviderType getProviderType(DeviceProviderKind deviceProviderKindRef)
+    private static ProviderTypeWrapper asProviderTypeWrapper(DeviceProviderKind deviceProviderKindRef)
+    {
+        return ProviderTypeWrapper.newBuilder().setType(asProviderType(deviceProviderKindRef)).build();
+    }
+
+    private static ProviderType asProviderType(DeviceProviderKind deviceProviderKindRef) throws ImplementationError
     {
         ProviderType type;
         switch (deviceProviderKindRef)
@@ -775,7 +832,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeName(apiStorPool.getNodeName())
             .setNodeUuid(apiStorPool.getNodeUuid().toString())
             .setStorPoolDfnUuid(apiStorPool.getStorPoolDfnUuid().toString())
-            .setProviderKind(getProviderType(apiStorPool.getDeviceProviderKind()))
+            .setProviderKind(asProviderType(apiStorPool.getDeviceProviderKind()))
             .addAllProps(ProtoMapUtils.fromMap(apiStorPool.getStorPoolProps()))
             .addAllVlms(serializeVolumeList(apiStorPool.getVlmList()))
             .addAllStaticTraits(ProtoMapUtils.fromMap(apiStorPool.getStorPoolStaticTraits()))
@@ -854,7 +911,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setStorPoolName(vlmApi.getStorPoolName())
                 .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()))
                 .addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()))
-                .setProviderKind(getProviderType(vlmApi.getStorPoolDeviceProviderKind()))
+                .setProviderKind(asProviderType(vlmApi.getStorPoolDeviceProviderKind()))
                 .setStorPoolDfnUuid(vlmApi.getStorPoolDfnUuid().toString())
                 .addAllStorPoolDfnProps(ProtoMapUtils.fromMap(vlmApi.getStorPoolDfnProps()))
                 .addAllStorPoolProps(ProtoMapUtils.fromMap(vlmApi.getStorPoolProps()))
@@ -909,7 +966,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return list;
     }
 
-    private static LayerType layerKind2LayerType(final DeviceLayerKind kind)
+    private static LayerTypeWrapper asLayerTypeWrapper(final DeviceLayerKind kind)
+    {
+        return LayerTypeWrapper.newBuilder().setType(asLayerType(kind)).build();
+    }
+
+    private static LayerType asLayerType(final DeviceLayerKind kind)
     {
         LayerType layerType; // WOHOOO checkstyle
         switch (kind)
@@ -940,7 +1002,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 RscDfnLayerDataApi rscDfnLayerDataApi = pair.objB;
 
                 RscDfnLayerData.Builder builder = RscDfnLayerData.newBuilder()
-                    .setLayerType(layerKind2LayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
+                    .setLayerType(asLayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
                 if (rscDfnLayerDataApi != null)
                 {
                     switch (rscDfnLayerDataApi.getLayerKind())
@@ -977,7 +1039,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 VlmDfnLayerDataApi vlmDfnLayerDataApi = pair.objB;
 
                 VlmDfnLayerData.Builder builder = VlmDfnLayerData.newBuilder()
-                    .setLayerType(layerKind2LayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
+                    .setLayerType(asLayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
                 if (vlmDfnLayerDataApi != null)
                 {
                     switch (vlmDfnLayerDataApi.getLayerKind())
@@ -1040,7 +1102,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 default:
                     break;
             }
-            builder.setLayerType(layerKind2LayerType(rscLayerPojo.getLayerKind()));
+            builder.setLayerType(asLayerType(rscLayerPojo.getLayerKind()));
             return builder.build();
         }
 
@@ -1055,7 +1117,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 String kind = pair.objA;
                 VlmLayerDataApi vlmLayerDataApi = pair.objB;
 
-                builder.setLayerType(layerKind2LayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
+                builder.setLayerType(asLayerType(LinstorParsingUtils.asDeviceLayerKind(kind)));
 
                 if (vlmLayerDataApi != null)
                 {
@@ -1271,7 +1333,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 default:
                     throw new ImplementationError("Unexpected provider kind: " + vlmPojo.getProviderKind());
             }
-            StorageVlm storageVlm = builder.setProviderKind(getProviderType(vlmPojo.getProviderKind())).build();
+            StorageVlm storageVlm = builder.setProviderKind(asProviderType(vlmPojo.getProviderKind())).build();
             return storageVlm;
         }
     }

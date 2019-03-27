@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.drbd.DrbdVersion;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
@@ -163,6 +164,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     private ServiceName devMgrInstName;
 
+    private final DrbdVersion drbdVersion;
     private boolean stateAvailable;
     private volatile boolean abortDevHndFlag;
     private DrbdEventService drbdEvent;
@@ -175,6 +177,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     private final DeviceHandlerImpl devHandler;
     private ResourceStateEvent resourceStateEvent;
+
 
     @Inject
     DeviceManagerImpl(
@@ -198,7 +201,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         Scheduler scheduler,
         UpdateMonitor updateMonitorRef,
         ResourceStateEvent resourceStateEventRef,
-        DeviceHandlerImpl deviceHandlerRef
+        DeviceHandlerImpl deviceHandlerRef,
+        DrbdVersion drbdVersionRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -220,6 +224,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         stltSecObj = stltSecObjRef;
         updateMonitor = updateMonitorRef;
         resourceStateEvent = resourceStateEventRef;
+        drbdVersion = drbdVersionRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -592,7 +597,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 // Cancel nonblocking collection of update notifications
                 waitUpdFlag.set(true);
 
-                if (stateAvailable)
+                if (!drbdVersion.hasDrbd9() || stateAvailable)
                 {
                     phaseDispatchDeviceHandlers(phaseLock);
                 }

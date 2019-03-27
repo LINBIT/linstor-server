@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -12,6 +13,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 public interface CommonSerializer
 {
@@ -30,6 +33,12 @@ public interface CommonSerializer
         byte[] build();
 
         CommonSerializerBuilder authError(ApiCallRcImpl apiCallRcRef);
+        CommonSerializerBuilder authSuccess(
+            long expectedFullSyncId,
+            int[] stltVersion,
+            List<DeviceLayerKind> supportedDeviceLayerRef,
+            List<DeviceProviderKind> supportedDeviceProviderRef
+        );
 
         CommonSerializerBuilder bytes(byte[] bytes);
 
@@ -62,5 +71,7 @@ public interface CommonSerializer
             Set<StorPoolName> storPoolFilter,
             Set<ResourceName> resourceFilter
         );
+
+
     }
 }

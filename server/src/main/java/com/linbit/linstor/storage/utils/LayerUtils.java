@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class LayerUtils
 {
@@ -152,4 +153,19 @@ public class LayerUtils
     {
         return !LayerUtils.getChildLayerDataByKind(rscData, kind).isEmpty();
     }
+
+    public static Set<DeviceLayerKind> getUsedDeviceLayerKinds(RscLayerObject rscLayerObject)
+    {
+        Set<DeviceLayerKind> ret = new TreeSet<>();
+        LinkedList<RscLayerObject> rscDataToExplore = new LinkedList<>();
+        rscDataToExplore.add(rscLayerObject);
+        while (!rscDataToExplore.isEmpty())
+        {
+            RscLayerObject rscData = rscDataToExplore.removeFirst();
+            ret.add(rscData.getLayerKind());
+            rscDataToExplore.addAll(rscData.getChildren());
+        }
+        return ret;
+    }
+
 }

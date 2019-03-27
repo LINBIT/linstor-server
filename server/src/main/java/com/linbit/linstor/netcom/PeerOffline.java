@@ -3,6 +3,8 @@ package com.linbit.linstor.netcom;
 import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -12,6 +14,9 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
@@ -336,5 +341,29 @@ public class PeerOffline implements Peer
     public Message nextCurrentMsgIn()
     {
         return null;
+    }
+
+    @Override
+    public void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerListRef)
+    {
+        // ignore, offline peer does support everything
+    }
+
+    @Override
+    public List<DeviceLayerKind> getSupportedLayers()
+    {
+        return Arrays.asList(DeviceLayerKind.values());
+    }
+
+    @Override
+    public void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderListRef)
+    {
+        // ignore, offline peer does support everything
+    }
+
+    @Override
+    public List<DeviceProviderKind> getSupportedProviders()
+    {
+        return Arrays.asList(DeviceProviderKind.values());
     }
 }

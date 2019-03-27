@@ -129,6 +129,7 @@ public class ApplyRsc implements ApiCall
                 case STORAGE:
                     rscDfnLayerDataApi = null;
                     break;
+                case UNKNOWN_LAYER: // fall-through
                 default:
                     throw new ImplementationError(
                         "Unknown resource definition layer (proto) kind: " + rscDfnData.getLayerType()
@@ -203,7 +204,7 @@ public class ApplyRsc implements ApiCall
                     vol.getVlmNr(),
                     Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
                     ProtoMapUtils.asMap(vol.getVlmPropsList()),
-                    ProtoDeserializationUtils.parseProviderKind(vol.getProviderKind()),
+                    ProtoDeserializationUtils.parseDeviceProviderKind(vol.getProviderKind()),
                     UUID.fromString(vol.getStorPoolDfnUuid()),
                     ProtoMapUtils.asMap(vol.getStorPoolDfnPropsList()),
                     ProtoMapUtils.asMap(vol.getStorPoolPropsList()),

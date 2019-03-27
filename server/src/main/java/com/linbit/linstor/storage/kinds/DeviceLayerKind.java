@@ -3,7 +3,7 @@ package com.linbit.linstor.storage.kinds;
 public enum DeviceLayerKind
 {
     DRBD(
-        StartupVerifications.UNAME, StartupVerifications.DRBD9
+        StartupVerification.UNAME, StartupVerification.DRBD9
     ),
     //    DRBD_PROXY(
     //        false,
@@ -13,19 +13,19 @@ public enum DeviceLayerKind
     //        StartupVerifications.DRBD_PROXY
     //    ),
     LUKS(
-        StartupVerifications.CRYPT_SETUP
+        StartupVerification.CRYPT_SETUP
     ),
     STORAGE();
-    private final StartupVerifications[] startupVerifications;
+    private final StartupVerification[] startupVerifications;
 
     DeviceLayerKind(
-        StartupVerifications... startupVerificationsRef
+        StartupVerification... startupVerificationsRef
     )
     {
         startupVerifications = startupVerificationsRef;
     }
 
-    public StartupVerifications[] getStartupVerifications()
+    public StartupVerification[] getStartupVerifications()
     {
         return startupVerifications;
     }

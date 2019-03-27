@@ -136,6 +136,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                         vlmData.setSizeState(sizeState);
                     }
                 }
+                else
+                {
+                    vlmData.setSizeState(Size.AS_EXPECTED);
+                }
             }
         }
 

@@ -18,7 +18,7 @@ public enum DeviceProviderKind
         false,
         true, // very thin :)
         new DisklessDriverKind(), // compatibility - will be removed
-        StartupVerifications.UNAME, StartupVerifications.DRBD9
+        StartupVerification.UNAME, StartupVerification.DRBD9
     ),
     LVM(
         false,
@@ -27,7 +27,7 @@ public enum DeviceProviderKind
         true,
         false,
         new LvmDriverKind(),
-        StartupVerifications.LVM
+        StartupVerification.LVM
     ),
     LVM_THIN(
         true,
@@ -36,7 +36,7 @@ public enum DeviceProviderKind
         true,
         true,
         new LvmThinDriverKind(),
-        StartupVerifications.LVM
+        StartupVerification.LVM
     ),
     ZFS(
         true,
@@ -45,7 +45,7 @@ public enum DeviceProviderKind
         true,
         false,
         new ZfsDriverKind(),
-        StartupVerifications.ZFS
+        StartupVerification.ZFS
     ),
     ZFS_THIN(
         true,
@@ -54,7 +54,7 @@ public enum DeviceProviderKind
         true,
         true,
         new ZfsThinDriverKind(),
-        StartupVerifications.ZFS
+        StartupVerification.ZFS
     ),
     SWORDFISH_TARGET(
         false,
@@ -91,7 +91,7 @@ public enum DeviceProviderKind
     private final boolean usesThinProvisioning;
     @Deprecated
     private final StorageDriverKind storageDriverKind;
-    private final StartupVerifications[] startupVerifications;
+    private final StartupVerification[] startupVerifications;
 
     DeviceProviderKind(
         boolean isSnapshotSupportedRef,
@@ -100,7 +100,7 @@ public enum DeviceProviderKind
         boolean hasBackingDeviceRef,
         boolean usesThinProvisioningRef,
         StorageDriverKind storageDriverKindRef,
-        StartupVerifications... startupVerificationsRef
+        StartupVerification... startupVerificationsRef
     )
     {
         isSnapshotSupported = isSnapshotSupportedRef;
@@ -143,7 +143,7 @@ public enum DeviceProviderKind
         return storageDriverKind;
     }
 
-    public StartupVerifications[] getStartupVerifications()
+    public StartupVerification[] getStartupVerifications()
     {
         return startupVerifications;
     }

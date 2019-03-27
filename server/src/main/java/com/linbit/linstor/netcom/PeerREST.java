@@ -6,13 +6,15 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
@@ -324,6 +326,29 @@ public class PeerREST implements Peer
         return null;
     }
 
+    @Override
+    public void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerListRef)
+    {
+        // ignore, client peer does not support anything
+    }
+
+    @Override
+    public List<DeviceLayerKind> getSupportedLayers()
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderListRef)
+    {
+        // ignore, client peer does not support anything
+    }
+
+    @Override
+    public List<DeviceProviderKind> getSupportedProviders()
+    {
+        return Collections.emptyList();
+    }
 
     @Override
     public String toString()

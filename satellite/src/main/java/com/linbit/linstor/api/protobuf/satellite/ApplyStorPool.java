@@ -72,7 +72,7 @@ public class ApplyStorPool implements ApiCall
             nodeName,
             protoStorPool.getStorPoolName(),
             UUID.fromString(protoStorPool.getStorPoolDfnUuid()),
-            ProtoDeserializationUtils.parseProviderKind(protoStorPool.getProviderKind()),
+            ProtoDeserializationUtils.parseDeviceProviderKind(protoStorPool.getProviderKind()),
             ProtoMapUtils.asMap(protoStorPool.getPropsList()),
             ProtoMapUtils.asMap(protoStorPoolDfn.getPropsList()),
             null, // List<Vlmapi> vlmRefs

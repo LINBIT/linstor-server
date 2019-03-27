@@ -36,7 +36,6 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -51,11 +50,11 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.satellite.StltStorPoolApiCallHandler.ChangedData;
+import com.linbit.linstor.core.apicallhandler.satellite.authentication.AuthenticationResult;
 import com.linbit.linstor.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
@@ -102,6 +101,7 @@ public class StltApiCallHandler
     private final StltStorPoolApiCallHandler storPoolHandler;
     private final StltSnapshotApiCallHandler snapshotHandler;
     private final PrepareDisksHandler prepareDisksHandler;
+    private final StltDeviceLayerChecker deviceLayerChecker;
 
     private final CtrlStltSerializer interComSerializer;
 
@@ -145,6 +145,7 @@ public class StltApiCallHandler
         StltRscApiCallHandler rscHandlerRef,
         StltStorPoolApiCallHandler storPoolHandlerRef,
         StltSnapshotApiCallHandler snapshotHandlerRef,
+        StltDeviceLayerChecker deviceLayerCheckerRef,
         PrepareDisksHandler prepareDisksHandlerRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
@@ -181,6 +182,7 @@ public class StltApiCallHandler
         rscHandler = rscHandlerRef;
         storPoolHandler = storPoolHandlerRef;
         snapshotHandler = snapshotHandlerRef;
+        deviceLayerChecker = deviceLayerCheckerRef;
         prepareDisksHandler = prepareDisksHandlerRef;
         interComSerializer = interComSerializerRef;
         reconfigurationLock = reconfigurationLockRef;
@@ -205,88 +207,66 @@ public class StltApiCallHandler
         dataToApply = new TreeMap<>();
     }
 
-    public ApiCallRcImpl authenticate(
+    public AuthenticationResult authenticate(
         UUID nodeUuid,
         String nodeName,
         Peer controllerPeer
     )
     {
-        ApiCallRcImpl apiCallRc = null;
+        AuthenticationResult authResult;
 
         // get satellites current hostname
         final String hostName = getHostname();
 
-        // Check if satellite hostname is equal to the given nodename
-        //
-        // The controller sends the display name, and the locally determined
-        // hostname may have different capitalization
-        // Perform a case-insensitive check
-        if (Satellite.checkHostname() && !hostName.equalsIgnoreCase(nodeName))
+        synchronized (dataToApply)
         {
-            ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
-            entry.setReturnCode(InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH);
-            entry.setMessage("Satellite node name doesn't match hostname.");
-            String cause = String.format(
-                "Satellite node name '%s' doesn't match nodes hostname '%s'.",
-                nodeName,
-                hostName
-            );
-            entry.setCause(cause);
-            apiCallRc = new ApiCallRcImpl();
-            apiCallRc.addEntry(entry);
-
-            errorReporter.logError(cause);
-        }
-        else
-        {
-            synchronized (dataToApply)
-            {
-                dataToApply.clear(); // controller should not have sent us anything before the authentication.
-                // that means, everything in this map is out-dated data + we should receive a full sync next.
-            }
-
-            controllerPeerConnector.setControllerPeer(
-                controllerPeer,
-                nodeUuid,
-                nodeName
-            );
-
-            // FIXME In the absence of any means of identification, assume the identity of the privileged API context
-            // for the peer.
-            AccessContext curCtx = controllerPeer.getAccessContext();
-            try
-            {
-                AccessContext newCtx = apiCtx.impersonate(
-                    apiCtx.subjectId, curCtx.subjectRole, curCtx.subjectDomain
-                );
-                controllerPeer.setAccessContext(apiCtx, newCtx);
-            }
-            catch (AccessDeniedException accExc)
-            {
-                errorReporter.reportError(
-                    Level.ERROR,
-                    new ImplementationError(
-                        "Creation of an access context for a Controller by the " +
-                        apiCtx.subjectRole.name.displayValue + " role failed",
-                        accExc
-                    )
-                );
-            }
-            try
-            {
-                // this will be cleared and re-set in fullsync. This is just for safety so that this property
-                // is always set
-                stltConf.setProp(LinStor.KEY_NODE_NAME, nodeName);
-                transMgrProvider.get().commit();
-            }
-            catch (AccessDeniedException | InvalidKeyException | InvalidValueException | SQLException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            errorReporter.logInfo("Controller connected and authenticated (" + controllerPeer.getId() + ")");
+            dataToApply.clear(); // controller should not have sent us anything before the authentication.
+            // that means, everything in this map is out-dated data + we should receive a full sync next.
         }
 
-        return apiCallRc;
+        controllerPeerConnector.setControllerPeer(
+            controllerPeer,
+            nodeUuid,
+            nodeName
+        );
+
+        // FIXME In the absence of any means of identification, assume the identity of the privileged API context
+        // for the peer.
+        AccessContext curCtx = controllerPeer.getAccessContext();
+        try
+        {
+            AccessContext newCtx = apiCtx.impersonate(
+                apiCtx.subjectId, curCtx.subjectRole, curCtx.subjectDomain
+            );
+            controllerPeer.setAccessContext(apiCtx, newCtx);
+        }
+        catch (AccessDeniedException accExc)
+        {
+            errorReporter.reportError(
+                Level.ERROR,
+                new ImplementationError(
+                    "Creation of an access context for a Controller by the " +
+                    apiCtx.subjectRole.name.displayValue + " role failed",
+                    accExc
+                )
+            );
+        }
+        try
+        {
+            // this will be cleared and re-set in fullsync. This is just for safety so that this property
+            // is always set
+            stltConf.setProp(LinStor.KEY_NODE_NAME, nodeName);
+            transMgrProvider.get().commit();
+
+            authResult = deviceLayerChecker.getSupportedLayerAndProvider(hostName);
+        }
+        catch (AccessDeniedException | InvalidKeyException | InvalidValueException | SQLException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        errorReporter.logInfo("Controller connected and authenticated (" + controllerPeer.getId() + ")");
+
+        return authResult;
     }
 
     public void applyFullSync(

@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.controller.exceptions.IllegalStora
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -61,6 +62,16 @@ public class StorPoolHelper
     {
         NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         StorPoolDefinitionData storPoolDef = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, false);
+
+        if (!isDeviceProviderKindAllowed(node, deviceProviderKindRef))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_STLT_DOES_NOT_SUPPORT_PROVIDER,
+                    "The satellite does not support the device provider " + deviceProviderKindRef
+                ).build()
+            );
+        }
 
         StorPoolData storPool;
         try
@@ -120,6 +131,32 @@ public class StorPoolHelper
             );
         }
         return storPool;
+    }
+
+    private boolean isDeviceProviderKindAllowed(
+        NodeData node,
+        DeviceProviderKind kind
+    )
+    {
+        boolean isKindAllowed;
+        try
+        {
+            // TODO try to skip creation of dfltDisklessStorPool if no DRBD is available
+            Peer peer = node.getPeer(peerAccCtx.get());
+            isKindAllowed =
+                peer == null || // if we are creating the node we also create a dfltDisklessStorPool
+                // where this peer will be uninitialized
+                peer.getSupportedProviders().contains(kind);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "access node " + node.getName() + "'s peer object",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return isKindAllowed;
     }
 
     public static String getStorPoolDescription(String nodeNameStr, String storPoolNameStr)

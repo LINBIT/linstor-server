@@ -47,7 +47,7 @@ public class CreateStorPool implements ApiCallReactive
             .createStorPool(
                 storPool.getNodeName(),
                 storPool.getStorPoolName(),
-                ProtoDeserializationUtils.parseProviderKind(storPool.getProviderKind()),
+                ProtoDeserializationUtils.parseDeviceProviderKind(storPool.getProviderKind()),
                 storPool.getFreeSpaceMgrName(),
                 ProtoMapUtils.asMap(storPool.getPropsList())
             )

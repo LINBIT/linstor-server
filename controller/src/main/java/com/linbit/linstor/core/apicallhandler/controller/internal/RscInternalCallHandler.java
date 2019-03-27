@@ -27,6 +27,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
+import com.linbit.linstor.tasks.RetryResourcesTask;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
@@ -55,7 +56,8 @@ public class RscInternalCallHandler
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
-    private LayerRscDataMerger layerRscDataMerger;
+    private final LayerRscDataMerger layerRscDataMerger;
+    private final RetryResourcesTask retryResourceTask;
 
     @Inject
     public RscInternalCallHandler(
@@ -69,7 +71,8 @@ public class RscInternalCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        LayerRscDataMerger layerRscDataMergerRef
+        LayerRscDataMerger layerRscDataMergerRef,
+        RetryResourcesTask retryResourceTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -84,6 +87,7 @@ public class RscInternalCallHandler
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         layerRscDataMerger = layerRscDataMergerRef;
+        retryResourceTask = retryResourceTaskRef;
     }
 
     public void handleResourceRequest(
@@ -233,6 +237,7 @@ public class RscInternalCallHandler
                     );
                 }
             }
+            retryResourceTask.remove(rsc);
             ctrlTransactionHelper.commit();
         }
         catch (InvalidNameException | AccessDeniedException exc)

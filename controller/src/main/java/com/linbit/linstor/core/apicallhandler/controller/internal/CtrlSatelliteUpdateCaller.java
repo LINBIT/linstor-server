@@ -46,7 +46,7 @@ public class CtrlSatelliteUpdateCaller
 {
     private final AccessContext apiCtx;
     private final CtrlStltSerializer internalComSerializer;
-    private RetryResourcesTask retryResourceTask;
+    private final RetryResourcesTask retryResourceTask;
 
     @Inject
     private CtrlSatelliteUpdateCaller(
@@ -283,8 +283,7 @@ public class CtrlSatelliteUpdateCaller
                     PeerNotConnectedException.class,
                     ignored -> notConnectedHandler.handleNotConnected(nodeName)
                 )
-                .doOnError(ignored -> retryResourceTask.add(currentRsc))
-                .doOnComplete(() -> retryResourceTask.remove(currentRsc));
+                .doOnError(ignored -> retryResourceTask.add(currentRsc));
         }
 
         return response;

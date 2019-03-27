@@ -4,11 +4,16 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
+import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
+import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
+import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -64,7 +69,30 @@ public class ProtoDeserializationUtils
         return arr;
     }
 
-    public static DeviceProviderKind parseProviderKind(ProviderType providerKindRef)
+    public static List<DeviceProviderKind> parseDeviceProviderKind(List<ProviderType> providerTypeList)
+    {
+        List<DeviceProviderKind> providerKindList = new ArrayList<>();
+        for (ProviderType providerType : providerTypeList)
+        {
+            providerKindList.add(parseDeviceProviderKind(providerType));
+        }
+        return providerKindList;
+    }
+
+    public static List<DeviceProviderKind> parseDeviceProviderKindWrapper(
+        List<ProviderTypeWrapper> providerTypeWrapperList
+    )
+    {
+        List<DeviceProviderKind> providerKindList = new ArrayList<>();
+        for (ProviderTypeWrapper providerTypeWrapper : providerTypeWrapperList)
+        {
+            providerKindList.add(parseDeviceProviderKind(providerTypeWrapper.getType()));
+        }
+        return providerKindList;
+    }
+
+
+    public static DeviceProviderKind parseDeviceProviderKind(ProviderType providerKindRef)
     {
         DeviceProviderKind kind = null;
         if (providerKindRef != null)
@@ -92,9 +120,51 @@ public class ProtoDeserializationUtils
                 case ZFS_THIN:
                     kind = DeviceProviderKind.ZFS_THIN;
                     break;
+                case UNKNOWN_PROVIDER: // fall-through
                 default:
                     throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);
             }
+        }
+        return kind;
+    }
+
+    public static List<DeviceLayerKind> parseDeviceLayerKindList(List<LayerType> layerTypeList)
+    {
+        List<DeviceLayerKind> devLayerKindList = new ArrayList<>();
+        for (LayerType layerType : layerTypeList)
+        {
+            devLayerKindList.add(parseDeviceLayerKind(layerType));
+        }
+        return devLayerKindList;
+    }
+
+    public static List<DeviceLayerKind> parseDeviceLayerKindWrapper(List<LayerTypeWrapper> layerTypeWrapperList)
+    {
+        List<DeviceLayerKind> devLayerKindList = new ArrayList<>();
+        for (LayerTypeWrapper layerTypeWrapper : layerTypeWrapperList)
+        {
+            devLayerKindList.add(parseDeviceLayerKind(layerTypeWrapper.getType()));
+        }
+        return devLayerKindList;
+    }
+
+    public static DeviceLayerKind parseDeviceLayerKind(LayerType layerTypeRef)
+    {
+        DeviceLayerKind kind = null;
+        switch (layerTypeRef)
+        {
+            case DRBD:
+                kind = DeviceLayerKind.DRBD;
+                break;
+            case LUKS:
+                kind = DeviceLayerKind.LUKS;
+                break;
+            case STORAGE:
+                kind = DeviceLayerKind.STORAGE;
+                break;
+            case UNKNOWN_LAYER: // fall-trough
+            default:
+                throw new ImplementationError("Unknown (proto) LayerType: " + layerTypeRef);
         }
         return kind;
     }

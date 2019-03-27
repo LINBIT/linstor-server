@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallReactive;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -77,6 +78,9 @@ public class IntAuthAccept implements ApiCallReactive
         MsgIntAuthSuccess msgIntAuthSuccess = MsgIntAuthSuccess.parseDelimitedFrom(msgDataIn);
         long expectedFullSyncId = msgIntAuthSuccess.getExpectedFullSyncId();
 
+        // TODO the next block should be somewhere in the CtrlApiCallHandler
+        // (or we could start an CtrlIntApiCallHandler or something like that)
+
         Peer peer = peerProvider.get();
         if (LinStor.VERSION_INFO_PROVIDER.equalsVersion(
             msgIntAuthSuccess.getVersionMajor(),
@@ -85,6 +89,16 @@ public class IntAuthAccept implements ApiCallReactive
         {
             peer.setAuthenticated(true);
             peer.setConnectionStatus(Peer.ConnectionStatus.CONNECTED);
+            peer.setSupportedLayers(
+                ProtoDeserializationUtils.parseDeviceLayerKindWrapper(
+                    msgIntAuthSuccess.getSupportedLayerList()
+                )
+            );
+            peer.setSupportedProviders(
+                ProtoDeserializationUtils.parseDeviceProviderKindWrapper(
+                    msgIntAuthSuccess.getSupportedProviderList()
+                )
+            );
 
             // Set the satellite's access context
             // Certain APIs called by the satellite are executed with a privileged access context by the controller,

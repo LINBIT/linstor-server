@@ -9,6 +9,8 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.OrderingFlux;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -25,10 +27,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
@@ -140,6 +144,9 @@ public class TcpConnectorPeer implements Peer
 
     private AtomicLong nextApiCallId = new AtomicLong(1);
     private Map<Long, FluxSink<ByteArrayInputStream>> openRpcs = Collections.synchronizedMap(new TreeMap<>());
+
+    private List<DeviceLayerKind> supportedDeviceLayerKinds = new ArrayList<>();
+    private List<DeviceProviderKind> supportedDeviceProviderKinds = new ArrayList<>();
 
     protected TcpConnectorPeer(
         ErrorReporter errorReporterRef,
@@ -452,6 +459,7 @@ public class TcpConnectorPeer implements Peer
         connector.closeConnection(this, false);
     }
 
+    @Override
     public void closeConnection(boolean allowReconnect)
     {
         connector.closeConnection(this, allowReconnect);
@@ -983,5 +991,33 @@ public class TcpConnectorPeer implements Peer
              */
             disableInterestOp(OP_READ);
         }
+    }
+
+    @Override
+    public void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerListRef)
+    {
+System.out.println(this + " setting supported layers: " + supportedDeviceLayerListRef);
+        supportedDeviceLayerKinds.clear();
+        supportedDeviceLayerKinds.addAll(supportedDeviceLayerListRef);
+    }
+
+    @Override
+    public List<DeviceLayerKind> getSupportedLayers()
+    {
+        return supportedDeviceLayerKinds;
+    }
+
+    @Override
+    public void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderListRef)
+    {
+System.out.println(this + " setting supported providers: " + supportedDeviceProviderListRef);
+        supportedDeviceProviderKinds.clear();
+        supportedDeviceProviderKinds.addAll(supportedDeviceProviderListRef);
+    }
+
+    @Override
+    public List<DeviceProviderKind> getSupportedProviders()
+    {
+        return supportedDeviceProviderKinds;
     }
 }

@@ -29,6 +29,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.utils.DmStatCommands;
@@ -38,7 +39,6 @@ import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Pair;
 
 import javax.inject.Provider;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -204,9 +204,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 }
                 else
                 {
+                    Size sizeState = vlmData.getSizeState();
                     if (vlmData.getVolume().getFlags().isSet(storDriverAccCtx, VlmFlags.RESIZE) &&
-                        (vlmData.getSizeState().equals(VlmProviderObject.Size.TOO_LARGE) ||
-                            vlmData.getSizeState().equals(VlmProviderObject.Size.TOO_SMALL))
+                        (sizeState.equals(VlmProviderObject.Size.TOO_LARGE) ||
+                            sizeState.equals(VlmProviderObject.Size.TOO_SMALL))
                     )
                     {
                         errorReporter.logTrace("Lv %s will be resized", lvId);

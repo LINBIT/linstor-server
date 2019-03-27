@@ -6,18 +6,17 @@ import javax.inject.Singleton;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.satellite.authentication.AuthenticationResult;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass.MsgIntAuth;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,11 +62,14 @@ public class CtrlAuth implements ApiCall
         UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
 
         Peer controllerPeer = controllerPeerProvider.get();
-        ApiCallRcImpl apiCallRc = apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer);
+        AuthenticationResult authResult =
+            apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer);
 
-        if (apiCallRc == null)
+        if (authResult.isAuthenticated())
         {
             // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
+            // additionally we also send information which layers are supported by the current satellite
+
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess.Builder builder = MsgIntAuthSuccess.newBuilder();
             builder.setExpectedFullSyncId(updateMonitor.getNextFullSyncId());
@@ -78,19 +80,23 @@ public class CtrlAuth implements ApiCall
 
             builder.build().writeDelimitedTo(baos);
 
-            controllerPeer.sendMessage(
-                apiCallAnswerer.prepareOnewayMessage(
-                    baos.toByteArray(),
-                    InternalApiConsts.API_AUTH_ACCEPT
-                )
+            controllerPeerProvider.get().sendMessage(
+                commonSerializer.onewayBuilder(InternalApiConsts.API_AUTH_ACCEPT)
+                    .authSuccess(
+                        updateMonitor.getNextFullSyncId(),
+                        LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
+                        authResult.getSupportedDeviceLayer(),
+                        authResult.getSupportedDeviceProvider()
+                    )
+                    .build()
             );
         }
         else
         {
             // whatever happened should be in the apiCallRc
-            controllerPeer.sendMessage(
+            controllerPeerProvider.get().sendMessage(
                 commonSerializer.onewayBuilder(InternalApiConsts.API_AUTH_ERROR)
-                    .authError(apiCallRc)
+                    .authError(authResult.getFailedApiCallRc())
                     .build()
             );
         }

@@ -78,7 +78,7 @@ public class VlmApiData implements VlmApi
         DeviceProviderKind kind = null;
         if (vlm.hasProviderKind())
         {
-            kind = ProtoDeserializationUtils.parseProviderKind(vlm.getProviderKind());
+            kind = ProtoDeserializationUtils.parseDeviceProviderKind(vlm.getProviderKind());
         }
         return kind;
     }
