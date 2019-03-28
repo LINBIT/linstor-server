@@ -42,7 +42,7 @@ class SatelliteArgumentParser
 
     @CommandLine.Option(names = {"--skip-drbd-check"},
                         description = "skips the check for a supported DRBD installation")
-    private boolean skipDrbdCheck = false;
+    private boolean skipDrbdCheck = true;
 
     @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
     private String bindAddress = null;
