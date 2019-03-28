@@ -21,6 +21,7 @@ public class LvmCommands
     public static final int LVS_COL_VG = 3;
     public static final int LVS_COL_POOL_LV = 4;
     public static final int LVS_COL_DATA_PERCENT = 5;
+    public static final int LVS_COL_ATTRIBUTES = 6;
 
     public static OutputData lvs(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
     {
@@ -29,7 +30,7 @@ public class LvmCommands
             StringUtils.concat(
                 new String[] {
                     "lvs",
-                    "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent",
+                    "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr",
                     "--separator", LvmUtils.DELIMITER,
                     "--noheadings",
                     "--units", "k",

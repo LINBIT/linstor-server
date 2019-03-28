@@ -145,7 +145,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     /*
      * Expected to be overridden (extended) by LvmThinProvider
      */
-    protected void updateInfo(LvmData vlmData, LvsInfo info) throws AccessDeniedException, SQLException
+    protected void updateInfo(LvmData vlmData, LvsInfo info)
+        throws AccessDeniedException, SQLException, StorageException
     {
         vlmData.setIdentifier(asLvIdentifier(vlmData));
         if (info == null)

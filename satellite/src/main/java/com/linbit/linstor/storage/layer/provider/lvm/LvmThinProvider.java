@@ -63,7 +63,8 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void updateInfo(LvmData vlmDataRef, LvsInfo infoRef) throws AccessDeniedException, SQLException
+    protected void updateInfo(LvmData vlmDataRef, LvsInfo infoRef)
+        throws AccessDeniedException, SQLException, StorageException
     {
         super.updateInfo(vlmDataRef, infoRef);
         LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
@@ -76,6 +77,14 @@ public class LvmThinProvider extends LvmProvider
         {
             lvmThinData.setThinPool(infoRef.thinPool);
             lvmThinData.setAllocatedPercent(infoRef.dataPercent);
+            if (!infoRef.attributes.contains("a"))
+            {
+                LvmCommands.activateVolume(
+                    extCmdFactory.create(),
+                    lvmThinData.getVolumeGroup(),
+                    lvmThinData.getIdentifier()
+                );
+            }
         }
     }
 
