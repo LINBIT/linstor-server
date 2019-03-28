@@ -2180,7 +2180,9 @@ components:
             type: string
         obj_refs:
           type: object
-          description: Map of objection that where involved by the operation.
+          description: Map of objection that have been involved by the operation.
+          additionalProperties:
+            type: string
     Node:
       type: object
       required:
