@@ -95,7 +95,16 @@ public class ApiCallRcConverter
         {
             if ((ApiConsts.MASK_ERROR & rc.getReturnCode()) == ApiConsts.MASK_ERROR)
             {
-                status = Response.Status.INTERNAL_SERVER_ERROR;
+                long strippedCode = rc.getReturnCode() & ~ApiConsts.MASK_ERROR;
+                if (strippedCode >= (ApiConsts.FAIL_NOT_FOUND_NODE & ~ApiConsts.MASK_ERROR) &&
+                    strippedCode <= (ApiConsts.FAIL_NOT_FOUND_KVS & ~ApiConsts.MASK_ERROR))
+                {
+                    status = Response.Status.NOT_FOUND;
+                }
+                else
+                {
+                    status = Response.Status.INTERNAL_SERVER_ERROR;
+                }
                 break;
             }
         }

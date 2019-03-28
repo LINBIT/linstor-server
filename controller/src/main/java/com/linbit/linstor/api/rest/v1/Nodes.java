@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
@@ -10,6 +11,7 @@ import com.linbit.linstor.api.rest.v1.serializer.Json.NodeData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.NodeModifyData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.NetInterfaceData;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -261,7 +263,15 @@ public class Nodes
 
                 if (netInterfaceName != null && netIfs.isEmpty())
                 {
-                    resp = Response.status(Response.Status.NOT_FOUND).build();
+                    throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_NOT_FOUND_NODE,
+                            "Node '" + nodeName + "' not found."
+                        )
+                        .setCause("The specified node '" + nodeName + "' could not be found in the database")
+                        .setCorrection("Create a node with the name '" + nodeName + "' first.")
+                        .build()
+                    );
                 }
                 else
                 {
@@ -272,7 +282,15 @@ public class Nodes
             }
             else
             {
-                resp = Response.status(Response.Status.NOT_FOUND).build();
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_NODE,
+                        "Node '" + nodeName + "' not found."
+                    )
+                    .setCause("The specified node '" + nodeName + "' could not be found in the database")
+                    .setCorrection("Create a node with the name '" + nodeName + "' first.")
+                    .build()
+                );
             }
             return resp;
         }, false);

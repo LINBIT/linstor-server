@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
@@ -165,11 +166,19 @@ public class RequestHelper
     void doFlux(final AsyncResponse asyncResponse, Mono<Response> monoResponse)
     {
         monoResponse
+            .onErrorResume(ApiRcException.class,
+                apiExc -> Mono.just(
+                    ApiCallRcConverter.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)))
             .subscribe(
                 asyncResponse::resume,
-                exc -> asyncResponse.resume(
-                    Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(exc.getMessage()).build()
-                )
+                exc ->
+                {
+                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                    apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage()));
+                    asyncResponse.resume(
+                        ApiCallRcConverter.toResponse(apiCallRc, Response.Status.INTERNAL_SERVER_ERROR)
+                    );
+                }
             );
     }
 
