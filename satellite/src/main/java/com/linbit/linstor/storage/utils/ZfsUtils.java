@@ -6,6 +6,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -76,51 +77,42 @@ public class ZfsUtils
         final int expectedColCount = 3;
         for (final String line : lines)
         {
-            final String[] data = line.trim().split(DELIMITER);
-            if (data.length == expectedColCount)
+            try
             {
-                final String identifier = data[ZFS_LIST_FILESYSTEMS_COL_IDENTIFIER];
-                final String availableSizeStr = data[ZFS_LIST_FILESYSTEMS_COL_AVAILABLE_SIZE];
-                final String type = data[ZFS_LIST_FILESYSTEMS_COL_TYPE];
-
-                if (type.equals(ZFS_TYPE_FILESYSTEM))
+                final String[] data = line.trim().split(DELIMITER);
+                if (data.length == expectedColCount)
                 {
-                    long usableSize;
-                    try
+                    final String identifier = data[ZFS_LIST_FILESYSTEMS_COL_IDENTIFIER];
+                    final String availableSizeStr = data[ZFS_LIST_FILESYSTEMS_COL_AVAILABLE_SIZE];
+                    final String type = data[ZFS_LIST_FILESYSTEMS_COL_TYPE];
+
+                    if (type.equals(ZFS_TYPE_FILESYSTEM))
                     {
-                        usableSize = SizeConv.convert(
+                        long usableSize = SizeConv.convert(
                             StorageUtils.parseDecimalAsLong(availableSizeStr.trim()),
                             SizeUnit.UNIT_B,
                             SizeUnit.UNIT_KiB
                         );
-                    }
-                    catch (NumberFormatException nfExc)
-                    {
-                        throw new StorageException(
-                            "Unable to parse available volume size",
-                            "Size to parse: '" + availableSizeStr + "'",
-                            null,
-                            null,
-                            "External command used to query logical volume info: " +
-                                String.join(" ", output.executedCommand),
-                                nfExc
+                        int poolNameEndIndex = identifier.lastIndexOf(File.separator);
+                        if (poolNameEndIndex == -1)
+                        {
+                            poolNameEndIndex = identifier.length() - 1;
+                        }
+                        final ZfsInfo state = new ZfsInfo(
+                            identifier.substring(0, poolNameEndIndex),
+                            identifier.substring(poolNameEndIndex + 1),
+                            type,
+                            buildZfsPath(identifier),
+                            -1,
+                            usableSize
                         );
+                        infoByIdentifier.put(identifier, state);
                     }
-                    int poolNameEndIndex = identifier.lastIndexOf(File.separator);
-                    if (poolNameEndIndex == -1)
-                    {
-                        poolNameEndIndex = identifier.length() - 1;
-                    }
-                    final ZfsInfo state = new ZfsInfo(
-                        identifier.substring(0, poolNameEndIndex),
-                        identifier.substring(poolNameEndIndex + 1),
-                        type,
-                        buildZfsPath(identifier),
-                        -1,
-                        usableSize
-                    );
-                    infoByIdentifier.put(identifier, state);
                 }
+            }
+            catch (NumberFormatException ignored)
+            {
+                // we could not parse a number so we ignore the whole line
             }
         }
         return infoByIdentifier;
@@ -140,73 +132,49 @@ public class ZfsUtils
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
-            if (data.length == expectedColCount)
+            try
             {
-                final String identifier = data[ZFS_LIST_COL_IDENTIFIER];
-                final String allocatedSizeStr = data[ZFS_LIST_COL_ALLOCATED_SIZE];
-                final String usableSizeStr = data[ZFS_LIST_COL_USABLE_SIZE];
-                final String type = data[ZFS_LIST_COL_TYPE];
-
-                if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
+                if (data.length == expectedColCount)
                 {
-                    long allocatedSize;
-                    try
+                    final String identifier = data[ZFS_LIST_COL_IDENTIFIER];
+                    final String allocatedSizeStr = data[ZFS_LIST_COL_ALLOCATED_SIZE];
+                    final String usableSizeStr = data[ZFS_LIST_COL_USABLE_SIZE];
+                    final String type = data[ZFS_LIST_COL_TYPE];
+
+                    if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
                     {
-                        allocatedSize = SizeConv.convert(
+                        long allocatedSize = SizeConv.convert(
                             StorageUtils.parseDecimalAsLong(allocatedSizeStr.trim()),
                             SizeUnit.UNIT_B,
                             SizeUnit.UNIT_KiB
                         );
-                    }
-                    catch (NumberFormatException nfExc)
-                    {
-                        throw new StorageException(
-                            "Unable to parse allocated volume size",
-                            "Size to parse: '" + allocatedSizeStr + "'",
-                            null,
-                            null,
-                            "External command used to query logical volume info: " +
-                                String.join(" ", output.executedCommand),
-                                nfExc
-                        );
-                    }
-                    long usableSize;
-                    try
-                    {
-                        usableSize = SizeConv.convert(
+
+                        long usableSize = SizeConv.convert(
                             StorageUtils.parseDecimalAsLong(usableSizeStr.trim()),
                             SizeUnit.UNIT_B,
                             SizeUnit.UNIT_KiB
                         );
-                    }
-                    catch (NumberFormatException nfExc)
-                    {
-                        throw new StorageException(
-                            "Unable to parse usable volume size",
-                            "Size to parse: '" + usableSizeStr + "'",
-                            null,
-                            null,
-                            "External command used to query logical volume info: " +
-                                String.join(" ", output.executedCommand),
-                                nfExc
-                        );
-                    }
 
-                    int poolNameEndIndex = identifier.lastIndexOf(File.separator);
-                    if (poolNameEndIndex == -1)
-                    {
-                        poolNameEndIndex = identifier.length() - 1;
+                        int poolNameEndIndex = identifier.lastIndexOf(File.separator);
+                        if (poolNameEndIndex == -1)
+                        {
+                            poolNameEndIndex = identifier.length() - 1;
+                        }
+                        final ZfsInfo state = new ZfsInfo(
+                            identifier.substring(0, poolNameEndIndex),
+                            identifier.substring(poolNameEndIndex + 1),
+                            type,
+                            buildZfsPath(identifier),
+                            allocatedSize,
+                            usableSize
+                        );
+                        infoByIdentifier.put(identifier, state);
                     }
-                    final ZfsInfo state = new ZfsInfo(
-                        identifier.substring(0, poolNameEndIndex),
-                        identifier.substring(poolNameEndIndex + 1),
-                        type,
-                        buildZfsPath(identifier),
-                        allocatedSize,
-                        usableSize
-                    );
-                    infoByIdentifier.put(identifier, state);
                 }
+            }
+            catch (NumberFormatException ignored)
+            {
+                // we could not parse a number so we ignore the whole line
             }
         }
         return infoByIdentifier;

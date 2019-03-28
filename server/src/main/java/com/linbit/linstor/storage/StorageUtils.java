@@ -12,7 +12,7 @@ public class StorageUtils
      *
      * @throws NumberFormatException
      */
-    public static BigDecimal parseDecimal(String raw)
+    public static BigDecimal parseDecimal(String raw) throws NumberFormatException
     {
         return new BigDecimal(raw.replace(',', '.'));
     }
@@ -23,13 +23,13 @@ public class StorageUtils
      *
      * @throws NumberFormatException
      */
-    public static long parseDecimalAsLong(String raw)
+    public static long parseDecimalAsLong(String raw) throws NumberFormatException
     {
         // Ignore the fractional part, but throw an exception if the value is too large.
         return parseDecimal(raw).toBigInteger().longValueExact();
     }
 
-    public static float parseDecimalAsFloat(String raw)
+    public static float parseDecimalAsFloat(String raw) throws NumberFormatException
     {
         return parseDecimal(raw).floatValue();
     }
