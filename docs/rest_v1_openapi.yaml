@@ -2247,6 +2247,8 @@ components:
     Properties:
       type: object
       description: A string to string property map.
+      additionalProperties:
+        type: string
     ProviderKind:
       type: string
       enum:
