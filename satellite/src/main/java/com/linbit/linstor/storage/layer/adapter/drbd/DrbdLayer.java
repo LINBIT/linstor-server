@@ -438,7 +438,9 @@ public class DrbdLayer implements DeviceLayer
 
     private boolean needsResize(DrbdVlmData drbdVlmData) throws AccessDeniedException
     {
-        return drbdVlmData.getVolume().getFlags().isSet(workerCtx, VlmFlags.DRBD_RESIZE);
+        // A resize should not be called on a resize without a disk
+        // there was a bug in pre 0.9.2 versions where diskless would be chosen for the resize command
+        return drbdVlmData.getVolume().getFlags().isSet(workerCtx, VlmFlags.DRBD_RESIZE) && drbdVlmData.hasDisk();
     }
 
     private String generateDevicePath(DrbdVlmData drbdVlmData)
