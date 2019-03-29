@@ -275,6 +275,9 @@ paths:
       summary: lists all storage pools for a node
       operationId: nodeStoragePoolList
       description: Lists all storage pools of a node
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Array list of all storage pools
