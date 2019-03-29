@@ -2163,6 +2163,7 @@ components:
       properties:
         ret_code:
           type: integer
+          format: int64
           description: A masked error number
         message:
           type: string
