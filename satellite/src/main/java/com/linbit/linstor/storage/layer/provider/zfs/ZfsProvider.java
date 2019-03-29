@@ -34,6 +34,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -298,8 +299,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
             );
         }
         zpoolName = zpoolName.trim();
-        Set<String> zpoolList = ZfsUtils.getZPoolList(extCmdFactory.create());
-        if (!zpoolList.contains(zpoolName))
+        HashMap<String, ZfsInfo> zfsPoolMap = ZfsUtils.getThinZPoolsList(extCmdFactory.create());
+        if (!zfsPoolMap.containsKey(zpoolName))
         {
             throw new StorageException("no zpool found with name '" + zpoolName + "'");
         }
@@ -308,15 +309,24 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     @Override
     public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        String zPool = getZPool(storPool);
-        if (zPool == null)
+        String poolName = getZPool(storPool);
+        if (poolName == null)
         {
-            throw new StorageException("Unset zpool for " + storPool);
+            throw new StorageException("Unset zfs dataset for " + storPool);
         }
+
+        int idx = poolName.indexOf(File.separator);
+        if (idx == -1)
+        {
+            idx = poolName.length();
+        }
+        String rootPoolName = poolName.substring(0, idx);
+
+        // do not use sub pool, we have to ask the actual zpool, not the sub dataset
         return ZfsUtils.getZPoolTotalSize(
             extCmdFactory.create(),
-            Collections.singleton(zPool)
-        ).get(zPool);
+            Collections.singleton(rootPoolName)
+        ).get(rootPoolName);
     }
 
     @Override

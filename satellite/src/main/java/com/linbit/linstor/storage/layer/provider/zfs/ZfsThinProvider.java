@@ -119,7 +119,7 @@ public class ZfsThinProvider extends ZfsProvider
         int idx = thinZpoolName.indexOf(File.separator);
         if (idx == -1)
         {
-            idx = thinZpoolName.length() - 1;
+            idx = thinZpoolName.length();
         }
         String zPoolName = thinZpoolName.substring(0, idx);
 
