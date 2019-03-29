@@ -1,3 +1,13 @@
+linstor-server (0.9.4-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rest-api: fix inconsistent error returns
+  * rest-api-docu: obj_refs is also a string map
+  * rest-api-docu: nodes/{node}/storage-pools missing GET parameters
+  * zfs-provider: fix thin and thick storage pool detection and size query
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 29 Mar 2019 10:21:23 +0100
+
 linstor-server (0.9.3-1) experimental; urgency=medium
 
   [ Roland Kammerer ]

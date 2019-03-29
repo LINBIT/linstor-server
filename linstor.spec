@@ -1,5 +1,5 @@
 Name: linstor
-Version: 0.9.3
+Version: 0.9.4
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -126,6 +126,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Fri Mar 29 2019 Rene Peinthor <rene.peinthor@linbit.com> 0.9.4-1
+- New upstream release. Fix zfs root thin pools and zfs dataset pools.
+
 * Thu Mar 28 2019 Rene Peinthor <rene.peinthor@linbit.com> 0.9.3-1
 - New upstream release. Fix zfs storage pools and activate lvm-thin volumes.
 
