@@ -132,6 +132,18 @@ public class Nodes
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_NODE, request), () ->
         {
             NodeData data = objectMapper.readValue(jsonData, NodeData.class);
+
+            // if we only get 1 netinterface with no satellite port set, assume it will be the default satellite netif
+            if (data.net_interfaces.size() == 1)
+            {
+                NetInterfaceData netif = data.net_interfaces.get(0);
+                if (netif.satellite_port == null)
+                {
+                    netif.satellite_port = ApiConsts.DFLT_STLT_PORT_PLAIN;
+                    netif.satellite_encryption_type = ApiConsts.VAL_NETCOM_TYPE_PLAIN;
+                }
+            }
+
             ApiCallRc apiCallRc = ctrlApiCallHandler.createNode(
                 data.name,
                 data.type,
