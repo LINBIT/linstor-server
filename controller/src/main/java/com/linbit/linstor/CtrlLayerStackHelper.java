@@ -148,9 +148,9 @@ public class CtrlLayerStackHelper
         return layerStack;
     }
 
-    public void ensureRscDfnLayerDataExits(
+    public void ensureRscDfnLayerDataExitsIfNeeded(
         ResourceDefinitionData rscDfn,
-        Integer tcpPortNrInt,
+        Integer tcpPortNrIntRef,
         TransportType transportTypeRef,
         String secretRef
     )
@@ -161,40 +161,13 @@ public class CtrlLayerStackHelper
         try
         {
             layerStack = rscDfn.getLayerStack(apiCtx);
-            if (layerStack.contains(DeviceLayerKind.DRBD))
+            if (layerStack.contains(DeviceLayerKind.DRBD) ||
+                tcpPortNrIntRef != null ||
+                transportTypeRef != null ||
+                secretRef != null
+            )
             {
-                DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
-                if (drbdRscDfnData == null)
-                {
-                    rscDfn.setLayerData(
-                        apiCtx,
-                        layerDataFactory.createDrbdRscDfnData(
-                            rscDfn,
-                            "",
-                            getAndCheckPeerSlotsForNewResource(rscDfn),
-                            ConfigModule.DEFAULT_AL_STRIPES,
-                            ConfigModule.DEFAULT_AL_SIZE,
-                            tcpPortNrInt,
-                            transportTypeRef,
-                            secretRef
-                        )
-                    );
-                }
-                else
-                {
-                    if (tcpPortNrInt != null)
-                    {
-                        drbdRscDfnData.setPort(tcpPortNrInt);
-                    }
-                    if (transportTypeRef != null)
-                    {
-                        drbdRscDfnData.setTransportType(transportTypeRef);
-                    }
-                    if (secretRef != null)
-                    {
-                        drbdRscDfnData.setSecret(secretRef);
-                    }
-                }
+                ensureDrbdRscDfnExists(rscDfn, tcpPortNrIntRef, transportTypeRef, secretRef);
             }
             else
             {
@@ -210,6 +183,63 @@ public class CtrlLayerStackHelper
             throw new ImplementationError(exc);
         }
     }
+
+    private DrbdRscDfnData ensureDrbdRscDfnExists(
+        ResourceDefinitionData rscDfn,
+        Integer tcpPortNrIntRef,
+        TransportType transportTypeRef,
+        String secretRef
+    )
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException,
+        ExhaustedPoolException, ValueInUseException
+    {
+        DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+        if (drbdRscDfnData == null)
+        {
+            TransportType transportType = transportTypeRef;
+            String secret = secretRef;
+            if (secret == null)
+            {
+                secret = SecretGenerator.generateSecretString(SecretGenerator.DRBD_SHARED_SECRET_SIZE);
+            }
+            if (transportType == null)
+            {
+                transportType = TransportType.IP;
+            }
+
+
+            rscDfn.setLayerData(
+                apiCtx,
+                layerDataFactory.createDrbdRscDfnData(
+                    rscDfn,
+                    "",
+                    getAndCheckPeerSlotsForNewResource(rscDfn),
+                    ConfigModule.DEFAULT_AL_STRIPES,
+                    ConfigModule.DEFAULT_AL_SIZE,
+                    tcpPortNrIntRef,
+                    transportType,
+                    secret
+                )
+            );
+        }
+        else
+        {
+            if (tcpPortNrIntRef != null)
+            {
+                drbdRscDfnData.setPort(tcpPortNrIntRef);
+            }
+            if (transportTypeRef != null)
+            {
+                drbdRscDfnData.setTransportType(transportTypeRef);
+            }
+            if (secretRef != null)
+            {
+                drbdRscDfnData.setSecret(secretRef);
+            }
+        }
+        return drbdRscDfnData;
+    }
+
     public void ensureVlmDfnLayerDataExits(
         VolumeDefinitionData vlmDfn,
         Integer minorNrInt
@@ -220,16 +250,14 @@ public class CtrlLayerStackHelper
         try
         {
             List<DeviceLayerKind> layerStack = vlmDfn.getResourceDefinition().getLayerStack(apiCtx);
-            if (layerStack.contains(DeviceLayerKind.DRBD))
+            if (layerStack.contains(DeviceLayerKind.DRBD) || minorNrInt != null)
             {
-                DrbdRscDfnData drbdRscDfnData = vlmDfn.getResourceDefinition().getLayerData(
-                    apiCtx,
-                    DeviceLayerKind.DRBD
+                DrbdRscDfnData drbdRscDfnData = ensureDrbdRscDfnExists(
+                    (ResourceDefinitionData) vlmDfn.getResourceDefinition(),
+                    null,
+                    null,
+                    null
                 );
-                if (drbdRscDfnData == null)
-                {
-                    throw new ImplementationError("No drbd resource definition data found");
-                }
                 DrbdVlmDfnData drbdVlmDfn = drbdRscDfnData.getDrbdVlmDfn(vlmDfn.getVolumeNumber());
                 if (drbdVlmDfn == null)
                 {

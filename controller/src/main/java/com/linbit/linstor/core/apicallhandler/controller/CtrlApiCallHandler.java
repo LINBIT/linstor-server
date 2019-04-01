@@ -10,7 +10,6 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
@@ -220,10 +219,6 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
         String secret = secretRef;
-        if (secret == null || secret.trim().isEmpty())
-        {
-            secret = SecretGenerator.generateSecretString(SecretGenerator.DRBD_SHARED_SECRET_SIZE);
-        }
         Map<String, String> props = propsRef;
         if (props == null)
         {

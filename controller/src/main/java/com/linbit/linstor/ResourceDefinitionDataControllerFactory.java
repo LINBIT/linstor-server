@@ -97,7 +97,7 @@ public class ResourceDefinitionDataControllerFactory
         );
 
         driver.create(rscDfn);
-        layerStackHelper.ensureRscDfnLayerDataExits(rscDfn, port, transType, secret);
+        layerStackHelper.ensureRscDfnLayerDataExitsIfNeeded(rscDfn, port, transType, secret);
 
         return rscDfn;
     }
