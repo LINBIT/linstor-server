@@ -250,24 +250,25 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         }
         else
         {
-            Flux<ApiCallRc> nextStep;
-            if (resize && hasDrbd(vlmDfn))
-            {
-                nextStep = resizeDrbd(rscName, vlmNr);
-            }
-            else
-            {
-                nextStep = Flux.empty();
-            }
-
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
                     "Updated volume " + vlmNr + " of {1} on {0}"
-                ))
-                .concatWith(nextStep)
-                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
+                )
+            );
+            if (resize)
+            {
+                if (hasDrbd(vlmDfn))
+                {
+                    flux = flux.concatWith(resizeDrbd(rscName, vlmNr));
+                }
+                flux = flux.concatWith(finishResize(rscName, vlmNr));
+            }
+            flux = flux.onErrorResume(
+                CtrlResponseUtils.DelayedApiRcException.class,
+                ignored -> Flux.empty()
+            );
         }
 
         return flux;
@@ -326,8 +327,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         }
         else
         {
-            streamVolumesPrivileged(vlmDfn).forEach(this::unmarkVlmResizePrivileged);
-
             Optional<Volume> drbdResizeVlm = streamVolumesPrivileged(vlmDfn)
                 .filter(this::isDiskful)
                 .findAny();
@@ -335,18 +334,15 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
             ctrlTransactionHelper.commit();
 
-            Flux<ApiCallRc> satelliteUpdateResponses =
-                ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
-                    .transform(updateResponses -> CtrlResponseUtils.combineResponses(
-                        updateResponses,
-                        rscName,
-                        getNodeNames(drbdResizeVlm),
-                        "Resized DRBD resource {1} on {0}",
-                        null
-                    ));
-
-            flux = satelliteUpdateResponses
-                .concatWith(finishResize(rscName, vlmNr));
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    updateResponses,
+                    rscName,
+                    getNodeNames(drbdResizeVlm),
+                    "Resized DRBD resource {1} on {0}",
+                    null
+                )
+            );
         }
 
         return flux;
@@ -382,7 +378,13 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         if (vlmDfn != null)
         {
-            streamVolumesPrivileged(vlmDfn).forEach(this::unmarkVlmDrbdResizePrivileged);
+            streamVolumesPrivileged(vlmDfn).forEach(
+                vlm ->
+                {
+                    unmarkVlmDrbdResizePrivileged(vlm);
+                    unmarkVlmResizePrivileged(vlm);
+                }
+            );
 
             unmarkVlmDfnResizePrivileged(vlmDfn);
 
