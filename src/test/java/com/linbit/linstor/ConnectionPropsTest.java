@@ -85,7 +85,8 @@ public class ConnectionPropsTest extends GenericDbBase
             null,
             "secret",
             resDfnTransportType,
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            null
         );
 
         res1 = resourceDataFactory.create(SYS_CTX, resDfn, node1, nodeId1, null, Collections.emptyList());

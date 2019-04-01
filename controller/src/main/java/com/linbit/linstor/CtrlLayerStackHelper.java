@@ -152,7 +152,8 @@ public class CtrlLayerStackHelper
         ResourceDefinitionData rscDfn,
         Integer tcpPortNrIntRef,
         TransportType transportTypeRef,
-        String secretRef
+        String secretRef,
+        Short newRscPeerSlotsRef
     )
         throws SQLException, ValueOutOfRangeException,
             ExhaustedPoolException, ValueInUseException
@@ -167,7 +168,13 @@ public class CtrlLayerStackHelper
                 secretRef != null
             )
             {
-                ensureDrbdRscDfnExists(rscDfn, tcpPortNrIntRef, transportTypeRef, secretRef);
+                ensureDrbdRscDfnExists(
+                    rscDfn,
+                    tcpPortNrIntRef,
+                    transportTypeRef,
+                    secretRef,
+                    newRscPeerSlotsRef
+                );
             }
             else
             {
@@ -184,11 +191,12 @@ public class CtrlLayerStackHelper
         }
     }
 
-    private DrbdRscDfnData ensureDrbdRscDfnExists(
+    public DrbdRscDfnData ensureDrbdRscDfnExists(
         ResourceDefinitionData rscDfn,
         Integer tcpPortNrIntRef,
         TransportType transportTypeRef,
-        String secretRef
+        String secretRef,
+        Short newRscPeerSlotsRef
     )
         throws AccessDeniedException, SQLException, ValueOutOfRangeException,
         ExhaustedPoolException, ValueInUseException
@@ -198,6 +206,7 @@ public class CtrlLayerStackHelper
         {
             TransportType transportType = transportTypeRef;
             String secret = secretRef;
+            Short peerSlots = newRscPeerSlotsRef;
             if (secret == null)
             {
                 secret = SecretGenerator.generateSecretString(SecretGenerator.DRBD_SHARED_SECRET_SIZE);
@@ -206,14 +215,17 @@ public class CtrlLayerStackHelper
             {
                 transportType = TransportType.IP;
             }
-
+            if (peerSlots == null)
+            {
+                peerSlots = getAndCheckPeerSlotsForNewResource(rscDfn);
+            }
 
             rscDfn.setLayerData(
                 apiCtx,
                 layerDataFactory.createDrbdRscDfnData(
                     rscDfn,
                     "",
-                    getAndCheckPeerSlotsForNewResource(rscDfn),
+                    peerSlots,
                     ConfigModule.DEFAULT_AL_STRIPES,
                     ConfigModule.DEFAULT_AL_SIZE,
                     tcpPortNrIntRef,
@@ -236,6 +248,10 @@ public class CtrlLayerStackHelper
             {
                 drbdRscDfnData.setSecret(secretRef);
             }
+            if (newRscPeerSlotsRef != null)
+            {
+                drbdRscDfnData.setPeerSlots(newRscPeerSlotsRef);
+            }
         }
         return drbdRscDfnData;
     }
@@ -254,6 +270,7 @@ public class CtrlLayerStackHelper
             {
                 DrbdRscDfnData drbdRscDfnData = ensureDrbdRscDfnExists(
                     (ResourceDefinitionData) vlmDfn.getResourceDefinition(),
+                    null,
                     null,
                     null,
                     null

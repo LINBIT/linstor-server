@@ -205,6 +205,7 @@ public class CtrlApiCallHandler
 
     /**
      * Creates new resource definition
+     * @param shortRef
      */
     public ApiCallRc createResourceDefinition(
         String resourceName,
@@ -214,7 +215,8 @@ public class CtrlApiCallHandler
         String transportType,
         Map<String, String> propsRef,
         List<VlmDfnWtihCreationPayload> vlmDescrMapRef,
-        List<String> layerStackRef
+        List<String> layerStackRef,
+        Short peerSlotsRef
     )
     {
         ApiCallRc apiCallRc;
@@ -239,7 +241,8 @@ public class CtrlApiCallHandler
                 transportType,
                 props,
                 vlmDescrMapRef,
-                layerStackRef
+                layerStackRef,
+                peerSlotsRef
             );
         }
         return apiCallRc;
@@ -260,6 +263,7 @@ public class CtrlApiCallHandler
      * @param deletePropKeys
      *            required (can be empty) - deletes the given property keys
      * @param layerStackStrList
+     * @param newRscPeerSlotsRef
      */
     public ApiCallRc modifyRscDfn(
         UUID rscDfnUuid,
@@ -268,7 +272,8 @@ public class CtrlApiCallHandler
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deletePropNamespaces,
-        List<String> layerStackStrList
+        List<String> layerStackStrList,
+        Short newRscPeerSlotsRef
     )
     {
         ApiCallRc apiCallRc;
@@ -281,7 +286,8 @@ public class CtrlApiCallHandler
                 overrideProps,
                 deletePropKeys,
                 deletePropNamespaces,
-                layerStackStrList
+                layerStackStrList,
+                newRscPeerSlotsRef
             );
         }
         return apiCallRc;

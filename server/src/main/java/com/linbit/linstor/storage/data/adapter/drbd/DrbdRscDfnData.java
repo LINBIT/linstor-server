@@ -34,7 +34,6 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
 {
     // unmodifiable, once initialized
     private final ResourceDefinition rscDfn;
-    private final short peerSlots;
     private final int alStripes;
     private final long alStripeSize;
     private final String suffixedResourceName;
@@ -48,6 +47,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     private final TransactionSimpleObject<DrbdRscDfnData, TcpPortNumber> port;
     private final TransactionSimpleObject<DrbdRscDfnData, TransportType> transportType;
     private final TransactionSimpleObject<DrbdRscDfnData, String> secret;
+    private final TransactionSimpleObject<DrbdRscDfnData, Short> peerSlots;
 
     // not persisted, serialized, ctrl and stlt
     private final TransactionSimpleObject<DrbdRscDfnData, Boolean> down;
@@ -76,7 +76,6 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         dbDriver = dbDriverRef;
         suffixedResourceName = rscDfnRef.getName().displayValue + resourceNameSuffixRef;
         rscDfn = Objects.requireNonNull(rscDfnRef);
-        peerSlots = peerSlotsRef;
         alStripes = alStripesRef;
         alStripeSize = alStripesSizeRef;
 
@@ -98,6 +97,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         );
         secret = transObjFactory.createTransactionSimpleObject(this, secretRef, dbDriverRef.getRscDfnSecretDriver());
         drbdRscDataList = transObjFactory.createTransactionList(this, drbdRscDataListRef, null);
+        peerSlots = transObjFactory.createTransactionSimpleObject(this, peerSlotsRef, dbDriverRef.getPeerSlotsDriver());
 
         down = transObjFactory.createTransactionSimpleObject(this, false, null);
 
@@ -176,7 +176,12 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     @Override
     public short getPeerSlots()
     {
-        return peerSlots;
+        return peerSlots.get();
+    }
+
+    public void setPeerSlots(short peerSlotsRef) throws SQLException
+    {
+        peerSlots.set(peerSlotsRef);
     }
 
     @Override
@@ -247,7 +252,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     {
         return new DrbdRscDfnPojo(
             suffixedResourceName,
-            peerSlots,
+            peerSlots.get(),
             alStripes,
             alStripeSize,
             port.get().value,

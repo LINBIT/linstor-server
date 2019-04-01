@@ -77,7 +77,8 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             null,
             "secret",
             TransportType.IP,
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            null
         );
 
         resUuid = randomUUID();

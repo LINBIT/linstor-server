@@ -836,7 +836,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             null,
             "NotTellingYou",
             ResourceDefinition.TransportType.IP,
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            null
         );
 
         rscDfnMap.put(rscDfn.getName(), rscDfn);

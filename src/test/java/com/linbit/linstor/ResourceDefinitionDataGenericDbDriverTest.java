@@ -138,7 +138,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             new RscDfnFlags[] {RscDfnFlags.DELETE},
             secret,
             transportType,
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            null
         );
 
         commit();
@@ -254,7 +255,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             null,
             "secret",
             transportType,
-            new ArrayList<>()
+            new ArrayList<>(),
+            null
         );
         objProtDriver.insertOp(resDfnObjProt);
 
@@ -275,7 +277,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         rscDfnMap.put(resName, resDfn);
 
         resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, null, port, null, "secret", transportType, new ArrayList<>()
+            SYS_CTX, resName, null, port, null, "secret", transportType, new ArrayList<>(), null
         );
     }
 }

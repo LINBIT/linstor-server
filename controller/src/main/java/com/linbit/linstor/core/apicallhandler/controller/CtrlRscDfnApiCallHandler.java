@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.CtrlLayerStackHelper;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -44,9 +45,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
@@ -79,6 +78,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlSecurityObjects secObjs;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final CtrlLayerStackHelper ctrlLayerStackHelper;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -94,7 +94,8 @@ public class CtrlRscDfnApiCallHandler
         ResponseConverter responseConverterRef,
         CtrlSecurityObjects secObjsRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        CtrlLayerStackHelper ctrlLayerStackHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -110,6 +111,7 @@ public class CtrlRscDfnApiCallHandler
         secObjs = secObjsRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        ctrlLayerStackHelper = ctrlLayerStackHelperRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -120,7 +122,8 @@ public class CtrlRscDfnApiCallHandler
         String transportTypeStr,
         Map<String, String> props,
         List<VlmDfnWtihCreationPayload> volDescrMap,
-        List<String> layerStackStrList
+        List<String> layerStackStrList,
+        Short peerSlotsRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -153,7 +156,8 @@ public class CtrlRscDfnApiCallHandler
                 transportTypeStr,
                 portInt,
                 secret,
-                layerStack
+                layerStack,
+                peerSlotsRef
             );
 
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, props,
@@ -239,7 +243,8 @@ public class CtrlRscDfnApiCallHandler
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deletePropNamespacesRef,
-        List<String> layerStackStrListRef
+        List<String> layerStackStrListRef,
+        Short newRscPeerSlotsRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -266,14 +271,17 @@ public class CtrlRscDfnApiCallHandler
                     .build()
                 );
             }
-            if (portInt != null)
+            if (portInt != null || newRscPeerSlotsRef != null)
             {
-                DrbdRscDfnData drbdRscDfn = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
-                if (drbdRscDfn != null)
-                {
-                    drbdRscDfn.setPort(portInt);
-                }
+                ctrlLayerStackHelper.ensureDrbdRscDfnExists(
+                    rscDfn,
+                    portInt,
+                    null,
+                    null,
+                    newRscPeerSlotsRef
+                );
             }
+
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
                 Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
@@ -364,16 +372,13 @@ public class CtrlRscDfnApiCallHandler
         String transportTypeStr,
         Integer portInt,
         String secret,
-        List<DeviceLayerKind> layerStack
+        List<DeviceLayerKind> layerStack,
+        Short peerSlotsRef
     )
         throws InvalidNameException
     {
-        TransportType transportType;
-        if (transportTypeStr == null || transportTypeStr.trim().equals(""))
-        {
-            transportType = TransportType.IP;
-        }
-        else
+        TransportType transportType = null;
+        if (transportTypeStr != null && !transportTypeStr.trim().equals(""))
         {
             try
             {
@@ -458,7 +463,8 @@ public class CtrlRscDfnApiCallHandler
                 null, // RscDfnFlags
                 secret,
                 transportType,
-                layerStack
+                layerStack,
+                peerSlotsRef
             );
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)

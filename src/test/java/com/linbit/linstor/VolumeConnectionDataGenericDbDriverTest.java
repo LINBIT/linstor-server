@@ -106,7 +106,8 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
             null,
             "secret",
             TransportType.IP,
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            null
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);

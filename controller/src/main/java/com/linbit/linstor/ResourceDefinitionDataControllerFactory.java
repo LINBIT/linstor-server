@@ -63,7 +63,8 @@ public class ResourceDefinitionDataControllerFactory
         RscDfnFlags[] flags,
         String secret,
         TransportType transType,
-        List<DeviceLayerKind> layerStack
+        List<DeviceLayerKind> layerStack,
+        Short peerSlotsRef
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
@@ -97,7 +98,7 @@ public class ResourceDefinitionDataControllerFactory
         );
 
         driver.create(rscDfn);
-        layerStackHelper.ensureRscDfnLayerDataExitsIfNeeded(rscDfn, port, transType, secret);
+        layerStackHelper.ensureRscDfnLayerDataExitsIfNeeded(rscDfn, port, transType, secret, peerSlotsRef);
 
         return rscDfn;
     }

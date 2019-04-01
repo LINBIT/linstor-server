@@ -124,7 +124,8 @@ public class RscApiTest extends ApiTestBase
             testRscDfnFlags,
             testRscDfnSecret,
             tesTRscDfnTransportType,
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            null
         );
         rscDfnMap.put(testRscName, testRscDfn);
         commitAndCleanUp(true);

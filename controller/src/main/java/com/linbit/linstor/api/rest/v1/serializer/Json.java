@@ -219,6 +219,7 @@ public class Json
         public String drbd_transport_type = "IP";
 
         public ResourceDefinitionData resource_definition;
+        public Short drbd_peer_slots;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -230,6 +231,7 @@ public class Json
 
         public List<String> layer_stack = Collections.emptyList();
         public Integer drbd_port;
+        public Short drbd_peer_slots;
         // do not use for now
 //        public String drbd_secret;
 //        public String drbd_transport_type;

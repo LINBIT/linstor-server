@@ -25,7 +25,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +124,8 @@ public class ResourceDefinitions
                 rscDfnCreate.drbd_transport_type,
                 rscDfnCreate.resource_definition.props,
                 new ArrayList<>(), // do not allow volume definition creations
-                layerDataList.stream().map(rscDfnData -> rscDfnData.type).collect(Collectors.toList())
+                layerDataList.stream().map(rscDfnData -> rscDfnData.type).collect(Collectors.toList()),
+                rscDfnCreate.drbd_peer_slots
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
@@ -151,7 +151,8 @@ public class ResourceDefinitions
                 modifyData.override_props,
                 modifyData.delete_props,
                 modifyData.delete_namespaces,
-                modifyData.layer_stack
+                modifyData.layer_stack,
+                modifyData.drbd_peer_slots
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
         }, true);

@@ -996,7 +996,6 @@ public class TcpConnectorPeer implements Peer
     @Override
     public void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerListRef)
     {
-System.out.println(this + " setting supported layers: " + supportedDeviceLayerListRef);
         supportedDeviceLayerKinds.clear();
         supportedDeviceLayerKinds.addAll(supportedDeviceLayerListRef);
     }
@@ -1010,7 +1009,6 @@ System.out.println(this + " setting supported layers: " + supportedDeviceLayerLi
     @Override
     public void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderListRef)
     {
-System.out.println(this + " setting supported providers: " + supportedDeviceProviderListRef);
         supportedDeviceProviderKinds.clear();
         supportedDeviceProviderKinds.addAll(supportedDeviceProviderListRef);
     }

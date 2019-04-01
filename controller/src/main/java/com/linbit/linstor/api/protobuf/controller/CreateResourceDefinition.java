@@ -61,6 +61,12 @@ public class CreateResourceDefinition implements ApiCall
             layerStack.add(ProtoLayerUtils.layerType2layerString(rscDfnData.getLayerType()));
         }
 
+        Short peerSlots = null;
+        if (msgCreateRscDfn.hasDrbdNewPeerSlots())
+        {
+            peerSlots = (short) msgCreateRscDfn.getDrbdNewPeerSlots();
+        }
+
         ApiCallRc apiCallRc = apiCallHandler.createResourceDefinition(
             rscDfn.getRscName(),
             rscDfn.getExternalName().toByteArray(),
@@ -69,7 +75,8 @@ public class CreateResourceDefinition implements ApiCall
             msgCreateRscDfn.hasDrbdTransportType() ? msgCreateRscDfn.getDrbdTransportType() : null,
             ProtoMapUtils.asMap(rscDfn.getRscDfnPropsList()),
             vlmDfnApiList,
-            layerStack
+            layerStack,
+            peerSlots
         );
         apiCallAnswerer.answerApiCallRc(apiCallRc);
     }

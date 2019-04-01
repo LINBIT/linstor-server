@@ -57,7 +57,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         resName = new ResourceName("TestResource");
         resPort = 9001;
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, null, resPort, null, "secret", TransportType.IP, new ArrayList<>()
+            SYS_CTX, resName, null, resPort, null, "secret", TransportType.IP, new ArrayList<>(), null
         );
 
         uuid = randomUUID();
@@ -122,7 +122,8 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             null,
             "secret",
             TransportType.IP,
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            null
         );
 
         volumeDefinitionDataFactory.create(

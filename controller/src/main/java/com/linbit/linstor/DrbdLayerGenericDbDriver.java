@@ -158,6 +158,11 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         " SET " + TRANSPORT_TYPE + " = ? " +
         " WHERE " + RESOURCE_NAME        + " = ? AND " +
                     RESOURCE_NAME_SUFFIX + " = ?";
+    private static final String UPDATE_RSC_DFN_PEER_SLOTS =
+        " UPDATE " + TBL_LAYER_DRBD_RESOURCE_DEFINITIONS +
+        " SET " + PEER_SLOTS + " = ? " +
+        " WHERE " + RESOURCE_NAME        + " = ? AND " +
+                    RESOURCE_NAME_SUFFIX + " = ?";
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -170,6 +175,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     private final RscDfnSecretDriver rscDfnSecretDriver;
     private final RscDfnTcpPortDriver rscDfnTcpPortDriver;
     private final RscDfnTransportTypeDriver rscDfnTransportTypeDriver;
+    private final RscDfnPeerSlotsDriver rscDfnPeerSlotsDriver;
 
     private final Map<ResourceDefinition, Pair<DrbdRscDfnData, List<DrbdRscData>>> drbdRscDfnCache;
     private final Map<VolumeDefinition, DrbdVlmDfnData> drbdVlmDfnCache;
@@ -199,6 +205,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         rscDfnSecretDriver = new RscDfnSecretDriver();
         rscDfnTcpPortDriver = new RscDfnTcpPortDriver();
         rscDfnTransportTypeDriver = new RscDfnTransportTypeDriver();
+        rscDfnPeerSlotsDriver = new RscDfnPeerSlotsDriver();
 
         drbdRscDfnCache = new HashMap<>();
         drbdVlmDfnCache = new HashMap<>();
@@ -588,6 +595,12 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         return rscDfnTransportTypeDriver;
     }
 
+    @Override
+    public SingleColumnDatabaseDriver<DrbdRscDfnData, Short> getPeerSlotsDriver()
+    {
+        return rscDfnPeerSlotsDriver;
+    }
+
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
@@ -675,7 +688,8 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_RSC_DFN_SECRET))
             {
                 stmt.setString(1, secretRef);
-                stmt.setString(2, drbdRscDfnData.getSuffixedResourceName());
+                stmt.setString(2, drbdRscDfnData.getResourceDefinition().getName().value);
+                stmt.setString(3, drbdRscDfnData.getRscNameSuffix());
                 stmt.executeUpdate();
             }
             errorReporter.logTrace(
@@ -702,7 +716,8 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_RSC_DFN_TCP_PORT))
             {
                 stmt.setInt(1, port.value);
-                stmt.setString(2, drbdRscDfnData.getSuffixedResourceName());
+                stmt.setString(2, drbdRscDfnData.getResourceDefinition().getName().value);
+                stmt.setString(3, drbdRscDfnData.getRscNameSuffix());
                 stmt.executeUpdate();
             }
             errorReporter.logTrace(
@@ -729,13 +744,43 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_RSC_DFN_TRANSPORT_TYPE))
             {
                 stmt.setString(1, transportType.name());
-                stmt.setString(2, drbdRscDfnData.getSuffixedResourceName());
+                stmt.setString(2, drbdRscDfnData.getResourceDefinition().getName().value);
+                stmt.setString(3, drbdRscDfnData.getRscNameSuffix());
                 stmt.executeUpdate();
             }
             errorReporter.logTrace(
                 "DrbdRscDfnData's transport type updated from [%d] to [%d] %s",
                 drbdRscDfnData.getTransportType().name(),
                 transportType.name(),
+                getId(drbdRscDfnData)
+            );
+        }
+    }
+
+    private class RscDfnPeerSlotsDriver implements SingleColumnDatabaseDriver<DrbdRscDfnData, Short>
+    {
+        @Override
+        public void update(DrbdRscDfnData drbdRscDfnData, Short peerSlots)
+            throws SQLException
+        {
+            short oldPeerSlots = drbdRscDfnData.getPeerSlots();
+            errorReporter.logTrace(
+                "Updating DrbdRscDfnData's peer slots from [%d] to [%d] %s",
+                oldPeerSlots,
+                peerSlots,
+                getId(drbdRscDfnData)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_RSC_DFN_PEER_SLOTS))
+            {
+                stmt.setShort(1, peerSlots);
+                stmt.setString(2, drbdRscDfnData.getResourceDefinition().getName().value);
+                stmt.setString(3, drbdRscDfnData.getRscNameSuffix());
+                stmt.executeUpdate();
+            }
+            errorReporter.logTrace(
+                "DrbdRscDfnData's peer slots updated from [%d] to [%d] %s",
+                oldPeerSlots,
+                peerSlots,
                 getId(drbdRscDfnData)
             );
         }

@@ -342,7 +342,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",
                 transportType,
-                Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE)
+                Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+                null
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();

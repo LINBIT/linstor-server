@@ -26,6 +26,7 @@ public interface DrbdLayerDatabaseDriver
     SingleColumnDatabaseDriver<DrbdRscDfnData, TcpPortNumber> getTcpPortDriver();
     SingleColumnDatabaseDriver<DrbdRscDfnData, TransportType> getTransportTypeDriver();
     SingleColumnDatabaseDriver<DrbdRscDfnData, String> getRscDfnSecretDriver();
+    SingleColumnDatabaseDriver<DrbdRscDfnData, Short> getPeerSlotsDriver();
 
     // DrbdVlmData methods
     void persist(DrbdVlmData drbdVlmData) throws SQLException;
@@ -34,4 +35,5 @@ public interface DrbdLayerDatabaseDriver
     // DrbdVlmDfnData
     void persist(DrbdVlmDfnData drbdVlmDfnData) throws SQLException;
     void delete(DrbdVlmDfnData drbdVlmDfnData) throws SQLException;
+
 }

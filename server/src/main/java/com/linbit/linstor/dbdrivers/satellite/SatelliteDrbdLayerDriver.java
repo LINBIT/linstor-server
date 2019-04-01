@@ -66,6 +66,13 @@ public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
         return (SingleColumnDatabaseDriver<DrbdRscDfnData, String>) noopSingleColDriver;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public SingleColumnDatabaseDriver<DrbdRscDfnData, Short> getPeerSlotsDriver()
+    {
+        return (SingleColumnDatabaseDriver<DrbdRscDfnData, Short>) noopSingleColDriver;
+    }
+
     @Override
     public ResourceLayerIdDatabaseDriver getIdDriver()
     {
