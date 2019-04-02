@@ -112,6 +112,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         Mockito.when(mockSatellite.apiCall(anyString(), any()))
             .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
         Mockito.when(mockSatellite.isConnected()).thenReturn(true);
+        Mockito.when(mockSatellite.getSupportedLayers()).thenReturn(Arrays.asList(DeviceLayerKind.values()));
+        Mockito.when(mockSatellite.getSupportedProviders()).thenReturn(Arrays.asList(DeviceProviderKind.values()));
 
         Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 

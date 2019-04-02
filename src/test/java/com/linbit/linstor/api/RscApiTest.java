@@ -22,6 +22,7 @@ import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.requests.MsgCrtRscOuterClass.RscWithPayload;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import junitparams.JUnitParamsRunner;
 import org.junit.After;
@@ -142,6 +143,8 @@ public class RscApiTest extends ApiTestBase
     public void createRscSuccess() throws Exception
     {
         Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
+        Mockito.when(mockSatellite.getSupportedLayers()).thenReturn(Arrays.asList(DeviceLayerKind.values()));
+        Mockito.when(mockSatellite.getSupportedProviders()).thenReturn(Arrays.asList(DeviceProviderKind.values()));
         evaluateTest(
             new CrtRscCall(
                 // Registered
