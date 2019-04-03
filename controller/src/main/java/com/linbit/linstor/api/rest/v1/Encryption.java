@@ -82,7 +82,7 @@ public class Encryption
         String jsonData
     )
     {
-        return requestHelper.doInScope(ApiConsts.API_MOD_CRYPT_PASS, request, () ->
+        return requestHelper.doInScope(ApiConsts.API_ENTER_CRYPT_PASS, request, () ->
         {
             String passPhrase = objectMapper.readValue(jsonData, String.class);
 
