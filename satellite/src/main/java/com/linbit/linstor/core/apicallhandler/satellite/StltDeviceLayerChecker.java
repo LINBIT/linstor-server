@@ -72,8 +72,11 @@ public class StltDeviceLayerChecker
                 case ZFS:
                     isCheckSatisfied = isZfsInstalled();
                     break;
+                case NVME:
+                    isCheckSatisfied = hasNvme();
+                    break;
                 default:
-                    throw new ImplementationError("Unhandled startupVerification");
+                    throw new ImplementationError("Unhandled startupVerification: \'" + devLayerVerification + "\'");
             }
             if (isCheckSatisfied)
             {
@@ -123,6 +126,13 @@ public class StltDeviceLayerChecker
             }
         }
         return allChecksSatisfied;
+    }
+
+    private boolean hasNvme()
+    {
+        return commandExists("modprobe", "nvmet_rdma") && // nvme target over RMDA (implicit nvmet)
+            commandExists("modprobe", "nvme_rdma") && // nvme initiator over RDMA (implicit initator)
+            commandExists("nvme", "version");
     }
 
     private boolean isDrbdProxyInstalled()

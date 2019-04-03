@@ -17,6 +17,10 @@ public enum DeviceLayerKind
         true,
         StartupVerification.CRYPT_SETUP
     ),
+    NVME(
+	false,
+        StartupVerification.NVME
+    ),
     STORAGE(true);
     private final StartupVerification[] startupVerifications;
 

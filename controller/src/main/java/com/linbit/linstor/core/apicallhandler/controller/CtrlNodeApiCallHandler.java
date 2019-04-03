@@ -52,6 +52,8 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
+import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -309,7 +311,7 @@ public class CtrlNodeApiCallHandler
                     netIfs.add(
                         new NetInterfacePojo(
                             UUID.randomUUID(),
-                            "default",
+                            DEFAULT_NETIF,
                             "127.0.0.1",
                             sfTargetPort,
                             ApiConsts.VAL_NETCOM_TYPE_PLAIN

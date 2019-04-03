@@ -43,6 +43,7 @@ import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSeria
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
@@ -60,6 +61,7 @@ import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass.NetInterface.Builder;
 import com.linbit.linstor.proto.common.NodeOuterClass;
+import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
@@ -985,6 +987,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case STORAGE:
                 layerType = LayerType.STORAGE;
                 break;
+            case NVME:
+                layerType = LayerType.NVME;
+                break;
             default: throw new RuntimeException("Not implemented.");
         }
         return layerType;
@@ -1017,6 +1022,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                             break;
                         case STORAGE:
                             // no rsc-dfn related data
+                            break;
+                        case NVME:
+                            // no rsc-dfn related data TODO: change (not sure yet)???
                             break;
                         default:
                             break;
@@ -1055,6 +1063,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         case STORAGE:
                             // no vlm-dfn related data
                             break;
+                        case NVME:
+                            // no vlm-dfn related data TODO: not sure yet
                         default:
                             break;
                     }
@@ -1131,6 +1141,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                             break;
                         case STORAGE:
                             builder.setStorage(buildStorageVlm(vlmLayerDataApi));
+                            break;
+                        case NVME:
+                            builder.setNvme(buildNvmeVlm((NvmeVlmPojo) vlmLayerDataApi));
                             break;
                         default:
                             break;
@@ -1335,6 +1348,28 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             }
             StorageVlm storageVlm = builder.setProviderKind(asProviderType(vlmPojo.getProviderKind())).build();
             return storageVlm;
+        }
+
+        private static NvmeVlm buildNvmeVlm(NvmeVlmPojo nvmeVlmPojo)
+        {
+            NvmeVlm.Builder nvmeVlmBuilder = NvmeVlm.newBuilder()
+                .setVlmNr(nvmeVlmPojo.getVlmNr())
+                .setAllocatedSize(nvmeVlmPojo.getAllocatedSize())
+                .setUsableSize(nvmeVlmPojo.getUsableSize());
+            if (nvmeVlmPojo.getDevicePath() != null)
+            {
+                nvmeVlmBuilder.setDevicePath(nvmeVlmPojo.getDevicePath());
+            }
+            if (nvmeVlmPojo.getBackingDisk() != null)
+            {
+                nvmeVlmBuilder.setBackingDevice(nvmeVlmPojo.getBackingDisk());
+            }
+            if (nvmeVlmPojo.getDiskState() != null)
+            {
+                nvmeVlmBuilder.setDiskState(nvmeVlmPojo.getDiskState());
+            }
+
+            return nvmeVlmBuilder.build();
         }
     }
 }

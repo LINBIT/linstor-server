@@ -162,6 +162,9 @@ public class ProtoDeserializationUtils
             case STORAGE:
                 kind = DeviceLayerKind.STORAGE;
                 break;
+            case NVME:
+                kind = DeviceLayerKind.NVME;
+                break;
             case UNKNOWN_LAYER: // fall-trough
             default:
                 throw new ImplementationError("Unknown (proto) LayerType: " + layerTypeRef);

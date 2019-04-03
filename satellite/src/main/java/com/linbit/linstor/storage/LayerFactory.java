@@ -2,6 +2,7 @@ package com.linbit.linstor.storage;
 
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.adapter.nvme.NvmeLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
 import com.linbit.linstor.storage.layer.adapter.luks.LuksLayer;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
@@ -21,6 +22,7 @@ public class LayerFactory
 
     @Inject
     public LayerFactory(
+        NvmeLayer nvmeLayer,
         DrbdLayer drbdLayer,
         StorageLayer storageLayer,
         LuksLayer luksLayer
@@ -28,6 +30,7 @@ public class LayerFactory
     {
         devLayerLookupTable = new HashMap<>();
 
+        devLayerLookupTable.put(DeviceLayerKind.NVME, nvmeLayer);
         devLayerLookupTable.put(DeviceLayerKind.DRBD, drbdLayer);
         devLayerLookupTable.put(DeviceLayerKind.LUKS, luksLayer);
         devLayerLookupTable.put(DeviceLayerKind.STORAGE, storageLayer);

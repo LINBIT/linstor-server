@@ -9,8 +9,8 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
@@ -22,6 +22,8 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -40,7 +42,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -54,6 +55,7 @@ public class LayerDataFactory
     private final LuksLayerDatabaseDriver luksDbDriver;
     private final DrbdLayerDatabaseDriver drbdDbDriver;
     private final StorageLayerDatabaseDriver storageDbDriver;
+    private final ResourceLayerIdDatabaseDriver nvmeDbDriver;
     private final SwordfishLayerDatabaseDriver swordfishDbDriver;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
@@ -68,6 +70,7 @@ public class LayerDataFactory
         LuksLayerDatabaseDriver luksDbDriverRef,
         DrbdLayerDatabaseDriver drbdDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
+        ResourceLayerIdDatabaseDriver nvmeDbDriverRef,
         SwordfishLayerDatabaseDriver swordfishDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
@@ -80,6 +83,7 @@ public class LayerDataFactory
         luksDbDriver = luksDbDriverRef;
         drbdDbDriver = drbdDbDriverRef;
         storageDbDriver = storageDbDriverRef;
+        nvmeDbDriver = nvmeDbDriverRef;
         swordfishDbDriver = swordfishDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
@@ -277,6 +281,40 @@ public class LayerDataFactory
         resourceLayerIdDatabaseDriver.persist(storageRscData);
         storageDbDriver.persist(storageRscData);
         return storageRscData;
+    }
+
+    public NvmeRscData createNvmeRscData(
+        int rscLayerId,
+        Resource rsc,
+        String rscNameSuffix,
+        RscLayerObject parentData
+    )
+        throws SQLException
+    {
+        NvmeRscData nvmeRscData = new NvmeRscData(
+            rscLayerId,
+            rsc,
+            parentData,
+            new HashSet<>(),
+            new TreeMap<>(),
+            rscNameSuffix,
+            nvmeDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+        resourceLayerIdDatabaseDriver.persist(nvmeRscData);
+        nvmeDbDriver.persist(nvmeRscData);
+        return nvmeRscData;
+    }
+
+    public NvmeVlmData createNvmeVlmData(Volume vlm, NvmeRscData rscData)
+    {
+        return new NvmeVlmData(
+            vlm,
+            rscData,
+            transObjFactory,
+            transMgrProvider
+        );
     }
 
     public LvmData createLvmData(Volume vlm, StorageRscData rscData) throws SQLException

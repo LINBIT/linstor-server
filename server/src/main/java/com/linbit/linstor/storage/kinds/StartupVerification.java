@@ -6,5 +6,6 @@ public enum StartupVerification
     DRBD9, DRBD_PROXY,
     CRYPT_SETUP,
     LVM,
-    ZFS
+    ZFS,
+    NVME
 }

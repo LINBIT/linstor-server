@@ -10,6 +10,7 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
@@ -22,6 +23,7 @@ import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
@@ -29,6 +31,8 @@ import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
+import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeRsc;
+import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
@@ -119,7 +123,7 @@ public class ProtoLayerUtils
                         );
                         for (StorageVlm protoVlm : protoRscData.getStorage().getStorageVlmsList())
                         {
-                            storageRscPojo.getVolumeList().add(extractStorageVolume(protoVlm));
+                            storageRscPojo.getVolumeList().add(extractStorageVlm(protoVlm));
                         }
 
                         ret = storageRscPojo;
@@ -130,6 +134,30 @@ public class ProtoLayerUtils
                     }
                 }
                 break;
+            case NVME:
+            {
+                if (protoRscData.hasNvme())
+                {
+                    NvmeRsc protoNvmeRsc = protoRscData.getNvme();
+                    NvmeRscPojo nvmeRscPojo = new NvmeRscPojo(
+                        protoRscData.getId(),
+                        new ArrayList<>(),
+                        protoRscData.getRscNameSuffix(),
+                        new ArrayList<>()
+                    );
+                    for (NvmeVlm protoVlm : protoRscData.getNvme().getNvmeVlmsList())
+                    {
+                        nvmeRscPojo.getVolumeList().add(extractNvmeVlm(protoVlm));
+                    }
+
+                    ret = nvmeRscPojo;
+                }
+                else
+                {
+                    ret = null;
+                }
+            }
+            break;
             case UNKNOWN_LAYER:
                 ret = null;
                 break;
@@ -175,6 +203,9 @@ public class ProtoLayerUtils
                 break;
             case STORAGE:
                 str = "STORAGE";
+                break;
+            case NVME:
+                str = "NVME";
                 break;
             case UNKNOWN_LAYER: // fall-through
             default:
@@ -227,7 +258,17 @@ public class ProtoLayerUtils
                 case STORAGE:
                     if (vlmLayerData.hasStorage())
                     {
-                        vlmLayerDataApi = extractStorageVolume(vlmLayerData.getStorage());
+                        vlmLayerDataApi = extractStorageVlm(vlmLayerData.getStorage());
+                    }
+                    else
+                    {
+                        vlmLayerDataApi = null;
+                    }
+                    break;
+                case NVME:
+                    if (vlmLayerData.hasNvme())
+                    {
+                        vlmLayerDataApi = extractNvmeVlm(vlmLayerData.getNvme());
                     }
                     else
                     {
@@ -255,6 +296,9 @@ public class ProtoLayerUtils
             RscDfnLayerDataApi rscDfnLayerDataApi;
             switch (rscDfnLayerData.getLayerType())
             {
+                case LUKS:
+                    rscDfnLayerDataApi = null;
+                    break;
                 case DRBD:
                     if (rscDfnLayerData.hasDrbd())
                     {
@@ -265,9 +309,11 @@ public class ProtoLayerUtils
                         rscDfnLayerDataApi = null;
                     }
                     break;
-                case LUKS:
                 case STORAGE:
                     rscDfnLayerDataApi = null;
+                    break;
+                case NVME:
+                    rscDfnLayerDataApi = null; // TODO: not sure yet
                     break;
                 case UNKNOWN_LAYER: // fall-through
                 default:
@@ -314,6 +360,9 @@ public class ProtoLayerUtils
                     break;
                 case LUKS:
                     vlmDfnLayerDataApi = null;
+                    break;
+                case NVME:
+                    vlmDfnLayerDataApi = null; // TODO: not sure yet
                     break;
                 case UNKNOWN_LAYER: // fall-through
                 default:
@@ -378,7 +427,7 @@ public class ProtoLayerUtils
         );
     }
 
-    private static VlmLayerDataApi extractStorageVolume(
+    private static VlmLayerDataApi extractStorageVlm(
         StorageVlm protoVlm
     )
         throws ImplementationError
@@ -493,5 +542,17 @@ public class ProtoLayerUtils
                 );
         }
         return vlmDfnApi;
+    }
+
+    private static NvmeVlmPojo extractNvmeVlm(NvmeVlm protoNvmeVlm)
+    {
+        return new NvmeVlmPojo(
+            protoNvmeVlm.getVlmNr(),
+            protoNvmeVlm.getDevicePath(),
+            protoNvmeVlm.getBackingDevice(),
+            protoNvmeVlm.getAllocatedSize(),
+            protoNvmeVlm.getUsableSize(),
+            protoNvmeVlm.getDiskState()
+        );
     }
 }

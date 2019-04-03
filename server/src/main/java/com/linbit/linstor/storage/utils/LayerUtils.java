@@ -3,6 +3,10 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.NVME;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,10 +16,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
-
 public class LayerUtils
 {
     private static final LayerNode TOPMOST_NODE = new LayerNode();
@@ -24,10 +24,11 @@ public class LayerUtils
 
     static
     {
-        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE);
+        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME);
 
         NODES.get(DRBD).addChildren(LUKS, STORAGE);
         NODES.get(LUKS).addChildren(STORAGE);
+        NODES.get(NVME).addChildren(STORAGE);
 
         NODES.get(STORAGE).setAllowedEnd(true);
 

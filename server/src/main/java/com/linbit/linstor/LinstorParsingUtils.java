@@ -265,6 +265,9 @@ public class LinstorParsingUtils
             case "SWORDFISH":
                 kind = DeviceLayerKind.STORAGE;
                 break;
+            case "NVME":
+                kind = DeviceLayerKind.NVME;
+                break;
             default:
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

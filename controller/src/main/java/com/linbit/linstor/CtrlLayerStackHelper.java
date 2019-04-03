@@ -28,6 +28,8 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
@@ -37,10 +39,10 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFl
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -106,8 +108,6 @@ public class CtrlLayerStackHelper
      * A LUKS layer is created if at least one {@link VolumeDefinition}
      * has the {@link VolumeDefinition.VlmDfnFlags#ENCRYPTED} flag set.
      * @param accCtxRef
-     * @param rscDfnRef
-     * @return
      * @return
      */
     public List<DeviceLayerKind> createDefaultStack(AccessContext accCtxRef, Resource rscRef)
@@ -328,6 +328,9 @@ public class CtrlLayerStackHelper
                         break;
                     case STORAGE:
                         ensureStorageLayerCreated(rscDataRef, rscObj);
+                        break;
+                    case NVME:
+                        rscObj = ensureNvmeRscLayerCreated(rscDataRef, rscObj);
                         break;
                     default:
                         break;
@@ -759,6 +762,87 @@ public class CtrlLayerStackHelper
         {
             vlmDataMap.remove(vlmNr);
         }
+    }
+
+    private RscLayerObject ensureNvmeRscLayerCreated(
+        Resource rscRef,
+        RscLayerObject parentRscData
+    )
+        throws ExhaustedPoolException, SQLException, LinStorException
+    {
+        NvmeRscData nvmeRscData = null;
+        if (parentRscData == null)
+        {
+            nvmeRscData = rscRef.getLayerData(apiCtx);
+        }
+        else
+        {
+            if (!parentRscData.getChildren().isEmpty())
+            {
+                nvmeRscData = (NvmeRscData) parentRscData.getChildren().iterator().next();
+            }
+        }
+        if (nvmeRscData == null)
+        {
+            nvmeRscData = layerDataFactory.createNvmeRscData(
+                layerRscIdPool.autoAllocate(),
+                rscRef,
+                "",
+                parentRscData
+            );
+            if (parentRscData == null)
+            {
+                rscRef.setLayerData(apiCtx, nvmeRscData);
+            }
+            else
+            {
+                parentRscData.getChildren().add(nvmeRscData);
+            }
+        }
+
+        Map<VolumeNumber, NvmeVlmData> vlmLayerObjects = nvmeRscData.getVlmLayerObjects();
+        List<VolumeNumber> existingVlmsDataToBeDeleted = new ArrayList<>(vlmLayerObjects.keySet());
+
+        Iterator<Volume> iterateVolumes = rscRef.iterateVolumes();
+        while (iterateVolumes.hasNext())
+        {
+            Volume vlm = iterateVolumes.next();
+
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+
+            VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+            if (!vlmLayerObjects.containsKey(vlmNr))
+            {
+                byte[] masterKey = secObjs.getCryptKey();
+                if (masterKey == null || masterKey.length == 0)
+                {
+                    throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                            "Unable to create an encrypted volume definition without having a master key")
+                        .setCause("The masterkey was not initialized yet")
+                        .setCorrection("Create or enter the master passphrase")
+                        .build()
+                    );
+                }
+
+                String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
+                SymmetricKeyCipher cipher;
+                cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+
+                byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
+
+                NvmeVlmData nvmeVlmData = layerDataFactory.createNvmeVlmData(vlm, nvmeRscData);
+                vlmLayerObjects.put(vlmNr, nvmeVlmData);
+            }
+            existingVlmsDataToBeDeleted.remove(vlmNr);
+        }
+
+        for (VolumeNumber vlmNr : existingVlmsDataToBeDeleted)
+        {
+            vlmLayerObjects.remove(vlmNr);
+        }
+
+        return nvmeRscData;
     }
 
     private short getAndCheckPeerSlotsForNewResource(ResourceDefinitionData rscDfn)

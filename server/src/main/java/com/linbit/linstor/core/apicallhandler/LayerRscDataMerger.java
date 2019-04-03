@@ -15,15 +15,17 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.pojo.LuksRscPojo;
-import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -32,6 +34,8 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -49,7 +53,6 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -118,6 +121,9 @@ public class LayerRscDataMerger
                 break;
             case STORAGE:
                 extractor = this::restoreStorageRscData;
+                break;
+            case NVME:
+                extractor = this::restoreNvmeRscData;
                 break;
             default:
                 throw new ImplementationError("Unexpected layer kind: " + rscLayerDataPojo.getLayerKind());
@@ -638,6 +644,92 @@ public class LayerRscDataMerger
             }
         }
         return (T) matchingChild;
+    }
+
+    private NvmeRscData restoreNvmeRscData(Resource rsc, RscLayerDataApi rscDataPojo, RscLayerObject parent)
+        throws AccessDeniedException, SQLException
+    {
+        NvmeRscPojo nvmeRscPojo = (NvmeRscPojo) rscDataPojo;
+
+        NvmeRscData nvmeRscData = null;
+        if (parent == null)
+        {
+            nvmeRscData = rsc.getLayerData(apiCtx);
+        }
+        else
+        {
+            nvmeRscData = findChild(parent, rscDataPojo.getId());
+        }
+
+        if (nvmeRscData == null)
+        {
+            nvmeRscData = layerDataFactory.createNvmeRscData(
+                nvmeRscPojo.getId(),
+                rsc,
+                nvmeRscPojo.getRscNameSuffix(),
+                parent
+            );
+            if (parent == null)
+            {
+                rsc.setLayerData(apiCtx, nvmeRscData);
+            }
+            else
+            {
+                updateChildsParent(nvmeRscData, parent);
+            }
+        }
+
+        Set<VolumeNumber> vlmNrsToDelete = new HashSet<>(nvmeRscData.getVlmLayerObjects().keySet());
+
+        Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+        while (iterateVolumes.hasNext())
+        {
+            Volume vlm = iterateVolumes.next();
+            restoreNvmeVlm(vlm, nvmeRscData, nvmeRscPojo.getVolumeList());
+
+            vlmNrsToDelete.remove(vlm.getVolumeDefinition().getVolumeNumber());
+        }
+
+        for (VolumeNumber vlmNrToDelete : vlmNrsToDelete)
+        {
+            nvmeRscData.remove(vlmNrToDelete);
+        }
+        return nvmeRscData;
+    }
+
+    private void restoreNvmeVlm(Volume vlm, NvmeRscData nvmeRscData, List<NvmeVlmPojo> vlmPojos)
+    {
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        NvmeVlmPojo vlmPojo = null;
+        {
+            for (NvmeVlmPojo nvmeVlmPojo : vlmPojos)
+            {
+                if (nvmeVlmPojo.getVlmNr() == vlmNr.value)
+                {
+                    vlmPojo = nvmeVlmPojo;
+                    break;
+                }
+            }
+            if (vlmPojo == null)
+            {
+                throw new ImplementationError("No NvmeVlmPojo found for " + vlm);
+            }
+        }
+
+        NvmeVlmData nvmeVlmData = nvmeRscData.getVlmLayerObjects().get(vlmNr);
+        if (nvmeVlmData == null)
+        {
+            nvmeVlmData = layerDataFactory.createNvmeVlmData(vlm, nvmeRscData);
+            nvmeRscData.getVlmLayerObjects().put(vlmNr, nvmeVlmData);
+        }
+        else
+        {
+            nvmeVlmData.setAllocatedSize(vlmPojo.getAllocatedSize());
+            nvmeVlmData.setDevicePath(vlmPojo.getDevicePath());
+            nvmeVlmData.setDiskState(vlmPojo.getDiskState());
+            nvmeVlmData.setUsableSize(vlmPojo.getUsableSize());
+        }
     }
 
     private void updateChildsParent(RscLayerObject child, RscLayerObject newParent) throws SQLException
