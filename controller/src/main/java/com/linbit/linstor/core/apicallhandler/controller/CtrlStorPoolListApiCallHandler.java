@@ -14,6 +14,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -110,7 +111,8 @@ public class CtrlStorPoolListApiCallHandler
                                 Long totalCapacity;
 
                                 SpaceInfo spaceInfo = freeCapacityMap.get(new StorPool.Key(storPool));
-                                if (!storPool.getNode().getPeer(peerAccCtx.get()).isConnected())
+                                Peer peer = storPool.getNode().getPeer(peerAccCtx.get());
+                                if (peer == null || !peer.isConnected())
                                 {
                                     freeCapacity = null;
                                     totalCapacity = null;
