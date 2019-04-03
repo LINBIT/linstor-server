@@ -96,7 +96,8 @@ public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigrat
 
     private void dropTableStltConn(Connection connection) throws SQLException
     {
-        // FIXME: This possibly drops various foreign key constraints from other tables
+        // This potentially drops various foreign key constraints from other tables
+        // Fixed in migration 2019_03_15_FixConstraints
         String dropOldSc =
             "DROP TABLE " + OLD_TBL_SC;
         Statement dropTblStmt = connection.createStatement();

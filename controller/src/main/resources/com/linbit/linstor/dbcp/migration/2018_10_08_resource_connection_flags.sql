@@ -5,7 +5,8 @@
 -- For DB2:
 --     CREATE TABLE RESOURCE_CONNECTIONS_TMP AS SELECT * FROM RESOURCE_CONNECTIONS WITH DATA;
 
--- FIXME: This drops various foreign key constraints from other tables
+-- This potentially drops various foreign key constraints from other tables
+-- Fixed in migration 2019_03_15_FixConstraints
 DROP TABLE RESOURCE_CONNECTIONS;
 CREATE TABLE RESOURCE_CONNECTIONS
 (
