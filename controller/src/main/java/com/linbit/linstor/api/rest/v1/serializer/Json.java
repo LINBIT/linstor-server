@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1.serializer;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
@@ -692,6 +693,8 @@ public class Json
         public String not_place_with_rsc_regex;
         public List<String> replicas_on_same = new ArrayList<>();
         public List<String> replicas_on_different = new ArrayList<>();
+        public List<String> layer_stack = new ArrayList<>();
+        public List<String> provider_list = new ArrayList<>();
 
         @Override
         public int getPlaceCount()
@@ -727,6 +730,18 @@ public class Json
         public List<String> getReplicasOnDifferentList()
         {
             return replicas_on_different;
+        }
+
+        @Override
+        public List<DeviceLayerKind> getLayerStackList()
+        {
+            return LinstorParsingUtils.asDeviceLayerKind(layer_stack);
+        }
+
+        @Override
+        public List<DeviceProviderKind> getProviderList()
+        {
+            return LinstorParsingUtils.asProviderKind(provider_list);
         }
     }
 

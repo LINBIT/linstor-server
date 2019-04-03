@@ -21,18 +21,24 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -108,7 +114,7 @@ public class CtrlAutoStorPoolSelector
         Map<StorPoolName, List<Node>> storPools = availableStorPools;
 
         storPools = filterByStorPoolName(selectFilter, storPools);
-
+        storPools = filterByLayerStackAndProviders(selectFilter, storPools);
         storPools = filterByDoNotPlaceWithResource(selectFilter, storPools);
 
         // this method already trims the node-list to placeCount.
@@ -210,6 +216,58 @@ public class CtrlAutoStorPoolSelector
             throw new ImplementationError(exc);
         }
         return peer;
+    }
+
+    private Map<StorPoolName, List<Node>> filterByLayerStackAndProviders(
+        final AutoStorPoolSelectorConfig selectFilter,
+        Map<StorPoolName, List<Node>> nodes
+    )
+    {
+        try
+        {
+            List<DeviceLayerKind> layerStackList = selectFilter.getLayerStackList();
+            List<DeviceProviderKind> providerList = selectFilter.getProviderList();
+            if (providerList.isEmpty())
+            {
+                providerList = Arrays.asList(DeviceProviderKind.values());
+            }
+
+            Set<StorPoolName> emptyStorPoolNames = new HashSet<>();
+            for (Entry<StorPoolName, List<Node>> entry : nodes.entrySet())
+            {
+                StorPoolName storPoolName = entry.getKey();
+                List<Node> nodeList = entry.getValue();
+
+                Set<Node> storPoolsOfTheseNodesNotSupportingLayersOrProviders = new HashSet<>();
+                for (Node node : nodeList)
+                {
+                    StorPool storPool = node.getStorPool(apiAccCtx, storPoolName);
+                    if (!node.getPeer(apiAccCtx).getSupportedLayers().containsAll(layerStackList))
+                    {
+                        storPoolsOfTheseNodesNotSupportingLayersOrProviders.add(node);
+                    }
+                    if (!providerList.contains(storPool.getDeviceProviderKind()))
+                    {
+                        storPoolsOfTheseNodesNotSupportingLayersOrProviders.add(node);
+                    }
+                }
+                nodeList.removeAll(storPoolsOfTheseNodesNotSupportingLayersOrProviders);
+                if (nodeList.isEmpty())
+                {
+                    emptyStorPoolNames.add(entry.getKey());
+                }
+            }
+            for (StorPoolName storPoolName : emptyStorPoolNames)
+            {
+                nodes.remove(storPoolName);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+
+        return nodes;
     }
 
     private Map<StorPoolName, List<Node>> filterByDoNotPlaceWithResource(
@@ -500,6 +558,8 @@ public class CtrlAutoStorPoolSelector
         private final String notPlaceWithRscRegex;
         private final List<String> notPlaceWithRscList;
         private final String storPoolNameStr;
+        private final List<DeviceLayerKind> layerStackList;
+        private final List<DeviceProviderKind> providerList;
 
         public AutoStorPoolSelectorConfig(
             int placeCountRef,
@@ -507,7 +567,9 @@ public class CtrlAutoStorPoolSelector
             List<String> replicasOnSameListRef,
             String notPlaceWithRscRegexRef,
             List<String> notPlaceWithRscListRef,
-            String storPoolNameStrRef
+            String storPoolNameStrRef,
+            List<DeviceLayerKind> layerStackRef,
+            List<DeviceProviderKind> providerListRef
         )
         {
             placeCount = placeCountRef;
@@ -516,6 +578,8 @@ public class CtrlAutoStorPoolSelector
             notPlaceWithRscRegex = notPlaceWithRscRegexRef;
             notPlaceWithRscList = notPlaceWithRscListRef;
             storPoolNameStr = storPoolNameStrRef;
+            layerStackList = layerStackRef;
+            providerList = providerListRef;
         }
 
         public int getPlaceCount()
@@ -546,6 +610,16 @@ public class CtrlAutoStorPoolSelector
         public String getStorPoolNameStr()
         {
             return storPoolNameStr;
+        }
+
+        public List<DeviceLayerKind> getLayerStackList()
+        {
+            return layerStackList;
+        }
+
+        public List<DeviceProviderKind> getProviderList()
+        {
+            return providerList;
         }
     }
 

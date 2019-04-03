@@ -1,5 +1,8 @@
 package com.linbit.linstor.api.interfaces;
 
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+
 import java.util.List;
 
 public interface AutoSelectFilterApi
@@ -16,4 +19,7 @@ public interface AutoSelectFilterApi
 
     List<String> getReplicasOnDifferentList();
 
+    List<DeviceLayerKind> getLayerStackList();
+
+    List<DeviceProviderKind> getProviderList();
 }

@@ -82,7 +82,9 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
             selectFilter.getReplicasOnSameList(),
             selectFilter.getNotPlaceWithRscRegex(),
             selectFilter.getNotPlaceWithRscList(),
-            selectFilter.getStorPoolNameStr()
+            selectFilter.getStorPoolNameStr(),
+            selectFilter.getLayerStackList(),
+            selectFilter.getProviderList()
         );
 
         List<Candidate> candidates = ctrlAutoStorPoolSelector.getCandidateList(

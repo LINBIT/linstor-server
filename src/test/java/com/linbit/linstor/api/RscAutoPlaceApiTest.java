@@ -32,6 +32,12 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -62,6 +68,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
+@SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase
 {
     private static final long KB = 1;
@@ -92,9 +99,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         }
     }
 
-    @Mock
-    protected Peer mockSatellite;
-
     @Bind @Mock
     protected FreeCapacityFetcher freeCapacityFetcher;
 
@@ -107,13 +111,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         MINOR_GEN.set(MINOR_NR_MIN);
 
         Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
-
-        // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be ready
-        Mockito.when(mockSatellite.apiCall(anyString(), any()))
-            .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
-        Mockito.when(mockSatellite.isConnected()).thenReturn(true);
-        Mockito.when(mockSatellite.getSupportedLayers()).thenReturn(Arrays.asList(DeviceLayerKind.values()));
-        Mockito.when(mockSatellite.getSupportedProviders()).thenReturn(Arrays.asList(DeviceProviderKind.values()));
 
         Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 
@@ -128,7 +125,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void basicTest() throws Exception
     {
         evaluateTest(
@@ -156,7 +152,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void chooseLargerSatelliteTest() throws Exception
     {
         evaluateTest(
@@ -187,7 +182,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void chooseLargerPoolTest() throws Exception
     {
         evaluateTest(
@@ -214,7 +208,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void chooseThickPoolTest() throws Exception
     {
         evaluateTest(
@@ -225,7 +218,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt")
-                .addStorPool("pool1", 30 * MB, true)
+                .addStorPool("pool1", 30 * MB, LVM_THIN)
                 .addStorPool("pool2", 10 * MB)
                 .addStorPool("pool3", 20 * MB)
                 .build()
@@ -239,7 +232,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void preferredStorPoolNotEnoughSpaceTest() throws Exception
     {
         evaluateTest(
@@ -264,7 +256,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void preferredStorPoolSuccessTest() throws Exception
     {
         evaluateTest(
@@ -294,7 +285,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void doNotPlaceWithRscTest() throws Exception
     {
         evaluateTest(
@@ -329,7 +319,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void notEnoughNodesTest() throws Exception
     {
         evaluateTest(
@@ -353,7 +342,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void doNotPlaceWithRscAndStorPoolTest() throws Exception
     {
         evaluateTest(
@@ -384,7 +372,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void doNotPlaceWithRscRegexTest() throws Exception
     {
         evaluateTest(
@@ -424,7 +411,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void doNotPlaceWithRscSimpleRegexPrefixTest() throws Exception
     {
         evaluateTest(
@@ -464,7 +450,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings("checkstyle:magicnumber")
     public void replicasCombinedTest() throws Exception
     {
         evaluateTest(
@@ -554,7 +539,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
     public void disklessRemainingTest() throws Exception
     {
         evaluateTest(
@@ -600,7 +584,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
     public void idempotencyTest() throws Exception
     {
         evaluateTest(
@@ -648,7 +631,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
     public void extendAutoPlacedRscTest() throws Exception
     {
         evaluateTest(
@@ -717,7 +699,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
     public void extendAutoPlacedRscOnDifferentStorPoolsTest() throws Exception
     {
         evaluateTest(
@@ -790,6 +771,81 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         );
     }
 
+    @Test
+    public void layerStackTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("stor", 10 * GB)
+                .setSupportedLayers(DRBD, LUKS, STORAGE)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("stor", 10 * GB)
+                .setSupportedLayers(DRBD, LUKS, STORAGE)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("stor", 100 * GB)
+                .setSupportedLayers(LUKS, STORAGE) // no DRBD :(
+                .build()
+            .setLayerStack(DRBD, STORAGE)
+            .disklessOnRemaining(false)
+        );
+
+        // although stlt3 has the most storage, as it does not support DRBD, the other two
+        // should be selected
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode())
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+        assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
+        assertEquals("stlt2", deployedNodes.get(1).getName().displayValue);
+    }
+
+    @Test
+    public void providerTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("stor", 10 * GB, LVM)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("stor", 10 * GB, LVM)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("stor", 100 * GB, ZFS) // no LVM
+                .build()
+            .setProvider(LVM, LVM_THIN)
+            .disklessOnRemaining(false)
+        );
+
+        // although stlt3 has the most storage, as it does not support LVM, the other two
+        // should be selected
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode())
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+        assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
+        assertEquals("stlt2", deployedNodes.get(1).getName().displayValue);
+    }
+
     private void expectDeployed(
         String storPoolNameStr,
         String rscNameStr,
@@ -838,7 +894,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             null,
             "NotTellingYou",
             ResourceDefinition.TransportType.IP,
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            Arrays.asList(DRBD, STORAGE),
             null
         );
 
@@ -874,6 +930,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final List<String> replicasOnDifferentNodePropList = new ArrayList<>();
         private boolean disklessOnRemaining;
 
+        private final List<DeviceLayerKind> layerStack = new ArrayList<>(Arrays.asList(DRBD, STORAGE));
+        private final List<DeviceProviderKind> providerList =
+            new ArrayList<>(Arrays.asList(DeviceProviderKind.values()));
+
         RscAutoPlaceApiCall(
             String rscNameStrRef,
             int placeCountRef,
@@ -888,11 +948,28 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     // When the resources are successfully registered in the DB, the API call handler should try to
                     // deploy them on the satellites. We deliberately cause this to fail. Hence we expect a failure
                     // response after the registration success responses.
-                    LongStream.concat(LongStream.of(expectedRetCodes), LongStream.of(ApiConsts.FAIL_UNKNOWN_ERROR)).toArray() :
+                    LongStream.concat(
+                        LongStream.of(expectedRetCodes),
+                        LongStream.of(ApiConsts.FAIL_UNKNOWN_ERROR)
+                    ).toArray() :
                     expectedRetCodes
             );
             rscNameStr = rscNameStrRef;
             placeCount = placeCountRef;
+        }
+
+        public RscAutoPlaceApiCall setProvider(DeviceProviderKind... kinds)
+        {
+            providerList.clear();
+            providerList.addAll(Arrays.asList(kinds));
+            return this;
+        }
+
+        public RscAutoPlaceApiCall setLayerStack(DeviceLayerKind... kinds)
+        {
+            layerStack.clear();
+            layerStack.addAll(Arrays.asList(kinds));
+            return this;
         }
 
         RscAutoPlaceApiCall setDoNotPlaceWithRegex(String doNotPlaceWithRscRegexStrRef)
@@ -976,9 +1053,21 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     {
                         return doNotPlaceWithRscList;
                     }
+
+                    @Override
+                    public List<DeviceLayerKind> getLayerStackList()
+                    {
+                        return layerStack;
+                    }
+
+                    @Override
+                    public List<DeviceProviderKind> getProviderList()
+                    {
+                        return providerList;
+                    }
                 },
                 disklessOnRemaining,
-                Collections.emptyList()
+                layerStack.stream().map(DeviceLayerKind::name).collect(Collectors.toList())
             ).subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
@@ -994,7 +1083,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 null
             );
 
-            stlt.setPeer(GenericDbBase.SYS_CTX, mockSatellite);
             nodesMap.put(stlt.getName(), stlt);
             StorPoolDefinitionData dfltDisklessStorPoolDfn =
                 storPoolDefinitionRepository.get(SYS_CTX, DFLT_DISKLESS_STOR_POOL_NAME);
@@ -1086,11 +1174,30 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     {
         private final RscAutoPlaceApiCall parent;
         private final NodeData stlt;
+        private final Peer mockedPeer;
 
         SatelliteBuilder(RscAutoPlaceApiCall parentRef, NodeData stltRef)
         {
+            mockedPeer = Mockito.mock(Peer.class);
+            // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be ready
+            Mockito.when(mockedPeer.apiCall(anyString(), any()))
+                .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
+            Mockito.when(mockedPeer.isConnected()).thenReturn(true);
+
+            try
+            {
+                stltRef.setPeer(GenericDbBase.SYS_CTX, mockedPeer);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+
             parent = parentRef;
             stlt = stltRef;
+
+            setSupportedLayers(DeviceLayerKind.values());
+            setSupportedProviders(DeviceProviderKind.values());
         }
 
         public SatelliteBuilder setNodeProp(String key, String value)
@@ -1105,17 +1212,24 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
-        SatelliteBuilder addStorPool(String storPoolName, long storPoolSize) throws Exception
+        SatelliteBuilder addStorPool(String storPoolName, long storPoolSize)
+            throws Exception
         {
-            return addStorPool(storPoolName, null, storPoolSize, false);
+            return addStorPool(storPoolName, null, storPoolSize, LVM);
         }
 
-        SatelliteBuilder addStorPool(String storPoolName, long storPoolSize, boolean thin) throws Exception
+        SatelliteBuilder addStorPool(String storPoolName, long storPoolSize, DeviceProviderKind provider)
+            throws Exception
         {
-            return addStorPool(storPoolName, null, storPoolSize, thin);
+            return addStorPool(storPoolName, null, storPoolSize, provider);
         }
 
-        SatelliteBuilder addStorPool(String storPoolName, String freeSpaceMgrName, long storPoolSize, boolean thin)
+        SatelliteBuilder addStorPool(
+            String storPoolName,
+            String freeSpaceMgrName,
+            long storPoolSize,
+            DeviceProviderKind providerKind
+        )
             throws Exception
         {
             enterScope();
@@ -1146,7 +1260,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiTestBase.BOB_ACC_CTX,
                 stlt,
                 storPoolDfn,
-                (thin ? DeviceProviderKind.LVM_THIN : DeviceProviderKind.LVM),
+                providerKind,
                 fsm
             );
 
@@ -1154,6 +1268,18 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
             commitAndCleanUp(true);
 
+            return this;
+        }
+
+        public SatelliteBuilder setSupportedLayers(DeviceLayerKind... layers)
+        {
+            Mockito.when(mockedPeer.getSupportedLayers()).thenReturn(Arrays.asList(layers));
+            return this;
+        }
+
+        public SatelliteBuilder setSupportedProviders(DeviceProviderKind... providers)
+        {
+            Mockito.when(mockedPeer.getSupportedProviders()).thenReturn(Arrays.asList(providers));
             return this;
         }
 

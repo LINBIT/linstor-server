@@ -291,24 +291,29 @@ public class LinstorParsingUtils
         DeviceProviderKind kind;
         switch (stringRef.toUpperCase()) {
             case "DRBD_DISKLESS":
+            case "DRBDDISKLESS":
             case "DISKLESS":
                 kind = DeviceProviderKind.DISKLESS;
                 break;
             case "LVM":
                 kind = DeviceProviderKind.LVM;
                 break;
+            case "LVMTHIN":
             case "LVM_THIN":
                 kind = DeviceProviderKind.LVM_THIN;
                 break;
             case "ZFS":
                 kind = DeviceProviderKind.ZFS;
                 break;
+            case "ZFSTHIN":
             case "ZFS_THIN":
                 kind = DeviceProviderKind.ZFS_THIN;
                 break;
+            case "SWORDFISHTARGET":
             case "SWORDFISH_TARGET":
                 kind = DeviceProviderKind.SWORDFISH_TARGET;
                 break;
+            case "SWORDFISHINITIATOR":
             case "SWORDFISH_INITIATOR":
                 kind = DeviceProviderKind.SWORDFISH_INITIATOR;
                 break;
@@ -321,5 +326,15 @@ public class LinstorParsingUtils
                 );
         }
         return kind;
+    }
+
+    public static List<DeviceProviderKind> asProviderKind(List<String> providerStackStrListRef)
+    {
+        List<DeviceProviderKind> ret = new ArrayList<>();
+        for (String providerStr : providerStackStrListRef)
+        {
+            ret.add(asProviderKind(providerStr));
+        }
+        return ret;
     }
 }

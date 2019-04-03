@@ -1,7 +1,10 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.proto.common.AutoSelectFilterOuterClass.AutoSelectFilter;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.List;
 
@@ -58,5 +61,17 @@ public class AutoSelectFilterApiData implements AutoSelectFilterApi
     public List<String> getReplicasOnDifferentList()
     {
         return selectFilterProto.getReplicasOnDifferentList();
+    }
+
+    @Override
+    public List<DeviceLayerKind> getLayerStackList()
+    {
+        return ProtoDeserializationUtils.parseDeviceLayerKindList(selectFilterProto.getLayerStackList());
+    }
+
+    @Override
+    public List<DeviceProviderKind> getProviderList()
+    {
+        return ProtoDeserializationUtils.parseDeviceProviderKind(selectFilterProto.getProvidersList());
     }
 }

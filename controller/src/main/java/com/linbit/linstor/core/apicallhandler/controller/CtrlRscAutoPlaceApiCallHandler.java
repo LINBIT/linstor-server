@@ -142,7 +142,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         String rscNameStr,
         AutoSelectFilterApi selectFilter,
         boolean disklessOnRemainingNodes,
-        ResponseContext context, List<String> layerStackStrList
+        ResponseContext context,
+        List<String> layerStackStrList
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -208,7 +209,9 @@ public class CtrlRscAutoPlaceApiCallHandler
                     // Do not attempt to re-use nodes that already have this resource
                     Stream.of(rscNameStr)
                 ).collect(Collectors.toList()),
-                storPoolName
+                storPoolName,
+                selectFilter.getLayerStackList(),
+                selectFilter.getProviderList()
             );
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);
