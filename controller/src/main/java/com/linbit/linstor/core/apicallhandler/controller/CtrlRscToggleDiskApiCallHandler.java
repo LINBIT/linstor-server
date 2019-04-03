@@ -57,6 +57,7 @@ import reactor.core.publisher.Mono;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -270,6 +271,14 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INSUFFICIENT_REPLICA_COUNT,
                     "Cannot remove the disk from the only resource with a disk"
+                ));
+            }
+
+            if (!LayerUtils.hasLayer(getLayerData(peerAccCtx.get(), rsc), DeviceLayerKind.DRBD))
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_LAYER_STACK,
+                    "Toggle disk is only supported in combination with DRBD"
                 ));
             }
         }
@@ -881,6 +890,24 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             throw new ImplementationError(accDeniedExc);
         }
         return props;
+    }
+
+    static RscLayerObject getLayerData(AccessContext accCtx, Resource rsc)
+    {
+        RscLayerObject layerData;
+        try
+        {
+            layerData = rsc.getLayerData(accCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "access layer data",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return layerData;
     }
 
     private LockGuard createLockGuard()

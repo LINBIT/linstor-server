@@ -21,7 +21,9 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
@@ -103,35 +105,53 @@ public class CtrlVlmCrtApiHelper
          */
 
         DeviceProviderKind driverKind = storPool.getDeviceProviderKind();
-        if (driverKind.hasBackingDevice() &&
-            getPeerPrivileged(rsc.getAssignedNode()).getConnectionStatus() == Peer.ConnectionStatus.ONLINE &&
-            (thinFreeCapacities != null || !driverKind.usesThinProvisioning()) &&
-            !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
-        )
+        if (driverKind.hasBackingDevice())
         {
-            if (!FreeCapacityAutoPoolSelectorUtils
-                .isStorPoolUsable(
-                    getVolumeSizePrivileged(vlmDfn),
-                    thinFreeCapacities,
-                    true,
-                    storPool.getName(),
-                    rsc.getAssignedNode(),
-                    apiCtx
-                )
-                // allow the volume to be created if the free capacity is unknown
-                .orElse(true)
+            if (getPeerPrivileged(rsc.getAssignedNode()).getConnectionStatus() == Peer.ConnectionStatus.ONLINE &&
+                (thinFreeCapacities != null || !driverKind.usesThinProvisioning()) &&
+                !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
             )
             {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_VLM_SIZE,
-                        String.format(
-                            "Not enough free space available for volume %d of resource '%s'.",
-                            vlmDfn.getVolumeNumber().value,
-                            rsc.getDefinition().getName().getDisplayName()
-                        )
+                if (!FreeCapacityAutoPoolSelectorUtils
+                    .isStorPoolUsable(
+                        getVolumeSizePrivileged(vlmDfn),
+                        thinFreeCapacities,
+                        true,
+                        storPool.getName(),
+                        rsc.getAssignedNode(),
+                        apiCtx
                     )
-                );
+                    // allow the volume to be created if the free capacity is unknown
+                    .orElse(true)
+                )
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_VLM_SIZE,
+                            String.format(
+                                "Not enough free space available for volume %d of resource '%s'.",
+                                vlmDfn.getVolumeNumber().value,
+                                rsc.getDefinition().getName().getDisplayName()
+                            )
+                        )
+                    );
+                }
+            }
+        }
+        else
+        {
+            if (!LayerUtils.hasLayer(
+                CtrlRscToggleDiskApiCallHandler.getLayerData(
+                    peerAccCtx.get(),
+                    rsc
+                ),
+                DeviceLayerKind.DRBD)
+            )
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_LAYER_STACK,
+                    "Diskless volume is only supported in combination with DRBD"
+                ));
             }
         }
 

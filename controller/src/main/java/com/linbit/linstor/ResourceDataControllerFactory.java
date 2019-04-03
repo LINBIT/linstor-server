@@ -106,6 +106,7 @@ public class ResourceDataControllerFactory
         {
             throw new ImplementationError("Lowest layer has to be a STORAGE layer. " + new ArrayList<>(layerStack));
         }
+
         layerStackHelper.ensureStackDataExists(rscData, layerStack, nodeIdIntRef);
 
         return rscData;
