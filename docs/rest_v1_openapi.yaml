@@ -53,7 +53,12 @@ paths:
       - developers
       summary: add a node to Linstor
       operationId: nodeAdd
-      description: Adds a node to Linstor
+      description: |
+        Adds a node to Linstor
+
+        If only one net-interface is specified and it is does not specify
+        a `satellite_port` it will apply the default port and `satellite_encryption_type`
+        for this net-interface.
       responses:
         '201':
           description: node created
@@ -333,7 +338,7 @@ paths:
     put:
       tags:
       - developers
-      summary: modify a node
+      summary: modify a storage pool
       operationId: nodeStoragePoolModify
       description: |
         Sets or modifies properties
@@ -1282,6 +1287,30 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Snapshot'
+    post:
+      tags:
+      - developers
+      summary: create a snapshot
+      description: Create a snapshot for a resource
+      operationId: resourceSnapshotCreate
+      responses:
+        '201':
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Snapshot'
+            example:
+              name: snap1
   /v1/resource-definitions/{resource}/snapshots/{snapshot}:
     parameters:
     - $ref: '#/components/parameters/Resource'
@@ -1306,28 +1335,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Snapshot'
-    post:
-      tags:
-      - developers
-      summary: create a snapshot
-      description: Create a snapshot for a resource
-      operationId: resourceSnapshotCreate
-      responses:
-        '201':
-          description: Snapshot created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiCallRc'
-        '400':
-          $ref: '#/components/responses/InvalidInput'
-        '500':
-          $ref: '#/components/responses/OperationFailed'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Snapshot'
     delete:
       tags:
       - developers
@@ -1863,13 +1870,13 @@ paths:
         description: Unix timestamp from the starting interval
         schema:
           type: integer
-          format: uint64
+          format: int64
       - name: to
         in: query
         description: Unix timestamp to the ending interval
         schema:
           type: integer
-          format: uint64
+          format: int64
       - name: withContent
         in: query
         description: Include error report text in response.
@@ -1915,13 +1922,13 @@ paths:
         description: Unix timestamp from the starting interval
         schema:
           type: integer
-          format: uint64
+          format: int64
       - name: to
         in: query
         description: Unix timestamp to the ending interval
         schema:
           type: integer
-          format: uint64
+          format: int64
       - name: withContent
         in: query
         description: Include error report text in response.
@@ -2061,7 +2068,7 @@ paths:
                           example: DfltStorPool
                         max_volume_size_kib:
                           type: integer
-                          format: uint64
+                          format: int64
                           description: maximum size in KiB
                           example: 3194880
                         node_names:
@@ -2310,14 +2317,14 @@ components:
         resource_name_suffix:
           type: string
         peer_slots:
-          type: number
-          format: int16
+          type: integer
+          format: int32
         al_stripes:
-          type: number
-          format: uint64
+          type: integer
+          format: int64
         port:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
           example: 7000
           description: used drbd port for this resource
         transport_type:
@@ -2364,8 +2371,8 @@ components:
         - resource_definition
       properties:
         drbd_port:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
           description: drbd port for resources
         drbd_secret:
           type: string
@@ -2390,8 +2397,8 @@ components:
           items:
             type: string
         drbd_port:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
           description: drbd port for resources
         layer_stack:
           type: array
@@ -2404,11 +2411,11 @@ components:
         resource_name_suffix:
           type: string
         volume_number:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
         minor_number:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
     VolumeDefinitionLayer:
       type: object
       required:
@@ -2449,8 +2456,8 @@ components:
         volume_definition:
           $ref: '#/components/schemas/VolumeDefinition'
         drbd_minor_number:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
     VolumeDefinitionModify:
       type: object
       properties:
@@ -2474,17 +2481,17 @@ components:
         drbd_resource_definition:
           $ref: '#/components/schemas/DrbdResourceDefinitionLayer'
         node_id:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
         peer_slots:
-          type: number
-          format: uint16
+          type: integer
+          format: int32
         al_stripes:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
         al_size:
-          type: number
-          format: uint64
+          type: integer
+          format: int64
         flags:
           type: array
           items:
@@ -2554,8 +2561,8 @@ components:
           items:
             $ref: '#/components/schemas/LayerType'
         drbd_node_id:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
 
     DrbdVolume:
       type: object
@@ -2572,10 +2579,10 @@ components:
           type: string
         allocated_size_kib:
           type: integer
-          format: uint64
+          format: int64
         usable_size_kib:
           type: integer
-          format: uint64
+          format: int64
         disk_state:
           type: string
           description: String describing current volume state
@@ -2584,8 +2591,8 @@ components:
       type: object
       properties:
         volume_number:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
         device_path:
           type: string
           description: block device path
@@ -2594,10 +2601,10 @@ components:
           description: block device used by luks
         allocated_size_kib:
           type: integer
-          format: uint64
+          format: int64
         usable_size_kib:
           type: integer
-          format: uint64
+          format: int64
         disk_state:
           type: string
           description: String describing current volume state
@@ -2608,17 +2615,17 @@ components:
       type: object
       properties:
         volume_number:
-          type: number
-          format: uint32
+          type: integer
+          format: int32
         device_path:
           type: string
           description: block device path
         allocated_size_kib:
           type: integer
-          format: uint64
+          format: int64
         usable_size_kib:
           type: integer
-          format: uint64
+          format: int64
         disk_state:
           type: string
           description: String describing current volume state
@@ -2648,10 +2655,10 @@ components:
           type: string
         allocated_size_kib:
           type: integer
-          format: uint64
+          format: int64
         usable_size_kib:
           type: integer
-          format: uint64
+          format: int64
         props:
           $ref: '#/components/schemas/Properties'
         flags:
@@ -2686,7 +2693,7 @@ components:
       properties:
         place_count:
           type: integer
-          format: uint32
+          format: int32
         storage_pool:
           type: string
         not_place_with_rsc:
@@ -2725,7 +2732,7 @@ components:
           type: string
         error_time:
           type: integer
-          format: uint64
+          format: int64
         filename:
           type: string
           description: |
@@ -2785,10 +2792,10 @@ components:
       properties:
         volume_number:
           type: integer
-          format: uint32
+          format: int32
         size_kib:
           type: integer
-          format: uint64
+          format: int64
           description: Volume size in KiB
     SnapshotRestore:
       type: object
