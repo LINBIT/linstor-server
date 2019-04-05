@@ -18,11 +18,12 @@ public class ResourceName extends GenericName
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
     public static final String RESERVED_KEYWORD_ALL = "all";
+    public static final String RESERVED_KEYWORD_PROXY = "proxy";
 
     public ResourceName(String resName) throws InvalidNameException
     {
         super(resName);
-        if (resName.equalsIgnoreCase(RESERVED_KEYWORD_ALL))
+        if (resName.equalsIgnoreCase(RESERVED_KEYWORD_ALL) || resName.equalsIgnoreCase(RESERVED_KEYWORD_PROXY))
         {
             throw new InvalidNameException(
                 "The specified name '" + resName +
