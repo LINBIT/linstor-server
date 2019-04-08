@@ -99,14 +99,20 @@ public class CryptSetupCommands implements Luks
             // open cryptsetup
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
-                CRYPTSETUP, "open", dev, LUKS_PREFIX + targetIdentifier
+                CRYPTSETUP, "open", "--tries", "1", dev, LUKS_PREFIX + targetIdentifier
             );
             outputStream.write(cryptKey);
             outputStream.write('\n');
             outputStream.flush();
 
-            extCommand.syncProcess();
+            OutputData outputData = extCommand.syncProcess();
             outputStream.close(); // just to be sure and get rid of the java warning
+
+            ExtCmdUtils.checkExitCode(
+                outputData,
+                StorageException::new,
+                "Failed to open dm-crypt device" + LUKS_PREFIX + targetIdentifier + "'"
+            );
         }
         catch (IOException ioExc)
         {
