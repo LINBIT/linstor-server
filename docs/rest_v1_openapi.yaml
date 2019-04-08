@@ -1800,10 +1800,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                new_passphrase:
-                  type: string
+              $ref: '#/components/schemas/PassPhraseCreate'
     put:
       tags:
       - developers
@@ -1824,12 +1821,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                new_passphrase:
-                  type: string
-                old_passphrase:
-                  type: string
+              $ref: '#/components/schemas/PassPhraseCreate'
     patch:
       tags:
       - developers
@@ -1850,7 +1842,7 @@ paths:
         content:
           application/json:
             schema:
-              type: string
+              $ref: '#/components/schemas/PassPhraseEnter'
 
   /v1/error-reports:
     get:
@@ -2811,3 +2803,12 @@ components:
           items:
             type: string
           description: List of nodes where to place the restored snapshot
+    PassPhraseCreate:
+      type: object
+      properties:
+        new_passphrase:
+          type: string
+        old_passphrase:
+          type: string
+    PassPhraseEnter:
+      type: string
