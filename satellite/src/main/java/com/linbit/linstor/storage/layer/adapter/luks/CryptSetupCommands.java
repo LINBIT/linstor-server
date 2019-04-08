@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 public class CryptSetupCommands implements Luks
 {
     private static final String CRYPTSETUP = "cryptsetup";
+    private static final String CRYPT_PREFIX = "Linstor-Crypt-";
 
     @SuppressWarnings("unused")
     private final ErrorReporter errorReporter;
@@ -99,7 +100,7 @@ public class CryptSetupCommands implements Luks
             // open cryptsetup
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
-                CRYPTSETUP, "open", "--tries", "1", dev, LUKS_PREFIX + targetIdentifier
+                CRYPTSETUP, "open", "--tries", "1", dev, CRYPT_PREFIX + targetIdentifier
             );
             outputStream.write(cryptKey);
             outputStream.write('\n');
@@ -111,7 +112,7 @@ public class CryptSetupCommands implements Luks
             ExtCmdUtils.checkExitCode(
                 outputData,
                 StorageException::new,
-                "Failed to open dm-crypt device" + LUKS_PREFIX + targetIdentifier + "'"
+                "Failed to open dm-crypt device '" + CRYPT_PREFIX + targetIdentifier + "'"
             );
         }
         catch (IOException ioExc)
@@ -137,11 +138,11 @@ public class CryptSetupCommands implements Luks
         {
             final ExtCmd extCommand = extCmdFactory.create();
 
-            OutputData outputData = extCommand.exec(CRYPTSETUP, "close", LUKS_PREFIX + identifier);
+            OutputData outputData = extCommand.exec(CRYPTSETUP, "close", CRYPT_PREFIX + identifier);
             ExtCmdUtils.checkExitCode(
                 outputData,
                 StorageException::new,
-                "Failed to close dm-crypt device '" + LUKS_PREFIX + identifier + "'"
+                "Failed to close dm-crypt device '" + CRYPT_PREFIX + identifier + "'"
             );
         }
         catch (IOException ioExc)
@@ -204,7 +205,8 @@ public class CryptSetupCommands implements Luks
 
             // just to make sure that "foo" does not match "foobar"
             Pattern pattern = Pattern.compile(
-                "^" + Pattern.quote(LUKS_PREFIX + identifier) + "\\s+"
+                "^" + Pattern.quote(CRYPT_PREFIX + identifier) + "\\s+",
+                Pattern.MULTILINE
             );
 
             String stdOut = new String(outputData.stdoutData);
@@ -231,6 +233,6 @@ public class CryptSetupCommands implements Luks
     @Override
     public String getLuksVolumePath(String identifier)
     {
-        return "/dev/mapper/" + LUKS_PREFIX + identifier;
+        return "/dev/mapper/" + CRYPT_PREFIX + identifier;
     }
 }

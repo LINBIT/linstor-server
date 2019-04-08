@@ -107,7 +107,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     }
 
     @Override
-    public boolean isFailed()
+    public boolean hasFailed()
     {
         return failed;
     }

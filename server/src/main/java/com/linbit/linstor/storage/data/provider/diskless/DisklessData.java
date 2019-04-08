@@ -79,7 +79,7 @@ public class DisklessData extends BaseTransactionObject implements VlmProviderOb
     }
 
     @Override
-    public boolean isFailed()
+    public boolean hasFailed()
     {
         return failed;
     }

@@ -131,6 +131,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final AtomicBoolean waitUpdFlag     = new AtomicBoolean(true);
     private final AtomicBoolean fullSyncFlag    = new AtomicBoolean(false);
     private final AtomicBoolean shutdownFlag    = new AtomicBoolean(false);
+    private final AtomicBoolean collectUpdateNofiticationForceWakeFlag = new AtomicBoolean(false);
 
     private final Map<ResourceName, ApiCallRc> dispatchResponses = new TreeMap<>();
 
@@ -466,6 +467,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     @Override
+    public void forceWakeUpdateNotifications()
+    {
+        collectUpdateNofiticationForceWakeFlag.set(true);
+    }
+
+    @Override
     public void fullSyncApplied(Node localNode) throws StorageException
     {
         synchronized (sched)
@@ -670,6 +677,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 updTracker.collectUpdateNotifications(
                     updPendingBundle,
                     svcCondFlag,
+                    collectUpdateNofiticationForceWakeFlag,
                     waitUpdFlag.get() && pendingDispatchRscs.isEmpty()
                 );
                 if (svcCondFlag.get())

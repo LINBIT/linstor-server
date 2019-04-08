@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class LuksLayer implements DeviceLayer
 {
-    private static final String LUKS_IDENTIFIER_FORMAT = "luks_%s_%05d";
+    private static final String LUKS_IDENTIFIER_FORMAT = "%s_%05d";
 
     // linstor calculates in KiB
     private static final int MIB = 1024;
@@ -223,6 +223,7 @@ public class LuksLayer implements DeviceLayer
                 ));
 
                 vlmData.setOpened(true);
+                vlmData.setFailed(false);
             }
         }
         else
@@ -232,6 +233,10 @@ public class LuksLayer implements DeviceLayer
                     "are missing the decrypted key. Is the master key set?",
                 luksRscData.getSuffixedResourceName()
             );
+            for (LuksVlmData vlmData : luksRscData.getVlmLayerObjects().values())
+            {
+                vlmData.setFailed(true);
+            }
         }
     }
 

@@ -469,14 +469,14 @@ public class DrbdLayer implements DeviceLayer
             {
                 if (drbdVlmData.getVolume().getFlags().isSet(workerCtx, VlmFlags.DELETE))
                 {
-                    if (drbdVlmData.hasDisk() && !drbdVlmData.isFailed())
+                    if (drbdVlmData.hasDisk() && !drbdVlmData.hasFailed())
                     {
                         volumesToDelete.add(drbdVlmData);
                     }
                 }
                 else if (rsc.getStateFlags().isSet(workerCtx, RscFlags.DISK_REMOVING))
                 {
-                    if (drbdVlmData.hasDisk() && !drbdVlmData.isFailed())
+                    if (drbdVlmData.hasDisk() && !drbdVlmData.hasFailed())
                     {
                         volumesToMakeDiskless.add(drbdVlmData);
                     }

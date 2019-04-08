@@ -116,7 +116,7 @@ public class LvmData extends BaseTransactionObject implements LvmProviderObject
     }
 
     @Override
-    public boolean isFailed()
+    public boolean hasFailed()
     {
         return failed.get();
     }

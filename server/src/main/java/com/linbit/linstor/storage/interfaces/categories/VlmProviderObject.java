@@ -34,7 +34,7 @@ public interface VlmProviderObject extends LayerObject
 
     boolean exists();
 
-    boolean isFailed();
+    boolean hasFailed();
 
     long getAllocatedSize();
 

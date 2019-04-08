@@ -1,5 +1,8 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.ImplementationError;
+import com.linbit.utils.Base64;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,6 +21,16 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
         " SELECT LAYER_RESOURCE_ID, NODE_NAME, RESOURCE_NAME, LAYER_RESOURCE_KIND, " +
                 "LAYER_RESOURCE_PARENT_ID, LAYER_RESOURCE_SUFFIX " +
         " FROM LAYER_RESOURCE_IDS";
+    private static final String SELECT_ALL_LUKS_VLMS =
+        " SELECT LUKS.LAYER_RESOURCE_ID, LUKS.VLM_NR, " +
+                "LRI.RESOURCE_NAME " +
+        " FROM LAYER_LUKS_VOlUMES AS LUKS, LAYER_RESOURCE_IDS AS LRI " +
+        " WHERE LUKS.LAYER_RESOURCE_ID = LRI.LAYER_RESOURCE_ID";
+    private static final String SELECT_SINGLE_PROP =
+        "SELECT PROP_VALUE " +
+        "FROM PROPS_CONTAINERS " +
+        "WHERE PROPS_INSTANCE = ? AND " +
+               "PROP_KEY = ?";
 
     private static final String DELETE_DUP_DRBD_RESOURCE =
         " DELETE FROM LAYER_DRBD_RESOURCES " +
@@ -32,8 +45,14 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
         " WHERE LAYER_RESOURCE_ID = ?;";
     private static final String UPDATE_DUP_STORAGE_VOLUME =
         " UPDATE LAYER_STORAGE_VOLUMES " +
-            " SET LAYER_RESOURCE_ID = ? " +
-            " WHERE LAYER_RESOURCE_ID = ?;";
+        " SET LAYER_RESOURCE_ID = ? " +
+        " WHERE LAYER_RESOURCE_ID = ?;";
+
+    private static final String UPDATE_LUKS_BASE64_DECODE =
+        " UPDATE LAYER_LUKS_VOlUMES " +
+        " SET ENCRYPTED_PASSWORD = ? " +
+        " WHERE LAYER_RESOURCE_ID = ? AND " +
+               "VLM_NR = ?;";
 
     @Override
     protected void migrate(Connection connectionRef) throws Exception
@@ -64,6 +83,41 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
                         update(connectionRef, UPDATE_DUP_STORAGE_VOLUME, origId, duplicateId);
                         delete(connectionRef, DELETE_DUP_DRBD_RESOURCE, duplicateId);
                         delete(connectionRef, DELETE_DUP_LAYER_RESOURCE_ID, duplicateId);
+                    }
+                }
+            }
+        }
+
+        try (PreparedStatement selectLuksVlms = connectionRef.prepareStatement(SELECT_ALL_LUKS_VLMS))
+        {
+            try (ResultSet resultSet = selectLuksVlms.executeQuery())
+            {
+                try (PreparedStatement updateStmt = connectionRef.prepareStatement(UPDATE_LUKS_BASE64_DECODE))
+                {
+                    try (PreparedStatement selectKey = connectionRef.prepareStatement(SELECT_SINGLE_PROP))
+                    {
+                        while (resultSet.next())
+                        {
+                            String rscName = resultSet.getString("RESOURCE_NAME");
+                            int vlmNr = resultSet.getInt("VLM_NR");
+                            String encryptedPw;
+                            selectKey.setString(1, "/VOLUMEDEFINITIONS/" + rscName.toUpperCase() + "/" + vlmNr);
+                            selectKey.setString(2, "CryptPasswd");
+
+                            try (ResultSet encryptedKeyResultSet = selectKey.executeQuery())
+                            {
+                                if (!encryptedKeyResultSet.next())
+                                {
+                                    throw new ImplementationError("No key found for " + rscName + "/" + vlmNr);
+                                }
+                                encryptedPw = encryptedKeyResultSet.getString(1);
+                            }
+                            updateStmt.setBytes(1, Base64.decode(encryptedPw));
+                            updateStmt.setInt(2, resultSet.getInt("LAYER_RESOURCE_ID"));
+                            updateStmt.setInt(3, vlmNr);
+
+                            updateStmt.executeUpdate();
+                        }
                     }
                 }
             }

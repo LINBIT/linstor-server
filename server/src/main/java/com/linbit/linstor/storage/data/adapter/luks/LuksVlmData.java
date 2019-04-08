@@ -97,7 +97,7 @@ public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
     }
 
     @Override
-    public boolean isFailed()
+    public boolean hasFailed()
     {
         return failed;
     }

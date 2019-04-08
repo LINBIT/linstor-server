@@ -77,7 +77,7 @@ public class SfTargetData extends BaseTransactionObject implements SfTargetVlmPr
     }
 
     @Override
-    public boolean isFailed()
+    public boolean hasFailed()
     {
         return failed.get();
     }

@@ -83,12 +83,17 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
             snapshotKey, ignored -> new UpdateNotification(snapshotUuid)));
     }
 
-    public void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean condFlag, boolean block)
+    public void collectUpdateNotifications(
+        UpdateBundle updates,
+        AtomicBoolean condFlag,
+        AtomicBoolean forceWake,
+        boolean block
+    )
     {
         synchronized (sched)
         {
             // If no updates are queued, wait for updates
-            while (cachedUpdates.isEmpty() && !condFlag.get() && block)
+            while (cachedUpdates.isEmpty() && !condFlag.get() && !forceWake.get() && block)
             {
                 try
                 {
@@ -98,6 +103,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
                 {
                 }
             }
+            forceWake.set(false);
             // Collect all queued updates
 
             cachedUpdates.copyUpdateRequestsTo(updates);

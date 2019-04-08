@@ -96,6 +96,7 @@ public class StltCryptApiCallHelper
                 transMgrProvider.get().commit();
                 if (updateDevMgr)
                 {
+                    devMgr.forceWakeUpdateNotifications();
                     devMgr.markMultipleResourcesForDispatch(decryptedResources);
                 }
             }

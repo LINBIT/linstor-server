@@ -28,4 +28,5 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void abortDeviceHandlers();
 
     StltUpdateTracker getUpdateTracker();
+    void forceWakeUpdateNotifications();
 }

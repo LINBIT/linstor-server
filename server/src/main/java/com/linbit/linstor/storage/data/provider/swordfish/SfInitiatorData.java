@@ -88,7 +88,7 @@ public class SfInitiatorData extends BaseTransactionObject implements SfInitiato
     }
 
     @Override
-    public boolean isFailed()
+    public boolean hasFailed()
     {
         return failed.get();
     }

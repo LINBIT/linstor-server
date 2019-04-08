@@ -146,7 +146,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
                         new LuksVlmData(
                             rsc.getVolume(vlmNr),
                             rscData,
-                            resultSet.getString(ENCRYPTED_PASSWORD).getBytes(),
+                            resultSet.getBytes(ENCRYPTED_PASSWORD),
                             this,
                             transObjFactory,
                             transMgrProvider

@@ -69,9 +69,9 @@ public interface RscLayerObject extends LayerObject
         return getResourceName().displayValue + getResourceNameSuffix();
     }
 
-    default boolean isFailed()
+    default boolean hasFailed()
     {
-        return getVlmLayerObjects().values().stream().anyMatch(VlmProviderObject::isFailed);
+        return getVlmLayerObjects().values().stream().anyMatch(VlmProviderObject::hasFailed);
     }
 
     default Stream<? extends VlmProviderObject> streamVlmLayerObjects()

@@ -3,6 +3,7 @@ package com.linbit.linstor.core.devmgr;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
@@ -297,6 +298,24 @@ public class DeviceHandlerImpl implements DeviceHandler
             {
                 throw new ImplementationError(exc);
             }
+            catch (AbortLayerProcessingException exc)
+            {
+                RscLayerObject rscLayerData = exc.rscLayerObject;
+                List<String> devLayersAbove = new ArrayList<>();
+                RscLayerObject parent = rscLayerData.getParent();
+                while (parent != null)
+                {
+                    devLayersAbove.add(layerFactory.getDeviceLayer(parent.getLayerKind()).getName());
+                    parent = parent.getParent();
+                }
+
+                errorReporter.logError(
+                    "Layer '%s' failed to process resource '%s'. Skipping layers above %s",
+                    rscLayerData.getLayerKind().name(),
+                    rscLayerData.getSuffixedResourceName(),
+                    devLayersAbove
+                );
+            }
             catch (Exception | ImplementationError exc)
             {
                 String errorId = errorReporter.reportError(
@@ -541,7 +560,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private void resourceFinished(RscLayerObject layerDataRef)
     {
         DeviceLayer rootLayer = layerFactory.getDeviceLayer(layerDataRef.getLayerKind());
-        if (!layerDataRef.isFailed())
+        if (!layerDataRef.hasFailed())
         {
             try
             {
@@ -596,6 +615,11 @@ public class DeviceHandlerImpl implements DeviceHandler
         );
 
         nextLayer.process(rscLayerData, snapshots, apiCallRc);
+
+        if (rscLayerData.hasFailed())
+        {
+            throw new AbortLayerProcessingException(rscLayerData);
+        }
 
         errorReporter.logTrace(
             "Layer '%s' finished processing resource '%s'",
@@ -661,5 +685,23 @@ public class DeviceHandlerImpl implements DeviceHandler
     public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
         storageLayer.checkStorPool(storPool);
+    }
+
+    private final class AbortLayerProcessingException extends LinStorRuntimeException
+    {
+        private static final long serialVersionUID = -3885415188860635819L;
+        private RscLayerObject rscLayerObject;
+
+        private AbortLayerProcessingException(RscLayerObject rscLayerObjectRef)
+        {
+            super(
+                String.format("Layer '%s' aborted by failed resource '%s'",
+                    "Layer '%s' failed to process resource '%s'. Skipping layers above %s",
+                    rscLayerObjectRef.getLayerKind().name(),
+                    rscLayerObjectRef.getSuffixedResourceName()
+                )
+            );
+            rscLayerObject = rscLayerObjectRef;
+        }
     }
 }

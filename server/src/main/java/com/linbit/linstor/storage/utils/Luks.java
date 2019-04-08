@@ -4,8 +4,6 @@ import com.linbit.linstor.storage.StorageException;
 
 public interface Luks
 {
-    String LUKS_PREFIX = "Linstor-Luks-";
-
     String createLuksDevice(String dev, byte[] cryptKey, String identifier)
         throws StorageException;
 

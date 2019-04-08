@@ -105,7 +105,7 @@ public class ZfsData extends BaseTransactionObject implements ZfsProviderObject
     }
 
     @Override
-    public boolean isFailed()
+    public boolean hasFailed()
     {
         return failed.get();
     }

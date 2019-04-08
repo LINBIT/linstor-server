@@ -84,7 +84,7 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     }
 
     @Override
-    public boolean isFailed()
+    public boolean hasFailed()
     {
         return failed;
     }
