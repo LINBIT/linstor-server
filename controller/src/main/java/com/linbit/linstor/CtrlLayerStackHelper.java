@@ -220,19 +220,17 @@ public class CtrlLayerStackHelper
                 peerSlots = getAndCheckPeerSlotsForNewResource(rscDfn);
             }
 
-            rscDfn.setLayerData(
-                apiCtx,
-                layerDataFactory.createDrbdRscDfnData(
-                    rscDfn,
-                    "",
-                    peerSlots,
-                    ConfigModule.DEFAULT_AL_STRIPES,
-                    ConfigModule.DEFAULT_AL_SIZE,
-                    tcpPortNrIntRef,
-                    transportType,
-                    secret
-                )
+            drbdRscDfnData = layerDataFactory.createDrbdRscDfnData(
+                rscDfn,
+                "",
+                peerSlots,
+                ConfigModule.DEFAULT_AL_STRIPES,
+                ConfigModule.DEFAULT_AL_SIZE,
+                tcpPortNrIntRef,
+                transportType,
+                secret
             );
+            rscDfn.setLayerData(apiCtx, drbdRscDfnData);
         }
         else
         {

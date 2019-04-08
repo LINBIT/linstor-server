@@ -13,6 +13,8 @@ public class InternalApiConsts
     public static final String API_CHANGED_CONTROLLER   = "ChangedController";
     public static final String API_REQUEST_CONTROLLER   = "RequestController";
     public static final String API_APPLY_CONTROLLER     = "ApplyController";
+    public static final String API_OTHER_CONTROLLER     = "OtherController"; // old controller was replaced
+    // with a new controller. Indicates that the old controller should not try to reconnect to satellite
 
     public static final String API_CHANGED_NODE       = "ChangedNode";
     public static final String API_REQUEST_NODE       = "RequestNode";

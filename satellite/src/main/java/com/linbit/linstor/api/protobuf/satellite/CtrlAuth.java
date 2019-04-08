@@ -72,7 +72,8 @@ public class CtrlAuth implements ApiCall
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess.Builder builder = MsgIntAuthSuccess.newBuilder();
-            builder.setExpectedFullSyncId(updateMonitor.getNextFullSyncId());
+            long expectedFullSyncId = updateMonitor.getNextFullSyncId();
+            builder.setExpectedFullSyncId(expectedFullSyncId);
             int[] stltVersion = LinStor.VERSION_INFO_PROVIDER.getSemanticVersion();
             builder.setVersionMajor(stltVersion[0]);
             builder.setVersionMinor(stltVersion[1]);
@@ -83,7 +84,7 @@ public class CtrlAuth implements ApiCall
             controllerPeerProvider.get().sendMessage(
                 commonSerializer.onewayBuilder(InternalApiConsts.API_AUTH_ACCEPT)
                     .authSuccess(
-                        updateMonitor.getNextFullSyncId(),
+                        expectedFullSyncId,
                         LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
                         authResult.getSupportedDeviceLayer(),
                         authResult.getSupportedDeviceProvider()

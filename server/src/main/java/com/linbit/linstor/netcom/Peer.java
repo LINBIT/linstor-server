@@ -16,6 +16,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_OTHER_CONTROLLER;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
@@ -37,7 +39,8 @@ public interface Peer
         FULL_SYNC_FAILED(ApiConsts.CONN_STATUS_FULL_SYNC_FAILED), // FullSync failed
         AUTHENTICATION_ERROR(ApiConsts.CONN_STATUS_AUTHENTICATION_ERROR),
         UNKNOWN(ApiConsts.CONN_STATUS_UNKNOWN),
-        HOSTNAME_MISMATCH(ApiConsts.CONN_STATUS_HOSTNAME_MISMATCH); // Hostname set by controller does not match local `uname -n`
+        HOSTNAME_MISMATCH(ApiConsts.CONN_STATUS_HOSTNAME_MISMATCH), // Hostname set by controller does not match local `uname -n`
+        OTHER_CONTROLLER(CONN_STATUS_OTHER_CONTROLLER); // Satellite received a connection from a new(er) controller
 
         private int status;
         ConnectionStatus(int statusRef)

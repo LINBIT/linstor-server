@@ -2,12 +2,14 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeDataSatelliteFactory;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -42,6 +44,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     private final NodeDataSatelliteFactory nodeDataFactory;
 
     private final Provider<TransactionMgr> transMgrProvider;
+    private final CommonSerializer commonSerializer;
 
     // Local NodeName received from the currently active controller
     private NodeName localNodeName;
@@ -62,7 +65,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         @SystemContext AccessContext sysCtxRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         NodeDataSatelliteFactory nodeDataFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        CommonSerializer commonSerializerRef
     )
     {
         nodesMap = nodesMapRef;
@@ -76,6 +80,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         sysCtx = sysCtxRef;
         nodeDataFactory = nodeDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        commonSerializer = commonSerializerRef;
     }
 
     @Override
@@ -106,6 +111,14 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             rscDfnMapLock.writeLock().lock();
             storPoolDfnMapLock.writeLock().lock();
 
+            if (controllerPeer != null)
+            {
+                controllerPeer.sendMessage(
+                    commonSerializer.onewayBuilder(InternalApiConsts.API_OTHER_CONTROLLER)
+                        .build()
+                );
+                // no need to close connection, controller will do so when it finished processing the OUTDATED message
+            }
             controllerPeer = controllerPeerRef;
 
             AccessContext tmpCtx = sysCtx.clone();

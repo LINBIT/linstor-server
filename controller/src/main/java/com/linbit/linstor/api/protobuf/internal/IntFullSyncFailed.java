@@ -34,5 +34,4 @@ public class IntFullSyncFailed implements ApiCall
     {
         satelliteProvider.get().fullSyncFailed();
     }
-
 }
