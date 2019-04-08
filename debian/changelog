@@ -1,3 +1,43 @@
+linstor-server (0.9.5-1) experimental; urgency=medium
+
+  [ Rainer Laschober ]
+  * moved constructor logic to new checkVersion() method
+  * checkVersion() now restores defaults values on error
+  * Satellite, DrbdVersion: cosmetic changes; DrbdVersionTest: exception t [...]
+  * DrbdVersionTest: overlooked a compile error
+  * DrbdVersionTest: exception test added (presumably completed)
+  * Satellite: added checkVersion call before Drbd9 check
+  * Checks: removed checks for ipv4/-6; LsIpAddress: replaced ipAddrCheck  [...]
+  * LsipAddress: fixed fatal mishap (unchecked return value of isInetAddre [...]
+
+  [ Gabor Hernadi ]
+  * Added environment checks on satellite startups
+  * Updated ApiRc resolving map
+  * Fixed issue with resizing non-drbd resources
+  * Fixed drbdmanage migration issue
+  * DrbdRscDfn.peerSlots is now modifiable
+  * Fixed unit tests
+  * Added layerStack and provider filter to autoplace
+  * Fixed NullPointerException in StorPoolList
+  * Fixed a wrong migration regarding multiple volumes per rsc
+  * Fixed opening Luks after ctrl restart
+
+  [ Rene Peinthor ]
+  * rest-api: CreateNode set default satellite port on single netif
+  * rest-api: fix incorrect used apiconst
+  * rest-api-docu: format fixes, snapshot post at wrong location
+  * luks-layer: only try once to enter passphrase and check on exit code
+  * rest-api-docu: do not inline passphrase schemas
+  * rest-api: return 404 if a specific rsc-dfn couldn't be found
+  * conffile: generate handlers section from DrbdOptions/Handlers keys
+
+  [ Robert Altnoeder ]
+  * Add migration to fix database constraints
+  * Replaced FIXMEs with a comment where the fix can be found
+  * ResourceName: Added 'proxy' as a reserved keyword
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 08 Apr 2019 15:27:51 +0200
+
 linstor-server (0.9.4-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
