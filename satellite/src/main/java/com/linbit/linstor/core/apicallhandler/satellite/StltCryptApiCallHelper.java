@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
 import com.linbit.ImplementationError;
+import com.linbit.crypto.LengthPadding;
 import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Resource;
@@ -37,6 +38,7 @@ public class StltCryptApiCallHelper
     private final StltSecurityObjects secObjs;
     private ResourceDefinitionMap rscDfnMap;
     private DeviceManager devMgr;
+    private final LengthPadding cryptoLenPad;
 
     @Inject
     StltCryptApiCallHelper(
@@ -44,7 +46,8 @@ public class StltCryptApiCallHelper
         @ApiContext AccessContext apiCtxRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects secObjsRef,
-        DeviceManager devMgrRef
+        DeviceManager devMgrRef,
+        LengthPadding cryptoLenPadRef
     )
     {
         rscDfnMap = rscDfnMapRef;
@@ -52,6 +55,7 @@ public class StltCryptApiCallHelper
         transMgrProvider = transMgrProviderRef;
         secObjs = secObjsRef;
         devMgr = devMgrRef;
+        cryptoLenPad = cryptoLenPadRef;
     }
 
     public void decryptAllNewLuksVlmKeys(boolean updateDevMgr)
@@ -84,9 +88,10 @@ public class StltCryptApiCallHelper
                                 {
                                     byte[] encryptedKey = cryptVlmData.getEncryptedKey();
                                     SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
-                                    cryptVlmData.setDecryptedPassword(
-                                        cipher.decrypt(encryptedKey)
-                                    );
+                                    byte[] decryptedData = cipher.decrypt(encryptedKey);
+                                    byte[] decryptedKey = cryptoLenPad.retrieve(decryptedData);
+
+                                    cryptVlmData.setDecryptedPassword(decryptedKey);
                                     decryptedResources.add(rscDfn.getName());
                                 }
                             }

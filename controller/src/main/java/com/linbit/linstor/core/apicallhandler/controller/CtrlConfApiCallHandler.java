@@ -56,6 +56,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 
 import com.google.inject.Provider;
+import com.linbit.crypto.LengthPadding;
 
 @Singleton
 public class CtrlConfApiCallHandler
@@ -82,6 +83,7 @@ public class CtrlConfApiCallHandler
     private final NodesMap nodesMap;
     private final AccessContext apiCtx;
     private final WhitelistProps whitelistProps;
+    private final LengthPadding cryptoLenPad;
 
     static
     {
@@ -108,7 +110,8 @@ public class CtrlConfApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CoreModule.NodesMap nodesMapRef,
         CtrlStltSerializer ctrlStltSrzlRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        LengthPadding cryptoLenPadRef
     )
     {
         errorReporter = errorReporterRef;
@@ -124,6 +127,7 @@ public class CtrlConfApiCallHandler
         nodesMap = nodesMapRef;
         ctrlStltSrzl = ctrlStltSrzlRef;
         whitelistProps = whitelistPropsRef;
+        cryptoLenPad = cryptoLenPadRef;
     }
 
     private void updateSatelliteConf() throws AccessDeniedException
@@ -673,12 +677,8 @@ public class CtrlConfApiCallHandler
     {
         Props ctrlConf = systemConfRepository.getCtrlConfForChange(peerAccCtx.get());
 
-        // store the hash of the masterkey in the database
-        sha512.reset();
-        byte[] hash = sha512.digest(masterKey);
-        ctrlConf.setProp(KEY_CRYPT_HASH, Base64.encode(hash), NAMESPACE_ENCRYPTED);
-
-        // next, encrypt the masterKey with the newPassphrase and store it in the database
+        // Add length padding to the master key, encrypt with the new passphrase and a generated salt,
+        // and store the encrypted key, the salt and a hash of the length padded key in the database
         byte[] salt = SecretGenerator.generateSecret(MASTER_KEY_SALT_BYTES);
         SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithPassword(
             salt,
@@ -686,7 +686,13 @@ public class CtrlConfApiCallHandler
             CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this also has to be configurable
         );
 
-        byte[] encryptedMasterKey = cipher.encrypt(masterKey);
+        byte[] encodedData = cryptoLenPad.conceal(masterKey);
+        // Store a hash of the length padded key in the database
+        sha512.reset();
+        byte[] hash = sha512.digest(encodedData);
+        ctrlConf.setProp(KEY_CRYPT_HASH, Base64.encode(hash), NAMESPACE_ENCRYPTED);
+        byte[] encryptedMasterKey = cipher.encrypt(encodedData);
+
         ctrlConf.setProp(KEY_CRYPT_KEY, Base64.encode(encryptedMasterKey), NAMESPACE_ENCRYPTED);
         ctrlConf.setProp(KEY_PASSPHRASE_SALT, Base64.encode(salt), NAMESPACE_ENCRYPTED);
 
@@ -730,16 +736,16 @@ public class CtrlConfApiCallHandler
                 oldPassphrase.getBytes(StandardCharsets.UTF_8),
                 CipherStrength.KEY_LENGTH_128
             );
-            // TODO if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable
+            // TODO: if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable
 
-            byte[] decryptedMasterKey = ciper.decrypt(encryptedMasterKey);
+            byte[] decryptedData = ciper.decrypt(encryptedMasterKey);
 
             sha512.reset();
-            byte[] hashedMasterKey = sha512.digest(decryptedMasterKey);
+            byte[] hashedMasterKey = sha512.digest(decryptedData);
 
             if (Arrays.equals(hashedMasterKey, Base64.decode(masterHashStr)))
             {
-                ret = decryptedMasterKey;
+                ret = cryptoLenPad.retrieve(decryptedData);
             }
             else
             {

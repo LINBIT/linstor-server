@@ -6,6 +6,8 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.crypto.LengthPadding;
+import com.linbit.crypto.LengthPaddingImpl;
 import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.Node;
@@ -80,6 +82,8 @@ public class CoreModule extends AbstractModule
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(KVS_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
+
+        bind(LengthPadding.class).to(LengthPaddingImpl.class);
     }
 
     @Provides

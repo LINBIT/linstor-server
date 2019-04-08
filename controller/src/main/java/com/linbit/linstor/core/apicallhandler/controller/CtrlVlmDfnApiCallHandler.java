@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.LengthPadding;
 import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.drbd.md.GidGenerator;
 import com.linbit.linstor.LinStorException;
@@ -64,6 +65,7 @@ class CtrlVlmDfnApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final LengthPadding cryptoLenPad;
 
     @Inject
     CtrlVlmDfnApiCallHandler(
@@ -78,7 +80,8 @@ class CtrlVlmDfnApiCallHandler
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        LengthPadding cryptoLenPadRef
     )
     {
         errorReporter = errorReporterRef;
@@ -93,6 +96,7 @@ class CtrlVlmDfnApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        cryptoLenPad = cryptoLenPadRef;
     }
 
     ApiCallRc createVolumeDefinitions(
@@ -241,7 +245,8 @@ class CtrlVlmDfnApiCallHandler
                 SymmetricKeyCipher cipher;
                 cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
 
-                byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
+                byte[] encodedData = cryptoLenPad.conceal(vlmDfnKeyPlain.getBytes());
+                byte[] encryptedVlmDfnKey = cipher.encrypt(encodedData);
 
                 propsMap.put(
                     ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,

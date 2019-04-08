@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.LengthPadding;
 import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
@@ -62,6 +63,7 @@ public class CtrlLayerStackHelper
     private final DynamicNumberPool layerRscIdPool;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
     private final CtrlSecurityObjects secObjs;
+    private final LengthPadding cryptoLenPad;
 
     @Inject
     public CtrlLayerStackHelper(
@@ -71,7 +73,8 @@ public class CtrlLayerStackHelper
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
-        CtrlSecurityObjects secObjsRef
+        CtrlSecurityObjects secObjsRef,
+        LengthPadding cryptoLenPadRef
     )
     {
         errorReporter = errorReporterRef;
@@ -81,6 +84,7 @@ public class CtrlLayerStackHelper
         layerRscIdPool = layerRscIdPoolRef;
         storPoolResolveHelper = storPoolResolveHelperRef;
         secObjs = secObjsRef;
+        cryptoLenPad = cryptoLenPadRef;
     }
 
     public List<DeviceLayerKind> getLayerStack(Resource rscRef)
@@ -609,7 +613,8 @@ public class CtrlLayerStackHelper
                 SymmetricKeyCipher cipher;
                 cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
 
-                byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
+                byte[] encodedData = cryptoLenPad.conceal(vlmDfnKeyPlain.getBytes());
+                byte[] encryptedVlmDfnKey = cipher.encrypt(encodedData);
 
                 LuksVlmData luksVlmData = layerDataFactory.createLuksVlmData(
                     vlm,
