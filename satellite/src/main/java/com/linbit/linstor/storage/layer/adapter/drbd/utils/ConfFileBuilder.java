@@ -124,6 +124,20 @@ public class ConfFileBuilder
             // include linstor common
             appendLine("template-file \"linstor_common.conf\";");
 
+            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS).isPresent())
+            {
+                appendLine("");
+                appendLine("handlers");
+                try (Section optionsSection = new Section())
+                {
+                    appendDrbdOptions(
+                        LinStorObject.RESOURCE_DEFINITION,
+                        rscDfn.getProps(accCtx),
+                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS
+                    );
+                }
+            }
+
             if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS).isPresent())
             {
                 appendLine("");
@@ -483,6 +497,20 @@ public class ConfFileBuilder
                         LinStorObject.CONTROLLER,
                         satelliteProps,
                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                    );
+                }
+            }
+
+            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS).isPresent())
+            {
+                appendLine("");
+                appendLine("handlers");
+                try (Section optionsSection = new Section())
+                {
+                    appendDrbdOptions(
+                        LinStorObject.CONTROLLER,
+                        satelliteProps,
+                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS
                     );
                 }
             }
