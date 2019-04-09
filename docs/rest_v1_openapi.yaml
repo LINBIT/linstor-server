@@ -2283,6 +2283,8 @@ components:
           type: object
           readOnly: true
           description: read only map of static storage pool traits
+          additionalProperties:
+            type: string
         free_capacity:
           type: integer
           format: int64
