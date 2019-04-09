@@ -24,7 +24,7 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
     private static final String SELECT_ALL_LUKS_VLMS =
         " SELECT LUKS.LAYER_RESOURCE_ID, LUKS.VLM_NR, " +
                 "LRI.RESOURCE_NAME " +
-        " FROM LAYER_LUKS_VOlUMES AS LUKS, LAYER_RESOURCE_IDS AS LRI " +
+        " FROM LAYER_LUKS_VOLUMES AS LUKS, LAYER_RESOURCE_IDS AS LRI " +
         " WHERE LUKS.LAYER_RESOURCE_ID = LRI.LAYER_RESOURCE_ID";
     private static final String SELECT_SINGLE_PROP =
         "SELECT PROP_VALUE " +
