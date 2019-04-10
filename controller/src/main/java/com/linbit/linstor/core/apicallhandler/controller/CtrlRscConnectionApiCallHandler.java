@@ -158,7 +158,10 @@ class CtrlRscConnectionApiCallHandler
                             throw new ApiRcException(ApiCallRcImpl
                                 .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "NetInterface for node unknown.")
                                 .setCause(
-                                    String.format("The Netinterface '%s' is not known for node '%s'", netIfName, nodeName)
+                                    String.format(
+                                        "The Netinterface '%s' is not known for node '%s'",
+                                        netIfName, nodeName
+                                    )
                                 )
                                 .build()
                             );

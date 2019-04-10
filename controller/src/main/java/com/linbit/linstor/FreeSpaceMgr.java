@@ -208,7 +208,8 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     }
 
     @Override
-    public void setCapacityInfo(AccessContext accCtx, long freeSpaceRef, long totalCapacityRef) throws AccessDeniedException
+    public void setCapacityInfo(AccessContext accCtx, long freeSpaceRef, long totalCapacityRef)
+        throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
 

@@ -314,8 +314,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 removeStorageLayerData(rsc);
                 ctrlLayerStackHelper.ensureStackDataExists(rsc, null, null);
             }
-            // else (if we are removing disk) we first have to remove the actual disk. that means we can only update the storage layer
-            // when the deviceManager already got rid of the actual volume(s)
+            // else (if we are removing disk) we first have to remove the actual disk.
+            // that means we can only update the storage layer if the deviceManager already got rid
+            // of the actual volume(s)
         }
 
         if (removeDisk)

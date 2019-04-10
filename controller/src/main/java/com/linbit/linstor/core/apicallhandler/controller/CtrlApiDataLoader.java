@@ -460,7 +460,10 @@ public class CtrlApiDataLoader
                         ApiConsts.FAIL_NOT_FOUND_KVS,
                         "KeyValueStore '" + kvsName.displayValue + "' not found."
                     )
-                    .setCause("The specified keyValueStore '" + kvsName.displayValue + "' could not be found in the database")
+                    .setCause(
+                        "The specified keyValueStore '" + kvsName.displayValue +
+                        "' could not be found in the database"
+                    )
                     .setCorrection("Create a keyValueStore with the name '" + kvsName.displayValue + "' first.")
                     .build()
                 );
