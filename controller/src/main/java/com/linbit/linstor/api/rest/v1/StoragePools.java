@@ -227,8 +227,9 @@ public class StoragePools
                     ),
                     Response.Status.OK
                 );
-            }
-            , true);
+            },
+            true
+        );
     }
 
     @DELETE
@@ -243,7 +244,8 @@ public class StoragePools
             ApiCallRcConverter.toResponse(
                 ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName),
                 Response.Status.OK
-            )
-        , true);
+            ),
+            true
+        );
     }
 }

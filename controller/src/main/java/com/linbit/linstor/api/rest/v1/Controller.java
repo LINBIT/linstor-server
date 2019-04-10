@@ -52,11 +52,14 @@ public class Controller
         @Context Request request
     )
     {
-        return requestHelper.doInScope(ApiConsts.API_LST_CTRL_PROPS, request, () ->
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_CTRL_PROPS, request,
+            () ->
                 Response.status(Response.Status.OK)
                     .entity(objectMapper.writeValueAsString(ctrlApiCallHandler.listCtrlCfg()))
-                    .build()
-            , false);
+                    .build(),
+            false
+        );
     }
 
     private Pair<String, String> splitFullKey(final String fullKey)

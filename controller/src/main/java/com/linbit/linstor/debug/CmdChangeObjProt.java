@@ -360,7 +360,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
                         CMD_NAME + ": No parameters were specified",
                         "Object protection was not changed",
                         "The command line did not specify any changes to the object protection",
-                        "The following combinations of parameters can be used to change the protection "+
+                        "The following combinations of parameters can be used to change the protection " +
                         "of an object:\n" +
                         "- " + PRM_OBJ_OWNER + " to change the object's owner\n" +
                         "- " + PRM_OBJ_SECTYPE + " to change the object's security type\n" +

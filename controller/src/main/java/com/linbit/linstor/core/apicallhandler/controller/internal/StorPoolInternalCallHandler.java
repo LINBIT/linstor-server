@@ -191,14 +191,16 @@ public class StorPoolInternalCallHandler
                                     capacityInfoPojo.getFreeCapacity(),
                                     capacityInfoPojo.getTotalCapacity()
                                 );
-                            } else
+                            }
+                            else
                             {
                                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                                     ApiConsts.FAIL_UUID_STOR_POOL,
                                     "UUIDs mismatched when updating free space of " + getStorPoolDescriptionInline(storPool)
                                 ));
                             }
-                        } catch (Exception | ImplementationError exc)
+                        }
+                        catch (Exception | ImplementationError exc)
                         {
                             // Add context to exception
                             throw new ApiRcException(
@@ -207,7 +209,8 @@ public class StorPoolInternalCallHandler
                     }
 
                     ctrlTransactionHelper.commit();
-                } catch (ApiRcException exc)
+                }
+                catch (ApiRcException exc)
                 {
                     ApiCallRc apiCallRc = exc.getApiCallRc();
                     for (ApiCallRc.RcEntry entry : apiCallRc.getEntries())

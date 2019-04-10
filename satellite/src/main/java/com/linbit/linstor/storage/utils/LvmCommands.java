@@ -188,7 +188,7 @@ public class LvmCommands
         throws StorageException
     {
         String failMsg = "Failed to create snapshot " + snapshotIdentifier + " from " + identifier +
-            " within thin volume group " + volumeGroup + File.separator + thinPool ;
+            " within thin volume group " + volumeGroup + File.separator + thinPool;
         return genericExecutor(
             extCmd,
             new String[] {

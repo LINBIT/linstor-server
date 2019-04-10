@@ -62,11 +62,11 @@ public class MaxVlmSize implements ApiCallReactive
         return result.flatMap(res ->
             scopeRunner.fluxInTransactionlessScope("Serialize max vlm answers", LockGuard.createDeferred(),
                 () -> res.hasApiCallRc() ?
-                      Flux.just(clientComSerializer
+                    Flux.just(clientComSerializer
                         .answerBuilder(ApiConsts.API_REPLY, apiCallId.get())
                         .apiCallRcSeries(res.getApiCallRc())
-                        .build())
-                    : Flux.just(clientComSerializer
+                        .build()) :
+                    Flux.just(clientComSerializer
                         .answerBuilder(ApiConsts.API_RSP_MAX_VLM_SIZE, apiCallId.get())
                         .maxVlmSizeCandidateList(res.getValue())
                         .build())

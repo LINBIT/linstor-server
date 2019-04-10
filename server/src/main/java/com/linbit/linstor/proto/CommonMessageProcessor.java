@@ -415,7 +415,8 @@ public class CommonMessageProcessor implements MessageProcessor
                         ApiModule.API_CALL_ID, apiCallId
                     ));
             }
-            else if (respond)
+            else
+            if (respond)
             {
                 messageFlux = Flux.just(makeNotAuthorizedMessage(getApiCallId(header), apiCallName));
             }
