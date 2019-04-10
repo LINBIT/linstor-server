@@ -14,7 +14,7 @@ DEF_DB_TYPE="h2"
 
 # always create a backup of the current DB
 CURRENT_DB=${DEF_DB}.mv.db
-[ -f "$CURRENT_DB" ] && cp "$CURRENT_DB" "${CURRENT_DB}.bak"
+[ -f "$CURRENT_DB" ] && cp "$CURRENT_DB" "${CURRENT_DB}-$(date --iso-8601=minutes).bak"
 
 [ -f ${DEF_DB_CFG} ] && { echo "Database config already created, exiting"; exit 0; }
 
