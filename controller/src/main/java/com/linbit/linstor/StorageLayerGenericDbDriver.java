@@ -154,33 +154,36 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         );
 
         List<StorVlmInfoData> vlmInfoList = cachedStorVlmInfoByRscLayerId.get(rscIdRef);
-        for (StorVlmInfoData vlmInfo : vlmInfoList)
+        if (vlmInfoList != null)
         {
-            try
+            for (StorVlmInfoData vlmInfo : vlmInfoList)
             {
-                VolumeNumber vlmNr = new VolumeNumber(vlmInfo.vlmNr);
-                Volume vlm = resourceRef.getVolume(vlmNr);
-
-                if (vlm == null)
+                try
                 {
-                    throw new LinStorRuntimeException(
-                        "Storage volume found but linstor volume missing: " +
-                        resourceRef + ", vlmNr: " + vlmNr
+                    VolumeNumber vlmNr = new VolumeNumber(vlmInfo.vlmNr);
+                    Volume vlm = resourceRef.getVolume(vlmNr);
+
+                    if (vlm == null)
+                    {
+                        throw new LinStorRuntimeException(
+                            "Storage volume found but linstor volume missing: " +
+                            resourceRef + ", vlmNr: " + vlmNr
+                        );
+                    }
+
+                    VlmProviderObject vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
+                    vlmMap.put(vlmNr, vlmData);
+                }
+                catch (ValueOutOfRangeException exc)
+                {
+                    throw new LinStorSqlRuntimeException(
+                        String.format(
+                            "Failed to restore stored volume number %d for (layered) resource id: %d",
+                            vlmInfo.vlmNr,
+                            vlmInfo.rscId
+                        )
                     );
                 }
-
-                VlmProviderObject vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
-                vlmMap.put(vlmNr, vlmData);
-            }
-            catch (ValueOutOfRangeException exc)
-            {
-                throw new LinStorSqlRuntimeException(
-                    String.format(
-                        "Failed to restore stored volume number %d for (layered) resource id: %d",
-                        vlmInfo.vlmNr,
-                        vlmInfo.rscId
-                    )
-                );
             }
         }
 
