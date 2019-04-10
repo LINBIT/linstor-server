@@ -40,6 +40,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,76 +247,94 @@ public class CtrlRscApiCallHandler
         return rscList;
     }
 
-    List<ResourceConnection.RscConnApi> listResourceConnections(
-        final String rscNameString
-    )
+    List<ResourceConnection.RscConnApi> listResourceConnections(final String rscNameString)
     {
         ResourceName rscName = null;
         List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
         try
         {
             rscName = new ResourceName(rscNameString);
-
             ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, rscName);
 
             if (rscDfn  != null)
             {
-                for (Resource rsc : rscDfn.streamResource(apiCtx).collect(toList()))
+                final Map<ResourceConnectionKey, ResourceConnection.RscConnApi> rscConMap = new TreeMap<>(
+                    ResourceConnectionKey.COMPARATOR
+                );
+
+                // Build an array of all resources of the resource definition
+                Resource[] rscList = new Resource[rscDfn.getResourceCount()];
                 {
-                    List<ResourceConnection> rscConnections = rsc.streamResourceConnections(apiCtx).collect(toList());
-                    for (ResourceConnection rscConn : rscConnections)
+                    Iterator<Resource> rscIter = rscDfn.iterateResource(apiCtx);
+                    for (int idx = 0; rscIter.hasNext(); ++idx)
                     {
-                        if (rscConns.stream().noneMatch(con -> con.getUuid() == rscConn.getUuid()))
+                        rscList[idx] = rscIter.next();
+                    }
+                }
+
+                // Collect resource connection from all resources, avoiding duplicates
+                for (Resource rsc : rscList)
+                {
+                    List<ResourceConnection> rscConList = rsc.streamResourceConnections(apiCtx).collect(toList());
+                    for (ResourceConnection rscCon : rscConList)
+                    {
+                        ResourceConnectionKey rscConKey = new ResourceConnectionKey(
+                            rscCon.getSourceResource(apiCtx), rscCon.getTargetResource(apiCtx)
+                        );
+                        if (!rscConMap.containsKey(rscConKey))
                         {
-                            rscConns.add(rscConn.getApiData(apiCtx));
+                            rscConMap.put(rscConKey, rscCon.getApiData(apiCtx));
                         }
                     }
                 }
 
-                // lazy instantiate other resource connections
-                List<Resource> resourceList = rscDfn.streamResource(apiCtx).collect(toList());
-                for (int outerIdx = 0; outerIdx < resourceList.size(); outerIdx++)
+                // Construct empty resource connections for all resource pairs that did not have
+                // a resource connection defined already
+                for (int outerIdx = 0; outerIdx < rscList.length; ++outerIdx)
                 {
-                    for (int innerIdx = outerIdx + 1; innerIdx < resourceList.size(); innerIdx++)
+                    for (int innerIdx = outerIdx + 1; innerIdx < rscList.length; ++innerIdx)
                     {
-                        ResourceConnectionKey conKey =
-                            new ResourceConnectionKey(resourceList.get(outerIdx), resourceList.get(innerIdx));
-
-                        if (conKey.getSource() != conKey.getTarget() &&
-                            rscConns.stream().noneMatch(con ->
-                                con.getSourceNodeName().equalsIgnoreCase(
-                                    conKey.getSource().getAssignedNode().getName().getName()) &&
-                                con.getTargetNodeName().equalsIgnoreCase(
-                                    conKey.getTarget().getAssignedNode().getName().getName()) &&
-                                con.getResourceName().equalsIgnoreCase(rscNameString)))
+                        ResourceConnectionKey rscConKey = new ResourceConnectionKey(
+                            rscList[outerIdx], rscList[innerIdx]
+                        );
+                        if (!rscConMap.containsKey(rscConKey))
                         {
-                            rscConns.add(new RscConnPojo(
-                                UUID.randomUUID(),
-                                conKey.getSource().getAssignedNode().getName().getDisplayName(),
-                                conKey.getTarget().getAssignedNode().getName().getDisplayName(),
-                                rscDfn.getName().getDisplayName(),
-                                new HashMap<>(),
-                                0,
-                                null
-                            ));
+                            rscConMap.put(
+                                rscConKey,
+                                new RscConnPojo(
+                                    UUID.randomUUID(),
+                                    rscConKey.getSourceNodeName().getDisplayName(),
+                                    rscConKey.getTargetNodeName().getDisplayName(),
+                                    rscDfn.getName().getDisplayName(),
+                                    new HashMap<>(),
+                                    0,
+                                    null
+                                )
+                            );
                         }
                     }
                 }
+
+                rscConns.addAll(rscConMap.values());
             }
             else
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
-                    String.format("Resource definition '%s' not found.", rscNameString)
-                ));
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+                        String.format("Resource definition '%s' not found.", rscNameString)
+                    )
+                );
             }
         }
         catch (InvalidNameException exc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_RSC_NAME,
-                "Invalid resource name used"
-            ), exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_RSC_NAME,
+                    "Invalid resource name used"
+                ),
+            exc);
         }
         catch (AccessDeniedException accDeniedExc)
         {
