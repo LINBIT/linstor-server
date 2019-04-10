@@ -16,10 +16,10 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_OTHER_CONTROLLER;
-
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+
+import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_OTHER_CONTROLLER;
 
 /**
  * Represents the peer of a connection

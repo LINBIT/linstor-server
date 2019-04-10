@@ -11,7 +11,6 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.LvmUtils;
 
-import java.util.Collections;
 
 public class StorageConfigReader
 {

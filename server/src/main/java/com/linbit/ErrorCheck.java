@@ -1,7 +1,5 @@
 package com.linbit;
 
-import com.linbit.linstor.Volume;
-
 /**
  * Implementation error checks
  *

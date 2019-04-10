@@ -10,6 +10,7 @@ import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
+
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_KIND;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_PARENT_ID;

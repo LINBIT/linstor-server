@@ -37,9 +37,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import javax.net.ssl.SSLException;
-
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.TreeMap;
@@ -47,6 +44,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
+
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
  * Tracks the status of the communication with a peer

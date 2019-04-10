@@ -1,13 +1,13 @@
 package com.linbit.linstor.drbdstate;
 
-import static org.junit.Assert.fail;
-
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.fail;
 
 /**
  * Test of the DRBD resource observers

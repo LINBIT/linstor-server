@@ -4,7 +4,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -13,9 +12,6 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.proto.requests.MsgCrtVlmDfnOuterClass.MsgCrtVlmDfn;
 import com.linbit.linstor.proto.requests.MsgCrtVlmDfnOuterClass.VlmDfnWithPayload;
-import com.linbit.utils.Pair;
-import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
-import com.linbit.linstor.proto.apidata.VlmDfnApiData;
 import com.linbit.linstor.proto.apidata.VlmDfnWithPayloadApiData;
 
 import java.io.IOException;

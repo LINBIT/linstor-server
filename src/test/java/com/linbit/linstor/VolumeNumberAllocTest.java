@@ -1,13 +1,11 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.fail;
-
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueOutOfRangeException;
-
 import java.util.Arrays;
 import org.junit.Test;
 
+import static org.junit.Assert.fail;
 
 /**
  * Tests Volume number allocation algorithms

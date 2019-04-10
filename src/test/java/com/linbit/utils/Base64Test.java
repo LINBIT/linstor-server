@@ -1,8 +1,8 @@
 package com.linbit.utils;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class Base64Test
 {

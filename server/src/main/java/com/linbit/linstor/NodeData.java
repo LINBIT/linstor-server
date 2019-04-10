@@ -1,7 +1,5 @@
 package com.linbit.linstor;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
@@ -39,6 +37,8 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  *

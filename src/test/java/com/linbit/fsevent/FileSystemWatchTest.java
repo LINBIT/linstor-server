@@ -1,8 +1,5 @@
 package com.linbit.fsevent;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -28,6 +25,9 @@ import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.timer.Delay;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the FileSystemWatch class

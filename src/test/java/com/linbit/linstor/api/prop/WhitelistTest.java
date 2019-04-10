@@ -1,19 +1,18 @@
 package com.linbit.linstor.api.prop;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class WhitelistTest
 {

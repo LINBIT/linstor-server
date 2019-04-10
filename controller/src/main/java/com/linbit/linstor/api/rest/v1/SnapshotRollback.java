@@ -11,7 +11,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
 
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;

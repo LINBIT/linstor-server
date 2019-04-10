@@ -3,9 +3,6 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 
 public class LayerUtils
 {

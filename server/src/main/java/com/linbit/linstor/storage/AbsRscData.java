@@ -3,7 +3,6 @@ package com.linbit.linstor.storage;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.dbdrivers.Db2DatabaseInfo;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessContext;

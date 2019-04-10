@@ -8,17 +8,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.linbit.drbd.DrbdVersion.DRBD9_MAJOR_VSN;
-import static com.linbit.drbd.DrbdVersion.UNDETERMINED_VERSION;
-import static com.linbit.drbd.DrbdVersion.VSN_QUERY_COMMAND;
-import static org.junit.Assert.*;
-
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.HashSet;
+
+import static com.linbit.drbd.DrbdVersion.DRBD9_MAJOR_VSN;
+import static com.linbit.drbd.DrbdVersion.UNDETERMINED_VERSION;
+import static com.linbit.drbd.DrbdVersion.VSN_QUERY_COMMAND;
+import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({

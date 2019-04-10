@@ -1,8 +1,5 @@
 package com.linbit.crypto;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
 import java.security.SecureRandom;
 
 import org.junit.Before;
@@ -11,6 +8,9 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 @PowerMockIgnore({"com.sun.*", "javax.*"})
 @RunWith(PowerMockRunner.class)

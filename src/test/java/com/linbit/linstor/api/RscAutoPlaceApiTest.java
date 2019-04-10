@@ -32,12 +32,6 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,6 +61,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase

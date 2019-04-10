@@ -1,5 +1,15 @@
 package com.linbit.linstor.security;
 
+import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.transaction.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+
+import javax.inject.Provider;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import static com.linbit.linstor.security.AccessType.CHANGE;
 import static com.linbit.linstor.security.AccessType.CONTROL;
 import static com.linbit.linstor.security.AccessType.USE;
@@ -16,17 +26,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
-
-import com.linbit.linstor.api.LinStorScope;
-import com.linbit.linstor.transaction.SatelliteTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.transaction.TransactionObjectFactory;
-
-import javax.inject.Provider;
-
-import org.junit.Before;
-import org.junit.Test;
-
 
 public class ObjectProtectionTest
 {

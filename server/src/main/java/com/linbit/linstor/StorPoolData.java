@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -28,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
 public class StorPoolData extends BaseTransactionObject implements StorPool
 {

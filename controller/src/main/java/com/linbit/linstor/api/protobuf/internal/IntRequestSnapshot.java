@@ -3,7 +3,6 @@ package com.linbit.linstor.api.protobuf.internal;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.SnapshotInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 

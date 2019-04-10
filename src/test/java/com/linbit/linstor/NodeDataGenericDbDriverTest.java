@@ -1,10 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.Node.InitMaps;
 import com.linbit.linstor.Node.NodeFlag;
@@ -34,6 +29,11 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class NodeDataGenericDbDriverTest extends GenericDbBase
 {

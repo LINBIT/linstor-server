@@ -1,7 +1,5 @@
 package com.linbit;
 
-import static org.junit.Assert.fail;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,6 +21,8 @@ import static com.linbit.SizeConv.SizeUnit.UNIT_PB;
 import static com.linbit.SizeConv.SizeUnit.UNIT_EB;
 import static com.linbit.SizeConv.SizeUnit.UNIT_ZB;
 import static com.linbit.SizeConv.SizeUnit.UNIT_YB;
+
+import static org.junit.Assert.fail;
 
 /**
  * Tests for size conversion algorithms

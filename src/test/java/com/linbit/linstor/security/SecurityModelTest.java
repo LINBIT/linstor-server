@@ -1,20 +1,18 @@
 package com.linbit.linstor.security;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
-
 import java.sql.SQLException;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the security model

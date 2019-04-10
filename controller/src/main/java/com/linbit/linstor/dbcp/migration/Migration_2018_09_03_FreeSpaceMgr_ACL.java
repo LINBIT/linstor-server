@@ -3,7 +3,7 @@ package com.linbit.linstor.dbcp.migration;
 import com.linbit.linstor.DatabaseInfo;
 import java.sql.Connection;
 import java.sql.Statement;
-import javax.inject.Inject;
+
 import static com.linbit.linstor.DatabaseInfo.DbProduct.MYSQL;
 import static com.linbit.linstor.DatabaseInfo.DbProduct.MARIADB;
 

@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;

@@ -1,7 +1,5 @@
 package com.linbit.linstor.propscon;
 
-import static org.junit.Assert.assertEquals;
-
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.security.GenericDbBase;
 
@@ -9,6 +7,8 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class PriorityPropsTests extends GenericDbBase
 {

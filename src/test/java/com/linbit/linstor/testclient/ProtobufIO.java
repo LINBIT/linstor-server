@@ -2,10 +2,6 @@ package com.linbit.linstor.testclient;
 
 import com.linbit.linstor.api.ApiRcUtils;
 
-import static com.linbit.linstor.api.ApiConsts.MASK_ERROR;
-import static com.linbit.linstor.api.ApiConsts.MASK_INFO;
-import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
-
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
@@ -28,6 +24,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.protobuf.Message;
+
+import static com.linbit.linstor.api.ApiConsts.MASK_ERROR;
+import static com.linbit.linstor.api.ApiConsts.MASK_INFO;
+import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 
 public class ProtobufIO
 {

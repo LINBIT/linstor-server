@@ -1,18 +1,16 @@
 package com.linbit.linstor.storage;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 
+import java.util.Arrays;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
-
-import java.util.Arrays;
-
-import org.junit.Test;
 
 public class LayerUtilsTest
 {

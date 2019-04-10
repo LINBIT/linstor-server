@@ -1,17 +1,8 @@
 package com.linbit.linstor.security;
 
-import static com.linbit.linstor.security.AccessType.CHANGE;
-import static com.linbit.linstor.security.AccessType.CONTROL;
-import static com.linbit.linstor.security.AccessType.USE;
-import static com.linbit.linstor.security.AccessType.VIEW;
-import static com.linbit.linstor.security.Privilege.PRIVILEGE_LIST;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import com.linbit.linstor.api.LinStorScope;
 import org.junit.Before;
 import org.junit.Test;
-
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
@@ -21,8 +12,15 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.testutils.SimpleIterator;
 import java.sql.SQLException;
 import java.util.Collections;
-
 import javax.inject.Provider;
+
+import static com.linbit.linstor.security.AccessType.CHANGE;
+import static com.linbit.linstor.security.AccessType.CONTROL;
+import static com.linbit.linstor.security.AccessType.USE;
+import static com.linbit.linstor.security.AccessType.VIEW;
+import static com.linbit.linstor.security.Privilege.PRIVILEGE_LIST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class StateFlagBitsTest

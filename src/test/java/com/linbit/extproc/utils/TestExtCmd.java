@@ -1,7 +1,5 @@
 package com.linbit.extproc.utils;
 
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Paths;
@@ -16,6 +14,8 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
+
+import static org.junit.Assert.fail;
 
 public class TestExtCmd extends ExtCmd
 {
