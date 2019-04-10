@@ -418,7 +418,6 @@ public final class Controller
                 new SecurityModule(),
                 new ControllerSecurityModule(),
                 new ControllerArgumentsModule(cArgs),
-                new ConfigModule(),
                 new CoreTimerModule(),
                 new MetaDataModule(),
                 new ControllerLinstorModule(),

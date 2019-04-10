@@ -6,7 +6,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
@@ -23,7 +22,6 @@ import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -35,25 +33,19 @@ public class CtrlStorPoolResolveHelper
 {
     private final AccessContext apiCtx;
     private final CtrlPropsHelper ctrlPropsHelper;
-    private final String defaultStorPoolName;
     private final Provider<AccessContext> peerCtxProvider;
 
     @Inject
     public CtrlStorPoolResolveHelper(
         @ApiContext AccessContext apiCtxRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
-        CtrlPropsHelper ctrlPropsHelperRef,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
-
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         apiCtx = apiCtxRef;
         peerCtxProvider = peerCtxProviderRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
-        defaultStorPoolName = defaultStorPoolNameRef;
     }
-
-
 
     /**
      * Resolves the correct storage pool and also handles error/warnings in diskless modes.
@@ -115,7 +107,7 @@ public class CtrlStorPoolResolveHelper
             {
                 if (storPoolNameStr == null || "".equals(storPoolNameStr))
                 {
-                    storPoolNameStr = defaultStorPoolName;
+                    storPoolNameStr = InternalApiConsts.DEFAULT_STOR_POOL_NAME;
                 }
                 storPool = rsc.getAssignedNode().getStorPool(
                     apiCtx,

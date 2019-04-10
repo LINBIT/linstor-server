@@ -78,6 +78,10 @@ public class InternalApiConsts
     public static final String RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME = "AutoSelectedStorPoolName";
 
     public static final String NAMESPC_INTERNAL = "Internal";
+    public static final short DEFAULT_PEER_COUNT = 31;
+    public static final long DEFAULT_AL_SIZE = 32;
+    public static final int DEFAULT_AL_STRIPES = 1;
+    public static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
 
     private InternalApiConsts()
     {

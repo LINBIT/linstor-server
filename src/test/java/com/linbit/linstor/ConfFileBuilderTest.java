@@ -3,7 +3,6 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
-import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdLayerDriver;
@@ -404,9 +403,9 @@ public class ConfFileBuilderTest
         DrbdRscDfnData rscDfnData = new DrbdRscDfnData(
             resourceDefinition,
             "",
-            ConfigModule.DEFAULT_PEER_COUNT,
-            ConfigModule.DEFAULT_AL_STRIPES,
-            ConfigModule.DEFAULT_AL_SIZE,
+            InternalApiConsts.DEFAULT_PEER_COUNT,
+            InternalApiConsts.DEFAULT_AL_STRIPES,
+            InternalApiConsts.DEFAULT_AL_SIZE,
             42,
             null,
             "SuperSecretPassword",

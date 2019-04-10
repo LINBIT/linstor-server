@@ -14,7 +14,6 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
@@ -22,7 +21,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.sql.SQLException;
 
@@ -33,18 +31,15 @@ class CtrlVlmDfnCrtApiHelper
 {
     private final AccessContext apiCtx;
     private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
-    private final String defaultStorPoolName;
 
     @Inject
     CtrlVlmDfnCrtApiHelper(
         @ApiContext AccessContext apiCtxRef,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef,
-        @Named(ConfigModule.CONFIG_STOR_POOL_NAME) String defaultStorPoolNameRef
-        )
+        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
+    )
     {
         apiCtx = apiCtxRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
-        defaultStorPoolName = defaultStorPoolNameRef;
     }
 
     VolumeDefinitionData createVlmDfnData(

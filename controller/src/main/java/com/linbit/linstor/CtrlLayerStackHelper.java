@@ -11,7 +11,6 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.ConfigModule;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SecretGenerator;
@@ -224,8 +223,8 @@ public class CtrlLayerStackHelper
                 rscDfn,
                 "",
                 peerSlots,
-                ConfigModule.DEFAULT_AL_STRIPES,
-                ConfigModule.DEFAULT_AL_SIZE,
+                InternalApiConsts.DEFAULT_AL_STRIPES,
+                InternalApiConsts.DEFAULT_AL_SIZE,
                 tcpPortNrIntRef,
                 transportType,
                 secret
@@ -438,8 +437,8 @@ public class CtrlLayerStackHelper
                 rscDfn,
                 "",
                 getAndCheckPeerSlotsForNewResource((ResourceDefinitionData) rscDfn),
-                ConfigModule.DEFAULT_AL_STRIPES,
-                ConfigModule.DEFAULT_AL_SIZE,
+                InternalApiConsts.DEFAULT_AL_STRIPES,
+                InternalApiConsts.DEFAULT_AL_SIZE,
                 null, // generated tcpPort
                 TransportType.IP,
                 SecretGenerator.generateSharedSecret()
