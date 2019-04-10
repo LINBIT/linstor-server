@@ -289,9 +289,12 @@ public class LinstorParsingUtils
     public static DeviceProviderKind asProviderKind(String stringRef)
     {
         DeviceProviderKind kind;
-        switch (stringRef.toUpperCase()) {
+        switch (stringRef.toUpperCase())
+        {
             case "DRBD_DISKLESS":
+                // fall-through
             case "DRBDDISKLESS":
+                // fall-through
             case "DISKLESS":
                 kind = DeviceProviderKind.DISKLESS;
                 break;
@@ -299,6 +302,7 @@ public class LinstorParsingUtils
                 kind = DeviceProviderKind.LVM;
                 break;
             case "LVMTHIN":
+                // fall-through
             case "LVM_THIN":
                 kind = DeviceProviderKind.LVM_THIN;
                 break;
@@ -306,14 +310,17 @@ public class LinstorParsingUtils
                 kind = DeviceProviderKind.ZFS;
                 break;
             case "ZFSTHIN":
+                // fall-through
             case "ZFS_THIN":
                 kind = DeviceProviderKind.ZFS_THIN;
                 break;
             case "SWORDFISHTARGET":
+                // fall-through
             case "SWORDFISH_TARGET":
                 kind = DeviceProviderKind.SWORDFISH_TARGET;
                 break;
             case "SWORDFISHINITIATOR":
+                // fall-through
             case "SWORDFISH_INITIATOR":
                 kind = DeviceProviderKind.SWORDFISH_INITIATOR;
                 break;
