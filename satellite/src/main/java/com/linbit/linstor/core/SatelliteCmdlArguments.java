@@ -75,8 +75,8 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
         return overrideNodeName;
     }
 
-    public void setOverrideNodeName(String overrideNodeName)
+    public void setOverrideNodeName(String overrideNodeNameRef)
     {
-        this.overrideNodeName = overrideNodeName;
+        overrideNodeName = overrideNodeNameRef;
     }
 }

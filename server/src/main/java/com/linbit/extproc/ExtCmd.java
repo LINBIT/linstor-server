@@ -26,8 +26,8 @@ public class ExtCmd extends ChildProcessHandler
     private ErrorReporter   errLog;
     private long            startTime;
 
-    private String[] command;
-    private String commandStr;
+    private String[] execCommand;
+    private String execCommandStr;
 
     public ExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
     {
@@ -66,10 +66,10 @@ public class ExtCmd extends ChildProcessHandler
     public OutputStream exec(ProcessBuilder.Redirect stdinRedirect, String... command)
         throws IOException
     {
-        this.command = command;
-        commandStr = StringUtils.join(" ", command);
+        execCommand = command;
+        execCommandStr = StringUtils.join(" ", command);
 
-        errLog.logDebug("Executing command: %s", commandStr);
+        errLog.logDebug("Executing command: %s", execCommandStr);
 
         ProcessBuilder pBuilder = new ProcessBuilder();
         pBuilder.command(command);
@@ -93,7 +93,7 @@ public class ExtCmd extends ChildProcessHandler
         outReceiver.finish();
         errReceiver.finish();
         OutputData outData = new OutputData(
-            command,
+            execCommand,
             outReceiver.getData(),
             errReceiver.getData(),
             exitCode
@@ -102,7 +102,7 @@ public class ExtCmd extends ChildProcessHandler
         errLog.logTrace(
             "External command finished in %dms: %s",
             (System.currentTimeMillis() - startTime),
-            commandStr
+            execCommandStr
         );
 
         return outData;

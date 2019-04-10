@@ -50,8 +50,8 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
         return restBindAddress;
     }
 
-    public void setRESTBindAddress(String restBindAddress)
+    public void setRESTBindAddress(String restBindAddressRef)
     {
-        this.restBindAddress = restBindAddress;
+        restBindAddress = restBindAddressRef;
     }
 }
