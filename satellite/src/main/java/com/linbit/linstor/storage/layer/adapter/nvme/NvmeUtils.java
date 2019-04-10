@@ -44,15 +44,14 @@ public class NvmeUtils
         throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+        final String subsystemDirectory = NVMET_PATH + "/subsystems/" + subsystemName;
         final String portsDirectory = NVMET_PATH + "/ports/";
+        final int vlmCount = nvmeRscData.getResource().getVolumeCount();
 
-        int vlmCount = nvmeRscData.getResource().getVolumeCount();
-        for (int vlmNr = 0; vlmNr < vlmCount; vlmNr++)
+        try
         {
-            final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName() + "_" + vlmNr;
-            final String subsystemDirectory = NVMET_PATH + "/subsystems/" + subsystemName;
-
-            try
+            for (int vlmNr = 0; vlmNr < vlmCount; vlmNr++)
             {
                 // create nvmet-rdma subsystem
                 Path path = Paths.get(subsystemDirectory);
@@ -63,14 +62,14 @@ public class NvmeUtils
                 Files.write(path, "1".getBytes());
 
                 // create namespace and cd to it
-                path = Paths.get(subsystemDirectory + "/namespaces/" + 10); //FIXME dummy
+                path = Paths.get(subsystemDirectory + "/namespaces/" + vlmNr);
                 Files.createDirectory(path);
 
                 // set path to nvme device and enable namespace
-                path = Paths.get(subsystemDirectory + "/namespaces/" + 10 + "/device_path"); //FIXME dummy
-                Files.write(path, ("/dev/" + "nvme2n1").getBytes()); //FIXME dummy
+                path = Paths.get(subsystemDirectory + "/namespaces/" + vlmNr + "/device_path");
+                Files.write(path, getDevicePath(subsystemName, vlmNr).getBytes());
 
-                path = Paths.get(subsystemDirectory + "/namespaces/" + 10 + "/enable"); //FIXME dummy
+                path = Paths.get(subsystemDirectory + "/namespaces/" + vlmNr + "/enable");
                 Files.write(path, "1".getBytes());
 
                 // get port directory or create it if the first subsystem is being added
@@ -110,19 +109,24 @@ public class NvmeUtils
 
                 // create soft link
                 ExtCmdUtils.checkExitCode(
-                    extCmd.exec("ln", "-s", subsystemDirectory, portsDirectory + portIdx + "/subsystems/" + subsystemName),
+                    extCmd.exec(
+                        "ln",
+                        "-s",
+                        subsystemDirectory,
+                        portsDirectory + portIdx + "/subsystems/" + subsystemName
+                    ),
                     StorageException::new,
                     "Failed to create symbolic link!"
                 );
             }
-            catch (IOException | ChildProcessTimeoutException exc)
-            {
-                throw new StorageException("Failed to configure NVMe target!", exc);
-            }
-            catch (ValueOutOfRangeException | InvalidNameException | AccessDeniedException | InvalidKeyException exc)
-            {
-                throw new ImplementationError(exc);
-            }
+        }
+        catch (IOException | ChildProcessTimeoutException exc)
+        {
+            throw new StorageException("Failed to configure NVMe target!", exc);
+        }
+        catch (ValueOutOfRangeException | InvalidNameException | AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -130,15 +134,14 @@ public class NvmeUtils
         throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+        final String subsystemDirectory = NVMET_PATH + "/subsystems/" + subsystemName;
         final String portsDirectory = NVMET_PATH + "/ports/";
+        final int vlmCount = nvmeRscData.getResource().getVolumeCount();
 
-        int vlmCount = nvmeRscData.getResource().getVolumeCount();
-        for (int vlmNr = 0; vlmNr < vlmCount; vlmNr++)
+        try
         {
-            final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName() + "_" + vlmNr;
-            final String subsystemDirectory = NVMET_PATH + "/subsystems/" + subsystemName;
-
-            try
+            for (int vlmNr = 0; vlmNr < vlmCount; vlmNr++)
             {
                 // remove soft link
                 OutputData output = extCmd.exec("cd", portsDirectory);
@@ -168,17 +171,17 @@ public class NvmeUtils
                 }
 
                 // disable namespace
-                output = extCmd.exec("cd", subsystemDirectory + "/namespaces/" + 10); // FIXME: dummy
+                output = extCmd.exec("cd", subsystemDirectory + "/namespaces/" + vlmNr);
                 ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to change current directory!");
 
-                Path path = Paths.get(subsystemDirectory + "/namespaces/" + 10 + "/enable"); //FIXME dummy
+                Path path = Paths.get(subsystemDirectory + "/namespaces/" + vlmNr + "/enable");
                 Files.write(path, "0".getBytes());
 
                 // delete namespace directory
                 output = extCmd.exec("cd", "..");
                 ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to change current directory!");
 
-                output = extCmd.exec("rmdir", "10"); // FIXME: dummy
+                output = extCmd.exec("rmdir", (new Integer(vlmNr)).toString());
                 ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete namespace directory!");
 
                 // delete subsystem directory
@@ -188,15 +191,14 @@ public class NvmeUtils
                 output = extCmd.exec("rmdir", subsystemName);
                 ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete subsystem directory!");
             }
-            catch (
-                IOException | ChildProcessTimeoutException |
-                ValueOutOfRangeException | InvalidNameException |
-                AccessDeniedException |
-                InvalidKeyException exc
-            ) // TODO: right?
-            {
-                throw new StorageException("Failed to delete NVMe target!", exc);
-            }
+        }
+        catch (IOException | ChildProcessTimeoutException exc)
+        {
+            throw new StorageException("Failed to delete NVMe target!", exc);
+        }
+        catch (ValueOutOfRangeException | InvalidNameException | AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -233,24 +235,27 @@ public class NvmeUtils
             throw new StorageException("Failed to discover NVMe subsystems!", exc);
         }
 
-        if (subsystemNames.isEmpty())
-        {
-            throw new StorageException("No NVMe subsystems found!");
-        }
-
         return subsystemNames;
     }
 
-    public void connect(String ipAddr)
+    public void connect(NvmeRscData nvmeRscData, AccessContext accCtx)
         throws StorageException
     {
-        ExtCmd extCmd = extCmdFactory.create();
+        final ExtCmd extCmd = extCmdFactory.create();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+        final int vlmCount = nvmeRscData.getResource().getVolumeCount();
 
         try
         {
-            List<String> subsystemNames = discover(ipAddr);
-            for (String subsystemName : subsystemNames)
+            for (int vlmNr = 0; vlmNr < vlmCount; vlmNr++)
             {
+                LsIpAddress ipAddr = getIpAddr(nvmeRscData, vlmNr, accCtx);
+                List<String> subsystemNames = discover(ipAddr.getAddress()); // TODO: seems weird to do this per volume
+                if (!subsystemNames.contains(subsystemName))
+                {
+                    throw new StorageException("Failed to discover subsystem name \'" + subsystemName + "\'!");
+                }
+
                 OutputData output = extCmd.exec(
                     "nvme",
                     "connect",
@@ -259,40 +264,42 @@ public class NvmeUtils
                     "-n",
                     subsystemName,
                     "-a",
-                    ipAddr,
+                    ipAddr.getAddress(),
                     "-s",
-                    (new Integer(IANA_DEFAULT_PORT)).toString());
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to create symbolic link!");
+                    (new Integer(IANA_DEFAULT_PORT)).toString()
+                );
+                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to connect to NVMe target!");
             }
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
             throw new StorageException("Failed to connect to NVMe target!", exc);
         }
+        catch (ValueOutOfRangeException | InvalidNameException | AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
-    public void disconnect(String subsystemName, int nameSpaceNr) throws StorageException
+    public void disconnect(NvmeRscData nvmeRscData) throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+        final int vlmCount = nvmeRscData.getResource().getVolumeCount();
 
         try
         {
-            OutputData output = extCmd.exec("nvme", "disconnect", "-n", subsystemName);
-
-            if (output.exitCode != 0)
+            for (int vlmNr = 0; vlmNr < vlmCount; vlmNr++)
             {
-                Path path = Paths.get(
-                    NVMET_PATH + "/subsystems/" + subsystemName + "/namespaces/" + nameSpaceNr + "/device_path"
-                );
-                if (Files.notExists(path))
+                OutputData output = extCmd.exec("nvme", "disconnect", "-n", subsystemName);
+
+                if (output.exitCode != 0)
                 {
-                    throw new StorageException("No device path configured for NVMe target!");
+                    output = extCmd.exec("nvme", "disconnect", "-d", getDevicePath(subsystemName, vlmNr));
                 }
 
-                output = extCmd.exec("nvme", "disconnect", "-d", Files.newBufferedReader(path).readLine());
+                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to disconnect from NVMe target!");
             }
-
-            ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to disconnect from NVMe target!");
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
@@ -343,5 +350,19 @@ public class NvmeUtils
         }
 
         return portIdx;
+    }
+
+    private String getDevicePath(String subsystemName, int nameSpaceNr)
+        throws StorageException, IOException
+    {
+        Path path = Paths.get(
+            NVMET_PATH + "/subsystems/" + subsystemName + "/namespaces/" + nameSpaceNr + "/device_path"
+        );
+        if (Files.notExists(path))
+        {
+            throw new StorageException("No device path configured for NVMe target!");
+        }
+
+        return Files.newBufferedReader(path).readLine();
     }
 }

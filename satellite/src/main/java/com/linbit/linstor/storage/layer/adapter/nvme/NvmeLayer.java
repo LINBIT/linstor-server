@@ -1,6 +1,5 @@
 package com.linbit.linstor.storage.layer.adapter.nvme;
 
-import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -18,8 +17,6 @@ import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
-
-import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -65,27 +62,18 @@ public class NvmeLayer implements DeviceLayer
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
     {
         NvmeRscData nvmeRscData = (NvmeRscData) rscData;
-        NetInterface netIf = nvmeRscData.getResource().getAssignedNode().getSatelliteConnection(sysCtx);
 
         // initiator
         if (nvmeRscData.isDiskless(sysCtx))
         {
             if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
-                int vlmCount = nvmeRscData.getResource().getVolumeCount();
-                for (int vlmNr = 0; vlmNr < vlmCount; vlmNr++)
-                {
-                    nvmeUtils.disconnect(
-                        NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName() + "_" + vlmNr,
-                        10 // FIXME: dummy
-                    );
-                }
-
+                nvmeUtils.disconnect(nvmeRscData);
                 nvmeRscData.setExists(false);
             }
             else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
-                nvmeUtils.connect(netIf.getAddress(sysCtx).getAddress());
+                nvmeUtils.connect(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
             }
         }
@@ -95,22 +83,12 @@ public class NvmeLayer implements DeviceLayer
             if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 nvmeUtils.cleanUpTarget(nvmeRscData, sysCtx);
-                resourceProcessorProvider.get().process(
-                    nvmeRscData.getSingleChild(),
-                    snapshots,
-                    apiCallRc
-                );
-
+                resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeRscData.setExists(false);
             }
             else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
-                resourceProcessorProvider.get().process(
-                    nvmeRscData.getSingleChild(),
-                    snapshots,
-                    apiCallRc
-                );
-
+                resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeUtils.configureTarget(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
             }
