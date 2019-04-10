@@ -12,15 +12,6 @@ DEF_DB_TYPE="h2"
 [ ! -d ${DEF_LINSTOR_CFG} ] && mkdir "$DEF_LINSTOR_CFG"
 [ ! -d ${DEF_VARLIB_LINSTOR} ] && mkdir "$DEF_VARLIB_LINSTOR"
 
-# migrate old databases locations
-# remove after linstor-server 0.2.5
-OLD_DB_LOCATION="/opt/linstor-server/linstordb.mv.db"
-[ -f ${OLD_DB_LOCATION} ] && {
-    mv "$OLD_DB_LOCATION" "$DEF_VARLIB_LINSTOR";
-    echo "Moved old database to ${DEF_VARLIB_LINSTOR}";
-    echo "Please review the new configuration file: ${DEF_DB_CFG}";
-}
-
 # always create a backup of the current DB
 CURRENT_DB=${DEF_DB}.mv.db
 [ -f "$CURRENT_DB" ] && cp "$CURRENT_DB" "${CURRENT_DB}.bak"
