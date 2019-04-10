@@ -45,7 +45,7 @@ public class LockGuardFactory
 
         public final int lockIdx;
 
-        private LockObj(final int idx)
+        LockObj(final int idx)
         {
             lockIdx = idx;
         }

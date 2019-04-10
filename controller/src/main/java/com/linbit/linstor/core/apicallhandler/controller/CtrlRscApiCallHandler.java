@@ -272,14 +272,14 @@ public class CtrlRscApiCallHandler
                     }
                 }
 
-                // lazy instance other resource connections
+                // lazy instantiate other resource connections
                 List<Resource> resourceList = rscDfn.streamResource(apiCtx).collect(toList());
-                for (int i = 0; i < resourceList.size(); i++)
+                for (int outerIdx = 0; outerIdx < resourceList.size(); outerIdx++)
                 {
-                    for (int j = 1; j < resourceList.size(); j++)
+                    for (int innerIdx = outerIdx + 1; innerIdx < resourceList.size(); innerIdx++)
                     {
                         ResourceConnectionKey conKey =
-                            new ResourceConnectionKey(resourceList.get(i), resourceList.get(j));
+                            new ResourceConnectionKey(resourceList.get(outerIdx), resourceList.get(innerIdx));
 
                         if (conKey.getSource() != conKey.getTarget() &&
                             rscConns.stream().noneMatch(con ->

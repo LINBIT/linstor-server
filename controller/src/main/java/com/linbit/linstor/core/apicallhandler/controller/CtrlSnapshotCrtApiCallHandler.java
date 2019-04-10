@@ -169,8 +169,8 @@ public class CtrlSnapshotCrtApiCallHandler
         String snapshotNameStr
     )
     {
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
-        ResourceName rscName = rscDfn.getName();
+        final ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+        final ResourceName rscName = rscDfn.getName();
 
         SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
         SnapshotDefinition snapshotDfn = createSnapshotDfnData(
