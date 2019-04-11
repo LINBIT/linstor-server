@@ -77,7 +77,7 @@ public class NvmeUtils
             for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
             {
                 final Path namespacePath = Paths.get(
-                    subsystemDirectory + "/namespaces/" + nvmeVlmData.getVlmNr().value + 1
+                    subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().value + 1)
                 );
 
                 // create nvmet-rdma subsystem
@@ -106,18 +106,30 @@ public class NvmeUtils
                 {
                     // get existing port directories and compute next available index
                     OutputData output = extCmd.exec(
-                        "/bin/bash", "-c", "ls", "-m", "--color=never", "--directory", NVME_PORTS_PATH);
+                        "/bin/bash", "-c", "ls", "-m", "--color=never", NVME_PORTS_PATH);
+//                        "ls -m --color=never " + subsystemDirectory + "/namespaces/"
                     ExtCmdUtils.checkExitCode(
                         output,
                         StorageException::new,
                         "Failed to list files!"
                     );
-                    String[] portDirs = new String(output.stdoutData).split(", ");
-                    portIdx = portDirs[portDirs.length - 1] + 1;
+                    String outputStr = new String(output.stdoutData);
+                    if (outputStr.trim().isEmpty())
+                    {
+                        portIdx = "1";
+                    }
+                    else
+                    {
+                        String[] portDirs = outputStr.split(", ");
+                        portIdx = Integer.toString(
+                            Integer.parseInt(portDirs[portDirs.length - 1].trim()) + 1
+                        );
+                    }
 
-                    Files.createDirectories(portsPath.resolve(portIdx));
+                    Path localPortsPath = portsPath.resolve(portIdx);
+                    Files.createDirectories(localPortsPath);
                     Files.write(
-                        portsPath.resolve("addr_traddr"), ipAddr.getAddress().getBytes(), StandardOpenOption.CREATE
+                        localPortsPath.resolve("addr_traddr"), ipAddr.getAddress().getBytes()
                     );
 
                     // set the transport type and port
@@ -126,20 +138,19 @@ public class NvmeUtils
                     {
                         transportType = "rdma";
                     }
-                    Files.write(portsPath.resolve("addr_trtype"), transportType.getBytes(), StandardOpenOption.CREATE);
+                    Files.write(localPortsPath.resolve("addr_trtype"), transportType.getBytes());
 
                     String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT);
                     if (port == null)
                     {
                         port = Integer.toString(IANA_DEFAULT_PORT);
                     }
-                    Files.write(portsPath.resolve("addr_trsvcid"), port.getBytes(), StandardOpenOption.CREATE);
+                    Files.write(localPortsPath.resolve("addr_trsvcid"), port.getBytes());
 
                     // set the address family of the port, either IPv4 or IPv6
                     Files.write(
-                        portsPath.resolve("addr_adrfam"),
-                        ipAddr.getAddressType().toString().toLowerCase().getBytes(),
-                        StandardOpenOption.CREATE
+                        localPortsPath.resolve("addr_adrfam"),
+                        ipAddr.getAddressType().toString().toLowerCase().getBytes()
                     );
                 }
 
@@ -183,7 +194,13 @@ public class NvmeUtils
                 );
 
                 // remove soft link
-                String portIdx = getPortIdx(getIpAddr(nvmeRscData.getResource(), nvmeVlmData.getVlmNr().value, accCtx), extCmd);
+                String portIdx = getPortIdx(
+                    getIpAddr(
+                        nvmeRscData.getResource(), nvmeVlmData.getVlmNr().value,
+                        accCtx
+                    ),
+                    extCmd
+                );
                 if (portIdx == null)
                 {
                     throw new StorageException(

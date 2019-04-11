@@ -1279,6 +1279,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             }
 
             return NvmeRsc.newBuilder()
+                .setFlags(0) // TODO serialize flags as soon NvmeRscData get flags
                 .addAllNvmeVlms(nvmeVlms)
                 .build();
         }

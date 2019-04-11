@@ -89,7 +89,6 @@ public class NvmeLayerGenericDbDriver implements NvmeLayerDatabaseDriver
                 new NvmeVlmData(vlm, new Pair<>(nvmeRscData, children).objA, transObjFactory, transMgrProvider)
             );
         }
-
         return new Pair<>(nvmeRscData, children);
     }
 
