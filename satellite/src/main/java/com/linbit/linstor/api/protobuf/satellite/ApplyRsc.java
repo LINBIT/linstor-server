@@ -127,6 +127,7 @@ public class ApplyRsc implements ApiCall
                     break;
                 case LUKS:
                 case STORAGE:
+                case NVME:
                     rscDfnLayerDataApi = null;
                     break;
                 case UNKNOWN_LAYER: // fall-through

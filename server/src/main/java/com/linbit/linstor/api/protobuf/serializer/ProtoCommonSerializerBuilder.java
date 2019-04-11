@@ -42,6 +42,7 @@ import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
@@ -61,6 +62,7 @@ import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass.NetInterface.Builder;
 import com.linbit.linstor.proto.common.NodeOuterClass;
+import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeRsc;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
@@ -1109,6 +1111,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 case STORAGE:
                     builder.setStorage(buildStorageRscData((StorageRscPojo) rscLayerPojo));
                     break;
+                case NVME:
+                    builder.setNvme(buildNvmeRscData((NvmeRscPojo) rscLayerPojo));
+                    break;
                 default:
                     break;
             }
@@ -1263,6 +1268,19 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 builder.setDiskState(luksVlmPojo.getDiskState());
             }
             return builder.build();
+        }
+
+        private static NvmeRsc buildNvmeRscData(NvmeRscPojo rscLayerPojoRef)
+        {
+            List<NvmeVlm> nvmeVlms = new ArrayList<>();
+            for (NvmeVlmPojo nvmeVlmPojo : rscLayerPojoRef.getVolumeList())
+            {
+                nvmeVlms.add(buildNvmeVlm(nvmeVlmPojo));
+            }
+
+            return NvmeRsc.newBuilder()
+                .addAllNvmeVlms(nvmeVlms)
+                .build();
         }
 
         private static StorageRsc buildStorageRscData(StorageRscPojo rscLayerPojoRef)
