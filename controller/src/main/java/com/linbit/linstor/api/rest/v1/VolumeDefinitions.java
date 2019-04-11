@@ -3,7 +3,6 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.Json.VolumeDefinitionData;
@@ -95,43 +94,20 @@ public class VolumeDefinitions
                     data.add(new VolumeDefinitionData(vlmDfnApi));
                 }
 
-                if (data.isEmpty())
-                {
-                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                    apiCallRc.addEntry(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_NOT_FOUND_VLM_DFN,
-                            String.format("Volume definition '%d' not found.", vlmNumber)
-                        )
-                    );
-                    response = Response
-                        .status(Response.Status.NOT_FOUND)
-                        .entity(ApiCallRcConverter.toJSON(apiCallRc))
-                        .type(MediaType.APPLICATION_JSON)
-                        .build();
-                }
-                else
-                {
-                    response = Response
-                        .status(Response.Status.OK)
-                        .entity(objectMapper.writeValueAsString(data))
-                        .build();
-                }
+                response = RequestHelper.queryRequestResponse(
+                    objectMapper,
+                    ApiConsts.FAIL_NOT_FOUND_VLM_DFN,
+                    "Volume definition",
+                    vlmNumber == null ? null : vlmNumber.toString(),
+                    data
+                );
             }
             else
             {
-                ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                apiCallRc.addEntry(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
-                        String.format("Resource definition '%s' not found.", rscName)
-                    )
+                response = RequestHelper.notFoundResponse(
+                    ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+                    String.format("Resource definition '%s' not found.", rscName)
                 );
-                response = Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(ApiCallRcConverter.toJSON(apiCallRc))
-                    .type(MediaType.APPLICATION_JSON)
-                    .build();
             }
             return response;
         }, false);

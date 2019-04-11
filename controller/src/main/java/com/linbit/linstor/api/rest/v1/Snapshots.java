@@ -2,7 +2,6 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
@@ -102,24 +101,16 @@ public class Snapshots
                     .map(Json.SnapshotData::new)
                     .collect(Collectors.toList());
 
-                response = Response
-                    .status(Response.Status.OK)
-                    .entity(objectMapper.writeValueAsString(snapshotData))
-                    .build();
+                response = RequestHelper.queryRequestResponse(
+                    objectMapper, ApiConsts.FAIL_NOT_FOUND_SNAPSHOT, "Snapshot", snapName, snapshotData
+                );
             }
             else
             {
-                ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                apiCallRc.addEntry(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
-                        String.format("Resource definition '%s' not found.", rscName)
-                    )
+                response = RequestHelper.notFoundResponse(
+                    ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
+                    String.format("Resource definition '%s' not found.", rscName)
                 );
-                response = Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(ApiCallRcConverter.toJSON(apiCallRc))
-                    .build();
             }
 
             return response;

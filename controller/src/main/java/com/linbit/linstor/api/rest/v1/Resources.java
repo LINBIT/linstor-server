@@ -123,10 +123,13 @@ public class Resources
                 .map(rscApi -> new ResourceData(rscApi, resourceList.getSatelliteStates()))
                 .collect(Collectors.toList());
 
-            return Response
-                .status(Response.Status.OK)
-                .entity(objectMapper.writeValueAsString(rscs))
-                .build();
+            return RequestHelper.queryRequestResponse(
+                objectMapper,
+                ApiConsts.FAIL_NOT_FOUND_RSC,
+                String.format("Resource '%s' on", rscName),
+                nodeName,
+                rscs
+            );
         }, false);
     }
 
@@ -194,7 +197,7 @@ public class Resources
                 ResourceList resourceList = apiCallRcWith.getValue();
                 if (resourceList.isEmpty())
                 {
-                    resp = requestHelper.notFoundResponse(
+                    resp = RequestHelper.notFoundResponse(
                         ApiConsts.FAIL_NOT_FOUND_RSC,
                         String.format("Resource '%s' not found on node '%s'.", rscName, nodeName)
                     );
@@ -249,7 +252,7 @@ public class Resources
 
                     if (vlmNr != null && vlms.isEmpty())
                     {
-                        resp = requestHelper.notFoundResponse(
+                        resp = RequestHelper.notFoundResponse(
                             ApiConsts.FAIL_NOT_FOUND_VLM,
                             String.format("Volume '%d' of resource '%s' on node '%s' not found.",
                                 vlmNr, rscName, nodeName)
@@ -261,7 +264,7 @@ public class Resources
                         {
                             resp = Response
                                 .status(Response.Status.OK)
-                                .entity(objectMapper.writeValueAsString(vlms))
+                                .entity(objectMapper.writeValueAsString(vlmNr != null ? vlms.get(0) : vlms))
                                 .build();
                         }
                         catch (JsonProcessingException exc)

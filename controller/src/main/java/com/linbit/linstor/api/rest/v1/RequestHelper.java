@@ -18,10 +18,13 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import org.slf4j.event.Level;
@@ -181,7 +184,7 @@ public class RequestHelper
             );
     }
 
-    Response notFoundResponse(final long retcode, final String message)
+    static Response notFoundResponse(final long retcode, final String message)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         apiCallRc.addEntry(
@@ -195,5 +198,32 @@ public class RequestHelper
             .entity(ApiCallRcConverter.toJSON(apiCallRc))
             .type(MediaType.APPLICATION_JSON)
             .build();
+    }
+
+
+    static Response queryRequestResponse(
+        ObjectMapper objectMapper,
+        long retCode,
+        String objectType,
+        String searchObject,
+        List<?> resultList
+    )
+        throws JsonProcessingException
+    {
+        Response response;
+        if (searchObject != null && resultList.isEmpty())
+        {
+            response = RequestHelper.notFoundResponse(
+                retCode, String.format("%s '%s' not found.", objectType, searchObject)
+            );
+        }
+        else
+        {
+            response = Response
+                .status(Response.Status.OK)
+                .entity(objectMapper.writeValueAsString(searchObject != null ? resultList.get(0) : resultList))
+                .build();
+        }
+        return response;
     }
 }

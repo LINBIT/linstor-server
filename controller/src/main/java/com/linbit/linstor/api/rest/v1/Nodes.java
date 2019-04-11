@@ -5,11 +5,11 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
+import com.linbit.linstor.api.rest.v1.serializer.Json.NetInterfaceData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.NodeData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.NodeModifyData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.NetInterfaceData;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 
@@ -108,20 +108,9 @@ public class Nodes
                 })
                 .collect(Collectors.toList());
 
-            Response resp;
-            if (nds.isEmpty() && nodeName != null)
-            {
-                resp = Response.status(Response.Status.NOT_FOUND).build();
-            }
-            else
-            {
-                resp = Response
-                    .status(Response.Status.OK)
-                    .entity(objectMapper.writeValueAsString(nds))
-                    .build();
-            }
-
-            return resp;
+            return RequestHelper.queryRequestResponse(
+                objectMapper, ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "Node", nodeName, nds
+            );
         }, false);
     }
 
@@ -273,24 +262,9 @@ public class Nodes
                     netIfs.add(new NetInterfaceData(netif));
                 }
 
-                if (netInterfaceName != null && netIfs.isEmpty())
-                {
-                    throw new ApiRcException(ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.FAIL_NOT_FOUND_NODE,
-                            "Node '" + nodeName + "' not found."
-                        )
-                        .setCause("The specified node '" + nodeName + "' could not be found in the database")
-                        .setCorrection("Create a node with the name '" + nodeName + "' first.")
-                        .build()
-                    );
-                }
-                else
-                {
-                    resp = Response.status(Response.Status.OK)
-                        .entity(objectMapper.writeValueAsString(netIfs))
-                        .build();
-                }
+                resp = RequestHelper.queryRequestResponse(
+                    objectMapper, ApiConsts.FAIL_NOT_FOUND_NET_IF, "Netinterface", netInterfaceName, netIfs
+                );
             }
             else
             {

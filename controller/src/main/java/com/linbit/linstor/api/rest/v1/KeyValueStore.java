@@ -66,7 +66,7 @@ public class KeyValueStore
             Response resp;
             if (instanceName != null && keyValueStoreList.isEmpty())
             {
-                resp = requestHelper.notFoundResponse(
+                resp = RequestHelper.notFoundResponse(
                     ApiConsts.FAIL_NOT_FOUND_KVS,
                     String.format("Could not find key value store instance '%s'.", instanceName)
                 );

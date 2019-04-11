@@ -758,7 +758,7 @@ paths:
         A single resource can be queried by adding its name
         to the resource string like:
 
-        /v1/resource-definitions/rsc1/resource/nodeA
+        /v1/resource-definitions/rsc1/resources/nodeA
       parameters:
       - $ref: '#/components/parameters/Offset'
       - $ref: '#/components/parameters/Limit'
@@ -911,7 +911,7 @@ paths:
         A single volume can be queried by adding its volume number
         to the resource string like:
 
-        /v1/resource-definitions/rsc1/resource/nodeA/volumes/0
+        /v1/resource-definitions/rsc1/resources/nodeA/volumes/0
       parameters:
       - $ref: '#/components/parameters/Offset'
       - $ref: '#/components/parameters/Limit'
@@ -1332,9 +1332,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Snapshot'
+                $ref: '#/components/schemas/Snapshot'
     delete:
       tags:
       - developers

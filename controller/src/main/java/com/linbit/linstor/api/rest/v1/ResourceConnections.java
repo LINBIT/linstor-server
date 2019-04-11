@@ -2,7 +2,6 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
@@ -71,26 +70,20 @@ public class ResourceConnections
 
             Response resp;
 
-            if (filtered.isEmpty())
+            if (nodeA != null && filtered.isEmpty())
             {
-                ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                apiCallRc.addEntry(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_NOT_FOUND_RSC_DFN,
-                        String.format("Resource connection between '%s' and '%s' not found.", nodeA, nodeB)
-                    )
+                resp = RequestHelper.notFoundResponse(
+                    ApiConsts.FAIL_NOT_FOUND_RSC_CONN,
+                    String.format("Resource connection between '%s' and '%s' not found.", nodeA, nodeB)
                 );
-                resp = Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(ApiCallRcConverter.toJSON(apiCallRc))
-                    .build();
             }
             else
             {
+                List<Json.ResourceConnectionData> resList = filtered.stream()
+                    .map(Json.ResourceConnectionData::new)
+                    .collect(Collectors.toList());
                 resp = Response.status(Response.Status.OK)
-                    .entity(objectMapper.writeValueAsString(
-                        filtered.stream().map(Json.ResourceConnectionData::new).collect(Collectors.toList())
-                    ))
+                    .entity(objectMapper.writeValueAsString(nodeA != null ? resList.get(0) : resList))
                     .build();
             }
             return resp;

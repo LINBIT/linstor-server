@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -105,11 +106,13 @@ public class StoragePools
             .listStorPools(nodeNames, storPoolNames)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
-        requestHelper.doFlux(asyncResponse, apiCallRcWithToResponse(flux, limit, offset));
+        requestHelper.doFlux(asyncResponse, apiCallRcWithToResponse(flux, nodeName, storPoolName, limit, offset));
     }
 
     Mono<Response> apiCallRcWithToResponse(
         Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> apiCallRcWithFlux,
+        String nodeName,
+        String storPoolName,
         int limit,
         int offset
     )
@@ -152,11 +155,32 @@ public class StoragePools
 
                 try
                 {
-                    resp = Response
-                        .status(Response.Status.OK)
-                        .entity(objectMapper.writeValueAsString(storPoolDataList))
-                        .type(MediaType.APPLICATION_JSON)
-                        .build();
+                    if (storPoolName != null && storPoolDataList.isEmpty())
+                    {
+                        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                        apiCallRc.addEntry(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
+                                String.format("Storage pool '%s' on node '%s' not found.", storPoolName, nodeName)
+                            )
+                        );
+
+                        resp = Response
+                            .status(Response.Status.NOT_FOUND)
+                            .entity(ApiCallRcConverter.toJSON(apiCallRc))
+                            .type(MediaType.APPLICATION_JSON)
+                            .build();
+                    }
+                    else
+                    {
+                        resp = Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(
+                                storPoolName != null ? storPoolDataList.get(0) : storPoolDataList)
+                            )
+                            .type(MediaType.APPLICATION_JSON)
+                            .build();
+                    }
                 }
                 catch (JsonProcessingException exc)
                 {

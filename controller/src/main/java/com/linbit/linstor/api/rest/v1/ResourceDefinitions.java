@@ -2,7 +2,6 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceDefinitionData;
@@ -91,31 +90,9 @@ public class ResourceDefinitions
             final List<ResourceDefinitionData> rscDfns = rscDfnStream.map(ResourceDefinitionData::new)
                 .collect(Collectors.toList());
 
-            Response response;
-            if (rscName != null && rscDfns.isEmpty())
-            {
-                ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                apiCallRc.addEntry(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_NOT_FOUND_VLM_DFN,
-                        String.format("Resource definition '%s' not found.", rscName)
-                    )
-                );
-
-                response = Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(ApiCallRcConverter.toJSON(apiCallRc))
-                    .type(MediaType.APPLICATION_JSON)
-                    .build();
-            }
-            else
-            {
-                response = Response
-                    .status(Response.Status.OK)
-                    .entity(objectMapper.writeValueAsString(rscDfns))
-                    .build();
-            }
-            return response;
+            return RequestHelper.queryRequestResponse(
+                objectMapper, ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "Resource definition", rscName, rscDfns
+            );
         }, false);
     }
 
