@@ -45,6 +45,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class Json
 {
+    public static final String REST_API_VERSION = "1.0.1";
+
     public static String deviceProviderKindAsString(DeviceProviderKind deviceProviderKind)
     {
         return deviceProviderKind.name();
@@ -776,6 +778,7 @@ public class Json
         public String version;
         public String git_hash;
         public String build_time;
+        public String rest_api_version = REST_API_VERSION;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

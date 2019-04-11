@@ -131,6 +131,7 @@ public class Controller
         controllerVersion.version = LinStor.VERSION_INFO_PROVIDER.getVersion();
         controllerVersion.git_hash = LinStor.VERSION_INFO_PROVIDER.getGitCommitId();
         controllerVersion.build_time = LinStor.VERSION_INFO_PROVIDER.getBuildTime();
+        controllerVersion.rest_api_version = Json.REST_API_VERSION;
 
         Response resp;
         try

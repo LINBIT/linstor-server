@@ -15,7 +15,7 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
-  version: 1.0.0
+  version: 1.0.1
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -2712,6 +2712,8 @@ components:
         git_hash:
           type: string
         build_time:
+          type: string
+        rest_api_version:
           type: string
     ErrorReport:
       type: object
