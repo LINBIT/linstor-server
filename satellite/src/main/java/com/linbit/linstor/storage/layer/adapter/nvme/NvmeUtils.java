@@ -106,8 +106,8 @@ public class NvmeUtils
                 {
                     // get existing port directories and compute next available index
                     OutputData output = extCmd.exec(
-                        "/bin/bash", "-c", "ls", "-m", "--color=never", NVME_PORTS_PATH);
-//                        "ls -m --color=never " + subsystemDirectory + "/namespaces/"
+                        "/bin/bash", "-c",  "ls -m --color=never " + NVME_PORTS_PATH
+                    );
                     ExtCmdUtils.checkExitCode(
                         output,
                         StorageException::new,
