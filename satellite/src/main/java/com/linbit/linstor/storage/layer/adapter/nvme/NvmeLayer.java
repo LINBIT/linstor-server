@@ -76,6 +76,10 @@ public class NvmeLayer implements DeviceLayer
                 nvmeUtils.connect(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
             }
+            else
+            {
+                // ignored
+            }
         }
         // target
         else
@@ -86,11 +90,19 @@ public class NvmeLayer implements DeviceLayer
                 resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeRscData.setExists(false);
             }
-            else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+            else if (
+                !nvmeRscData.exists() &&
+                !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
+                !nvmeUtils.nvmeRscExists(nvmeRscData)
+            )
             {
                 resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeUtils.configureTarget(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
+            }
+            else
+            {
+                // ignored
             }
         }
     }
