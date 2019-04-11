@@ -11,6 +11,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
@@ -55,7 +56,7 @@ public class LayerDataFactory
     private final LuksLayerDatabaseDriver luksDbDriver;
     private final DrbdLayerDatabaseDriver drbdDbDriver;
     private final StorageLayerDatabaseDriver storageDbDriver;
-    private final ResourceLayerIdDatabaseDriver nvmeDbDriver;
+    private final NvmeLayerDatabaseDriver nvmeDbDriver;
     private final SwordfishLayerDatabaseDriver swordfishDbDriver;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
@@ -70,7 +71,7 @@ public class LayerDataFactory
         LuksLayerDatabaseDriver luksDbDriverRef,
         DrbdLayerDatabaseDriver drbdDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
-        ResourceLayerIdDatabaseDriver nvmeDbDriverRef,
+        NvmeLayerDatabaseDriver nvmeDbDriverRef,
         SwordfishLayerDatabaseDriver swordfishDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
@@ -303,7 +304,7 @@ public class LayerDataFactory
             transMgrProvider
         );
         resourceLayerIdDatabaseDriver.persist(nvmeRscData);
-        nvmeDbDriver.persist(nvmeRscData);
+        nvmeDbDriver.create(nvmeRscData);
         return nvmeRscData;
     }
 

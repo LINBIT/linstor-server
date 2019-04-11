@@ -8,6 +8,7 @@ import com.linbit.linstor.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.NodeConnectionDataGenericDbDriver;
 import com.linbit.linstor.NodeDataGenericDbDriver;
+import com.linbit.linstor.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.ResourceDataGenericDbDriver;
 import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
@@ -29,6 +30,7 @@ import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -85,5 +87,6 @@ public class ControllerDbModule extends AbstractModule
         bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
         bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
         bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
+        bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
     }
 }

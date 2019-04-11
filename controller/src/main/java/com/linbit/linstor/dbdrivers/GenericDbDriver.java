@@ -18,6 +18,7 @@ import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeConnectionDataGenericDbDriver;
 import com.linbit.linstor.NodeDataGenericDbDriver;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceConnectionDataGenericDbDriver;
@@ -132,6 +133,7 @@ public class GenericDbDriver implements DatabaseDriver
     private final DrbdLayerGenericDbDriver drbdLayerDriver;
     private final LuksLayerGenericDbDriver luksLayerDriver;
     private final StorageLayerGenericDbDriver storageLayerDriver;
+    private final NvmeLayerGenericDbDriver nvmeLayerDriver;
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -162,6 +164,7 @@ public class GenericDbDriver implements DatabaseDriver
         DrbdLayerGenericDbDriver drbdLayerDriverRef,
         LuksLayerGenericDbDriver luksLayerDriverRef,
         StorageLayerGenericDbDriver storageLayerDriverRef,
+        NvmeLayerGenericDbDriver nvmeLayerDriverRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
@@ -190,6 +193,7 @@ public class GenericDbDriver implements DatabaseDriver
         drbdLayerDriver = drbdLayerDriverRef;
         luksLayerDriver = luksLayerDriverRef;
         storageLayerDriver = storageLayerDriverRef;
+        nvmeLayerDriver = nvmeLayerDriverRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
@@ -505,6 +509,14 @@ public class GenericDbDriver implements DatabaseDriver
                         break;
                     case STORAGE:
                         rscLayerObjectPair = storageLayerDriver.load(
+                            rsc,
+                            rli.id,
+                            rli.rscSuffix,
+                            parent
+                        );
+                        break;
+                    case NVME:
+                        rscLayerObjectPair = nvmeLayerDriver.load(
                             rsc,
                             rli.id,
                             rli.rscSuffix,

@@ -6,7 +6,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.AbsRscData;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class NvmeRscData extends AbsRscData<NvmeVlmData> implements RscLayerObject
+public class NvmeRscData extends AbsRscData<NvmeVlmData>
 {
     private boolean exists = false;
     private boolean failed = false;
@@ -37,7 +37,7 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData> implements RscLayerObje
         Set<RscLayerObject> childrenRef,
         Map<VolumeNumber, NvmeVlmData> vlmLayerObjectsMapRef,
         String rscNameSuffixRef,
-        ResourceLayerIdDatabaseDriver dbDriverRef,
+        NvmeLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -48,7 +48,7 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData> implements RscLayerObje
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriverRef,
+            dbDriverRef.getIdDriver(),
             vlmLayerObjectsMapRef,
             transObjFactory,
             transMgrProvider
