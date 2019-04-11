@@ -813,24 +813,6 @@ public class CtrlLayerStackHelper
             VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
             if (!vlmLayerObjects.containsKey(vlmNr))
             {
-                byte[] masterKey = secObjs.getCryptKey();
-                if (masterKey == null || masterKey.length == 0)
-                {
-                    throw new ApiRcException(ApiCallRcImpl
-                        .entryBuilder(ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
-                            "Unable to create an encrypted volume definition without having a master key")
-                        .setCause("The masterkey was not initialized yet")
-                        .setCorrection("Create or enter the master passphrase")
-                        .build()
-                    );
-                }
-
-                String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
-                SymmetricKeyCipher cipher;
-                cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
-
-                byte[] encryptedVlmDfnKey = cipher.encrypt(vlmDfnKeyPlain.getBytes());
-
                 NvmeVlmData nvmeVlmData = layerDataFactory.createNvmeVlmData(vlm, nvmeRscData);
                 vlmLayerObjects.put(vlmNr, nvmeVlmData);
             }
