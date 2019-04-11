@@ -14,6 +14,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -65,19 +66,28 @@ public class CtrlStorPoolListApiCallHandler
         List<String> storPoolNames
     )
     {
-        final Set<StorPoolName> storPoolsFilter =
-            storPoolNames.stream().map(LinstorParsingUtils::asStorPoolName).collect(Collectors.toSet());
-        final Set<NodeName> nodesFilter =
-            nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
+        Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> flux;
+        try
+        {
+            final Set<StorPoolName> storPoolsFilter =
+                storPoolNames.stream().map(LinstorParsingUtils::asStorPoolName).collect(Collectors.toSet());
+            final Set<NodeName> nodesFilter =
+                nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
 
-        return freeCapacityFetcher.fetchThinFreeSpaceInfo(nodesFilter)
-            .flatMapMany(freeCapacityAnswers ->
-                scopeRunner.fluxInTransactionlessScope(
-                    "Assemble storage pool list",
-                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.STOR_POOL_DFN_MAP),
-                    () -> assembleList(nodesFilter, storPoolsFilter, freeCapacityAnswers)
-                )
-            );
+            flux = freeCapacityFetcher.fetchThinFreeSpaceInfo(nodesFilter)
+                .flatMapMany(freeCapacityAnswers ->
+                    scopeRunner.fluxInTransactionlessScope(
+                        "Assemble storage pool list",
+                        lockGuardFactory.buildDeferred(LockType.READ, LockObj.STOR_POOL_DFN_MAP),
+                        () -> assembleList(nodesFilter, storPoolsFilter, freeCapacityAnswers)
+                    )
+                );
+        }
+        catch (ApiRcException exc)
+        {
+            flux = Flux.just(new ApiCallRcWith<>(exc.getApiCallRc(), new ArrayList<>()));
+        }
+        return flux;
     }
 
     private Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> assembleList(
