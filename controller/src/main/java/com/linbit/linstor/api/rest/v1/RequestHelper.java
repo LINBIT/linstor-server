@@ -1,7 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.annotation.PeerContext;
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
@@ -27,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Key;
+import com.linbit.linstor.annotation.PublicContext;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
@@ -35,20 +35,20 @@ public class RequestHelper
 {
     protected final ErrorReporter errorReporter;
     private final LinStorScope apiCallScope;
-    private final AccessContext systemContext;
+    private final AccessContext publicContext;
     private final TransactionMgrGenerator transactionMgrGenerator;
 
     @Inject
     public RequestHelper(
             ErrorReporter errorReporterRef,
             LinStorScope apiCallScopeRef,
-            @SystemContext AccessContext accessContextRef,
+            @PublicContext AccessContext accessContextRef,
             TransactionMgrGenerator transactionMgrGeneratorRef
         )
     {
         errorReporter = errorReporterRef;
         apiCallScope = apiCallScopeRef;
-        systemContext = accessContextRef;
+        publicContext = accessContextRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
     }
 
@@ -59,7 +59,7 @@ public class RequestHelper
         errorReporter.logDebug("REST access api '%s' from '%s'", apiCall, request.getRemoteAddr());
         return  Context.of(
             ApiModule.API_CALL_NAME, apiCall,
-            AccessContext.class, systemContext,
+            AccessContext.class, publicContext,
             Peer.class, new PeerREST(request.getRemoteAddr())
         );
     }
