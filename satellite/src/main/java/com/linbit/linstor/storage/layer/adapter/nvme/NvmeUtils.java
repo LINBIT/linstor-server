@@ -9,6 +9,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.api.ApiConsts;
@@ -22,20 +23,25 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 
 import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.PATTERN_NQN;
+import static com.linbit.linstor.api.ApiConsts.KEY_PREF_NIC;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 
+/**
+ * @author Rainer Laschober
+ *
+ * Class for processing NvmeRscData.
+ * {@link this.configureTarget}
+ */
 @Singleton
 public class NvmeUtils
 {
@@ -43,8 +49,10 @@ public class NvmeUtils
     private static final String NVMET_PATH = "/sys/kernel/config/nvmet";
     private static final String NVME_SUBSYSTEMS_PATH = NVMET_PATH + "/subsystems/";
     private static final String NVME_PORTS_PATH = NVMET_PATH + "/ports/";
+    private static final String NVME_FABRICS_PATH = "/sys/devices/virtual/nvme-fabrics/ctl/nvme";
 
     private static final int IANA_DEFAULT_PORT = 4420;
+    private static final int NVME_IDX_MAX_DIGITS = 5;
 
     private final ExtCmdFactory extCmdFactory;
     private final Props stltProps;
@@ -56,8 +64,16 @@ public class NvmeUtils
         stltProps = stltPropsRef;
     }
 
+
     /* compute methods */
 
+    /**
+     * Creates the necessary directories and files for the NVMe subsystem and namespaces
+     * depending on the {@link NvmeRscData} and {@link NvmeVlmData}.
+     *
+     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
+     * @param accCtx        AccessContext needed to access properties and the IP address
+     */
     public void configureTarget(NvmeRscData nvmeRscData, AccessContext accCtx)
         throws StorageException
     {
@@ -76,7 +92,7 @@ public class NvmeUtils
             for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
             {
                 final Path namespacePath = Paths.get(
-                    subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().value + 1)
+                    subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().getValue() + 1)
                 );
 
                 // create nvmet-rdma subsystem
@@ -172,6 +188,12 @@ public class NvmeUtils
         }
     }
 
+    /**
+     * Reverses the operations executed by configureTarget(), thus deleting the data on the NVMe Target
+     *
+     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
+     * @param accCtx        AccessContext needed to access properties and the IP address
+     */
     public void cleanUpTarget(NvmeRscData nvmeRscData, AccessContext accCtx)
         throws StorageException
     {
@@ -183,7 +205,7 @@ public class NvmeUtils
         {
             for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
             {
-                final int namespaceNr = nvmeVlmData.getVlmNr().value + 1;
+                final int namespaceNr = nvmeVlmData.getVlmNr().getValue() + 1;
                 final Path namespacePath = Paths.get(
                     subsystemDirectory + "/namespaces/" + namespaceNr
                 );
@@ -236,6 +258,12 @@ public class NvmeUtils
         }
     }
 
+    /**
+     * Connects the NVMe Initiator to the Target after discovering available subsystems, given the subsystem name
+     *
+     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
+     * @param accCtx        AccessContext needed to access properties and Target resource
+     */
     public void connect(NvmeRscData nvmeRscData, AccessContext accCtx)
         throws StorageException
     {
@@ -267,7 +295,7 @@ public class NvmeUtils
                 accCtx
             ).getAddress();
 
-            List<String> subsystemNames = discover(transportType, ipAddr, port);
+            List<String> subsystemNames = discover(transportType, ipAddr, port, extCmd);
             if (!subsystemNames.contains(subsystemName))
             {
                 throw new StorageException("Failed to discover subsystem name \'" + subsystemName + "\'!");
@@ -297,6 +325,11 @@ public class NvmeUtils
         }
     }
 
+    /**
+     * Disconnects the NVMe Initiator from the Target, given the subsystem name
+     *
+     * @param nvmeRscData NvmeRscData object containing all needed information for this method
+     */
     public void disconnect(NvmeRscData nvmeRscData) throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
@@ -306,36 +339,7 @@ public class NvmeUtils
             OutputData output = extCmd.exec(
                 "nvme", "disconnect", "-n", NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName()
             );
-
-            if (output.exitCode != 0)
-            {
-                String devicePath;
-                output = extCmd.exec(
-                    "/bin/bash",
-                    "-c",
-                    "grep -H --color=never " + nvmeRscData.getResourceName() +
-                        " /sys/devices/virtual/nvme-fabrics/ctl/nvme*/subsysnqn"
-                );
-                if (output.exitCode == 0)
-                {
-                    String outString = new String(output.stdoutData);
-                    Matcher matcher = PATTERN_NQN.matcher(outString); // TODO: change
-                    if (matcher.find())
-                    {
-                        devicePath = "/dev/nvme" + matcher.group(1) + "n1"; // TODO: change namespace index?
-                    }
-                }
-                else
-                {
-                    throw new StorageException("Failed to disconnect from NVMe target!");
-                }
-
-                output = extCmd.exec("nvme", "disconnect", "-d", devicePath);
-                ExtCmdUtils.checkExitCode(
-                    output, StorageException::new, "Failed to disconnect from NVMe target!"
-                );
-
-            }
+            ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to disconnect from NVMe target!");
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
@@ -343,17 +347,101 @@ public class NvmeUtils
         }
     }
 
-    public boolean nvmeRscExists(NvmeRscData nvmeRscData)
+    /**
+     * Checks whether the specified subsystem directory exists
+     *
+     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
+     * @return              boolean true if the subsystem directory exists and false otherwise
+     */
+    public boolean isTargetConfigured(NvmeRscData nvmeRscData)
     {
         return Files.exists(Paths.get(NVME_SUBSYSTEMS_PATH).resolve(nvmeRscData.getResourceName().getDisplayName()));
     }
 
-    /* helper methods */
-
-    private List<String> discover(String transportType, String ipAddr, String port)
+    /**
+     * Queries NVMe-specific indices for the {@link NvmeRscData} and {@link NvmeVlmData}
+     * and stores the as the device path
+     *
+     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
+     * @return              boolean true if the data was found and false otherwise
+     */
+    public boolean setDevicePaths(NvmeRscData nvmeRscData)
         throws StorageException
     {
+        boolean success = true;
         final ExtCmd extCmd = extCmdFactory.create();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+
+        try
+        {
+            OutputData output = extCmd.exec(
+                "/bin/bash",
+                "-c",
+                " grep -H -r " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
+            );
+            if (output.exitCode != 0)
+            {
+                success = false;
+            }
+            else
+            {
+                final int nvmeRscIdx = Integer.parseInt(
+                    (new String(output.stdoutData))
+                        .substring(NVME_FABRICS_PATH.length(), NVME_FABRICS_PATH.length() + NVME_IDX_MAX_DIGITS)
+                        .split(File.separator)[0]
+                );
+
+                for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                {
+                    output = extCmd.exec(
+                        "/bin/bash",
+                        "-c",
+                        " grep -H -r " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
+                            NVME_FABRICS_PATH + nvmeRscIdx + "/nvme" + nvmeRscIdx + "c*n*/nsid"
+                    );
+
+                    if (output.exitCode != 0)
+                    {
+                        success = false;
+                    }
+                    else
+                    {
+                        String fabricsPathRsc = NVME_FABRICS_PATH + nvmeRscIdx + "/nvme" + nvmeRscIdx + "c*n";
+
+                        final int nvmeVlmIdx = Integer.parseInt(
+                            (new String(output.stdoutData))
+                                .substring(fabricsPathRsc.length(), fabricsPathRsc.length() + NVME_IDX_MAX_DIGITS)
+                                .split(File.separator)[0]
+                        );
+
+                        nvmeVlmData.setDevicePath("/dev/nvme" + nvmeRscIdx + "n" + nvmeVlmIdx);
+                    }
+                }
+            }
+        }
+        catch (IOException | ChildProcessTimeoutException exc)
+        {
+            throw new StorageException("Failed to set NVMe device path!", exc);
+        }
+
+        return success;
+    }
+
+
+    /* helper methods */
+
+    /**
+     * Executes the nvme-discover command and reads the names of available subsystems from the output
+     *
+     * @param transportType String, only RDMA featured at the moment
+     * @param ipAddr        String, can be IPv4 or IPv6
+     * @param port          String, default: 4420
+     * @param extCmd        ExtCmd for executing commands
+     * @return              List<String> of discovered subsystem names
+     */
+    private List<String> discover(String transportType, String ipAddr, String port, ExtCmd extCmd)
+        throws StorageException
+    {
         List<String> subsystemNames = new ArrayList<>();
 
         try
@@ -386,34 +474,56 @@ public class NvmeUtils
         return subsystemNames;
     }
 
+    /**
+     * Queries the net interface of the resource for its IP address.
+     * If no preferred net interface is configured, the default is assigned
+     *
+     * @param rsc       Resource object containing all needed information for this method
+     * @param accCtx    AccessContext needed to access properties and the net interface
+     * @return          {@link LsIpAddress} of the resource's net interface
+     */
     private LsIpAddress getIpAddr(Resource rsc, AccessContext accCtx)
-        throws InvalidNameException, AccessDeniedException, InvalidKeyException
+        throws StorageException, InvalidNameException, AccessDeniedException, InvalidKeyException
     {
-        String netIfName = rsc.getProps(accCtx).getProp(KEY_RSC_PREF_NIC); // TODO: create prop and whitelist prop
+        String netIfName = rsc.getProps(accCtx).getProp(KEY_PREF_NIC);
 
         if (netIfName == null)
         {
             netIfName = DEFAULT_NETIF;
         }
+        else
+        {
+            Node rscNode = rsc.getAssignedNode();
+            if (rscNode.getNetInterface(accCtx, new NetInterfaceName(netIfName)) == null)
+            {
+                throw new StorageException(
+                    "The network interface '" + netIfName + "' of node '" + rscNode.getName() + "' does not exist!"
+                ); // TODO: call checkPrefNic() when rsc.getAssignedNode().getNetInterface(accCtx, new NetInterfaceName(netIfName)) is called
+            }
+        }
 
-        return rsc
-            .getAssignedNode()
-            .getNetInterface(accCtx, new NetInterfaceName(netIfName))
-            .getAddress(accCtx);
+        return rsc.getAssignedNode().getNetInterface(accCtx, new NetInterfaceName(netIfName)).getAddress(accCtx);
     }
 
+    /**
+     * Retrieves the NVMe-intern port directory index
+     *
+     * @param ipAddr    LsIpAddress, can be IPv4 or IPv6
+     * @param extCmd    ExtCmd for executing commands
+     * @return          String port index
+     */
     private String getPortIdx(LsIpAddress ipAddr, ExtCmd extCmd)
         throws StorageException, IOException, ChildProcessTimeoutException
     {
         OutputData output = extCmd.exec(
-            "/bin/bash", "-c", "cd " + NVME_PORTS_PATH + "; grep -r -H --color=never " + ipAddr.getAddress()
+            "/bin/bash", "-c", "grep -r -H --color=never " + ipAddr.getAddress() + " " + NVME_PORTS_PATH
         );
 
         String portIdx;
         if (output.exitCode == 0)
         {
             String grepPortIdx = new String(output.stdoutData);
-            portIdx = grepPortIdx.substring(0, grepPortIdx.indexOf(System.getProperty("file.separator")));
+            portIdx = grepPortIdx.substring(0, grepPortIdx.indexOf(File.separator));
         }
         else if (output.exitCode == 1)
         {

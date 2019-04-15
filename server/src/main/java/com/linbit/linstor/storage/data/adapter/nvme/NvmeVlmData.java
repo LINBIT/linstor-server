@@ -172,14 +172,14 @@ public class NvmeVlmData extends BaseTransactionObject implements NvmeVlmObject
     @Override
     public String getIdentifier()
     {
-        return rscData.getSuffixedResourceName() + "/" + getVlmNr().value;
+        return rscData.getSuffixedResourceName() + "/" + getVlmNr().getValue();
     }
 
     @Override
     public NvmeVlmPojo asPojo(AccessContext accCtxRef)
     {
         return new NvmeVlmPojo(
-            getVlmNr().value,
+            getVlmNr().getValue(),
             devicePath,
             getBackingDevice(),
             allocatedSize,

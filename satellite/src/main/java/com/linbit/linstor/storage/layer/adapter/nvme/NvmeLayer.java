@@ -25,6 +25,11 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
 
+/**
+ * @author Rainer Laschober
+ *
+ * @since v0.9.6
+ */
 @Singleton
 public class NvmeLayer implements DeviceLayer
 {
@@ -57,6 +62,16 @@ public class NvmeLayer implements DeviceLayer
         // no-op
     }
 
+    /**
+     * Connects/disconnects an NVMe Target or creates/deletes its data.
+     *
+     * @param rscData   RscLayerObject object to processed.
+     *                  If diskless, rscData is an NVMe Initiator and a Target otherwise.
+     *                  Depending on its {@link RscFlags} the operation executed on the Initiator/Target is either
+     *                  connect/configure or disconnect/delete.
+     * @param snapshots Collection<Snapshot> to be processed, passed on to {@link DeviceHandler}
+     * @param apiCallRc ApiCallRcImpl responses, passed on to {@link DeviceHandler}
+     */
     @Override
     public void process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
@@ -66,15 +81,25 @@ public class NvmeLayer implements DeviceLayer
         // initiator
         if (nvmeRscData.isDiskless(sysCtx))
         {
-            if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+            boolean isConnected = nvmeUtils.setDevicePaths(nvmeRscData);
+
+            // disconnect
+            if (nvmeRscData.exists() &&
+                nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
+                isConnected) // TODO: delete target before
             {
                 nvmeUtils.disconnect(nvmeRscData);
                 nvmeRscData.setExists(false);
             }
-            else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+            // connect
+            else if (
+                !nvmeRscData.exists() &&
+                !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
+                !isConnected) // TODO: create target before
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
+                nvmeUtils.setDevicePaths(nvmeRscData);
             }
             else
             {
@@ -84,17 +109,20 @@ public class NvmeLayer implements DeviceLayer
         // target
         else
         {
-            if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+            // delete target data
+            if (nvmeRscData.exists() &&
+                nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
+                nvmeUtils.isTargetConfigured(nvmeRscData))
             {
                 nvmeUtils.cleanUpTarget(nvmeRscData, sysCtx);
                 resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeRscData.setExists(false);
             }
+            // create target data
             else if (
                 !nvmeRscData.exists() &&
                 !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                !nvmeUtils.nvmeRscExists(nvmeRscData)
-            )
+                !nvmeUtils.isTargetConfigured(nvmeRscData))
             {
                 resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeUtils.configureTarget(nvmeRscData, sysCtx);
