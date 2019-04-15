@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceConnectionData;
@@ -51,7 +52,7 @@ class CtrlRscConnectionHelper
         String rscNameStr
     )
     {
-        ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr);
+        ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr, false);
         if (rscConn == null)
         {
             rscConn = createRscConn(nodeName1, nodeName2, rscNameStr, null);
@@ -116,17 +117,18 @@ class CtrlRscConnectionHelper
     }
 
     public ResourceConnectionData loadRscConn(
-        String nodeName1,
-        String nodeName2,
-        String rscNameStr
+        String nodeName1Str,
+        String nodeName2Str,
+        String rscNameStr,
+        boolean failIfNull
     )
     {
-        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
-        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
+        NodeName nodeName1 = LinstorParsingUtils.asNodeName(nodeName1Str);
+        NodeName nodeName2 = LinstorParsingUtils.asNodeName(nodeName2Str);
 
-        Resource rsc1 = ctrlApiDataLoader.loadRsc(node1.getName(), rscName, false);
-        Resource rsc2 = ctrlApiDataLoader.loadRsc(node2.getName(), rscName, false);
+        Resource rsc1 = ctrlApiDataLoader.loadRsc(nodeName1, rscName, true);
+        Resource rsc2 = ctrlApiDataLoader.loadRsc(nodeName2, rscName, true);
 
         ResourceConnectionData rscConn;
         try
@@ -136,12 +138,26 @@ class CtrlRscConnectionHelper
                 rsc1,
                 rsc2
             );
+
+            if (failIfNull && rscConn == null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_FOUND_RSC_CONN,
+                        String.format("Resource connection between node '%s' and '%s' not found for resource '%s'.",
+                            nodeName1Str,
+                            nodeName2Str,
+                            rscNameStr
+                        )
+                    )
+                );
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "load " + getResourceConnectionDescriptionInline(nodeName1, nodeName2, rscNameStr),
+                "load " + getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }

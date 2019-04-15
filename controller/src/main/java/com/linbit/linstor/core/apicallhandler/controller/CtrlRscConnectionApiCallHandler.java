@@ -222,7 +222,7 @@ class CtrlRscConnectionApiCallHandler
         try
         {
             ResourceConnectionData rscConn =
-                ctrlRscConnectionHelper.loadRscConn(nodeName1Str, nodeName2Str, rscNameStr);
+                ctrlRscConnectionHelper.loadRscConn(nodeName1Str, nodeName2Str, rscNameStr, true);
             UUID rscConnUuid = rscConn.getUuid();
             delete(rscConn);
 
