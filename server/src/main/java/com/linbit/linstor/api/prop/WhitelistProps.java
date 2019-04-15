@@ -82,6 +82,16 @@ public class WhitelistProps
         }
     }
 
+    private Property createHandler(final String name)
+    {
+        return new PropertyBuilder()
+            .name(name)
+            .keyStr("DrbdOptions/Handlers/" + name)
+            .internal("True")
+            .type("string")
+            .build();
+    }
+
     public void overrideProperties()
     {
         // fix entry for resync-after, it is defined as range by drbdsetup-utils
@@ -94,6 +104,28 @@ public class WhitelistProps
                     )
                 )
         );
+
+        // add drbd handlers
+        List<String> handlers = Arrays.asList(
+            "after-resync-target",
+            "before-resync-target",
+            "before-resync-source",
+            "out-of-sync",
+            "quorum-lost",
+            "fence-peer",
+            "unfence-peer",
+            "initial-split-brain",
+            "local-io-error",
+            "pri-lost",
+            "pri-lost-after-sb",
+            "pri-on-incon-degr",
+            "split-brain"
+        );
+        Map<String, Property> ctrlProps = rules.get(LinStorObject.CONTROLLER);
+        for (String handler : handlers)
+        {
+            ctrlProps.put("DrbdOptions/Handlers/" + handler, createHandler(handler));
+        }
     }
 
     public void appendRules(
