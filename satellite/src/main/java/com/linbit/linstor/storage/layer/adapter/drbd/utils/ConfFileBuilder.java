@@ -133,7 +133,8 @@ public class ConfFileBuilder
                     appendDrbdOptions(
                         LinStorObject.RESOURCE_DEFINITION,
                         rscDfn.getProps(accCtx),
-                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS
+                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
+                        true
                     );
                 }
             }
@@ -510,7 +511,8 @@ public class ConfFileBuilder
                     appendDrbdOptions(
                         LinStorObject.CONTROLLER,
                         satelliteProps,
-                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS
+                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
+                        true
                     );
                 }
             }
@@ -668,6 +670,16 @@ public class ConfFileBuilder
         final String namespace
     )
     {
+        appendDrbdOptions(lsObj, props, namespace, false);
+    }
+
+    private void appendDrbdOptions(
+        final LinStorObject lsObj,
+        final Props props,
+        final String namespace,
+        boolean quote
+    )
+    {
         Map<String, String> drbdProps = props.getNamespace(namespace)
             .map(Props::map).orElse(new HashMap<>());
 
@@ -677,7 +689,9 @@ public class ConfFileBuilder
             String value = entry.getValue();
             if (checkValidDrbdOption(lsObj, key, value))
             {
-                appendLine("%s %s;",
+                String sFormat = quote ? "%s \"%s\";" : "%s %s;";
+                appendLine(
+                    sFormat,
                     key.substring(namespace.length() + 1),
                     value
                 );
