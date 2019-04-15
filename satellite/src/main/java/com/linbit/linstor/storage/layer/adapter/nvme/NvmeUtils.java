@@ -37,10 +37,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Rainer Laschober
+ * Class for processing NvmeRscData
  *
- * Class for processing NvmeRscData.
- * {@link this.configureTarget}
+ * @author Rainer Laschober
  */
 @Singleton
 public class NvmeUtils
@@ -78,7 +77,7 @@ public class NvmeUtils
         throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName();
         final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
         final Path subsystemPath = Paths.get(subsystemDirectory);
 
@@ -198,7 +197,7 @@ public class NvmeUtils
         throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName();
         final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
 
         try
@@ -268,7 +267,7 @@ public class NvmeUtils
         throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName();
 
         try
         {
@@ -337,7 +336,8 @@ public class NvmeUtils
         try
         {
             OutputData output = extCmd.exec(
-                "nvme", "disconnect", "-n", NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName()
+                "nvme", "disconnect", "-n",
+                NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName()
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to disconnect from NVMe target!");
         }
@@ -355,7 +355,9 @@ public class NvmeUtils
      */
     public boolean isTargetConfigured(NvmeRscData nvmeRscData)
     {
-        return Files.exists(Paths.get(NVME_SUBSYSTEMS_PATH).resolve(nvmeRscData.getResourceName().getDisplayName()));
+        return Files.exists(Paths.get(NVME_SUBSYSTEMS_PATH).resolve(
+            NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName())
+        );
     }
 
     /**
@@ -370,13 +372,12 @@ public class NvmeUtils
     {
         boolean success = true;
         final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName();
 
         try
         {
             OutputData output = extCmd.exec(
-                "/bin/bash",
-                "-c",
+                "/bin/bash", "-c",
                 " grep -H -r " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
             );
             if (output.exitCode != 0)
@@ -394,8 +395,7 @@ public class NvmeUtils
                 for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
                 {
                     output = extCmd.exec(
-                        "/bin/bash",
-                        "-c",
+                        "/bin/bash", "-c",
                         " grep -H -r " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
                             NVME_FABRICS_PATH + nvmeRscIdx + "/nvme" + nvmeRscIdx + "c*n*/nsid"
                     );
@@ -475,8 +475,8 @@ public class NvmeUtils
     }
 
     /**
-     * Queries the net interface of the resource for its IP address.
-     * If no preferred net interface is configured, the default is assigned
+     * Queries the resource's net interface for its IP address.
+     * If no preferred net interface is configured, the default net interface is assigned
      *
      * @param rsc       Resource object containing all needed information for this method
      * @param accCtx    AccessContext needed to access properties and the net interface

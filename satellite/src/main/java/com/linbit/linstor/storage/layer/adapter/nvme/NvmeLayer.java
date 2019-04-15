@@ -84,9 +84,12 @@ public class NvmeLayer implements DeviceLayer
             boolean isConnected = nvmeUtils.setDevicePaths(nvmeRscData);
 
             // disconnect
-            if (nvmeRscData.exists() &&
+            if (
+                nvmeRscData.exists() &&
                 nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                isConnected) // TODO: delete target before
+                isConnected &&
+                !nvmeUtils.isTargetConfigured(nvmeRscData) // TODO: this is bullshit?
+            )
             {
                 nvmeUtils.disconnect(nvmeRscData);
                 nvmeRscData.setExists(false);
@@ -95,7 +98,9 @@ public class NvmeLayer implements DeviceLayer
             else if (
                 !nvmeRscData.exists() &&
                 !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                !isConnected) // TODO: create target before
+                !isConnected &&
+                nvmeUtils.isTargetConfigured(nvmeRscData)
+            )
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
