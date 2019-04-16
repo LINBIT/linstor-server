@@ -323,6 +323,8 @@ class StltRscApiCallHandler
                     );
                     otherRscs.add(remoteRsc);
 
+                    layerRscDataMerger.restoreLayerData(remoteRsc, otherRscRaw.getRscLayerDataPojo());
+
                     createdRscSet.add(new Resource.Key(remoteRsc));
                 }
             }
@@ -520,6 +522,9 @@ class StltRscApiCallHandler
 
                         updatedRscSet.add(new Resource.Key(remoteRsc));
                     }
+
+                    layerRscDataMerger.restoreLayerData(remoteRsc, otherRsc.getRscLayerDataPojo());
+
                     if (remoteRsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DELETE))
                     {
                         // remote resources do not go through the device manager, which means
@@ -624,26 +629,6 @@ class StltRscApiCallHandler
             layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getLayerData());
 
             cryptHelper.decryptAllNewLuksVlmKeys(false);
-
-            for (Resource otherRsc : otherRscs)
-            {
-                OtherRscPojo otherRscPojo = null;
-                for (OtherRscPojo tmp : rscRawData.getOtherRscList())
-                {
-                    if (otherRsc.getAssignedNode().getName().value.equals(
-                        tmp.getNodeName().toUpperCase()
-                    ))
-                    {
-                        otherRscPojo = tmp;
-                        break;
-                    }
-                }
-                if (otherRscPojo == null)
-                {
-                    throw new ImplementationError("No rscPojo found for remote resource " + otherRsc);
-                }
-                layerRscDataMerger.restoreLayerData(otherRsc, otherRscPojo.getRscLayerDataPojo());
-            }
 
             transMgrProvider.get().commit();
 
