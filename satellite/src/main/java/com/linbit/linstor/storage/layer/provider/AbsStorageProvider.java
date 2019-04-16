@@ -227,14 +227,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 {
                     errorReporter.logTrace("Lv %s should be deleted but does not exist; no-op", lvId);
 
-
-                    String storageName = getStorageName(vlmData);
-                    addPostRunNotification(
-                        storageName,
-                        vlmData.getVolume().getStorPool(storDriverAccCtx),
-                        freeSpaces -> notificationListenerProvider.get()
-                            .notifyVolumeDeleted(vlmData.getVolume(), freeSpaces.get(storageName))
-                    );
+                    notificationListenerProvider.get().notifyVolumeDeleted(vlmData.getVolume());
                 }
             }
         }
@@ -391,18 +384,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             {
                 addDeletedMsg(vlmData, apiCallRc);
 
-                String storageName = getStorageName(vlmData);
-                addPostRunNotification(
-                    storageName,
-                    vlmData.getVolume().getStorPool(storDriverAccCtx),
-                    freeSpaces ->
-                    {
-                        notificationListenerProvider.get().notifyVolumeDeleted(
-                            vlmData.getVolume(),
-                            freeSpaces.get(storageName)
-                        );
-                    }
-                );
+                notificationListenerProvider.get().notifyVolumeDeleted(vlmData.getVolume());
             }
         }
     }

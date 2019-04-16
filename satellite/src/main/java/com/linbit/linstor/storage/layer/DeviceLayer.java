@@ -3,10 +3,12 @@ package com.linbit.linstor.storage.layer;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -17,6 +19,7 @@ import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 public interface DeviceLayer
@@ -71,8 +74,10 @@ public interface DeviceLayer
 
         void notifyResourceDeleted(Resource rsc);
 
-        void notifyVolumeDeleted(Volume vlm, long freeSpace);
+        void notifyVolumeDeleted(Volume vlm);
 
         void notifySnapshotDeleted(Snapshot snapshot);
+
+        void notifyFreeSpacesChanged(Map<StorPool, SpaceInfo> spaceInfoMapRef);
     }
 }

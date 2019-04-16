@@ -1214,7 +1214,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     @Override
-    public void notifyVolumeDeleted(Volume vlm, long freeSpace)
+    public void notifyVolumeDeleted(Volume vlm)
     {
         // Remember the volume for removal after the DeviceHandler instances have finished
         synchronized (sched)
@@ -1230,6 +1230,23 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         synchronized (sched)
         {
             deletedSnapshotSet.add(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()));
+        }
+    }
+
+    @Override
+    public void notifyFreeSpacesChanged(Map<StorPool, SpaceInfo> spaceInfoMap)
+    {
+        // Send update notification to the controller
+
+        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+        if (ctrlPeer != null)
+        {
+            ctrlPeer.sendMessage(
+                interComSerializer
+                    .onewayBuilder(InternalApiConsts.API_UPDATE_FREE_CAPACITY)
+                    .updateFreeCapacities(spaceInfoMap)
+                    .build()
+            );
         }
     }
 

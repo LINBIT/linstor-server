@@ -135,6 +135,8 @@ public class DeviceHandlerImpl implements DeviceHandler
 
             notifyResourcesApplied(rscListNotifyApplied);
 
+            updateChangedFreeSpaces();
+
             clearLayerCaches(rscByLayer);
         }
     }
@@ -680,6 +682,33 @@ public class DeviceHandlerImpl implements DeviceHandler
         layerFactory.streamDeviceHandlers().forEach(
             rscLayer ->
                 rscLayer.setLocalNodeProps(localNodeProps));
+    }
+
+    private void updateChangedFreeSpaces()
+    {
+        Map<StorPool, SpaceInfo> freeSpaces = new TreeMap<>();
+        for (StorPool storPool : storageLayer.getChangedStorPools())
+        {
+            try
+            {
+                freeSpaces.put(
+                    storPool,
+                    new SpaceInfo(
+                        storageLayer.getCapacity(storPool),
+                        storageLayer.getFreeSpace(storPool)
+                    )
+                );
+            }
+            catch (StorageException exc)
+            {
+                errorReporter.logError("Failed to query freespace or capacity of storPool " + storPool.getName());
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+        notificationListener.get().notifyFreeSpacesChanged(freeSpaces);
     }
 
     public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException

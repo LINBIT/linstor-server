@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -108,6 +109,17 @@ public class StorageLayer implements DeviceLayer
         {
             deviceProvider.clearCache();
         }
+
+    }
+
+    public Set<StorPool> getChangedStorPools()
+    {
+        Set<StorPool> changedStorPools = new TreeSet<>();
+        for (DeviceProvider deviceProvider : deviceProviderMapper.getDriverList())
+        {
+            changedStorPools.addAll(deviceProvider.getChangedStorPools());
+        }
+        return changedStorPools;
     }
 
     @Override
