@@ -91,8 +91,7 @@ public class NvmeLayer implements DeviceLayer
             if (
                 nvmeRscData.exists() &&
                 nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                isConnected &&
-                nvmeUtils.isTargetConfigured(nvmeRscData) // TODO: this is bullshit?
+                isConnected
             )
             {
                 nvmeUtils.disconnect(nvmeRscData);
@@ -102,8 +101,7 @@ public class NvmeLayer implements DeviceLayer
             else if (
                 !nvmeRscData.exists() &&
                 !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                !isConnected &&
-                !nvmeUtils.isTargetConfigured(nvmeRscData)
+                !isConnected
             )
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);

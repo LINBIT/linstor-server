@@ -124,16 +124,22 @@ public class CtrlRscApiCallHandler
 
             Props props = ctrlPropsHelper.getProps(rsc);
 
-            ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespacesRef);
-
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
-                    apiCtx,
-                    rsc.getAssignedNode(),
-                    overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
-                    ApiConsts.MASK_RSC
+                apiCtx,
+                rsc.getAssignedNode(),
+                overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+                ApiConsts.MASK_RSC
             );
+            ctrlPropsHelper.checkPrefNic(
+                apiCtx,
+                rsc.getAssignedNode(),
+                overrideProps.get(ApiConsts.NAMESPC_NVME + "/" + ApiConsts.KEY_PREF_NIC),
+                ApiConsts.MASK_RSC
+            );
+
+            ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
+            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespacesRef);
 
             ctrlTransactionHelper.commit();
 

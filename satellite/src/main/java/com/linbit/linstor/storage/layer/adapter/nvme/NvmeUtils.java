@@ -84,7 +84,7 @@ public class NvmeUtils
         throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName();
         final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
         final Path subsystemPath = Paths.get(subsystemDirectory);
 
@@ -97,18 +97,17 @@ public class NvmeUtils
                 stltProps
             );
 
+            // create nvmet-rdma subsystem
+            Files.createDirectories(subsystemPath);
+
+            // allow any host to be connected
+            Files.write(subsystemPath.resolve("attr_allow_any_host"), "1".getBytes());
+
             for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
             {
                 final Path namespacePath = Paths.get(
                     subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().getValue() + 1)
                 );
-
-                // create nvmet-rdma subsystem
-                Files.createDirectories(subsystemPath);
-
-                // allow any host to be connected
-                Files.write(subsystemPath.resolve("attr_allow_any_host"), "1".getBytes());
-
                 // create namespace
                 Files.createDirectories(namespacePath);
 
@@ -116,75 +115,74 @@ public class NvmeUtils
                 Files.write(namespacePath.resolve("device_path"), nvmeVlmData.getBackingDevice().getBytes());
 
                 Files.write(namespacePath.resolve("enable"), "1".getBytes());
+            }
 
-                // get port directory or create it if the first subsystem is being added
-                LsIpAddress ipAddr = getIpAddr(nvmeRscData.getResource(), accCtx);
-                String portIdx = getPortIdx(ipAddr, extCmd);
+            // get port directory or create it if the first subsystem is being added
+            LsIpAddress ipAddr = getIpAddr(nvmeRscData.getResource(), accCtx);
+            String portIdx = getPortIdx(ipAddr, extCmd);
 
-                if (portIdx == null)
+            if (portIdx == null)
+            {
+                // get existing port directories and compute next available index
+                OutputData output = extCmd.exec(
+                    "/bin/bash", "-c",  "ls -m --color=never " + NVME_PORTS_PATH
+                );
+                ExtCmdUtils.checkExitCode(
+                    output,
+                    StorageException::new,
+                    "Failed to list files!"
+                );
+                String outputStr = new String(output.stdoutData);
+                if (outputStr.trim().isEmpty())
                 {
-                    // get existing port directories and compute next available index
-                    OutputData output = extCmd.exec(
-                        "/bin/bash", "-c",  "ls -m --color=never " + NVME_PORTS_PATH
-                    );
-                    ExtCmdUtils.checkExitCode(
-                        output,
-                        StorageException::new,
-                        "Failed to list files!"
-                    );
-                    String outputStr = new String(output.stdoutData);
-                    if (outputStr.trim().isEmpty())
-                    {
-                        portIdx = "1";
-                    }
-                    else
-                    {
-                        String[] portDirs = outputStr.split(", ");
-                        portIdx = Integer.toString(
-                            Integer.parseInt(portDirs[portDirs.length - 1].trim()) + 1
-                        );
-                    }
-
-                    Path portsPath = Paths.get(NVME_PORTS_PATH + portIdx);
-                    Files.createDirectories(portsPath);
-                    Files.write(
-                        portsPath.resolve("addr_traddr"), ipAddr.getAddress().getBytes()
-                    );
-
-                    // set the transport type and port
-                    String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE);
-                    if (transportType == null)
-                    {
-                        transportType = "rdma";
-                    }
-                    Files.write(portsPath.resolve("addr_trtype"), transportType.getBytes());
-
-                    String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT);
-                    if (port == null)
-                    {
-                        port = Integer.toString(IANA_DEFAULT_PORT);
-                    }
-                    Files.write(portsPath.resolve("addr_trsvcid"), port.getBytes());
-
-                    // set the address family of the port, either IPv4 or IPv6
-                    Files.write(
-                        portsPath.resolve("addr_adrfam"),
-                        ipAddr.getAddressType().toString().toLowerCase().getBytes()
+                    portIdx = "1";
+                }
+                else
+                {
+                    String[] portDirs = outputStr.split(", ");
+                    portIdx = Integer.toString(
+                        Integer.parseInt(portDirs[portDirs.length - 1].trim()) + 1
                     );
                 }
 
-                // create soft link
-                ExtCmdUtils.checkExitCode(
-                    extCmd.exec(
-                        "ln",
-                        "-s",
-                        subsystemDirectory,
-                        NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName
-                    ),
-                    StorageException::new,
-                    "Failed to create symbolic link!"
+                Path portsPath = Paths.get(NVME_PORTS_PATH + portIdx);
+                Files.createDirectories(portsPath);
+                Files.write(
+                    portsPath.resolve("addr_traddr"), ipAddr.getAddress().getBytes()
+                    );
+
+                // set the transport type and port
+                String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE);
+                if (transportType == null)
+                {
+                    transportType = "rdma";
+                }
+                Files.write(portsPath.resolve("addr_trtype"), transportType.getBytes());
+
+                String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT);
+                if (port == null)
+                {
+                    port = Integer.toString(IANA_DEFAULT_PORT);
+                }
+                Files.write(portsPath.resolve("addr_trsvcid"), port.getBytes());
+
+                // set the address family of the port, either IPv4 or IPv6
+                Files.write(
+                    portsPath.resolve("addr_adrfam"),
+                    ipAddr.getAddressType().toString().toLowerCase().getBytes()
                 );
             }
+            // create soft link
+            ExtCmdUtils.checkExitCode(
+                extCmd.exec(
+                    "ln",
+                    "-s",
+                    subsystemDirectory,
+                    NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName
+                    ),
+                StorageException::new,
+                "Failed to create symbolic link!"
+            );
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
@@ -206,12 +204,39 @@ public class NvmeUtils
         throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName();
         final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
 
         try
         {
             errorReporter.logDebug("Nvme: removing resource: " + nvmeRscData.getSuffixedResourceName());
+
+            // remove soft link
+            String portIdx = getPortIdx(getIpAddr(nvmeRscData.getResource(), accCtx), extCmd);
+            if (portIdx == null)
+            {
+                throw new StorageException(
+                    "No ports directory for NVMe subsystem \'" + subsystemName + "\' exists!"
+                );
+            }
+
+            OutputData output = extCmd.exec(
+                "rm", NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName
+            );
+            ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to remove symbolic link!");
+
+            // delete ports directory
+            output = extCmd.exec(
+                "/bin/bash", "-c",
+                "ls", "-m", "--color=never", "--directory", NVME_PORTS_PATH + portIdx + "/subsystems"
+            );
+            ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to list files!");
+
+            if (new String(output.stdoutData).trim().isEmpty())
+            {
+                output = extCmd.exec("rmdir", NVME_PORTS_PATH + portIdx);
+                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete ports directory!");
+            }
 
             for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
             {
@@ -220,43 +245,16 @@ public class NvmeUtils
                     subsystemDirectory + "/namespaces/" + namespaceNr
                 );
 
-                // remove soft link
-                String portIdx = getPortIdx(getIpAddr(nvmeRscData.getResource(), accCtx), extCmd);
-                if (portIdx == null)
-                {
-                    throw new StorageException(
-                        "No ports directory for NVMe subsystem \'" + subsystemName + "\' exists!"
-                    );
-                }
-
-                OutputData output = extCmd.exec(
-                    "rm", NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName
-                );
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to remove symbolic link!");
-
-                // delete ports directory
-                output = extCmd.exec(
-                    "/bin/bash", "-c",
-                    "ls", "-m", "--color=never", "--directory", NVME_PORTS_PATH + portIdx + "/subsystems"
-                );
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to list files!");
-
-                if (new String(output.stdoutData).trim().isEmpty())
-                {
-                    output = extCmd.exec("rmdir", NVME_PORTS_PATH + portIdx);
-                    ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete ports directory!");
-                }
-
                 // disable namespace
                 Files.write(namespacePath.resolve("enable"), "0".getBytes());
 
                 output = extCmd.exec("rmdir", namespacePath.toString());
                 ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete namespace directory!");
-
-                // delete subsystem directory
-                output = extCmd.exec("rmdir", subsystemDirectory);
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete subsystem directory!");
             }
+
+            // delete subsystem directory
+            output = extCmd.exec("rmdir", subsystemDirectory);
+            ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete subsystem directory!");
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
@@ -278,7 +276,7 @@ public class NvmeUtils
         throws StorageException
     {
         final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName();
 
         try
         {
@@ -351,7 +349,7 @@ public class NvmeUtils
             errorReporter.logDebug("Nvme: disconnecting resource: " + nvmeRscData.getSuffixedResourceName());
             OutputData output = extCmd.exec(
                 "nvme", "disconnect", "-n",
-                NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName()
+                NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to disconnect from NVMe target!");
         }
@@ -370,7 +368,7 @@ public class NvmeUtils
     public boolean isTargetConfigured(NvmeRscData nvmeRscData)
     {
         return Files.exists(Paths.get(NVME_SUBSYSTEMS_PATH).resolve(
-            NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName())
+            NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName())
         );
     }
 
@@ -386,7 +384,7 @@ public class NvmeUtils
     {
         boolean success = true;
         final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName();
+        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName();
 
         try
         {
@@ -500,7 +498,11 @@ public class NvmeUtils
     private LsIpAddress getIpAddr(Resource rsc, AccessContext accCtx)
         throws StorageException, InvalidNameException, AccessDeniedException, InvalidKeyException
     {
-        String netIfName = rsc.getProps(accCtx).getProp(KEY_PREF_NIC);
+        String netIfName = new PriorityProps(
+            rsc.getProps(accCtx),
+            rsc.getAssignedNode().getProps(accCtx),
+            stltProps
+        ).getProp(KEY_PREF_NIC, ApiConsts.NAMESPC_NVME);
 
         if (netIfName == null)
         {
