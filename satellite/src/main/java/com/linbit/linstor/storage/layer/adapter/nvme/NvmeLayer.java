@@ -86,7 +86,7 @@ public class NvmeLayer implements DeviceLayer
         // initiator
         if (nvmeRscData.isDiskless(sysCtx))
         {
-            boolean isConnected = nvmeUtils.setDevicePaths(nvmeRscData);
+            boolean isConnected = nvmeUtils.setDevicePaths(nvmeRscData, false);
             // disconnect
             if (
                 nvmeRscData.exists() &&
@@ -106,7 +106,7 @@ public class NvmeLayer implements DeviceLayer
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
-                nvmeUtils.setDevicePaths(nvmeRscData);
+                nvmeUtils.setDevicePaths(nvmeRscData, true);
             }
             else
             {

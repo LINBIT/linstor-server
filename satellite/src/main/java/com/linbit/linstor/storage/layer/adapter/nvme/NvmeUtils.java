@@ -53,6 +53,8 @@ public class NvmeUtils
 
     private static final int IANA_DEFAULT_PORT = 4420;
     private static final int NVME_IDX_MAX_DIGITS = 5;
+    private static final int NVME_GREP_SLEEP_MAX_WAIT_TIME = 50;
+    private static final long NVME_GREP_SLEEP_INCREMENT = 200L;
 
     private final ExtCmdFactory extCmdFactory;
     private final Props stltProps;
@@ -379,7 +381,7 @@ public class NvmeUtils
      * @param nvmeRscData   NvmeRscData object containing all needed information for this method
      * @return              boolean true if the data was found and false otherwise
      */
-    public boolean setDevicePaths(NvmeRscData nvmeRscData)
+    public boolean setDevicePaths(NvmeRscData nvmeRscData, boolean isWaiting)
         throws StorageException
     {
         boolean success = true;
@@ -388,11 +390,35 @@ public class NvmeUtils
 
         try
         {
-            OutputData output = extCmd.exec(
-                "/bin/bash", "-c",
-                " grep -H -r " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
-            );
-            if (output.exitCode != 0)
+            OutputData output = null;
+            int tries;
+            if (isWaiting)
+            {
+                tries = 0;
+            }
+            else
+            {
+                tries = NVME_GREP_SLEEP_MAX_WAIT_TIME - 1;
+            }
+
+            // wait for NVMe device to appear
+            for (; tries < NVME_GREP_SLEEP_MAX_WAIT_TIME; tries++)
+            {
+                output = extCmd.exec(
+                    "/bin/bash", "-c",
+                    " grep -H -r " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
+                );
+                if (output.exitCode != 0)
+                {
+                    Thread.sleep(NVME_GREP_SLEEP_INCREMENT);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (isWaiting && tries >= NVME_GREP_SLEEP_MAX_WAIT_TIME)
             {
                 success = false;
             }
@@ -431,7 +457,7 @@ public class NvmeUtils
                 }
             }
         }
-        catch (IOException | ChildProcessTimeoutException exc)
+        catch (IOException | ChildProcessTimeoutException | InterruptedException exc)
         {
             throw new StorageException("Failed to set NVMe device path!", exc);
         }
