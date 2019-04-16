@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -21,6 +22,7 @@ import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
@@ -33,17 +35,20 @@ import java.util.Set;
 @Singleton
 public class NvmeLayer implements DeviceLayer
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext sysCtx;
     private final Provider<DeviceHandler> resourceProcessorProvider;
     private final NvmeUtils nvmeUtils;
 
     @Inject
     public NvmeLayer(
+        ErrorReporter errorReporterRef,
         @DeviceManagerContext AccessContext workerCtxRef,
         NvmeUtils nvmeUtilsRef,
         Provider<DeviceHandler> resourceProcessorRef
     )
     {
+        errorReporter = errorReporterRef;
         sysCtx = workerCtxRef;
         nvmeUtils = nvmeUtilsRef;
         resourceProcessorProvider = resourceProcessorRef;
@@ -82,13 +87,12 @@ public class NvmeLayer implements DeviceLayer
         if (nvmeRscData.isDiskless(sysCtx))
         {
             boolean isConnected = nvmeUtils.setDevicePaths(nvmeRscData);
-
             // disconnect
             if (
                 nvmeRscData.exists() &&
                 nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
                 isConnected &&
-                !nvmeUtils.isTargetConfigured(nvmeRscData) // TODO: this is bullshit?
+                nvmeUtils.isTargetConfigured(nvmeRscData) // TODO: this is bullshit?
             )
             {
                 nvmeUtils.disconnect(nvmeRscData);
@@ -99,7 +103,7 @@ public class NvmeLayer implements DeviceLayer
                 !nvmeRscData.exists() &&
                 !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
                 !isConnected &&
-                nvmeUtils.isTargetConfigured(nvmeRscData)
+                !nvmeUtils.isTargetConfigured(nvmeRscData)
             )
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);
@@ -108,7 +112,10 @@ public class NvmeLayer implements DeviceLayer
             }
             else
             {
-                // ignored
+                errorReporter.logDebug(
+                    "Nvme intiator resource '%s' in expected state - noop",
+                    nvmeRscData.getSuffixedResourceName()
+                );
             }
         }
         // target
@@ -135,7 +142,10 @@ public class NvmeLayer implements DeviceLayer
             }
             else
             {
-                // ignored
+                errorReporter.logDebug(
+                    "Nvme target resource '%s' in expected state - noop",
+                    nvmeRscData.getSuffixedResourceName()
+                );
             }
         }
     }

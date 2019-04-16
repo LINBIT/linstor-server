@@ -14,6 +14,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -55,10 +56,16 @@ public class NvmeUtils
 
     private final ExtCmdFactory extCmdFactory;
     private final Props stltProps;
+    private final ErrorReporter errorReporter;
 
     @Inject
-    public NvmeUtils(ExtCmdFactory extCmdFactoryRef, @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef)
+    public NvmeUtils(
+        ErrorReporter errorReporterRef,
+        ExtCmdFactory extCmdFactoryRef,
+        @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef
+    )
     {
+        errorReporter = errorReporterRef;
         extCmdFactory = extCmdFactoryRef;
         stltProps = stltPropsRef;
     }
@@ -83,6 +90,8 @@ public class NvmeUtils
 
         try
         {
+            errorReporter.logDebug("Nvme: creating resource: " + nvmeRscData.getSuffixedResourceName());
+
             final PriorityProps nvmePrioProps = new PriorityProps(
                 nvmeRscData.getResource().getDefinition().getProps(accCtx),
                 stltProps
@@ -202,6 +211,8 @@ public class NvmeUtils
 
         try
         {
+            errorReporter.logDebug("Nvme: removing resource: " + nvmeRscData.getSuffixedResourceName());
+
             for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
             {
                 final int namespaceNr = nvmeVlmData.getVlmNr().getValue() + 1;
@@ -219,7 +230,7 @@ public class NvmeUtils
                 }
 
                 OutputData output = extCmd.exec(
-                    "rmdir", NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName
+                    "rm", NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName
                 );
                 ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to remove symbolic link!");
 
@@ -230,7 +241,7 @@ public class NvmeUtils
                 );
                 ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to list files!");
 
-                if (new String(output.stdoutData).isEmpty())
+                if (new String(output.stdoutData).trim().isEmpty())
                 {
                     output = extCmd.exec("rmdir", NVME_PORTS_PATH + portIdx);
                     ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete ports directory!");
@@ -239,7 +250,7 @@ public class NvmeUtils
                 // disable namespace
                 Files.write(namespacePath.resolve("enable"), "0".getBytes());
 
-                output = extCmd.exec("rmdir", namespacePath + Integer.toString(namespaceNr));
+                output = extCmd.exec("rmdir", namespacePath.toString());
                 ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete namespace directory!");
 
                 // delete subsystem directory
@@ -271,6 +282,8 @@ public class NvmeUtils
 
         try
         {
+            errorReporter.logDebug("Nvme: connecting resource: " + nvmeRscData.getSuffixedResourceName());
+
             final PriorityProps nvmePrioProps = new PriorityProps(
                 nvmeRscData.getResource().getDefinition().getProps(accCtx),
                 stltProps
@@ -335,6 +348,7 @@ public class NvmeUtils
 
         try
         {
+            errorReporter.logDebug("Nvme: disconnecting resource: " + nvmeRscData.getSuffixedResourceName());
             OutputData output = extCmd.exec(
                 "nvme", "disconnect", "-n",
                 NVME_SUBSYSTEM_PREFIX + nvmeRscData.getResourceName().getDisplayName()
@@ -446,6 +460,7 @@ public class NvmeUtils
 
         try
         {
+            errorReporter.logDebug("Nvme: discovering target subsystems");
             OutputData output = extCmd.exec(
                 "nvme",
                 "discover",
@@ -523,7 +538,10 @@ public class NvmeUtils
         if (output.exitCode == 0)
         {
             String grepPortIdx = new String(output.stdoutData);
-            portIdx = grepPortIdx.substring(0, grepPortIdx.indexOf(File.separator));
+            portIdx = grepPortIdx.substring(
+                NVME_PORTS_PATH.length(),
+                grepPortIdx.indexOf(File.separator, NVME_PORTS_PATH.length() + 1)
+            );
         }
         else if (output.exitCode == 1)
         {
