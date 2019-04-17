@@ -81,6 +81,12 @@ public class PriorityProps
         return value;
     }
 
+    public String getProp(String key, String namespace, String defaultValue) throws InvalidKeyException
+    {
+        final String val = getProp(key, namespace);
+        return val == null ? defaultValue : val;
+    }
+
     public String getProp(String key) throws InvalidKeyException
     {
         return getProp(key, null);
