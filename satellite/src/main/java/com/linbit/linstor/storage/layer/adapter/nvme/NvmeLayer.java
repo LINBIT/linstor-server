@@ -106,12 +106,15 @@ public class NvmeLayer implements DeviceLayer
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
-                nvmeUtils.setDevicePaths(nvmeRscData, true);
+                if (!nvmeUtils.setDevicePaths(nvmeRscData, true))
+                {
+                    throw new StorageException("Failed to set NVMe device path!");
+                }
             }
             else
             {
                 errorReporter.logDebug(
-                    "Nvme intiator resource '%s' in expected state - noop",
+                    "NVMe Intiator resource '%s' in expected state - noop",
                     nvmeRscData.getSuffixedResourceName()
                 );
             }

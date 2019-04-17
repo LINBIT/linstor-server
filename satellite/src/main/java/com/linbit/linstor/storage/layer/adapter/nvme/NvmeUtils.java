@@ -46,9 +46,9 @@ import java.util.List;
 public class NvmeUtils
 {
     private static final String NVME_SUBSYSTEM_PREFIX = "LS-NVMe_";
-    private static final String NVMET_PATH = "/sys/kernel/config/nvmet";
-    private static final String NVME_SUBSYSTEMS_PATH = NVMET_PATH + "/subsystems/";
-    private static final String NVME_PORTS_PATH = NVMET_PATH + "/ports/";
+    private static final String NVMET_PATH = "/sys/kernel/config/nvmet/";
+    private static final String NVME_SUBSYSTEMS_PATH = NVMET_PATH + "subsystems/";
+    private static final String NVME_PORTS_PATH = NVMET_PATH + "ports/";
     private static final String NVME_FABRICS_PATH = "/sys/devices/virtual/nvme-fabrics/ctl/nvme";
 
     private static final int IANA_DEFAULT_PORT = 4420;
@@ -92,7 +92,9 @@ public class NvmeUtils
 
         try
         {
-            errorReporter.logDebug("Nvme: creating resource: " + nvmeRscData.getSuffixedResourceName());
+            errorReporter.logDebug(
+                "NVMe: creating subsystem on target: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+            );
 
             final PriorityProps nvmePrioProps = new PriorityProps(
                 nvmeRscData.getResource().getDefinition().getProps(accCtx),
@@ -125,6 +127,8 @@ public class NvmeUtils
 
             if (portIdx == null)
             {
+                errorReporter.logDebug("NVMe: creating new ports directory on target");
+
                 // get existing port directories and compute next available index
                 OutputData output = extCmd.exec(
                     "/bin/bash", "-c",  "ls -m --color=never " + NVME_PORTS_PATH
@@ -211,7 +215,9 @@ public class NvmeUtils
 
         try
         {
-            errorReporter.logDebug("Nvme: removing resource: " + nvmeRscData.getSuffixedResourceName());
+            errorReporter.logDebug(
+                "NVMe: cleaning up target: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+            );
 
             // remove soft link
             String portIdx = getPortIdx(getIpAddr(nvmeRscData.getResource(), accCtx), extCmd);
@@ -246,6 +252,8 @@ public class NvmeUtils
                 final Path namespacePath = Paths.get(
                     subsystemDirectory + "/namespaces/" + namespaceNr
                 );
+
+                errorReporter.logDebug("NVMe: deleting namespace: " + namespaceNr);
 
                 // disable namespace
                 Files.write(namespacePath.resolve("enable"), "0".getBytes());
@@ -282,7 +290,9 @@ public class NvmeUtils
 
         try
         {
-            errorReporter.logDebug("Nvme: connecting resource: " + nvmeRscData.getSuffixedResourceName());
+            errorReporter.logDebug(
+                "NVMe: connecting initiator to: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+            );
 
             final PriorityProps nvmePrioProps = new PriorityProps(
                 nvmeRscData.getResource().getDefinition().getProps(accCtx),
@@ -348,7 +358,10 @@ public class NvmeUtils
 
         try
         {
-            errorReporter.logDebug("Nvme: disconnecting resource: " + nvmeRscData.getSuffixedResourceName());
+            errorReporter.logDebug(
+                "NVMe: disconnecting initiator from: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+            );
+
             OutputData output = extCmd.exec(
                 "nvme", "disconnect", "-n",
                 NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
@@ -369,6 +382,10 @@ public class NvmeUtils
      */
     public boolean isTargetConfigured(NvmeRscData nvmeRscData)
     {
+        errorReporter.logDebug(
+            "NVMe: checking if subsystem " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName() + " exists."
+        );
+
         return Files.exists(Paths.get(NVME_SUBSYSTEMS_PATH).resolve(
             NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName())
         );
@@ -376,7 +393,7 @@ public class NvmeUtils
 
     /**
      * Queries NVMe-specific indices for the {@link NvmeRscData} and {@link NvmeVlmData}
-     * and stores the as the device path
+     * and stores the result as the device path (for example '/dev/nvme2n1')
      *
      * @param nvmeRscData   NvmeRscData object containing all needed information for this method
      * @return              boolean true if the data was found and false otherwise
@@ -390,6 +407,10 @@ public class NvmeUtils
 
         try
         {
+            errorReporter.logDebug(
+                "NVMe: trying to set device paths for: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+            );
+
             OutputData output = null;
             int tries;
             if (isWaiting)
@@ -418,7 +439,7 @@ public class NvmeUtils
                 }
             }
 
-            if (isWaiting && tries >= NVME_GREP_SLEEP_MAX_WAIT_TIME)
+            if (isWaiting && tries >= NVME_GREP_SLEEP_MAX_WAIT_TIME || output.exitCode != 0)
             {
                 success = false;
             }
@@ -484,7 +505,8 @@ public class NvmeUtils
 
         try
         {
-            errorReporter.logDebug("Nvme: discovering target subsystems");
+            errorReporter.logDebug("Nvme: discovering target subsystems.");
+
             OutputData output = extCmd.exec(
                 "nvme",
                 "discover",
@@ -536,6 +558,8 @@ public class NvmeUtils
         }
         else
         {
+            errorReporter.logDebug("NVMe: querying net interface " + netIfName + "for IP address.");
+
             Node rscNode = rsc.getAssignedNode();
             if (rscNode.getNetInterface(accCtx, new NetInterfaceName(netIfName)) == null)
             {
@@ -558,6 +582,8 @@ public class NvmeUtils
     private String getPortIdx(LsIpAddress ipAddr, ExtCmd extCmd)
         throws StorageException, IOException, ChildProcessTimeoutException
     {
+        errorReporter.logDebug("NVMe: retrieving port directory index of IP address: " + ipAddr);
+
         OutputData output = extCmd.exec(
             "/bin/bash", "-c", "grep -r -H --color=never " + ipAddr.getAddress() + " " + NVME_PORTS_PATH
         );
