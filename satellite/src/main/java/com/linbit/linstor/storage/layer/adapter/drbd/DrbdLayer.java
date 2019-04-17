@@ -8,6 +8,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinAlSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.drbd.md.PeerCountException;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Resource;
@@ -50,6 +51,7 @@ import com.linbit.linstor.storage.layer.adapter.drbd.utils.DrbdAdm;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.utils.AccessUtils;
 
@@ -90,6 +92,7 @@ public class DrbdLayer implements DeviceLayer
     private final CtrlStltSerializer interComSerializer;
     private final ControllerPeerConnector controllerPeerConnector;
     private final Provider<DeviceHandler> resourceProcessorProvider;
+    private final ExtCmdFactory extCmdFactory;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -109,7 +112,8 @@ public class DrbdLayer implements DeviceLayer
         WhitelistProps whiltelistPropsRef,
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        Provider<DeviceHandler> resourceProcessorRef
+        Provider<DeviceHandler> resourceProcessorRef,
+        ExtCmdFactory extCmdFactoryRef
     )
     {
         workerCtx = workerCtxRef;
@@ -121,6 +125,7 @@ public class DrbdLayer implements DeviceLayer
         interComSerializer = interComSerializerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         resourceProcessorProvider = resourceProcessorRef;
+        extCmdFactory = extCmdFactoryRef;
     }
 
     @Override
@@ -1070,6 +1075,8 @@ public class DrbdLayer implements DeviceLayer
                     errorReporter.logTrace("Setting resource primary on %s", drbdRscData.getSuffixedResourceName());
                     setResourcePrimary(drbdRscData);
                 }
+
+                MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
             }
         }
         catch (InvalidKeyException invalidKeyExc)

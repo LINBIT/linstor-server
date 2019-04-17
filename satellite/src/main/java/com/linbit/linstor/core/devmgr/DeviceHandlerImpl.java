@@ -1,11 +1,14 @@
 package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
@@ -25,6 +28,7 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -37,6 +41,8 @@ import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
+import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 
@@ -54,6 +60,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,6 +81,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final LayerFactory layerFactory;
     private final AtomicBoolean fullSyncApplied;
     private final StorageLayer storageLayer;
+    private final ExtCmdFactory extCmdFactory;
 
     @Inject
     public DeviceHandlerImpl(
@@ -84,7 +92,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         Provider<NotificationListener> notificationListenerRef,
         LayerFactory layerFactoryRef,
         StorageLayer storageLayerRef,
-        ResourceStateEvent resourceStateEventRef
+        ResourceStateEvent resourceStateEventRef,
+        ExtCmdFactory extCmdFactoryRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -96,6 +105,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         layerFactory = layerFactoryRef;
         storageLayer = storageLayerRef;
         resourceStateEvent = resourceStateEventRef;
+        extCmdFactory = extCmdFactoryRef;
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -256,11 +266,18 @@ public class DeviceHandlerImpl implements DeviceHandler
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
             try
             {
+                RscLayerObject rscLayerObject = rsc.getLayerData(wrkCtx);
                 process(
-                    rsc.getLayerData(wrkCtx),
+                    rscLayerObject,
                     snapshotList,
                     apiCallRc
                 );
+
+                if (rscLayerObject.getLayerKind().isLocalOnly() &&
+                    rsc.getStateFlags().isUnset(wrkCtx, Resource.RscFlags.DELETE))
+                {
+                    MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
+                }
 
                 /*
                  * old device manager reported changes of free space after every

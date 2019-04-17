@@ -39,6 +39,9 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     protected final TransactionSimpleObject<AbsRscData<VLM_TYPE>, RscLayerObject> parent;
     protected final TransactionSet<AbsRscData<VLM_TYPE>, RscLayerObject> children;
 
+    // volatile satellite only
+    private boolean checkFileSystem;
+
     public AbsRscData(
         int rscLayerIdRef,
         Resource rscRef,
@@ -60,6 +63,8 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
         parent = transObjFactory.createTransactionSimpleObject(this, parentRef, dbDriverRef.getParentDriver());
         children = transObjFactory.createTransactionSet(this, childrenRef, null);
         vlmMap = transObjFactory.createTransactionMap(vlmProviderObjectsRef, null);
+
+        checkFileSystem = true;
 
         transObjs = new ArrayList<>();
         transObjs.add(rsc);
@@ -136,7 +141,6 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
         dbDriver.delete(this);
     }
 
-
     protected List<RscLayerDataApi> getChildrenPojos(AccessContext accCtx) throws AccessDeniedException
     {
         List<RscLayerDataApi> childrenPojos = new ArrayList<>();
@@ -145,5 +149,15 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
             childrenPojos.add(rscLayerObject.asPojo(accCtx));
         }
         return childrenPojos;
+    }
+
+    public boolean checkFileSystem()
+    {
+        return checkFileSystem;
+    }
+
+    public void disableCheckFileSystem()
+    {
+        this.checkFileSystem = false;
     }
 }

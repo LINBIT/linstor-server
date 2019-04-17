@@ -90,4 +90,6 @@ public interface RscLayerObject extends LayerObject
 
     void remove(VolumeNumber vlmNrRef) throws SQLException;
 
+    boolean checkFileSystem();
+    void disableCheckFileSystem();
 }
