@@ -15,7 +15,7 @@ public class ExtCmdFailedException extends LinStorException
     private static final String EXCEPTION_DESCR_FORMAT = "Execution of the external command '%s' failed.";
     private static final String EXCEPTION_DETAILS_FORMAT = "The full command line executed was:\n%s";
     private static final String EXCEPTION_STDOUT_DATA = "The external command sent the following output data:";
-    private static final String EXCEPTION_STDERR_DATA = "The external command sent the follwing error information:";
+    private static final String EXCEPTION_STDERR_DATA = "The external command sent the following error information:";
 
     public ExtCmdFailedException(String[] command, ChildProcessTimeoutException cause)
     {
@@ -26,7 +26,7 @@ public class ExtCmdFailedException extends LinStorException
             "Possible causes include:\n" +
             "- The system load may be too high to ensure completion of external commands in a timely manner.\n" +
             "- The program implementing the external command may not be operating properly.\n" +
-            "- The operating system may have entered an errorneous state.",
+            "- The operating system may have entered an erroneous state.",
             "Check whether the external program and the operating system are still operating properly.\n" +
             "Check whether the system's load is within normal parameters.\n",
             String.format(EXCEPTION_DETAILS_FORMAT, glue(command)),
