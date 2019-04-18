@@ -1,3 +1,60 @@
+linstor-server (0.9.6-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Added OTHER_CONTROLLER internal api
+  * Reject storage only diskless setups
+  * Fixed wrong migration for resources without volumes
+  * Fixed db NPE when loading 0 storage volumes for a resource
+  * Removed unnecessary ConfigModule
+  * Deletiion of resources now also update the freeSpace
+  * Fixed rare NPE when applying already deleted remote resource on satellite
+  * Added DbDriver for NVMe layer
+  * Removed unnecessary masterKey access
+  * Added missing NVMe cases in switch statements
+  * Minor changes in NvmeUtils
+  * Fixed some nvmet related external commands
+  * Bugfix in nvme layer querying target namespaces
+  * Fixed minor issues with NvmeLayer
+  * NvmeLayer now supports multiple volumes per resource
+  * Diskless can also be used for NVME resources
+
+  [ Rene Peinthor ]
+  * rest-api-docu: static_traits is a string->string map
+  * postinstall.sh: remove very old db location migration
+  * postinstall.sh: add timestamp to database backups
+  * rest-api: introduce a rest_api_version field and pump minor to 1.0.1
+  * storpoolisthandler: fix unhandled ApiRcExceptions
+  * rest-api: specified object GETters now return a single value
+  * rsc_con: improve error reporting on using non existing rsc con
+  * whitelistprops: add drbd handlers on satellites
+  * conffilebuilder: always quote drbd handler options
+  * priorityprops: add a default variant for getProp(key,ns)
+  * mkfs feature for ext4 and xfs
+  * extcmdExc: fix typo
+
+  [ Robert Altnoeder ]
+  * Fixed capitalization typo in Migration_2019_04_04_Fix_LayerData_Multip [...]
+  * Code cleanup: Fixed imports
+  * Code cleanup: Fixed variable shadowing
+  * Code cleanup: Fixed line length
+  * Code cleanup: Fixed style & formatting
+  * Code cleanup: Fixed variable names, adjusted modifiers
+  * Code cleanup: Added fall-through comments
+  * More efficient listResourceConnections() implementation
+  * Set access context for REST API calls to the public context
+
+  [ Rainer Laschober ]
+  * introduce nvme layer
+  * Fix namespaces and other bugs
+  * Make transport type and port configurable in nvme layer, fix ip addres [...]
+  * Add new rsc prop 'prefNic'
+  * fix device path query on initiator, start documentation
+  * add constraints in NvmeLayer.process(), fix isTargetConfigured()
+  * Fix race condition for setting device path
+  * minor fix, add logging for debugging
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 18 Apr 2019 11:14:54 +0200
+
 linstor-server (0.9.5-1) experimental; urgency=medium
 
   [ Rainer Laschober ]
