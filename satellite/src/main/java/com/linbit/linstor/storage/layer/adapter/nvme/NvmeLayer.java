@@ -86,23 +86,16 @@ public class NvmeLayer implements DeviceLayer
         // initiator
         if (nvmeRscData.isDiskless(sysCtx))
         {
-            boolean isConnected = nvmeUtils.setDevicePaths(nvmeRscData, false);
+            nvmeRscData.setExists(nvmeUtils.setDevicePaths(nvmeRscData, false));
+
             // disconnect
-            if (
-                nvmeRscData.exists() &&
-                nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                isConnected
-            )
+            if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 nvmeUtils.disconnect(nvmeRscData);
                 nvmeRscData.setExists(false);
             }
             // connect
-            else if (
-                !nvmeRscData.exists() &&
-                !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                !isConnected
-            )
+            else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);
                 nvmeRscData.setExists(true);
@@ -114,7 +107,7 @@ public class NvmeLayer implements DeviceLayer
             else
             {
                 errorReporter.logDebug(
-                    "NVMe Intiator resource '%s' in expected state - noop",
+                    "NVMe Intiator resource '%s' already in expected state, nothing to be done.",
                     nvmeRscData.getSuffixedResourceName()
                 );
             }
@@ -122,20 +115,17 @@ public class NvmeLayer implements DeviceLayer
         // target
         else
         {
+            nvmeRscData.setExists(nvmeUtils.isTargetConfigured(nvmeRscData));
+
             // delete target data
-            if (nvmeRscData.exists() &&
-                nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                nvmeUtils.isTargetConfigured(nvmeRscData))
+            if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 nvmeUtils.cleanUpTarget(nvmeRscData, sysCtx);
                 resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeRscData.setExists(false);
             }
             // create target data
-            else if (
-                !nvmeRscData.exists() &&
-                !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE) &&
-                !nvmeUtils.isTargetConfigured(nvmeRscData))
+            else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeUtils.configureTarget(nvmeRscData, sysCtx);
@@ -144,7 +134,7 @@ public class NvmeLayer implements DeviceLayer
             else
             {
                 errorReporter.logDebug(
-                    "Nvme target resource '%s' in expected state - noop",
+                    "NVMe target resource '%s' already in expected state, nothing to be done.",
                     nvmeRscData.getSuffixedResourceName()
                 );
             }

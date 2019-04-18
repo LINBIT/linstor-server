@@ -236,7 +236,7 @@ public class NvmeUtils
             // delete ports directory
             output = extCmd.exec(
                 "/bin/bash", "-c",
-                "ls", "-m", "--color=never", "--directory", NVME_PORTS_PATH + portIdx + "/subsystems"
+                "ls", "-m", "--color=never", NVME_PORTS_PATH + portIdx + "/subsystems"
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to list files!");
 
