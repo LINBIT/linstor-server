@@ -92,13 +92,11 @@ public class NvmeLayer implements DeviceLayer
             if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 nvmeUtils.disconnect(nvmeRscData);
-                nvmeRscData.setExists(false);
             }
             // connect
             else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);
-                nvmeRscData.setExists(true);
                 if (!nvmeUtils.setDevicePaths(nvmeRscData, true))
                 {
                     throw new StorageException("Failed to set NVMe device path!");
@@ -122,14 +120,12 @@ public class NvmeLayer implements DeviceLayer
             {
                 nvmeUtils.cleanUpTarget(nvmeRscData, sysCtx);
                 resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
-                nvmeRscData.setExists(false);
             }
             // create target data
             else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 nvmeUtils.configureTarget(nvmeRscData, sysCtx);
-                nvmeRscData.setExists(true);
             }
             else
             {

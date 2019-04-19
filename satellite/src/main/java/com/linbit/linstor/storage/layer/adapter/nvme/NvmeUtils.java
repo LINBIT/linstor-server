@@ -130,9 +130,7 @@ public class NvmeUtils
                 errorReporter.logDebug("NVMe: creating new ports directory on target");
 
                 // get existing port directories and compute next available index
-                OutputData output = extCmd.exec(
-                    "/bin/bash", "-c",  "ls -m --color=never " + NVME_PORTS_PATH
-                );
+                OutputData output = extCmd.exec("/bin/bash", "-c", "ls -m --color=never " + NVME_PORTS_PATH);
                 ExtCmdUtils.checkExitCode(
                     output,
                     StorageException::new,
@@ -235,8 +233,7 @@ public class NvmeUtils
 
             // delete ports directory
             output = extCmd.exec(
-                "/bin/bash", "-c",
-                "ls", "-m", "--color=never", NVME_PORTS_PATH + portIdx + "/subsystems"
+                "/bin/bash", "-c", "ls -m --color=never " + NVME_PORTS_PATH + portIdx + "/subsystems"
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to list files!");
 
@@ -313,7 +310,7 @@ public class NvmeUtils
             String ipAddr = getIpAddr(
                 nvmeRscData.getResource().getDefinition().streamResource(accCtx).filter(
                     rsc -> !rsc.equals(nvmeRscData.getResource())
-                ).findFirst().orElseThrow(() -> new StorageException("Target resource not found!")),
+                ).findFirst().orElseThrow(() -> new StorageException("Target resource not found!")), //FIXME: thrown, but ls-rsc created; with db: sql eFisEmptxc thrown o.O
                 accCtx
             ).getAddress();
 
@@ -428,7 +425,7 @@ public class NvmeUtils
             {
                 output = extCmd.exec(
                     "/bin/bash", "-c",
-                    " grep -H -r " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
+                    "grep -H -r " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
                 );
                 extCmdSuccess = output.exitCode == 0;
                 if (!extCmdSuccess)
@@ -450,13 +447,14 @@ public class NvmeUtils
                         .substring(NVME_FABRICS_PATH.length(), NVME_FABRICS_PATH.length() + NVME_IDX_MAX_DIGITS)
                         .split(File.separator)[0]
                 );
+                final String nvmeFabricsVlmPath = NVME_FABRICS_PATH + nvmeRscIdx + "/nvme" + nvmeRscIdx;
 
                 for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
                 {
                     output = extCmd.exec(
                         "/bin/bash", "-c",
                         " grep -H -r " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
-                            NVME_FABRICS_PATH + nvmeRscIdx + "/nvme" + nvmeRscIdx + "c*n*/nsid"
+                            nvmeFabricsVlmPath + "c*n*/nsid"
                     );
 
                     if (output.exitCode != 0)
@@ -465,7 +463,7 @@ public class NvmeUtils
                     }
                     else
                     {
-                        String fabricsPathRsc = NVME_FABRICS_PATH + nvmeRscIdx + "/nvme" + nvmeRscIdx + "c*n";
+                        String fabricsPathRsc = nvmeFabricsVlmPath + "c*n";
 
                         final int nvmeVlmIdx = Integer.parseInt(
                             (new String(output.stdoutData))
@@ -505,7 +503,7 @@ public class NvmeUtils
 
         try
         {
-            errorReporter.logDebug("Nvme: discovering target subsystems.");
+            errorReporter.logDebug("NVMe: discovering target subsystems.");
 
             OutputData output = extCmd.exec(
                 "nvme",
