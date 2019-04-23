@@ -413,6 +413,7 @@ public class NvmeUtils
 
             OutputData output = null;
             int tries;
+            boolean extCmdSuccess;
             if (isWaiting)
             {
                 tries = 0;
@@ -423,23 +424,22 @@ public class NvmeUtils
             }
 
             // wait for NVMe device to appear
-            for (; tries < NVME_GREP_SLEEP_MAX_WAIT_TIME; tries++)
+            do
             {
                 output = extCmd.exec(
                     "/bin/bash", "-c",
                     " grep -H -r " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
                 );
-                if (output.exitCode != 0)
+                extCmdSuccess = output.exitCode == 0;
+                if (!extCmdSuccess)
                 {
                     Thread.sleep(NVME_GREP_SLEEP_INCREMENT);
-                }
-                else
-                {
-                    break;
+                    tries++;
                 }
             }
+            while (!extCmdSuccess && tries < NVME_GREP_SLEEP_MAX_WAIT_TIME);
 
-            if (isWaiting && tries >= NVME_GREP_SLEEP_MAX_WAIT_TIME || output.exitCode != 0)
+            if (isWaiting && tries >= NVME_GREP_SLEEP_MAX_WAIT_TIME || !extCmdSuccess)
             {
                 success = false;
             }
