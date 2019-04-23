@@ -11,6 +11,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -46,7 +47,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class Json
 {
-    public static final String REST_API_VERSION = "1.0.1";
+    public static final String REST_API_VERSION = "1.0.2";
 
     public static String deviceProviderKindAsString(DeviceProviderKind deviceProviderKind)
     {
@@ -102,6 +103,30 @@ public class Json
     public static class NodeModifyData
     {
         public String node_type;
+        public Map<String, String> override_props = Collections.emptyMap();
+        public Set<String> delete_props = Collections.emptySet();
+        public Set<String> delete_namespaces = Collections.emptySet();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class StorPoolDfnData
+    {
+        public String storage_pool_name;
+        public Map<String, String> props;
+
+        public StorPoolDfnData()
+        {
+        }
+
+        public StorPoolDfnData(StorPoolDefinitionData.StorPoolDfnApi apiData)
+        {
+            storage_pool_name = apiData.getName();
+            props = apiData.getProps();
+        }
+    }
+
+    public static class StorPoolDfnModifyData
+    {
         public Map<String, String> override_props = Collections.emptyMap();
         public Set<String> delete_props = Collections.emptySet();
         public Set<String> delete_namespaces = Collections.emptySet();
