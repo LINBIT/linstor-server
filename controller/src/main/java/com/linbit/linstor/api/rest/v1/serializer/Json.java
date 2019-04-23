@@ -21,6 +21,7 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
@@ -205,6 +206,7 @@ public class Json
                             break;
                         case LUKS:
                         case STORAGE:
+                        case NVME:
                         default:
                             throw new ImplementationError("Not implemented Kind case");
                     }
@@ -306,6 +308,7 @@ public class Json
                             break;
                         case LUKS:
                         case STORAGE:
+                        case NVME:
                         default:
                             throw new ImplementationError("Not implemented Kind case");
                     }
@@ -406,6 +409,24 @@ public class Json
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NVMEResourceData
+    {
+        public Long flags;
+        public List<NVMEVolume> nvme_volumes;
+
+        public NVMEResourceData()
+        {
+        }
+
+        public NVMEResourceData(NvmeRscPojo nvmeRscPojo)
+        {
+            nvme_volumes = nvmeRscPojo.getVolumeList().stream()
+                .map(NVMEVolume::new)
+                .collect(Collectors.toList());
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceLayerData
     {
         public List<ResourceLayerData> children = Collections.emptyList();
@@ -414,6 +435,7 @@ public class Json
         public DrbdResourceData drbd;
         public LUKSResourceData luks;
         public StorageResourceData storage;
+        public NVMEResourceData nvme;
 
         public ResourceLayerData()
         {
@@ -437,6 +459,10 @@ public class Json
                 case LUKS:
                     LuksRscPojo luksRscPojo = (LuksRscPojo) rscLayerDataApi;
                     luks = new LUKSResourceData(luksRscPojo);
+                    break;
+                case NVME:
+                    NvmeRscPojo nvmeRscPojo = (NvmeRscPojo) rscLayerDataApi;
+                    nvme = new NVMEResourceData(nvmeRscPojo);
                     break;
                 default:
             }
@@ -590,6 +616,31 @@ public class Json
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NVMEVolume
+    {
+        public Integer volume_number;
+        public String device_path;
+        public String backing_device;
+        public Long allocated_size_kib;
+        public Long usable_size_kib;
+        public String disk_state;
+
+        public NVMEVolume()
+        {
+        }
+
+        public NVMEVolume(NvmeRscPojo.NvmeVlmPojo nvmeVlmPojo)
+        {
+            volume_number = nvmeVlmPojo.getVlmNr();
+            device_path = nvmeVlmPojo.getDevicePath();
+            backing_device = nvmeVlmPojo.getBackingDisk();
+            allocated_size_kib = nvmeVlmPojo.getAllocatedSize();
+            usable_size_kib = nvmeVlmPojo.getUsableSize();
+            disk_state = nvmeVlmPojo.getDiskState();
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class StorageVolume
     {
         public Integer volume_number;
@@ -671,6 +722,10 @@ public class Json
                     case LUKS:
                         LuksRscPojo.LuksVlmPojo luksVlmPojo = (LuksRscPojo.LuksVlmPojo) layerData.objB;
                         volumeLayerData.data = new LUKSVolume(luksVlmPojo);
+                        break;
+                    case NVME:
+                        NvmeRscPojo.NvmeVlmPojo nvmeVlmPojo = (NvmeRscPojo.NvmeVlmPojo) layerData.objB;
+                        volumeLayerData.data = new NVMEVolume(nvmeVlmPojo);
                         break;
                     default:
                 }
