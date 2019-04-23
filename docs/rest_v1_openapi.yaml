@@ -2424,6 +2424,7 @@ components:
         - DRBD
         - LUKS
         - STORAGE
+        - NVME
     DrbdResourceDefinitionLayer:
       type: object
       properties:
@@ -2621,10 +2622,17 @@ components:
     LUKSResource:
       type: object
       properties:
-        storage_volumes:
+        luks_volumes:
           type: array
           items:
             $ref: '#/components/schemas/LUKSVolume'
+    NVMEResource:
+      type: object
+      properties:
+        nvme_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NVMEVolume'
     ResourceLayer:
       type: object
       properties:
@@ -2642,6 +2650,8 @@ components:
           $ref: '#/components/schemas/LUKSResource'
         storage:
           $ref: '#/components/schemas/StorageResource'
+        nvme:
+          $ref: '#/components/schemas/NVMEResource'
     Resource:
       type: object
       properties:
@@ -2743,6 +2753,28 @@ components:
           type: string
           description: String describing current volume state
 
+    NVMEVolume:
+      type: object
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        device_path:
+          type: string
+          description: block device path
+        backing_device:
+          type: string
+          description: block device used by nvme
+        allocated_size_kib:
+          type: integer
+          format: int64
+        usable_size_kib:
+          type: integer
+          format: int64
+        disk_state:
+          type: string
+          description: String describing current volume state
+
     VolumeLayer:
       type: object
       properties:
@@ -2753,6 +2785,7 @@ components:
             - $ref: '#/components/schemas/DrbdVolume'
             - $ref: '#/components/schemas/LUKSVolume'
             - $ref: '#/components/schemas/StorageVolume'
+            - $ref: '#/components/schemas/NVMEVolume'
 
     Volume:
       type: object
