@@ -109,7 +109,7 @@ public class Nodes
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(
-                objectMapper, ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "Node", nodeName, nds
+                objectMapper, ApiConsts.FAIL_NOT_FOUND_NODE, "Node", nodeName, nds
             );
         }, false);
     }
