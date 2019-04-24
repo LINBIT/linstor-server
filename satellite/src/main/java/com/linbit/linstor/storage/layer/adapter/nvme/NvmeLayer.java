@@ -1,7 +1,11 @@
 package com.linbit.linstor.storage.layer.adapter.nvme;
 
+import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
@@ -19,12 +23,20 @@ import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -86,12 +98,13 @@ public class NvmeLayer implements DeviceLayer
         // initiator
         if (nvmeRscData.isDiskless(sysCtx))
         {
-            nvmeRscData.setExists(nvmeUtils.setDevicePaths(nvmeRscData, false));
+            nvmeRscData.setExists(nvmeUtils.setDevicePaths(nvmeRscData, nvmeRscData.exists()));
 
             // disconnect
             if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 nvmeUtils.disconnect(nvmeRscData);
+                nvmeRscData.setExists(false);
             }
             // connect
             else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
@@ -101,6 +114,7 @@ public class NvmeLayer implements DeviceLayer
                 {
                     throw new StorageException("Failed to set NVMe device path!");
                 }
+                nvmeRscData.setExists(true);
             }
             else
             {
@@ -115,24 +129,82 @@ public class NvmeLayer implements DeviceLayer
         {
             nvmeRscData.setExists(nvmeUtils.isTargetConfigured(nvmeRscData));
 
-            // delete target data
-            if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+            if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
-                nvmeUtils.cleanUpTarget(nvmeRscData, sysCtx);
-                resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
-            }
-            // create target data
-            else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
-            {
-                resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
-                nvmeUtils.configureTarget(nvmeRscData, sysCtx);
+                // delete target resource
+                if (nvmeRscData.exists())
+                {
+                    nvmeUtils.deleteTargetRsc(nvmeRscData, sysCtx);
+                    resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                    nvmeRscData.setExists(false);
+                }
+                else
+                {
+                    errorReporter.logDebug(
+                        "NVMe target resource '%s' already in expected state, nothing to be done.",
+                        nvmeRscData.getSuffixedResourceName()
+                    );
+                }
             }
             else
             {
-                errorReporter.logDebug(
-                    "NVMe target resource '%s' already in expected state, nothing to be done.",
-                    nvmeRscData.getSuffixedResourceName()
-                );
+                // update volumes
+                if (nvmeRscData.exists())
+                {
+                    final ExtCmd extCmd = nvmeUtils.getExtCmdFactory().create();
+                    final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName();
+                    final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
+
+                    try
+                    {
+                        errorReporter.logDebug(
+                            "NVMe: updating target volumes: " +
+                                NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+                        );
+
+                        List<NvmeVlmData> newVolumes = new ArrayList<>();
+                        for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                        {
+                            final Path namespacePath = Paths.get(
+                                subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().getValue() + 1)
+                            );
+                            if (nvmeVlmData.getVolume().getFlags().isSet(sysCtx, VlmFlags.DELETE))
+                            {
+                                nvmeUtils.deleteNamespace(namespacePath, extCmd);
+                            }
+                            else
+                            {
+                                newVolumes.add(nvmeVlmData);
+                            }
+                        }
+
+                        resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+
+                        for (NvmeVlmData nvmeVlmData : newVolumes)
+                        {
+                            final Path namespacePath = Paths.get(
+                                subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().getValue() + 1)
+                            );
+                            nvmeUtils.createNamespace(namespacePath, nvmeVlmData.getBackingDevice().getBytes());
+                        }
+                    }
+                    catch (IOException | ChildProcessTimeoutException exc)
+                    {
+                        throw new StorageException("Failed to update NVMe target!", exc);
+                    }
+                    catch (AccessDeniedException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                    nvmeRscData.setExists(true); // sanity check
+                }
+                // create
+                else
+                {
+                    resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                    nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
+                    nvmeRscData.setExists(true);
+                }
             }
         }
     }
