@@ -6,13 +6,12 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
@@ -28,7 +27,6 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -42,7 +40,6 @@ import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.linstor.storage.utils.MkfsUtils;
-import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 
@@ -56,11 +53,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -130,6 +127,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
             List<Resource> rscListNotifyApplied = new ArrayList<>();
             List<Resource> rscListNotifyDelete = new ArrayList<>();
+            List<Volume> vlmListNotifyDelete = new ArrayList<>();
             List<Snapshot> snapListNotifyDelete = new ArrayList<>();
 
             processResourcesAndTheirSnapshots(
@@ -139,11 +137,18 @@ public class DeviceHandlerImpl implements DeviceHandler
                 unprocessedSnapshots,
                 rscListNotifyApplied,
                 rscListNotifyDelete,
+                vlmListNotifyDelete,
                 snapListNotifyDelete
             );
             processUnprocessedSnapshots(unprocessedSnapshots);
 
             notifyResourcesApplied(rscListNotifyApplied);
+
+            NotificationListener listener = notificationListener.get();
+            for (Volume vlm : vlmListNotifyDelete)
+            {
+                listener.notifyVolumeDeleted(vlm);
+            }
 
             updateChangedFreeSpaces();
 
@@ -252,6 +257,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         List<Snapshot> unprocessedSnapshots,
         List<Resource> rscListNotifyApplied,
         List<Resource> rscListNotifyDelete,
+        List<Volume> vlmListNotifyDelete,
         List<Snapshot> snapListNotifyDelete
     )
         throws ImplementationError
@@ -295,8 +301,16 @@ public class DeviceHandlerImpl implements DeviceHandler
                 }
                 else
                 {
+                    Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+                    while (iterateVolumes.hasNext())
+                    {
+                        Volume vlm = iterateVolumes.next();
+                        if (vlm.getFlags().isSet(wrkCtx, VlmFlags.DELETE))
+                        {
+                            vlmListNotifyDelete.add(vlm);
+                        }
+                    }
                     rscListNotifyApplied.add(rsc);
-                    notificationListener.get().notifyResourceApplied(rsc);
                 }
 
                 for (Snapshot snapshot : snapshots)
@@ -309,8 +323,9 @@ public class DeviceHandlerImpl implements DeviceHandler
                     }
                 }
 
-                // give the layer the opportunity to send a "resource ready" event (DrbdLayer will ignore it
-                // as it will send that event asynchronously when the corresponding events2 events show up)
+
+
+                // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
             }
             catch (AccessDeniedException | SQLException exc)
