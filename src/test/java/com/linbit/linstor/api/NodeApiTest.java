@@ -2,6 +2,8 @@ package com.linbit.linstor.api;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,7 @@ import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.DoNotSeedDefaultPeer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
@@ -32,7 +35,10 @@ import org.mockito.Mockito;
 
 public class NodeApiTest extends ApiTestBase
 {
+    private static final int DEFAULT_CREATE_NODE_TIMEOUT = 5;
+
     @Inject private Provider<CtrlNodeApiCallHandler> nodeApiCallHandlerProvider;
+    @Inject private Provider<CtrlNodeCrtApiCallHandler> nodeCrtApiCallHandlerProvider;
 
     private NodeName testNodeName;
     private NodeType testNodeType;
@@ -205,7 +211,7 @@ public class NodeApiTest extends ApiTestBase
             nodeType = ApiConsts.VAL_NODE_TYPE_STLT;
             netIfApis = new ArrayList<>();
             netIfApis.add(
-                ApiTestBase.createNetInterfaceApi("tcp0","127.0.0.1")
+                ApiTestBase.createNetInterfaceApi("tcp0", "127.0.0.1")
             );
             props = new TreeMap<>();
         }
@@ -213,12 +219,12 @@ public class NodeApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return nodeApiCallHandlerProvider.get().createNode(
+            return nodeCrtApiCallHandlerProvider.get().createNode(
                 nodeName,
                 nodeType,
                 netIfApis,
                 props
-            );
+            ).blockFirst(Duration.ofSeconds(DEFAULT_CREATE_NODE_TIMEOUT));
         }
 
         public AbsApiCallTester setNodeName(String nodeNameRef)

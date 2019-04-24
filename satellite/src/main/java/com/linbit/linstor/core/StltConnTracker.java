@@ -8,6 +8,8 @@ import com.linbit.linstor.netcom.Peer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.io.IOException;
+
 @Singleton
 class StltConnTracker implements ConnectionObserver
 {
@@ -29,6 +31,17 @@ class StltConnTracker implements ConnectionObserver
     {
         // FIXME: Something should done here for completeness, although the Satellite
         //        does not normally connect outbound
+        addToPeerMap(connPeer);
+    }
+
+    @Override
+    public void outboundConnectionEstablishing(Peer peerRef) throws IOException
+    {
+        addToPeerMap(peerRef);
+    }
+
+    private void addToPeerMap(Peer connPeer)
+    {
         if (connPeer != null)
         {
             SatellitePeerCtx peerCtx = (SatellitePeerCtx) connPeer.getAttachment();

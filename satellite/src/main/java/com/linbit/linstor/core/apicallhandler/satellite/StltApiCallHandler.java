@@ -4,6 +4,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +28,6 @@ import com.linbit.ImplementationError;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeType;
@@ -273,7 +273,7 @@ public class StltApiCallHandler
         return authResult;
     }
 
-    public void applyFullSync(
+    public boolean applyFullSync(
         Map<String, String> satelliteProps,
         Set<NodePojo> nodes,
         Set<StorPoolPojo> storPools,
@@ -283,6 +283,7 @@ public class StltApiCallHandler
         byte[] cryptKey
     )
     {
+        boolean success = false;
         try (
             LockGuard ls = LockGuard.createLocked(
                 reconfigurationLock.writeLock(),
@@ -405,18 +406,16 @@ public class StltApiCallHandler
                     updateMonitor.getCurrentFullSyncId()
                 );
             }
+            success = true;
         }
         catch (Exception | ImplementationError exc)
         {
             errorReporter.reportError(exc);
 
-            Peer controllerPeer = controllerPeerConnector.getControllerPeer();
-            controllerPeer.sendMessage(
-                interComSerializer.onewayBuilder(InternalApiConsts.API_FULL_SYNC_FAILED)
-                    .build()
-            );
+            success = false;
+            // this method returning false should trigger a stlt->ctrl message that the full sync failed
 
-            // sending this message should tell the controller to not send us any further data, as
+            // sending that message should tell the controller to not send us any further data, as
             // updates would be based on an invalid fullSync, and receiving this fullSync again
             // would most likely cause the same exception as now.
 
@@ -431,6 +430,7 @@ public class StltApiCallHandler
             // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
             updateMonitor.getNextFullSyncId();
         }
+        return success;
     }
 
     private void checkForAlreadyKnownResources(RscPojo rsc)

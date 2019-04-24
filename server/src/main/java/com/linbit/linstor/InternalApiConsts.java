@@ -3,12 +3,10 @@ package com.linbit.linstor;
 public class InternalApiConsts
 {
     public static final String API_AUTH        = "Auth";
-    public static final String API_AUTH_ACCEPT = "AuthAccept";
-    public static final String API_AUTH_ERROR  = "AuthError";
+    public static final String API_AUTH_RESPONSE = "AuthResponse";
 
-    public static final String API_FULL_SYNC_DATA    = "FullSyncData";
-    public static final String API_FULL_SYNC_FAILED  = "FullSyncFailed";
-    public static final String API_FULL_SYNC_SUCCESS = "FullSyncSuccess";
+    public static final String API_FULL_SYNC_DATA     = "FullSyncData";
+    public static final String API_FULL_SYNC_RESPONSE = "FullSyncResponse";
 
     public static final String API_CHANGED_CONTROLLER   = "ChangedController";
     public static final String API_REQUEST_CONTROLLER   = "RequestController";

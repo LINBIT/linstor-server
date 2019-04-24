@@ -18,6 +18,14 @@ public interface ConnectionObserver
     void outboundConnectionEstablished(Peer connPeer) throws IOException;
 
     /**
+     * Called when an outbound connection is establishing but not yet finished
+     *
+     * @param peerRef
+     * @throws IOException
+     */
+    void outboundConnectionEstablishing(Peer peerRef) throws IOException;
+
+    /**
      * Called when an inbound connection is established
      * @param connPeer The connected peer
      */
@@ -31,4 +39,5 @@ public interface ConnectionObserver
      * @param shuttingDown True if the connections being generally shut down.
      */
     void connectionClosed(Peer connPeer, boolean allowReconnect, boolean shuttingDown);
+
 }

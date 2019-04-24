@@ -248,6 +248,11 @@ public class TcpConnectorPeer implements Peer
     {
         connected = true;
         pongReceived(); // in order to calculate the first "real" pong correctly.
+
+        if (node != null)
+        {
+            node.connectionEstablished();
+        }
         synchronized (this)
         {
             this.notifyAll();
@@ -371,6 +376,11 @@ public class TcpConnectorPeer implements Peer
     @Override
     public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data)
     {
+        return apiCall(apiCallName, data, true);
+    }
+
+    public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data, boolean authenticationRequired)
+    {
         return Flux
             .<ByteArrayInputStream>create(fluxSink ->
                 {
@@ -381,7 +391,7 @@ public class TcpConnectorPeer implements Peer
 
                     openRpcs.put(apiCallId, fluxSink);
 
-                    if (!authenticated)
+                    if (authenticationRequired && !authenticated)
                     {
                         fluxSink.error(new PeerNotConnectedException());
                     }

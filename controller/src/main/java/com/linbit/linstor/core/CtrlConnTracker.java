@@ -42,6 +42,18 @@ class CtrlConnTracker implements ConnectionObserver
     @Override
     public void outboundConnectionEstablished(Peer connPeer) throws IOException
     {
+        addToPeerMap(connPeer);
+        reconnectorTask.peerConnected(connPeer);
+    }
+
+    @Override
+    public void outboundConnectionEstablishing(Peer connPeer) throws IOException
+    {
+        addToPeerMap(connPeer);
+    }
+
+    private void addToPeerMap(Peer connPeer)
+    {
         if (connPeer != null)
         {
             ControllerPeerCtx peerCtx = (ControllerPeerCtx) connPeer.getAttachment();
@@ -54,9 +66,7 @@ class CtrlConnTracker implements ConnectionObserver
             {
                 peerMap.put(connPeer.getId(), connPeer);
             }
-            reconnectorTask.peerConnected(connPeer);
         }
-        // TODO: If a satellite has been connected, schedule any necessary actions
     }
 
     private void sendApiVersionMessage(final Peer connPeer)

@@ -9,7 +9,6 @@ import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.annotation.SatelliteConnectorContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
@@ -19,7 +18,6 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
 import javax.inject.Inject;
@@ -32,35 +30,31 @@ import java.net.InetSocketAddress;
 public class SatelliteConnectorImpl implements SatelliteConnector
 {
     private final ErrorReporter errorReporter;
-    private final AccessContext connectorCtx;
     private final Props ctrlConf;
     private final NetComContainer netComContainer;
-    private final CtrlAuthenticator authenticator;
-    private final PingTask pingTask;
     private final ReconnectorTask reconnectorTask;
 
     @Inject
     public SatelliteConnectorImpl(
         ErrorReporter errorReporterRef,
-        @SatelliteConnectorContext AccessContext connectorCtxRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         NetComContainer netComContainerRef,
-        CtrlAuthenticator authenticatorRef,
-        PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef
     )
     {
         errorReporter = errorReporterRef;
-        connectorCtx = connectorCtxRef;
         ctrlConf = ctrlConfRef;
         netComContainer = netComContainerRef;
-        authenticator = authenticatorRef;
-        pingTask = pingTaskRef;
         reconnectorTask = reconnectorTaskRef;
     }
 
     @Override
     public void startConnecting(Node node, AccessContext accCtx)
+    {
+        startConnecting(node, accCtx, true);
+    }
+
+    public void startConnecting(Node node, AccessContext accCtx, boolean async)
     {
         try
         {
@@ -108,14 +102,29 @@ public class SatelliteConnectorImpl implements SatelliteConnector
 
                     if (tcpConnector != null)
                     {
-                        connectSatellite(
-                            new InetSocketAddress(
-                                stltConn.getAddress(accCtx).getAddress(),
-                                stltConn.getStltConnPort(accCtx).value
-                            ),
-                            tcpConnector,
-                            node
-                        );
+                        if (async)
+                        {
+                            connectSatelliteAsync(
+                                new InetSocketAddress(
+                                    stltConn.getAddress(accCtx).getAddress(),
+                                    stltConn.getStltConnPort(accCtx).value
+                                ),
+                                tcpConnector,
+                                node
+                            );
+                        }
+                        else
+                        {
+                            connectSatellite(
+                                new InetSocketAddress(
+                                    stltConn.getAddress(accCtx).getAddress(),
+                                    stltConn.getStltConnPort(accCtx).value
+                                ),
+                                tcpConnector,
+                                node,
+                                false
+                            );
+                        }
                     }
                     else
                     {
@@ -142,41 +151,13 @@ public class SatelliteConnectorImpl implements SatelliteConnector
         }
     }
 
-    public void connectSatellite(
+    public void connectSatelliteAsync(
         final InetSocketAddress satelliteAddress,
         final TcpConnector tcpConnector,
         final Node node
     )
     {
-        Runnable connectRunnable = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try
-                {
-                    Peer peer = tcpConnector.connect(satelliteAddress, node);
-                    reconnectorTask.add(peer, true);
-                }
-                catch (IOException ioExc)
-                {
-                    errorReporter.reportError(
-                        new LinStorException(
-                            "Cannot connect to satellite",
-                            String.format(
-                                "Establishing connection to satellite (%s:%d) failed",
-                                satelliteAddress.getAddress().getHostAddress(),
-                                satelliteAddress.getPort()
-                            ),
-                            "IOException occured. See cause for further details",
-                            null,
-                            null,
-                            ioExc
-                        )
-                    );
-                }
-            }
-        };
+        Runnable connectRunnable = () -> connectSatellite(satelliteAddress, tcpConnector, node, true);
         // This could possibly be offloaded to some specialized worker pool in the future,
         // but not to the main worker pool used for submitting inbound requests,
         // because submitting to the main worker pool from the Controller's initialization
@@ -185,4 +166,37 @@ public class SatelliteConnectorImpl implements SatelliteConnector
         connectRunnable.run();
     }
 
+    public void connectSatellite(
+        final InetSocketAddress satelliteAddress,
+        final TcpConnector tcpConnector,
+        final Node node,
+        final boolean addToReconnector
+    )
+    {
+        try
+        {
+            Peer peer = tcpConnector.connect(satelliteAddress, node);
+            if (addToReconnector)
+            {
+                reconnectorTask.add(peer, false);
+            }
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(
+                new LinStorException(
+                    "Cannot connect to satellite",
+                    String.format(
+                        "Establishing connection to satellite (%s:%d) failed",
+                        satelliteAddress.getAddress().getHostAddress(),
+                        satelliteAddress.getPort()
+                    ),
+                    "IOException occured. See cause for further details",
+                    null,
+                    null,
+                    ioExc
+                )
+            );
+        }
+    }
 }

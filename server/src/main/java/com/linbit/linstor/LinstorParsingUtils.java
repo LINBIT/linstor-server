@@ -3,6 +3,8 @@ package com.linbit.linstor;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.NetInterface.EncryptionType;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -39,6 +41,50 @@ public class LinstorParsingUtils
         }
         return nodeName;
     }
+
+    public static NodeType asNodeType(String nodeTypeStr)
+    {
+        NodeType nodeType;
+        try
+        {
+            nodeType = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
+        }
+        catch (IllegalArgumentException illegalArgExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_INVLD_NODE_TYPE,
+                    "The specified node type '" + nodeTypeStr + "' is invalid."
+                )
+                .setCorrection("Valid node types are:\n" +
+                    NodeType.CONTROLLER.name() + "\n" +
+                    NodeType.SATELLITE.name() + "\n" +
+                    NodeType.COMBINED.name() + "\n" +
+                    NodeType.AUXILIARY.name() + "\n")
+                .build(),
+                illegalArgExc
+            );
+        }
+        return nodeType;
+    }
+
+    public static EncryptionType asEncryptionType(String encryptionTypeStr)
+    {
+        EncryptionType encryptionType;
+        try
+        {
+            encryptionType = EncryptionType.valueOfIgnoreCase(encryptionTypeStr);
+        }
+        catch (Exception exc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_NET_TYPE,
+                "The given encryption type '" + encryptionTypeStr + "' is invalid."
+            ), exc);
+        }
+        return encryptionType;
+    }
+
 
     /**
      * Returns the given String as a {@link NetInterfaceName} if possible. If the String is not a valid

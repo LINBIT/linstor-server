@@ -38,6 +38,8 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import reactor.core.publisher.FluxSink;
+
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -89,6 +91,8 @@ public class NodeData extends BaseTransactionObject implements Node
     private transient TransactionSimpleObject<NodeData, NetInterface> currentStltConn;
 
     private final TransactionSimpleObject<NodeData, Boolean> deleted;
+
+    private FluxSink<Boolean> initialConnectSink;
 
     NodeData(
         UUID uuidRef,
@@ -720,5 +724,28 @@ public class NodeData extends BaseTransactionObject implements Node
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
+    }
+
+    public void registerInitialConnectSink(FluxSink<Boolean> fluxSinkRef)
+    {
+        if (initialConnectSink != null)
+        {
+            throw new ImplementationError("Only one initialConnectSink allowed");
+        }
+        initialConnectSink = fluxSinkRef;
+    }
+
+    @Override
+    public boolean connectionEstablished()
+    {
+        boolean ret = false;
+        if (initialConnectSink != null)
+        {
+            initialConnectSink.next(true);
+            initialConnectSink.complete();
+            initialConnectSink = null;
+            ret = true;
+        }
+        return ret;
     }
 }

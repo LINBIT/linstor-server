@@ -7,10 +7,14 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
+import com.linbit.linstor.api.protobuf.internal.IntFullSyncResponse;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlSatelliteConnectionNotifier;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -20,12 +24,12 @@ import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.util.ArrayList;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import static java.util.stream.Collectors.toList;
@@ -33,80 +37,80 @@ import static java.util.stream.Collectors.toList;
 @Singleton
 public class CtrlFullSyncApiCallHandler
 {
+    private static final Long FULL_SYNC_RPC_ID = -1L;
+
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
-    private final CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifier;
     private final CtrlStltSerializer interComSerializer;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
-    private final Provider<Peer> satelliteProvider;
+    private final IntFullSyncResponse fullSyncResponse;
 
     @Inject
     CtrlFullSyncApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
-        CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifierRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        Provider<Peer> satelliteProviderRef
+        IntFullSyncResponse fullSyncResponseRef
     )
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
-        ctrlSatelliteConnectionNotifier = ctrlSatelliteConnectionNotifierRef;
         interComSerializer = interComSerializerRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
-        satelliteProvider = satelliteProviderRef;
+        fullSyncResponse = fullSyncResponseRef;
     }
 
-    public Flux<?> sendFullSync(Peer satellite, long expectedFullSyncId)
+    public Flux<?> sendFullSync(Node satelliteNode, long expectedFullSyncId)
     {
+        return sendFullSync(satelliteNode, expectedFullSyncId, false);
+    }
+
+    public Flux<ApiCallRc> sendFullSync(Node satelliteNode, long expectedFullSyncId, boolean waitForAnswer)
+    {
+        Peer peer;
+        try
+        {
+            peer = satelliteNode.getPeer(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
         return scopeRunner.fluxInTransactionlessScope(
             "Send full sync",
             LockGuard.createDeferred(
                 nodesMapLock.readLock(),
                 rscDfnMapLock.readLock(),
                 storPoolDfnMapLock.readLock(),
-                satellite.getSerializerLock().writeLock()
+                peer.getSerializerLock().writeLock()
             ),
-            () -> sendFullSyncInScope(satellite, expectedFullSyncId)
+            () -> sendFullSyncInScope(satelliteNode, expectedFullSyncId, waitForAnswer)
         );
     }
 
-    public Flux<?> fullSyncSuccess()
+    private Flux<ApiCallRc> sendFullSyncInScope(Node satelliteNode, long expectedFullSyncId, boolean waitForAnswer)
     {
-        return scopeRunner.fluxInTransactionlessScope(
-            "Handle full sync success",
-            LockGuard.createDeferred(
-                nodesMapLock.writeLock(),
-                rscDfnMapLock.readLock()
-            ),
-            this::fullSyncSuccessInScope
-        );
-    }
-
-    private Flux<?> sendFullSyncInScope(Peer satellite, long expectedFullSyncId)
-    {
+        Flux<ApiCallRc> flux = Flux.empty();
         try
         {
-            Node localNode = satellite.getNode();
-
             Set<Node> nodes = new LinkedHashSet<>();
             Set<StorPool> storPools = new LinkedHashSet<>();
             Set<Resource> rscs = new LinkedHashSet<>();
             Set<Snapshot> snapshots = new LinkedHashSet<>();
 
-            nodes.add(localNode); // always add the localNode
+            nodes.add(satelliteNode); // always add the localNode
 
-            for (Resource rsc : localNode.streamResources(apiCtx).collect(toList()))
+            for (Resource rsc : satelliteNode.streamResources(apiCtx).collect(toList()))
             {
                 rscs.add(rsc);
                 Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
@@ -121,57 +125,86 @@ public class CtrlFullSyncApiCallHandler
             }
             // some storPools might have been created on the satellite, but are not used by resources / volumes
             // however, when a rsc / vlm is created, they already assume the referenced storPool already exists
-            storPools.addAll(localNode.streamStorPools(apiCtx).collect(toList()));
+            storPools.addAll(satelliteNode.streamStorPools(apiCtx).collect(toList()));
 
-            snapshots.addAll(localNode.getInProgressSnapshots(apiCtx));
+            snapshots.addAll(satelliteNode.getInProgressSnapshots(apiCtx));
 
-            satellite.setFullSyncId(expectedFullSyncId);
+            Peer satellitePeer = satelliteNode.getPeer(apiCtx);
+            satellitePeer.setFullSyncId(expectedFullSyncId);
 
-            errorReporter.logTrace("Sending full sync to " + satellite + ".");
-            satellite.sendMessage(
-                interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_FULL_SYNC_DATA)
-                    .fullSync(nodes, storPools, rscs, snapshots, expectedFullSyncId, -1) // fullSync has -1 as updateId
-                    .build()
-            );
+            errorReporter.logTrace("Sending full sync to " + satelliteNode + ".");
+
+            CtrlStltSerializerBuilder builder;
+            if (waitForAnswer)
+            {
+                builder = interComSerializer.headerlessBuilder();
+            }
+            else
+            {
+                builder = interComSerializer.apiCallBuilder(
+                    InternalApiConsts.API_FULL_SYNC_DATA,
+                    FULL_SYNC_RPC_ID
+                );
+            }
+
+            byte[] data = builder
+                .fullSync(nodes, storPools, rscs, snapshots, expectedFullSyncId, FULL_SYNC_RPC_ID)
+                .build();
+
+            if (waitForAnswer)
+            {
+                flux = satellitePeer.apiCall(
+                        InternalApiConsts.API_FULL_SYNC_DATA,
+                        data
+                    )
+                    .concatMap(inputStream -> handleFullSyncResponse(satellitePeer, inputStream))
+                    .thenMany(
+                        Flux.just(
+                            ApiCallRcImpl.singletonApiCallRc(
+                                ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.CONN_STATUS_AUTHENTICATED,
+                                    "Node '" + satelliteNode.getName().displayValue + "' authenticated"
+                                )
+                                .setDetails(
+                                    "Supported storage providers: " +
+                                        satellitePeer.getSupportedProviders().toString().toLowerCase() + "\n" +
+                                    "Supported resource layers  : " +
+                                        satellitePeer.getSupportedLayers().toString().toLowerCase()
+                                )
+                            )
+                        )
+                    );
+            }
+            else
+            {
+                satellitePeer.sendMessage(data);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
             errorReporter.reportError(
                 new ImplementationError(
-                    "ApiCtx does not have enough privileges to create a full sync for satellite " + satellite.getId(),
+                    "ApiCtx does not have enough privileges to create a full sync for satellite " +
+                        satelliteNode.getName(),
                     accDeniedExc
                 )
             );
         }
 
-        return Flux.empty();
+        return flux;
     }
 
-    private Flux<?> fullSyncSuccessInScope()
+    private Flux<byte[]> handleFullSyncResponse(Peer satellitePeerRef, InputStream inputStream)
     {
-        Peer satellite = satelliteProvider.get();
-
-        satellite.setConnectionStatus(Peer.ConnectionStatus.ONLINE);
-
-        Node localNode = satellite.getNode();
-
-        List<Flux<?>> fluxes = new ArrayList<>();
-
+        Flux<byte[]> flux;
         try
         {
-            Iterator<Resource> localRscIter = localNode.iterateResources(apiCtx);
-            while (localRscIter.hasNext())
-            {
-                Resource localRsc = localRscIter.next();
-                fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc));
-            }
+            flux = fullSyncResponse.processReactive(satellitePeerRef, inputStream);
         }
-        catch (AccessDeniedException exc)
+        catch (IOException exc)
         {
-            throw new ImplementationError(exc);
+            flux = Flux.error(exc);
         }
-
-        return Flux.merge(fluxes);
+        return flux;
     }
 }

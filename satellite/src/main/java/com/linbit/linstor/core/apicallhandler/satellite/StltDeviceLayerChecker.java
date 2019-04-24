@@ -5,6 +5,8 @@ import com.linbit.ImplementationError;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.satellite.authentication.AuthenticationResult;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -108,7 +110,16 @@ public class StltDeviceLayerChecker
             supportedDeviceLayers.remove(DeviceLayerKind.STORAGE);
         }
 
-        return new AuthenticationResult(supportedDeviceLayers, supportedDeviceProviders);
+        return new AuthenticationResult(
+            supportedDeviceLayers,
+            supportedDeviceProviders,
+            ApiCallRcImpl.singletonApiCallRc(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.CREATED | ApiConsts.MASK_NODE,
+                    "successfully authenticated"
+                )
+            )
+        );
     }
 
     private boolean allChecksSatisfied(

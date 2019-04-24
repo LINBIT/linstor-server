@@ -240,11 +240,15 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     }
                     peer = createTcpConnectorPeer(peerId, connKey, true, node);
                     connKey.attach(peer);
-                    connObserver.outboundConnectionEstablished(peer);
                     if (connected)
                     {
                         // May throw SSLException
                         peer.connectionEstablished();
+                        connObserver.outboundConnectionEstablished(peer);
+                    }
+                    else
+                    {
+                        connObserver.outboundConnectionEstablishing(peer);
                     }
                     try
                     {
@@ -1334,6 +1338,15 @@ public class TcpConnectorService implements Runnable, TcpConnector
             performConnectionObserverCall(
                 notNullConnObserver -> notNullConnObserver.outboundConnectionEstablished(connPeer),
                 "outbound connection established"
+            );
+        }
+
+        @Override
+        public void outboundConnectionEstablishing(Peer connPeer)
+        {
+            performConnectionObserverCall(
+                notNullConnObserver -> notNullConnObserver.outboundConnectionEstablishing(connPeer),
+                "outbound connection establishing"
             );
         }
 

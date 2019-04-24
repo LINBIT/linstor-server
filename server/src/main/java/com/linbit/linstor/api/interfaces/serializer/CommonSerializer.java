@@ -37,7 +37,8 @@ public interface CommonSerializer
             long expectedFullSyncId,
             int[] stltVersion,
             List<DeviceLayerKind> supportedDeviceLayerRef,
-            List<DeviceProviderKind> supportedDeviceProviderRef
+            List<DeviceProviderKind> supportedDeviceProviderRef,
+            ApiCallRc responses
         );
 
         CommonSerializerBuilder bytes(byte[] bytes);

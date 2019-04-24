@@ -94,8 +94,8 @@ public class Json
     {
         public String name;
         public String type;
-        public Map<String, String> props;
-        public List<String> flags;
+        public Map<String, String> props = Collections.emptyMap();
+        public List<String> flags = Collections.emptyList();
         public List<NetInterfaceData> net_interfaces = new ArrayList<>();
         public String connection_status;
     }

@@ -28,7 +28,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncSuccessOuterClass.MsgIntFullSyncSuccess;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
@@ -95,7 +95,7 @@ public class FullSync implements ApiCall
             )
         );
 
-        apiCallHandler.applyFullSync(
+        boolean success = apiCallHandler.applyFullSync(
             ProtoMapUtils.asMap(msgIntControllerData.getPropsList()),
             nodes,
             storPools,
@@ -105,35 +105,39 @@ public class FullSync implements ApiCall
             Base64.decode(applyFullSync.getMasterKey())
         );
 
-        Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
-            apiCallHandlerUtils.getAllSpaceInfo(false);
-
-        Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
-
-        spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
-            spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
-            apiRcException -> errorReporter.reportError(apiRcException.getCause())
-        ));
-
-        MsgIntFullSyncSuccess.Builder builder = MsgIntFullSyncSuccess.newBuilder();
-        for (Entry<StorPool, SpaceInfo> entry : spaceInfoMap.entrySet())
+        MsgIntFullSyncResponse.Builder builder = MsgIntFullSyncResponse.newBuilder();
+        builder.setSuccess(success);
+        if (success)
         {
-            StorPool storPool = entry.getKey();
-            builder.addFreeSpace(
-                StorPoolFreeSpace.newBuilder()
-                    .setStorPoolUuid(storPool.getUuid().toString())
-                    .setStorPoolName(storPool.getName().displayValue)
-                    .setFreeCapacity(entry.getValue().freeCapacity)
-                    .setTotalCapacity(entry.getValue().totalCapacity)
-                    .build()
-            );
+            Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
+                apiCallHandlerUtils.getAllSpaceInfo(false);
+
+            Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
+
+            spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
+                spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
+                apiRcException -> errorReporter.reportError(apiRcException.getCause())
+            ));
+
+            for (Entry<StorPool, SpaceInfo> entry : spaceInfoMap.entrySet())
+            {
+                StorPool storPool = entry.getKey();
+                builder.addFreeSpace(
+                    StorPoolFreeSpace.newBuilder()
+                        .setStorPoolUuid(storPool.getUuid().toString())
+                        .setStorPoolName(storPool.getName().displayValue)
+                        .setFreeCapacity(entry.getValue().freeCapacity)
+                        .setTotalCapacity(entry.getValue().totalCapacity)
+                        .build()
+                );
+            }
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         builder.build().writeDelimitedTo(baos);
         controllerPeerProvider.get().sendMessage(
-            apiCallAnswerer.prepareOnewayMessage(
+            apiCallAnswerer.answerBytes(
                 baos.toByteArray(),
-                InternalApiConsts.API_FULL_SYNC_SUCCESS
+                InternalApiConsts.API_FULL_SYNC_RESPONSE
             )
         );
     }

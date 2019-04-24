@@ -24,7 +24,6 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -51,7 +50,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.ReconnectorTask;
-
 import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
 
 import javax.inject.Inject;
@@ -133,74 +131,14 @@ public class CtrlNodeApiCallHandler
         scheduler = schedulerRef;
     }
 
-    /**
-     * Attempts to create a node by the given parameters. <br />
-     * <br />
-     * In any case an {@link ApiCallRc} is returned. The list of {@link ApiCallRcEntry}s describe the success
-     * or failure of the operation. <br />
-     * <br />
-     * All return codes from this method are masked with {@link ApiConsts#MASK_NODE} and
-     * {@link ApiConsts#MASK_CRT}.<br />
-     * <br />
-     * Following return codes can be returned:
-     * <ul>
-     *  <li>
-     *      {@link ApiConsts#FAIL_ACC_DENIED_NODE} when the current access context does have enough privileges to
-     *      change any nodes at all (controller.nodesMapLockProt)
-     *  </li>
-     *  <li>{@link ApiConsts#FAIL_MISSING_NETCOM} when the list of network interface apis is empty</li>
-     *  <li>
-     *      {@link ApiConsts#FAIL_INVLD_NET_NAME} when the list of network interface apis contains an invalid
-     *      {@link NetInterfaceName}
-     *  </li>
-     *  <li>
-     *      {@link ApiConsts#FAIL_INVLD_NET_ADDR} when the list of network interface apis contains an invalid
-     *      {@link LsIpAddress}
-     *  </li>
-     *  <li>{@link ApiConsts#FAIL_MISSING_STLT_CONN} when the list of satellite connection apis is empty</li>
-     *  <li>{@link ApiConsts#FAIL_INVLD_NODE_NAME} when the {@link NodeName} is invalid</li>
-     *  <li>{@link ApiConsts#FAIL_INVLD_NODE_TYPE} when the {@link NodeType} is invalid</li>
-     *  <li>{@link ApiConsts#CREATED} when the node was created successfully </li>
-     * </ul>
-     *
-     * @param nodeNameStr
-     * @param nodeTypeStr
-     * @param netIfs
-     * @param propsMap
-     * @return
-     */
-    public ApiCallRc createNode(
-        String nodeNameStr,
-        String nodeTypeStr,
-        List<NetInterfaceApi> netIfs,
-        Map<String, String> propsMap
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeNodeContext(
-            ApiOperation.makeRegisterOperation(),
-            nodeNameStr
-        );
-
-        try
-        {
-            createNodeImpl(nodeNameStr, nodeTypeStr, netIfs, propsMap, responses, context, true);
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
-    private NodeData createNodeImpl(
+    NodeData createNodeImpl(
         String nodeNameStr,
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
         Map<String, String> propsMap,
         ApiCallRcImpl responses,
         ResponseContext context,
+        boolean startConnecting,
         boolean autoCommit
     )
         throws AccessDeniedException
@@ -216,7 +154,7 @@ public class CtrlNodeApiCallHandler
         {
             NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
 
-            NodeType type = asNodeType(nodeTypeStr);
+            NodeType type = LinstorParsingUtils.asNodeType(nodeTypeStr);
 
             node = createNode(nodeName, type);
 
@@ -232,7 +170,7 @@ public class CtrlNodeApiCallHandler
                 if (netIfApi.isUsableAsSatelliteConnection())
                 {
                     port = LinstorParsingUtils.asTcpPortNumber(netIfApi.getSatelliteConnectionPort());
-                    encrType = asEncryptionType(netIfApi.getSatelliteConnectionEncryptionType());
+                    encrType = LinstorParsingUtils.asEncryptionType(netIfApi.getSatelliteConnectionEncryptionType());
                 }
 
                 NetInterfaceData netIf = createNetInterface(
@@ -283,7 +221,10 @@ public class CtrlNodeApiCallHandler
             responseConverter.addWithOp(responses, context,
                 ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
 
-            satelliteConnector.startConnecting(node, peerAccCtx.get());
+            if (startConnecting)
+            {
+                satelliteConnector.startConnecting(node, peerAccCtx.get());
+            }
         }
         return node;
     }
@@ -324,6 +265,7 @@ public class CtrlNodeApiCallHandler
                         propsMap,
                         responses,
                         context,
+                        true,
                         false
                     );
                     sfTargetProcessMgr.startLocalSatelliteProcess(node);
@@ -532,32 +474,6 @@ public class CtrlNodeApiCallHandler
         return nodes;
     }
 
-    private NodeType asNodeType(String nodeTypeStr)
-    {
-        NodeType nodeType;
-        try
-        {
-            nodeType = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
-        }
-        catch (IllegalArgumentException illegalArgExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_INVLD_NODE_TYPE,
-                    "The specified node type '" + nodeTypeStr + "' is invalid."
-                )
-                .setCorrection("Valid node types are:\n" +
-                    NodeType.CONTROLLER.name() + "\n" +
-                    NodeType.SATELLITE.name() + "\n" +
-                    NodeType.COMBINED.name() + "\n" +
-                    NodeType.AUXILIARY.name() + "\n")
-                .build(),
-                illegalArgExc
-            );
-        }
-        return nodeType;
-    }
-
     private NodeData createNode(NodeName nodeName, NodeType type)
     {
         NodeData node;
@@ -608,23 +524,6 @@ public class CtrlNodeApiCallHandler
             throw new ApiSQLException(sqlExc);
         }
         return node;
-    }
-
-    private EncryptionType asEncryptionType(String encryptionTypeStr)
-    {
-        EncryptionType encryptionType;
-        try
-        {
-            encryptionType = EncryptionType.valueOfIgnoreCase(encryptionTypeStr);
-        }
-        catch (Exception exc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_INVLD_NET_TYPE,
-                "The given encryption type '" + encryptionTypeStr + "' is invalid."
-            ), exc);
-        }
-        return encryptionType;
     }
 
     private void reportMissingNetInterfaces(String nodeNameStr)
@@ -687,7 +586,7 @@ public class CtrlNodeApiCallHandler
 
     private void setNodeType(NodeData node, String nodeTypeStr)
     {
-        NodeType nodeType = asNodeType(nodeTypeStr);
+        NodeType nodeType = LinstorParsingUtils.asNodeType(nodeTypeStr);
         try
         {
             if (!node.streamStorPools(apiCtx)

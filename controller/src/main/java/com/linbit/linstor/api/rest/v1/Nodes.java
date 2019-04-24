@@ -9,6 +9,7 @@ import com.linbit.linstor.api.rest.v1.serializer.Json.NetInterfaceData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.NodeData;
 import com.linbit.linstor.api.rest.v1.serializer.Json.NodeModifyData;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -29,6 +30,8 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +48,7 @@ public class Nodes
 {
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
+    private final CtrlNodeCrtApiCallHandler ctrlNodeCrtApiCallHandler;
     private final CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandler;
     private final CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandler;
     private final ObjectMapper objectMapper;
@@ -53,12 +57,14 @@ public class Nodes
     Nodes(
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
+        CtrlNodeCrtApiCallHandler ctrlNodeCrtApiCallHandlerRef,
         CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandlerRef,
         CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
+        ctrlNodeCrtApiCallHandler = ctrlNodeCrtApiCallHandlerRef;
         ctrlNodeDeleteApiCallHandler = ctrlNodeDeleteApiCallHandlerRef;
         ctrlNodeLostApiCallHandler = ctrlNodeLostApiCallHandlerRef;
         objectMapper = new ObjectMapper();
@@ -116,31 +122,30 @@ public class Nodes
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createNode(@Context Request request, String jsonData)
+    public void createNode(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_NODE, request), () ->
+        try
         {
             NodeData data = objectMapper.readValue(jsonData, NodeData.class);
+            Flux<ApiCallRc> flux = ctrlNodeCrtApiCallHandler
+                .createNode(
+                    data.name,
+                    data.type,
+                    data.net_interfaces.stream().map(NetInterfaceData::toApi).collect(Collectors.toList()),
+                    data.props
+                )
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_NODE, request));
 
-            // if we only get 1 netinterface with no satellite port set, assume it will be the default satellite netif
-            if (data.net_interfaces.size() == 1)
-            {
-                NetInterfaceData netif = data.net_interfaces.get(0);
-                if (netif.satellite_port == null)
-                {
-                    netif.satellite_port = ApiConsts.DFLT_STLT_PORT_PLAIN;
-                    netif.satellite_encryption_type = ApiConsts.VAL_NETCOM_TYPE_PLAIN;
-                }
-            }
-
-            ApiCallRc apiCallRc = ctrlApiCallHandler.createNode(
-                data.name,
-                data.type,
-                data.net_interfaces.stream().map(NetInterfaceData::toApi).collect(Collectors.toList()),
-                data.props
-            );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
-        }, true);
+            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @PUT

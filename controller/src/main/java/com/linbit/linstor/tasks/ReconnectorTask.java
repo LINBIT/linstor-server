@@ -47,7 +47,7 @@ public class ReconnectorTask implements Task
             if (authenticateImmediately && peer.isConnected(false))
             {
                 // no locks needed
-                authenticatorProvider.get().completeAuthentication(peer);
+                authenticatorProvider.get().sendAuthentication(peer);
                 pingTask.add(peer);
             }
             else
@@ -64,7 +64,7 @@ public class ReconnectorTask implements Task
             if (peerList.remove(peer) && pingTask != null)
             {
                 // no locks needed
-                authenticatorProvider.get().completeAuthentication(peer);
+                authenticatorProvider.get().sendAuthentication(peer);
                 pingTask.add(peer);
             }
         }

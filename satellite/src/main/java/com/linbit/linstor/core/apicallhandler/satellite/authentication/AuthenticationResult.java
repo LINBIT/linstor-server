@@ -10,28 +10,33 @@ public class AuthenticationResult
     private final List<DeviceLayerKind> supportedDeviceLayer;
     private final List<DeviceProviderKind> supportedDeviceProvider;
 
-    private final ApiCallRcImpl failedApiCallRcImpl;
+    private final boolean authenticated;
+
+    private final ApiCallRcImpl apiCallRcImpl;
 
     public AuthenticationResult(
         List<DeviceLayerKind> supportedDeviceLayerRef,
-        List<DeviceProviderKind> supportedDeviceProviderRef
+        List<DeviceProviderKind> supportedDeviceProviderRef,
+        ApiCallRcImpl apiCallRcImplRef
     )
     {
         supportedDeviceLayer = supportedDeviceLayerRef;
         supportedDeviceProvider = supportedDeviceProviderRef;
-        failedApiCallRcImpl = null;
+        apiCallRcImpl = apiCallRcImplRef;
+        authenticated = true;
     }
 
     public AuthenticationResult(ApiCallRcImpl failedApiCallRcImplRef)
     {
         supportedDeviceLayer = null;
         supportedDeviceProvider = null;
-        failedApiCallRcImpl = failedApiCallRcImplRef;
+        apiCallRcImpl = failedApiCallRcImplRef;
+        authenticated = false;
     }
 
     public boolean isAuthenticated()
     {
-        return failedApiCallRcImpl == null;
+        return authenticated;
     }
 
     public List<DeviceLayerKind> getSupportedDeviceLayer()
@@ -44,8 +49,8 @@ public class AuthenticationResult
         return supportedDeviceProvider;
     }
 
-    public ApiCallRcImpl getFailedApiCallRc()
+    public ApiCallRcImpl getApiCallRc()
     {
-        return failedApiCallRcImpl;
+        return apiCallRcImpl;
     }
 }

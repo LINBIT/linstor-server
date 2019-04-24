@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolName;
@@ -18,7 +19,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -165,11 +165,17 @@ public class StorPoolInternalCallHandler
 
     public void updateRealFreeSpace(List<CapacityInfoPojo> capacityInfoPojoList)
     {
+        updateRealFreeSpace(peer.get(), capacityInfoPojoList);
+    }
+
+    public void updateRealFreeSpace(Peer peerRef, List<CapacityInfoPojo> capacityInfoPojoList)
+    {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()))
         {
-            if (!peer.get().getNode().isDeleted())
+            Node node = peerRef.getNode();
+            if (!node.isDeleted())
             {
-                String nodeName = peer.get().getNode().getName().displayValue;
+                String nodeName = node.getName().displayValue;
 
                 try
                 {
@@ -177,7 +183,7 @@ public class StorPoolInternalCallHandler
                     {
                         ResponseContext context = CtrlStorPoolApiCallHandler.makeStorPoolContext(
                             ApiOperation.makeModifyOperation(),
-                            peer.get().getNode().getName().displayValue,
+                            nodeName,
                             capacityInfoPojo.getStorPoolName()
                         );
 
@@ -196,7 +202,8 @@ public class StorPoolInternalCallHandler
                             {
                                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                                     ApiConsts.FAIL_UUID_STOR_POOL,
-                                    "UUIDs mismatched when updating free space of " + getStorPoolDescriptionInline(storPool)
+                                    "UUIDs mismatched when updating free space of " +
+                                    getStorPoolDescriptionInline(storPool)
                                 ));
                             }
                         }
@@ -204,7 +211,7 @@ public class StorPoolInternalCallHandler
                         {
                             // Add context to exception
                             throw new ApiRcException(
-                                responseConverter.exceptionToResponse(peer.get(), context, exc), exc, true);
+                                responseConverter.exceptionToResponse(peerRef, context, exc), exc, true);
                         }
                     }
 
@@ -216,9 +223,9 @@ public class StorPoolInternalCallHandler
                     for (ApiCallRc.RcEntry entry : apiCallRc.getEntries())
                     {
                         errorReporter.reportError(
-                            exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
+                            exc.getCause() != null ? exc.getCause() : exc,
                             peerAccCtx.get(),
-                            peer.get(),
+                            peerRef,
                             entry.getMessage()
                         );
                     }

@@ -112,6 +112,11 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     void setSatelliteConnection(AccessContext accCtx, NetInterface netIf)
         throws AccessDeniedException, SQLException;
 
+    /**
+     * @return true iff this is the initial connection attempt
+     */
+    boolean connectionEstablished();
+
     void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 

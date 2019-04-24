@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.KeyValueStore;
-import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -91,41 +90,6 @@ public class CtrlApiCallHandler
         drbdProxyModifyApiCallHandler = drbdProxyModifyApiCallHandlerRef;
         kvsApiCallHandler = kvsApiCallHandlerRef;
         lockGuardFactory = lockGuardFactoryRef;
-    }
-
-    /**
-     * Creates a new {@link Node}
-     *
-     * @param nodeNameStr
-     *            required
-     * @param nodeTypeStr
-     *            required
-     * @param netIfs
-     *            required, at least one needed
-     */
-    public ApiCallRc createNode(
-        String nodeNameStr,
-        String nodeTypeStr,
-        List<NetInterfaceApi> netIfs,
-        Map<String, String> propsRef
-    )
-    {
-        ApiCallRc apiCallRc;
-        Map<String, String> props = propsRef;
-        if (props == null)
-        {
-            props = Collections.emptyMap();
-        }
-        try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP))
-        {
-            apiCallRc = nodeApiCallHandler.createNode(
-                nodeNameStr,
-                nodeTypeStr,
-                netIfs,
-                props
-            );
-        }
-        return apiCallRc;
     }
 
     /**

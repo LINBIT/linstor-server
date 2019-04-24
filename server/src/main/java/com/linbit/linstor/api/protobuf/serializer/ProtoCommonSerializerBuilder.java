@@ -100,8 +100,7 @@ import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthErrorOuterClass.MsgIntAuthError;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
@@ -237,12 +236,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     {
         try
         {
-            MsgIntAuthError.Builder builder = MsgIntAuthError.newBuilder();
-            for (ApiCallResponseOuterClass.ApiCallResponse protoMsg : serializeApiCallRc(apiCallRc))
-            {
-                builder.addResponses(protoMsg);
-            }
-            builder.build().writeDelimitedTo(baos);
+            MsgIntAuthResponse.newBuilder()
+                .setSuccess(false)
+                .addAllResponses(serializeApiCallRc(apiCallRc))
+                .build()
+                .writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {
@@ -256,16 +254,20 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         long expectedFullSyncIdRef,
         int[] stltVersionRef,
         List<DeviceLayerKind> supportedDeviceLayerRef,
-        List<DeviceProviderKind> supportedDeviceProviderRef
+        List<DeviceProviderKind> supportedDeviceProviderRef,
+        ApiCallRc responses
     )
     {
         try
         {
-            MsgIntAuthSuccess.newBuilder()
+
+            MsgIntAuthResponse.newBuilder()
+                .setSuccess(true)
                 .setExpectedFullSyncId(expectedFullSyncIdRef)
                 .setVersionMajor(stltVersionRef[0])
                 .setVersionMinor(stltVersionRef[1])
                 .setVersionPatch(stltVersionRef[2])
+                .addAllResponses(serializeApiCallRc(responses))
                 .addAllSupportedLayer(asProtoLayerTypeWrapperList(supportedDeviceLayerRef))
                 .addAllSupportedProvider(asProtoProviderTypeWrapperList(supportedDeviceProviderRef))
                 .build()

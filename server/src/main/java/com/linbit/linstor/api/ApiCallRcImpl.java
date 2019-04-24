@@ -104,54 +104,64 @@ public class ApiCallRcImpl implements ApiCallRc
         private String details;
         private Set<String> errorIds = new TreeSet<>();
 
-        public void setReturnCode(long returnCodeRef)
+        public ApiCallRcEntry setReturnCode(long returnCodeRef)
         {
             returnCode = returnCodeRef;
+            return this;
         }
 
-        public void setReturnCodeBit(long bitMask)
+        public ApiCallRcEntry setReturnCodeBit(long bitMask)
         {
             returnCode |= bitMask;
+            return this;
         }
 
-        public void setMessage(String messageRef)
+        public ApiCallRcEntry setMessage(String messageRef)
         {
             message = messageRef;
+            return this;
         }
 
-        public void setCause(String causeRef)
+        public ApiCallRcEntry setCause(String causeRef)
         {
             cause = causeRef;
+            return this;
         }
 
-        public void setCorrection(String correctionRef)
+        public ApiCallRcEntry setCorrection(String correctionRef)
         {
             correction = correctionRef;
+            return this;
         }
 
-        public void setDetails(String detailsRef)
+        public ApiCallRcEntry setDetails(String detailsRef)
         {
             details = detailsRef;
+            return this;
         }
 
-        public void putObjRef(String key, String value)
+        public ApiCallRcEntry putObjRef(String key, String value)
         {
             objRefs.put(key, value);
+            return this;
         }
 
-        public void putAllObjRef(Map<String, String> map)
+        public ApiCallRcEntry putAllObjRef(Map<String, String> map)
         {
             objRefs.putAll(map);
+            return this;
         }
 
-        public void addErrorId(String errorId)
+        public ApiCallRcEntry addErrorId(String errorId)
         {
             errorIds.add(errorId);
+            return this;
         }
 
-        public void addAllErrorIds(Set<String> errorIdsRef)
+        public ApiCallRcEntry addAllErrorIds(Set<String> errorIdsRef)
         {
             errorIds.addAll(errorIdsRef);
+            return this;
         }
 
         @Override

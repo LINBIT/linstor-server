@@ -54,6 +54,14 @@ public class ApiCallAnswerer
         peerProvider.get().sendMessage(apiCallMsgData);
     }
 
+    public byte[] answerBytes(byte[] protoMsgsBytes, String apiCall)
+    {
+        return commonSerializer
+            .answerBuilder(apiCall, apiCallIdProvider.get())
+            .bytes(protoMsgsBytes)
+            .build();
+    }
+
     public byte[] prepareOnewayMessage(byte[] protoMsgsBytes, String apiCall)
     {
         return commonSerializer

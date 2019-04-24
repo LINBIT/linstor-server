@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -15,6 +16,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
+import com.linbit.linstor.core.CtrlAuthenticator;
+import com.linbit.linstor.core.SatelliteConnectorImpl;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.netcom.Peer;
@@ -29,9 +32,11 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -47,17 +52,23 @@ public class CtrlSatelliteUpdateCaller
     private final AccessContext apiCtx;
     private final CtrlStltSerializer internalComSerializer;
     private final RetryResourcesTask retryResourceTask;
+    private final SatelliteConnectorImpl stltConnector;
+    private final Provider<CtrlAuthenticator> ctrlAuthenticator;
 
     @Inject
     private CtrlSatelliteUpdateCaller(
         @ApiContext AccessContext apiCtxRef,
         CtrlStltSerializer serializerRef,
-        RetryResourcesTask retryResourceTaskRef
+        RetryResourcesTask retryResourceTaskRef,
+        SatelliteConnectorImpl stltConnectorRef,
+        Provider<CtrlAuthenticator> ctrlAuthenticatorRef
     )
     {
         apiCtx = apiCtxRef;
         internalComSerializer = serializerRef;
         retryResourceTask = retryResourceTaskRef;
+        stltConnector = stltConnectorRef;
+        ctrlAuthenticator = ctrlAuthenticatorRef;
     }
 
     /**
@@ -328,7 +339,7 @@ public class CtrlSatelliteUpdateCaller
         return response;
     }
 
-    private ApiCallRc deserializeApiCallRc(NodeName nodeName, ByteArrayInputStream inputStream)
+    public static ApiCallRc deserializeApiCallRc(NodeName nodeName, ByteArrayInputStream inputStream)
     {
         ApiCallRcImpl deploymentState = new ApiCallRcImpl();
 
@@ -367,5 +378,19 @@ public class CtrlSatelliteUpdateCaller
             ApiConsts.FAIL_NOT_CONNECTED,
             "Connection to satellite '" + nodeName + "' lost"
         )));
+    }
+
+    public Flux<Boolean> attemptConnecting(AccessContext accCtx, NodeData nodeRef, long timeoutMillis)
+    {
+        return Flux.<Boolean>create(fluxSink ->
+            {
+                nodeRef.registerInitialConnectSink(fluxSink);
+                stltConnector.startConnecting(nodeRef, accCtx, false);
+            }
+        )
+        .timeout(
+            Duration.ofMillis(timeoutMillis),
+            Flux.just(false)
+        );
     }
 }

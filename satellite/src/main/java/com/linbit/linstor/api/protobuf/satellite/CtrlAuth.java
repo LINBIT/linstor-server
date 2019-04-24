@@ -15,9 +15,6 @@ import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.satellite.authentication.AuthenticationResult;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass.MsgIntAuth;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthSuccessOuterClass;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -65,41 +62,34 @@ public class CtrlAuth implements ApiCall
         AuthenticationResult authResult =
             apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer);
 
+        byte[] replyBytes;
         if (authResult.isAuthenticated())
         {
             // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
             // additionally we also send information which layers are supported by the current satellite
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            MsgIntAuthSuccessOuterClass.MsgIntAuthSuccess.Builder builder = MsgIntAuthSuccess.newBuilder();
-            long expectedFullSyncId = updateMonitor.getNextFullSyncId();
-            builder.setExpectedFullSyncId(expectedFullSyncId);
-            int[] stltVersion = LinStor.VERSION_INFO_PROVIDER.getSemanticVersion();
-            builder.setVersionMajor(stltVersion[0]);
-            builder.setVersionMinor(stltVersion[1]);
-            builder.setVersionPatch(stltVersion[2]);
-
-            builder.build().writeDelimitedTo(baos);
-
-            controllerPeerProvider.get().sendMessage(
-                commonSerializer.onewayBuilder(InternalApiConsts.API_AUTH_ACCEPT)
-                    .authSuccess(
-                        expectedFullSyncId,
-                        LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
-                        authResult.getSupportedDeviceLayer(),
-                        authResult.getSupportedDeviceProvider()
-                    )
-                    .build()
-            );
+            replyBytes = commonSerializer.headerlessBuilder()
+                .authSuccess(
+                    updateMonitor.getNextFullSyncId(),
+                    LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
+                    authResult.getSupportedDeviceLayer(),
+                    authResult.getSupportedDeviceProvider(),
+                    authResult.getApiCallRc()
+                )
+                .build();
         }
         else
         {
             // whatever happened should be in the apiCallRc
-            controllerPeerProvider.get().sendMessage(
-                commonSerializer.onewayBuilder(InternalApiConsts.API_AUTH_ERROR)
-                    .authError(authResult.getFailedApiCallRc())
-                    .build()
-            );
+            replyBytes = commonSerializer.headerlessBuilder()
+                .authError(authResult.getApiCallRc())
+                .build();
         }
+        controllerPeerProvider.get().sendMessage(
+            apiCallAnswerer.answerBytes(
+                replyBytes,
+                InternalApiConsts.API_AUTH_RESPONSE
+            )
+        );
     }
 }
