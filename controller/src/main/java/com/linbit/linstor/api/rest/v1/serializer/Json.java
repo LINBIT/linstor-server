@@ -246,7 +246,7 @@ public class Json
     {
         public Integer drbd_port;
         public String drbd_secret;
-        public String drbd_transport_type = "IP";
+        public String drbd_transport_type;
 
         public ResourceDefinitionData resource_definition;
         public Short drbd_peer_slots;
