@@ -8,6 +8,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.PriorityProps;
@@ -25,7 +26,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 
-import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
 import static com.linbit.linstor.api.ApiConsts.KEY_PREF_NIC;
 
 import javax.inject.Inject;
@@ -658,24 +658,35 @@ public class NvmeUtils
 
         String netIfName = prioProps.getProp(KEY_PREF_NIC, ApiConsts.NAMESPC_NVME);
 
+        NetInterface netIf;
         if (netIfName == null)
         {
-            netIfName = DEFAULT_NETIF;
+            Iterator<NetInterface> iterateNetInterfaces = rsc.getAssignedNode().iterateNetInterfaces(accCtx);
+            if (iterateNetInterfaces.hasNext())
+            {
+                netIf = iterateNetInterfaces.next();
+            }
+            else
+            {
+                throw new StorageException("No network interface defined for node " + rsc.getAssignedNode().getName());
+            }
         }
         else
         {
             errorReporter.logDebug("NVMe: querying net interface " + netIfName + "for IP address.");
 
             Node rscNode = rsc.getAssignedNode();
-            if (rscNode.getNetInterface(accCtx, new NetInterfaceName(netIfName)) == null)
+            netIf = rscNode.getNetInterface(accCtx, new NetInterfaceName(netIfName));
+            if (netIf == null)
             {
                 throw new StorageException(
-                    "The network interface '" + netIfName + "' of node '" + rscNode.getName() + "' does not exist!"
+                    "The preferred network interface '" + netIfName + "' of node '" +
+                        rscNode.getName() + "' does not exist!"
                 ); // TODO: call checkPrefNic() when rsc.getAssignedNode().getNetInterface(accCtx, new NetInterfaceName(netIfName)) is called
             }
         }
 
-        return rsc.getAssignedNode().getNetInterface(accCtx, new NetInterfaceName(netIfName)).getAddress(accCtx);
+        return netIf.getAddress(accCtx);
     }
 
     /**
