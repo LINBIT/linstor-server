@@ -54,10 +54,6 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 @Singleton
 public class LayerRscDataMerger
@@ -110,25 +106,26 @@ public class LayerRscDataMerger
         throws AccessDeniedException, SQLException, IllegalArgumentException,
             ImplementationError, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException
     {
-        RscDataExtractor extractor;
+        RscDataExtractor rscRestorer;
         switch (rscLayerDataPojo.getLayerKind())
         {
             case DRBD:
-                extractor = this::restoreDrbdRscData;
+                rscRestorer = this::restoreDrbdRscData;
                 break;
             case LUKS:
-                extractor = this::restoreLuksRscData;
+                rscRestorer = this::restoreLuksRscData;
                 break;
             case STORAGE:
-                extractor = this::restoreStorageRscData;
+                rscRestorer = this::restoreStorageRscData;
                 break;
             case NVME:
-                extractor = this::restoreNvmeRscData;
+                rscRestorer = this::restoreNvmeRscData;
                 break;
             default:
                 throw new ImplementationError("Unexpected layer kind: " + rscLayerDataPojo.getLayerKind());
         }
-        RscLayerObject rscLayerObject = extractor.restore(rsc, rscLayerDataPojo, parent);
+        RscLayerObject rscLayerObject = rscRestorer.restore(rsc, rscLayerDataPojo, parent);
+
         for (RscLayerDataApi childRscPojo : rscLayerDataPojo.getChildren())
         {
             restore(rsc, childRscPojo, rscLayerObject);
@@ -190,21 +187,21 @@ public class LayerRscDataMerger
             updateChildsParent(drbdRscData, parent);
         }
 
-        Set<VolumeNumber> vlmNrsToDelete = new HashSet<>(drbdRscData.getVlmLayerObjects().keySet());
-
-        Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
-        while (iterateVolumes.hasNext())
+        // do not iterate over rsc.volumes as those might have changed in the meantime
+        // see gitlab 368
+        for (DrbdVlmPojo drbdVlmPojo : drbdRscPojo.getVolumeList())
         {
-            Volume vlm = iterateVolumes.next();
-            restoreDrbdVlm(vlm, drbdRscData, drbdRscPojo.getVolumeList());
-            vlmNrsToDelete.remove(vlm.getVolumeDefinition().getVolumeNumber());
+            VolumeNumber vlmNr = new VolumeNumber(drbdVlmPojo.getVlmNr());
+            Volume vlm = rsc.getVolume(vlmNr);
+            if (vlm == null)
+            {
+                drbdRscData.remove(vlmNr);
+            }
+            else
+            {
+                restoreDrbdVlm(vlm, drbdRscData, drbdVlmPojo);
+            }
         }
-
-        for (VolumeNumber vlmNrToDelete : vlmNrsToDelete)
-        {
-            drbdRscData.remove(vlmNrToDelete);
-        }
-
         return drbdRscData;
     }
 
@@ -244,27 +241,12 @@ public class LayerRscDataMerger
         return rscDfnData;
     }
 
-    private void restoreDrbdVlm(Volume vlm, DrbdRscData rscData, List<DrbdVlmPojo> vlmPojos)
+    private void restoreDrbdVlm(Volume vlm, DrbdRscData rscData, DrbdVlmPojo vlmPojo)
         throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-        DrbdVlmPojo vlmPojo = null;
-        {
-            for (DrbdVlmPojo drbdVlmPojo : vlmPojos)
-            {
-                if (drbdVlmPojo.getDrbdVlmDfn().getVlmNr() == vlmNr.value)
-                {
-                    vlmPojo = drbdVlmPojo;
-                    break;
-                }
-            }
-            if (vlmPojo == null)
-            {
-                throw new ImplementationError("No DrbdVlmPojo found for " + vlm);
-            }
-        }
 
         DrbdVlmDfnData drbdVlmDfnData = restoreDrbdVlmDfn(vlmDfn, vlmPojo.getDrbdVlmDfn());
 
@@ -315,7 +297,7 @@ public class LayerRscDataMerger
         RscLayerDataApi rscDataPojo,
         RscLayerObject parent
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException
     {
         LuksRscPojo luksRscPojo = (LuksRscPojo) rscDataPojo;
 
@@ -347,20 +329,20 @@ public class LayerRscDataMerger
             }
         }
 
-        Set<VolumeNumber> vlmNrsToDelete = new HashSet<>(luksRscData.getVlmLayerObjects().keySet());
-
-        Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
-        while (iterateVolumes.hasNext())
+        // do not iterate over rsc.volumes as those might have changed in the meantime
+        // see gitlab 368
+        for (LuksVlmPojo luksVlmPojo : luksRscPojo.getVolumeList())
         {
-            Volume vlm = iterateVolumes.next();
-            restoreLuksVlm(vlm, luksRscData, luksRscPojo.getVolumeList());
-
-            vlmNrsToDelete.remove(vlm.getVolumeDefinition().getVolumeNumber());
-        }
-
-        for (VolumeNumber vlmNrToDelete : vlmNrsToDelete)
-        {
-            luksRscData.remove(vlmNrToDelete);
+            VolumeNumber vlmNr = new VolumeNumber(luksVlmPojo.getVlmNr());
+            Volume vlm = rsc.getVolume(vlmNr);
+            if (vlm == null)
+            {
+                luksRscData.remove(vlmNr);
+            }
+            else
+            {
+                restoreLuksVlm(vlm, luksRscData, luksVlmPojo);
+            }
         }
         return luksRscData;
     }
@@ -368,27 +350,12 @@ public class LayerRscDataMerger
     private void restoreLuksVlm(
         Volume vlm,
         LuksRscData luksRscData,
-        List<LuksVlmPojo> vlmPojos
+        LuksVlmPojo vlmPojo
     )
         throws SQLException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-        LuksVlmPojo vlmPojo = null;
-        {
-            for (LuksVlmPojo luksVlmPojo : vlmPojos)
-            {
-                if (luksVlmPojo.getVlmNr() == vlmNr.value)
-                {
-                    vlmPojo = luksVlmPojo;
-                    break;
-                }
-            }
-            if (vlmPojo == null)
-            {
-                throw new ImplementationError("No LuksVlmPojo found for " + vlm);
-            }
-        }
 
         LuksVlmData luksVlmData = luksRscData.getVlmLayerObjects().get(vlmNr);
         if (luksVlmData == null)
@@ -416,7 +383,7 @@ public class LayerRscDataMerger
         RscLayerDataApi rscDataPojo,
         RscLayerObject parent
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException
     {
         StorageRscPojo storRscPojo = (StorageRscPojo) rscDataPojo;
         StorageRscData storRscData = null;
@@ -451,49 +418,33 @@ public class LayerRscDataMerger
             storRscData.setParent(parent);
         }
 
-        Set<VolumeNumber> vlmNrsToDelete = new HashSet<>(storRscData.getVlmLayerObjects().keySet());
-
-        Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
-        while (iterateVolumes.hasNext())
+        // do not iterate over rsc.volumes as those might have changed in the meantime
+        // see gitlab 368
+        for (VlmLayerDataApi vlmPojo : storRscPojo.getVolumeList())
         {
-            Volume vlm = iterateVolumes.next();
-            restoreStorVlm(vlm, storRscData, storRscPojo.getVolumeList());
-
-            vlmNrsToDelete.remove(vlm.getVolumeDefinition().getVolumeNumber());
+            VolumeNumber vlmNr = new VolumeNumber(vlmPojo.getVlmNr());
+            Volume vlm = rsc.getVolume(vlmNr);
+            if (vlm == null)
+            {
+                storRscData.remove(vlmNr);
+            }
+            else
+            {
+                restoreStorVlm(vlm, storRscData, vlmPojo);
+            }
         }
-
-        for (VolumeNumber vlmNrToDelete : vlmNrsToDelete)
-        {
-            storRscData.remove(vlmNrToDelete);
-        }
-
         return storRscData;
     }
 
     private void restoreStorVlm(
         Volume vlm,
         StorageRscData storRscData,
-        List<VlmLayerDataApi> vlmPojos
+        VlmLayerDataApi vlmPojo
     )
         throws AccessDeniedException, SQLException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-        VlmLayerDataApi vlmPojo = null;
-        {
-            for (VlmLayerDataApi vlmLayerDataPojo : vlmPojos)
-            {
-                if (vlmLayerDataPojo.getVlmNr() == vlmNr.value)
-                {
-                    vlmPojo = vlmLayerDataPojo;
-                    break;
-                }
-            }
-            if (vlmPojo == null)
-            {
-                throw new ImplementationError("No VlmLayerDataPojo found for " + vlm);
-            }
-        }
 
         VlmProviderObject vlmData = storRscData.getVlmLayerObjects().get(vlmNr);
         switch (vlmPojo.getProviderKind())
@@ -647,7 +598,7 @@ public class LayerRscDataMerger
     }
 
     private NvmeRscData restoreNvmeRscData(Resource rsc, RscLayerDataApi rscDataPojo, RscLayerObject parent)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException
     {
         NvmeRscPojo nvmeRscPojo = (NvmeRscPojo) rscDataPojo;
 
@@ -679,43 +630,28 @@ public class LayerRscDataMerger
             }
         }
 
-        Set<VolumeNumber> vlmNrsToDelete = new HashSet<>(nvmeRscData.getVlmLayerObjects().keySet());
-
-        Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
-        while (iterateVolumes.hasNext())
+        // do not iterate over rsc.volumes as those might have changed in the meantime
+        // see gitlab 368
+        for (NvmeVlmPojo vlmPojo : nvmeRscPojo.getVolumeList())
         {
-            Volume vlm = iterateVolumes.next();
-            restoreNvmeVlm(vlm, nvmeRscData, nvmeRscPojo.getVolumeList());
-
-            vlmNrsToDelete.remove(vlm.getVolumeDefinition().getVolumeNumber());
-        }
-
-        for (VolumeNumber vlmNrToDelete : vlmNrsToDelete)
-        {
-            nvmeRscData.remove(vlmNrToDelete);
+            VolumeNumber vlmNr = new VolumeNumber(vlmPojo.getVlmNr());
+            Volume vlm = rsc.getVolume(vlmNr);
+            if (vlm == null)
+            {
+                nvmeRscData.remove(vlmNr);
+            }
+            else
+            {
+                restoreNvmeVlm(vlm, nvmeRscData, vlmPojo);
+            }
         }
         return nvmeRscData;
     }
 
-    private void restoreNvmeVlm(Volume vlm, NvmeRscData nvmeRscData, List<NvmeVlmPojo> vlmPojos)
+    private void restoreNvmeVlm(Volume vlm, NvmeRscData nvmeRscData, NvmeVlmPojo vlmPojo)
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-        NvmeVlmPojo vlmPojo = null;
-        {
-            for (NvmeVlmPojo nvmeVlmPojo : vlmPojos)
-            {
-                if (nvmeVlmPojo.getVlmNr() == vlmNr.value)
-                {
-                    vlmPojo = nvmeVlmPojo;
-                    break;
-                }
-            }
-            if (vlmPojo == null)
-            {
-                throw new ImplementationError("No NvmeVlmPojo found for " + vlm);
-            }
-        }
 
         NvmeVlmData nvmeVlmData = nvmeRscData.getVlmLayerObjects().get(vlmNr);
         if (nvmeVlmData == null)

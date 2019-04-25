@@ -232,7 +232,7 @@ public class RscInternalCallHandler
                             "Tried to update a volume with missing layer data. Node: %s, Resource: %s, VolumeNr: %d",
                             nodeName.displayValue,
                             rscDfn.getName().displayValue,
-                            vlm.getVolumeDefinition().getVolumeNumber()
+                            vlm.getVolumeDefinition().getVolumeNumber().value
                         )
                     );
                 }
