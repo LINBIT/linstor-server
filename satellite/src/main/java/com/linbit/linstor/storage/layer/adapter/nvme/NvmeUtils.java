@@ -12,6 +12,7 @@ import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
@@ -36,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -642,11 +644,19 @@ public class NvmeUtils
     private LsIpAddress getIpAddr(Resource rsc, AccessContext accCtx)
         throws StorageException, InvalidNameException, AccessDeniedException, InvalidKeyException
     {
-        String netIfName = new PriorityProps(
-            rsc.getProps(accCtx),
-            rsc.getAssignedNode().getProps(accCtx),
-            stltProps
-        ).getProp(KEY_PREF_NIC, ApiConsts.NAMESPC_NVME);
+        PriorityProps prioProps = new PriorityProps();
+        Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+        while (iterateVolumes.hasNext())
+        {
+            Volume vlm = iterateVolumes.next();
+            prioProps.addProps(vlm.getStorPool(accCtx).getProps(accCtx));
+            prioProps.addProps(vlm.getProps(accCtx));
+        }
+        prioProps.addProps(rsc.getProps(accCtx));
+        prioProps.addProps(rsc.getAssignedNode().getProps(accCtx));
+        prioProps.addProps(stltProps);
+
+        String netIfName = prioProps.getProp(KEY_PREF_NIC, ApiConsts.NAMESPC_NVME);
 
         if (netIfName == null)
         {
