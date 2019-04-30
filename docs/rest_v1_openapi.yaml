@@ -2616,7 +2616,9 @@ components:
           items:
             type: string
         drbd_volumes:
-          $ref: '#/components/schemas/DrbdVolume'
+          type: array
+          items:
+            $ref: '#/components/schemas/DrbdVolume'
     StorageResource:
       type: object
       properties:
