@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Injector;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -27,8 +28,8 @@ public class GrizzlyHttpService implements SystemService
     private ServiceName instanceName;
 
     private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
-        "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/1.0.0\">Documentation</a>" +
-        "</body></html>";
+        "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + Json.REST_API_VERSION
+        + "\">Documentation</a></body></html>";
 
     public GrizzlyHttpService(Injector injector, Path logDirectory, String listenAddress)
     {
