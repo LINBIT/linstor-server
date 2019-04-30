@@ -14,7 +14,6 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -44,6 +43,7 @@ import java.util.List;
  * Class for processing NvmeRscData
  *
  * @author Rainer Laschober
+ * @since v0.9.6
  */
 @Singleton
 public class NvmeUtils
@@ -268,54 +268,6 @@ public class NvmeUtils
             throw new ImplementationError(exc);
         }
     }
-
-    /**
-     * Handles the creation and deletion of NVMe namespaces
-     *
-     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
-     * @param accCtx        AccessContext needed to access properties and Target resource
-     */
-    public void updateTargetVolumes(NvmeRscData nvmeRscData, AccessContext accCtx)
-        throws StorageException
-    {
-        final ExtCmd extCmd = extCmdFactory.create();
-        final String subsystemName = NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName();
-        final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
-
-        try
-        {
-            errorReporter.logDebug(
-                "NVMe: updating target volumes: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
-            );
-
-            for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
-            {
-                final Path namespacePath = Paths.get(
-                    subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().getValue() + 1)
-                );
-
-                if (nvmeVlmData.getVolume().getFlags().isSet(accCtx, VlmFlags.DELETE))
-                {
-                    errorReporter.logDebug("NVMe: deleting namespace: " + (nvmeVlmData.getVlmNr().getValue() + 1));
-                    deleteNamespace(namespacePath, extCmd);
-                }
-                else
-                {
-                    errorReporter.logDebug("NVMe: creating namespace: " + (nvmeVlmData.getVlmNr().getValue() + 1));
-                    createNamespace(namespacePath, nvmeVlmData.getBackingDevice().getBytes());
-                }
-            }
-        }
-        catch (IOException | ChildProcessTimeoutException exc)
-        {
-            throw new StorageException("Failed to update NVMe target!", exc);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
 
     /**
      * Connects the NVMe Initiator to the Target after discovering available subsystems, given the subsystem name

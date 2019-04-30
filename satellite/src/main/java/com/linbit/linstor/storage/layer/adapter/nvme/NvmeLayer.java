@@ -29,7 +29,6 @@ import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSY
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,8 +39,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @author Rainer Laschober
+ * Class for managing NVMe Target and Initiator
  *
+ * @author Rainer Laschober
  * @since v0.9.6
  */
 @Singleton
