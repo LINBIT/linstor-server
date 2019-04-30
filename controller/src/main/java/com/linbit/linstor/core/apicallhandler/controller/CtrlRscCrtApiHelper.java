@@ -126,15 +126,6 @@ public class CtrlRscCrtApiHelper
      * * update satellites
      * * create success-apiCallRc entries (only error RC in case of exception)
      *
-     * @param nodeNameStr
-     * @param rscNameStr
-     * @param flags
-     * @param rscPropsMap
-     * @param vlmApiList
-     * @param nodeIdInt
-     *
-     * @param thinFreeCapacities
-     * @param layerStackStrListRef
      * @return the newly created resource
      */
     public ApiCallRcWith<ResourceData> createResourceDb(
@@ -171,13 +162,32 @@ public class CtrlRscCrtApiHelper
             rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
         }
 
-        boolean hasAlreadySwordfishTargetVolume = execPrivileged(() -> rscDfn.streamResource(apiCtx))
+        boolean hasAlreadySwordfishTargetVlm = execPrivileged(() -> rscDfn.streamResource(apiCtx))
             .flatMap(tmpRsc -> tmpRsc.streamVolumes())
             .anyMatch(vlm ->
                 execPrivileged(
                     () -> DeviceProviderKind.SWORDFISH_TARGET.equals(
                         vlm.getStorPool(apiCtx).getDeviceProviderKind()
                     )
+                )
+            );
+
+        boolean hasAlreadyNvmeTargetVlm = execPrivileged(() -> rscDfn.streamResource(apiCtx))
+            .flatMap(tmpRsc -> tmpRsc.streamVolumes())
+            .anyMatch(vlm ->
+                execPrivileged(
+                    () -> DeviceLayerKind.NVME.equals(
+                        vlm.getResource().getLayerData(apiCtx).getLayerKind()
+                    ) && !vlm.getResource().isDiskless(apiCtx)
+                )
+            );
+        boolean hasAlreadyNvmeInitiatorVlm = execPrivileged(() -> rscDfn.streamResource(apiCtx))
+            .flatMap(tmpRsc -> tmpRsc.streamVolumes())
+            .anyMatch(vlm ->
+                execPrivileged(
+                    () -> DeviceLayerKind.NVME.equals(
+                        vlm.getResource().getLayerData(apiCtx).getLayerKind()
+                    ) && vlm.getResource().isDiskless(apiCtx)
                 )
             );
 
@@ -221,7 +231,7 @@ public class CtrlRscCrtApiHelper
             }
         }
 
-        boolean createsNewSwordfishTargetVolume = createdVolumes.stream()
+        boolean createsNewSwordfishTargetVlm = createdVolumes.stream()
             .anyMatch(vlm ->
                 execPrivileged(
                     () -> DeviceProviderKind.SWORDFISH_TARGET.equals(
@@ -229,15 +239,89 @@ public class CtrlRscCrtApiHelper
                     )
                 )
             );
-
-        if (createsNewSwordfishTargetVolume && hasAlreadySwordfishTargetVolume)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_EXISTS_SWORDFISH_TARGET_PER_RSC_DFN,
-                    "Linstor currently only allows one swordfish target per resource definition"
+        boolean createsNewSwordfishInitiatorVlm = createdVolumes.stream()
+            .anyMatch(vlm ->
+                execPrivileged(
+                    () -> DeviceProviderKind.SWORDFISH_INITIATOR.equals(
+                        vlm.getStorPool(apiCtx).getDeviceProviderKind()
+                    )
                 )
             );
+
+        boolean createsNewNvmeTargetVlm = createdVolumes.stream()
+            .anyMatch(vlm ->
+                execPrivileged(
+                    () -> DeviceLayerKind.NVME.equals(
+                        vlm.getResource().getLayerData(apiCtx).getLayerKind()
+                    ) && !vlm.getResource().isDiskless(apiCtx)
+                )
+            );
+        boolean createsNewNvmeInitiatorVlm = createdVolumes.stream()
+            .anyMatch(vlm ->
+                execPrivileged(
+                    () -> DeviceLayerKind.NVME.equals(
+                        vlm.getResource().getLayerData(apiCtx).getLayerKind()
+                    ) && vlm.getResource().isDiskless(apiCtx)
+                )
+            );
+
+        if (hasAlreadySwordfishTargetVlm)
+        {
+            if (createsNewSwordfishTargetVlm)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_SWORDFISH_TARGET_PER_RSC_DFN,
+                        "Linstor currently only allows one swordfish target per resource definition"
+                    )
+                );
+            }
+        }
+        else
+        {
+            if (createsNewSwordfishInitiatorVlm)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_MISSING_SWORDFISH_TARGET,
+                        "A swordfish target needs to be created before the initiator"
+                    )
+                );
+            }
+        }
+
+        if (hasAlreadyNvmeTargetVlm)
+        {
+            if (createsNewNvmeTargetVlm)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_NVME_TARGET_PER_RSC_DFN,
+                        "Linstor currently only allows one NVMe target per resource definition"
+                    )
+                );
+            }
+            else if (createsNewNvmeInitiatorVlm && hasAlreadyNvmeInitiatorVlm)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_NVME_INITIATOR_PER_RSC_DFN,
+                        "Linstor currently only allows one NVMe initiator per resource definition"
+                    )
+                );
+            }
+        }
+        else
+        {
+            if (createsNewNvmeInitiatorVlm)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_MISSING_NVME_TARGET,
+                        "An NVMe target needs to be created before the initiator"
+                    )
+                );
+            }
         }
 
         return new ApiCallRcWith<>(responses, rsc);
