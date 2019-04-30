@@ -177,11 +177,11 @@ public class CtrlStorPoolApiCallHandler
                 for (Volume vol : volumes)
                 {
                     volListSb.append("\n   Node name: '")
-                             .append(vol.getResource().getAssignedNode().getName().displayValue)
-                             .append("', resource name: '")
-                             .append(vol.getResource().getDefinition().getName().displayValue)
-                             .append("', volume number: ")
-                             .append(vol.getVolumeDefinition().getVolumeNumber().value);
+                         .append(vol.getResource().getAssignedNode().getName().displayValue)
+                         .append("', resource name: '")
+                         .append(vol.getResource().getDefinition().getName().displayValue)
+                         .append("', volume number: ")
+                         .append(vol.getVolumeDefinition().getVolumeNumber().value);
                 }
 
                 String correction = volumes.size() == 1 ?

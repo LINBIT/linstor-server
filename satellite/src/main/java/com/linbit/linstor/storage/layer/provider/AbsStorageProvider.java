@@ -126,7 +126,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             Map<String, Long> vgFreeSizes = getFreeSpacesImpl();
             postRunVolumeNotifications.forEach(consumer -> consumer.accept(vgFreeSizes));
         }
-
+        changedStorPools.clear();
         changedStoragePoolStrings.clear();
         postRunVolumeNotifications.clear();
         prepared = false;
@@ -336,10 +336,16 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 wipeHandler.quickWipe(devicePath);
             }
 
-            changedStorPools.add(vlmData.getVolume().getStorPool(storDriverAccCtx));
+            addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
 
             addCreatedMsg(vlmData, apiCallRc);
         }
+    }
+
+    protected void addChangedStorPool(StorPool storPoolRef) throws AccessDeniedException
+    {
+        changedStorPools.add(storPoolRef);
+        changedStoragePoolStrings.add(getStorageName(storPoolRef));
     }
 
     private void resizeVolumes(List<LAYER_DATA> vlmsToResize, ApiCallRcImpl apiCallRc)
@@ -353,7 +359,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             setAllocatedSize(vlmData, allocatedSize);
             setUsableSize(vlmData, allocatedSize);
 
-            changedStorPools.add(vlmData.getVolume().getStorPool(storDriverAccCtx));
+            addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
 
             addResizedMsg(vlmData, apiCallRc);
         }
@@ -373,7 +379,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 DmStatCommands.delete(extCmdFactory.create(), vlmData.getDevicePath());
             }
 
-            changedStorPools.add(vlmData.getVolume().getStorPool(storDriverAccCtx));
+            addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
 
             if (!vlmData.getVolume().getResource().getStateFlags().isSet(
                 storDriverAccCtx,
@@ -400,7 +406,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 errorReporter.logTrace("Snapshot '%s' already deleted", snapVlm.toString());
             }
 
-            changedStorPools.add(snapVlm.getStorPool(storDriverAccCtx));
+            addChangedStorPool(snapVlm.getStorPool(storDriverAccCtx));
 
             addSnapDeletedMsg(snapVlm, apiCallRc);
         }
@@ -435,7 +441,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                     errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
                     createSnapshot(vlmData, snapVlm);
 
-                    changedStorPools.add(snapVlm.getStorPool(storDriverAccCtx));
+                    addChangedStorPool(snapVlm.getStorPool(storDriverAccCtx));
 
                     addSnapCreatedMsg(snapVlm, apiCallRc);
                 }
@@ -454,7 +460,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             if (rollbackTargetSnapshotName != null)
             {
                 rollbackImpl(vlmData, rollbackTargetSnapshotName);
-                changedStorPools.add(vlmData.getVolume().getStorPool(storDriverAccCtx));
+                addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
             }
         }
     }
@@ -473,13 +479,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
     }
 
     protected void addPostRunNotification(
-        String storageName,
         StorPool storPool,
         Consumer<Map<String, Long>> consumer
     )
+        throws AccessDeniedException
     {
-        changedStoragePoolStrings.add(storageName);
-        changedStorPools.add(storPool);
+        addChangedStorPool(storPool);
         postRunVolumeNotifications.add(consumer);
     }
 
@@ -733,6 +738,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
     @Override
     public abstract long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException;
+
+    protected abstract String getStorageName(StorPool storPoolRef) throws AccessDeniedException;
 
     @SuppressWarnings("unused")
     protected void createSnapshot(LAYER_DATA vlmData, SnapshotVolume snapVlm)

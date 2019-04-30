@@ -149,6 +149,10 @@ public class DeviceHandlerImpl implements DeviceHandler
             {
                 listener.notifyVolumeDeleted(vlm);
             }
+            for (Resource rsc : rscListNotifyDelete)
+            {
+                listener.notifyResourceDeleted(rsc);
+            }
 
             updateChangedFreeSpaces();
 

@@ -299,6 +299,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         );
     }
 
+    @Override
+    protected String getStorageName(StorPool storPoolRef)
+    {
+        return getVolumeGroup(storPoolRef);
+    }
+
     protected String getVolumeGroup(StorPool storPool)
     {
         String volumeGroup;

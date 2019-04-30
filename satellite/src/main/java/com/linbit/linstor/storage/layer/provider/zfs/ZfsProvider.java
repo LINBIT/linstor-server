@@ -271,6 +271,12 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
         return String.format(FORMAT_ZFS_DEV_PATH, zPool, identifier);
     }
 
+    @Override
+    protected String getStorageName(StorPool storPoolRef) throws AccessDeniedException
+    {
+        return getZPool(storPoolRef);
+    }
+
     protected String getZPool(StorPool storPool) throws AccessDeniedException
     {
         String zPool;
