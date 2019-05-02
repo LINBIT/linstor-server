@@ -26,6 +26,7 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -54,10 +55,8 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPrivileged;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
@@ -77,7 +76,6 @@ public class CtrlRscCrtApiHelper
 {
     private final AccessContext apiCtx;
     private final ErrorReporter errorReporter;
-    private final Props stltConf;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final EventWaiter eventWaiter;
@@ -87,12 +85,12 @@ public class CtrlRscCrtApiHelper
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDataControllerFactory resourceDataFactory;
     private final Provider<AccessContext> peerAccCtx;
+    private final ResourceCreateCheck resourceCreateCheck;
 
     @Inject
     CtrlRscCrtApiHelper(
         @ApiContext AccessContext apiCtxRef,
         ErrorReporter errorReporterRef,
-        @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         EventWaiter eventWaiterRef,
@@ -101,12 +99,12 @@ public class CtrlRscCrtApiHelper
         ResponseConverter responseConverterRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDataControllerFactory resourceDataFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ResourceCreateCheck resourceCreateCheckRef
     )
     {
         apiCtx = apiCtxRef;
         errorReporter = errorReporterRef;
-        stltConf = stltConfRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         eventWaiter = eventWaiterRef;
@@ -116,6 +114,7 @@ public class CtrlRscCrtApiHelper
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDataFactory = resourceDataFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        resourceCreateCheck = resourceCreateCheckRef;
     }
 
     /**
@@ -152,6 +151,8 @@ public class CtrlRscCrtApiHelper
             warnAddedStorageLayer(responses);
         }
 
+        resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
+
         ResourceData rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
         Props rscProps = ctrlPropsHelper.getProps(rsc);
 
@@ -161,35 +162,6 @@ public class CtrlRscCrtApiHelper
         {
             rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
         }
-
-        boolean hasAlreadySwordfishTargetVlm = execPrivileged(() -> rscDfn.streamResource(apiCtx))
-            .flatMap(tmpRsc -> tmpRsc.streamVolumes())
-            .anyMatch(vlm ->
-                execPrivileged(
-                    () -> DeviceProviderKind.SWORDFISH_TARGET.equals(
-                        vlm.getStorPool(apiCtx).getDeviceProviderKind()
-                    )
-                )
-            );
-
-        boolean hasAlreadyNvmeTargetVlm = execPrivileged(() -> rscDfn.streamResource(apiCtx))
-            .flatMap(tmpRsc -> tmpRsc.streamVolumes())
-            .anyMatch(vlm ->
-                execPrivileged(
-                    () -> DeviceLayerKind.NVME.equals(
-                        vlm.getResource().getLayerData(apiCtx).getLayerKind()
-                    ) && !vlm.getResource().isDiskless(apiCtx)
-                )
-            );
-        boolean hasAlreadyNvmeInitiatorVlm = execPrivileged(() -> rscDfn.streamResource(apiCtx))
-            .flatMap(tmpRsc -> tmpRsc.streamVolumes())
-            .anyMatch(vlm ->
-                execPrivileged(
-                    () -> DeviceLayerKind.NVME.equals(
-                        vlm.getResource().getLayerData(apiCtx).getLayerKind()
-                    ) && vlm.getResource().isDiskless(apiCtx)
-                )
-            );
 
         List<VolumeData> createdVolumes = new ArrayList<>();
 
@@ -231,98 +203,7 @@ public class CtrlRscCrtApiHelper
             }
         }
 
-        boolean createsNewSwordfishTargetVlm = createdVolumes.stream()
-            .anyMatch(vlm ->
-                execPrivileged(
-                    () -> DeviceProviderKind.SWORDFISH_TARGET.equals(
-                        vlm.getStorPool(apiCtx).getDeviceProviderKind()
-                    )
-                )
-            );
-        boolean createsNewSwordfishInitiatorVlm = createdVolumes.stream()
-            .anyMatch(vlm ->
-                execPrivileged(
-                    () -> DeviceProviderKind.SWORDFISH_INITIATOR.equals(
-                        vlm.getStorPool(apiCtx).getDeviceProviderKind()
-                    )
-                )
-            );
-
-        boolean createsNewNvmeTargetVlm = createdVolumes.stream()
-            .anyMatch(vlm ->
-                execPrivileged(
-                    () -> DeviceLayerKind.NVME.equals(
-                        vlm.getResource().getLayerData(apiCtx).getLayerKind()
-                    ) && !vlm.getResource().isDiskless(apiCtx)
-                )
-            );
-        boolean createsNewNvmeInitiatorVlm = createdVolumes.stream()
-            .anyMatch(vlm ->
-                execPrivileged(
-                    () -> DeviceLayerKind.NVME.equals(
-                        vlm.getResource().getLayerData(apiCtx).getLayerKind()
-                    ) && vlm.getResource().isDiskless(apiCtx)
-                )
-            );
-
-        if (hasAlreadySwordfishTargetVlm)
-        {
-            if (createsNewSwordfishTargetVlm)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_SWORDFISH_TARGET_PER_RSC_DFN,
-                        "Linstor currently only allows one swordfish target per resource definition"
-                    )
-                );
-            }
-        }
-        else
-        {
-            if (createsNewSwordfishInitiatorVlm)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_MISSING_SWORDFISH_TARGET,
-                        "A swordfish target needs to be created before the initiator"
-                    )
-                );
-            }
-        }
-
-        if (hasAlreadyNvmeTargetVlm)
-        {
-            if (createsNewNvmeTargetVlm)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_NVME_TARGET_PER_RSC_DFN,
-                        "Linstor currently only allows one NVMe target per resource definition"
-                    )
-                );
-            }
-            else if (createsNewNvmeInitiatorVlm && hasAlreadyNvmeInitiatorVlm)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_NVME_INITIATOR_PER_RSC_DFN,
-                        "Linstor currently only allows one NVMe initiator per resource definition"
-                    )
-                );
-            }
-        }
-        else
-        {
-            if (createsNewNvmeInitiatorVlm)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_MISSING_NVME_TARGET,
-                        "An NVMe target needs to be created before the initiator"
-                    )
-                );
-            }
-        }
+        resourceCreateCheck.checkCreatedResource(createdVolumes);
 
         return new ApiCallRcWith<>(responses, rsc);
     }
