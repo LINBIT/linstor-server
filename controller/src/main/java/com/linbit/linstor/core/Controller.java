@@ -85,7 +85,7 @@ public final class Controller
     public static final int API_MIN_VERSION = API_VERSION;
 
     private static final String ENV_REST_BIND_ADDRESS = "LS_REST_BIND_ADDRESS";
-    private static final String DEFAULT_HTTP_LISTEN_ADDRESS = "127.0.0.1";
+    private static final String DEFAULT_HTTP_LISTEN_ADDRESS = "[::]";
     private static final String DEFAULT_HTTP_REST_PORT = "3370";
 
     // Error & exception logging facility
