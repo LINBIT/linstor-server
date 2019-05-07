@@ -56,72 +56,63 @@ public class ResourceCreateCheck
     public void checkCreatedResource(List<VolumeData> volumes)
     {
         ResourceRole resourceRole = getCreatedResourceRole(volumes);
-        switch (resourceRole)
+        if (resourceRole != null)
         {
-            case NVME_TARGET:
-                if (hasNvmeTarget)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
+            switch (resourceRole)
+            {
+                case NVME_TARGET:
+                    if (hasNvmeTarget)
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_EXISTS_NVME_TARGET_PER_RSC_DFN,
-                            "Only one NVMe Target per resource definition allowed!"
-                        )
-                    );
-                }
-                break;
-            case NVME_INITIATOR:
-                if (hasNvmeInitiator)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
+                            "Only one NVMe Target per resource definition allowed!")
+                        );
+                    }
+                    break;
+                case NVME_INITIATOR:
+                    if (hasNvmeInitiator)
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_EXISTS_NVME_INITIATOR_PER_RSC_DFN,
-                            "Only one NVMe Initiator per resource definition allowed!"
-                        )
-                    );
-                }
-                if (!hasNvmeTarget)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
+                            "Only one NVMe Initiator per resource definition allowed!")
+                        );
+                    }
+                    if (!hasNvmeTarget)
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_MISSING_NVME_TARGET,
-                            "An NVMe Target needs to be created before the Initiator!"
-                        )
-                    );
-                }
-                break;
-            case SWORDFISH_TARGET:
-                if (hasSwordfishTarget)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
+                            "An NVMe Target needs to be created before the Initiator!")
+                        );
+                    }
+                    break;
+                case SWORDFISH_TARGET:
+                    if (hasSwordfishTarget)
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_EXISTS_SWORDFISH_TARGET_PER_RSC_DFN,
-                            "Only one Swordfish Target per resource definition allowed!"
-                        )
-                    );
-                }
-                break;
-            case SWORDFISH_INITIATOR:
-                if (hasSwordfishInitiator)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
+                            "Only one Swordfish Target per resource definition allowed!")
+                        );
+                    }
+                    break;
+                case SWORDFISH_INITIATOR:
+                    if (hasSwordfishInitiator)
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_EXISTS_SWORDFISH_INITIATOR_PER_RSC_DFN,
-                            "Only one Swordfish Initiator per resource definition allowed!"
-                        )
-                    );
-                }
-                if (!hasSwordfishTarget)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
+                            "Only one Swordfish Initiator per resource definition allowed!")
+                        );
+                    }
+                    if (!hasSwordfishTarget)
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_MISSING_SWORDFISH_TARGET,
-                            "A Swordfish Target needs to be created before the Initiator!"
-                        )
-                    );
-                }
-                break;
-            default:
-                // no further checks needed in this case
+                            "A Swordfish Target needs to be created before the Initiator!")
+                        );
+                    }
+                    break;
+                default:
+                    // no further checks needed in this case
+            }
         }
     }
 
