@@ -224,7 +224,7 @@ public final class Controller
                 initCtx
             );
 
-            whitelistProps.overrideProperties();
+            whitelistProps.overrideDrbdProperties();
 
             swordfishTargetProcessManager.initialize();
 

@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
+import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
@@ -128,6 +129,7 @@ public class StltApiCallHandler
     private final Provider<Long> apiCallId;
     private DrbdStateTracker drbdStateTracker;
     private DrbdEventPublisher drbdEventPublisher;
+    private DrbdVersion drbdVersion;
 
     @Inject
     public StltApiCallHandler(
@@ -165,7 +167,8 @@ public class StltApiCallHandler
         @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
         DrbdStateTracker drbdStateTrackerRef,
         DrbdEventPublisher drbdEventPublisherRef,
-        DeviceProviderMapper deviceProviderMapperRef
+        DeviceProviderMapper deviceProviderMapperRef,
+        DrbdVersion drbdVersionRef
     )
     {
         errorReporter = errorReporterRef;
@@ -203,6 +206,7 @@ public class StltApiCallHandler
         drbdStateTracker = drbdStateTrackerRef;
         drbdEventPublisher = drbdEventPublisherRef;
         deviceProviderMapper = deviceProviderMapperRef;
+        drbdVersion = drbdVersionRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -519,84 +523,87 @@ public class StltApiCallHandler
 
     private void regenerateLinstorCommonConf()
     {
-        Path tmpResFileOut = Paths.get(CoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
-        NodeType localNodeType;
-        try
+        if (drbdVersion.hasDrbd9())
         {
-            localNodeType = controllerPeerConnector.getLocalNode().getNodeType(apiCtx);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        if (tmpResFileOut != null && !localNodeType.equals(NodeType.SWORDFISH_TARGET))
-        {
-            try (
-                FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())
-            )
-            {
-                ConfFileBuilder confFileBuilder = new ConfFileBuilder(
-                    errorReporter,
-                    whitelistProps
-                );
-                commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
-            }
-            catch (IOException ioExc)
-            {
-                String ioErrorMsg = ioExc.getMessage();
-                if (ioErrorMsg == null)
-                {
-                    ioErrorMsg = "The runtime environment or operating system did not provide a " +
-                        "description of the I/O error";
-                }
-
-                errorReporter.reportProblem(
-                    Level.ERROR,
-                    new LinStorException(
-                        "Creation of the common Linstor DRBD configuration file " +
-                            "'linstor_common.conf' failed due to an I/O error",
-                        null,
-                        "Creation of the DRBD configuration file failed due to an I/O error",
-                        "- Check whether enough free space is available for the creation of the file\n" +
-                            "- Check whether the application has write access to the target directory\n" +
-                            "- Check whether the storage is operating flawlessly",
-                        "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                        ioExc
-                    ),
-                    apiCtx,
-                    null,
-                    ioErrorMsg
-                );
-            }
-
+            Path tmpResFileOut = Paths.get(CoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
+            NodeType localNodeType;
             try
             {
-                Files.move(
-                    tmpResFileOut,
-                    Paths.get(CoreModule.CONFIG_PATH + "/linstor_common.conf"),
-                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
-                );
+                localNodeType = controllerPeerConnector.getLocalNode().getNodeType(apiCtx);
             }
-            catch (IOException ioExc)
+            catch (AccessDeniedException exc)
             {
-                String ioErrorMsg = ioExc.getMessage();
-                errorReporter.reportProblem(
-                    Level.ERROR,
-                    new LinStorException(
-                        "Unable to move temporary common Linstor DRBD configuration file " +
-                            "'linstor_common.conf' failed due to an I/O error",
+                throw new ImplementationError(exc);
+            }
+            if (tmpResFileOut != null && !localNodeType.equals(NodeType.SWORDFISH_TARGET))
+            {
+                try (
+                    FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())
+                )
+                {
+                    ConfFileBuilder confFileBuilder = new ConfFileBuilder(
+                        errorReporter,
+                        whitelistProps
+                    );
+                    commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
+                }
+                catch (IOException ioExc)
+                {
+                    String ioErrorMsg = ioExc.getMessage();
+                    if (ioErrorMsg == null)
+                    {
+                        ioErrorMsg = "The runtime environment or operating system did not provide a " +
+                            "description of the I/O error";
+                    }
+
+                    errorReporter.reportProblem(
+                        Level.ERROR,
+                        new LinStorException(
+                            "Creation of the common Linstor DRBD configuration file " +
+                                "'linstor_common.conf' failed due to an I/O error",
+                            null,
+                            "Creation of the DRBD configuration file failed due to an I/O error",
+                            "- Check whether enough free space is available for the creation of the file\n" +
+                                "- Check whether the application has write access to the target directory\n" +
+                                "- Check whether the storage is operating flawlessly",
+                            "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                            ioExc
+                        ),
+                        apiCtx,
                         null,
-                        "Creation of the DRBD configuration file failed due to an I/O error",
-                        "- Check whether enough free space is available for the creation of the file\n" +
-                            "- Check whether the application has write access to the target directory\n" +
-                            "- Check whether the storage is operating flawlessly",
-                        "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                        ioExc
-                    ),
-                    apiCtx,
-                    null,
-                    ioErrorMsg
-                );
+                        ioErrorMsg
+                    );
+                }
+
+                try
+                {
+                    Files.move(
+                        tmpResFileOut,
+                        Paths.get(CoreModule.CONFIG_PATH + "/linstor_common.conf"),
+                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+                    );
+                }
+                catch (IOException ioExc)
+                {
+                    String ioErrorMsg = ioExc.getMessage();
+                    errorReporter.reportProblem(
+                        Level.ERROR,
+                        new LinStorException(
+                            "Unable to move temporary common Linstor DRBD configuration file " +
+                                "'linstor_common.conf' failed due to an I/O error",
+                            null,
+                            "Creation of the DRBD configuration file failed due to an I/O error",
+                            "- Check whether enough free space is available for the creation of the file\n" +
+                                "- Check whether the application has write access to the target directory\n" +
+                                "- Check whether the storage is operating flawlessly",
+                            "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                            ioExc
+                        ),
+                        apiCtx,
+                        null,
+                        ioErrorMsg
+                    );
+                }
             }
         }
     }

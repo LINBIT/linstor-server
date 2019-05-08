@@ -52,9 +52,8 @@ public class WhitelistPropsReconfigurator
             if (drbdVersion.hasDrbd9())
             {
                 reloadDrbdOptions();
+                whitelistProps.overrideDrbdProperties();
             }
-
-            whitelistProps.overrideProperties();
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {

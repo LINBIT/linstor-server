@@ -92,7 +92,7 @@ public class WhitelistProps
             .build();
     }
 
-    public void overrideProperties()
+    public void overrideDrbdProperties()
     {
         // fix entry for resync-after, it is defined as range by drbdsetup-utils
         rules.values().forEach(objMap ->
