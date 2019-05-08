@@ -22,6 +22,9 @@ class SatelliteArgumentParser
     @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
     private String logDirectory = "./logs";
 
+    @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
+    private boolean versionInfoRequested;
+
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
 
@@ -65,6 +68,12 @@ class SatelliteArgumentParser
             System.err.println(exc.getMessage());
             cmd.usage(System.err);
             System.exit(InternalApiConsts.EXIT_CODE_CMDLINE_ERROR);
+        }
+
+        if (cmd.isVersionHelpRequested())
+        {
+            System.out.println("LINSTOR Satellite " + LinStor.VERSION_INFO_PROVIDER.getVersion());
+            System.exit(InternalApiConsts.EXIT_CODE_SHUTDOWN);
         }
 
         if (cmd.isUsageHelpRequested())

@@ -34,6 +34,9 @@ class ControllerArgumentParser
     )
     private String restBindAddress = null;
 
+    @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
+    private boolean versionInfoRequested;
+
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
 
@@ -52,6 +55,12 @@ class ControllerArgumentParser
             System.err.println(exc.getMessage());
             cmd.usage(System.err);
             System.exit(InternalApiConsts.EXIT_CODE_CMDLINE_ERROR);
+        }
+
+        if (cmd.isVersionHelpRequested())
+        {
+            System.out.println("LINSTOR Controller " + LinStor.VERSION_INFO_PROVIDER.getVersion());
+            System.exit(InternalApiConsts.EXIT_CODE_SHUTDOWN);
         }
 
         if (cmd.isUsageHelpRequested())
