@@ -87,9 +87,8 @@ public class ReconnectorTask implements Task
         {
             localList = new ArrayList<>(peerList);
         }
-        for (int idx = 0; idx < localList.size(); ++idx)
+        for (final Peer peer : localList)
         {
-            final Peer peer = localList.get(idx);
             if (peer.isConnected(false))
             {
                 errorReporter.logTrace(
@@ -116,14 +115,14 @@ public class ReconnectorTask implements Task
                             if (node == null)
                             {
                                 errorReporter.logTrace(
-                                    "Peer %s's node is null (possibly rollbacked), removing from reconnector list",
+                                    "Peer %s's node is null (possibly rollbacked), removing from reconnect list",
                                     peer.getId()
                                 );
                             }
                             else
                             {
                                 errorReporter.logTrace(
-                                    "Peer %s's node got deleted, removing from reconnector list",
+                                    "Peer %s's node got deleted, removing from reconnect list",
                                     peer.getId()
                                 );
                             }
