@@ -398,9 +398,13 @@ public final class Controller
             LinStor.getHostName()
         );
 
+        boolean dbgCnsEnabled = false;
+        Controller instance = null;
         try
         {
             Thread.currentThread().setName("Main");
+
+            dbgCnsEnabled = cArgs.startDebugConsole();
 
             errorLog.logInfo("Loading API classes started.");
             long startAPIClassLoadingTime = System.currentTimeMillis();
@@ -465,10 +469,10 @@ public final class Controller
                     (System.currentTimeMillis() - startDepInjectionTime))
             );
 
-            Controller instance = injector.getInstance(Controller.class);
+            instance = injector.getInstance(Controller.class);
             instance.start(injector, cArgs);
 
-            if (cArgs.startDebugConsole())
+            if (dbgCnsEnabled)
             {
                 instance.enterDebugConsole();
             }
@@ -476,6 +480,21 @@ public final class Controller
         catch (Throwable error)
         {
             errorLog.reportError(error);
+            // If enabled, attempt to enter the debug console
+            if (dbgCnsEnabled)
+            {
+                if (instance != null)
+                {
+                    try
+                    {
+                        instance.enterDebugConsole();
+                    }
+                    catch (Throwable dbgError)
+                    {
+                        errorLog.reportError(dbgError);
+                    }
+                }
+            }
             System.exit(InternalApiConsts.EXIT_CODE_IMPL_ERROR);
         }
 
