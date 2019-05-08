@@ -70,6 +70,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.slf4j.event.Level;
 
 /**
  * linstor controller prototype
@@ -256,48 +257,64 @@ public final class Controller
     private void initializeRestServer(Injector injector, ControllerCmdlArguments cArgs) throws InvalidKeyException
     {
         boolean restEnabled = true;
-        String restBindAddress; // = String.format("%s:%d", DEFAULT_HTTP_LISTEN_ADDRESS, DEFAULT_HTTP_REST_PORT);
-
-        if (cArgs.getRESTBindAddress() != null)
+        String restBindAddress;
+        try
         {
-            restBindAddress = cArgs.getRESTBindAddress();
-        }
-        else
-        {
-            final String envRESTBindAddress = System.getenv(ENV_REST_BIND_ADDRESS);
-            if (envRESTBindAddress != null)
+            if (cArgs.getRESTBindAddress() != null)
             {
-                restBindAddress = envRESTBindAddress;
+                restBindAddress = cArgs.getRESTBindAddress();
             }
             else
             {
-                restEnabled = Boolean.parseBoolean(
-                    ctrlConf.getPropWithDefault(ApiConsts.KEY_ENABLED, ApiConsts.NAMESPC_REST, "true")
-                );
-                String restListenAddr = ctrlConf.getPropWithDefault(
-                    ApiConsts.KEY_BIND_ADDR, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_LISTEN_ADDRESS
-                );
-                int restListenPort = Integer.parseInt(
-                    ctrlConf.getPropWithDefault(ApiConsts.KEY_BIND_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT)
-                );
-                // Detect IPv6 addresses since they require a different bind address format
-                if (restListenAddr.indexOf(':') != -1)
+                final String envRESTBindAddress = System.getenv(ENV_REST_BIND_ADDRESS);
+                if (envRESTBindAddress != null)
                 {
-                    restBindAddress = String.format("[%s]:%d", restListenAddr, restListenPort);
+                    restBindAddress = envRESTBindAddress;
                 }
                 else
                 {
-                    restBindAddress = String.format("%s:%d", restListenAddr, restListenPort);
+                    restEnabled = Boolean.parseBoolean(
+                        ctrlConf.getPropWithDefault(ApiConsts.KEY_ENABLED, ApiConsts.NAMESPC_REST, "true")
+                    );
+                    String restListenAddr = ctrlConf.getPropWithDefault(
+                        ApiConsts.KEY_BIND_ADDR, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_LISTEN_ADDRESS
+                    );
+                    int restListenPort = Integer.parseInt(
+                        ctrlConf.getPropWithDefault(
+                            ApiConsts.KEY_BIND_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT
+                        )
+                    );
+                    // Detect IPv6 addresses since they require a different bind address format
+                    if (restListenAddr.indexOf(':') != -1)
+                    {
+                        restBindAddress = String.format("[%s]:%d", restListenAddr, restListenPort);
+                    }
+                    else
+                    {
+                        restBindAddress = String.format("%s:%d", restListenAddr, restListenPort);
+                    }
                 }
             }
-        }
 
-        if (restEnabled)
+            if (restEnabled)
+            {
+                final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(
+                    injector, errorReporter.getLogDirectory(), restBindAddress
+                );
+                systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
+            }
+        }
+        catch (NumberFormatException nfExc)
         {
-            final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(
-                injector, errorReporter.getLogDirectory(), restBindAddress
+            errorReporter.reportError(Level.ERROR, nfExc);
+        }
+        catch (Exception exc)
+        {
+            String reportId = errorReporter.reportError(Level.ERROR, exc);
+            errorReporter.logError(
+                "Initialization of the REST service failed, see error report %s for details",
+                reportId
             );
-            systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
         }
     }
 
