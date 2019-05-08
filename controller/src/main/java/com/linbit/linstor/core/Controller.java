@@ -84,7 +84,7 @@ public final class Controller
     public static final int API_MIN_VERSION = API_VERSION;
 
     private static final String ENV_REST_BIND_ADDRESS = "LS_REST_BIND_ADDRESS";
-    private static final String DEFAULT_HTTP_LISTEN_ADDRESS = "[::]";
+    private static final String DEFAULT_HTTP_LISTEN_ADDRESS = "::";
     private static final String DEFAULT_HTTP_REST_PORT = "3370";
 
     // Error & exception logging facility
@@ -280,7 +280,15 @@ public final class Controller
                 int restListenPort = Integer.parseInt(
                     ctrlConf.getPropWithDefault(ApiConsts.KEY_BIND_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT)
                 );
-                restBindAddress = String.format("%s:%d", restListenAddr, restListenPort);
+                // Detect IPv6 addresses since they require a different bind address format
+                if (restListenAddr.indexOf(':') != -1)
+                {
+                    restBindAddress = String.format("[%s]:%d", restListenAddr, restListenPort);
+                }
+                else
+                {
+                    restBindAddress = String.format("%s:%d", restListenAddr, restListenPort);
+                }
             }
         }
 
