@@ -51,7 +51,6 @@ import com.linbit.linstor.security.DbCoreObjProtInitializer;
 import com.linbit.linstor.security.DbSecurityInitializer;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
-import com.linbit.linstor.tasks.GarbageCollectorTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.RetryResourcesTask;
@@ -198,7 +197,6 @@ public final class Controller
 
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
-            taskScheduleService.addTask(new GarbageCollectorTask());
             taskScheduleService.addTask(retryResourcesTask);
 
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
