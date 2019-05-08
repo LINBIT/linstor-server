@@ -10,6 +10,7 @@ sourceCompatibility = 1.8
 def protobufVersion = '3.2.0'
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 def logbackConfig = "logback.xml"
+def jvmOpts = ["-Xms32M", "-XX:MinHeapFreeRatio=40", "-XX:MaxHeapFreeRatio=70"]
 
 // workaround to force gradle to download not just the dependencies for --offline use
 // but also the plugins
@@ -202,6 +203,7 @@ project(':satellite') {
         applicationName = "Satellite"
         outputDir = new File(project.buildDir, 'satellite')
         classpath = jar.outputs.files + project.configurations.runtime + files('conf')
+        defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
         }
@@ -280,6 +282,7 @@ project(':controller') {
         applicationName = "Controller"
         outputDir = new File(project.buildDir, 'controller')
         classpath = jar.outputs.files + project.configurations.runtime + files('conf') + files('*')
+        defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
         }
@@ -290,6 +293,7 @@ project(':controller') {
         applicationName = "linstor-config"
         outputDir = new File(project.buildDir, 'linstorconfig')
         classpath = jar.outputs.files + project.configurations.runtime + files('*')
+        defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
         }
