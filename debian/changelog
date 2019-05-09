@@ -1,3 +1,45 @@
+linstor-server (0.9.7-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Added NVME-layer support for JSON API
+  * Fixed formating errors reported by checkstyle
+  * Fixed volume-definitions not being deleted on satellite
+  * Fixed race-condition when creating vlmDfn too fast
+  * Fixed AccessToDeleted StorPool
+  * Added all storPools to prioProps for NVMe's PrefNic
+  * Removed hardcoded "default" network interface name
+  * Fixed issues when DRBD is not installed
+
+  [ Rene Peinthor ]
+  * rest-api: fix copy paste return code error
+  * rest-api: add /v1/storage-pool-definitions resource
+  * rest-api-docu: add nvme
+  * rest-api: do not default drbd_transport_type
+  * rest-api-docu: fix missing requestbody for drbdproxyenable
+  * rest-api-docu: fix incorrect drbd_volumes type
+  * rest-api: link to the current api version documentation
+  * rest-api: bind on ipv4 and ipv6 and not local only
+  * remove garbage collector task
+  * reconnectortask: small code cleanup
+  * commandline-args: add --version to Controller and Satellite
+  * gradle: add better JVM default options
+
+  [ Rainer Laschober ]
+  * Fix minor bugs
+  * Fix command parsing, merge constraints for create/delete in NvmeLayer
+  * Add functionality for creating and deleting volumes while the resource is up
+  * delete obsolete method, add description for class
+  * add controller check for nvme rsc creation + api consts
+  * Source out behavior that checks if a resource creation is valid
+  * Fix nullpointer exception when rsc role is neither NVMe nor Swordfish
+
+  [ Robert Altnoeder ]
+  * Adjusted REST-API IPv6 bind address format
+  * Handle exceptions during REST service initalization
+  * Enable debugging failed controller startup
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 09 May 2019 09:16:49 +0200
+
 linstor-server (0.9.6-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
