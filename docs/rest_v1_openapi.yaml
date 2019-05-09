@@ -6,11 +6,11 @@ info:
   description: |
     Linstor REST API
 
-    Server runs per default on port `3370` on `localhost`.
+    Server runs per default on port `3370` on `::` ipv6 and ipv4.
 
     To change the bind address or port you can use the following linstor client commands:
     ```
-    linstor controller set-property REST/bindAddress 0.0.0.0
+    linstor controller set-property REST/bindAddress 127.0.0.1
     linstor controller set-property REST/port 8080
     ```
 
