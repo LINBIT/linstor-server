@@ -426,7 +426,14 @@ public class NvmeUtils
                     output = executeCmdAfterWaiting(extCmd, isWaiting,
                         "/bin/bash", "-c",
                         " grep -H -r " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
-                            nvmeFabricsVlmPath + "c*n*/nsid");
+                            nvmeFabricsVlmPath + "*n*/nsid");
+                    /*
+                     * device path might be
+                     * .../nvmeX/nvmeXcYnZ/..
+                     * but also
+                     * .../nvmeX/nvmeXnY/..
+                     *
+                     */
 
                     if (output == null)
                     {
@@ -434,12 +441,17 @@ public class NvmeUtils
                     }
                     else
                     {
-                        String fabricsPathRsc = nvmeFabricsVlmPath + "c*n";
+                        String grepResult = new String(output.stdoutData);
+                        // grepResult looks something like
+                        // /sys/devices/virtual/nvme-fabrics/ctl/nvme0/nvme0c1n1/nsid:1
+                        // either with cY or without
+
+                        String[] nvmePathParts = grepResult.split(File.separator);
+                        // should now only contain "nvme0(c1)?n1"
+                        String nvmeNamespacePart = nvmePathParts[nvmePathParts.length - 2];
 
                         final int nvmeVlmIdx = Integer.parseInt(
-                            (new String(output.stdoutData))
-                                .substring(fabricsPathRsc.length(), fabricsPathRsc.length() + NVME_IDX_MAX_DIGITS)
-                                .split(File.separator)[0]
+                            nvmeNamespacePart.substring(nvmeNamespacePart.lastIndexOf("n") + 1)
                         );
 
                         nvmeVlmData.setDevicePath("/dev/nvme" + nvmeRscIdx + "n" + nvmeVlmIdx);
