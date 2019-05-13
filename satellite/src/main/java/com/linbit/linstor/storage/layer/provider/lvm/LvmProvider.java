@@ -23,14 +23,16 @@ import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.StorageConfigReader;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
-import com.linbit.linstor.storage.utils.LvmCommands;
-import com.linbit.linstor.storage.utils.LvmUtils;
-import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.storage.utils.lvm.LvmCommands;
+import com.linbit.linstor.storage.utils.lvm.LvmUtils;
+import com.linbit.linstor.storage.utils.lvm.LvmUtils.LvsInfo;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.io.File;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -108,7 +110,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         );
         for (LvmData vlmData : vlmDataList)
         {
-            final LvsInfo info = infoListCache.get(asLvIdentifier(vlmData));
+            final LvsInfo info = infoListCache.get(getFullQualifiedIdentifier(vlmData));
             updateInfo(vlmData, info);
 
             // final VlmStorageState<T> vlmState = vlmStorStateFactory.create((T) info, vlm);
@@ -144,6 +146,13 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         }
 
         updateSnapshotStates(snapshots);
+    }
+
+    private String getFullQualifiedIdentifier(LvmData vlmDataRef)
+    {
+        return vlmDataRef.getVolumeGroup() +
+            File.separator +
+            asLvIdentifier(vlmDataRef);
     }
 
     /*

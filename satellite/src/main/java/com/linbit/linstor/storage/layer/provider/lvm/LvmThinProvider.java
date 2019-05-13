@@ -19,9 +19,9 @@ import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
-import com.linbit.linstor.storage.utils.LvmCommands;
-import com.linbit.linstor.storage.utils.LvmUtils;
-import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.storage.utils.lvm.LvmCommands;
+import com.linbit.linstor.storage.utils.lvm.LvmUtils;
+import com.linbit.linstor.storage.utils.lvm.LvmUtils.LvsInfo;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -89,8 +89,11 @@ public class LvmThinProvider extends LvmProvider
     }
 
     private String asFullQualifiedLvIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
+        throws AccessDeniedException
     {
-        return String.format(
+        return
+            getVolumeGroup(snapVlm.getStorPool(storDriverAccCtx)) + File.separator +
+            String.format(
             FORMAT_SNAP_VLM_TO_LVM_ID,
             snapVlm.getResourceName().displayValue,
             rscNameSuffix,

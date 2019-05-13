@@ -46,7 +46,7 @@ public class ConfigParseUtils
         {
             try
             {
-                ret = parserFunc.accept(valStr);
+                ret = parserFunc.apply(valStr);
             }
             catch (Exception exc)
             {
