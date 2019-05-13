@@ -224,6 +224,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
         MockitoAnnotations.initMocks(this);
 
+        Mockito.when(mockPeer.getAccessContext()).thenReturn(PUBLIC_CTX);
+
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
             new LoggingModule(errorReporter),

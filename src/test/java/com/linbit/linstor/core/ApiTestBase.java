@@ -48,8 +48,8 @@ public abstract class ApiTestBase extends GenericDbBase
     @Mock
     protected TcpConnector tcpConnectorMock;
 
-    @Bind @Mock
-    protected SatelliteConnector satelliteConnector;
+    // mocked manually in setUp and bound in ApiTestModule
+    protected SatelliteConnectorImpl satelliteConnector;
 
     @Bind @Mock
     protected NetComContainer netComContainer;
@@ -70,9 +70,14 @@ public abstract class ApiTestBase extends GenericDbBase
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void setUp() throws Exception
     {
+        SatelliteConnectorImpl stltConnector = Mockito.mock(SatelliteConnectorImpl.class);
         super.setUpWithoutEnteringScope(Modules.combine(
-            new CtrlApiCallHandlerModule()
+            new CtrlApiCallHandlerModule(),
+            new ApiTestModule(stltConnector)
         ));
+        // super.setUpWithoutEnteringScope has also initialized satelliteConnector, but with a different
+        // mock as we just gave guice to bind to. i.e. override with our local mock
+        satelliteConnector = stltConnector;
 
         testScope.enter();
 
@@ -224,10 +229,17 @@ public abstract class ApiTestBase extends GenericDbBase
             expectRc(idx, expectedRetCodes.get(idx), actualRetCodes.get(idx));
         }
 
-        Mockito.verify(satelliteConnector, Mockito.times(currentCall.expectedConnectingAttempts.size()))
+        Mockito.verify(satelliteConnector, Mockito.times(currentCall.expectedSyncConnectingAttempts.size()))
             .startConnecting(
                 Mockito.any(Node.class),
-                Mockito.any(AccessContext.class)
+                Mockito.any(AccessContext.class),
+                Mockito.eq(false)
+            );
+        Mockito.verify(satelliteConnector, Mockito.times(currentCall.expectedAsyncConnectingAttempts.size()))
+            .startConnecting(
+                Mockito.any(Node.class),
+                Mockito.any(AccessContext.class),
+                Mockito.eq(true)
             );
     }
 }

@@ -10,7 +10,8 @@ import java.util.List;
 public abstract class AbsApiCallTester
 {
     public List<Long> retCodes;
-    public List<StltConnectingAttempt> expectedConnectingAttempts;
+    public List<StltConnectingAttempt> expectedSyncConnectingAttempts;
+    public List<StltConnectingAttempt> expectedAsyncConnectingAttempts;
 
     public AbsApiCallTester(
         long objMask,
@@ -33,7 +34,8 @@ public abstract class AbsApiCallTester
             retCodes.add(rc);
         }
 
-        expectedConnectingAttempts = new ArrayList<>();
+        expectedSyncConnectingAttempts = new ArrayList<>();
+        expectedAsyncConnectingAttempts = new ArrayList<>();
     }
 
     public AbsApiCallTester retCode(int index, long retCode)
@@ -48,11 +50,20 @@ public abstract class AbsApiCallTester
         return this;
     }
 
-    public AbsApiCallTester expectStltConnectingAttempt()
+    public AbsApiCallTester expectStltConnectingAttempt(boolean async)
     {
-        expectedConnectingAttempts.add(
-            new StltConnectingAttempt(null, null, null) // just a dummy entry to be checked
-        );
+        if (async)
+        {
+            expectedAsyncConnectingAttempts.add(
+                new StltConnectingAttempt(null, null, null) // just a dummy entry to be checked
+            );
+        }
+        else
+        {
+            expectedSyncConnectingAttempts.add(
+                new StltConnectingAttempt(null, null, null) // just a dummy entry to be checked
+            );
+        }
         return this;
     }
 

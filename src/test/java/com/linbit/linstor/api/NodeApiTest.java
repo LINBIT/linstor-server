@@ -3,7 +3,6 @@ package com.linbit.linstor.api;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,7 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.SecurityLevel;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -35,14 +35,14 @@ import org.mockito.Mockito;
 
 public class NodeApiTest extends ApiTestBase
 {
-    private static final int DEFAULT_CREATE_NODE_TIMEOUT = 5;
-
     @Inject private Provider<CtrlNodeApiCallHandler> nodeApiCallHandlerProvider;
     @Inject private Provider<CtrlNodeCrtApiCallHandler> nodeCrtApiCallHandlerProvider;
 
     private NodeName testNodeName;
     private NodeType testNodeType;
     private NodeData testNode;
+
+    private boolean inScope = false;
 
     @Mock
     protected Peer mockSatellite;
@@ -67,15 +67,25 @@ public class NodeApiTest extends ApiTestBase
         );
         testNode.setPeer(GenericDbBase.SYS_CTX, mockSatellite);
         nodesMap.put(testNodeName, testNode);
-        commit();
+        commitAndCleanUp(true);
+        inScope = false;
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        commitAndCleanUp(inScope);
     }
 
     @Test
     public void crtSuccess() throws Exception
     {
         evaluateTest(
-            new CreateNodeCall(ApiConsts.CREATED)
-                .expectStltConnectingAttempt()
+            new CreateNodeCall(
+                ApiConsts.CREATED,
+                ApiConsts.WARN_NOT_CONNECTED
+            )
+                .expectStltConnectingAttempt(false)
         );
     }
 
@@ -85,8 +95,11 @@ public class NodeApiTest extends ApiTestBase
         // FIXME: this test only works because the first API call succeeds.
         // if it would fail, the transaction is currently NOT rolled back.
         evaluateTest(
-            new CreateNodeCall(ApiConsts.CREATED)
-                .expectStltConnectingAttempt()
+            new CreateNodeCall(
+                ApiConsts.CREATED,
+                ApiConsts.WARN_NOT_CONNECTED
+            )
+                .expectStltConnectingAttempt(false)
         );
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_EXISTS_NODE)
@@ -99,12 +112,20 @@ public class NodeApiTest extends ApiTestBase
     {
         DummySecurityInitializer.setSecurityLevel(SYS_CTX, SecurityLevel.MAC);
 
+        enterScope();
+
         nodeRepository.getObjProt().delAclEntry(GenericDbBase.SYS_CTX, GenericDbBase.PUBLIC_CTX.subjectRole);
-        nodeRepository.getObjProt().addAclEntry(GenericDbBase.SYS_CTX, GenericDbBase.PUBLIC_CTX.subjectRole, AccessType.VIEW);
+        nodeRepository.getObjProt().addAclEntry(
+            GenericDbBase.SYS_CTX,
+            GenericDbBase.PUBLIC_CTX.subjectRole,
+            AccessType.VIEW
+        );
 
         testScope.seed(Key.get(AccessContext.class, PeerContext.class), GenericDbBase.PUBLIC_CTX);
         testScope.seed(Peer.class, mockPeer);
         Mockito.when(mockPeer.getAccessContext()).thenReturn(GenericDbBase.PUBLIC_CTX);
+
+        commitAndLeaveScope();
 
         evaluateTest(
             new CreateNodeCall(ApiConsts.FAIL_ACC_DENIED_NODE)
@@ -171,6 +192,7 @@ public class NodeApiTest extends ApiTestBase
     @Test
     public void modSuccess() throws Exception
     {
+        enterScope();
         evaluateTest(
             new ModifyNodeCall(ApiConsts.MODIFIED) // nothing to do
         );
@@ -180,6 +202,8 @@ public class NodeApiTest extends ApiTestBase
     @DoNotSeedDefaultPeer
     public void modDifferentUserAccDenied() throws Exception
     {
+        enterScope();
+
         DummySecurityInitializer.setSecurityLevel(SYS_CTX, SecurityLevel.MAC);
 
         testScope.seed(Key.get(AccessContext.class, PeerContext.class), ApiTestBase.ALICE_ACC_CTX);
@@ -198,13 +222,13 @@ public class NodeApiTest extends ApiTestBase
         List<NetInterfaceApi> netIfApis;
         Map<String, String> props;
 
-        CreateNodeCall(long expectedRc)
+        CreateNodeCall(long... expectedRcs)
         {
             super(
                 // peer
                 ApiConsts.MASK_NODE,
                 ApiConsts.MASK_CRT,
-                expectedRc
+                expectedRcs
             );
 
             nodeName = "TestNode";
@@ -219,12 +243,16 @@ public class NodeApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return nodeCrtApiCallHandlerProvider.get().createNode(
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            nodeCrtApiCallHandlerProvider.get().createNode(
                 nodeName,
                 nodeType,
                 netIfApis,
                 props
-            ).blockFirst(Duration.ofSeconds(DEFAULT_CREATE_NODE_TIMEOUT));
+            )
+            .subscriberContext(subscriberContext())
+            .toStream().forEach(apiCallRc::addEntries);
+            return apiCallRc;
         }
 
         public AbsApiCallTester setNodeName(String nodeNameRef)
@@ -339,6 +367,19 @@ public class NodeApiTest extends ApiTestBase
                 deletePropNamespaces
             );
         }
+    }
 
+    @Override
+    protected void enterScope() throws Exception
+    {
+        inScope = true;
+        super.enterScope();
+    }
+
+    private void commitAndLeaveScope() throws Exception
+    {
+        commit();
+        testScope.exit();
+        inScope = false;
     }
 }
