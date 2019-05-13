@@ -2,12 +2,15 @@ package com.linbit.linstor.tasks;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.core.CtrlAuthenticator;
+import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 
 import javax.inject.Inject;
@@ -23,16 +26,19 @@ public class ReconnectorTask implements Task
     private final LinkedList<Peer> peerList = new LinkedList<>();
     private final ErrorReporter errorReporter;
     private PingTask pingTask;
-    private Provider<CtrlAuthenticator> authenticatorProvider;
+    private final Provider<CtrlAuthenticator> authenticatorProvider;
+    private final Provider<SatelliteConnector> satelliteConnector;
 
     @Inject
     public ReconnectorTask(
         ErrorReporter errorReporterRef,
-        Provider<CtrlAuthenticator> authenticatorRef
+        Provider<CtrlAuthenticator> authenticatorRef,
+        Provider<SatelliteConnector> satelliteConnectorRef
     )
     {
         errorReporter = errorReporterRef;
         authenticatorProvider = authenticatorRef;
+        satelliteConnector = satelliteConnectorRef;
     }
 
     void setPingTask(PingTask pingTaskRef)
@@ -138,5 +144,24 @@ public class ReconnectorTask implements Task
             }
         }
         return RECONNECT_SLEEP;
+    }
+
+    public void startReconnecting(Collection<Node> nodes, AccessContext initCtx)
+    {
+        /*
+         * We need this method so that all nodes are added starting connecting while having
+         * this syncObj. If we would give up the syncObj between two startConnecting calls
+         * we might run into a deadlock where one thread tries to connect (awaits authentication)
+         * and another thread tries to start connecting the next node.
+         */
+        synchronized (syncObj)
+        {
+            SatelliteConnector stltConnector = satelliteConnector.get();
+            for (Node node : nodes)
+            {
+                errorReporter.logDebug("Reconnecting to node '" + node.getName() + "'.");
+                stltConnector.startConnecting(node, initCtx);
+            }
+        }
     }
 }

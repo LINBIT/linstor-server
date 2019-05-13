@@ -42,7 +42,6 @@ import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.NetComModule;
 import com.linbit.linstor.numberpool.DbNumberPoolInitializer;
 import com.linbit.linstor.numberpool.NumberPoolModule;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -124,7 +123,6 @@ public final class Controller
     private final ReconnectorTask reconnectorTask;
 
     private final DebugConsoleCreator debugConsoleCreator;
-    private final SatelliteConnector satelliteConnector;
     private final ControllerNetComInitializer controllerNetComInitializer;
 
     private final SwordfishTargetProcessManager swordfishTargetProcessManager;
@@ -153,7 +151,6 @@ public final class Controller
         ReconnectorTask reconnectorTaskRef,
         RetryResourcesTask retryResourcesTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
-        SatelliteConnector satelliteConnectorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
         SwordfishTargetProcessManager swordfishTargetProcessManagerRef,
         WhitelistProps whitelistPropsRef
@@ -178,7 +175,6 @@ public final class Controller
         reconnectorTask = reconnectorTaskRef;
         retryResourcesTask = retryResourcesTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
-        satelliteConnector = satelliteConnectorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
         swordfishTargetProcessManager = swordfishTargetProcessManagerRef;
         whitelistProps = whitelistPropsRef;
@@ -233,13 +229,6 @@ public final class Controller
 
             errorReporter.logInfo("Controller initialized");
         }
-        catch (InvalidKeyException invalidKeyExc)
-        {
-            throw new ImplementationError(
-              "Invalid key used.",
-              invalidKeyExc
-            );
-        }
         catch (AccessDeniedException accessExc)
         {
             throw new ImplementationError(
@@ -254,7 +243,7 @@ public final class Controller
         }
     }
 
-    private void initializeRestServer(Injector injector, ControllerCmdlArguments cArgs) throws InvalidKeyException
+    private void initializeRestServer(Injector injector, ControllerCmdlArguments cArgs)
     {
         boolean restEnabled = true;
         String restBindAddress;
@@ -365,11 +354,7 @@ public final class Controller
         {
             errorLogRef.logInfo("Reconnecting to previously known nodes");
             Collection<Node> nodes = nodesMap.values();
-            for (Node node : nodes)
-            {
-                errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
-                satelliteConnector.startConnecting(node, initCtx);
-            }
+            reconnectorTask.startReconnecting(nodes, initCtx);
             errorLogRef.logInfo("Reconnect requests sent");
         }
         else
