@@ -2,6 +2,7 @@ package com.linbit.linstor.netcom;
 
 import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +24,7 @@ import reactor.core.publisher.Flux;
 public class PeerOffline implements Peer
 {
     private final String peerId;
+    private final InetSocketAddress inetSocketAddress;
     private final Node node;
     static ServiceName serviceName;
 
@@ -42,10 +44,12 @@ public class PeerOffline implements Peer
 
     public PeerOffline(
         String peerIdRef,
+        InetSocketAddress inetAddress,
         Node nodeRef
     )
     {
         peerId = peerIdRef;
+        inetSocketAddress = inetAddress;
         node = nodeRef;
         satelliteStateLock = new ReentrantReadWriteLock(true);
 
@@ -239,7 +243,7 @@ public class PeerOffline implements Peer
     @Override
     public InetSocketAddress localAddress()
     {
-        return null;
+        return inetSocketAddress;
     }
 
     @Override
