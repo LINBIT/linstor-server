@@ -7,12 +7,12 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.EncryptionType;
-import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.PeerOffline;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -136,9 +136,10 @@ public class SatelliteConnectorImpl implements SatelliteConnector
             }
             else
             {
-                final String nodeName = node.getName().displayValue;
-                node.setPeer(accCtx, new PeerOffline(nodeName, node));
-                errorReporter.logDebug("Not connecting to " + nodeType.name() + " node: '" + nodeName + "'");
+                CtrlNodeCrtApiCallHandler.setOfflinePeer(node, accCtx);
+                errorReporter.logDebug(
+                    "Not connecting to " + nodeType.name() + " node: '" + node.getName().getDisplayName() + "'"
+                );
             }
         }
         catch (AccessDeniedException | InvalidKeyException exc)

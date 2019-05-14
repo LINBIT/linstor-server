@@ -4,6 +4,7 @@ import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -173,7 +174,23 @@ public class PeerOffline implements Peer
     @Override
     public ConnectionStatus getConnectionStatus()
     {
-        return ConnectionStatus.UNKNOWN;
+        ConnectionStatus status = ConnectionStatus.OFFLINE;
+        try
+        {
+            InetAddress[] allMyIps = InetAddress.getAllByName(InetAddress.getLocalHost().getCanonicalHostName());
+            for (InetAddress inetAddress : allMyIps)
+            {
+                if (localAddress().getAddress().equals(inetAddress))
+                {
+                    status = Peer.ConnectionStatus.ONLINE;
+                    break;
+                }
+            }
+        }
+        catch (UnknownHostException ignored)
+        {
+        }
+        return status;
     }
 
     @Override
