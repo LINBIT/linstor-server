@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 
 import javax.inject.Inject;
@@ -45,9 +46,9 @@ public class SnapshotRestoreVolumeDefinition
     {
         return requestHelper.doInScope(ApiConsts.API_RESTORE_VLM_DFN, request, () ->
         {
-            Json.SnapshotRestore snapRestore = objectMapper.readValue(
+            JsonGenTypes.SnapshotRestore snapRestore = objectMapper.readValue(
                 jsonData,
-                Json.SnapshotRestore.class
+                JsonGenTypes.SnapshotRestore.class
             );
             ApiCallRc apiCallRc = ctrlApiCallHandler.restoreVlmDfn(
                 rscName,

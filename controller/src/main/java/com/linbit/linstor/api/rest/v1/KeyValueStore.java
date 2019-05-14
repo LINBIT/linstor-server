@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 
 import javax.inject.Inject;
@@ -14,6 +15,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,9 +60,9 @@ public class KeyValueStore
     {
         return requestHelper.doInScope(ApiConsts.API_LST_KVS, request, () ->
         {
-            List<Json.KeyValueStore> keyValueStoreList = ctrlApiCallHandler.listKvs().stream()
+            List<JsonGenTypes.KeyValueStore> keyValueStoreList = ctrlApiCallHandler.listKvs().stream()
                 .filter(kvsApi -> instanceName == null || kvsApi.getName().equalsIgnoreCase(instanceName))
-                .map(Json.KeyValueStore::new)
+                .map(Json::apiToKeyValueStore)
                 .collect(Collectors.toList());
 
             Response resp;
@@ -93,17 +95,17 @@ public class KeyValueStore
     {
         return requestHelper.doInScope(ApiConsts.API_MOD_KVS, request, () ->
         {
-            Json.ModifyKeyValueStore modifyKeyValueStore = objectMapper.readValue(
+            JsonGenTypes.KeyValueStoreModify modifyKeyValueStore = objectMapper.readValue(
                 jsonData,
-                Json.ModifyKeyValueStore.class
+                JsonGenTypes.KeyValueStoreModify.class
             );
 
             return ApiCallRcConverter.toResponse(ctrlApiCallHandler.modifyKvs(
                 null,
                 instanceName,
                 modifyKeyValueStore.override_props,
-                modifyKeyValueStore.delete_props,
-                modifyKeyValueStore.delete_namespaces
+                new HashSet<>(modifyKeyValueStore.delete_props),
+                new HashSet<>(modifyKeyValueStore.delete_namespaces)
             ), Response.Status.OK);
         }, true);
     }

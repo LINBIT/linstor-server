@@ -7,8 +7,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
-import com.linbit.linstor.api.rest.v1.serializer.Json.StorPoolData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.StorPoolModifyData;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
@@ -31,6 +30,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -134,10 +134,10 @@ public class StoragePools
                 {
                     storPoolApiStream = storPoolApiStream.skip(offset).limit(limit);
                 }
-                List<StorPoolData> storPoolDataList = storPoolApiStream
+                List<JsonGenTypes.StoragePool> storPoolDataList = storPoolApiStream
                     .map(storPoolApi ->
                     {
-                        StorPoolData storPoolData = new StorPoolData();
+                        JsonGenTypes.StoragePool storPoolData = new JsonGenTypes.StoragePool();
                         storPoolData.storage_pool_name = storPoolApi.getStorPoolName();
                         storPoolData.node_name = storPoolApi.getNodeName();
                         storPoolData.provider_kind = Json.deviceProviderKindAsString(
@@ -204,7 +204,8 @@ public class StoragePools
     {
         try
         {
-            StorPoolData storPoolData = objectMapper.readValue(jsonData, StorPoolData.class);
+            JsonGenTypes.StoragePool storPoolData = objectMapper
+                .readValue(jsonData, JsonGenTypes.StoragePool.class);
 
             Flux<ApiCallRc> responses = ctrlStorPoolCrtApiCallHandler.createStorPool(
                 nodeName,
@@ -238,7 +239,8 @@ public class StoragePools
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request), () ->
             {
-                StorPoolModifyData modifyData = objectMapper.readValue(jsonData, StorPoolModifyData.class);
+                JsonGenTypes.StoragePoolDefinitionModify modifyData = objectMapper
+                    .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
 
                 return ApiCallRcConverter.toResponse(
                     ctrlStorPoolApiCallHandler.modifyStorPool(
@@ -246,8 +248,8 @@ public class StoragePools
                         nodeName,
                         storPoolName,
                         modifyData.override_props,
-                        modifyData.delete_props,
-                        modifyData.delete_namespaces
+                        new HashSet<>(modifyData.delete_props),
+                        new HashSet<>(modifyData.delete_namespaces)
                     ),
                     Response.Status.OK
                 );

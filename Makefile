@@ -131,3 +131,6 @@ endif
 
 dockerpath:
 	@echo $(DOCKERREGPATH_CONTROLLER):latest $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) $(DOCKERREGPATH_SATELLITE):latest $(DOCKERREGPATH_SATELLITE):$(DOCKER_TAG)
+
+resttypes:
+	python3 ./scripts/rest-gen.py ./docs/rest_v1_openapi.yaml > controller/src/main/java/com/linbit/linstor/api/rest/v1/serializer/JsonGenTypes.java

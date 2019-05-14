@@ -19,8 +19,8 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -36,19 +36,12 @@ import com.linbit.utils.Pair;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class Json
 {
-    public static final String REST_API_VERSION = "1.0.2";
-
     public static String deviceProviderKindAsString(DeviceProviderKind deviceProviderKind)
     {
         return deviceProviderKind.name();
@@ -59,970 +52,504 @@ public class Json
         return deviceLayerKind.name();
     }
 
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class NetInterfaceData
+    public static JsonGenTypes.NetInterface apiToNetInterface(NetInterface.NetInterfaceApi netIfApi)
     {
-        public String name;
-        public String address;
-        public Integer satellite_port;
-        public String satellite_encryption_type;
-
-        public NetInterfaceData()
+        JsonGenTypes.NetInterface netif = new JsonGenTypes.NetInterface();
+        netif.name = netIfApi.getName();
+        netif.address = netIfApi.getAddress();
+        if (netIfApi.isUsableAsSatelliteConnection())
         {
+            netif.satellite_encryption_type = netIfApi.getSatelliteConnectionEncryptionType();
+            netif.satellite_port = netIfApi.getSatelliteConnectionPort();
         }
+        return netif;
+    }
 
-        public NetInterfaceData(NetInterface.NetInterfaceApi netIfApi)
+    public static NetInterface.NetInterfaceApi netInterfacetoApi(JsonGenTypes.NetInterface netif)
+    {
+        return new NetInterfacePojo(
+            null,
+            netif.name,
+            netif.address,
+            netif.satellite_port,
+            netif.satellite_encryption_type
+        );
+    }
+
+    public static JsonGenTypes.StoragePoolDefinition storPoolDfnApiToStoragePoolDefinition(
+        StorPoolDefinitionData.StorPoolDfnApi apiData
+    )
+    {
+        JsonGenTypes.StoragePoolDefinition storPoolDfn = new JsonGenTypes.StoragePoolDefinition();
+        storPoolDfn.storage_pool_name = apiData.getName();
+        storPoolDfn.props = apiData.getProps();
+        return storPoolDfn;
+    }
+
+    public static JsonGenTypes.DrbdResourceDefinitionLayer pojoToDrbdRscDfnLayer(
+        DrbdRscPojo.DrbdRscDfnPojo drbdRscDfnPojo
+    )
+    {
+        JsonGenTypes.DrbdResourceDefinitionLayer drbdResourceDefinitionLayer = new
+            JsonGenTypes.DrbdResourceDefinitionLayer();
+        drbdResourceDefinitionLayer.resource_name_suffix = drbdRscDfnPojo.getRscNameSuffix();
+        drbdResourceDefinitionLayer.peer_slots = (int) drbdRscDfnPojo.getPeerSlots();
+        drbdResourceDefinitionLayer.al_stripes = drbdRscDfnPojo.getAlStripes();
+        drbdResourceDefinitionLayer.al_stripe_size_kib = drbdRscDfnPojo.getAlStripeSize();
+        drbdResourceDefinitionLayer.port = drbdRscDfnPojo.getPort();
+        drbdResourceDefinitionLayer.transport_type = drbdRscDfnPojo.getTransportType();
+        drbdResourceDefinitionLayer.secret = drbdRscDfnPojo.getSecret();
+        drbdResourceDefinitionLayer.down = drbdRscDfnPojo.isDown();
+        return drbdResourceDefinitionLayer;
+    }
+
+    public static JsonGenTypes.ResourceDefinition apiToResourceDefinition(
+        ResourceDefinition.RscDfnApi rscDfnApi
+    )
+    {
+        JsonGenTypes.ResourceDefinition rscDfn = new JsonGenTypes.ResourceDefinition();
+        rscDfn.name = rscDfnApi.getResourceName();
+        if (rscDfnApi.getExternalName() != null)
         {
-            name = netIfApi.getName();
-            address = netIfApi.getAddress();
-            if (netIfApi.isUsableAsSatelliteConnection())
+            rscDfn.external_name = new String(rscDfnApi.getExternalName(), StandardCharsets.UTF_8);
+        }
+        rscDfn.flags = ResourceDefinition.RscDfnFlags.toStringList(rscDfnApi.getFlags());
+        rscDfn.props = rscDfnApi.getProps();
+
+        rscDfn.layer_data = new ArrayList<>();
+
+        for (Pair<String, RscDfnLayerDataApi> layer : rscDfnApi.getLayerData())
+        {
+            JsonGenTypes.ResourceDefinitionLayer rscDfnLayerData = new JsonGenTypes.ResourceDefinitionLayer();
+            rscDfnLayerData.type = layer.objA;
+
+            if (layer.objB != null)
             {
-                satellite_encryption_type = netIfApi.getSatelliteConnectionEncryptionType();
-                satellite_port = netIfApi.getSatelliteConnectionPort();
-            }
-        }
-
-        public NetInterface.NetInterfaceApi toApi()
-        {
-            return new NetInterfacePojo(null, name, address, satellite_port, satellite_encryption_type);
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class NodeData
-    {
-        public String name;
-        public String type;
-        public Map<String, String> props = Collections.emptyMap();
-        public List<String> flags = Collections.emptyList();
-        public List<NetInterfaceData> net_interfaces = new ArrayList<>();
-        public String connection_status;
-    }
-
-    public static class NodeModifyData
-    {
-        public String node_type;
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class StorPoolDfnData
-    {
-        public String storage_pool_name;
-        public Map<String, String> props;
-
-        public StorPoolDfnData()
-        {
-        }
-
-        public StorPoolDfnData(StorPoolDefinitionData.StorPoolDfnApi apiData)
-        {
-            storage_pool_name = apiData.getName();
-            props = apiData.getProps();
-        }
-    }
-
-    public static class StorPoolDfnModifyData
-    {
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class StorPoolData
-    {
-        public String node_name;
-        public String storage_pool_name;
-        public String provider_kind;
-        public Map<String, String> props = new HashMap<>();
-        // Volumes are for now not reported, maybe later via flag
-        public Map<String, String> static_traits;
-        public Long free_capacity;
-        public Long total_capacity;
-        public String free_space_mgr_name;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class StorPoolModifyData
-    {
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class DrbdResourceDefinitionLayerData
-    {
-        public String resource_name_suffix;
-        public Short peer_slots;
-        public Integer al_stripes;
-        public Long al_size;
-        public Integer port;
-        public String transport_type;
-        public String secret;
-        public Boolean down;
-
-        public DrbdResourceDefinitionLayerData()
-        {
-        }
-
-        public DrbdResourceDefinitionLayerData(DrbdRscPojo.DrbdRscDfnPojo drbdRscDfnPojo)
-        {
-            resource_name_suffix = drbdRscDfnPojo.getRscNameSuffix();
-            peer_slots = drbdRscDfnPojo.getPeerSlots();
-            al_stripes = drbdRscDfnPojo.getAlStripes();
-            al_size = drbdRscDfnPojo.getAlStripeSize();
-            port = drbdRscDfnPojo.getPort();
-            transport_type = drbdRscDfnPojo.getTransportType();
-            secret = drbdRscDfnPojo.getSecret();
-            down = drbdRscDfnPojo.isDown();
-        }
-    }
-
-    public static class ResourceDefinitionLayerData
-    {
-        public String type;
-        public Object data;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceDefinitionData
-    {
-        public String name = "";
-        public String external_name = null;
-        public Map<String, String> props = Collections.emptyMap();
-        public List<String> flags = Collections.emptyList();
-        public List<VolumeDefinitionData> volume_definitions; // do not use for now
-
-        public List<ResourceDefinitionLayerData> layer_data = Collections.emptyList();
-
-        public ResourceDefinitionData()
-        {
-        }
-
-        public ResourceDefinitionData(ResourceDefinition.RscDfnApi rscDfnApi)
-        {
-            name = rscDfnApi.getResourceName();
-            if (rscDfnApi.getExternalName() != null)
-            {
-                external_name = new String(rscDfnApi.getExternalName(), StandardCharsets.UTF_8);
-            }
-            flags = ResourceDefinition.RscDfnFlags.toStringList(rscDfnApi.getFlags());
-            props = rscDfnApi.getProps();
-
-            layer_data = new ArrayList<>();
-
-            for (Pair<String, RscDfnLayerDataApi> layer : rscDfnApi.getLayerData())
-            {
-                ResourceDefinitionLayerData rscDfnLayerData = new ResourceDefinitionLayerData();
-                rscDfnLayerData.type = layer.objA;
-
-                if (layer.objB != null)
+                switch (layer.objB.getLayerKind())
                 {
-                    switch (layer.objB.getLayerKind())
-                    {
-                        case DRBD:
-                            DrbdRscPojo.DrbdRscDfnPojo drbdRscDfnPojo = (DrbdRscPojo.DrbdRscDfnPojo) layer.objB;
-                            rscDfnLayerData.data = new DrbdResourceDefinitionLayerData(drbdRscDfnPojo);
-                            break;
-                        case LUKS:
-                        case STORAGE:
-                        case NVME:
-                        default:
-                            throw new ImplementationError("Not implemented Kind case");
-                    }
+                    case DRBD:
+                        DrbdRscPojo.DrbdRscDfnPojo drbdRscDfnPojo = (DrbdRscPojo.DrbdRscDfnPojo) layer.objB;
+                        rscDfnLayerData.data = pojoToDrbdRscDfnLayer(drbdRscDfnPojo);
+                        break;
+                    case LUKS:
+                    case STORAGE:
+                    case NVME:
+                    default:
+                        throw new ImplementationError("Not implemented Kind case");
                 }
-                layer_data.add(rscDfnLayerData);
             }
+            rscDfn.layer_data.add(rscDfnLayerData);
         }
+        return rscDfn;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceDefinitionCreateData
+    public static JsonGenTypes.DrbdVolumeDefinition pojoToDrbdVolumeDefinition(
+        DrbdRscPojo.DrbdVlmDfnPojo drbdVlmDfnPojo
+    )
     {
-        public Integer drbd_port;
-        public String drbd_secret;
-        public String drbd_transport_type;
-
-        public ResourceDefinitionData resource_definition;
-        public Short drbd_peer_slots;
+        JsonGenTypes.DrbdVolumeDefinition drbdVlmDfn = new JsonGenTypes.DrbdVolumeDefinition();
+        drbdVlmDfn.resource_name_suffix = drbdVlmDfnPojo.getRscNameSuffix();
+        drbdVlmDfn.volume_number = drbdVlmDfnPojo.getVlmNr();
+        drbdVlmDfn.minor_number = drbdVlmDfnPojo.getMinorNr();
+        return drbdVlmDfn;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceDefinitionModifyData
+    public static JsonGenTypes.VolumeDefinition apiToVolumeDefinition(
+        VolumeDefinition.VlmDfnApi vlmDfnApi
+    )
     {
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
+        JsonGenTypes.VolumeDefinition vlmDfn = new JsonGenTypes.VolumeDefinition();
+        vlmDfn.volume_number = vlmDfnApi.getVolumeNr();
+        vlmDfn.size_kib = vlmDfnApi.getSize();
+        vlmDfn.props = vlmDfnApi.getProps();
+        vlmDfn.flags = FlagsHelper.toStringList(
+            VolumeDefinition.VlmDfnFlags.class,
+            vlmDfnApi.getFlags()
+        );
 
-        public List<String> layer_stack = Collections.emptyList();
-        public Integer drbd_port;
-        public Short drbd_peer_slots;
-        // do not use for now
-//        public String drbd_secret;
-//        public String drbd_transport_type;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class DrbdVolumeDefinitionLayerData
-    {
-        public String resource_name_suffix;
-        public Integer volume_number;
-        public Integer minor_number;
-
-        public DrbdVolumeDefinitionLayerData()
+        vlmDfn.layer_data = new ArrayList<>();
+        for (Pair<String, VlmDfnLayerDataApi> layer : vlmDfnApi.getVlmDfnLayerData())
         {
-        }
+            JsonGenTypes.VolumeDefinitionLayer volumeDefinitionLayerData = new JsonGenTypes.VolumeDefinitionLayer();
+            volumeDefinitionLayerData.type = layer.objA;
 
-        public DrbdVolumeDefinitionLayerData(DrbdRscPojo.DrbdVlmDfnPojo drbdVlmDfnPojo)
-        {
-            resource_name_suffix = drbdVlmDfnPojo.getRscNameSuffix();
-            volume_number = drbdVlmDfnPojo.getVlmNr();
-            minor_number = drbdVlmDfnPojo.getMinorNr();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class VolumeDefinitionLayerData
-    {
-        public String type;
-        public Object data;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class VolumeDefinitionData
-    {
-        public Integer volume_number;
-        public Long size_kib;
-        public Map<String, String> props = Collections.emptyMap();
-        public List<String> flags = Collections.emptyList();
-
-        public List<VolumeDefinitionLayerData> layer_data = Collections.emptyList();
-
-        public VolumeDefinitionData()
-        {
-        }
-
-        public VolumeDefinitionData(VolumeDefinition.VlmDfnApi vlmDfnApi)
-        {
-            volume_number = vlmDfnApi.getVolumeNr();
-            size_kib = vlmDfnApi.getSize();
-            props = vlmDfnApi.getProps();
-            flags = FlagsHelper.toStringList(
-                VolumeDefinition.VlmDfnFlags.class,
-                vlmDfnApi.getFlags()
-            );
-
-            layer_data = new ArrayList<>();
-            for (Pair<String, VlmDfnLayerDataApi> layer : vlmDfnApi.getVlmDfnLayerData())
+            if (layer.objB != null)
             {
-                VolumeDefinitionLayerData volumeDefinitionLayerData = new VolumeDefinitionLayerData();
-                volumeDefinitionLayerData.type = layer.objA;
-
-                if (layer.objB != null)
+                switch (layer.objB.getLayerKind())
                 {
-                    switch (layer.objB.getLayerKind())
-                    {
-                        case DRBD:
-                            DrbdRscPojo.DrbdVlmDfnPojo drbdVlmDfnPojo = (DrbdRscPojo.DrbdVlmDfnPojo) layer.objB;
-                            volumeDefinitionLayerData.data = new DrbdVolumeDefinitionLayerData(drbdVlmDfnPojo);
-                            break;
-                        case LUKS:
-                        case STORAGE:
-                        case NVME:
-                        default:
-                            throw new ImplementationError("Not implemented Kind case");
-                    }
+                    case DRBD:
+                        DrbdRscPojo.DrbdVlmDfnPojo drbdVlmDfnPojo = (DrbdRscPojo.DrbdVlmDfnPojo) layer.objB;
+                        volumeDefinitionLayerData.data = pojoToDrbdVolumeDefinition(drbdVlmDfnPojo);
+                        break;
+                    case LUKS:
+                    case STORAGE:
+                    case NVME:
+                    default:
+                        throw new ImplementationError("Not implemented Kind case");
                 }
-                layer_data.add(volumeDefinitionLayerData);
+            }
+            vlmDfn.layer_data.add(volumeDefinitionLayerData);
+        }
+        return vlmDfn;
+    }
+
+    public static VolumeDefinition.VlmDfnApi VolumeDefinitionToApi(
+        JsonGenTypes.VolumeDefinition vlmDfn
+    )
+    {
+        ArrayList<Pair<String, VlmDfnLayerDataApi>> layerData = new ArrayList<>(); // empty will be ignored
+        return new VlmDfnPojo(
+            null,
+            vlmDfn.volume_number,
+            vlmDfn.size_kib,
+            FlagsHelper.fromStringList(VolumeDefinition.VlmDfnFlags.class, vlmDfn.flags),
+            vlmDfn.props,
+            layerData
+        );
+    }
+
+    public static JsonGenTypes.DrbdResource pojoToDrbdResource(DrbdRscPojo drbdRscPojo)
+    {
+        JsonGenTypes.DrbdResource drbdResource = new JsonGenTypes.DrbdResource();
+        drbdResource.drbd_resource_definition = pojoToDrbdRscDfnLayer(drbdRscPojo.getDrbdRscDfn());
+        drbdResource.node_id = drbdRscPojo.getNodeId();
+        drbdResource.peer_slots = (int) drbdRscPojo.getPeerSlots();
+        drbdResource.al_stripes = drbdRscPojo.getAlStripes();
+        drbdResource.al_size = drbdRscPojo.getAlStripeSize();
+        drbdResource.flags = FlagsHelper.toStringList(DrbdRscObject.DrbdRscFlags.class, drbdRscPojo.getFlags());
+        drbdResource.drbd_volumes = drbdRscPojo.getVolumeList().stream()
+            .map(Json::pojoToDrbdVolume)
+            .collect(Collectors.toList());
+        return drbdResource;
+    }
+
+    public static JsonGenTypes.StorageResource pojoToStorageResource(StorageRscPojo storageRscPojo)
+    {
+        JsonGenTypes.StorageResource storageResource = new JsonGenTypes.StorageResource();
+        storageResource.storage_volumes = storageRscPojo.getVolumeList().stream()
+            .map(Json::apiToStorageVolume)
+            .collect(Collectors.toList());
+        return storageResource;
+    }
+
+    public static JsonGenTypes.LUKSResource pojoToLUKSResource(LuksRscPojo luksRscPojo)
+    {
+        JsonGenTypes.LUKSResource luksResource = new JsonGenTypes.LUKSResource();
+        luksResource.luks_volumes = luksRscPojo.getVolumeList().stream()
+            .map(Json::pojoToLUKSVolume)
+            .collect(Collectors.toList());
+        return luksResource;
+    }
+
+    public static JsonGenTypes.NVMEResource pojoToNVMEResource(NvmeRscPojo nvmeRscPojo)
+    {
+        JsonGenTypes.NVMEResource nvmeResource = new JsonGenTypes.NVMEResource();
+        nvmeResource.nvme_volumes = nvmeRscPojo.getVolumeList().stream()
+            .map(Json::pojoToNVMEVolume)
+            .collect(Collectors.toList());
+        return nvmeResource;
+    }
+
+    public static JsonGenTypes.ResourceLayer apiToResourceLayer(RscLayerDataApi rscLayerDataApi)
+    {
+        JsonGenTypes.ResourceLayer resourceLayer = new JsonGenTypes.ResourceLayer();
+        resourceLayer.resource_name_suffix = rscLayerDataApi.getRscNameSuffix();
+        resourceLayer.children = rscLayerDataApi.getChildren().stream()
+            .map(Json::apiToResourceLayer)
+            .collect(Collectors.toList());
+        resourceLayer.type = getLayerTypeString(rscLayerDataApi.getLayerKind());
+        switch (rscLayerDataApi.getLayerKind())
+        {
+            case DRBD:
+                DrbdRscPojo drbdRscPojo = (DrbdRscPojo) rscLayerDataApi;
+                resourceLayer.drbd = pojoToDrbdResource(drbdRscPojo);
+                break;
+            case STORAGE:
+                StorageRscPojo storageRscPojo = (StorageRscPojo) rscLayerDataApi;
+                resourceLayer.storage = pojoToStorageResource(storageRscPojo);
+                break;
+            case LUKS:
+                LuksRscPojo luksRscPojo = (LuksRscPojo) rscLayerDataApi;
+                resourceLayer.luks = pojoToLUKSResource(luksRscPojo);
+                break;
+            case NVME:
+                NvmeRscPojo nvmeRscPojo = (NvmeRscPojo) rscLayerDataApi;
+                resourceLayer.nvme = pojoToNVMEResource(nvmeRscPojo);
+                break;
+            default:
+        }
+        return resourceLayer;
+    }
+
+    public static JsonGenTypes.Resource apiToResource(
+        Resource.RscApi rscApi,
+        Map<NodeName, SatelliteState> satelliteStates
+    )
+    {
+        JsonGenTypes.Resource rsc = new JsonGenTypes.Resource();
+        rsc.name = rscApi.getName();
+        rsc.node_name = rscApi.getNodeName();
+        rsc.flags = FlagsHelper.toStringList(Resource.RscFlags.class, rscApi.getFlags());
+        rsc.props = rscApi.getProps();
+        rsc.layer_object = apiToResourceLayer(rscApi.getLayerData());
+
+        try
+        {
+            final ResourceName rscNameRes = new ResourceName(rscApi.getName());
+            final NodeName linNodeName = new NodeName(rscApi.getNodeName());
+            if (satelliteStates.containsKey(linNodeName) &&
+                satelliteStates.get(linNodeName)
+                    .getResourceStates().containsKey(rscNameRes))
+            {
+                rsc.state = new JsonGenTypes.ResourceState();
+                rsc.state.in_use = satelliteStates.get(linNodeName)
+                    .getResourceStates().get(rscNameRes).isInUse();
             }
         }
-
-        public VolumeDefinition.VlmDfnApi toVlmDfnApi()
+        catch (InvalidNameException ignored)
         {
-            ArrayList<Pair<String, VlmDfnLayerDataApi>> layerData = new ArrayList<>(); // empty will be ignored
-            return new VlmDfnPojo(
-                null,
-                volume_number,
-                size_kib,
-                FlagsHelper.fromStringList(VolumeDefinition.VlmDfnFlags.class, flags),
-                props,
-                layerData
-            );
         }
+        return rsc;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class VolumeDefinitionCreateData
+    public static Resource.RscApi resourceToApi(JsonGenTypes.Resource resource)
     {
-        public VolumeDefinitionData volume_definition;
-        public Integer drbd_minor_number;
+        return new RscPojo(
+            resource.name,
+            resource.node_name,
+            FlagsHelper.fromStringList(Resource.RscFlags.class, resource.flags),
+            resource.props
+        );
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class VolumeDefinitionModifyData
+    public static JsonGenTypes.DrbdVolume pojoToDrbdVolume(
+        DrbdRscPojo.DrbdVlmPojo drbdVlmPojo
+    )
     {
-        public Long size_kib;
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
+        JsonGenTypes.DrbdVolume drbdVolume = new JsonGenTypes.DrbdVolume();
+        drbdVolume.drbd_volume_definition = pojoToDrbdVolumeDefinition(drbdVlmPojo.getDrbdVlmDfn());
+        drbdVolume.device_path = drbdVlmPojo.getDevicePath();
+        drbdVolume.backing_device = drbdVlmPojo.getBackingDisk();
+        drbdVolume.meta_disk = drbdVlmPojo.getMetaDisk();
+        drbdVolume.allocated_size_kib = drbdVlmPojo.getAllocatedSize();
+        drbdVolume.usable_size_kib = drbdVlmPojo.getUsableSize();
+        drbdVolume.disk_state = drbdVlmPojo.getDiskState();
+        return drbdVolume;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class DrbdResourceData
+    public static JsonGenTypes.LUKSVolume pojoToLUKSVolume(
+        LuksRscPojo.LuksVlmPojo luksVlmPojo
+    )
     {
-        public DrbdResourceDefinitionLayerData drbd_resource_definition;
-        public Integer node_id;
-        public Short peer_slots;
-        public Integer al_stripes;
-        public Long al_size;
-        public List<String> flags;
-        public List<DrbdVolumeData> drbd_volumes;
-
-        public DrbdResourceData()
-        {
-        }
-
-        public DrbdResourceData(DrbdRscPojo drbdRscPojo)
-        {
-            drbd_resource_definition = new DrbdResourceDefinitionLayerData(drbdRscPojo.getDrbdRscDfn());
-            node_id = drbdRscPojo.getNodeId();
-            peer_slots = drbdRscPojo.getPeerSlots();
-            al_stripes = drbdRscPojo.getAlStripes();
-            al_size = drbdRscPojo.getAlStripeSize();
-            flags = FlagsHelper.toStringList(DrbdRscObject.DrbdRscFlags.class, drbdRscPojo.getFlags());
-            drbd_volumes = drbdRscPojo.getVolumeList().stream().map(DrbdVolumeData::new).collect(Collectors.toList());
-        }
+        JsonGenTypes.LUKSVolume luksVolume = new JsonGenTypes.LUKSVolume();
+        luksVolume.volume_number = luksVlmPojo.getVlmNr();
+        luksVolume.device_path = luksVlmPojo.getDevicePath();
+        luksVolume.backing_device = luksVlmPojo.getBackingDevice();
+        luksVolume.allocated_size_kib = luksVlmPojo.getAllocatedSize();
+        luksVolume.usable_size_kib = luksVlmPojo.getUsableSize();
+        luksVolume.opened = luksVlmPojo.isOpened();
+        luksVolume.disk_state = luksVlmPojo.getDiskState();
+        return luksVolume;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class StorageResourceData
+    public static JsonGenTypes.NVMEVolume pojoToNVMEVolume(
+        NvmeRscPojo.NvmeVlmPojo nvmeVlmPojo
+    )
     {
-        public List<StorageVolume> storage_volumes;
-
-        public StorageResourceData()
-        {
-        }
-
-        public StorageResourceData(StorageRscPojo storageRscPojo)
-        {
-            storage_volumes = storageRscPojo.getVolumeList().stream()
-                .map(StorageVolume::new)
-                .collect(Collectors.toList());
-        }
+        JsonGenTypes.NVMEVolume nvmeVolume = new JsonGenTypes.NVMEVolume();
+        nvmeVolume.volume_number = nvmeVlmPojo.getVlmNr();
+        nvmeVolume.device_path = nvmeVlmPojo.getDevicePath();
+        nvmeVolume.backing_device = nvmeVlmPojo.getBackingDisk();
+        nvmeVolume.allocated_size_kib = nvmeVlmPojo.getAllocatedSize();
+        nvmeVolume.usable_size_kib = nvmeVlmPojo.getUsableSize();
+        nvmeVolume.disk_state = nvmeVlmPojo.getDiskState();
+        return nvmeVolume;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class LUKSResourceData
+    public static JsonGenTypes.StorageVolume apiToStorageVolume(
+        VlmLayerDataApi vlmLayerDataApi
+    )
     {
-        public List<LUKSVolume> luks_volumes;
-
-        public LUKSResourceData()
-        {
-        }
-
-        public LUKSResourceData(LuksRscPojo luksRscPojo)
-        {
-            luks_volumes = luksRscPojo.getVolumeList().stream()
-                .map(LUKSVolume::new)
-                .collect(Collectors.toList());
-        }
+        JsonGenTypes.StorageVolume storageVolume = new JsonGenTypes.StorageVolume();
+        storageVolume.volume_number = vlmLayerDataApi.getVlmNr();
+        storageVolume.device_path = vlmLayerDataApi.getDevicePath();
+        storageVolume.allocated_size_kib = vlmLayerDataApi.getAllocatedSize();
+        storageVolume.usable_size_kib = vlmLayerDataApi.getUsableSize();
+        storageVolume.disk_state = vlmLayerDataApi.getDiskState();
+        return storageVolume;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class NVMEResourceData
+    public static JsonGenTypes.Volume apiToVolume(Volume.VlmApi vlmApi)
     {
-        public Long flags;
-        public List<NVMEVolume> nvme_volumes;
+        JsonGenTypes.Volume volume = new JsonGenTypes.Volume();
+        volume.volume_number = vlmApi.getVlmNr();
+        volume.storage_pool_name = vlmApi.getStorPoolName();
+        volume.provider_kind = deviceProviderKindAsString(vlmApi.getStorPoolDeviceProviderKind());
 
-        public NVMEResourceData()
+        volume.device_path = vlmApi.getDevicePath();
+        volume.allocated_size_kib = vlmApi.getAllocatedSize().orElse(null);
+
+        volume.props = vlmApi.getVlmProps();
+        volume.flags = FlagsHelper.toStringList(Volume.VlmFlags.class, vlmApi.getFlags());
+
+        volume.layer_data_list = new ArrayList<>();
+
+        for (Pair<String, VlmLayerDataApi> layerData : vlmApi.getVlmLayerData())
         {
-        }
+            JsonGenTypes.VolumeLayer volumeLayerData = new JsonGenTypes.VolumeLayer();
+            volumeLayerData.type = getLayerTypeString(layerData.objB.getLayerKind());
 
-        public NVMEResourceData(NvmeRscPojo nvmeRscPojo)
-        {
-            nvme_volumes = nvmeRscPojo.getVolumeList().stream()
-                .map(NVMEVolume::new)
-                .collect(Collectors.toList());
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceLayerData
-    {
-        public List<ResourceLayerData> children = Collections.emptyList();
-        public String resource_name_suffix;
-        public String type;
-        public DrbdResourceData drbd;
-        public LUKSResourceData luks;
-        public StorageResourceData storage;
-        public NVMEResourceData nvme;
-
-        public ResourceLayerData()
-        {
-        }
-
-        public ResourceLayerData(RscLayerDataApi rscLayerDataApi)
-        {
-            resource_name_suffix = rscLayerDataApi.getRscNameSuffix();
-            children = rscLayerDataApi.getChildren().stream().map(ResourceLayerData::new).collect(Collectors.toList());
-            type = getLayerTypeString(rscLayerDataApi.getLayerKind());
-            switch (rscLayerDataApi.getLayerKind())
+            switch (layerData.objB.getLayerKind())
             {
                 case DRBD:
-                    DrbdRscPojo drbdRscPojo = (DrbdRscPojo) rscLayerDataApi;
-                    drbd = new DrbdResourceData(drbdRscPojo);
+                    DrbdRscPojo.DrbdVlmPojo drbdVlm = (DrbdRscPojo.DrbdVlmPojo) layerData.objB;
+                    volumeLayerData.data = pojoToDrbdVolume(drbdVlm);
                     break;
                 case STORAGE:
-                    StorageRscPojo storageRscPojo = (StorageRscPojo) rscLayerDataApi;
-                    storage = new StorageResourceData(storageRscPojo);
+                    volumeLayerData.data = apiToStorageVolume(layerData.objB);
                     break;
                 case LUKS:
-                    LuksRscPojo luksRscPojo = (LuksRscPojo) rscLayerDataApi;
-                    luks = new LUKSResourceData(luksRscPojo);
+                    LuksRscPojo.LuksVlmPojo luksVlmPojo = (LuksRscPojo.LuksVlmPojo) layerData.objB;
+                    volumeLayerData.data = pojoToLUKSVolume(luksVlmPojo);
                     break;
                 case NVME:
-                    NvmeRscPojo nvmeRscPojo = (NvmeRscPojo) rscLayerDataApi;
-                    nvme = new NVMEResourceData(nvmeRscPojo);
+                    NvmeRscPojo.NvmeVlmPojo nvmeVlmPojo = (NvmeRscPojo.NvmeVlmPojo) layerData.objB;
+                    volumeLayerData.data = pojoToNVMEVolume(nvmeVlmPojo);
                     break;
                 default:
             }
+
+            volume.layer_data_list.add(volumeLayerData);
         }
+        return volume;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceData
-    {
-        public String name;
-        public String node_name;
-        public Map<String, String> props = Collections.emptyMap();
-        public List<String> flags = Collections.emptyList();
-        public ResourceLayerData layer_object;
-        public ResourceStateData state;
-
-        public ResourceData()
-        {
-        }
-
-        public ResourceData(Resource.RscApi rscApi, Map<NodeName, SatelliteState> satelliteStates)
-        {
-            name = rscApi.getName();
-            node_name = rscApi.getNodeName();
-            flags = FlagsHelper.toStringList(Resource.RscFlags.class, rscApi.getFlags());
-            props = rscApi.getProps();
-            layer_object = new ResourceLayerData(rscApi.getLayerData());
-
-            try
-            {
-                final ResourceName rscNameRes = new ResourceName(rscApi.getName());
-                final NodeName linNodeName = new NodeName(rscApi.getNodeName());
-                if (satelliteStates.containsKey(linNodeName) &&
-                    satelliteStates.get(linNodeName)
-                        .getResourceStates().containsKey(rscNameRes))
-                {
-                    state = new ResourceStateData();
-                    state.in_use = satelliteStates.get(linNodeName)
-                        .getResourceStates().get(rscNameRes).isInUse();
-                }
-            }
-            catch (InvalidNameException ignored)
-            {
-            }
-        }
-
-        public Resource.RscApi toRscApi()
-        {
-            return new RscPojo(
-                name,
-                node_name,
-                FlagsHelper.fromStringList(Resource.RscFlags.class, flags),
-                props
-            );
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceStateData
-    {
-        public Boolean in_use;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceCreateData
-    {
-        public ResourceData resource;
-        public List<String> layer_list = Collections.emptyList();
-        public Integer drbd_node_id;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceModifyData
-    {
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class DrbdVolumeDefinition
-    {
-        public String resource_name_suffix;
-        public Integer volume_number;
-        public Integer minor_number;
-
-        public DrbdVolumeDefinition()
-        {
-        }
-
-        public DrbdVolumeDefinition(DrbdRscPojo.DrbdVlmDfnPojo drbdVlmDfnPojo)
-        {
-            resource_name_suffix = drbdVlmDfnPojo.getRscNameSuffix();
-            volume_number = drbdVlmDfnPojo.getVlmNr();
-            minor_number = drbdVlmDfnPojo.getMinorNr();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class DrbdVolumeData
-    {
-        public DrbdVolumeDefinition drbd_volume_definition;
-        public String device_path;
-        public String backing_device;
-        public String meta_disk;
-        public Long allocated_size_kib;
-        public Long usable_size_kib;
-        public String disk_state;
-
-        public DrbdVolumeData()
-        {
-        }
-
-        public DrbdVolumeData(DrbdRscPojo.DrbdVlmPojo drbdVlmPojo)
-        {
-            drbd_volume_definition = new DrbdVolumeDefinition(drbdVlmPojo.getDrbdVlmDfn());
-            device_path = drbdVlmPojo.getDevicePath();
-            backing_device = drbdVlmPojo.getBackingDisk();
-            meta_disk = drbdVlmPojo.getMetaDisk();
-            allocated_size_kib = drbdVlmPojo.getAllocatedSize();
-            usable_size_kib = drbdVlmPojo.getUsableSize();
-            disk_state = drbdVlmPojo.getDiskState();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class LUKSVolume
-    {
-        public Integer volume_number;
-        public String device_path;
-        public String backing_device;
-        public Long allocated_size_kib;
-        public Long usable_size_kib;
-        public Boolean opened;
-        public String disk_state;
-
-        public LUKSVolume()
-        {
-        }
-
-        public LUKSVolume(LuksRscPojo.LuksVlmPojo luksVlmPojo)
-        {
-            volume_number = luksVlmPojo.getVlmNr();
-            device_path = luksVlmPojo.getDevicePath();
-            backing_device = luksVlmPojo.getBackingDevice();
-            allocated_size_kib = luksVlmPojo.getAllocatedSize();
-            usable_size_kib = luksVlmPojo.getUsableSize();
-            opened = luksVlmPojo.isOpened();
-            disk_state = luksVlmPojo.getDiskState();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class NVMEVolume
-    {
-        public Integer volume_number;
-        public String device_path;
-        public String backing_device;
-        public Long allocated_size_kib;
-        public Long usable_size_kib;
-        public String disk_state;
-
-        public NVMEVolume()
-        {
-        }
-
-        public NVMEVolume(NvmeRscPojo.NvmeVlmPojo nvmeVlmPojo)
-        {
-            volume_number = nvmeVlmPojo.getVlmNr();
-            device_path = nvmeVlmPojo.getDevicePath();
-            backing_device = nvmeVlmPojo.getBackingDisk();
-            allocated_size_kib = nvmeVlmPojo.getAllocatedSize();
-            usable_size_kib = nvmeVlmPojo.getUsableSize();
-            disk_state = nvmeVlmPojo.getDiskState();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class StorageVolume
-    {
-        public Integer volume_number;
-        public String device_path;
-        public Long allocated_size_kib;
-        public Long usable_size_kib;
-        public String disk_state;
-
-        // ignore provider for now
-
-        public StorageVolume()
-        {
-        }
-
-        public StorageVolume(VlmLayerDataApi vlmLayerDataApi)
-        {
-            volume_number = vlmLayerDataApi.getVlmNr();
-            device_path = vlmLayerDataApi.getDevicePath();
-            allocated_size_kib = vlmLayerDataApi.getAllocatedSize();
-            usable_size_kib = vlmLayerDataApi.getUsableSize();
-            disk_state = vlmLayerDataApi.getDiskState();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class VolumeLayerData
-    {
-        public String type;
-        public Object data;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class VolumeData
-    {
-        public Integer volume_number;
-        public String storage_pool_name;
-        public String provider_kind;
-        public String device_path;
-        public Long allocated_size_kib;
-        public Long usable_size_kib;
-        public Map<String, String> props = Collections.emptyMap();
-        public List<String> flags = Collections.emptyList();
-
-        public VolumeStateData state;
-        public List<VolumeLayerData> layer_data_list = Collections.emptyList();
-
-        public VolumeData()
-        {
-        }
-
-        public VolumeData(Volume.VlmApi vlmApi)
-        {
-            volume_number = vlmApi.getVlmNr();
-            storage_pool_name = vlmApi.getStorPoolName();
-            provider_kind = deviceProviderKindAsString(vlmApi.getStorPoolDeviceProviderKind());
-
-            device_path = vlmApi.getDevicePath();
-            allocated_size_kib = vlmApi.getAllocatedSize().orElse(null);
-
-            props = vlmApi.getVlmProps();
-            flags = FlagsHelper.toStringList(Volume.VlmFlags.class, vlmApi.getFlags());
-
-            layer_data_list = new ArrayList<>();
-
-            for (Pair<String, VlmLayerDataApi> layerData : vlmApi.getVlmLayerData())
-            {
-                VolumeLayerData volumeLayerData = new VolumeLayerData();
-                volumeLayerData.type = getLayerTypeString(layerData.objB.getLayerKind());
-
-                switch (layerData.objB.getLayerKind())
-                {
-                    case DRBD:
-                        DrbdRscPojo.DrbdVlmPojo drbdVlm = (DrbdRscPojo.DrbdVlmPojo) layerData.objB;
-                        volumeLayerData.data = new DrbdVolumeData(drbdVlm);
-                        break;
-                    case STORAGE:
-                        volumeLayerData.data = new StorageVolume(layerData.objB);
-                        break;
-                    case LUKS:
-                        LuksRscPojo.LuksVlmPojo luksVlmPojo = (LuksRscPojo.LuksVlmPojo) layerData.objB;
-                        volumeLayerData.data = new LUKSVolume(luksVlmPojo);
-                        break;
-                    case NVME:
-                        NvmeRscPojo.NvmeVlmPojo nvmeVlmPojo = (NvmeRscPojo.NvmeVlmPojo) layerData.objB;
-                        volumeLayerData.data = new NVMEVolume(nvmeVlmPojo);
-                        break;
-                    default:
-                }
-
-                layer_data_list.add(volumeLayerData);
-            }
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class VolumeStateData
-    {
-        public String disk_state;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AutoSelectFilterData implements AutoSelectFilterApi
     {
-        public int place_count = 2;
-        public String storage_pool;
-        public List<String> not_place_with_rsc = new ArrayList<>();
-        public String not_place_with_rsc_regex;
-        public List<String> replicas_on_same = new ArrayList<>();
-        public List<String> replicas_on_different = new ArrayList<>();
-        public List<String> layer_stack = new ArrayList<>();
-        public List<String> provider_list = new ArrayList<>();
+        private final JsonGenTypes.AutoSelectFilter autoSelectFilter;
+
+        public AutoSelectFilterData(JsonGenTypes.AutoSelectFilter autoSelectFilterRef)
+        {
+            autoSelectFilter = autoSelectFilterRef;
+        }
 
         @Override
         public int getPlaceCount()
         {
-            return place_count;
+            return autoSelectFilter.place_count;
         }
 
         @Override
         public String getStorPoolNameStr()
         {
-            return storage_pool;
+            return autoSelectFilter.storage_pool;
         }
 
         @Override
         public List<String> getNotPlaceWithRscList()
         {
-            return not_place_with_rsc;
+            return autoSelectFilter.not_place_with_rsc;
         }
 
         @Override
         public String getNotPlaceWithRscRegex()
         {
-            return not_place_with_rsc_regex;
+            return autoSelectFilter.not_place_with_rsc_regex;
         }
 
         @Override
         public List<String> getReplicasOnSameList()
         {
-            return replicas_on_same;
+            return autoSelectFilter.replicas_on_same;
         }
 
         @Override
         public List<String> getReplicasOnDifferentList()
         {
-            return replicas_on_different;
+            return autoSelectFilter.replicas_on_different;
         }
 
         @Override
         public List<DeviceLayerKind> getLayerStackList()
         {
-            return LinstorParsingUtils.asDeviceLayerKind(layer_stack);
+            return LinstorParsingUtils.asDeviceLayerKind(autoSelectFilter.layer_stack);
         }
 
         @Override
         public List<DeviceProviderKind> getProviderList()
         {
-            return LinstorParsingUtils.asProviderKind(provider_list);
+            return LinstorParsingUtils.asProviderKind(autoSelectFilter.provider_list);
         }
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class AutoPlaceRequest
+    public static JsonGenTypes.SnapshotVolumeDefinition apiToSnapshotVolumeDefinition(
+        SnapshotVolumeDefinition.SnapshotVlmDfnApi snapshotVlmDfnApi
+    )
     {
-        public boolean diskless_on_remaining = false;
-        public AutoSelectFilterData select_filter = new AutoSelectFilterData();
-        public List<String> layer_list = Collections.emptyList();
+        JsonGenTypes.SnapshotVolumeDefinition snapshotVolumeDefinition =
+            new JsonGenTypes.SnapshotVolumeDefinition();
+
+        snapshotVolumeDefinition.volume_number = snapshotVlmDfnApi.getVolumeNr();
+        snapshotVolumeDefinition.size_kib = snapshotVlmDfnApi.getSize();
+
+        return snapshotVolumeDefinition;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ErrorReport
+    public static JsonGenTypes.Snapshot apiToSnapshot(
+        SnapshotDefinition.SnapshotDfnListItemApi snapshotDfnListItemApi
+    )
     {
-        public String node_name;
-        public long error_time;
-        public String filename;
-        public String text;
+        JsonGenTypes.Snapshot snapshot = new JsonGenTypes.Snapshot();
+        snapshot.name = snapshotDfnListItemApi.getSnapshotName();
+        snapshot.resource_name = snapshotDfnListItemApi.getRscDfn().getResourceName();
+        snapshot.nodes = snapshotDfnListItemApi.getNodeNames();
+        snapshot.props = snapshotDfnListItemApi.getProps();
+        snapshot.flags = FlagsHelper.toStringList(
+            SnapshotDefinition.SnapshotDfnFlags.class, snapshotDfnListItemApi.getFlags()
+        );
+        snapshot.volume_definitions = snapshotDfnListItemApi.getSnapshotVlmDfnList().stream()
+            .map(Json::apiToSnapshotVolumeDefinition)
+            .collect(Collectors.toList());
+        return snapshot;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ControllerPropsModify
+    public static JsonGenTypes.ResourceConnection apiToResourceConnection(
+        ResourceConnection.RscConnApi rscConnApi
+    )
     {
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
+        JsonGenTypes.ResourceConnection resourceConnection = new JsonGenTypes.ResourceConnection();
+        resourceConnection.node_a = rscConnApi.getSourceNodeName();
+        resourceConnection.node_b = rscConnApi.getTargetNodeName();
+        resourceConnection.props = rscConnApi.getProps();
+        resourceConnection.flags = FlagsHelper.toStringList(
+            ResourceConnection.RscConnFlags.class, rscConnApi.getFlags()
+        );
+        resourceConnection.port = rscConnApi.getPort();
+        return resourceConnection;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ControllerVersion
+    public static JsonGenTypes.Candidate pojoToCandidate(MaxVlmSizeCandidatePojo pojo)
     {
-        public String version;
-        public String git_hash;
-        public String build_time;
-        public String rest_api_version = REST_API_VERSION;
+        JsonGenTypes.Candidate candidate = new JsonGenTypes.Candidate();
+        candidate.storage_pool = pojo.getStorPoolDfnApi().getName();
+        candidate.max_volume_size_kib = pojo.getMaxVlmSize();
+        candidate.node_names = pojo.getNodeNames();
+        candidate.all_thin = pojo.areAllThin();
+        return candidate;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class PassPhraseCreate
+    public static JsonGenTypes.MaxVolumeSizes pojoToMaxVolumeSizes(List<MaxVlmSizeCandidatePojo> candidatePojos)
     {
-        public String new_passphrase;
-        public String old_passphrase;
+        JsonGenTypes.MaxVolumeSizes maxVolumeSizes = new JsonGenTypes.MaxVolumeSizes();
+        maxVolumeSizes.candidates = candidatePojos.stream().map(Json::pojoToCandidate).collect(Collectors.toList());
+        return maxVolumeSizes;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class SnapshotVolumeDfnData
+    public static JsonGenTypes.KeyValueStore apiToKeyValueStore(com.linbit.linstor.KeyValueStore.KvsApi kvsApi)
     {
-        public Integer volume_number;
-        public long size_kib;
-
-        public SnapshotVolumeDfnData()
-        {
-        }
-
-        public SnapshotVolumeDfnData(SnapshotVolumeDefinition.SnapshotVlmDfnApi snapshotVlmDfnApi)
-        {
-            volume_number = snapshotVlmDfnApi.getVolumeNr();
-            size_kib = snapshotVlmDfnApi.getSize();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class SnapshotData
-    {
-        public String name;
-        public String resource_name;
-        public List<String> nodes = Collections.emptyList();
-        public Map<String, String> props = Collections.emptyMap();
-        public List<String> flags = Collections.emptyList();
-        public List<SnapshotVolumeDfnData> volume_definitions = Collections.emptyList();
-
-        public SnapshotData()
-        {
-        }
-
-        public SnapshotData(SnapshotDefinition.SnapshotDfnListItemApi snapshotDfnListItemApi)
-        {
-            name = snapshotDfnListItemApi.getSnapshotName();
-            resource_name = snapshotDfnListItemApi.getRscDfn().getResourceName();
-            nodes = snapshotDfnListItemApi.getNodeNames();
-            props = snapshotDfnListItemApi.getProps();
-            flags = FlagsHelper.toStringList(
-                SnapshotDefinition.SnapshotDfnFlags.class, snapshotDfnListItemApi.getFlags()
-            );
-            volume_definitions = snapshotDfnListItemApi.getSnapshotVlmDfnList().stream()
-                .map(SnapshotVolumeDfnData::new)
-                .collect(Collectors.toList());
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class SnapshotRestore
-    {
-        public List<String> nodes = Collections.emptyList();  //optional
-        public String to_resource;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceConnectionData
-    {
-        public String node_a;
-        public String node_b;
-        public Map<String, String> props = Collections.emptyMap();
-        public List<String> flags = Collections.emptyList();
-        public Integer port;
-
-        public ResourceConnectionData()
-        {
-        }
-
-        public ResourceConnectionData(ResourceConnection.RscConnApi rscConnApi)
-        {
-            node_a = rscConnApi.getSourceNodeName();
-            node_b = rscConnApi.getTargetNodeName();
-            props = rscConnApi.getProps();
-            flags = FlagsHelper.toStringList(ResourceConnection.RscConnFlags.class, rscConnApi.getFlags());
-            port = rscConnApi.getPort();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ResourceConnectionModify
-    {
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class DrbdProxyEnable
-    {
-        public Integer port;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class DrbdProxyModify
-    {
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
-        public String compression_type;
-        public Map<String, String> compression_props = Collections.emptyMap();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class Candidate
-    {
-        public String storage_pool;
-        public Long max_volume_size_kib;
-        public List<String> node_names;
-        public boolean all_thin;
-
-        public Candidate()
-        {
-        }
-
-        public Candidate(MaxVlmSizeCandidatePojo pojo)
-        {
-            storage_pool = pojo.getStorPoolDfnApi().getName();
-            max_volume_size_kib = pojo.getMaxVlmSize();
-            node_names = pojo.getNodeNames();
-            all_thin = pojo.areAllThin();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class MaxVolumeSizesData
-    {
-        public List<Candidate> candidates;
-        public Double default_max_oversubscription_ratio;
-
-        public MaxVolumeSizesData(List<MaxVlmSizeCandidatePojo> candidatePojos)
-        {
-            candidates = candidatePojos.stream().map(Candidate::new).collect(Collectors.toList());
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class KeyValueStore
-    {
-        public String name;
-        public Map<String, String> props;
-
-        public KeyValueStore()
-        {
-        }
-
-        public KeyValueStore(com.linbit.linstor.KeyValueStore.KvsApi kvsApi)
-        {
-            name = kvsApi.getName();
-            props = kvsApi.getProps();
-        }
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ModifyKeyValueStore
-    {
-        public Map<String, String> override_props = Collections.emptyMap();
-        public Set<String> delete_props = Collections.emptySet();
-        public Set<String> delete_namespaces = Collections.emptySet();
+        JsonGenTypes.KeyValueStore keyValueStore = new JsonGenTypes.KeyValueStore();
+        keyValueStore.name = kvsApi.getName();
+        keyValueStore.props = kvsApi.getProps();
+        return keyValueStore;
     }
 }

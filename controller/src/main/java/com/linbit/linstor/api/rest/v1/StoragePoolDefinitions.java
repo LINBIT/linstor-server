@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 
 import javax.inject.Inject;
@@ -18,6 +19,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -75,8 +77,8 @@ public class StoragePoolDefinitions
                 storPoolDfnStream = storPoolDfnStream.skip(offset).limit(limit);
             }
 
-            final List<Json.StorPoolDfnData> storPoolDfns = storPoolDfnStream
-                .map(Json.StorPoolDfnData::new)
+            final List<JsonGenTypes.StoragePoolDefinition> storPoolDfns = storPoolDfnStream
+                .map(Json::storPoolDfnApiToStoragePoolDefinition)
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(
@@ -97,7 +99,8 @@ public class StoragePoolDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_STOR_POOL_DFN, request), () ->
         {
-            Json.StorPoolDfnData data = objectMapper.readValue(jsonData, Json.StorPoolDfnData.class);
+            JsonGenTypes.StoragePoolDefinition data = objectMapper
+                .readValue(jsonData, JsonGenTypes.StoragePoolDefinition.class);
 
             return ApiCallRcConverter.toResponse(
                 ctrlApiCallHandler.createStoragePoolDefinition(data.storage_pool_name, data.props),
@@ -116,15 +119,16 @@ public class StoragePoolDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request), () ->
         {
-            Json.StorPoolDfnModifyData data = objectMapper.readValue(jsonData, Json.StorPoolDfnModifyData.class);
+            JsonGenTypes.StoragePoolDefinitionModify data = objectMapper
+                .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
 
             return ApiCallRcConverter.toResponse(
                 ctrlApiCallHandler.modifyStorPoolDfn(
                     null,
                     storagePoolName,
                     data.override_props,
-                    data.delete_props,
-                    data.delete_namespaces
+                    new HashSet<>(data.delete_props),
+                    new HashSet<>(data.delete_namespaces)
                 ),
                 Response.Status.OK
             );

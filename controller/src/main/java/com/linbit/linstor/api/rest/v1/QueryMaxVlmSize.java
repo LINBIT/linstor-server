@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlQueryMaxVlmSizeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 
@@ -74,7 +75,8 @@ public class QueryMaxVlmSize
                     else
                     {
                         List<MaxVlmSizeCandidatePojo> maxVlmSizeCandidates = apiCallRcWith.getValue();
-                        Json.MaxVolumeSizesData maxVolumeSizesData = new Json.MaxVolumeSizesData(maxVlmSizeCandidates);
+                        JsonGenTypes.MaxVolumeSizes maxVolumeSizesData =
+                            Json.pojoToMaxVolumeSizes(maxVlmSizeCandidates);
                         maxVolumeSizesData.default_max_oversubscription_ratio =
                             FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
 

@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 
 import javax.inject.Inject;
@@ -44,7 +45,8 @@ public class Encryption
     {
         return requestHelper.doInScope(ApiConsts.API_CRT_CRYPT_PASS, request, () ->
         {
-            Json.PassPhraseCreate passPhraseCreate = objectMapper.readValue(jsonData, Json.PassPhraseCreate.class);
+            JsonGenTypes.PassPhraseCreate passPhraseCreate = objectMapper
+                .readValue(jsonData, JsonGenTypes.PassPhraseCreate.class);
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.setMasterPassphrase(
                 passPhraseCreate.new_passphrase,
@@ -64,7 +66,8 @@ public class Encryption
     {
         return requestHelper.doInScope(ApiConsts.API_MOD_CRYPT_PASS, request, () ->
         {
-            Json.PassPhraseCreate passPhraseCreate = objectMapper.readValue(jsonData, Json.PassPhraseCreate.class);
+            JsonGenTypes.PassPhraseCreate passPhraseCreate = objectMapper
+                .readValue(jsonData, JsonGenTypes.PassPhraseCreate.class);
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.setMasterPassphrase(
                 passPhraseCreate.new_passphrase,

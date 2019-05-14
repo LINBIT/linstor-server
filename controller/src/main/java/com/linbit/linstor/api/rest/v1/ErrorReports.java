@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
 import com.linbit.linstor.logging.ErrorReport;
 
@@ -119,9 +120,9 @@ public class ErrorReports
                 {
                     finalStream = finalStream.skip(offset).limit(limit);
                 }
-                List<Json.ErrorReport> jsonReports = finalStream.map(errorReport ->
+                List<JsonGenTypes.ErrorReport> jsonReports = finalStream.map(errorReport ->
                 {
-                    Json.ErrorReport jsonErrorReport = new Json.ErrorReport();
+                    JsonGenTypes.ErrorReport jsonErrorReport = new JsonGenTypes.ErrorReport();
                     jsonErrorReport.node_name = errorReport.getNodeName();
                     jsonErrorReport.error_time = errorReport.getDateTime().getTime();
                     jsonErrorReport.filename = errorReport.getFileName();

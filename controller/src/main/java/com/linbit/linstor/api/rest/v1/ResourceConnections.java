@@ -4,6 +4,7 @@ import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 
 import javax.inject.Inject;
@@ -15,6 +16,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -79,8 +81,8 @@ public class ResourceConnections
             }
             else
             {
-                List<Json.ResourceConnectionData> resList = filtered.stream()
-                    .map(Json.ResourceConnectionData::new)
+                List<JsonGenTypes.ResourceConnection> resList = filtered.stream()
+                    .map(Json::apiToResourceConnection)
                     .collect(Collectors.toList());
                 resp = Response.status(Response.Status.OK)
                     .entity(objectMapper.writeValueAsString(nodeA != null ? resList.get(0) : resList))
@@ -102,9 +104,9 @@ public class ResourceConnections
     {
         return requestHelper.doInScope(ApiConsts.API_MOD_RSC_CONN, request, () ->
         {
-            Json.ResourceConnectionModify rscConnModify = objectMapper.readValue(
+            JsonGenTypes.ResourceConnectionModify rscConnModify = objectMapper.readValue(
                 jsonData,
-                Json.ResourceConnectionModify.class
+                JsonGenTypes.ResourceConnectionModify.class
             );
             ApiCallRc apiCallRc = ctrlApiCallHandler.modifyRscConn(
                 null,
@@ -112,8 +114,8 @@ public class ResourceConnections
                 nodeB,
                 rscName,
                 rscConnModify.override_props,
-                rscConnModify.delete_props,
-                rscConnModify.delete_namespaces
+                new HashSet<>(rscConnModify.delete_props),
+                new HashSet<>(rscConnModify.delete_namespaces)
             );
 
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);

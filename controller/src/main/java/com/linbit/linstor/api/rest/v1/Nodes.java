@@ -5,9 +5,8 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.rest.v1.serializer.Json.NetInterfaceData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.NodeData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.NodeModifyData;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
@@ -30,9 +29,9 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -98,18 +97,17 @@ public class Nodes
             {
                 nodeApiStream = nodeApiStream.skip(offset).limit(limit);
             }
-            final List<NodeData> nds = nodeApiStream.map(nodeApi ->
+            final List<JsonGenTypes.Node> nds = nodeApiStream.map(nodeApi ->
                 {
-                    NodeData nd = new NodeData();
+                    JsonGenTypes.Node nd = new JsonGenTypes.Node();
                     nd.name = nodeApi.getName();
                     nd.type = nodeApi.getType();
                     nd.connection_status = nodeApi.connectionStatus().toString();
                     nd.props = nodeApi.getProps();
                     nd.flags = Node.NodeFlag.toStringList(nodeApi.getFlags());
-                    for (NetInterface.NetInterfaceApi netif : nodeApi.getNetInterfaces())
-                    {
-                        nd.net_interfaces.add(new NetInterfaceData(netif));
-                    }
+                    nd.net_interfaces = nodeApi.getNetInterfaces().stream()
+                        .map(Json::apiToNetInterface)
+                        .collect(Collectors.toList());
                     return nd;
                 })
                 .collect(Collectors.toList());
@@ -130,12 +128,12 @@ public class Nodes
     {
         try
         {
-            NodeData data = objectMapper.readValue(jsonData, NodeData.class);
+            JsonGenTypes.Node data = objectMapper.readValue(jsonData, JsonGenTypes.Node.class);
             Flux<ApiCallRc> flux = ctrlNodeCrtApiCallHandler
                 .createNode(
                     data.name,
                     data.type,
-                    data.net_interfaces.stream().map(NetInterfaceData::toApi).collect(Collectors.toList()),
+                    data.net_interfaces.stream().map(Json::netInterfacetoApi).collect(Collectors.toList()),
                     data.props
                 )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_NODE, request));
@@ -159,14 +157,14 @@ public class Nodes
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_NODE, request), () ->
         {
-            NodeModifyData modifyData = objectMapper.readValue(jsonData, NodeModifyData.class);
+            JsonGenTypes.NodeModify modifyData = objectMapper.readValue(jsonData, JsonGenTypes.NodeModify.class);
             ApiCallRc apiCallRc = ctrlApiCallHandler.modifyNode(
                 null,
                 nodeName,
                 modifyData.node_type,
                 modifyData.override_props,
-                modifyData.delete_props,
-                modifyData.delete_namespaces
+                new HashSet<>(modifyData.delete_props),
+                new HashSet<>(modifyData.delete_namespaces)
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
         }, true);
@@ -261,10 +259,10 @@ public class Nodes
                     netIfApiStream = netIfApiStream.skip(offset).limit(limit);
                 }
 
-                ArrayList<NetInterfaceData> netIfs = new ArrayList<>();
+                ArrayList<JsonGenTypes.NetInterface> netIfs = new ArrayList<>();
                 for (NetInterface.NetInterfaceApi netif : netIfApiStream.collect(Collectors.toList()))
                 {
-                    netIfs.add(new NetInterfaceData(netif));
+                    netIfs.add(Json.apiToNetInterface(netif));
                 }
 
                 resp = RequestHelper.queryRequestResponse(
@@ -297,7 +295,8 @@ public class Nodes
     {
         return requestHelper.doInScope(ApiConsts.API_CRT_NET_IF, request, () ->
         {
-            NetInterfaceData netInterfaceData = objectMapper.readValue(jsonData, NetInterfaceData.class);
+            JsonGenTypes.NetInterface netInterfaceData = objectMapper
+                .readValue(jsonData, JsonGenTypes.NetInterface.class);
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.createNetInterface(
                 nodeName,
@@ -321,7 +320,8 @@ public class Nodes
     {
         return requestHelper.doInScope(ApiConsts.API_MOD_NET_IF, request, () ->
         {
-            NetInterfaceData netInterfaceData = objectMapper.readValue(jsonData, NetInterfaceData.class);
+            JsonGenTypes.NetInterface netInterfaceData = objectMapper
+                .readValue(jsonData, JsonGenTypes.NetInterface.class);
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.modifyNetInterface(
                 nodeName,

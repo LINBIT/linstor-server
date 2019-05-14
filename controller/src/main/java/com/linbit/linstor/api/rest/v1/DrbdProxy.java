@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyDisableApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyEnableApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyModifyApiCallHandler;
@@ -18,6 +19,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.HashSet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
@@ -61,7 +63,8 @@ public class DrbdProxy
     {
         try
         {
-            Json.DrbdProxyEnable proxyEnable = objectMapper.readValue(jsonData, Json.DrbdProxyEnable.class);
+            JsonGenTypes.DrbdProxyEnable proxyEnable = objectMapper
+                .readValue(jsonData, JsonGenTypes.DrbdProxyEnable.class);
             Flux<ApiCallRc> flux = ctrlDrbdProxyEnableApiCallHandler.enableProxy(
                 null,
                 nodeA,
@@ -108,13 +111,14 @@ public class DrbdProxy
     {
         return requestHelper.doInScope(ApiConsts.API_MOD_DRBD_PROXY, request, () ->
         {
-            Json.DrbdProxyModify proxyModify = objectMapper.readValue(jsonData, Json.DrbdProxyModify.class);
+            JsonGenTypes.DrbdProxyModify proxyModify = objectMapper
+                .readValue(jsonData, JsonGenTypes.DrbdProxyModify.class);
 
             ApiCallRc apiCallRc = ctrlDrbdProxyModifyApiCallHandler.modifyDrbdProxy(
                 null,
                 rscName,
                 proxyModify.override_props,
-                proxyModify.delete_props,
+                new HashSet<>(proxyModify.delete_props),
                 proxyModify.compression_type,
                 proxyModify.compression_props
             );

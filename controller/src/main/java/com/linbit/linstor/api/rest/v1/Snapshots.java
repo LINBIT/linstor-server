@@ -4,6 +4,7 @@ import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
@@ -96,9 +97,9 @@ public class Snapshots
                     snapsStream = snapsStream.skip(offset).limit(limit);
                 }
 
-                List<Json.SnapshotData> snapshotData = snapsStream
+                List<JsonGenTypes.Snapshot> snapshotData = snapsStream
                     .filter(snaphotDfn -> snaphotDfn.getRscDfn().getResourceName().equalsIgnoreCase(rscName))
-                    .map(Json.SnapshotData::new)
+                    .map(Json::apiToSnapshot)
                     .collect(Collectors.toList());
 
                 response = RequestHelper.queryRequestResponse(
@@ -127,7 +128,7 @@ public class Snapshots
     {
         try
         {
-            Json.SnapshotData snapData = objectMapper.readValue(jsonData, Json.SnapshotData.class);
+            JsonGenTypes.Snapshot snapData = objectMapper.readValue(jsonData, JsonGenTypes.Snapshot.class);
 
             Flux<ApiCallRc> responses = ctrlSnapshotCrtApiCallHandler.createSnapshot(
                     snapData.nodes,

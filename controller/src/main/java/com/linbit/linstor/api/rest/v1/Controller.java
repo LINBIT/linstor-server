@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -18,6 +19,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.util.HashSet;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,15 +88,15 @@ public class Controller
     {
         return requestHelper.doInScope(ApiConsts.API_SET_CTRL_PROP, request, () ->
         {
-            Json.ControllerPropsModify properties = objectMapper.readValue(
+            JsonGenTypes.ControllerPropsModify properties = objectMapper.readValue(
                 jsonData,
-                Json.ControllerPropsModify.class
+                JsonGenTypes.ControllerPropsModify.class
             );
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.modifyCtrl(
                 properties.override_props,
-                properties.delete_props,
-                properties.delete_namespaces
+                new HashSet<>(properties.delete_props),
+                new HashSet<>(properties.delete_namespaces)
             );
 
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
@@ -127,11 +130,11 @@ public class Controller
         @Context Request request
     )
     {
-        Json.ControllerVersion controllerVersion = new Json.ControllerVersion();
+        JsonGenTypes.ControllerVersion controllerVersion = new JsonGenTypes.ControllerVersion();
         controllerVersion.version = LinStor.VERSION_INFO_PROVIDER.getVersion();
         controllerVersion.git_hash = LinStor.VERSION_INFO_PROVIDER.getGitCommitId();
         controllerVersion.build_time = LinStor.VERSION_INFO_PROVIDER.getBuildTime();
-        controllerVersion.rest_api_version = Json.REST_API_VERSION;
+        controllerVersion.rest_api_version = JsonGenTypes.REST_API_VERSION;
 
         Response resp;
         try

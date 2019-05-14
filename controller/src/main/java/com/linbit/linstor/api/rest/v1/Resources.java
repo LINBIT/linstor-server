@@ -11,8 +11,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
-import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceModifyData;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
@@ -41,6 +40,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -119,8 +119,8 @@ public class Resources
                 rscApiStream = rscApiStream.skip(offset).limit(limit);
             }
 
-            final List<ResourceData> rscs = rscApiStream
-                .map(rscApi -> new ResourceData(rscApi, resourceList.getSatelliteStates()))
+            final List<JsonGenTypes.Resource> rscs = rscApiStream
+                .map(rscApi -> Json.apiToResource(rscApi, resourceList.getSatelliteStates()))
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(
@@ -214,11 +214,11 @@ public class Resources
                         vlmApiStream = vlmApiStream.skip(offset).limit(limit);
                     }
 
-                    final List<Json.VolumeData> vlms = vlmApiStream.map(vlmApi ->
+                    final List<JsonGenTypes.Volume> vlms = vlmApiStream.map(vlmApi ->
                     {
-                        Json.VolumeData vlmData = new Json.VolumeData(vlmApi);
+                        JsonGenTypes.Volume vlmData = Json.apiToVolume(vlmApi);
 
-                        Json.VolumeStateData vlmState = null;
+                        JsonGenTypes.VolumeState vlmState = null;
                         try
                         {
                             final ResourceName rscNameRes = new ResourceName(rscName);
@@ -236,7 +236,7 @@ public class Resources
                                 VolumeNumber vlmNumber = new VolumeNumber(vlmApi.getVlmNr());
                                 if (satResState.getVolumeStates().containsKey(vlmNumber))
                                 {
-                                    vlmState = new Json.VolumeStateData();
+                                    vlmState = new JsonGenTypes.VolumeState();
                                     SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
                                     vlmState.disk_state = satVlmState.getDiskState();
                                 }
@@ -282,9 +282,9 @@ public class Resources
 
     private class ResourceDataWithPayload implements Resource.RscWithPayloadApi
     {
-        private final Json.ResourceCreateData rscPayload;
+        private final JsonGenTypes.ResourceCreate rscPayload;
 
-        ResourceDataWithPayload(Json.ResourceCreateData rsc, String rscName)
+        ResourceDataWithPayload(JsonGenTypes.ResourceCreate rsc, String rscName)
         {
             rscPayload = rsc;
             rscPayload.resource.name = rscName;
@@ -293,7 +293,7 @@ public class Resources
         @Override
         public Resource.RscApi getRscApi()
         {
-            return rscPayload.resource.toRscApi();
+            return Json.resourceToApi(rscPayload.resource);
         }
 
         @Override
@@ -320,8 +320,8 @@ public class Resources
     {
         try
         {
-            List<Json.ResourceCreateData> rscDatas = Arrays.asList(
-                objectMapper.readValue(jsonData, Json.ResourceCreateData[].class)
+            List<JsonGenTypes.ResourceCreate> rscDatas = Arrays.asList(
+                objectMapper.readValue(jsonData, JsonGenTypes.ResourceCreate[].class)
             );
 
             List<Resource.RscWithPayloadApi> rscWithPayloadApiList = rscDatas.stream()
@@ -353,9 +353,9 @@ public class Resources
         try
         {
             // stuff single resource in a array and forward to the multiple resource creator
-            Json.ResourceCreateData rscData = objectMapper.readValue(jsonData, Json.ResourceCreateData.class);
+            JsonGenTypes.ResourceCreate rscData = objectMapper.readValue(jsonData, JsonGenTypes.ResourceCreate.class);
             rscData.resource.node_name = nodeName;
-            ArrayList<Json.ResourceCreateData> rscDatas = new ArrayList<>();
+            ArrayList<JsonGenTypes.ResourceCreate> rscDatas = new ArrayList<>();
             rscDatas.add(rscData);
 
             createResource(request, asyncResponse, rscName, objectMapper.writeValueAsString(rscDatas));
@@ -377,15 +377,16 @@ public class Resources
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_RSC, request), () ->
         {
-            ResourceModifyData modifyData = objectMapper.readValue(jsonData, ResourceModifyData.class);
+            JsonGenTypes.ResourceModify modifyData = objectMapper
+                .readValue(jsonData, JsonGenTypes.ResourceModify.class);
             return ApiCallRcConverter.toResponse(
                 ctrlApiCallHandler.modifyRsc(
                     null,
                     nodeName,
                     rscName,
                     modifyData.override_props,
-                    modifyData.delete_props,
-                    modifyData.delete_namespaces
+                    new HashSet<>(modifyData.delete_props),
+                    new HashSet<>(modifyData.delete_namespaces)
                 ),
                 Response.Status.OK
             );

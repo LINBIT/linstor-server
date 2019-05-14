@@ -4,8 +4,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
-import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceDefinitionData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.ResourceDefinitionModifyData;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 
@@ -27,6 +26,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -87,7 +87,7 @@ public class ResourceDefinitions
                 rscDfnStream = rscDfnStream.skip(offset).limit(limit);
             }
 
-            final List<ResourceDefinitionData> rscDfns = rscDfnStream.map(ResourceDefinitionData::new)
+            final List<JsonGenTypes.ResourceDefinition> rscDfns = rscDfnStream.map(Json::apiToResourceDefinition)
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(
@@ -102,15 +102,15 @@ public class ResourceDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_RSC_DFN, request), () ->
         {
-            Json.ResourceDefinitionCreateData rscDfnCreate = objectMapper.readValue(
+            JsonGenTypes.ResourceDefinitionCreate rscDfnCreate = objectMapper.readValue(
                 jsonData,
-                Json.ResourceDefinitionCreateData.class
+                JsonGenTypes.ResourceDefinitionCreate.class
             );
 //            final List<VolumeDefinitionData> vlmDfns =
 //                rscDfnCreate.resource_definition.volume_definitions != null ?
 //                    rscDfnCreate.resource_definition.volume_definitions : new ArrayList<>();
 
-            List<Json.ResourceDefinitionLayerData> layerDataList = rscDfnCreate.resource_definition.layer_data;
+            List<JsonGenTypes.ResourceDefinitionLayer> layerDataList = rscDfnCreate.resource_definition.layer_data;
             // currently we ignore the possible payload, only extract the layer-stack
 
             byte[] externalNameBytes = rscDfnCreate.resource_definition.external_name != null ?
@@ -126,7 +126,7 @@ public class ResourceDefinitions
                 rscDfnCreate.resource_definition.props,
                 new ArrayList<>(), // do not allow volume definition creations
                 layerDataList.stream().map(rscDfnData -> rscDfnData.type).collect(Collectors.toList()),
-                rscDfnCreate.drbd_peer_slots
+                rscDfnCreate.drbd_peer_slots == null ? null : rscDfnCreate.drbd_peer_slots.shortValue()
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
@@ -143,17 +143,17 @@ public class ResourceDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request), () ->
         {
-            ResourceDefinitionModifyData modifyData =
-                objectMapper.readValue(jsonData, ResourceDefinitionModifyData.class);
+            JsonGenTypes.ResourceDefinitionModify modifyData =
+                objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionModify.class);
             ApiCallRc apiCallRc = ctrlApiCallHandler.modifyRscDfn(
                 null,
                 rscName,
                 modifyData.drbd_port,
                 modifyData.override_props,
-                modifyData.delete_props,
-                modifyData.delete_namespaces,
+                new HashSet<>(modifyData.delete_props),
+                new HashSet<>(modifyData.delete_namespaces),
                 modifyData.layer_stack,
-                modifyData.drbd_peer_slots
+                modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue()
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
         }, true);

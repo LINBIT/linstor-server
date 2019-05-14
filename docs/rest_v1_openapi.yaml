@@ -236,16 +236,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                node_type:
-                  type: string
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/NodeModify'
             example:
               override_props:
                 Aux/testprop: '1'
@@ -490,18 +481,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                delete_namespaces:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/StoragePoolDefinitionModify'
             example:
               override_props:
                 Aux/testprop: '1'
@@ -987,18 +967,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                delete_namespaces:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/ResourceModify'
             example:
               override_props:
                 Aux/testprop: '1'
@@ -1377,18 +1346,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                delete_namespaces:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/ResourceConnectionModify'
 
   /v1/resource-definitions/{resource}/snapshots:
     parameters:
@@ -1717,18 +1675,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                delete_namespaces:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/ControllerPropsModify'
             example:
               override_props:
                 Aux/testprop: myprop
@@ -1825,25 +1772,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                compression_type:
-                  type: string
-                  description: |
-                    Compression type used by the proxy.
-                  enum:
-                  - none
-                  - zlib
-                  - lzma
-                  - lz4
-                compression_props:
-                  $ref: '#/components/schemas/Properties'
+              $ref: '#/components/schemas/DrbdProxyModify'
             example:
               override_props:
                 compression_type: lz4
@@ -2131,18 +2060,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                delete_namespaces:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/KeyValueStoreModify'
     delete:
       tags:
       - developers
@@ -2172,30 +2090,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  candidates:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        storage_pool:
-                          type: string
-                          example: DfltStorPool
-                        max_volume_size_kib:
-                          type: integer
-                          format: int64
-                          description: maximum size in KiB
-                          example: 3194880
-                        node_names:
-                          type: array
-                          items:
-                            type: string
-                        all_thin:
-                          type: boolean
-                  default_max_oversubscription_ratio:
-                    type: number
-                    format: double
+                $ref: '#/components/schemas/MaxVolumeSizes'
         '500':
           $ref: '#/components/responses/OperationFailed'
       requestBody:
@@ -2279,6 +2174,7 @@ components:
             $ref: '#/components/schemas/ApiCallRc'
   schemas:
     ApiCallRc:
+      description: Common api reply structure
       type: object
       required:
       - ret_code
@@ -2352,6 +2248,21 @@ components:
           - FULL_SYNC_FAILED
           - AUTHENTICATION_ERROR
           - UNKNOWN
+    NodeModify:
+      type: object
+      properties:
+        node_type:
+          type: string
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
     NetInterface:
       type: object
       required:
@@ -2440,6 +2351,9 @@ components:
           format: int32
         al_stripes:
           type: integer
+          format: int32
+        al_stripe_size_kib:
+          type: integer
           format: int64
         port:
           type: integer
@@ -2497,6 +2411,10 @@ components:
           type: string
           example: 7sqCWjvGmwAiV5kzg3VF
           description: drbd resource secret
+        drbd_peer_slots:
+          type: integer
+          format: int32
+          description: drbd peer slot number
         drbd_transport_type:
           type: string
           example: IP
@@ -2519,6 +2437,10 @@ components:
           type: integer
           format: int32
           description: drbd port for resources
+        drbd_peer_slots:
+          type: integer
+          format: int32
+          description: drbd peer slot number
         layer_stack:
           type: array
           items:
@@ -2659,6 +2581,11 @@ components:
           $ref: '#/components/schemas/StorageResource'
         nvme:
           $ref: '#/components/schemas/NVMEResource'
+    ResourceState:
+      type: object
+      properties:
+        in_use:
+          type: boolean
     Resource:
       type: object
       properties:
@@ -2677,10 +2604,7 @@ components:
         layer_object:
           $ref: '#/components/schemas/ResourceLayer'
         state:
-          type: object
-          properties:
-            in_use:
-              type: boolean
+          $ref: '#/components/schemas/ResourceState'
     ResourceCreate:
       type: object
       properties:
@@ -2693,6 +2617,19 @@ components:
         drbd_node_id:
           type: integer
           format: int32
+    ResourceModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
 
     DrbdVolume:
       type: object
@@ -2800,7 +2737,7 @@ components:
         volume_number:
           type: integer
           format: int32
-        storage_pool:
+        storage_pool_name:
           type: string
         provider_kind:
           $ref: '#/components/schemas/ProviderKind'
@@ -2863,6 +2800,54 @@ components:
           type: array
           items:
             type: string
+        layer_stack:
+          type: array
+          items:
+            type: string
+        provider_list:
+          type: array
+          items:
+            type: string
+    Candidate:
+      type: object
+      properties:
+        storage_pool:
+          type: string
+          example: DfltStorPool
+        max_volume_size_kib:
+          type: integer
+          format: int64
+          description: maximum size in KiB
+          example: 3194880
+        node_names:
+          type: array
+          items:
+            type: string
+        all_thin:
+          type: boolean
+    MaxVolumeSizes:
+      type: object
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candidate'
+        default_max_oversubscription_ratio:
+          type: number
+          format: double
+    ControllerPropsModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
     ControllerVersion:
       type: object
       properties:
@@ -2906,6 +2891,19 @@ components:
           description: name of the key value store
         props:
           $ref: '#/components/schemas/Properties'
+    KeyValueStoreModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
     ResourceConnection:
       type: object
       properties:
@@ -2923,6 +2921,19 @@ components:
             type: string
         port:
           type: integer
+    ResourceConnectionModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
     Snapshot:
       type: object
       properties:
@@ -2941,7 +2952,9 @@ components:
           items:
             type: string
         volume_definitions:
-          $ref: '#/components/schemas/SnapshotVolumeDefinition'
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotVolumeDefinition'
     SnapshotVolumeDefinition:
       type: object
       properties:
@@ -2982,6 +2995,19 @@ components:
           type: string
         props:
           $ref: '#/components/schemas/Properties'
+    StoragePoolDefinitionModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
     DrbdProxyEnable:
       type: object
       properties:
@@ -2989,3 +3015,23 @@ components:
           type: integer
           format: int32
           description: Proxy port to use (optional)
+    DrbdProxyModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        compression_type:
+          type: string
+          description: |
+            Compression type used by the proxy.
+          enum:
+            - none
+            - zlib
+            - lzma
+            - lz4
+        compression_props:
+          $ref: '#/components/schemas/Properties'

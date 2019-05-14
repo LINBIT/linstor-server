@@ -5,8 +5,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
-import com.linbit.linstor.api.rest.v1.serializer.Json.VolumeDefinitionData;
-import com.linbit.linstor.api.rest.v1.serializer.Json.VolumeDefinitionModifyData;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
@@ -27,6 +26,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -86,12 +86,12 @@ public class VolumeDefinitions
             Response response;
             if (foundRscDfn.isPresent())
             {
-                List<VolumeDefinitionData> data = new ArrayList<>();
+                List<JsonGenTypes.VolumeDefinition> data = new ArrayList<>();
                 for (VolumeDefinition.VlmDfnApi vlmDfnApi : foundRscDfn.get().getVlmDfnList().stream()
                         .filter(vlmDfnApi -> vlmNumber == null || vlmDfnApi.getVolumeNr().equals(vlmNumber))
                         .collect(Collectors.toList()))
                 {
-                    data.add(new VolumeDefinitionData(vlmDfnApi));
+                    data.add(Json.apiToVolumeDefinition(vlmDfnApi));
                 }
 
                 response = RequestHelper.queryRequestResponse(
@@ -115,9 +115,9 @@ public class VolumeDefinitions
 
     private static class VlmDfnCreationWithPayload implements VolumeDefinition.VlmDfnWtihCreationPayload
     {
-        Json.VolumeDefinitionCreateData vlmCreateData;
+        JsonGenTypes.VolumeDefinitionCreate vlmCreateData;
 
-        public VlmDfnCreationWithPayload(Json.VolumeDefinitionCreateData data)
+        public VlmDfnCreationWithPayload(JsonGenTypes.VolumeDefinitionCreate data)
         {
             vlmCreateData = data;
         }
@@ -125,7 +125,7 @@ public class VolumeDefinitions
         @Override
         public VolumeDefinition.VlmDfnApi getVlmDfn()
         {
-            return vlmCreateData.volume_definition.toVlmDfnApi();
+            return Json.VolumeDefinitionToApi(vlmCreateData.volume_definition);
         }
 
         @Override
@@ -145,9 +145,9 @@ public class VolumeDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_VLM_DFN, request), () ->
         {
-            Json.VolumeDefinitionCreateData vlmDfnData = objectMapper.readValue(
+            JsonGenTypes.VolumeDefinitionCreate vlmDfnData = objectMapper.readValue(
                 dataJson,
-                Json.VolumeDefinitionCreateData.class
+                JsonGenTypes.VolumeDefinitionCreate.class
             );
             List<VolumeDefinition.VlmDfnWtihCreationPayload> vlmList = new ArrayList<>();
             vlmList.add(new VlmDfnCreationWithPayload(vlmDfnData));
@@ -170,7 +170,8 @@ public class VolumeDefinitions
     {
         try
         {
-            VolumeDefinitionModifyData vlmDfnData = objectMapper.readValue(dataJson, VolumeDefinitionModifyData.class);
+            JsonGenTypes.VolumeDefinitionModify vlmDfnData = objectMapper
+                .readValue(dataJson, JsonGenTypes.VolumeDefinitionModify.class);
 
             Flux<ApiCallRc> flux = ctrlVlmDfnModifyApiCallHandler.modifyVlmDfn(
                 null,
@@ -178,7 +179,7 @@ public class VolumeDefinitions
                 vlmNr,
                 vlmDfnData.size_kib,
                 vlmDfnData.override_props,
-                vlmDfnData.delete_props)
+                new HashSet<>(vlmDfnData.delete_props))
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));

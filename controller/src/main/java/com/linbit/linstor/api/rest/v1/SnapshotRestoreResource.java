@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotRestoreApiCallHandler;
 
 import javax.inject.Inject;
@@ -49,9 +50,9 @@ public class SnapshotRestoreResource
     {
         try
         {
-            Json.SnapshotRestore snapRestore = objectMapper.readValue(
+            JsonGenTypes.SnapshotRestore snapRestore = objectMapper.readValue(
                 jsonData,
-                Json.SnapshotRestore.class
+                JsonGenTypes.SnapshotRestore.class
             );
 
             Flux<ApiCallRc> flux = ctrlSnapshotRestoreApiCallHandler.restoreSnapshot(

@@ -2,7 +2,8 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.rest.v1.serializer.Json.AutoPlaceRequest;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 
 import javax.inject.Inject;
@@ -51,11 +52,12 @@ public class AutoPlace
     {
         try
         {
-            AutoPlaceRequest autoPlaceRequest = objectMapper.readValue(jsonData, AutoPlaceRequest.class);
+            JsonGenTypes.AutoPlaceRequest autoPlaceRequest = objectMapper
+                .readValue(jsonData, JsonGenTypes.AutoPlaceRequest.class);
 
             Flux<ApiCallRc> flux = ctrlRscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
-                autoPlaceRequest.select_filter,
+                new Json.AutoSelectFilterData(autoPlaceRequest.select_filter),
                 autoPlaceRequest.diskless_on_remaining,
                 autoPlaceRequest.layer_list
             )
