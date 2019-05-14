@@ -81,6 +81,12 @@ def gen_description_javadoc(field, indent: str, indent_level: int):
     return out
 
 
+def value_to_string(val):
+    if isinstance(val, bool):
+        return "true" if val else "false"
+    return str(val)
+
+
 def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: OrderedDict):
     if schema["type"] == "object" and "properties" in schema:
         indent = "    "
@@ -101,7 +107,13 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
             elif t.startswith("List"):
                 out += indent * 2 + "public {t} {n} = Collections.emptyList();\n".format(t=t, n=fieldname)
             else:
-                out += indent * 2 + "public {t} {n};\n".format(t=t, n=fieldname)
+                if "default" in field:
+                    dval = field['default']
+                    out += indent * 2 + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=value_to_string(dval))
+                elif "required" in schema and fieldname in schema["required"] and t not in ["String", "Integer", "Long"]:
+                    out += indent * 2 + "public {t} {n} = new {v};\n".format(t=t, n=fieldname, v=t + "()")
+                else:
+                    out += indent * 2 + "public {t} {n};\n".format(t=t, n=fieldname)
     out += indent + "}\n"
     return out
 

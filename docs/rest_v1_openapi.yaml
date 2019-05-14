@@ -2768,6 +2768,8 @@ components:
           type: string
     AutoPlaceRequest:
       type: object
+      required:
+        - select_filter
       properties:
         diskless_on_remaining:
           type: boolean
@@ -2780,10 +2782,13 @@ components:
             $ref: '#/components/schemas/LayerType'
     AutoSelectFilter:
       type: object
+      required:
+        - place_count
       properties:
         place_count:
           type: integer
           format: int32
+          default: 2
         storage_pool:
           type: string
         not_place_with_rsc:

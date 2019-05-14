@@ -179,7 +179,7 @@ public class JsonGenTypes
          */
         public Integer drbd_peer_slots;
         public String drbd_transport_type;
-        public ResourceDefinition resource_definition;
+        public ResourceDefinition resource_definition = new ResourceDefinition();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -230,7 +230,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class VolumeDefinitionCreate
     {
-        public VolumeDefinition volume_definition;
+        public VolumeDefinition volume_definition = new VolumeDefinition();
         public Integer drbd_minor_number;
     }
 
@@ -427,15 +427,15 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AutoPlaceRequest
     {
-        public Boolean diskless_on_remaining;
-        public AutoSelectFilter select_filter;
+        public Boolean diskless_on_remaining = false;
+        public AutoSelectFilter select_filter = new AutoSelectFilter();
         public List<String> layer_list = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AutoSelectFilter
     {
-        public Integer place_count;
+        public Integer place_count = 2;
         public String storage_pool;
         public List<String> not_place_with_rsc = Collections.emptyList();
         public String not_place_with_rsc_regex;
