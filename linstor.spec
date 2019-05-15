@@ -31,6 +31,7 @@ TODO.
 %build
 rm -rf ./build/install
 gradle %{GRADLE_TASKS} %{GRADLE_FLAGS}
+for p in server satellite controller; do echo "%{LS_PREFIX}/.$p" >> "%{_builddir}/%{NAME_VERS}/$p/jar.deps"; done
 
 %install
 mkdir -p %{buildroot}/%{LS_PREFIX}
@@ -51,6 +52,7 @@ cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/linstor-controller.xml %{buildroo
 cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/linstor-satellite.xml %{buildroot}/%{FIREWALLD_SERVICES}
 mkdir -p %{buildroot}/%{_sysconfdir}/drbd.d/
 cp %{_builddir}/%{NAME_VERS}/scripts/linstor-resources.res %{buildroot}/%{_sysconfdir}/drbd.d/
+touch %{buildroot}/%{LS_PREFIX}/{.server,.satellite,.controller}
 
 ### common
 %package common
