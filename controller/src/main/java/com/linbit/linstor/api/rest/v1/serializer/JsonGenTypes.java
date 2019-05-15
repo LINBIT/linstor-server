@@ -151,7 +151,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceDefinition
     {
-        public String name;
+        public String name = "";
         /**
          * External name can be used to have native resource names.
          * If you need to store a non Linstor compatible resource name use this field

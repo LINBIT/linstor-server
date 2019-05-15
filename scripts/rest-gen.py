@@ -109,8 +109,14 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
             else:
                 if "default" in field:
                     dval = field['default']
-                    out += indent * 2 + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=value_to_string(dval))
-                elif "required" in schema and fieldname in schema["required"] and t not in ["String", "Integer", "Long"]:
+                    if t == "String":
+                        out += indent * 2 + 'public {t} {n} = "{v}";\n'.format(
+                            t=t, n=fieldname, v=value_to_string(dval)
+                        )
+                    else:
+                        out += indent * 2 + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=value_to_string(dval))
+                elif "required" in schema and fieldname in schema["required"] and\
+                        t not in ["String", "Integer", "Long"]:
                     out += indent * 2 + "public {t} {n} = new {v};\n".format(t=t, n=fieldname, v=t + "()")
                 else:
                     out += indent * 2 + "public {t} {n};\n".format(t=t, n=fieldname)
