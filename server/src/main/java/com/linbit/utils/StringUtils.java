@@ -75,6 +75,14 @@ public class StringUtils
         return result.toArray(new String[0]);
     }
 
+    public static String[] concat(String[] array1, String[] array2)
+    {
+        String[] result = new String[array1.length + array2.length];
+        System.arraycopy(array1, 0, result, 0, array1.length);
+        System.arraycopy(array2, 0, result, array1.length, array2.length);
+        return result;
+    }
+
     public static String repeat(String repeatedElement, String glue, int times)
     {
         StringBuilder sb = new StringBuilder();

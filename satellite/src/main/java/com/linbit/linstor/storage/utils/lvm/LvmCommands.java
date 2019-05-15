@@ -61,18 +61,26 @@ public class LvmCommands
         );
     }
 
-    public static OutputData createFat(ExtCmd extCmd, String volumeGroup, String vlmId, long size)
+    public static OutputData createFat(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String vlmId,
+        long size,
+        String... additionalParameters
+    )
         throws StorageException
     {
         return genericExecutor(
             extCmd,
-            new String[] {
-                "lvcreate",
-                "--size", size + "k",
-                "-n", vlmId,
-                "-y", // force, skip "wipe signature question"
-                volumeGroup
-            },
+            StringUtils.concat(
+                new String[] {
+                    "lvcreate",
+                    "--size", size + "k",
+                    "-n", volumeGroup + "/" + vlmId,
+                    "-y" // force, skip "wipe signature question"
+                },
+                additionalParameters
+            ),
             "Failed to create lvm volume",
             "Failed to create new lvm volume '" + vlmId + "' in volume group '" + volumeGroup +
                 "' with size " + size + "kb"
@@ -84,23 +92,26 @@ public class LvmCommands
         String volumeGroup,
         String thinPoolName,
         String vlmId,
-        long size
+        long size,
+        String... additionalParameters
     )
         throws StorageException
     {
         return genericExecutor(
             extCmd,
-            new String[] {
-                "lvcreate",
-                "--virtualsize", size + "k", // -V
-                "--thinpool", thinPoolName,
-                "--name", vlmId,        // -n
-                volumeGroup
-            },
+            StringUtils.concat(
+                new String[] {
+                    "lvcreate",
+                    "--virtualsize", size + "k", // -V
+                    "--thinpool", thinPoolName,
+                    "--name", volumeGroup + "/" + vlmId        // -n
+                },
+                additionalParameters
+            ),
             "Failed to create lvm volume",
             "Failed to create new lvm volume '" + vlmId + "' in volume group '" + volumeGroup +
             "' with size " + size + "kb"
-            );
+        );
     }
 
     public static OutputData delete(ExtCmd extCmd, String volumeGroup, String vlmId)

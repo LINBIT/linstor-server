@@ -2,11 +2,14 @@ package com.linbit.linstor.storage.layer.provider.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -50,6 +53,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     public static final String FORMAT_RSC_TO_LVM_ID = "%s%s_%05d";
     private static final String FORMAT_LVM_ID_WIPE_IN_PROGRESS = "%s_linstor_wiping_in_progress";
     private static final String FORMAT_DEV_PATH = "/dev/%s/%s";
+
+    private static final String DFLT_LVCREATE_TYPE = "linear";
 
     protected LvmProvider(
         ErrorReporter errorReporter,
@@ -204,8 +209,33 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             extCmdFactory.create(),
             vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
-            vlmData.getUsableSize()
+            vlmData.getUsableSize(),
+            "--type=" + getLvCreateType(vlmData)
         );
+    }
+
+    protected String getLvCreateType(LvmData vlmDataRef)
+    {
+        String type;
+        try
+        {
+            Volume vlm = vlmDataRef.getVolume();
+            PriorityProps prioProps = new PriorityProps(
+                vlm.getProps(storDriverAccCtx),
+                vlm.getVolumeDefinition().getProps(storDriverAccCtx),
+                vlm.getStorPool(storDriverAccCtx).getProps(storDriverAccCtx)
+            );
+            type = prioProps.getProp(
+                ApiConsts.KEY_STOR_POOL_LVCREATE_TYPE,
+                ApiConsts.NAMESPC_STORAGE_DRIVER,
+                DFLT_LVCREATE_TYPE
+            );
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return type;
     }
 
     @Override
