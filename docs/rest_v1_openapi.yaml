@@ -2381,6 +2381,7 @@ components:
       properties:
         name:
           type: string
+          default: ''
           example: rsc1
         external_name:
           type: string
