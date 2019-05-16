@@ -4,6 +4,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 
 import java.io.IOException;
 import java.net.URI;
@@ -11,9 +12,7 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Injector;
-import com.linbit.linstor.api.rest.v1.serializer.Json;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
-
+import org.glassfish.grizzly.http.CompressionConfig;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -33,6 +32,8 @@ public class GrizzlyHttpService implements SystemService
         "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + JsonGenTypes.REST_API_VERSION
         + "\">Documentation</a></body></html>";
 
+    private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
+
     public GrizzlyHttpService(Injector injector, Path logDirectory, String listenAddress)
     {
         ResourceConfig resourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
@@ -43,6 +44,12 @@ public class GrizzlyHttpService implements SystemService
             resourceConfig,
             false
         );
+
+        CompressionConfig compressionConfig = httpServer.getListener("grizzly").getCompressionConfig();
+        compressionConfig.setCompressionMode(CompressionConfig.CompressionMode.ON);
+        compressionConfig.setCompressibleMimeTypes("text/plain", "text/html", "application/json");
+        compressionConfig.setCompressionMinSize(COMPRESSION_MIN_SIZE);
+
 
         httpServer.getServerConfiguration().addHttpHandler(
             new HttpHandler()
