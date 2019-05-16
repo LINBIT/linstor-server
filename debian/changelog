@@ -1,3 +1,33 @@
+linstor-server (0.9.8-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Made Node create synchonous
+  * Fixed finding device path of nvme volumes
+  * Fixed possible deadlock in sync node creation
+  * Fixed NodeApiTests
+  * LvsUtils now parses json output for 'lvs' and 'vgs'
+  * Skip attemptConnection to Controller and Aux nodes
+  * Added property to set --type for lvcreate
+
+  [ Rene Peinthor ]
+  * rest-api-docu: update bind interface info
+  * rest-api: use generated data structures from rest-documentation
+  * peeroffline: offlinepeer(controller) will display online if local
+  * rest-api: rest-gen, use `default` and `required` properties
+  * rest-api-docu: add default and required for ResourceDefinition.name
+  * rest-api-gen: correctly generate string defaults
+  * rest-api: add /v1/view/resources as a summary and raise rest-api-version
+
+  [ Robert Altnoeder ]
+  * Added length padding for concealing the length of encrypted data
+  * Updated encrypted properties to use length padding
+
+  [ Roland Kammerer ]
+  * build: fix empty files for RHEL8
+  * build: fix python dependency for RHEL8
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 16 May 2019 09:59:06 +0200
+
 linstor-server (0.9.7-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
