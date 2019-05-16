@@ -15,7 +15,7 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
-  version: "1.0.2"
+  version: "1.0.3"
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -2099,6 +2099,49 @@ paths:
             schema:
               $ref: '#/components/schemas/AutoSelectFilter'
 
+  /v1/view/resources:
+    get:
+      tags:
+        - developers
+      operationId: viewResources
+      summary: query all resources with their volumes
+      description: This REST-resource should be used if you want to get an overview of all resources with their volumes.
+      parameters:
+        - name: nodes
+          in: query
+          description: Filter only for the specified nodes, if not specified no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+        - name: storage_pools
+          in: query
+          description: Filter only for the specified storage pools, if not specified no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+        - name: resources
+          in: query
+          description: Filter only for the specified resources, if not specified no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: resources list with volume data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Resource'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
 components:
   parameters:
     Resource:
@@ -2606,6 +2649,10 @@ components:
           $ref: '#/components/schemas/ResourceLayer'
         state:
           $ref: '#/components/schemas/ResourceState'
+        volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Volume'
     ResourceCreate:
       type: object
       properties:

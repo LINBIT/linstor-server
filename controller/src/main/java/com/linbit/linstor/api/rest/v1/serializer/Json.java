@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1.serializer;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NodeName;
@@ -14,6 +15,7 @@ import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
@@ -27,7 +29,9 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -283,7 +287,8 @@ public class Json
 
     public static JsonGenTypes.Resource apiToResource(
         Resource.RscApi rscApi,
-        Map<NodeName, SatelliteState> satelliteStates
+        Map<NodeName, SatelliteState> satelliteStates,
+        boolean withVolumes
     )
     {
         JsonGenTypes.Resource rsc = new JsonGenTypes.Resource();
@@ -292,6 +297,42 @@ public class Json
         rsc.flags = FlagsHelper.toStringList(Resource.RscFlags.class, rscApi.getFlags());
         rsc.props = rscApi.getProps();
         rsc.layer_object = apiToResourceLayer(rscApi.getLayerData());
+
+        if (withVolumes)
+        {
+            rsc.volumes = rscApi.getVlmList().stream().map(vlmApi ->
+                {
+                    JsonGenTypes.Volume vlmData = Json.apiToVolume(vlmApi);
+                    JsonGenTypes.VolumeState vlmState = null;
+                    try
+                    {
+                        final ResourceName rscNameRes = new ResourceName(rsc.name);
+                        final NodeName linNodeName = new NodeName(rsc.node_name);
+                        if (satelliteStates.containsKey(linNodeName) &&
+                            satelliteStates.get(linNodeName)
+                                .getResourceStates().containsKey(rscNameRes))
+                        {
+                            SatelliteResourceState satResState = satelliteStates
+                                .get(linNodeName)
+                                .getResourceStates()
+                                .get(rscNameRes);
+
+                            VolumeNumber vlmNumber = new VolumeNumber(vlmData.volume_number);
+                            if (satResState.getVolumeStates().containsKey(vlmNumber))
+                            {
+                                vlmState = new JsonGenTypes.VolumeState();
+                                SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
+                                vlmState.disk_state = satVlmState.getDiskState();
+                            }
+                        }
+                    }
+                    catch (InvalidNameException | ValueOutOfRangeException ignored)
+                    {
+                    }
+                    vlmData.state = vlmState;
+                    return vlmData;
+                }).collect(Collectors.toList());
+        }
 
         try
         {
