@@ -1,10 +1,12 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 
@@ -36,16 +38,19 @@ public class View
 {
     private final RequestHelper requestHelper;
     private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;
+    private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
     private final ObjectMapper objectMapper;
 
     @Inject
     View(
         RequestHelper requestHelperRef,
-        CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef
+        CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef,
+        CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
+        ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -111,6 +116,88 @@ public class View
                     resp = Response
                         .status(Response.Status.OK)
                         .entity(objectMapper.writeValueAsString(rscs))
+                        .build();
+                }
+                catch (JsonProcessingException exc)
+                {
+                    exc.printStackTrace();
+                    resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                }
+            }
+
+            return Mono.just(resp);
+        }).next();
+    }
+
+    @GET
+    @Path("storage-pools")
+    public void viewStoragePools(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @QueryParam("nodes") List<String> nodes,
+        @QueryParam("storage_pools") List<String> storagePools,
+        @DefaultValue("0") @QueryParam("limit") int limit,
+        @DefaultValue("0") @QueryParam("offset") int offset
+    )
+    {
+        List<String> nodesFilter = nodes != null ? nodes : Collections.emptyList();
+        List<String> storagePoolsFilter = storagePools != null ? storagePools : Collections.emptyList();
+
+        Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> flux = ctrlStorPoolListApiCallHandler
+            .listStorPools(nodesFilter, storagePoolsFilter)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
+
+        requestHelper.doFlux(asyncResponse, apiCallRcWithToResponse(flux, limit, offset));
+    }
+
+    Mono<Response> apiCallRcWithToResponse(
+        Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> apiCallRcWithFlux,
+        int limit,
+        int offset
+    )
+    {
+        return apiCallRcWithFlux.flatMap(apiCallRcWith ->
+        {
+            Response resp;
+            if (apiCallRcWith.hasApiCallRc())
+            {
+                resp = ApiCallRcConverter.toResponse(
+                    apiCallRcWith.getApiCallRc(),
+                    Response.Status.INTERNAL_SERVER_ERROR
+                );
+            }
+            else
+            {
+                Stream<StorPool.StorPoolApi> storPoolApiStream = apiCallRcWith.getValue().stream();
+                if (limit > 0)
+                {
+                    storPoolApiStream = storPoolApiStream.skip(offset).limit(limit);
+                }
+                List<JsonGenTypes.StoragePool> storPoolDataList = storPoolApiStream
+                    .map(storPoolApi ->
+                    {
+                        JsonGenTypes.StoragePool storPoolData = new JsonGenTypes.StoragePool();
+                        storPoolData.storage_pool_name = storPoolApi.getStorPoolName();
+                        storPoolData.node_name = storPoolApi.getNodeName();
+                        storPoolData.provider_kind = Json.deviceProviderKindAsString(
+                            storPoolApi.getDeviceProviderKind()
+                        );
+                        storPoolData.props = storPoolApi.getStorPoolProps();
+                        storPoolData.static_traits = storPoolApi.getStorPoolStaticTraits();
+                        storPoolData.free_capacity = storPoolApi.getFreeCapacity().orElse(null);
+                        storPoolData.total_capacity = storPoolApi.getTotalCapacity().orElse(null);
+                        storPoolData.free_space_mgr_name = storPoolApi.getFreeSpaceManagerName();
+
+                        return storPoolData;
+                    })
+                    .collect(Collectors.toList());
+
+                try
+                {
+                    resp = Response
+                        .status(Response.Status.OK)
+                        .entity(objectMapper.writeValueAsString(storPoolDataList))
+                        .type(MediaType.APPLICATION_JSON)
                         .build();
                 }
                 catch (JsonProcessingException exc)

@@ -15,7 +15,7 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
-  version: "1.0.3"
+  version: "1.0.4"
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -2139,6 +2139,42 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Resource'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
+  /v1/view/storage-pools:
+    get:
+      tags:
+        - developers
+      operationId: viewStoragePools
+      summary: query all storage pools
+      description: This REST-resource should be used if you want to get an overview of all storage pools.
+      parameters:
+        - name: nodes
+          in: query
+          description: Filter only for the specified nodes, if not specified no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+        - name: storage_pools
+          in: query
+          description: Filter only for the specified storage pools, if not specified no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: storage pool list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StoragePool'
         '500':
           $ref: '#/components/responses/OperationFailed'
 
