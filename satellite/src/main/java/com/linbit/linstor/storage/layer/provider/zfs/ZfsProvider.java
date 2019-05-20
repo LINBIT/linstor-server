@@ -153,20 +153,18 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     protected void createLvImpl(ZfsData vlmData)
         throws StorageException, AccessDeniedException, SQLException
     {
-        long volumeSize = roundUpToExtentSize(vlmData);
-
         ZfsCommands.create(
             extCmdFactory.create(),
             vlmData.getZPool(),
             asLvIdentifier(vlmData),
-            volumeSize,
+            vlmData.getExepectedSize(),
             false
         );
     }
 
-    protected long roundUpToExtentSize(ZfsData vlmData) throws SQLException
+    protected long roundUpToExtentSize(long sizeRef)
     {
-        long volumeSize = vlmData.getUsableSize();
+        long volumeSize = sizeRef;
         if (volumeSize % DEFAULT_ZFS_EXTENT_SIZE != 0)
         {
             long origSize = volumeSize;
@@ -179,7 +177,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
                     DEFAULT_ZFS_EXTENT_SIZE
                 )
             );
-            vlmData.setAllocatedSize(volumeSize);
         }
         return volumeSize;
     }
@@ -192,7 +189,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
             extCmdFactory.create(),
             vlmData.getZPool(),
             asLvIdentifier(vlmData),
-            vlmData.getUsableSize()
+            vlmData.getExepectedSize()
         );
     }
 
@@ -375,7 +372,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
             {
                 updateInfo(vlmData, info);
 
-                final long expectedSize = vlmData.getUsableSize();
+                final long expectedSize = vlmData.getExepectedSize();
                 final long actualSize = info.allocatedSize;
                 if (actualSize != expectedSize)
                 {
@@ -385,26 +382,23 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
                     }
                     else
                     {
-                        if (actualSize == expectedSize)
+                        long extentSize = ZfsUtils.getZfsExtentSize(
+                            extCmdFactory.create(),
+                            info.poolName,
+                            info.identifier
+                        );
+                        vlmData.setSizeState(Size.TOO_LARGE);
+                        final long toleratedSize =
+                            expectedSize + extentSize * TOLERANCE_FACTOR;
+                        if (actualSize < toleratedSize)
                         {
-                            vlmData.setSizeState(Size.AS_EXPECTED);
-                        }
-                        else
-                        {
-                            long extentSize = ZfsUtils.getZfsExtentSize(
-                                extCmdFactory.create(),
-                                info.poolName,
-                                info.identifier
-                            );
-                            vlmData.setSizeState(Size.TOO_LARGE);
-                            final long toleratedSize =
-                                expectedSize + extentSize * TOLERANCE_FACTOR;
-                            if (actualSize < toleratedSize)
-                            {
-                                vlmData.setSizeState(Size.TOO_LARGE_WITHIN_TOLERANCE);
-                            }
+                            vlmData.setSizeState(Size.TOO_LARGE_WITHIN_TOLERANCE);
                         }
                     }
+                }
+                else
+                {
+                    vlmData.setSizeState(Size.AS_EXPECTED);
                 }
             }
             else
@@ -427,12 +421,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     }
 
     @Override
-    protected long getAllocatedSize(ZfsData vlmDataRef) throws StorageException
-    {
-        return vlmDataRef.getAllocatedSize();
-    }
-
-    @Override
     protected void setDevicePath(ZfsData vlmDataRef, String devicePathRef) throws SQLException
     {
         vlmDataRef.setDevicePath(devicePathRef);
@@ -448,6 +436,14 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     protected void setUsableSize(ZfsData vlmDataRef, long sizeRef) throws SQLException
     {
         vlmDataRef.setUsableSize(sizeRef);
+    }
+
+    @Override
+    protected void setExpectedUsableSize(ZfsData vlmData, long size) throws SQLException
+    {
+        vlmData.setExepectedSize(
+            roundUpToExtentSize(size)
+        );
     }
 
     @Override

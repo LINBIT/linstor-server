@@ -60,13 +60,11 @@ public class ZfsThinProvider extends ZfsProvider
     protected void createLvImpl(ZfsData vlmData)
         throws StorageException, AccessDeniedException, SQLException
     {
-        long volumeSize = roundUpToExtentSize(vlmData);
-
         ZfsCommands.create(
             extCmdFactory.create(),
             vlmData.getZPool(),
             asLvIdentifier(vlmData),
-            volumeSize,
+            vlmData.getExepectedSize(),
             true
         );
     }

@@ -103,7 +103,7 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void createLvImpl(LvmData lvmVlmData) throws StorageException
+    protected void createLvImpl(LvmData lvmVlmData) throws StorageException, AccessDeniedException
     {
         LvmThinData vlmData = (LvmThinData) lvmVlmData;
         String volumeGroup = vlmData.getVolumeGroup();
@@ -113,7 +113,7 @@ public class LvmThinProvider extends LvmProvider
             volumeGroup,
             vlmData.getThinPool(),
             lvId,
-            vlmData.getUsableSize()
+            vlmData.getExepectedSize()
         );
         LvmCommands.activateVolume(
             extCmdFactory.create(),

@@ -49,9 +49,9 @@ public class ZfsData extends BaseTransactionObject implements ZfsProviderObject
     private final TransactionSimpleObject<ZfsData, Size> sizeState;
 
     // not persisted, not serialized, stlt only
-    private String zpool = null;
-    private String identifier = null;
-
+    private transient String zpool = null;
+    private transient String identifier = null;
+    private transient long expectedSize;
 
     public ZfsData(
         Volume vlmRef,
@@ -220,6 +220,16 @@ public class ZfsData extends BaseTransactionObject implements ZfsProviderObject
     public String getFullQualifiedLvIdentifier()
     {
         return zpool + File.separator + identifier;
+    }
+
+    public void setExepectedSize(long size)
+    {
+        expectedSize = size;
+    }
+
+    public long getExepectedSize()
+    {
+        return expectedSize;
     }
 
     @Override

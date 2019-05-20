@@ -129,6 +129,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         changedStorPools.clear();
         changedStoragePoolStrings.clear();
         postRunVolumeNotifications.clear();
+
         prepared = false;
     }
 
@@ -141,10 +142,17 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
         List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) rawVlmDataList;
 
+        updateVolumeAndSnapshotStates(snapVlms, vlmDataList);
+
+        prepared = true;
+    }
+
+    private void updateVolumeAndSnapshotStates(List<SnapshotVolume> snapVlms, List<LAYER_DATA> vlmDataList)
+        throws StorageException, AccessDeniedException, SQLException
+    {
         infoListCache.putAll(getInfoListImpl(vlmDataList, snapVlms));
 
         updateStates(vlmDataList, snapVlms);
-        prepared = true;
     }
 
     @Override
@@ -324,7 +332,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             setDevicePath(vlmData, devicePath);
             waitUntilDeviceCreated(devicePath);
 
-            setAllocatedSize(vlmData, getAllocatedSize(vlmData));
+            long allocatedSize = getAllocatedSize(vlmData);
+            setAllocatedSize(vlmData, allocatedSize);
+            setUsableSize(vlmData, allocatedSize);
 
             if (stltConfigAccessor.useDmStats() && updateDmStats())
             {
@@ -714,7 +724,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
     @Override
     public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
     {
-        setUsableSize(
+        setExpectedUsableSize(
             (LAYER_DATA) vlmData,
             vlmData.getParentAllocatedSizeOrElse(
                 () -> vlmData.getVolume().getVolumeDefinition().getVolumeSize(storDriverAccCtx)
@@ -844,4 +854,5 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
     protected abstract void setUsableSize(LAYER_DATA vlmData, long size) throws SQLException;
 
+    protected abstract void setExpectedUsableSize(LAYER_DATA vlmData, long size) throws SQLException;
 }

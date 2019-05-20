@@ -45,6 +45,7 @@ public class LvmData extends BaseTransactionObject implements LvmProviderObject
     // not persisted, not serialized, stlt only
     private transient String volumeGroup;
     private transient String identifier;
+    private transient long expectedSize;
 
     public LvmData(
         Volume vlmRef,
@@ -202,6 +203,16 @@ public class LvmData extends BaseTransactionObject implements LvmProviderObject
     public void setIdentifier(String identifierRef)
     {
         identifier = identifierRef;
+    }
+
+    public void setExepectedSize(long size)
+    {
+        expectedSize = size;
+    }
+
+    public long getExepectedSize()
+    {
+        return expectedSize;
     }
 
     @Override

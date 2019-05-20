@@ -122,7 +122,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
 
             if (info != null)
             {
-                final long expectedSize = vlmData.getUsableSize();
+                final long expectedSize = vlmData.getExepectedSize();
                 final long actualSize = info.size;
                 if (actualSize != expectedSize)
                 {
@@ -173,6 +173,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             vlmData.setVolumeGroup(extractVolumeGroup(vlmData));
             vlmData.setDevicePath(null);
             vlmData.setAllocatedSize(-1);
+            vlmData.setUsableSize(-1);
             vlmData.setDevicePath(null);
         }
         else
@@ -182,6 +183,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             vlmData.setDevicePath(info.path);
             vlmData.setIdentifier(info.identifier);
             vlmData.setAllocatedSize(info.size);
+            vlmData.setUsableSize(info.size);
             vlmData.setDevicePath(info.path);
         }
     }
@@ -203,13 +205,13 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
 
     @Override
     protected void createLvImpl(LvmData vlmData)
-        throws StorageException
+        throws StorageException, AccessDeniedException
     {
         LvmCommands.createFat(
             extCmdFactory.create(),
             vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
-            vlmData.getUsableSize(),
+            vlmData.getExepectedSize(),
             "--type=" + getLvCreateType(vlmData)
         );
     }
@@ -240,13 +242,13 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
 
     @Override
     protected void resizeLvImpl(LvmData vlmData)
-        throws StorageException
+        throws StorageException, AccessDeniedException
     {
         LvmCommands.resize(
             extCmdFactory.create(),
             vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
-            vlmData.getUsableSize()
+            vlmData.getExepectedSize()
         );
     }
 
@@ -453,6 +455,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     protected void setUsableSize(LvmData vlmData, long size) throws SQLException
     {
         vlmData.setUsableSize(size);
+    }
+
+    @Override
+    protected void setExpectedUsableSize(LvmData vlmData, long size)
+    {
+        vlmData.setExepectedSize(size);
     }
 
     @Override
