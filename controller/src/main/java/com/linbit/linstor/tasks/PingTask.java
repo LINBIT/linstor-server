@@ -2,7 +2,7 @@ package com.linbit.linstor.tasks;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
 
 import com.linbit.linstor.logging.ErrorReporter;
@@ -19,7 +19,7 @@ public class PingTask implements Task
     private static final long PING_SLEEP = 1_000;
 
     private final Object syncObj = new Object();
-    private final LinkedList<Peer> peerList = new LinkedList<>();
+    private final HashSet<Peer> peerSet = new HashSet<>();
     private final ErrorReporter errorReporter;
     private final ReconnectorTask reconnector;
 
@@ -36,7 +36,7 @@ public class PingTask implements Task
     {
         synchronized (syncObj)
         {
-            peerList.add(peer);
+            peerSet.add(peer);
         }
     }
 
@@ -44,7 +44,7 @@ public class PingTask implements Task
     {
         synchronized (syncObj)
         {
-            peerList.remove(peer);
+            peerSet.remove(peer);
         }
     }
 
@@ -56,7 +56,7 @@ public class PingTask implements Task
         final List<Peer> currentPeers;
         synchronized (syncObj)
         {
-            currentPeers = new ArrayList<>(peerList);
+            currentPeers = new ArrayList<>(peerSet);
         }
 
         for (final Peer peer : currentPeers)
@@ -98,7 +98,7 @@ public class PingTask implements Task
         }
         synchronized (syncObj)
         {
-            peerList.removeAll(peersToRemove);
+            peerSet.removeAll(peersToRemove);
         }
         return PING_SLEEP;
     }

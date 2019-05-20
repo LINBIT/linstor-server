@@ -3,8 +3,7 @@ package com.linbit.linstor.tasks;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
-
+import java.util.HashSet;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.SatelliteConnector;
@@ -23,7 +22,7 @@ public class ReconnectorTask implements Task
     private static final int RECONNECT_SLEEP = 10_000;
 
     private final Object syncObj = new Object();
-    private final LinkedList<Peer> peerList = new LinkedList<>();
+    private final HashSet<Peer> peerSet = new HashSet<>();
     private final ErrorReporter errorReporter;
     private PingTask pingTask;
     private final Provider<CtrlAuthenticator> authenticatorProvider;
@@ -58,7 +57,7 @@ public class ReconnectorTask implements Task
             }
             else
             {
-                peerList.add(peer);
+                peerSet.add(peer);
             }
         }
     }
@@ -67,11 +66,13 @@ public class ReconnectorTask implements Task
     {
         synchronized (syncObj)
         {
-            if (peerList.remove(peer) && pingTask != null)
+            if (peerSet.remove(peer) && pingTask != null)
             {
                 // no locks needed
                 authenticatorProvider.get().sendAuthentication(peer);
-                pingTask.add(peer);
+
+                // do not add peer to ping task, as that is done when the satellite
+                // authenticated successfully.
             }
         }
     }
@@ -80,7 +81,7 @@ public class ReconnectorTask implements Task
     {
         synchronized (syncObj)
         {
-            peerList.remove(peer);
+            peerSet.remove(peer);
             pingTask.remove(peer);
         }
     }
@@ -91,7 +92,7 @@ public class ReconnectorTask implements Task
         ArrayList<Peer> localList;
         synchronized (syncObj)
         {
-            localList = new ArrayList<>(peerList);
+            localList = new ArrayList<>(peerSet);
         }
         for (final Peer peer : localList)
         {
@@ -114,7 +115,7 @@ public class ReconnectorTask implements Task
                         Node node = peer.getNode();
                         if (node != null && !node.isDeleted())
                         {
-                            peerList.add(peer.getConnector().reconnect(peer));
+                            peerSet.add(peer.getConnector().reconnect(peer));
                         }
                         else
                         {
@@ -133,7 +134,7 @@ public class ReconnectorTask implements Task
                                 );
                             }
                         }
-                        peerList.remove(peer);
+                        peerSet.remove(peer);
                     }
                 }
                 catch (IOException ioExc)
