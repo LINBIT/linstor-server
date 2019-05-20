@@ -17,8 +17,7 @@ public enum DeviceProviderKind
         true,
         false,
         true, // very thin :)
-        new DisklessDriverKind(), // compatibility - will be removed
-        StartupVerification.UNAME, StartupVerification.DRBD9
+        new DisklessDriverKind() // compatibility - will be removed
     ),
     LVM(
         false,
