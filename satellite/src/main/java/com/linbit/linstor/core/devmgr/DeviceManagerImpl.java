@@ -20,6 +20,7 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.LinStorScope;
@@ -796,15 +797,29 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
                 Set<Resource> resourcesToDispatch = new TreeSet<>();
                 Set<Snapshot> snapshotsToDispatch = new TreeSet<>();
+                Set<Resource> remoteResourcesToDelete = new TreeSet<>();
 
                 for (ResourceName rscName : dispatchRscs.keySet())
                 {
+
                     // Dispatch resources that were affected by changes to worker threads
                     // and to the resource's respective handler
                     ResourceDefinition rscDfn = rscDfnMap.get(rscName);
                     if (rscDfn != null)
                     {
                         Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
+
+                        Iterator<Resource> rscIt = rscDfn.iterateResource(wrkCtx);
+                        while (rscIt.hasNext())
+                        {
+                            Resource otherRsc = rscIt.next();
+                            if (otherRsc != rsc &&
+                                otherRsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE)
+                            )
+                            {
+                                remoteResourcesToDelete.add(otherRsc);
+                            }
+                        }
 
                         List<Snapshot> snapshots = new ArrayList<>();
                         for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(wrkCtx))
@@ -881,7 +896,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 respondToController(dispatchRscs, responseSinks);
 
                 // Cleanup deleted objects
-                deletedObjectsCleanup();
+                deletedObjectsCleanup(remoteResourcesToDelete);
             }
             finally
             {
@@ -927,7 +942,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
-    private void deletedObjectsCleanup()
+    private void deletedObjectsCleanup(Set<Resource> remoteResourcesToDeleteRef)
         throws AccessDeniedException
     {
         final Set<NodeName> localDelNodeSet = new TreeSet<>();
@@ -1027,6 +1042,37 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         // delete the resource definition as well
                         rscDfnMap.remove(curRscName);
                         transMgrProvider.get().commit();
+                    }
+                }
+
+                for (Resource remoteRsc : remoteResourcesToDeleteRef)
+                {
+                    // if the remote resource never gets deleted, it will cause a
+                    // divergent UUID exception when the "same" remote resource gets
+                    // recreated
+                    Node remoteNode = remoteRsc.getAssignedNode();
+                    remoteRsc.delete(wrkCtx);
+
+                    /*
+                     *  Bugfix: if the remoteRsc was the last resource of the remote node
+                     *  we will no longer receive updates about the remote node (why should we?)
+                     *  The problem is, that if the remote node gets completely deleted
+                     *  on the controller, and later recreated, and that "new" node deploys
+                     *  a resource we are also interested in, we will receive the "new" node's UUID.
+                     *  However, we will still find our old node-reference when looking up the
+                     *  "new" node's name and therefore we will find the old node's UUID and check it
+                     *  against the "new" node's UUID.
+                     *  This will cause a UUID mismatch upon resource-creation on the other node
+                     *  (which will trigger an update to us as we also need to know about the new resource
+                     *  and it's node)
+                     *
+                     *  Therefore, we have to remove the remoteNode completely if it has no
+                     *  resources left
+                     */
+                    if (!remoteNode.iterateResources(wrkCtx).hasNext())
+                    {
+                        nodesMap.remove(remoteNode.getName());
+                        remoteNode.delete(wrkCtx);
                     }
                 }
 

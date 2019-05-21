@@ -416,6 +416,24 @@ public class DrbdLayer implements DeviceLayer
                     }
                 }
 
+                if (!drbdRscData.getResource().isDiskless(workerCtx))
+                {
+                    for (DrbdRscData otherRsc : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
+                    {
+                        if (!otherRsc.equals(drbdRscData) && // skip local rsc
+                            otherRsc.getResource().getStateFlags().isSet(workerCtx, RscFlags.DELETE)
+                        )
+                        {
+                            /*
+                             * If a peer is getting deleted, we issue a forget-peer (which requires
+                             * a del-peer) so that the bitmap of that peer is reset to day0
+                             */
+                            drbdUtils.deletePeer(otherRsc);
+                            drbdUtils.forgetPeer(otherRsc);
+                        }
+                    }
+                }
+
                 drbdUtils.adjust(
                     drbdRscData,
                     false,

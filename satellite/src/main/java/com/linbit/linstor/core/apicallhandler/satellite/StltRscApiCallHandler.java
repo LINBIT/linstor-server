@@ -63,7 +63,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -202,7 +201,6 @@ class StltRscApiCallHandler
             ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
 
             Resource localRsc = null;
-            Set<Resource> otherRscs = new HashSet<>();
             if (rscDfn == null)
             {
                 rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
@@ -321,7 +319,6 @@ class StltRscApiCallHandler
                         otherRscRaw.getVlms(),
                         true
                     );
-                    otherRscs.add(remoteRsc);
 
                     layerRscDataMerger.restoreLayerData(remoteRsc, otherRscRaw.getRscLayerDataPojo());
 
@@ -524,44 +521,6 @@ class StltRscApiCallHandler
                     }
 
                     layerRscDataMerger.restoreLayerData(remoteRsc, otherRsc.getRscLayerDataPojo());
-
-                    if (remoteRsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DELETE))
-                    {
-                        // remote resources do not go through the device manager, which means
-                        // we have to delete them here.
-                        // otherwise the resource never gets deleted, which will cause a
-                        // divergent UUID exception when the "same" remote resource gets
-                        // recreated
-                        Node remoteNode = remoteRsc.getAssignedNode();
-                        remoteRsc.delete(apiCtx);
-
-                        /*
-                         *  Bugfix: if the remoteRsc was the last resource of the remote node
-                         *  we will no longer receive updates about the remote node (why should we?)
-                         *  The problem is, that if the remote node gets completely deleted
-                         *  on the controller, and later recreated, and that "new" node deploys
-                         *  a resource we are also interested in, we will receive the "new" node's UUID.
-                         *  However, we will still find our old node-reference when looking up the
-                         *  "new" node's name and therefor we will find the old node's UUID and check it
-                         *  against the "new" node's UUID.
-                         *  This will cause a UUID mismatch upon resource-creation on the other node
-                         *  (which will trigger an update to us as we also need to know about the new resource
-                         *  and it's node)
-                         *
-                         *  Therefore, we have to remove the remoteNode completely if it has no
-                         *  resources left
-                         */
-
-                        if (!remoteNode.iterateResources(apiCtx).hasNext())
-                        {
-                            nodesMap.remove(remoteNode.getName());
-                            remoteNode.delete(apiCtx);
-                        }
-                    }
-                    else
-                    {
-                        otherRscs.add(remoteRsc);
-                    }
                 }
                 // all resources have been created, updated or deleted
 

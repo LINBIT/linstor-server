@@ -307,6 +307,24 @@ public class DrbdAdm
         );
     }
 
+    /**
+     * For debug purposes
+     *
+     * @param vlmDataRef
+     * @throws ExtCmdFailedException
+     */
+    public void showGi(DrbdVlmData vlmDataRef) throws ExtCmdFailedException
+    {
+        DrbdRscData rscData = vlmDataRef.getRscLayerObject();
+        execute(
+            DRBDSETUP_UTIL,
+            "show-gi",
+            rscData.getSuffixedResourceName(),
+            rscData.getNodeId().value + "",
+            vlmDataRef.getVlmNr().value + ""
+        );
+    }
+
     public void suspendIo(DrbdRscData drbdRscData)
         throws ExtCmdFailedException
     {
@@ -345,6 +363,27 @@ public class DrbdAdm
         // Using -c disables /etc/drbd.d/global_common.conf
         // execute(DRBDADM_UTIL, "-c", tmpResPathStr, "-d", "up", resourceName.value);
         // execute(DRBDADM_UTIL, "-d", "up", resourceName.value);
+    }
+
+
+    public void deletePeer(DrbdRscData peerRscData) throws ExtCmdFailedException
+    {
+        execute(
+            DRBDSETUP_UTIL,
+            "del-peer",
+            peerRscData.getSuffixedResourceName(),
+            Integer.toString(peerRscData.getNodeId().value)
+        );
+    }
+
+    public void forgetPeer(DrbdRscData rscData) throws ExtCmdFailedException
+    {
+        execute(
+            DRBDSETUP_UTIL,
+            "forget-peer",
+            rscData.getSuffixedResourceName(),
+            Integer.toString(rscData.getNodeId().value)
+        );
     }
 
     private void simpleSetupCommand(
