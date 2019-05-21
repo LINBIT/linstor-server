@@ -23,6 +23,7 @@ info:
 
     * 1.0.4
       - Added /v1/views/storage-pools overview path
+      - Added uuid fields for objects
     * 1.0.3:
       - Added /v1/vies/resources overview path
       - documentation schema extraction
@@ -2346,6 +2347,10 @@ components:
           - FULL_SYNC_FAILED
           - AUTHENTICATION_ERROR
           - UNKNOWN
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
     NodeModify:
       type: object
       properties:
@@ -2382,6 +2387,10 @@ components:
           enum:
           - Plain
           - SSL
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
     Properties:
       type: object
       description: A string to string property map.
@@ -2432,6 +2441,10 @@ components:
           type: string
           example: drbd1:myfastpool
           description: read only
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
     LayerType:
       type: string
       enum:
@@ -2497,6 +2510,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResourceDefinitionLayer'
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
     ResourceDefinitionCreate:
       type: object
       required:
@@ -2588,6 +2605,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VolumeDefinitionLayer'
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
     VolumeDefinitionCreate:
       type: object
       required:
@@ -2708,6 +2729,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Volume'
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
     ResourceCreate:
       type: object
       properties:
@@ -2864,6 +2889,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VolumeLayer'
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
     VolumeState:
       type: object
       properties:
@@ -3063,6 +3092,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SnapshotVolumeDefinition'
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
     SnapshotVolumeDefinition:
       type: object
       properties:

@@ -59,6 +59,10 @@ public class JsonGenTypes
          * Enum describing the current connection status.
          */
         public String connection_status;
+        /**
+         * unique object id
+         */
+        public String uuid;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -77,6 +81,10 @@ public class JsonGenTypes
         public String address;
         public Integer satellite_port;
         public String satellite_encryption_type;
+        /**
+         * unique object id
+         */
+        public String uuid;
     }
 
 //    /**
@@ -115,6 +123,10 @@ public class JsonGenTypes
          * read only
          */
         public String free_space_mgr_name;
+        /**
+         * unique object id
+         */
+        public String uuid;
     }
 
 //    @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -161,6 +173,10 @@ public class JsonGenTypes
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
         public List<ResourceDefinitionLayer> layer_data = Collections.emptyList();
+        /**
+         * unique object id
+         */
+        public String uuid;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -225,6 +241,10 @@ public class JsonGenTypes
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
         public List<VolumeDefinitionLayer> layer_data = Collections.emptyList();
+        /**
+         * unique object id
+         */
+        public String uuid;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -301,6 +321,10 @@ public class JsonGenTypes
         public ResourceLayer layer_object;
         public ResourceState state;
         public List<Volume> volumes = Collections.emptyList();
+        /**
+         * unique object id
+         */
+        public String uuid;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -417,6 +441,10 @@ public class JsonGenTypes
         public List<String> flags = Collections.emptyList();
         public VolumeState state;
         public List<VolumeLayer> layer_data_list = Collections.emptyList();
+        /**
+         * unique object id
+         */
+        public String uuid;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -551,6 +579,10 @@ public class JsonGenTypes
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
         public List<SnapshotVolumeDefinition> volume_definitions = Collections.emptyList();
+        /**
+         * unique object id
+         */
+        public String uuid;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

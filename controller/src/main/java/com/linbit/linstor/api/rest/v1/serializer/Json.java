@@ -71,6 +71,7 @@ public class Json
         nd.net_interfaces = nodeApi.getNetInterfaces().stream()
             .map(Json::apiToNetInterface)
             .collect(Collectors.toList());
+        nd.uuid = nodeApi.getUuid().toString();
         return nd;
     }
 
@@ -84,6 +85,7 @@ public class Json
             netif.satellite_encryption_type = netIfApi.getSatelliteConnectionEncryptionType();
             netif.satellite_port = netIfApi.getSatelliteConnectionPort();
         }
+        netif.uuid = netIfApi.getUuid().toString();
         return netif;
     }
 
@@ -123,6 +125,7 @@ public class Json
         storPoolData.free_capacity = storPoolApi.getFreeCapacity().orElse(null);
         storPoolData.total_capacity = storPoolApi.getTotalCapacity().orElse(null);
         storPoolData.free_space_mgr_name = storPoolApi.getFreeSpaceManagerName();
+        storPoolData.uuid = storPoolApi.getStorPoolUuid().toString();
 
         return storPoolData;
     }
@@ -156,6 +159,7 @@ public class Json
         }
         rscDfn.flags = ResourceDefinition.RscDfnFlags.toStringList(rscDfnApi.getFlags());
         rscDfn.props = rscDfnApi.getProps();
+        rscDfn.uuid = rscDfnApi.getUuid().toString();
 
         rscDfn.layer_data = new ArrayList<>();
 
@@ -207,6 +211,7 @@ public class Json
             VolumeDefinition.VlmDfnFlags.class,
             vlmDfnApi.getFlags()
         );
+        vlmDfn.uuid = vlmDfnApi.getUuid().toString();
 
         vlmDfn.layer_data = new ArrayList<>();
         for (Pair<String, VlmDfnLayerDataApi> layer : vlmDfnApi.getVlmDfnLayerData())
@@ -334,6 +339,7 @@ public class Json
         rsc.flags = FlagsHelper.toStringList(Resource.RscFlags.class, rscApi.getFlags());
         rsc.props = rscApi.getProps();
         rsc.layer_object = apiToResourceLayer(rscApi.getLayerData());
+        rsc.uuid = rscApi.getUuid().toString();
 
         if (withVolumes)
         {
@@ -469,6 +475,7 @@ public class Json
 
         volume.props = vlmApi.getVlmProps();
         volume.flags = FlagsHelper.toStringList(Volume.VlmFlags.class, vlmApi.getFlags());
+        volume.uuid = vlmApi.getVlmUuid().toString();
 
         volume.layer_data_list = new ArrayList<>();
 
@@ -588,6 +595,7 @@ public class Json
         snapshot.volume_definitions = snapshotDfnListItemApi.getSnapshotVlmDfnList().stream()
             .map(Json::apiToSnapshotVolumeDefinition)
             .collect(Collectors.toList());
+        snapshot.uuid = snapshotDfnListItemApi.getUuid().toString();
         return snapshot;
     }
 
