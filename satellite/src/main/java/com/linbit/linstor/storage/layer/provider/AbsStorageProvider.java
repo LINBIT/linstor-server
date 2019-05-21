@@ -8,6 +8,7 @@ import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
@@ -56,7 +57,7 @@ import java.util.stream.Collectors;
 
 public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObject> implements DeviceProvider
 {
-    protected static final long WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 500;
+    private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 500;
     public static final long SIZE_OF_NOT_FOUND_STOR_POOL = -1;
 
     protected final ErrorReporter errorReporter;
@@ -330,7 +331,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
             String devicePath = getDevicePath(storageName, lvId);
             setDevicePath(vlmData, devicePath);
-            waitUntilDeviceCreated(devicePath);
+
+            StorPool storPool = vlmData.getVolume().getStorPool(storDriverAccCtx);
+            long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
+            waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
 
             long allocatedSize = getAllocatedSize(vlmData);
             setAllocatedSize(vlmData, allocatedSize);
@@ -350,6 +354,31 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
 
             addCreatedMsg(vlmData, apiCallRc);
         }
+    }
+
+    protected long getWaitTimeoutAfterCreate(StorPool storPoolRef)
+        throws AccessDeniedException
+    {
+        long timeout = DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS;
+        try
+        {
+            String timeoutStr = new PriorityProps(
+                storPoolRef.getProps(storDriverAccCtx),
+                stltConfigAccessor.getReadonlyProps()
+            ).getProp(
+                ApiConsts.KEY_STOR_POOL_WAIT_TIMEOUT_AFTER_CREATE,
+                ApiConsts.NAMESPC_STORAGE_DRIVER
+            );
+            if (timeoutStr != null)
+            {
+                timeout = Long.parseLong(timeoutStr);
+            }
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return timeout;
     }
 
     protected void addChangedStorPool(StorPool storPoolRef) throws AccessDeniedException
@@ -656,7 +685,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         return restoreSnapshotName;
     }
 
-    private void waitUntilDeviceCreated(String devicePath) throws StorageException
+    private void waitUntilDeviceCreated(String devicePath, long waitTimeoutAfterCreateMillis)
+        throws StorageException
     {
         final Object syncObj = new Object();
         FileObserver fileObserver = new FileObserver()
@@ -685,10 +715,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 try
                 {
                     errorReporter.logTrace(
-                        "Waiting until device [%s] appears",
-                        devicePath
+                        "Waiting until device [%s] appears (up to %dms)",
+                        devicePath,
+                        waitTimeoutAfterCreateMillis
                     );
-                    syncObj.wait(WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS);
+
+                    syncObj.wait(waitTimeoutAfterCreateMillis);
                 }
                 catch (InterruptedException interruptedExc)
                 {
@@ -701,7 +733,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 {
                     throw new StorageException(
                         "Device '" + devicePath + "' did not show up in " +
-                            WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS + "ms"
+                            waitTimeoutAfterCreateMillis + "ms"
                     );
                 }
                 errorReporter.logTrace(

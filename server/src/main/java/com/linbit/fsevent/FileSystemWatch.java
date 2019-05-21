@@ -371,7 +371,23 @@ public class FileSystemWatch implements Runnable, SystemService
         }
         if (trigger)
         {
-            watchEntry.fObserver.fileEvent(watchEntry);
+            /*
+             * DO NOT run this callback in the current thread
+             *
+             * See AbsStorProvider#waitUntilDeviceCreated for example code
+             *
+             * If a method creates an observer which notifies a later "syncObject.wait()" if the
+             * event occurs, then this fileEvent is registered (this method) and the event
+             * has already happened - if we call the observer right now, in the current thread
+             * the original code will not have entered the .wait() yet when we execute the observer's
+             * .notify(), thus the .wait() will never receive the .notify(). Without a timeout
+             * this will hang forever.
+             *
+             * Calling the observer's callback method from a different thread allows the
+             * original caller to make sure to first enter the .wait before a potential .notify
+             * is executed.
+             */
+            new Thread(() -> watchEntry.fObserver.fileEvent(watchEntry)).start();
         }
     }
 
