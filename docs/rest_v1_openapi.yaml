@@ -4,7 +4,10 @@ servers:
   description: Local Linstor controller
 info:
   description: |
-    Linstor REST API
+    Linstor REST API V1
+
+    The V1 rest api of Linstor should stay compatible and only additions are made to the API,
+    If there are breaking changes or redesigned a new major REST API version will be issued.
 
     Server runs per default on port `3370` on `::` ipv6 and ipv4.
 
@@ -15,6 +18,22 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
+
+    Changelog:
+
+    * 1.0.4
+      - Added /v1/views/storage-pools overview path
+    * 1.0.3:
+      - Added /v1/vies/resources overview path
+      - documentation schema extraction
+    * 1.0.2
+      - Added /v1/storage-pool-definitions object path
+      - added NVME layer object type
+    * 1.0.1
+      - Documentation review and updates
+      - no functional changes
+    * 1.0.0
+      - Initial REST API v1
   version: "1.0.4"
   title: Linstor REST API
   contact:
