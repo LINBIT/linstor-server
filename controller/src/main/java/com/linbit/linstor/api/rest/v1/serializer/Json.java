@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
@@ -12,6 +13,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -56,6 +58,22 @@ public class Json
         return deviceLayerKind.name();
     }
 
+    public static JsonGenTypes.Node apiToNode(
+        Node.NodeApi nodeApi
+    )
+    {
+        JsonGenTypes.Node nd = new JsonGenTypes.Node();
+        nd.name = nodeApi.getName();
+        nd.type = nodeApi.getType();
+        nd.connection_status = nodeApi.connectionStatus().toString();
+        nd.props = nodeApi.getProps();
+        nd.flags = Node.NodeFlag.toStringList(nodeApi.getFlags());
+        nd.net_interfaces = nodeApi.getNetInterfaces().stream()
+            .map(Json::apiToNetInterface)
+            .collect(Collectors.toList());
+        return nd;
+    }
+
     public static JsonGenTypes.NetInterface apiToNetInterface(NetInterface.NetInterfaceApi netIfApi)
     {
         JsonGenTypes.NetInterface netif = new JsonGenTypes.NetInterface();
@@ -88,6 +106,25 @@ public class Json
         storPoolDfn.storage_pool_name = apiData.getName();
         storPoolDfn.props = apiData.getProps();
         return storPoolDfn;
+    }
+
+    public static JsonGenTypes.StoragePool storPoolApiToStoragePool(
+        StorPool.StorPoolApi storPoolApi
+    )
+    {
+        JsonGenTypes.StoragePool storPoolData = new JsonGenTypes.StoragePool();
+        storPoolData.storage_pool_name = storPoolApi.getStorPoolName();
+        storPoolData.node_name = storPoolApi.getNodeName();
+        storPoolData.provider_kind = Json.deviceProviderKindAsString(
+            storPoolApi.getDeviceProviderKind()
+        );
+        storPoolData.props = storPoolApi.getStorPoolProps();
+        storPoolData.static_traits = storPoolApi.getStorPoolStaticTraits();
+        storPoolData.free_capacity = storPoolApi.getFreeCapacity().orElse(null);
+        storPoolData.total_capacity = storPoolApi.getTotalCapacity().orElse(null);
+        storPoolData.free_space_mgr_name = storPoolApi.getFreeSpaceManagerName();
+
+        return storPoolData;
     }
 
     public static JsonGenTypes.DrbdResourceDefinitionLayer pojoToDrbdRscDfnLayer(

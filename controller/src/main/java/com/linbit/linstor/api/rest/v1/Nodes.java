@@ -97,19 +97,7 @@ public class Nodes
             {
                 nodeApiStream = nodeApiStream.skip(offset).limit(limit);
             }
-            final List<JsonGenTypes.Node> nds = nodeApiStream.map(nodeApi ->
-                {
-                    JsonGenTypes.Node nd = new JsonGenTypes.Node();
-                    nd.name = nodeApi.getName();
-                    nd.type = nodeApi.getType();
-                    nd.connection_status = nodeApi.connectionStatus().toString();
-                    nd.props = nodeApi.getProps();
-                    nd.flags = Node.NodeFlag.toStringList(nodeApi.getFlags());
-                    nd.net_interfaces = nodeApi.getNetInterfaces().stream()
-                        .map(Json::apiToNetInterface)
-                        .collect(Collectors.toList());
-                    return nd;
-                })
+            final List<JsonGenTypes.Node> nds = nodeApiStream.map(Json::apiToNode)
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(

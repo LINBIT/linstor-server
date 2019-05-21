@@ -174,22 +174,7 @@ public class View
                     storPoolApiStream = storPoolApiStream.skip(offset).limit(limit);
                 }
                 List<JsonGenTypes.StoragePool> storPoolDataList = storPoolApiStream
-                    .map(storPoolApi ->
-                    {
-                        JsonGenTypes.StoragePool storPoolData = new JsonGenTypes.StoragePool();
-                        storPoolData.storage_pool_name = storPoolApi.getStorPoolName();
-                        storPoolData.node_name = storPoolApi.getNodeName();
-                        storPoolData.provider_kind = Json.deviceProviderKindAsString(
-                            storPoolApi.getDeviceProviderKind()
-                        );
-                        storPoolData.props = storPoolApi.getStorPoolProps();
-                        storPoolData.static_traits = storPoolApi.getStorPoolStaticTraits();
-                        storPoolData.free_capacity = storPoolApi.getFreeCapacity().orElse(null);
-                        storPoolData.total_capacity = storPoolApi.getTotalCapacity().orElse(null);
-                        storPoolData.free_space_mgr_name = storPoolApi.getFreeSpaceManagerName();
-
-                        return storPoolData;
-                    })
+                    .map(Json::storPoolApiToStoragePool)
                     .collect(Collectors.toList());
 
                 try
