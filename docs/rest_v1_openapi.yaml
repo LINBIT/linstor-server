@@ -238,6 +238,9 @@ paths:
 
         Possible properties are:
         - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
         - `StorDriver/SwordfishComposedNodeName` - regex[`.*`]
         - `StorDriver/SwordfishStorSvc` - regex[`.*`]
         - `StorDriver/SwordfishUserName` - regex[`.*`]
@@ -472,7 +475,7 @@ paths:
         - developers
       summary: modify a storage pool
       operationId: nodeStoragePoolModify
-      description: |+
+      description: |
         Sets or modifies properties
 
         Possible properties are:
@@ -506,6 +509,7 @@ paths:
             * lzma
             * lz4
 
+        - `StorDriver/WaitTimeoutAfterCreate` - regex[`[0-9]+`]
       responses:
         '200':
           description: storage pool modified
@@ -603,6 +607,9 @@ paths:
 
         Possible properties are:
         - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
         - `PeerSlotsNewResource` - range[`1-31`]
 
             DRBD peer slots to allocate for newly created resources (default 7), the number of peer slots cannot be changed once the resource is created, so allow sufficient slots to increase redundancy in the future
@@ -620,6 +627,9 @@ paths:
             * xfs
 
         - `FileSystem/MkfsParams` - string
+
+            Additional parameters for the mkfs command
+
         - `NVMe/enabled` - enum
             * rdma
             * tcp
@@ -644,7 +654,7 @@ paths:
             * detach
 
         - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/resync-after` - range[`-1-1048575`]
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
@@ -656,12 +666,17 @@ paths:
         - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
         - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
         - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
-        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-4194304`]
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
         - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
         - `DrbdOptions/PeerDevice/bitmap` - boolean
         - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
         - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
+        - `DrbdOptions/Resource/quorum-minimum-redundancy` - enum [`1-32`]
+            * off
+            * majority
+            * all
+
         - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
         - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
         - `DrbdOptions/Resource/quorum` - enum [`1-32`]
@@ -864,6 +879,9 @@ paths:
 
         Possible properties are:
         - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
         - `OverrideVlmId` - regex[`.*`]
 
             Overwrites the generated '<resource-name>_<5 digit volume number>' volume name for migration purposes
@@ -880,6 +898,9 @@ paths:
             * xfs
 
         - `FileSystem/MkfsParams` - string
+
+            Additional parameters for the mkfs command
+
         - `StorDriver/LvcreateType` - enum
             * linear
             * striped
@@ -912,7 +933,7 @@ paths:
             * detach
 
         - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/resync-after` - range[`-1-1048575`]
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
@@ -1060,6 +1081,9 @@ paths:
 
         Possible properties are:
         - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
         - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Preferred network interface to use
@@ -1076,6 +1100,9 @@ paths:
             * xfs
 
         - `FileSystem/MkfsParams` - string
+
+            Additional parameters for the mkfs command
+
         - `NVMe/PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Preferred network interface to use
@@ -1391,7 +1418,7 @@ paths:
         Possible properties are:
         - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
         - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
-        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-4194304`]
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
         - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
         - `DrbdOptions/PeerDevice/bitmap` - boolean
@@ -1694,8 +1721,17 @@ paths:
             Globally sequentialize all ctrl -> stlt api calls
 
         - `REST/bindAddress` - string
+
+            Bind address of the REST API
+
         - `REST/port` - range[`1-65535`]
+
+            TCP Port of the REST API
+
         - `REST/enabled` - boolean_true_false
+
+            Bool if REST API should be enabled
+
         - `NVMe/enabled` - enum
             * rdma
             * tcp
@@ -1705,6 +1741,7 @@ paths:
 
             Preferred network interface to use
 
+        - `StorDriver/WaitTimeoutAfterCreate` - regex[`[0-9]+`]
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -1724,7 +1761,7 @@ paths:
             * detach
 
         - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/resync-after` - range[`-1-1048575`]
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
@@ -1736,12 +1773,17 @@ paths:
         - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
         - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
         - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
-        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-4194304`]
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
         - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
         - `DrbdOptions/PeerDevice/bitmap` - boolean
         - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
         - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
+        - `DrbdOptions/Resource/quorum-minimum-redundancy` - enum [`1-32`]
+            * off
+            * majority
+            * all
+
         - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
         - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
         - `DrbdOptions/Resource/quorum` - enum [`1-32`]
