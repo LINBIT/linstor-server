@@ -15,9 +15,11 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -40,6 +42,7 @@ public class CtrlAuthenticator
     private final Provider<AccessContext> peerAccCtx;
     private final AccessContext apiCtx;
     private final IntAuthResponse intAuthResponse;
+    private final ReconnectorTask reconnectorTask;
 
     @Inject
     CtrlAuthenticator(
@@ -49,7 +52,8 @@ public class CtrlAuthenticator
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @SystemContext AccessContext apiCtxRef,
-        IntAuthResponse intAuthResponseRef
+        IntAuthResponse intAuthResponseRef,
+        ReconnectorTask reconnectorTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -59,6 +63,7 @@ public class CtrlAuthenticator
         peerAccCtx = peerAccCtxRef;
         apiCtx = apiCtxRef;
         intAuthResponse = intAuthResponseRef;
+        reconnectorTask = reconnectorTaskRef;
     }
 
     public void sendAuthentication(Peer peer)
@@ -81,7 +86,11 @@ public class CtrlAuthenticator
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP),
             () -> completeAuthenticationInTransaction(node)
         )
-            .concatMap(inputStream -> this.processAuthResponse((NodeData) node, inputStream));
+            .concatMap(inputStream -> this.processAuthResponse((NodeData) node, inputStream))
+            .onErrorResume(
+                PeerNotConnectedException.class,
+                ignored -> Flux.empty()
+            );
     }
 
     private Flux<ByteArrayInputStream> completeAuthenticationInTransaction(Node node)
