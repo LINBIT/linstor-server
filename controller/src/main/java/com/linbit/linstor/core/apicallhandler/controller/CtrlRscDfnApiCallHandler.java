@@ -161,6 +161,13 @@ public class CtrlRscDfnApiCallHandler
                 peerSlotsRef
             );
 
+            if (rscNameStr.trim().equals(""))
+            {
+                // an external name was given which means that we have to update the object-references
+                // so the response of this create API is correctly filled
+                context.getObjRefs().put(ApiConsts.KEY_RSC_DFN, rscDfn.getName().displayValue);
+            }
+
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, props,
                 ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
