@@ -114,7 +114,7 @@ versioninfo:
 	echo "git.commit.id=$(GITHASH)" >> $(VERSINFO)
 	echo "build.time=$$(date -u --iso-8601=second)" >> $(VERSINFO)
 
-.PHONY: dockerimage dockerimage.controller dockerimage.satellite dockerpatch
+.PHONY: dockerimage dockerimage.controller dockerimage.satellite dockerpatch update-rest-props resttypes
 dockerimage.controller:
 	docker build -f $(DOCKERFILE_CONTROLLER) -t $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) .
 	docker tag $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) $(DOCKERREGPATH_CONTROLLER):latest
@@ -131,6 +131,9 @@ endif
 
 dockerpath:
 	@echo $(DOCKERREGPATH_CONTROLLER):latest $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) $(DOCKERREGPATH_SATELLITE):latest $(DOCKERREGPATH_SATELLITE):$(DOCKER_TAG)
+
+update-rest-props:
+	PYTHONPATH=../linstor-api-py ./scripts/rest-docu-props.py -i docs/rest_v1_openapi.yaml
 
 resttypes:
 	python3 ./scripts/rest-gen.py ./docs/rest_v1_openapi.yaml > controller/src/main/java/com/linbit/linstor/api/rest/v1/serializer/JsonGenTypes.java

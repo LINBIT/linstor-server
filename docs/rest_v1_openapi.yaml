@@ -1,7 +1,7 @@
 openapi: 3.0.2
 servers:
-- url: http://localhost:3370
-  description: Local Linstor controller
+  - url: http://localhost:3370
+    description: Local Linstor controller
 info:
   description: |
     Linstor REST API V1
@@ -43,8 +43,8 @@ info:
     name: GPLv3
     url: https://www.gnu.org/licenses/gpl-3.0.html
 tags:
-- name: developers
-  description: Operations available to regular developers
+  - name: developers
+    description: Operations available to regular developers
 paths:
   /v1/storage-pool-definitions:
     get:
@@ -67,7 +67,7 @@ paths:
                   $ref: '#/components/schemas/StoragePoolDefinition'
     post:
       tags:
-      - developers
+        - developers
       summary: add a storage pool definition to Linstor
       operationId: storagePoolDfnAdd
       description: |
@@ -151,7 +151,7 @@ paths:
               override_props:
                 Aux/testprop: '1'
               delete_props:
-              - Aux/deleteprop
+                - Aux/deleteprop
     delete:
       tags:
         - developers
@@ -170,14 +170,14 @@ paths:
   /v1/nodes:
     get:
       tags:
-      - developers
+        - developers
       summary: Lists nodes registered to the controller
       operationId: nodeList
       description: |
         Returns an array of all nodes registered to Linstor.
       parameters:
-      - $ref: '#/components/parameters/Offset'
-      - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Array of all node objects
@@ -191,7 +191,7 @@ paths:
           $ref: '#/components/responses/InvalidInput'
     post:
       tags:
-      - developers
+        - developers
       summary: add a node to Linstor
       operationId: nodeAdd
       description: |
@@ -220,17 +220,17 @@ paths:
               name: nodeA
               type: SATELLITE
               net_interfaces:
-              - name: default
-                address: 10.0.0.2
-                satellite_port: 3366
-                satellite_encryption_type: Plain
+                - name: default
+                  address: 10.0.0.2
+                  satellite_port: 3366
+                  satellite_encryption_type: Plain
         description: Node to add to Linstor
   /v1/nodes/{node}:
     parameters:
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Node'
     put:
       tags:
-      - developers
+        - developers
       summary: modify a node
       operationId: nodeModify
       description: |
@@ -261,10 +261,10 @@ paths:
               override_props:
                 Aux/testprop: '1'
               delete_props:
-              - Aux/deleteprop
+                - Aux/deleteprop
     delete:
       tags:
-      - developers
+        - developers
       summary: delete a node
       operationId: nodeDelete
       description: Delete a node from Linstor
@@ -279,10 +279,10 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/{node}/lost:
     parameters:
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Node'
     delete:
       tags:
-      - developers
+        - developers
       summary: delete an unrecoverable node
       operationId: nodeLost
       description: Delete an unrecoverable node
@@ -297,10 +297,10 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/{node}/reconnect:
     parameters:
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Node'
     put:
       tags:
-      - developers
+        - developers
       summary: reconnect a node to the controller
       operationId: nodeReconnect
       description: Reconnect a node to the controller
@@ -315,16 +315,16 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/{node}/net-interfaces:
     parameters:
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Node'
     get:
       tags:
-      - developers
+        - developers
       summary: return the list of net-interfaces
       operationId: netinterfaceList
       description: Returns the list of netinterfaces for this node
       parameters:
-      - $ref: '#/components/parameters/Offset'
-      - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Array of net-interfaces
@@ -338,7 +338,7 @@ paths:
           $ref: '#/components/responses/OperationFailed'
     post:
       tags:
-      - developers
+        - developers
       summary: create a netinterface on a node
       operationId: netinterfaceCreate
       description: |
@@ -364,11 +364,11 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/{node}/net-interfaces/{netinterface}:
     parameters:
-    - $ref: '#/components/parameters/Node'
-    - $ref: '#/components/parameters/NetInterface'
+      - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/NetInterface'
     put:
       tags:
-      - developers
+        - developers
       summary: modify a netinterface from a node
       operationId: netinterfaceModified
       description: Modify a netinterface from a node
@@ -390,7 +390,7 @@ paths:
           $ref: '#/components/responses/OperationFailed'
     delete:
       tags:
-      - developers
+        - developers
       summary: delete a netinterface from a node
       operationId: netinterfaceDelete
       description: Delete a netinterface from a node
@@ -405,10 +405,10 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/{node}/storage-pools:
     parameters:
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Node'
     get:
       tags:
-      - developers
+        - developers
       summary: lists all storage pools for a node
       operationId: nodeStoragePoolList
       description: Lists all storage pools of a node
@@ -426,7 +426,7 @@ paths:
                   $ref: '#/components/schemas/StoragePool'
     post:
       tags:
-      - developers
+        - developers
       summary: creates a new storage pool on this node
       operationId: nodeStoragePoolCreate
       description: |
@@ -460,19 +460,19 @@ paths:
                 StorDriver/ThinPool: thin
   /v1/nodes/{node}/storage-pools/{storagepool}:
     parameters:
-    - $ref: '#/components/parameters/Node'
-    - name: storagepool
-      in: path
-      required: true
-      schema:
-        type: string
-        description: Storage pool to use
+      - $ref: '#/components/parameters/Node'
+      - name: storagepool
+        in: path
+        required: true
+        schema:
+          type: string
+          description: Storage pool to use
     put:
       tags:
-      - developers
+        - developers
       summary: modify a storage pool
       operationId: nodeStoragePoolModify
-      description: |
+      description: |+
         Sets or modifies properties
 
         Possible properties are:
@@ -481,6 +481,9 @@ paths:
         - `StorDriver/ZPool` - regex[`[a-zA-Z0-9_/-]+`]
         - `StorDriver/ZPoolThin` - regex[`[a-zA-Z0-9_/-]+`]
         - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Preferred network interface to use
+
         - `StorDriver/SwordfishStorPool` - regex[`.*`]
         - `StorDriver/SwordfishVolumeCreateTimeout` - regex[`[0-9]+`]
         - `StorDriver/SwordfishVolumeCreateRetries` - regex[`[0-9]+`]
@@ -490,6 +493,19 @@ paths:
         - `StorDriver/SwordfishGrepNvmeUuidRetries` - regex[`[0-9]+`]
         - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
         - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
+        - `StorDriver/LvcreateType` - enum
+            * linear
+            * striped
+            * mirror
+            * raid0
+            * raid1
+            * raid4
+            * raid5
+            * raid6
+            * raid10
+            * lzma
+            * lz4
+
       responses:
         '200':
           description: storage pool modified
@@ -506,10 +522,10 @@ paths:
               override_props:
                 Aux/testprop: '1'
               delete_props:
-              - Aux/deleteprop
+                - Aux/deleteprop
     delete:
       tags:
-      - developers
+        - developers
       summary: delete a storage pool
       operationId: nodeStoragePoolDelete
       description: Delete a storage pool
@@ -523,7 +539,7 @@ paths:
   /v1/resource-definitions:
     get:
       tags:
-      - developers
+        - developers
       summary: lists all resource-definitions
       operationId: resourceDefinitionList
       description: |
@@ -534,8 +550,8 @@ paths:
 
         /v1/resource-definitions/rsc1
       parameters:
-      - $ref: '#/components/parameters/Offset'
-      - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Array of all resource-definitions
@@ -547,7 +563,7 @@ paths:
                   $ref: '#/components/schemas/ResourceDefinition'
     post:
       tags:
-      - developers
+        - developers
       summary: add a resource-definition
       operationId: resourceDefinitionCreate
       description: |
@@ -576,10 +592,10 @@ paths:
                 name: rsc1
   /v1/resource-definitions/{resource}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Resource'
     put:
       tags:
-      - developers
+        - developers
       summary: modify a resource-definition
       operationId: resourceDefinitionModify
       description: |
@@ -588,10 +604,27 @@ paths:
         Possible properties are:
         - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
         - `PeerSlotsNewResource` - range[`1-31`]
+
+            DRBD peer slots to allocate for newly created resources (default 7), the number of peer slots cannot be changed once the resource is created, so allow sufficient slots to increase redundancy in the future
+
         - `DrbdProxy/CompressionType` - enum
             * zlib
             * lzma
             * lz4
+
+        - `FileSystem/Type` - enum
+
+            File system type to use
+
+            * ext4
+            * xfs
+
+        - `FileSystem/MkfsParams` - string
+        - `NVMe/enabled` - enum
+            * rdma
+            * tcp
+
+        - `NVMe/enabled` - range[`1-65535`]
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -604,10 +637,12 @@ paths:
             * 256K-striping
             * 512K-striping
             * 1M-striping
+
         - `DrbdOptions/Disk/on-io-error` - enum
             * pass_on
             * call-local-io-error
             * detach
+
         - `DrbdOptions/Disk/disk-drain` - boolean
         - `DrbdOptions/Disk/resync-after` - string
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
@@ -633,9 +668,11 @@ paths:
             * off
             * majority
             * all
+
         - `DrbdOptions/Resource/on-no-data-accessible` - enum
             * io-error
             * suspend-io
+
         - `DrbdOptions/Resource/auto-promote` - boolean
         - `DrbdOptions/Resource/cpu-mask` - string
         - `DrbdOptions/Resource/twopc-timeout` - range[`50-600`]
@@ -644,11 +681,13 @@ paths:
         - `DrbdOptions/Resource/on-no-quorum` - enum
             * io-error
             * suspend-io
+
         - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
         - `DrbdOptions/Net/protocol` - enum
             * A
             * B
             * C
+
         - `DrbdOptions/Net/allow-two-primaries` - boolean
         - `DrbdOptions/Net/after-sb-0pri` - enum
             * disconnect
@@ -658,6 +697,7 @@ paths:
             * discard-least-changes
             * discard-local
             * discard-remote
+
         - `DrbdOptions/Net/ko-count` - range[`0-200`]
         - `DrbdOptions/Net/data-integrity-alg` - string
         - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
@@ -669,6 +709,7 @@ paths:
             * dont-care
             * resource-only
             * resource-and-stonith
+
         - `DrbdOptions/Net/csums-alg` - string
         - `DrbdOptions/Net/always-asbp` - boolean
         - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
@@ -676,11 +717,13 @@ paths:
             * block
             * pull-ahead
             * disconnect
+
         - `DrbdOptions/Net/ping-int` - range[`1-120`]
         - `DrbdOptions/Net/rr-conflict` - enum
             * disconnect
             * call-pri-lost
             * violently
+
         - `DrbdOptions/Net/tcp-cork` - boolean
         - `DrbdOptions/Net/use-rle` - boolean
         - `DrbdOptions/Net/csums-after-crash-only` - boolean
@@ -695,12 +738,27 @@ paths:
             * disconnect
             * call-pri-lost-after-sb
             * violently-as0p
+
         - `DrbdOptions/Net/after-sb-1pri` - enum
             * disconnect
             * consensus
             * discard-secondary
             * call-pri-lost-after-sb
             * violently-as0p
+
+        - `DrbdOptions/Handlers/after-resync-target` - string
+        - `DrbdOptions/Handlers/before-resync-target` - string
+        - `DrbdOptions/Handlers/before-resync-source` - string
+        - `DrbdOptions/Handlers/out-of-sync` - string
+        - `DrbdOptions/Handlers/quorum-lost` - string
+        - `DrbdOptions/Handlers/fence-peer` - string
+        - `DrbdOptions/Handlers/unfence-peer` - string
+        - `DrbdOptions/Handlers/initial-split-brain` - string
+        - `DrbdOptions/Handlers/local-io-error` - string
+        - `DrbdOptions/Handlers/pri-lost` - string
+        - `DrbdOptions/Handlers/pri-lost-after-sb` - string
+        - `DrbdOptions/Handlers/pri-on-incon-degr` - string
+        - `DrbdOptions/Handlers/split-brain` - string
       responses:
         '200':
           description: resource-definition modified
@@ -717,10 +775,10 @@ paths:
               override_props:
                 Aux/testprop: '1'
               delete_props:
-              - Aux/deleteprop
+                - Aux/deleteprop
     delete:
       tags:
-      - developers
+        - developers
       summary: delete a resource-definition
       operationId: resourceDefinitionDelete
       description: Delete a resource-definition
@@ -733,10 +791,10 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
   /v1/resource-definitions/{resource}/volume-definitions:
     parameters:
-    - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Resource'
     get:
       tags:
-      - developers
+        - developers
       summary: lists all volume-definitions
       operationId: volumeDefinitionList
       description: |
@@ -747,8 +805,8 @@ paths:
 
         /v1/resource-definitions/rsc1/volume-definitions/0
       parameters:
-      - $ref: '#/components/parameters/Offset'
-      - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Array of all volume-definitions
@@ -760,7 +818,7 @@ paths:
                   $ref: '#/components/schemas/VolumeDefinition'
     post:
       tags:
-      - developers
+        - developers
       summary: add a volume-definition to a resource
       operationId: volumeDefinitionCreate
       description: |
@@ -788,17 +846,17 @@ paths:
                 size_kib: 262144
   /v1/resource-definitions/{resource}/volume-definitions/{volume_number}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - name: volume_number
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int32
-        description: Volume number of the definition
+      - $ref: '#/components/parameters/Resource'
+      - name: volume_number
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+          description: Volume number of the definition
     put:
       tags:
-      - developers
+        - developers
       summary: modify a resource-definition
       operationId: volumeDefinitionModify
       description: |
@@ -807,7 +865,34 @@ paths:
         Possible properties are:
         - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
         - `OverrideVlmId` - regex[`.*`]
+
+            Overwrites the generated '<resource-name>_<5 digit volume number>' volume name for migration purposes
+
         - `AllowLargerVolumeSize` - boolean_true_false
+
+            Do not fail when the underlying volume is larger than expected
+
+        - `FileSystem/Type` - enum
+
+            File system type to use
+
+            * ext4
+            * xfs
+
+        - `FileSystem/MkfsParams` - string
+        - `StorDriver/LvcreateType` - enum
+            * linear
+            * striped
+            * mirror
+            * raid0
+            * raid1
+            * raid4
+            * raid5
+            * raid6
+            * raid10
+            * lzma
+            * lz4
+
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -820,10 +905,12 @@ paths:
             * 256K-striping
             * 512K-striping
             * 1M-striping
+
         - `DrbdOptions/Disk/on-io-error` - enum
             * pass_on
             * call-local-io-error
             * detach
+
         - `DrbdOptions/Disk/disk-drain` - boolean
         - `DrbdOptions/Disk/resync-after` - string
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
@@ -851,10 +938,10 @@ paths:
               override_props:
                 Aux/testprop: '1'
               delete_props:
-              - Aux/deleteprop
+                - Aux/deleteprop
     delete:
       tags:
-      - developers
+        - developers
       summary: delete a volume-definition
       operationId: volumeDefinitionDelete
       description: Delete a volume-definition
@@ -867,10 +954,10 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
   /v1/resource-definitions/{resource}/resources:
     parameters:
-    - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Resource'
     get:
       tags:
-      - developers
+        - developers
       summary: lists all resources for a resource-definition
       operationId: resourceList
       description: |
@@ -881,8 +968,8 @@ paths:
 
         /v1/resource-definitions/rsc1/resources/nodeA
       parameters:
-      - $ref: '#/components/parameters/Offset'
-      - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Array of all resources for the resource-definition
@@ -894,7 +981,7 @@ paths:
                   $ref: '#/components/schemas/Resource'
     post:
       tags:
-      - developers
+        - developers
       summary: create one or more resources.
       operationId: resourceCreate
       description: |
@@ -924,11 +1011,11 @@ paths:
                   node_name: alpha
   /v1/resource-definitions/{resource}/resources/{node}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
     post:
       tags:
-      - developers
+        - developers
       summary: create a resource on a node
       operationId: resourceCreateOnNode
       description: |
@@ -962,20 +1049,37 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ResourceCreate'
-            example:
-              {}
+            example: {}
     put:
       tags:
-      - developers
+        - developers
       summary: modify a resource
       operationId: resourceModify
-      description: |
+      description: |+
         Sets or modifies properties
 
         Possible properties are:
         - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
         - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Preferred network interface to use
+
         - `PeerSlots` - range[`1-31`]
+
+            DRBD peer slots present on resource
+
+        - `FileSystem/Type` - enum
+
+            File system type to use
+
+            * ext4
+            * xfs
+
+        - `FileSystem/MkfsParams` - string
+        - `NVMe/PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Preferred network interface to use
+
       responses:
         '200':
           description: resource-definition modified
@@ -992,10 +1096,10 @@ paths:
               override_props:
                 Aux/testprop: '1'
               delete_props:
-              - Aux/deleteprop
+                - Aux/deleteprop
     delete:
       tags:
-      - developers
+        - developers
       summary: delete a resource
       operationId: resourceDelete
       description: Delete a resource on a node
@@ -1008,11 +1112,11 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
   /v1/resource-definitions/{resource}/resources/{node}/volumes:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
     get:
       tags:
-      - developers
+        - developers
       summary: lists all volumes of a resources
       operationId: resourceVolumeList
       description: |
@@ -1023,8 +1127,8 @@ paths:
 
         /v1/resource-definitions/rsc1/resources/nodeA/volumes/0
       parameters:
-      - $ref: '#/components/parameters/Offset'
-      - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Array of all volume for the resource
@@ -1036,11 +1140,11 @@ paths:
                   $ref: '#/components/schemas/Volume'
   /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
     put:
       tags:
-      - developers
+        - developers
       summary: toggle a resource to diskless
       operationId: resourceToggleDiskless
       description: toggle a resource to a diskless resource
@@ -1059,17 +1163,17 @@ paths:
 
   /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless/{disklesspool}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/Node'
-    - name: disklesspool
-      in: path
-      required: true
-      schema:
-        type: string
-        description: diskless pool to use.
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
+      - name: disklesspool
+        in: path
+        required: true
+        schema:
+          type: string
+          description: diskless pool to use.
     put:
       tags:
-      - developers
+        - developers
       summary: toggle a resource to diskless resource
       operationId: resourceToggleDisklessDisklesspool
       description: |
@@ -1088,11 +1192,11 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskful:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
     put:
       tags:
-      - developers
+        - developers
       summary: toggle a resource to a diskful resource
       operationId: resourceToggleDiskful
       description: |
@@ -1111,17 +1215,17 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskful/{storagepool}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/Node'
-    - name: storagepool
-      in: path
-      required: true
-      schema:
-        type: string
-        description: storage pool to use.
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
+      - name: storagepool
+        in: path
+        required: true
+        schema:
+          type: string
+          description: storage pool to use.
     put:
       tags:
-      - developers
+        - developers
       summary: toggle a resource to a diskful resource
       operationId: resourceToggleDiskfulStoragepool
       description: toggle a resource to a diskful resource
@@ -1139,17 +1243,17 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/resources/{node}/migrate-disk/{fromnode}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/Node'
-    - name: fromnode
-      in: path
-      required: true
-      schema:
-        type: string
-        description: node that should be deleted after the successful migrate
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
+      - name: fromnode
+        in: path
+        required: true
+        schema:
+          type: string
+          description: node that should be deleted after the successful migrate
     put:
       tags:
-      - developers
+        - developers
       summary: migrate a resource to another node
       operationId: resourceMigrateDisk
       description: |
@@ -1168,23 +1272,23 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/resources/{node}/migrate-disk/{fromnode}/{storagepool}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/Node'
-    - name: fromnode
-      in: path
-      required: true
-      schema:
-        type: string
-        description: node that should be deleted after the successful migrate
-    - name: storagepool
-      in: path
-      required: true
-      schema:
-        type: string
-        description: storage pool to use.
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
+      - name: fromnode
+        in: path
+        required: true
+        schema:
+          type: string
+          description: node that should be deleted after the successful migrate
+      - name: storagepool
+        in: path
+        required: true
+        schema:
+          type: string
+          description: storage pool to use.
     put:
       tags:
-      - developers
+        - developers
       summary: migrate a resource to another node
       operationId: resourceMigrateDiskStoragepool
       description: |
@@ -1203,10 +1307,10 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/autoplace:
     parameters:
-    - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Resource'
     post:
       tags:
-      - developers
+        - developers
       summary: autoplace resource
       operationId: resourceAutoplace
       description: |
@@ -1234,10 +1338,10 @@ paths:
 
   /v1/resource-definitions/{resource}/resource-connections:
     parameters:
-    - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Resource'
     get:
       tags:
-      - developers
+        - developers
       operationId: resourceConnectionsList
       summary: list all resource connections for resource
       description: List all resource connections for resource
@@ -1254,12 +1358,12 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/resource-connections/{node_a}/{node_b}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/NodeA'
-    - $ref: '#/components/parameters/NodeB'
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/NodeA'
+      - $ref: '#/components/parameters/NodeB'
     get:
       tags:
-      - developers
+        - developers
       operationId: resourceConnectionList
       summary: show the specified resource connection
       description: show the specified resource connection
@@ -1278,10 +1382,10 @@ paths:
           $ref: '#/components/responses/OperationFailed'
     put:
       tags:
-      - developers
+        - developers
       operationId: resourceConnectionModify
       summary: modify a resource connection
-      description: |
+      description: |+
         Sets or modifies properties
 
         Possible properties are:
@@ -1297,6 +1401,7 @@ paths:
             * A
             * B
             * C
+
         - `DrbdOptions/Net/allow-two-primaries` - boolean
         - `DrbdOptions/Net/after-sb-0pri` - enum
             * disconnect
@@ -1306,6 +1411,7 @@ paths:
             * discard-least-changes
             * discard-local
             * discard-remote
+
         - `DrbdOptions/Net/ko-count` - range[`0-200`]
         - `DrbdOptions/Net/data-integrity-alg` - string
         - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
@@ -1317,6 +1423,7 @@ paths:
             * dont-care
             * resource-only
             * resource-and-stonith
+
         - `DrbdOptions/Net/csums-alg` - string
         - `DrbdOptions/Net/always-asbp` - boolean
         - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
@@ -1324,11 +1431,13 @@ paths:
             * block
             * pull-ahead
             * disconnect
+
         - `DrbdOptions/Net/ping-int` - range[`1-120`]
         - `DrbdOptions/Net/rr-conflict` - enum
             * disconnect
             * call-pri-lost
             * violently
+
         - `DrbdOptions/Net/tcp-cork` - boolean
         - `DrbdOptions/Net/use-rle` - boolean
         - `DrbdOptions/Net/csums-after-crash-only` - boolean
@@ -1343,12 +1452,14 @@ paths:
             * disconnect
             * call-pri-lost-after-sb
             * violently-as0p
+
         - `DrbdOptions/Net/after-sb-1pri` - enum
             * disconnect
             * consensus
             * discard-secondary
             * call-pri-lost-after-sb
             * violently-as0p
+
       responses:
         '200':
           description: resource connection modified
@@ -1370,10 +1481,10 @@ paths:
 
   /v1/resource-definitions/{resource}/snapshots:
     parameters:
-    - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Resource'
     get:
       tags:
-      - developers
+        - developers
       summary: list snapshots
       description: List snapshots for a resource
       operationId: resourceSnapshotsList
@@ -1388,7 +1499,7 @@ paths:
                   $ref: '#/components/schemas/Snapshot'
     post:
       tags:
-      - developers
+        - developers
       summary: create a snapshot
       description: Create a snapshot for a resource
       operationId: resourceSnapshotCreate
@@ -1412,16 +1523,16 @@ paths:
               name: snap1
   /v1/resource-definitions/{resource}/snapshots/{snapshot}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - name: snapshot
-      in: path
-      required: true
-      schema:
-        type: string
-        description: Snapshot name to use
+      - $ref: '#/components/parameters/Resource'
+      - name: snapshot
+        in: path
+        required: true
+        schema:
+          type: string
+          description: Snapshot name to use
     get:
       tags:
-      - developers
+        - developers
       summary: list a specific snapshot
       description: List the given snapshot for a resource
       operationId: resourceSnapshotList
@@ -1434,7 +1545,7 @@ paths:
                 $ref: '#/components/schemas/Snapshot'
     delete:
       tags:
-      - developers
+        - developers
       summary: delete a snapshot
       description: Delete a snapshot
       operationId: resourceSnapshotDelete
@@ -1449,16 +1560,16 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/snapshot-restore-resource/{snapshot}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - name: snapshot
-      in: path
-      required: true
-      description: Snapshot name to use
-      schema:
-        type: string
+      - $ref: '#/components/parameters/Resource'
+      - name: snapshot
+        in: path
+        required: true
+        description: Snapshot name to use
+        schema:
+          type: string
     post:
       tags:
-      - developers
+        - developers
       summary: restore a snapshot
       description: Restore a snapshot to a new resource
       operationId: resourceSnapshotRestore
@@ -1480,16 +1591,16 @@ paths:
               $ref: '#/components/schemas/SnapshotRestore'
   /v1/resource-definitions/{resource}/snapshot-restore-volume-definition/{snapshot}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - name: snapshot
-      in: path
-      required: true
-      description: Snapshot name to use
-      schema:
-        type: string
+      - $ref: '#/components/parameters/Resource'
+      - name: snapshot
+        in: path
+        required: true
+        description: Snapshot name to use
+        schema:
+          type: string
     post:
       tags:
-      - developers
+        - developers
       summary: restore a snapshot volume definition
       description: Restore a snapshot volume definition to a new resource
       operationId: resourceSnapshotsRestoreVolumeDefinition
@@ -1511,16 +1622,16 @@ paths:
               $ref: '#/components/schemas/SnapshotRestore'
   /v1/resource-definitions/{resource}/snapshot-rollback/{snapshot}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - name: snapshot
-      in: path
-      required: true
-      description: Snapshot name to use
-      schema:
-        type: string
+      - $ref: '#/components/parameters/Resource'
+      - name: snapshot
+        in: path
+        required: true
+        description: Snapshot name to use
+        schema:
+          type: string
     post:
       tags:
-      - developers
+        - developers
       summary: rollback a snapshot
       description: Rollback a resource to the snapshot state
       operationId: resourceSnapshotRollback
@@ -1536,7 +1647,7 @@ paths:
   /v1/controller/properties:
     get:
       tags:
-      - developers
+        - developers
       summary: lists all controller properties
       operationId: controllerPropertyList
       description: |
@@ -1550,7 +1661,7 @@ paths:
                 $ref: '#/components/schemas/Properties'
     post:
       tags:
-      - developers
+        - developers
       summary: sets or modifies controller properties
       operationId: controllerPropertyModify
       description: |
@@ -1558,18 +1669,42 @@ paths:
 
         Possible properties are:
         - `TcpPortAutoRange` - regex[`[0-9]+-[0-9]+`]
+
+            Range for auto-allocation of resource TCP ports
+
         - `MinorNrAutoRange` - regex[`[0-9]+-[0-9]+`]
+
+            Range for auto-allocation of volume minor numbers
+
         - `PeerSlotsNewResource` - range[`1-31`]
+
+            DRBD peer slots to allocate for newly created resources (default 7), the number of peer slots cannot be changed once the resource is created, so allow sufficient slots to increase redundancy in the future
+
         - `StorDriver/DMStats` - boolean_true_false
+
+            Enable dmstats on lvm create
+
         - `StorDriver/SwordfishUserName` - regex[`.*`]
         - `StorDriver/SwordfishUserPw` - regex[`.*`]
         - `StorDriver/SwordfishUrl` - regex[`.*`]
         - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
         - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
         - `GlobSeqApiCalls` - boolean_true_false
-        - `REST/listenAddr` - string
-        - `REST/listenPort` - range[`1-65535`]
+
+            Globally sequentialize all ctrl -> stlt api calls
+
+        - `REST/bindAddress` - string
+        - `REST/port` - range[`1-65535`]
         - `REST/enabled` - boolean_true_false
+        - `NVMe/enabled` - enum
+            * rdma
+            * tcp
+
+        - `NVMe/enabled` - range[`1-65535`]
+        - `NVMe/PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Preferred network interface to use
+
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -1582,10 +1717,12 @@ paths:
             * 256K-striping
             * 512K-striping
             * 1M-striping
+
         - `DrbdOptions/Disk/on-io-error` - enum
             * pass_on
             * call-local-io-error
             * detach
+
         - `DrbdOptions/Disk/disk-drain` - boolean
         - `DrbdOptions/Disk/resync-after` - string
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
@@ -1611,9 +1748,11 @@ paths:
             * off
             * majority
             * all
+
         - `DrbdOptions/Resource/on-no-data-accessible` - enum
             * io-error
             * suspend-io
+
         - `DrbdOptions/Resource/auto-promote` - boolean
         - `DrbdOptions/Resource/cpu-mask` - string
         - `DrbdOptions/Resource/twopc-timeout` - range[`50-600`]
@@ -1622,11 +1761,13 @@ paths:
         - `DrbdOptions/Resource/on-no-quorum` - enum
             * io-error
             * suspend-io
+
         - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
         - `DrbdOptions/Net/protocol` - enum
             * A
             * B
             * C
+
         - `DrbdOptions/Net/allow-two-primaries` - boolean
         - `DrbdOptions/Net/after-sb-0pri` - enum
             * disconnect
@@ -1636,6 +1777,7 @@ paths:
             * discard-least-changes
             * discard-local
             * discard-remote
+
         - `DrbdOptions/Net/ko-count` - range[`0-200`]
         - `DrbdOptions/Net/data-integrity-alg` - string
         - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
@@ -1647,6 +1789,7 @@ paths:
             * dont-care
             * resource-only
             * resource-and-stonith
+
         - `DrbdOptions/Net/csums-alg` - string
         - `DrbdOptions/Net/always-asbp` - boolean
         - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
@@ -1654,11 +1797,13 @@ paths:
             * block
             * pull-ahead
             * disconnect
+
         - `DrbdOptions/Net/ping-int` - range[`1-120`]
         - `DrbdOptions/Net/rr-conflict` - enum
             * disconnect
             * call-pri-lost
             * violently
+
         - `DrbdOptions/Net/tcp-cork` - boolean
         - `DrbdOptions/Net/use-rle` - boolean
         - `DrbdOptions/Net/csums-after-crash-only` - boolean
@@ -1673,6 +1818,7 @@ paths:
             * disconnect
             * call-pri-lost-after-sb
             * violently-as0p
+
         - `DrbdOptions/Net/after-sb-1pri` - enum
             * disconnect
             * consensus
@@ -1680,6 +1826,19 @@ paths:
             * call-pri-lost-after-sb
             * violently-as0p
 
+        - `DrbdOptions/Handlers/after-resync-target` - string
+        - `DrbdOptions/Handlers/before-resync-target` - string
+        - `DrbdOptions/Handlers/before-resync-source` - string
+        - `DrbdOptions/Handlers/out-of-sync` - string
+        - `DrbdOptions/Handlers/quorum-lost` - string
+        - `DrbdOptions/Handlers/fence-peer` - string
+        - `DrbdOptions/Handlers/unfence-peer` - string
+        - `DrbdOptions/Handlers/initial-split-brain` - string
+        - `DrbdOptions/Handlers/local-io-error` - string
+        - `DrbdOptions/Handlers/pri-lost` - string
+        - `DrbdOptions/Handlers/pri-lost-after-sb` - string
+        - `DrbdOptions/Handlers/pri-on-incon-degr` - string
+        - `DrbdOptions/Handlers/split-brain` - string
       responses:
         '201':
           description: Controller property created/modifed.
@@ -1701,15 +1860,15 @@ paths:
                 Aux/testprop: myprop
   /v1/controller/properties/{key}:
     parameters:
-    - name: key
-      in: path
-      required: true
-      schema:
-        type: string
-        description: Controller property key to delete
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+          description: Controller property key to delete
     delete:
       tags:
-      - developers
+        - developers
       summary: Deletes a controller property
       operationId: controllerPropertyDelete
       description: Delete a controller property
@@ -1725,7 +1884,7 @@ paths:
   /v1/controller/version:
     get:
       tags:
-      - developers
+        - developers
       summary: show controller version info
       operationId: controllerVersion
       description: |
@@ -1740,10 +1899,10 @@ paths:
                 $ref: '#/components/schemas/ControllerVersion'
   /v1/resource-definitions/{resource}/drbd-proxy:
     parameters:
-    - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Resource'
     put:
       tags:
-      - developers
+        - developers
       summary: modify drbd proxy option properties
       operationId: resourceDrbdProxyModify
       description: |
@@ -1766,15 +1925,18 @@ paths:
             * bt2
             * bt3
             * bt4
+
         - `DrbdOptions/ProxyCompression/mode` - enum
             * fast
             * normal
+
         - `DrbdOptions/ProxyCompression/depth` - range[`0-1000`]
         - `DrbdOptions/ProxyCompression/level` - range[`1-9`]
         - `DrbdOptions/ProxyCompression/contexts` - range[`1-253`]
         - `DrbdOptions/ProxyCompression/fallback-to-zlib` - enum
             * off
             * on
+
         - `DrbdOptions/ProxyCompression/numa-threshold` - range[`0-253`]
         - `DrbdOptions/ProxyCompression/level` - range[`1-9`]
       responses:
@@ -1798,12 +1960,12 @@ paths:
                 compression_type: lz4
   /v1/resource-definitions/{resource}/drbd-proxy/enable/{node_a}/{node_b}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - $ref: '#/components/parameters/NodeA'
-    - $ref: '#/components/parameters/NodeB'
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/NodeA'
+      - $ref: '#/components/parameters/NodeB'
     post:
       tags:
-      - developers
+        - developers
       summary: enable a drbd proxy on a node connection
       operationId: resourceDrbdProxyEnable
       description: Enables a drbd proxy on a node connection
@@ -1823,22 +1985,22 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/drbd-proxy/disable/{nodeA}/{nodeB}:
     parameters:
-    - $ref: '#/components/parameters/Resource'
-    - name: nodeA
-      in: path
-      required: true
-      schema:
-        type: string
-        description: source node of the connection
-    - name: nodeB
-      in: path
-      required: true
-      schema:
-        type: string
-        description: target node of the connection
+      - $ref: '#/components/parameters/Resource'
+      - name: nodeA
+        in: path
+        required: true
+        schema:
+          type: string
+          description: source node of the connection
+      - name: nodeB
+        in: path
+        required: true
+        schema:
+          type: string
+          description: target node of the connection
     post:
       tags:
-      - developers
+        - developers
       summary: disables a drbd proxy on a node connection
       operationId: resourceDrbdProxyDisable
       description: Disables a drbd proxy on a node connection
@@ -1855,7 +2017,7 @@ paths:
   /v1/encryption/passphrase:
     post:
       tags:
-      - developers
+        - developers
       summary: create a encryption passphrase
       operationId: encryptionPassphraseCreate
       responses:
@@ -1876,7 +2038,7 @@ paths:
               $ref: '#/components/schemas/PassPhraseCreate'
     put:
       tags:
-      - developers
+        - developers
       summary: modifies the encryption passphrase
       operationId: encryptionPassphraseModify
       responses:
@@ -1897,7 +2059,7 @@ paths:
               $ref: '#/components/schemas/PassPhraseCreate'
     patch:
       tags:
-      - developers
+        - developers
       summary: enter the encryption passphrase
       operationId: encryptionPassphraseEnter
       responses:
@@ -1920,36 +2082,36 @@ paths:
   /v1/error-reports:
     get:
       tags:
-      - developers
+        - developers
       operationId: errorReportList
       summary: list all error reports
       description: List all error reports
       parameters:
-      - name: node
-        in: query
-        description: Only show error reports of this node
-        schema:
-          type: string
-      - name: since
-        in: query
-        description: Unix timestamp from the starting interval
-        schema:
-          type: integer
-          format: int64
-      - name: to
-        in: query
-        description: Unix timestamp to the ending interval
-        schema:
-          type: integer
-          format: int64
-      - name: withContent
-        in: query
-        description: Include error report text in response.
-        schema:
-          type: boolean
-          default: false
-      - $ref: '#/components/parameters/Offset'
-      - $ref: '#/components/parameters/Limit'
+        - name: node
+          in: query
+          description: Only show error reports of this node
+          schema:
+            type: string
+        - name: since
+          in: query
+          description: Unix timestamp from the starting interval
+          schema:
+            type: integer
+            format: int64
+        - name: to
+          in: query
+          description: Unix timestamp to the ending interval
+          schema:
+            type: integer
+            format: int64
+        - name: withContent
+          in: query
+          description: Include error report text in response.
+          schema:
+            type: boolean
+            default: false
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: list of error reports
@@ -1966,42 +2128,42 @@ paths:
   /v1/error-reports/{reportid}:
     get:
       tags:
-      - developers
+        - developers
       operationId: errorReportShow
       summary: query the specified reportid
       description: Query the specified reportid
       parameters:
-      - name: reportid
-        in: path
-        required: true
-        description: Error id to select
-        schema:
-          type: string
-      - name: node
-        in: query
-        description: Only show error reports of this node
-        schema:
-          type: string
-      - name: since
-        in: query
-        description: Unix timestamp from the starting interval
-        schema:
-          type: integer
-          format: int64
-      - name: to
-        in: query
-        description: Unix timestamp to the ending interval
-        schema:
-          type: integer
-          format: int64
-      - name: withContent
-        in: query
-        description: Include error report text in response.
-        schema:
-          type: boolean
-          default: true
-      - $ref: '#/components/parameters/Offset'
-      - $ref: '#/components/parameters/Limit'
+        - name: reportid
+          in: path
+          required: true
+          description: Error id to select
+          schema:
+            type: string
+        - name: node
+          in: query
+          description: Only show error reports of this node
+          schema:
+            type: string
+        - name: since
+          in: query
+          description: Unix timestamp from the starting interval
+          schema:
+            type: integer
+            format: int64
+        - name: to
+          in: query
+          description: Unix timestamp to the ending interval
+          schema:
+            type: integer
+            format: int64
+        - name: withContent
+          in: query
+          description: Include error report text in response.
+          schema:
+            type: boolean
+            default: true
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: list of error reports
@@ -2019,7 +2181,7 @@ paths:
   /v1/key-value-store:
     get:
       tags:
-      - developers
+        - developers
       operationId: keyValueStoresList
       summary: list all key value stores
       description: List all known key value store instances
@@ -2036,15 +2198,15 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/key-value-store/{instance}:
     parameters:
-    - name: instance
-      in: path
-      required: true
-      schema:
-        type: string
-        description: name of the key value store
+      - name: instance
+        in: path
+        required: true
+        schema:
+          type: string
+          description: name of the key value store
     get:
       tags:
-      - developers
+        - developers
       operationId: keyValueStoreList
       summary: list all key value stores
       description: List all known key value store instances
@@ -2061,7 +2223,7 @@ paths:
           $ref: '#/components/responses/OperationFailed'
     put:
       tags:
-      - developers
+        - developers
       operationId: keyValueStoreModify
       summary: modify a key value store
       description: Modify a key value store
@@ -2083,7 +2245,7 @@ paths:
               $ref: '#/components/schemas/KeyValueStoreModify'
     delete:
       tags:
-      - developers
+        - developers
       operationId: keyValueStoreDelete
       summary: delete a key value store
       description: Delete a key value store
@@ -2100,7 +2262,7 @@ paths:
   /v1/query-max-volume-size:
     options:
       tags:
-      - developers
+        - developers
       operationId: queryMaxVolumeSize
       summary: query the maximum volume size
       description: Query the maximum possible volume size storage pools
@@ -2125,7 +2287,8 @@ paths:
         - developers
       operationId: viewResources
       summary: query all resources with their volumes
-      description: This REST-resource should be used if you want to get an overview of all resources with their volumes.
+      description: This REST-resource should be used if you want to get an overview
+        of all resources with their volumes.
       parameters:
         - name: nodes
           in: query
@@ -2136,14 +2299,16 @@ paths:
               type: string
         - name: storage_pools
           in: query
-          description: Filter only for the specified storage pools, if not specified no filtering.
+          description: Filter only for the specified storage pools, if not specified
+            no filtering.
           schema:
             type: array
             items:
               type: string
         - name: resources
           in: query
-          description: Filter only for the specified resources, if not specified no filtering.
+          description: Filter only for the specified resources, if not specified no
+            filtering.
           schema:
             type: array
             items:
@@ -2168,7 +2333,8 @@ paths:
         - developers
       operationId: viewStoragePools
       summary: query all storage pools
-      description: This REST-resource should be used if you want to get an overview of all storage pools.
+      description: This REST-resource should be used if you want to get an overview
+        of all storage pools.
       parameters:
         - name: nodes
           in: query
@@ -2179,7 +2345,8 @@ paths:
               type: string
         - name: storage_pools
           in: query
-          description: Filter only for the specified storage pools, if not specified no filtering.
+          description: Filter only for the specified storage pools, if not specified
+            no filtering.
           schema:
             type: array
             items:
@@ -2276,8 +2443,8 @@ components:
       description: Common api reply structure
       type: object
       required:
-      - ret_code
-      - message
+        - ret_code
+        - message
       properties:
         ret_code:
           type: integer
@@ -2308,8 +2475,8 @@ components:
     Node:
       type: object
       required:
-      - name
-      - type
+        - name
+        - type
       properties:
         name:
           type: string
@@ -2318,11 +2485,11 @@ components:
           type: string
           example: Satellite
           enum:
-          - Controller
-          - Satellite
-          - Combined
-          - Auxiliary
-          - SWORDFISH_TARGET
+            - Controller
+            - Satellite
+            - Combined
+            - Auxiliary
+            - SWORDFISH_TARGET
         flags:
           type: array
           items:
@@ -2339,14 +2506,14 @@ components:
           description: |
             Enum describing the current connection status.
           enum:
-          - OFFLINE
-          - CONNECTED
-          - ONLINE
-          - VERSION_MISMATCH
-          - HOSTNAME_MISMATCH
-          - FULL_SYNC_FAILED
-          - AUTHENTICATION_ERROR
-          - UNKNOWN
+            - OFFLINE
+            - CONNECTED
+            - ONLINE
+            - VERSION_MISMATCH
+            - HOSTNAME_MISMATCH
+            - FULL_SYNC_FAILED
+            - AUTHENTICATION_ERROR
+            - UNKNOWN
         uuid:
           type: string
           description: unique object id
@@ -2369,8 +2536,8 @@ components:
     NetInterface:
       type: object
       required:
-      - name
-      - address
+        - name
+        - address
       properties:
         name:
           type: string
@@ -2385,8 +2552,8 @@ components:
           type: string
           example: Plain
           enum:
-          - Plain
-          - SSL
+            - Plain
+            - SSL
         uuid:
           type: string
           description: unique object id
@@ -2409,8 +2576,8 @@ components:
     StoragePool:
       type: object
       required:
-      - storage_pool_name
-      - provider_kind
+        - storage_pool_name
+        - provider_kind
       properties:
         storage_pool_name:
           type: string
@@ -2579,14 +2746,14 @@ components:
         - type
       properties:
         type:
-            $ref: '#/components/schemas/LayerType'
+          $ref: '#/components/schemas/LayerType'
         data:
           oneOf:
             - $ref: '#/components/schemas/DrbdVolumeDefinition'
     VolumeDefinition:
       type: object
       required:
-      - size_kib
+        - size_kib
       properties:
         volume_number:
           type: integer
@@ -3003,7 +3170,7 @@ components:
         error_time: 1536827504594
         filename: ErrorReport-5B9A15B7-00000-000000.log
       required:
-      - error_time
+        - error_time
       properties:
         node_name:
           type: string
@@ -3109,7 +3276,7 @@ components:
     SnapshotRestore:
       type: object
       required:
-      - to_resource
+        - to_resource
       properties:
         to_resource:
           type: string
