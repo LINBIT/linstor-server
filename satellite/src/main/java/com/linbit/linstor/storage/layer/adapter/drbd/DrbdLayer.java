@@ -421,6 +421,7 @@ public class DrbdLayer implements DeviceLayer
                     for (DrbdRscData otherRsc : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
                     {
                         if (!otherRsc.equals(drbdRscData) && // skip local rsc
+                            !otherRsc.getResource().isDiskless(workerCtx) && // skip remote diskless resources
                             otherRsc.getResource().getStateFlags().isSet(workerCtx, RscFlags.DELETE)
                         )
                         {
