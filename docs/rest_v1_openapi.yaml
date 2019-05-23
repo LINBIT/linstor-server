@@ -654,7 +654,7 @@ paths:
             * detach
 
         - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - range[`-1-1048575`]
+        - `DrbdOptions/Disk/resync-after` - string
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
@@ -933,7 +933,7 @@ paths:
             * detach
 
         - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - range[`-1-1048575`]
+        - `DrbdOptions/Disk/resync-after` - string
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
@@ -1761,7 +1761,7 @@ paths:
             * detach
 
         - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - range[`-1-1048575`]
+        - `DrbdOptions/Disk/resync-after` - string
         - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
