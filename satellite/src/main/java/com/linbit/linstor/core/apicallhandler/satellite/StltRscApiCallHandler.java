@@ -35,6 +35,7 @@ import com.linbit.linstor.core.objects.ResourceDataSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
@@ -103,6 +104,7 @@ class StltRscApiCallHandler
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
+    private final StltRscGrpApiCallHelper rscGrpApiCallHelper;
     private final StltLayerRscDataMerger layerRscDataMerger;
     private final StltCryptApiCallHelper cryptHelper;
 
@@ -127,6 +129,7 @@ class StltRscApiCallHandler
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionDataSatelliteFactory resourceConnectionDataFactoryRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
+        StltRscGrpApiCallHelper rscGrpApiCallHelperRef,
         StltLayerRscDataMerger layerRscDataMergerRef,
         StltCryptApiCallHelper cryptHelperRef
     )
@@ -150,6 +153,7 @@ class StltRscApiCallHandler
         stltSecObjs = stltSecObjsRef;
         resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
+        rscGrpApiCallHelper = rscGrpApiCallHelperRef;
         layerRscDataMerger = layerRscDataMergerRef;
         cryptHelper = cryptHelperRef;
     }
@@ -207,12 +211,17 @@ class StltRscApiCallHandler
 
             ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
 
+            ResourceGroup rscGrp = rscGrpApiCallHelper.mergeResourceGroup(
+                rscRawData.getRscDfnApi().getResourceGroup()
+            );
+
             Resource localRsc = null;
             if (rscDfn == null)
             {
                 rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
                     apiCtx,
                     rscRawData.getRscDfnUuid(),
+                    rscGrp,
                     rscName,
                     rscDfnFlags
                 );

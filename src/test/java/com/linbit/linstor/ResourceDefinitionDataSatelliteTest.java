@@ -9,10 +9,12 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceGroupDataSatelliteFactory;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
@@ -49,6 +51,7 @@ public class ResourceDefinitionDataSatelliteTest
 
     @Inject private VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     @Inject private ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
+    @Inject private ResourceGroupDataSatelliteFactory resourceGroupDataFactory;
 
     @Inject private LinStorScope testScope;
     @Inject private Provider<TransactionMgr> transMgrProvider;
@@ -94,6 +97,19 @@ public class ResourceDefinitionDataSatelliteTest
         ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
             SYS_CTX,
             resDfnUuid,
+            resourceGroupDataFactory.getInstanceSatellite(
+                new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
+                "",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            ),
             resName,
             null
         );
@@ -118,6 +134,19 @@ public class ResourceDefinitionDataSatelliteTest
         ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
             SYS_CTX,
             resDfnUuid,
+            resourceGroupDataFactory.getInstanceSatellite(
+                new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
+                "",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            ),
             resName,
             null
         );

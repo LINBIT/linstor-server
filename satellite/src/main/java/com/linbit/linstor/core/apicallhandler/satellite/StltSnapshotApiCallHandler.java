@@ -16,6 +16,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -57,6 +58,7 @@ class StltSnapshotApiCallHandler
     private final SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactory;
     private final SnapshotDataSatelliteFactory snapshotDataFactory;
     private final SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactory;
+    private final StltRscGrpApiCallHelper rscGrpApiCallHelper;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
@@ -71,6 +73,7 @@ class StltSnapshotApiCallHandler
         SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactoryRef,
         SnapshotDataSatelliteFactory snapshotDataFactoryRef,
         SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactoryRef,
+        StltRscGrpApiCallHelper stltGrpApiCallHelperRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -84,6 +87,7 @@ class StltSnapshotApiCallHandler
         snapshotVolumeDefinitionFactory = snapshotVolumeDefinitionFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
         snapshotVolumeDataFactory = snapshotVolumeDataFactoryRef;
+        rscGrpApiCallHelper = stltGrpApiCallHelperRef;
         transMgrProvider = transMgrProviderRef;
     }
 
@@ -123,12 +127,15 @@ class StltSnapshotApiCallHandler
 
         RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscDfnApi.getFlags());
 
+        ResourceGroup rscGrp = rscGrpApiCallHelper.mergeResourceGroup(rscDfnApi.getResourceGroup());
+
         ResourceDefinition rscDfn = rscDfnMap.get(rscName);
         if (rscDfn == null)
         {
             rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
                 apiCtx,
                 rscDfnApi.getUuid(),
+                rscGrp,
                 rscName,
                 rscDfnFlags
             );

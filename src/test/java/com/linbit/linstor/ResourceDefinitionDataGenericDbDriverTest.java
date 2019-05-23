@@ -7,6 +7,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition.InitMaps;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
@@ -26,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -50,8 +52,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     private final String secret;
     private final TransportType transportType;
 
-    private java.util.UUID resDfnUuid;
-    private ObjectProtection resDfnObjProt;
+    private java.util.UUID rscDfnUuid;
+    private ObjectProtection rscDfnObjProt;
 
     private NodeId node1Id;
     private Node node1;
@@ -59,6 +61,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     private ResourceDefinitionData resDfn;
     @Inject private ResourceDefinitionDataGenericDbDriver driver;
     @Inject private ObjectProtectionDatabaseDriver objProtDriver;
+
+    private ResourceGroupData dfltRscGrp;
 
     @SuppressWarnings("checkstyle:magicnumber")
     public ResourceDefinitionDataGenericDbDriverTest() throws InvalidNameException
@@ -81,12 +85,14 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_RESOURCE_DEFINITIONS
         );
 
-        resDfnUuid = randomUUID();
+        rscDfnUuid = randomUUID();
 
-        resDfnObjProt = createTestObjectProtection(
+        rscDfnObjProt = createTestObjectProtection(
             SYS_CTX,
             ObjectProtection.buildPath(resName)
         );
+
+        dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
 
         node1Id = new NodeId(1);
         node1 = nodeDataFactory.create(
@@ -97,8 +103,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         );
         nodesMap.put(node1.getName(), node1);
         resDfn = TestFactory.createResourceDefinitionData(
-            resDfnUuid,
-            resDfnObjProt,
+            rscDfnUuid,
+            rscDfnObjProt,
             resName,
             null,
             RscDfnFlags.DELETE.flagValue,
@@ -110,7 +116,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             new TreeMap<>(),
             new TreeMap<>(),
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            dfltRscGrp
         );
     }
 
@@ -124,7 +131,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist resourceDefinition", resultSet.next());
-        assertEquals(resDfnUuid, java.util.UUID.fromString(resultSet.getString(UUID)));
+        assertEquals(rscDfnUuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
@@ -146,7 +153,8 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             secret,
             transportType,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null
+            null,
+            dfltRscGrp
         );
 
         commit();
@@ -159,7 +167,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
-        assertThat(SQLUtils.getAsStringList(resultSet, LAYER_STACK))
+        assertThat(SQLUtils.getAsStringListFromVarchar(resultSet, LAYER_STACK))
             .containsExactly(DeviceLayerKind.DRBD.name(), DeviceLayerKind.STORAGE.name());
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
@@ -263,11 +271,14 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
             "secret",
             transportType,
             new ArrayList<>(),
-            null
+            null,
+            dfltRscGrp
         );
-        objProtDriver.insertOp(resDfnObjProt);
+        objProtDriver.insertOp(rscDfnObjProt);
 
-        Map<ResourceDefinitionData, InitMaps> resourceDefDataList = driver.loadAll();
+        Map<ResourceDefinitionData, InitMaps> resourceDefDataList = driver.loadAll(
+            Collections.singletonMap(dfltRscGrp.getName(), dfltRscGrp)
+        );
 
         ResourceDefinitionData res1 = findResourceDefinitionDatabyName(resourceDefDataList, resName);
         ResourceDefinitionData res2 = findResourceDefinitionDatabyName(resourceDefDataList, resName2);
@@ -280,11 +291,11 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(resDfn);
-        objProtDriver.insertOp(resDfnObjProt);
+        objProtDriver.insertOp(rscDfnObjProt);
         rscDfnMap.put(resName, resDfn);
 
         resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, null, port, null, "secret", transportType, new ArrayList<>(), null
+            SYS_CTX, resName, null, port, null, "secret", transportType, new ArrayList<>(), null, dfltRscGrp
         );
     }
 }

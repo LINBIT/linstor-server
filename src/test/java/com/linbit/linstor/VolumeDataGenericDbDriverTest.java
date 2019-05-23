@@ -101,7 +101,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             "secret",
             TransportType.IP,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null
+            null,
+            createDefaultResourceGroup(SYS_CTX)
         );
 
         nodeId = 7;

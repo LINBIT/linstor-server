@@ -22,4 +22,6 @@ public interface AutoSelectFilterApi
     List<DeviceLayerKind> getLayerStackList();
 
     List<DeviceProviderKind> getProviderList();
+
+    Boolean getDisklessOnRemaining();
 }

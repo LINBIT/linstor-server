@@ -87,6 +87,7 @@ public class InternalApiConsts
     public static final long DEFAULT_AL_SIZE = 32;
     public static final int DEFAULT_AL_STRIPES = 1;
     public static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
+    public static final String DEFAULT_RSC_GRP_NAME = "DfltRscGrp";
 
     private InternalApiConsts()
     {

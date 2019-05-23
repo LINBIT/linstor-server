@@ -94,7 +94,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
             "secret",
             TransportType.IP,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null
+            null,
+            createDefaultResourceGroup(SYS_CTX)
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
         nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);

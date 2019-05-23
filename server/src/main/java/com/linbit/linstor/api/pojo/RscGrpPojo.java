@@ -16,7 +16,6 @@ public class RscGrpPojo implements RscGrpApi
     private final @Nullable UUID uuid;
     private final String rscGrpName;
     private final String description;
-    private final List<DeviceLayerKind> layerStack;
     private final Map<String, String> rscDfnPropsMap;
     private final List<VlmGrpApi> vlmGrpList;
     private final @Nullable AutoSelectFilterApi autoSelectFilter;
@@ -25,7 +24,6 @@ public class RscGrpPojo implements RscGrpApi
         @Nullable UUID uuidRef,
         String rscGrpNameStrRef,
         String descriptionRef,
-        List<DeviceLayerKind> layerStackStrRef,
         Map<String, String> rscDfnPropsRef,
         List<VlmGrpApi> vlmGrpListRef,
         @Nullable AutoSelectFilterApi autoSelectFilterRef
@@ -34,7 +32,6 @@ public class RscGrpPojo implements RscGrpApi
         uuid = uuidRef;
         rscGrpName = rscGrpNameStrRef;
         description = descriptionRef;
-        layerStack = layerStackStrRef;
         rscDfnPropsMap = rscDfnPropsRef;
         vlmGrpList = vlmGrpListRef;
         autoSelectFilter = autoSelectFilterRef;
@@ -56,12 +53,6 @@ public class RscGrpPojo implements RscGrpApi
     public String getDescription()
     {
         return description;
-    }
-
-    @Override
-    public List<DeviceLayerKind> getLayerStack()
-    {
-        return layerStack;
     }
 
     @Override

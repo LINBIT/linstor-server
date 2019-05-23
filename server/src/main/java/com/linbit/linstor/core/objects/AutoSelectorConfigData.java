@@ -18,6 +18,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
     private final TransactionList<ResourceGroupData, String> replicasOnDifferentList;
     private final TransactionList<ResourceGroupData, DeviceLayerKind> layerStack;
     private final TransactionList<ResourceGroupData, DeviceProviderKind> allowedProviderList;
+    private final TransactionSimpleObject<ResourceGroupData, Boolean> disklessOnRemaining;
 
     public AutoSelectorConfigData(
         ResourceGroupData rscGrpRef,
@@ -44,8 +46,9 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
         String doNotPlaceWithRscRegexRef,
         List<String> replicasOnSameListRef,
         List<String> replicasOnDifferentListRef,
-        TransactionList<ResourceGroupData, DeviceLayerKind> layerStackRef,
+        List<DeviceLayerKind> layerStackRef,
         List<DeviceProviderKind> allowedProviderListRef,
+        Boolean disklessOnRemainingRef,
         ResourceGroupDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transactionObjectFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -53,7 +56,6 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
     {
         super(transMgrProviderRef);
         rscGrp = rscGrpRef;
-        layerStack = layerStackRef;
         dbgInstanceId = UUID.randomUUID();
 
         replicaCount = transactionObjectFactoryRef.createTransactionSimpleObject(
@@ -86,10 +88,30 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
             replicasOnDifferentListRef,
             dbDriverRef.getReplicasOnDifferentDriver()
         );
+        layerStack = transactionObjectFactoryRef.createTransactionPrimitiveList(
+            rscGrpRef,
+            layerStackRef,
+            dbDriverRef.getLayerStackDriver()
+        );
         allowedProviderList = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
             allowedProviderListRef,
             dbDriverRef.getAllowedProviderListDriver()
+        );
+        disklessOnRemaining = transactionObjectFactoryRef.createTransactionSimpleObject(
+            rscGrpRef,
+            disklessOnRemainingRef,
+            dbDriverRef.getDisklessOnRemainingDriver()
+        );
+        transObjs = Arrays.asList(
+            replicaCount,
+            storPoolName,
+            doNotPlaceWithRscList,
+            doNotPlaceWithRscRegex,
+            replicasOnSameList,
+            replicasOnDifferentList,
+            layerStack,
+            allowedProviderList
         );
     }
 
@@ -176,6 +198,12 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
     }
 
     @Override
+    public Boolean getDisklessOnRemaining(AccessContext accCtxRef) throws AccessDeniedException
+    {
+        return disklessOnRemaining.get();
+    }
+
+    @Override
     public AutoSelectFilterApi getApiData(AccessContext accCtxRef) throws AccessDeniedException
     {
         return new AutoSelectFilterPojo(
@@ -186,7 +214,8 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
             Collections.unmodifiableList(replicasOnSameList),
             Collections.unmodifiableList(replicasOnDifferentList),
             Collections.unmodifiableList(layerStack),
-            Collections.unmodifiableList(allowedProviderList)
+            Collections.unmodifiableList(allowedProviderList),
+            disklessOnRemaining.get()
         );
     }
 
@@ -216,6 +245,12 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
         if (autoPlaceConfigRef.getDoNotPlaceWithRscRegex() != null)
         {
             doNotPlaceWithRscRegex.set(autoPlaceConfigRef.getDoNotPlaceWithRscRegex());
+        }
+        if (autoPlaceConfigRef.getLayerStackList() != null &&
+            !autoPlaceConfigRef.getLayerStackList().equals(layerStack))
+        {
+            layerStack.clear();
+            layerStack.addAll(autoPlaceConfigRef.getLayerStackList());
         }
         if (!autoPlaceConfigRef.getReplicasOnSameList().isEmpty())
         {

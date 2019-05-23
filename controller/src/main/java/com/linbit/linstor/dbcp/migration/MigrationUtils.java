@@ -150,7 +150,7 @@ public class MigrationUtils
                 sql.append(" NULL");
                 if (defaultValRef != null)
                 {
-                    sql.append("DEFAULT '").append(defaultValRef).append("'");
+                    sql.append(" DEFAULT '").append(defaultValRef).append("'");
                 }
                 sql.append(";");
                 break;

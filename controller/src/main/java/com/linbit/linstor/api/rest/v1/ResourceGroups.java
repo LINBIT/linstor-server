@@ -10,6 +10,7 @@ import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -22,17 +23,24 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import reactor.core.publisher.Flux;
 
 @Path("resource-groups")
 @Produces(MediaType.APPLICATION_JSON)
@@ -40,16 +48,19 @@ public class ResourceGroups
 {
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
+    private final CtrlRscGrpApiCallHandler ctrlRscGrpApiCallHandler;
     private final ObjectMapper objectMapper;
 
     @Inject
-    ResourceGroups(
+    public ResourceGroups(
         RequestHelper requestHelperRef,
-        CtrlApiCallHandler ctrlApiCallHandlerRef
+        CtrlApiCallHandler ctrlApiCallHandlerRef,
+        CtrlRscGrpApiCallHandler ctrlRscGrpApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
+        ctrlRscGrpApiCallHandler = ctrlRscGrpApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -106,8 +117,6 @@ public class ResourceGroups
 //                rscGrpCreate.resource_definition.volume_definitions != null ?
 //                    rscGrpCreate.resource_definition.volume_definitions : new ArrayList<>();
 
-            List<String> layerDataList = rscGrp.layer_stack;
-
             AutoSelectFilterApi autoSelectFilter = null;
             if (rscGrp.select_filter != null)
             {
@@ -119,7 +128,8 @@ public class ResourceGroups
                     rscGrp.select_filter.replicas_on_same,
                     rscGrp.select_filter.replicas_on_different,
                     LinstorParsingUtils.asDeviceLayerKind(rscGrp.select_filter.layer_stack),
-                    LinstorParsingUtils.asProviderKind(rscGrp.select_filter.provider_list)
+                    LinstorParsingUtils.asProviderKind(rscGrp.select_filter.provider_list),
+                    rscGrp.select_filter.diskless_on_remaining
                 );
             }
 
@@ -128,7 +138,6 @@ public class ResourceGroups
                     null,
                     rscGrp.name,
                     rscGrp.description,
-                    LinstorParsingUtils.asDeviceLayerKind(rscGrp.layer_stack),
                     Collections.emptyMap(), // currently props are not supported on creation
                     Collections.emptyList(), // currently VlmGrps are not supported on creation
                     autoSelectFilter
@@ -141,55 +150,92 @@ public class ResourceGroups
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{rscName}")
-    public Response modifyResourceGroup(
+    public void modifyResourceGroup(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
         String jsonData
     )
+        throws JsonParseException, JsonMappingException, IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_RSC_GRP, request), () ->
+        JsonGenTypes.ResourceGroupModify modifyData = objectMapper.readValue(
+            jsonData,
+            JsonGenTypes.ResourceGroupModify.class
+        );
+        AutoSelectFilterApi modifyAutoSelectFilter = null;
+        if (modifyData.select_filter != null)
         {
-            JsonGenTypes.ResourceGroupModify modifyData =
-                objectMapper.readValue(jsonData, JsonGenTypes.ResourceGroupModify.class);
-
-            AutoSelectFilterApi modifyAutoSelectFilter = null;
-            if (modifyData.select_filter != null)
-            {
-                modifyAutoSelectFilter = new AutoSelectFilterPojo(
-                    modifyData.select_filter.place_count,
-                    modifyData.select_filter.storage_pool,
-                    modifyData.select_filter.not_place_with_rsc,
-                    modifyData.select_filter.not_place_with_rsc_regex,
-                    modifyData.select_filter.replicas_on_same,
-                    modifyData.select_filter.replicas_on_different,
-                    LinstorParsingUtils.asDeviceLayerKind(modifyData.select_filter.layer_stack),
-                    LinstorParsingUtils.asProviderKind(modifyData.select_filter.provider_list)
-                );
-            }
-
-            ApiCallRc apiCallRc = ctrlApiCallHandler.modifyResourceGroup(
-                rscName,
-                modifyData.description,
-                modifyData.override_props,
-                new HashSet<>(modifyData.delete_props),
-                new HashSet<>(modifyData.delete_namespaces),
-                modifyData.layer_stack,
-                modifyAutoSelectFilter
+            modifyAutoSelectFilter = new AutoSelectFilterPojo(
+                modifyData.select_filter.place_count,
+                modifyData.select_filter.storage_pool,
+                modifyData.select_filter.not_place_with_rsc,
+                modifyData.select_filter.not_place_with_rsc_regex,
+                modifyData.select_filter.replicas_on_same,
+                modifyData.select_filter.replicas_on_different,
+                LinstorParsingUtils.asDeviceLayerKind(modifyData.select_filter.layer_stack),
+                LinstorParsingUtils.asProviderKind(modifyData.select_filter.provider_list),
+                modifyData.select_filter.diskless_on_remaining
             );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
-        }, true);
+        }
+        Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.modify(
+            rscName,
+            modifyData.description,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces),
+            modifyAutoSelectFilter
+        )
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_GRP, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
 
     @DELETE
     @Path("{rscName}")
     public Response deleteResourceGroup(
         @Context Request request,
-        @PathParam("rscName") String rscName)
+        @PathParam("rscName") String rscName
+    )
     {
         return requestHelper.doInScope(
             requestHelper.createContext(ApiConsts.API_DEL_RSC_GRP, request),
-            () -> ApiCallRcConverter.toResponse(ctrlApiCallHandler.deleteResourceGroup(rscName), Response.Status.OK),
+            () -> ApiCallRcConverter.toResponse(
+                ctrlApiCallHandler.deleteResourceGroup(rscName),
+                Response.Status.OK
+            ),
             true
         );
+    }
+
+    @POST
+    @Path("{rscName}/spawn")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void spawnResourceDefinition(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("rscName") String rscName,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.ResourceGroupSpawn rscGrpSpwn = objectMapper.readValue(
+                jsonData,
+                JsonGenTypes.ResourceGroupSpawn.class
+            );
+            Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.spawn(
+                rscName,
+                rscGrpSpwn.rsc_name,
+                rscGrpSpwn.vlm_sizes,
+                rscGrpSpwn.partial
+            )
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_SPAWN_RSC_DFN, request));
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 }

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
 
+import "common/RscGrp.proto";
+
 // Internal message containing an in-progress snapshot
 message IntSnapshot
 {
@@ -23,6 +25,7 @@ message IntSnapshot
     sint64                            flags             = 14;
     bool                              suspend_resource  = 15;
     bool                              take_snapshot     = 16;
+    common.RscGrp                     rsc_grp           = 21;
 }
 
 message SnapshotVlmDfn

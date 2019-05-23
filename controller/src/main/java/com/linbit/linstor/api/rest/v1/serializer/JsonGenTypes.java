@@ -485,7 +485,6 @@ public class JsonGenTypes
     {
         public String name = "";
         public String description = "";
-        public List<String> layer_stack = Collections.emptyList();
         public Map<String, String> props = Collections.emptyMap();
         public AutoSelectFilter select_filter;
         /**
@@ -501,8 +500,33 @@ public class JsonGenTypes
         public Map<String, String> override_props = Collections.emptyMap();
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
-        public List<String> layer_stack = Collections.emptyList();
         public AutoSelectFilter select_filter;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceGroupSpawn
+    {
+        /**
+         * name of the resulting resource-definition
+         */
+        public String rsc_name;
+        /**
+         * sizes (in kib) of the resulting volume-definitions
+         */
+        public List<Long> vlm_sizes = Collections.emptyList();
+        /**
+         * If false, the length of the vlm_sizes has to match the number of volume-groups or an
+         * error is returned.
+         *
+         * If true and there are more vlm_sizes than volume-groups, the additional volume-definitions
+         * will simply have no pre-set properties (i.e. "empty" volume-definitions)
+         * If true and there are less vlm_sizes than volume-groups, the additional volume-groups
+         * won't be used.
+         *
+         * If the count of vlm_sizes matches the number of volume-groups, this "partial" parameter
+         * has no effect.
+         */
+        public boolean partial = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -510,7 +534,6 @@ public class JsonGenTypes
     {
         public Integer volume_number;
         public Map<String, String> props = Collections.emptyMap();
-        public AutoSelectFilter select_filter;
         /**
          * unique object id
          */
@@ -528,7 +551,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AutoPlaceRequest
     {
-        public Boolean diskless_on_remaining = false;
+        public boolean diskless_on_remaining = false;
         public AutoSelectFilter select_filter = new AutoSelectFilter();
         public List<String> layer_list = Collections.emptyList();
     }
@@ -536,7 +559,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AutoSelectFilter
     {
-        public Integer place_count = 2;
+        public int place_count = 2;
         public String storage_pool;
         public List<String> not_place_with_rsc = Collections.emptyList();
         public String not_place_with_rsc_regex;
@@ -544,6 +567,7 @@ public class JsonGenTypes
         public List<String> replicas_on_different = Collections.emptyList();
         public List<String> layer_stack = Collections.emptyList();
         public List<String> provider_list = Collections.emptyList();
+        public Boolean diskless_on_remaining;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

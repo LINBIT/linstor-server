@@ -40,6 +40,9 @@ public interface AutoSelectorConfig
     List<DeviceProviderKind> getProviderList(AccessContext accCtxRef)
         throws AccessDeniedException;
 
+    Boolean getDisklessOnRemaining(AccessContext accCtxRef)
+        throws AccessDeniedException;
+
     AutoSelectFilterApi getApiData(AccessContext accCtx)
         throws AccessDeniedException;
 }

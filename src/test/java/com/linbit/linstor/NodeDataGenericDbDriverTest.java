@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
@@ -100,6 +101,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     private long initialFlags;
     private NodeType initialType;
     private NodeData node;
+    private ResourceGroupData dfltRscGrp;
 
     public NodeDataGenericDbDriverTest() throws Exception
     {
@@ -137,6 +139,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             transObjFactory,
             transMgrProvider
         );
+
+        dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
     }
 
     @Test
@@ -374,7 +378,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 "secret",
                 transportType,
                 Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-                null
+                null,
+                dfltRscGrp
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();

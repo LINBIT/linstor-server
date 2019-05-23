@@ -120,7 +120,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                 stmt.setInt(5, snapshot.getNodeId().value);
             }
             stmt.setLong(6, snapshot.getFlags().getFlagsBits(dbCtx));
-            SQLUtils.setJsonIfNotNull(stmt, 7, snapshot.getLayerStack(dbCtx));
+            SQLUtils.setJsonIfNotNullAsVarchar(stmt, 7, snapshot.getLayerStack(dbCtx));
             stmt.executeUpdate();
 
             errorReporter.logTrace("Snapshot created %s", getId(snapshot));
@@ -157,7 +157,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             this, transObjFactory, transMgrProvider,
             snapshotVlmMap,
             DatabaseLoader.asDevLayerKindList(
-                SQLUtils.getAsStringList(resultSet, S_LAYER_STACK)
+                SQLUtils.getAsStringListFromVarchar(resultSet, S_LAYER_STACK)
             )
         );
 

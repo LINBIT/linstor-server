@@ -35,14 +35,19 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler.getRscGrpDescriptionInline;
 
+import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+@Singleton
 public class CtrlVlmGrpApiCallHandler
 {
     private final AccessContext apiCtx;
@@ -55,6 +60,7 @@ public class CtrlVlmGrpApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResponseConverter responseConverter;
 
+    @Inject
     public CtrlVlmGrpApiCallHandler(
         @ApiContext AccessContext apiCtxRef,
         ErrorReporter errorReporterRef,
@@ -154,6 +160,43 @@ public class CtrlVlmGrpApiCallHandler
         return responses;
     }
 
+    public List<VlmGrpApi> listVolumeGroups(String rscGrpNameRef, Integer vlmNrRef)
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_VLM_GRP, rscGrpNameRef);
+
+        List<VlmGrpApi> ret;
+        try
+        {
+            if (vlmNrRef != null)
+            {
+                VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameRef, vlmNrRef, true);
+                if (vlmGrp == null)
+                {
+                    ret = Collections.emptyList();
+                }
+                else
+                {
+                    ret = Arrays.asList(vlmGrp.getApiData(peerAccCtx.get()));
+                }
+            }
+            else
+            {
+                ResourceGroupData rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
+                ret = rscGrp.getApiData(peerAccCtx.get()).getVlmGrpList();
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "list " + getVlmGrpDescriptionInline(rscGrpNameRef, vlmNrRef),
+                ApiConsts.FAIL_ACC_DENIED_VLM_GRP
+            );
+        }
+        return ret;
+    }
+
     public ApiCallRc modify(
         String rscGrpNameRef,
         int vlmNrRef,
@@ -186,6 +229,14 @@ public class CtrlVlmGrpApiCallHandler
             );
             ctrlPropsHelper.remove(props, deletePropKeysRef, deleteNamespacesRef);
         }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "modify " + getVlmGrpDescriptionInline(rscGrpNameRef, vlmNrRef),
+                ApiConsts.FAIL_ACC_DENIED_VLM_GRP
+            );
+        }
         catch (Exception | ImplementationError exc)
         {
             responses = responseConverter.reportException(peer.get(), context, exc);
@@ -211,6 +262,14 @@ public class CtrlVlmGrpApiCallHandler
         {
             VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameRef, vlmNrRef, true);
             vlmGrp.delete(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "delete " + getVlmGrpDescriptionInline(rscGrpNameRef, vlmNrRef),
+                ApiConsts.FAIL_ACC_DENIED_VLM_GRP
+            );
         }
         catch (Exception | ImplementationError exc)
         {

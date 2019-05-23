@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
@@ -27,6 +28,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
@@ -34,6 +36,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
+import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.event.EventIdentifier;
@@ -62,6 +65,7 @@ import com.linbit.linstor.proto.common.RscConnOuterClass;
 import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
+import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass;
@@ -83,8 +87,10 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsVlm;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
+import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 import com.linbit.linstor.proto.common.VlmOuterClass;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.common.AutoSelectFilterOuterClass.AutoSelectFilter;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
@@ -278,6 +284,16 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             handleIOException(exc);
         }
         return this;
+    }
+
+    private static List<LayerType> asProtoLayerTypeList(List<DeviceLayerKind> devLayerKindList)
+    {
+        List<LayerType> layerTypes = new ArrayList<>();
+        for (DeviceLayerKind devLayerKind : devLayerKindList)
+        {
+            layerTypes.add(asLayerType(devLayerKind));
+        }
+        return layerTypes;
     }
 
     private static List<LayerTypeWrapper> asProtoLayerTypeWrapperList(List<DeviceLayerKind> devLayerKindList)
@@ -575,6 +591,60 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return builder.build();
     }
 
+    public static RscGrp serializeResourceGroup(RscGrpApi rscGrpApi)
+    {
+        RscGrp.Builder builder = RscGrp.newBuilder()
+            .setUuid(rscGrpApi.getUuid().toString())
+            .setName(rscGrpApi.getName())
+            .putAllRscDfnProps(rscGrpApi.getRcsDfnProps())
+            .addAllVlmGrp(serializeVolumeGroups(rscGrpApi.getVlmGrpList()));
+        if (rscGrpApi.getDescription() != null)
+        {
+            builder.setDescription(rscGrpApi.getDescription());
+        }
+        if (rscGrpApi.getAutoSelectFilter() != null)
+        {
+            builder.setSelectFilter(serializeAutoSelectFilter(rscGrpApi.getAutoSelectFilter()));
+        }
+        return builder.build();
+    }
+
+    public static AutoSelectFilter serializeAutoSelectFilter(AutoSelectFilterApi autoSelectFilter)
+    {
+        AutoSelectFilter.Builder builder = AutoSelectFilter.newBuilder()
+            .setReplicaCount(autoSelectFilter.getReplicaCount())
+            .addAllDoNotPlaceWithRsc(autoSelectFilter.getDoNotPlaceWithRscList())
+            .addAllReplicasOnDifferent(autoSelectFilter.getReplicasOnDifferentList())
+            .addAllReplicasOnSame(autoSelectFilter.getReplicasOnSameList());
+        if (autoSelectFilter.getDoNotPlaceWithRscRegex() != null)
+        {
+            builder.setDoNotPlaceWithRscRegex(autoSelectFilter.getDoNotPlaceWithRscRegex());
+        }
+        if (autoSelectFilter.getStorPoolNameStr() != null)
+        {
+            builder.setStoragePool(autoSelectFilter.getStorPoolNameStr());
+        }
+        return builder.build();
+    }
+
+    public static Iterable<? extends VlmGrp> serializeVolumeGroups(List<VlmGrpApi> vlmGrpListRef)
+    {
+        List<VlmGrp> list = new ArrayList<>(vlmGrpListRef.size());
+        for (VlmGrpApi vlmGrpApi : vlmGrpListRef)
+        {
+            list.add(serializeVolumeGroup(vlmGrpApi));
+        }
+        return list;
+    }
+
+    public static VlmGrp serializeVolumeGroup(VlmGrpApi vlmGrpApiRef)
+    {
+        return VlmGrp.newBuilder()
+            .setUuid(vlmGrpApiRef.getUUID().toString())
+            .setVlmNr(vlmGrpApiRef.getVolumeNr())
+            .putAllVlmDfnProps(vlmGrpApiRef.getProps())
+            .build();
+    }
 
     public static RscDfnOuterClass.RscDfn serializeResourceDefinition(
         AccessContext accCtx,
@@ -598,18 +668,19 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     public static RscDfnOuterClass.RscDfn serializeResourceDefinition(
-        ResourceDefinition.RscDfnApi rscDfnapi
+        ResourceDefinition.RscDfnApi rscDfnApi
     )
     {
         RscDfnOuterClass.RscDfn.Builder builder = RscDfnOuterClass.RscDfn.newBuilder()
-            .setRscName(rscDfnapi.getResourceName())
-            .setRscDfnUuid(rscDfnapi.getUuid().toString())
-            .addAllVlmDfns(serializeVolumeDefinition(rscDfnapi.getVlmDfnList()))
-            .putAllRscDfnProps(rscDfnapi.getProps())
-            .addAllLayerData(LayerObjectSerializer.serializeRscDfnLayerData(rscDfnapi));
-        if (rscDfnapi.getExternalName() != null)
+            .setRscName(rscDfnApi.getResourceName())
+            .setRscDfnUuid(rscDfnApi.getUuid().toString())
+            .setRscGrp(serializeResourceGroup(rscDfnApi.getResourceGroup()))
+            .addAllVlmDfns(serializeVolumeDefinition(rscDfnApi.getVlmDfnList()))
+            .putAllRscDfnProps(rscDfnApi.getProps())
+            .addAllLayerData(LayerObjectSerializer.serializeRscDfnLayerData(rscDfnApi));
+        if (rscDfnApi.getExternalName() != null)
         {
-            builder.setExternalName(ByteString.copyFrom(rscDfnapi.getExternalName()));
+            builder.setExternalName(ByteString.copyFrom(rscDfnApi.getExternalName()));
         }
         return builder.build();
     }

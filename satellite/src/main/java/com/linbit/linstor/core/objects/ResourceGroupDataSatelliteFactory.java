@@ -84,7 +84,8 @@ public class ResourceGroupDataSatelliteFactory
         @Nullable String autoPlaceDoNotPlaceWithRscRegexRef,
         @Nullable List<String> autoPlaceReplicasOnSameListRef,
         @Nullable List<String> autoPlaceReplicasOnDifferentListRef,
-        @Nullable List<DeviceProviderKind> autoPlaceAllowedProviderListRef
+        @Nullable List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
+        @Nullable Boolean autoPlaceDisklessOnRemainingRef
     )
         throws DatabaseException, AccessDeniedException
     {
@@ -109,6 +110,7 @@ public class ResourceGroupDataSatelliteFactory
                 new ArrayList<>(autoPlaceReplicasOnSameListRef),
                 new ArrayList<>(autoPlaceReplicasOnDifferentListRef),
                 new ArrayList<>(autoPlaceAllowedProviderListRef),
+                autoPlaceDisklessOnRemainingRef,
                 new TreeMap<>(),
                 new TreeMap<>(),
                 rscGrpDriver,
@@ -146,7 +148,7 @@ public class ResourceGroupDataSatelliteFactory
                     ),
                     rscGrpName,
                     rscGrpApiRef.getDescription(),
-                    rscGrpApiRef.getLayerStack(),
+                    autoSelectFilter.getLayerStackList(),
                     autoSelectFilter.getReplicaCount(),
                     autoSelectFilter.getStorPoolNameStr(),
                     autoSelectFilter.getDoNotPlaceWithRscList(),
@@ -154,6 +156,7 @@ public class ResourceGroupDataSatelliteFactory
                     autoSelectFilter.getReplicasOnSameList(),
                     autoSelectFilter.getReplicasOnDifferentList(),
                     autoSelectFilter.getProviderList(),
+                    autoSelectFilter.getDisklessOnRemaining(),
                     vlmGrpMap,
                     new TreeMap<>(),
                     rscGrpDriver,
@@ -179,12 +182,6 @@ public class ResourceGroupDataSatelliteFactory
             }
             else
             {
-                List<DeviceLayerKind> layerStack = rscGrp.getLayerStack(sysCtx);
-                if (!layerStack.equals(rscGrpApiRef.getLayerStack()))
-                {
-                    layerStack.clear();
-                    layerStack.addAll(rscGrpApiRef.getLayerStack());
-                }
                 if (!rscGrp.getDescription(sysCtx).equals(rscGrpApiRef.getDescription()))
                 {
                     rscGrp.setDescription(sysCtx, rscGrpApiRef.getDescription());

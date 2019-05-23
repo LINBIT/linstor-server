@@ -34,23 +34,36 @@ def resolve_type_str(schema_lookup: OrderedDict, field_obj: OrderedDict):
     t = "FIXME"
     if "type" in field_obj:
         type_str = field_obj["type"]
+        has_default = "default" in field_obj
         if type_str == "integer":
             if "format" in field_obj and field_obj["format"] == "int64":
-                t = "Long"
+                if has_default:
+                    t = "long"
+                else:
+                    t = "Long"
             else:
-                t = "Integer"
+                if has_default:
+                    t = "int"
+                else:
+                    t = "Integer"
         elif type_str == "number":
-            t = "Double"
+            if has_default:
+                t = "double"
+            else:
+                t = "Double"
         elif type_str == "string":
             t = "String"
         elif type_str == "boolean":
-            t = "Boolean"
+            if "default" in field_obj:
+                t = "boolean"
+            else:
+                t = "Boolean"
         elif type_str == "array":
             t = "List<" + resolve_type_str(schema_lookup, field_obj['items']) + ">"
         elif type_str == "object" and "properties" not in field_obj:  # Properties special case
             t = "Map<String, String>"
         elif type_str == "object":
-            t = "object"
+            t = "object" # needed for recursive call, will NOT go to java
     elif "$ref" in field_obj:
         assert field_obj["$ref"].startswith('#/components/schemas')
         schema_name = field_obj["$ref"][len('#/components/schemas/'):]

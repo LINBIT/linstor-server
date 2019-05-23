@@ -9,6 +9,7 @@ import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
@@ -69,6 +70,7 @@ public class ConnectionPropsTest extends GenericDbBase
     private Props volConProps;
 
     private PriorityProps conProps;
+    private ResourceGroupData dfltRscGrp;
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Before
@@ -92,6 +94,8 @@ public class ConnectionPropsTest extends GenericDbBase
         node1 = nodeDataFactory.create(SYS_CTX, nodeName1, NodeType.SATELLITE, null);
         node2 = nodeDataFactory.create(SYS_CTX, nodeName2, NodeType.SATELLITE, null);
 
+        dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
+
         resDfn = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,
@@ -101,7 +105,8 @@ public class ConnectionPropsTest extends GenericDbBase
             "secret",
             resDfnTransportType,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null
+            null,
+            dfltRscGrp
         );
 
         res1 = resourceDataFactory.create(SYS_CTX, resDfn, node1, nodeId1, null, Collections.emptyList());

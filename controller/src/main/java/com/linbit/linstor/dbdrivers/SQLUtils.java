@@ -41,28 +41,6 @@ public class SQLUtils
         return list;
     }
 
-    public static void setJsonIfNotNull(PreparedStatement stmt, int idx, Object obj) throws SQLException
-    {
-        if (obj != null)
-        {
-            try
-            {
-                stmt.setString(idx, OBJ_MAPPER.writeValueAsString(obj));
-            }
-            catch (IOException exc)
-            {
-                throw new LinStorDBRuntimeException(
-                    "Exception occurred while serializing to json array: " + obj.toString(),
-                    exc
-                );
-            }
-        }
-        else
-        {
-            stmt.setNull(idx, Types.VARCHAR);
-        }
-    }
-
     public static void setIntIfNotNull(PreparedStatement stmt, int idx, Integer val) throws SQLException
     {
         if (val != null)
@@ -179,4 +157,101 @@ public class SQLUtils
         return ret;
     }
 
+    public static void setBooleanIfNotNull(PreparedStatement stmt, int idx, Boolean val) throws SQLException
+    {
+        if (val != null)
+        {
+            stmt.setBoolean(idx, val);
+        }
+        else
+        {
+            stmt.setNull(idx, Types.BOOLEAN);
+        }
+    }
+
+    public static void setJsonIfNotNullAsVarchar(PreparedStatement stmt, int idx, Object obj) throws SQLException
+    {
+        if (obj != null)
+        {
+            try
+            {
+                stmt.setString(idx, OBJ_MAPPER.writeValueAsString(obj));
+            }
+            catch (IOException exc)
+            {
+                throw new LinStorDBRuntimeException(
+                    "Exception occurred while serializing to json array: " + obj.toString(),
+                    exc
+                );
+            }
+        }
+        else
+        {
+            stmt.setNull(idx, Types.VARCHAR);
+        }
+    }
+
+    public static void setJsonIfNotNullAsBlob(PreparedStatement stmt, int idx, Object obj) throws SQLException
+    {
+        if (obj != null)
+        {
+            try
+            {
+                stmt.setBytes(idx, OBJ_MAPPER.writeValueAsBytes(obj));
+            }
+            catch (IOException exc)
+            {
+                throw new LinStorDBRuntimeException(
+                    "Exception occurred while serializing to json array: " + obj.toString(),
+                    exc
+                );
+            }
+        }
+        else
+        {
+            stmt.setNull(idx, Types.BLOB);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<String> getAsStringListFromVarchar(ResultSet resultSet, String columnName)
+    {
+        List<String> list;
+        try
+        {
+            list = OBJ_MAPPER.readValue(
+                resultSet.getString(columnName),
+                List.class
+            );
+        }
+        catch (IOException | SQLException exc)
+        {
+            throw new LinStorDBRuntimeException(
+                "Exception occurred while deserializing from json array",
+                exc
+            );
+        }
+        return list;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<String> getAsStringListFromBlob(ResultSet resultSet, String columnName)
+    {
+        List<String> list;
+        try
+        {
+            list = OBJ_MAPPER.readValue(
+                resultSet.getString(columnName),
+                List.class
+            );
+        }
+        catch (IOException | SQLException exc)
+        {
+            throw new LinStorDBRuntimeException(
+                "Exception occurred while deserializing from json array",
+                exc
+                );
+        }
+        return list;
+    }
 }

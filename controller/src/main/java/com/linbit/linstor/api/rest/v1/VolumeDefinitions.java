@@ -64,6 +64,7 @@ public class VolumeDefinitions
     public Response listVolumeDefinition(
         @Context Request request,
         @PathParam("rscName") String rscName
+        // TODO: use limit and offset (like ResourceDefinitions#listResourceDefinitions)
     )
     {
         return listVolumeDefinition(request, rscName, null);
@@ -75,6 +76,7 @@ public class VolumeDefinitions
         @Context Request request,
         @PathParam("rscName") String rscName,
         @PathParam("vlmNr") Integer vlmNumber
+        // TODO: use limit and offset (like ResourceDefinitions#listResourceDefinitions)
     )
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_DFN, request), () ->
@@ -82,6 +84,9 @@ public class VolumeDefinitions
             Optional<ResourceDefinition.RscDfnApi> foundRscDfn = ctrlApiCallHandler.listResourceDefinition().stream()
                 .filter(rscDfnApi -> rscDfnApi.getResourceName().equalsIgnoreCase(rscName))
                 .findFirst();
+            // TODO: instead of building a list of ALL rscDfns(Api) and filtering the one we are interested in
+            // move this method into a new ctlrApiCallHandler.listVlmDfns(rscName) (which takes the readlock of rscDfnMap
+            // and makes that one rscDfnMap.get(rscName) lookup
 
             Response response;
             if (foundRscDfn.isPresent())

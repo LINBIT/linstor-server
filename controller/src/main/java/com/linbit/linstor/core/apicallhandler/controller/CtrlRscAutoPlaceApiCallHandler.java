@@ -138,7 +138,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> autoPlaceInTransaction(
+    Flux<ApiCallRc> autoPlaceInTransaction(
         String rscNameStr,
         AutoSelectFilterApi selectFilter,
         boolean disklessOnRemainingNodes,

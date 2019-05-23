@@ -5,12 +5,19 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
+import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
 import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
+import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.RscGrpPojo;
+import com.linbit.linstor.api.pojo.VlmGrpPojo;
+import com.linbit.linstor.proto.common.AutoSelectFilterOuterClass.AutoSelectFilter;
+import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
+import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.StringUtils;
@@ -212,5 +219,51 @@ public class ProtoDeserializationUtils
 
     private ProtoDeserializationUtils()
     {
+    }
+
+    public static RscGrpPojo parseRscGrp(RscGrp rscGrpProto)
+    {
+        return new RscGrpPojo(
+            UUID.fromString(rscGrpProto.getUuid()),
+            rscGrpProto.getName(),
+            rscGrpProto.getDescription(),
+            rscGrpProto.getRscDfnPropsMap(),
+            parseVlmGrpList(rscGrpProto.getVlmGrpList()),
+            parseAutoSelectFilter(rscGrpProto.getSelectFilter())
+        );
+    }
+
+    public static List<VlmGrpApi> parseVlmGrpList(List<VlmGrp> vlmGrpProtoList)
+    {
+        List<VlmGrpApi> ret = new ArrayList<>();
+        for (VlmGrp vlmGrpProto : vlmGrpProtoList)
+        {
+            ret.add(parseVlmGrp(vlmGrpProto));
+        }
+        return ret;
+    }
+
+    public static VlmGrpPojo parseVlmGrp(VlmGrp vlmGrpProto)
+    {
+        return new VlmGrpPojo(
+            UUID.fromString(vlmGrpProto.getUuid()),
+            vlmGrpProto.getVlmNr(),
+            vlmGrpProto.getVlmDfnPropsMap()
+        );
+    }
+
+    public static AutoSelectFilterPojo parseAutoSelectFilter(AutoSelectFilter selectFilter)
+    {
+        return new AutoSelectFilterPojo(
+            selectFilter.getReplicaCount(),
+            selectFilter.getStoragePool(),
+            selectFilter.getDoNotPlaceWithRscList(),
+            selectFilter.getDoNotPlaceWithRscRegex(),
+            selectFilter.getReplicasOnSameList(),
+            selectFilter.getReplicasOnDifferentList(),
+            ProtoDeserializationUtils.parseDeviceLayerKindList(selectFilter.getLayerStackList()),
+            ProtoDeserializationUtils.parseDeviceProviderKind(selectFilter.getProvidersList()),
+            selectFilter.getDisklessOnRemaining()
+        );
     }
 }

@@ -19,6 +19,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     private final List<String> replicasOnDifferentList;
     private final List<DeviceLayerKind> layerStackList;
     private final List<DeviceProviderKind> providerList;
+    private final @Nullable Boolean disklessOnRemaining;
 
     public AutoSelectFilterPojo(
         @Nullable Integer placeCountRef,
@@ -28,7 +29,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         List<String> replicasOnSameListRef,
         List<String> replicasOnDifferentListRef,
         List<DeviceLayerKind> layerStackListRef,
-        List<DeviceProviderKind> deviceProviderKindsRef
+        List<DeviceProviderKind> deviceProviderKindsRef,
+        @Nullable Boolean disklessOnRemainingRef
     )
     {
         placeCount = placeCountRef;
@@ -37,6 +39,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         doNotPlaceWithRegex = doNotPlaceWithRegexRef;
         replicasOnSameList = replicasOnSameListRef;
         replicasOnDifferentList = replicasOnDifferentListRef;
+        disklessOnRemaining = disklessOnRemainingRef;
         layerStackList = layerStackListRef == null ? Collections.emptyList() : layerStackListRef;
         providerList = deviceProviderKindsRef == null ? Collections.emptyList() : deviceProviderKindsRef;
     }
@@ -87,5 +90,11 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     public List<DeviceProviderKind> getProviderList()
     {
         return providerList;
+    }
+
+    @Override
+    public Boolean getDisklessOnRemaining()
+    {
+        return disklessOnRemaining;
     }
 }

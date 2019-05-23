@@ -64,7 +64,8 @@ public class ResourceGroupDataControllerFactory
         @Nullable String autoPlaceDoNotPlaceWithRscRegexRef,
         @Nullable List<String> autoPlaceReplicasOnSameListRef,
         @Nullable List<String> autoPlaceReplicasOnDifferentListRef,
-        @Nullable List<DeviceProviderKind> autoPlaceAllowedProviderListRef
+        @Nullable List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
+        @Nullable Boolean autoPlaceDisklessOnRemainingRef
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -84,14 +85,15 @@ public class ResourceGroupDataControllerFactory
             ),
             rscGrpName,
             description,
-            new ArrayList<>(layerStackRef),
+            copy(layerStackRef),
             autoPlaceReplicaCountRef,
             autoPlaceStorPoolNameRef,
-            new ArrayList<>(autoPlaceDoNotPlaceWithRscListRef),
+            copy(autoPlaceDoNotPlaceWithRscListRef),
             autoPlaceDoNotPlaceWithRscRegexRef,
-            new ArrayList<>(autoPlaceReplicasOnSameListRef),
-            new ArrayList<>(autoPlaceReplicasOnDifferentListRef),
-            new ArrayList<>(autoPlaceAllowedProviderListRef),
+            copy(autoPlaceReplicasOnSameListRef),
+            copy(autoPlaceReplicasOnDifferentListRef),
+            copy(autoPlaceAllowedProviderListRef),
+            autoPlaceDisklessOnRemainingRef,
             new TreeMap<>(),
             new TreeMap<>(),
             driver,
@@ -103,5 +105,19 @@ public class ResourceGroupDataControllerFactory
         driver.persist(rscGrp);
 
         return rscGrp;
+    }
+
+    private <T> ArrayList<T> copy(List<T> source)
+    {
+        ArrayList<T> copiedList;
+        if (source == null)
+        {
+            copiedList = new ArrayList<>();
+        }
+        else
+        {
+            copiedList = new ArrayList<>(source);
+        }
+        return copiedList;
     }
 }

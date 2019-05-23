@@ -13,6 +13,7 @@ import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
@@ -142,6 +143,7 @@ public class ApplyRsc implements ApiCall
 
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
             UUID.fromString(rscDfn.getRscDfnUuid()),
+            ProtoDeserializationUtils.parseRscGrp(rscDfn.getRscGrp()),
             rscDfn.getRscName(),
             rscDfn.getExternalName().toByteArray(),
             FlagsHelper.fromStringList(

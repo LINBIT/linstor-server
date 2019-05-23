@@ -4,6 +4,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
@@ -52,6 +53,8 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 
     @Inject private VolumeDefinitionDataGenericDbDriver driver;
 
+    private ResourceGroupData dfltRscGrp;
+
     @SuppressWarnings("checkstyle:magicnumber")
     @Before
     public void setUp() throws Exception
@@ -62,10 +65,12 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_VOLUME_DEFINITIONS
         );
 
+        dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
+
         resName = new ResourceName("TestResource");
         resPort = 9001;
         resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, null, resPort, null, "secret", TransportType.IP, new ArrayList<>(), null
+            SYS_CTX, resName, null, resPort, null, "secret", TransportType.IP, new ArrayList<>(), null, dfltRscGrp
         );
 
         uuid = randomUUID();
@@ -131,7 +136,8 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             "secret",
             TransportType.IP,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null
+            null,
+            dfltRscGrp
         );
 
         volumeDefinitionDataFactory.create(

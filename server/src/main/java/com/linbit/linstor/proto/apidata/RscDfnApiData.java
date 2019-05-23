@@ -1,9 +1,12 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.linstor.api.pojo.RscGrpPojo;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.utils.Pair;
@@ -21,11 +24,13 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
 {
     private final RscDfnOuterClass.RscDfn rscDfn;
     private final List<Pair<String, RscDfnLayerDataApi>> layerData;
+    private final RscGrpPojo rscGrp;
 
     public RscDfnApiData(RscDfnOuterClass.RscDfn rscDfnRef)
     {
-        rscDfn = rscDfnRef;
         layerData = ProtoLayerUtils.extractRscDfnLayerData(rscDfnRef);
+        rscDfn = rscDfnRef;
+        rscGrp = ProtoDeserializationUtils.parseRscGrp(rscDfnRef.getRscGrp());
     }
 
     @Override
@@ -37,6 +42,12 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
             uuid = UUID.fromString(rscDfn.getRscDfnUuid());
         }
         return uuid;
+    }
+
+    @Override
+    public RscGrpApi getResourceGroup()
+    {
+        return rscGrp;
     }
 
     @Override

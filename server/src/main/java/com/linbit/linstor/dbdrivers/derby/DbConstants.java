@@ -184,13 +184,13 @@ public class DbConstants
     public static final String RESOURCE_GROUP_NAME        = "RESOURCE_GROUP_NAME";
     public static final String RESOURCE_GROUP_DSP_NAME    = "RESOURCE_GROUP_DSP_NAME";
     public static final String DESCRIPTION                = "DESCRIPTION";
-    public static final String LAYER_KIND_STACK           = "LAYER_KIND_STACK";
     public static final String REPLICA_COUNT              = "REPLICA_COUNT";
     public static final String DO_NOT_PLACE_WITH_RSC_REGEX = "DO_NOT_PLACE_WITH_RSC_REGEX";
     public static final String DO_NOT_PLACE_WITH_RSC_LIST = "DO_NOT_PLACE_WITH_RSC_LIST";
     public static final String REPLICAS_ON_SAME           = "REPLICAS_ON_SAME";
     public static final String REPLICAS_ON_DIFFERENT      = "REPLICAS_ON_DIFFERENT";
     public static final String ALLOWED_PROVIDER_LIST      = "ALLOWED_PROVIDER_LIST";
+    public static final String DISKLESS_ON_REMAINING      = "DISKLESS_ON_REMAINING";
 
     private DbConstants()
     {

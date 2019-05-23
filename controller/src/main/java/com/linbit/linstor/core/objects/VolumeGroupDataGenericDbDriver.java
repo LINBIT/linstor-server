@@ -19,7 +19,9 @@ import com.linbit.utils.StringUtils;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_GROUP_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_VOLUME_GROUPS;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
+import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
 
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Singleton
 public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDriver
 {
     private static final String[] VLM_GRP_FIELDS =
@@ -61,6 +64,7 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
+    @Inject
     public VolumeGroupDataGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,

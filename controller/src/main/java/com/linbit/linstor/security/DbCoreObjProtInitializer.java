@@ -7,6 +7,7 @@ import com.linbit.linstor.core.repository.FreeSpaceMgrProtectionRepository;
 import com.linbit.linstor.core.repository.KeyValueStoreProtectionRepository;
 import com.linbit.linstor.core.repository.NodeProtectionRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionProtectionRepository;
+import com.linbit.linstor.core.repository.ResourceGroupProtectionRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionProtectionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.transaction.TransactionException;
@@ -22,6 +23,7 @@ public class DbCoreObjProtInitializer
     private final LinStorScope initScope;
     private final NodeProtectionRepository nodesProtectionRepository;
     private final ResourceDefinitionProtectionRepository resourceDefinitionProtectionRepository;
+    private final ResourceGroupProtectionRepository resourceGroupProtectionRepository;
     private final StorPoolDefinitionProtectionRepository storPoolDefinitionProtectionRepository;
     private final FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepository;
     private final SystemConfProtectionRepository systemConfProtectionRepository;
@@ -36,6 +38,7 @@ public class DbCoreObjProtInitializer
         LinStorScope initScopeRef,
         NodeProtectionRepository nodesProtectionRepositoryRef,
         ResourceDefinitionProtectionRepository resourceDefinitionProtectionRepositoryRef,
+        ResourceGroupProtectionRepository resourceGroupProtectionRepositoryRef,
         StorPoolDefinitionProtectionRepository storPoolDefinitionProtectionRepositoryRef,
         FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepositoryRef,
         SystemConfProtectionRepository systemConfProtectionRepositoryRef,
@@ -49,6 +52,7 @@ public class DbCoreObjProtInitializer
         initScope = initScopeRef;
         nodesProtectionRepository = nodesProtectionRepositoryRef;
         resourceDefinitionProtectionRepository = resourceDefinitionProtectionRepositoryRef;
+        resourceGroupProtectionRepository = resourceGroupProtectionRepositoryRef;
         storPoolDefinitionProtectionRepository = storPoolDefinitionProtectionRepositoryRef;
         freeSpaceMgrProtectionRepository = freeSpaceMgrProtectionRepositoryRef;
         systemConfProtectionRepository = systemConfProtectionRepositoryRef;
@@ -76,6 +80,11 @@ public class DbCoreObjProtInitializer
             resourceDefinitionProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
                 initCtx,
                 ObjectProtection.buildPathController("rscDfnMap"),
+                true
+            ));
+            resourceGroupProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
+                initCtx,
+                ObjectProtection.buildPathController("rscGrpMap"),
                 true
             ));
             storPoolDefinitionProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(

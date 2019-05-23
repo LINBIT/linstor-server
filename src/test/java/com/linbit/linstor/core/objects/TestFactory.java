@@ -200,7 +200,8 @@ public class TestFactory
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
         Map<NodeName, Resource> rscMapRef,
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,
-        Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef
+        Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef,
+        ResourceGroup rscGrpRef
     )
         throws DatabaseException
     {
@@ -218,7 +219,8 @@ public class TestFactory
             vlmDfnMapRef,
             rscMapRef,
             snapshotDfnMapRef,
-            layerDataMapRef
+            layerDataMapRef,
+            rscGrpRef
         );
     }
 

@@ -30,7 +30,8 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.ALLOWED_PROVIDER_LIST;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DESCRIPTION;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_KIND_STACK;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_STACK;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.DISKLESS_ON_REMAINING;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DO_NOT_PLACE_WITH_RSC_REGEX;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DO_NOT_PLACE_WITH_RSC_LIST;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.POOL_NAME;
@@ -50,6 +51,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
@@ -63,14 +65,15 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         RESOURCE_GROUP_NAME,
         RESOURCE_GROUP_DSP_NAME,
         DESCRIPTION,
-        LAYER_KIND_STACK,
+        LAYER_STACK,
         ALLOWED_PROVIDER_LIST,
         REPLICA_COUNT,
         POOL_NAME,
         DO_NOT_PLACE_WITH_RSC_REGEX,
         DO_NOT_PLACE_WITH_RSC_LIST,
         REPLICAS_ON_SAME,
-        REPLICAS_ON_DIFFERENT
+        REPLICAS_ON_DIFFERENT,
+        DISKLESS_ON_REMAINING
     };
 
     private static final String SELECT_ALL_RSC_GRPS =
@@ -88,7 +91,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         " WHERE " + RESOURCE_GROUP_NAME + " = ?";
     private static final String UPDATE_LAYER_STACK =
         " UPDATE " + TBL_RESOURCE_GROUPS +
-        " SET " + LAYER_KIND_STACK + " = ? " +
+        " SET " + LAYER_STACK + " = ? " +
         " WHERE " + RESOURCE_GROUP_NAME + " = ?";
     private static final String UPDATE_AP_REPLICA_COUNT =
         " UPDATE " + TBL_RESOURCE_GROUPS +
@@ -118,6 +121,10 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         " UPDATE " + TBL_RESOURCE_GROUPS +
         " SET " + REPLICAS_ON_DIFFERENT + " = ? " +
         " WHERE " + RESOURCE_GROUP_NAME + " = ?";
+    private static final String UPDATE_AP_DISKLESS_ON_REMAINING =
+        " UPDATE " + TBL_RESOURCE_GROUPS +
+        " SET " + DISKLESS_ON_REMAINING + " = ? " +
+        " WHERE " + RESOURCE_GROUP_NAME + " = ?";
 
     private static final String DELETE =
         " DELETE FROM " + TBL_RESOURCE_GROUPS +
@@ -136,6 +143,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
     private final CollectionDatabaseDriver<ResourceGroupData, String> replicasOnSameListDriver;
     private final CollectionDatabaseDriver<ResourceGroupData, String> replicasOnDifferentListDriver;
     private final CollectionDatabaseDriver<ResourceGroupData, DeviceProviderKind> allowedProviderDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroupData, Boolean> disklessOnRemainingDriver;
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
@@ -162,7 +170,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         descriptionDriver = new DescriptionDriver();
         layerStackDriver = new GenericStringListDriver<>(
             "layer stack",
-            rscGrp -> rscGrp.getLayerStack(accCtx),
+            rscGrp -> rscGrp.getAutoPlaceConfig().getLayerStackList(accCtx),
             UPDATE_LAYER_STACK
         );
         replicaCountDriver = new ReplicaCountDriver();
@@ -185,9 +193,10 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         );
         allowedProviderDriver = new GenericStringListDriver<>(
             "allowed provider list",
-            rscGrp -> rscGrp.getLayerStack(accCtx),
+            rscGrp -> rscGrp.getAutoPlaceConfig().getProviderList(accCtx),
             UPDATE_AP_ALLOWED_PROVIDER_LIST
         );
+        disklessOnRemainingDriver = new DisklessOnRemainingDriver();
     }
 
     @Override
@@ -203,13 +212,15 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
             stmt.setString(2, rscGrp.getName().value);
             stmt.setString(3, rscGrp.getName().displayValue);
             SQLUtils.setStringIfNotNull(stmt, 4, rscGrp.getDescription(dbCtx));
-            SQLUtils.setJsonIfNotNull(stmt, 5, rscGrp.getLayerStack(dbCtx));
-            SQLUtils.setIntIfNotNull(stmt, 6, autoPlaceConfig.getReplicaCount(dbCtx));
-            SQLUtils.setStringIfNotNull(stmt, 7, autoPlaceConfig.getStorPoolNameStr(dbCtx));
-            SQLUtils.setStringIfNotNull(stmt, 8, autoPlaceConfig.getDoNotPlaceWithRscRegex(dbCtx));
-            SQLUtils.setJsonIfNotNull(stmt, 9, autoPlaceConfig.getDoNotPlaceWithRscList(dbCtx));
-            SQLUtils.setJsonIfNotNull(stmt, 10, autoPlaceConfig.getReplicasOnSameList(dbCtx));
-            SQLUtils.setJsonIfNotNull(stmt, 11, autoPlaceConfig.getReplicasOnDifferentList(dbCtx));
+            SQLUtils.setJsonIfNotNullAsVarchar(stmt, 5, autoPlaceConfig.getLayerStackList(dbCtx));
+            SQLUtils.setJsonIfNotNullAsVarchar(stmt, 6, autoPlaceConfig.getProviderList(dbCtx));
+            SQLUtils.setIntIfNotNull(stmt, 7, autoPlaceConfig.getReplicaCount(dbCtx));
+            SQLUtils.setStringIfNotNull(stmt, 8, autoPlaceConfig.getStorPoolNameStr(dbCtx));
+            SQLUtils.setStringIfNotNull(stmt, 9, autoPlaceConfig.getDoNotPlaceWithRscRegex(dbCtx));
+            SQLUtils.setJsonIfNotNullAsVarchar(stmt, 10, autoPlaceConfig.getDoNotPlaceWithRscList(dbCtx));
+            SQLUtils.setJsonIfNotNullAsBlob(stmt, 11, autoPlaceConfig.getReplicasOnSameList(dbCtx));
+            SQLUtils.setJsonIfNotNullAsBlob(stmt, 12, autoPlaceConfig.getReplicasOnDifferentList(dbCtx));
+            SQLUtils.setBooleanIfNotNull(stmt, 13, autoPlaceConfig.getDisklessOnRemaining(dbCtx));
 
             stmt.executeUpdate();
 
@@ -273,6 +284,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
                     invalidNameExc
                 );
             }
+
             ObjectProtection objProt = getObjectProtection(rscGrpName);
 
             Map<VolumeNumber, VolumeGroup> vlmGrpMap = new TreeMap<>();
@@ -283,14 +295,15 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
                 objProt,
                 rscGrpName,
                 resultSet.getString(DESCRIPTION),
-                SQLUtils.getAsTypedList(resultSet, LAYER_KIND_STACK, DeviceLayerKind::valueOf),
+                SQLUtils.getAsTypedList(resultSet, LAYER_STACK, DeviceLayerKind::valueOf),
                 SQLUtils.getNullableInteger(resultSet, REPLICA_COUNT),
                 resultSet.getString(POOL_NAME),
-                SQLUtils.getAsStringList(resultSet, DO_NOT_PLACE_WITH_RSC_LIST),
+                SQLUtils.getAsStringListFromVarchar(resultSet, DO_NOT_PLACE_WITH_RSC_LIST),
                 resultSet.getString(DO_NOT_PLACE_WITH_RSC_REGEX),
-                SQLUtils.getAsStringList(resultSet, REPLICAS_ON_SAME),
-                SQLUtils.getAsStringList(resultSet, REPLICAS_ON_DIFFERENT),
+                SQLUtils.getAsStringListFromBlob(resultSet, REPLICAS_ON_SAME),
+                SQLUtils.getAsStringListFromBlob(resultSet, REPLICAS_ON_DIFFERENT),
                 SQLUtils.getAsTypedList(resultSet, ALLOWED_PROVIDER_LIST, DeviceProviderKind::valueOf),
+                SQLUtils.getNullableBoolean(resultSet, DISKLESS_ON_REMAINING),
                 vlmGrpMap,
                 rscDfnMap,
                 this,
@@ -395,6 +408,12 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
     public CollectionDatabaseDriver<ResourceGroupData, DeviceProviderKind> getAllowedProviderListDriver()
     {
         return allowedProviderDriver;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<ResourceGroupData, Boolean> getDisklessOnRemainingDriver()
+    {
+        return disklessOnRemainingDriver;
     }
 
     private Connection getConnection()
@@ -568,6 +587,51 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         }
     }
 
+    private class DisklessOnRemainingDriver implements SingleColumnDatabaseDriver<ResourceGroupData, Boolean>
+    {
+        @Override
+        public void update(ResourceGroupData rscGrp, Boolean disklessOnRemaining)
+            throws DatabaseException
+        {
+            try
+            {
+                errorReporter.logTrace(
+                    "Updating ResourceGroup's 'disklessOnRemaining' from [%s] to [%s] %s",
+                    rscGrp.getAutoPlaceConfig().getDisklessOnRemaining(dbCtx),
+                    disklessOnRemaining,
+                    getId(rscGrp)
+                );
+                try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_AP_DISKLESS_ON_REMAINING))
+                {
+                    if (disklessOnRemaining == null)
+                    {
+                        stmt.setNull(1, Types.BOOLEAN);
+                    }
+                    else
+                    {
+                        stmt.setBoolean(1, disklessOnRemaining);
+                    }
+                    stmt.setString(2, rscGrp.getName().value);
+                    stmt.executeUpdate();
+                }
+                errorReporter.logTrace(
+                    "ResourceGroup's 'disklessOnRemaining' updated from [%s] to [%s] %s",
+                    rscGrp.getAutoPlaceConfig().getDisklessOnRemaining(dbCtx),
+                    disklessOnRemaining,
+                    getId(rscGrp)
+                );
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
+            }
+        }
+    }
+
     private class GenericStringListDriver<TYPE> implements
         CollectionDatabaseDriver<ResourceGroupData, TYPE>
     {
@@ -613,7 +677,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
                 );
                 try (PreparedStatement stmt = getConnection().prepareStatement(updateStmt))
                 {
-                    SQLUtils.setJsonIfNotNull(stmt, 1, backingCollection);
+                    SQLUtils.setJsonIfNotNullAsVarchar(stmt, 1, backingCollection);
                     stmt.setString(2, rscGrp.getName().value);
                     stmt.executeUpdate();
                 }

@@ -50,6 +50,7 @@ public class ResourceDefinitionDataSatelliteFactory
     public ResourceDefinitionData getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
+        ResourceGroup rscGrpRef,
         ResourceName rscName,
         ResourceDefinition.RscDfnFlags[] initFlags
     )
@@ -77,7 +78,8 @@ public class ResourceDefinitionDataSatelliteFactory
                     new TreeMap<>(),
                     new TreeMap<>(),
                     new TreeMap<>(),
-                    new TreeMap<>()
+                    new TreeMap<>(),
+                    rscGrpRef
                 );
             }
         }

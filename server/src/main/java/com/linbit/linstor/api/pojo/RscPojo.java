@@ -121,6 +121,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         return rscDefinition.getUuid();
     }
 
+    public ResourceDefinition.RscDfnApi getRscDfnApi()
+    {
+        return rscDefinition;
+    }
+
     public long getRscDfnFlags()
     {
         return rscDefinition.getFlags();
@@ -129,6 +134,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     public Map<String, String> getRscDfnProps()
     {
         return rscDefinition.getProps();
+    }
+
+    public String getResourceGroupName()
+    {
+        return rscDefinition.getResourceName();
     }
 
     public UUID getLocalRscUuid()

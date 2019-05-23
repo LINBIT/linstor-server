@@ -4,6 +4,8 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -11,6 +13,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.ExceptionMapper;
 import java.io.IOException;
 import java.net.SocketException;
@@ -23,6 +26,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
 import org.glassfish.grizzly.http.CompressionConfig;
 import org.glassfish.grizzly.http.Method;
@@ -308,16 +313,53 @@ public class GrizzlyHttpService implements SystemService
 
     private void registerExceptionMappers(ResourceConfig resourceConfig)
     {
-        resourceConfig.register(new ExceptionMapper<ApiRcException>()
+        resourceConfig.register(new ExceptionMapper<Exception>()
         {
             @Override
-            public javax.ws.rs.core.Response toResponse(ApiRcException exception)
+            public javax.ws.rs.core.Response toResponse(Exception exc)
             {
-                errorReporter.reportError(exception);
-                return ApiCallRcConverter.toResponse(
-                    exception.getApiCallRc(),
-                    javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR
-                );
+                String errorReport = errorReporter.reportError(exc);
+                javax.ws.rs.core.Response.Status respStatus;
+
+                ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                if (exc instanceof ApiRcException)
+                {
+                    apiCallRc.addEntries(((ApiRcException) exc).getApiCallRc());
+                    respStatus = javax.ws.rs.core.Response.Status.BAD_REQUEST;
+                }
+                else if (exc instanceof JsonMappingException ||
+                    exc instanceof JsonParseException)
+                {
+                    apiCallRc.addEntry(
+                        ApiCallRcImpl.entryBuilder(
+                            ApiConsts.API_CALL_PARSE_ERROR,
+                            "Unable to parse input json."
+                        )
+                        .setDetails(exc.getMessage())
+                        .addErrorId(errorReport)
+                        .build()
+                    );
+                    respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+                }
+                else
+                {
+                    apiCallRc.addEntry(
+                        ApiCallRcImpl.entryBuilder(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            "An unknown error occurred."
+                        )
+                        .setDetails(exc.getMessage())
+                        .addErrorId(errorReport)
+                        .build()
+                    );
+                    respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+                }
+
+                return javax.ws.rs.core.Response
+                    .status(respStatus)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(ApiCallRcConverter.toJSON(apiCallRc))
+                    .build();
             }
         });
     }

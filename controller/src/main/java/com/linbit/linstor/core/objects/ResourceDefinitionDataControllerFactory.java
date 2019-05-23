@@ -71,7 +71,8 @@ public class ResourceDefinitionDataControllerFactory
         String secret,
         TransportType transType,
         List<DeviceLayerKind> layerStack,
-        Short peerSlotsRef
+        Short peerSlotsRef,
+        ResourceGroup rscGroup
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
@@ -101,8 +102,11 @@ public class ResourceDefinitionDataControllerFactory
             new TreeMap<>(),
             new TreeMap<>(),
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            rscGroup
         );
+
+        rscGroup.addResourceDefinition(accCtx, rscDfn);
 
         driver.create(rscDfn);
 

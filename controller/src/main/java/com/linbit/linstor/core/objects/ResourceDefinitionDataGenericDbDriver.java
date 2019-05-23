@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -38,6 +39,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_STACK;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_DSP_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_EXTERNAL_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_FLAGS;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_GROUP_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_RESOURCE_DEFINITIONS;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
@@ -63,13 +65,16 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     private static final String RD_FLAGS = RESOURCE_FLAGS;
     private static final String RD_LAYERS = LAYER_STACK;
     private static final String RD_EXT_NAME = RESOURCE_EXTERNAL_NAME;
+    private static final String RD_RSC_GRP_NAME = RESOURCE_GROUP_NAME;
+
     private static final String[] RSC_DFN_FIELDS = {
         RD_UUID,
         RD_NAME,
         RD_DSP_NAME,
         RD_FLAGS,
         RD_LAYERS,
-        RD_EXT_NAME
+        RD_EXT_NAME,
+        RD_RSC_GRP_NAME
     };
 
     private static final String RD_SELECT_ALL =
@@ -141,12 +146,13 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             stmt.setString(2, resourceDefinition.getName().value);
             stmt.setString(3, resourceDefinition.getName().displayValue);
             stmt.setLong(4, resourceDefinition.getFlags().getFlagsBits(dbCtx));
-            SQLUtils.setJsonIfNotNull(
+            SQLUtils.setJsonIfNotNullAsVarchar(
                 stmt,
                 5,
                 DatabaseLoader.asStrList(resourceDefinition.getLayerStack(dbCtx))
             );
             stmt.setBytes(6, resourceDefinition.getExternalName());
+            stmt.setString(7, resourceDefinition.getResourceGroup().getName().value);
             stmt.executeUpdate();
 
             errorReporter.logTrace("ResourceDefinition created %s", getId(resourceDefinition));
@@ -180,7 +186,8 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         return exists;
     }
 
-    public Map<ResourceDefinitionData, InitMaps> loadAll() throws DatabaseException
+    public Map<ResourceDefinitionData, InitMaps> loadAll(Map<ResourceGroupName, ResourceGroup> rscGrpMapRef)
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading all ResourceDefinitions");
         Map<ResourceDefinitionData, InitMaps> rscDfnMap = new TreeMap<>();
@@ -190,7 +197,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             {
                 while (resultSet.next())
                 {
-                    Pair<ResourceDefinitionData, InitMaps> pair = restoreRscDfn(resultSet);
+                    Pair<ResourceDefinitionData, InitMaps> pair = restoreRscDfn(resultSet, rscGrpMapRef);
                     rscDfnMap.put(pair.objA, pair.objB);
                 }
             }
@@ -203,7 +210,11 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         return rscDfnMap;
     }
 
-    private Pair<ResourceDefinitionData, InitMaps> restoreRscDfn(ResultSet resultSet) throws DatabaseException
+    private Pair<ResourceDefinitionData, InitMaps> restoreRscDfn(
+        ResultSet resultSet,
+        Map<ResourceGroupName, ResourceGroup> rscGrpMapRef
+    )
+        throws DatabaseException
     {
         Pair<ResourceDefinitionData, InitMaps> retPair = new Pair<>();
         ResourceDefinitionData resDfn;
@@ -233,13 +244,29 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             Map<NodeName, Resource> rscMap = new TreeMap<>();
             Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
 
+            ResourceGroup rscGrp;
+            try
+            {
+                rscGrp = rscGrpMapRef.get(new ResourceGroupName(resultSet.getString(RD_RSC_GRP_NAME)));
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "The resource group name of a stored ResourceDefinition in the table %s could not be restored. " +
+                            "(resource group name=%s)",
+                        TBL_RES_DEF,
+                        resultSet.getString(RD_RSC_GRP_NAME)
+                    )
+                );
+            }
             resDfn = new ResourceDefinitionData(
                 java.util.UUID.fromString(resultSet.getString(RD_UUID)),
                 objProt,
                 resourceName,
                 resultSet.getBytes(RD_EXT_NAME),
                 resultSet.getLong(RD_FLAGS),
-                DatabaseLoader.asDevLayerKindList(SQLUtils.getAsStringList(resultSet, RD_LAYERS)),
+                DatabaseLoader.asDevLayerKindList(SQLUtils.getAsStringListFromVarchar(resultSet, RD_LAYERS)),
                 this,
                 propsContainerFactory,
                 transObjFactory,
@@ -247,7 +274,8 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 vlmDfnMap,
                 rscMap,
                 snapshotDfnMap,
-                new TreeMap<>()
+                new TreeMap<>(),
+                rscGrp
             );
 
             retPair.objA = resDfn;
@@ -413,7 +441,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             );
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_LAYER_STACK))
             {
-                SQLUtils.setJsonIfNotNull(stmt, 1, DatabaseLoader.asStrList(backingCollection));
+                SQLUtils.setJsonIfNotNullAsVarchar(stmt, 1, DatabaseLoader.asStrList(backingCollection));
                 stmt.setString(2, rscDfn.getName().value);
                 stmt.executeUpdate();
             }

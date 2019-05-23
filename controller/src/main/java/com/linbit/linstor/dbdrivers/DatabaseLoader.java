@@ -224,9 +224,16 @@ public class DatabaseLoader implements DatabaseDriver
             Map<Node, Node.InitMaps> loadedNodesMap =
                 Collections.unmodifiableMap(nodeDriver.loadAll());
             Map<ResourceDefinition, ResourceDefinition.InitMaps> loadedRscDfnsMap =
-                Collections.unmodifiableMap(rscDfnDriver.loadAll());
+                Collections.unmodifiableMap(rscDfnDriver.loadAll(tmpRscGroups));
             Map<StorPoolDefinition, StorPoolDefinition.InitMaps> loadedStorPoolDfnsMap =
                 Collections.unmodifiableMap(storPoolDfnDriver.loadAll());
+
+            // add the rscDfns into the corresponding rscGroup rscDfn-map
+            for (ResourceDefinition rscDfn : loadedRscDfnsMap.keySet())
+            {
+                loadedRscGroupsMap.get(rscDfn.getResourceGroup()).getRscDfnMap()
+                    .put(rscDfn.getName(), rscDfn);
+            }
 
             // build temporary maps for easier restoring of the remaining objects
             Map<NodeName, Node> tmpNodesMap =

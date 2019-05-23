@@ -7,6 +7,7 @@ import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -81,6 +82,7 @@ public class ApplySnapshot implements ApiCall
             new SnapshotDfnPojo(
                 new RscDfnPojo(
                     UUID.fromString(snapshotData.getRscDfnUuid()),
+                    ProtoDeserializationUtils.parseRscGrp(snapshotData.getRscGrp()),
                     snapshotData.getRscName(),
                     null,
                     snapshotData.getRscDfnFlags(),

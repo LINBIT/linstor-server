@@ -74,4 +74,10 @@ public class AutoSelectFilterApiData implements AutoSelectFilterApi
     {
         return ProtoDeserializationUtils.parseDeviceProviderKind(selectFilterProto.getProvidersList());
     }
+
+    @Override
+    public Boolean getDisklessOnRemaining()
+    {
+        return selectFilterProto.getDisklessOnRemaining();
+    }
 }

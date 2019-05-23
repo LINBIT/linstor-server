@@ -599,6 +599,12 @@ public class Json
         {
             return LinstorParsingUtils.asProviderKind(autoSelectFilter.provider_list);
         }
+
+        @Override
+        public Boolean getDisklessOnRemaining()
+        {
+            return autoSelectFilter.diskless_on_remaining;
+        }
     }
 
     public static JsonGenTypes.SnapshotVolumeDefinition apiToSnapshotVolumeDefinition(
@@ -686,7 +692,6 @@ public class Json
         rscGrp.props = rscGrpApi.getRcsDfnProps();
         rscGrp.uuid = rscGrpApi.getUuid().toString();
 
-        rscGrp.layer_stack = rscGrpApi.getLayerStack().stream().map(Json::getLayerTypeString).collect(Collectors.toList());
         AutoSelectFilterApi autoSelectApi = rscGrpApi.getAutoSelectFilter();
         if (autoSelectApi != null)
         {

@@ -23,11 +23,11 @@ public interface VolumeGroup extends ProtectedObject, DbgInstanceUuid, Transacti
     Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
+    VlmGrpApi getApiData(AccessContext accCtxRef)
+        throws AccessDeniedException;
+
     void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException;
-
-    VlmGrpApi getApiData(AccessContext accCtx)
-        throws AccessDeniedException;
 
     interface VlmGrpApi
     {

@@ -91,6 +91,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private final TransactionList<ResourceDefinitionData, DeviceLayerKind> layerStack;
 
+    private final ResourceGroup rscGrp;
+
     ResourceDefinitionData(
         UUID objIdRef,
         ObjectProtection objProtRef,
@@ -105,7 +107,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
         Map<NodeName, Resource> rscMapRef,
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,
-        Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef
+        Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef,
+        ResourceGroup rscGrpRef
     )
         throws DatabaseException
     {
@@ -113,6 +116,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ObjectProtection.class, objProtRef);
+        ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceGroup.class, rscGrpRef);
         objId = objIdRef;
         dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
@@ -128,6 +132,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             dbDriver.getLayerStackDriver()
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+        rscGrp = rscGrpRef;
 
         rscDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resName)
@@ -148,6 +153,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             volumeMap,
             resourceMap,
             rscDfnProps,
+            rscGrp,
             deleted
         );
     }
@@ -469,6 +475,13 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public ResourceGroup getResourceGroup()
+    {
+        checkDeleted();
+        return rscGrp;
+    }
+
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
@@ -497,6 +510,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             {
                 rscDfnLayerObject.delete();
             }
+
+            rscGrp.removeResourceDefinition(accCtx, this);
 
             objProt.delete(accCtx);
 
@@ -561,6 +576,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
         return new RscDfnPojo(
             getUuid(),
+            getResourceGroup().getApiData(accCtx),
             getName().getDisplayName(),
             getExternalName(),
             getFlags().getFlagsBits(accCtx),

@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.objects.KeyValueStore;
@@ -220,7 +219,8 @@ public class CtrlApiCallHandler
                 props,
                 vlmDescrMapRef,
                 layerStackRef,
-                peerSlotsRef
+                peerSlotsRef,
+                null
             );
         }
         return apiCallRc;
@@ -1228,32 +1228,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc modifyResourceGroup(
-        String rscGrpNameRef,
-        String description,
-        Map<String, String> overrideProps,
-        HashSet<String> deletePropKeys,
-        HashSet<String> deleteNamespaces,
-        List<String> overrideLayerStackListRef,
-        AutoSelectFilterApi autoApi
-    )
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
-        {
-            apiCallRc = rscGrpApiCallHandler.modify(
-                rscGrpNameRef,
-                description,
-                overrideProps,
-                deletePropKeys,
-                deleteNamespaces,
-                overrideLayerStackListRef,
-                autoApi
-            );
-        }
-        return apiCallRc;
-    }
-
     public ApiCallRc deleteResourceGroup(String rscGrpNameStrRef)
     {
         ApiCallRc apiCallRc;
@@ -1275,6 +1249,16 @@ public class CtrlApiCallHandler
             );
         }
         return apiCallRc;
+    }
+
+    public List<VlmGrpApi> listVolumeGroups(String rscNameRef, Integer vlmNrRef)
+    {
+        List<VlmGrpApi> listResourceGroups;
+        try (LockGuard lg = lockGuardFactory.build(READ, RSC_GRP_MAP))
+        {
+            listResourceGroups = vlmGrpApiCallHandler.listVolumeGroups(rscNameRef, vlmNrRef);
+        }
+        return listResourceGroups;
     }
 
     public ApiCallRc modifyVolumeGroup(

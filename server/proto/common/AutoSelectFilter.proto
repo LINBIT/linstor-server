@@ -36,4 +36,6 @@ message AutoSelectFilter
     // select nodes which support at least the following list of (storage) provider.
     // an empty list is the same as a list containing all providers (nothing is filtered)
     repeated common.ProviderType providers = 8;
+
+    optional bool diskless_on_remaining = 9;
 }

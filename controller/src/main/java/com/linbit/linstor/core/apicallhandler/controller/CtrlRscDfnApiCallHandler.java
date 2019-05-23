@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -25,11 +26,14 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroupDataControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -73,6 +77,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final ResourceGroupDataControllerFactory resourceGroupeDataFactory;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -90,6 +95,7 @@ public class CtrlRscDfnApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
+        ResourceGroupDataControllerFactory resourceGroupDataFactoryRef,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -106,6 +112,7 @@ public class CtrlRscDfnApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        resourceGroupeDataFactory = resourceGroupDataFactoryRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -125,7 +132,8 @@ public class CtrlRscDfnApiCallHandler
         Map<String, String> props,
         List<VlmDfnWtihCreationPayload> volDescrMap,
         List<String> layerStackStrList,
-        Short peerSlotsRef
+        Short peerSlotsRef,
+        String rscGrpNameStr
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -159,7 +167,8 @@ public class CtrlRscDfnApiCallHandler
                 portInt,
                 secret,
                 layerStack,
-                peerSlotsRef
+                peerSlotsRef,
+                rscGrpNameStr
             );
 
             if (rscNameStr.trim().isEmpty())
@@ -384,7 +393,8 @@ public class CtrlRscDfnApiCallHandler
         Integer portInt,
         String secret,
         List<DeviceLayerKind> layerStack,
-        Short peerSlotsRef
+        Short peerSlotsRef,
+        String rscGrpNameStr
     )
         throws InvalidNameException
     {
@@ -466,6 +476,26 @@ public class CtrlRscDfnApiCallHandler
         ResourceDefinitionData rscDfn;
         try
         {
+
+            ResourceGroupData rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStr, false);
+            if (rscGrp == null && InternalApiConsts.DEFAULT_RSC_GRP_NAME.equalsIgnoreCase(rscGrpNameStr))
+            {
+                rscGrp = resourceGroupeDataFactory.create(
+                    peerAccCtx.get(),
+                    new ResourceGroupName(rscGrpNameStr),
+                    "Default resource group",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                );
+            }
+
             rscDfn = resourceDefinitionDataFactory.create(
                 peerAccCtx.get(),
                 rscName,
@@ -475,7 +505,8 @@ public class CtrlRscDfnApiCallHandler
                 secret,
                 transportType,
                 layerStack,
-                peerSlotsRef
+                peerSlotsRef,
+                rscGrp
             );
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)

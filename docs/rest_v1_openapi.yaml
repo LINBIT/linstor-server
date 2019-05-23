@@ -2049,6 +2049,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-groups/{resource-group}/spawn:
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupName'
+    post:
+      tags:
+        - developers
+      summary: create a new resource-definition based on the given resource-group
+      operationId: resourceGroupSpawn
+      description: |
+        Creates a new resource-definition and auto-deploys if configured to do so.
+      responses:
+        '201':
+          description: resource-definition created and auto-deployed if configured accordingly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceGroupSpawn'
+            example:
+              rsc_name: res1
+              vlm_sizes: 
+                - 1048576
+                - 20971520
   /v1/resource-groups/{resource-group}/volume-groups:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
@@ -2079,12 +2110,10 @@ paths:
     post:
       tags:
         - developers
-      summary: add a volume-group to a resource
+      summary: add a volume-group to a resource-group
       operationId: volumeGroupCreate
       description: |
         Adds a volume-group.
-
-        Required properties is only `size`, all other will be auto generated if not given.
       responses:
         '201':
           description: volume-group created
@@ -2100,10 +2129,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VolumeGroupCreate'
-            example:
-              volume_group:
-                size_kib: 262144
+              $ref: '#/components/schemas/VolumeGroup'
   /v1/resource-groups/{resource-group}/volume-groups/{volume_number}:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
@@ -3707,16 +3733,12 @@ components:
       type: object
       properties:
         name:
-          type: string
+          type: string 
           default: ''
-          example: rscgrp1
+          example: rscgrp1 
         description:
           type: string
           default: ''
-        layer_stack:
-          type: array
-          items:
-            $ref: '#/components/schemas/LayerType'
         props:
           $ref: '#/components/schemas/Properties'
         select_filter:
@@ -3741,12 +3763,34 @@ components:
           type: array
           items:
             type: string
-        layer_stack:
-          type: array
-          items:
-            $ref: '#/components/schemas/LayerType'
         select_filter:
           $ref: '#/components/schemas/AutoSelectFilter'
+    ResourceGroupSpawn:
+      type: object
+      properties:
+        rsc_name:
+          type: string
+          description: name of the resulting resource-definition
+        vlm_sizes:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: sizes (in kib) of the resulting volume-definitions
+        partial:
+          type: boolean
+          default: false
+          description: |
+            If false, the length of the vlm_sizes has to match the number of volume-groups or an 
+            error is returned.
+            
+            If true and there are more vlm_sizes than volume-groups, the additional volume-definitions
+            will simply have no pre-set properties (i.e. "empty" volume-definitions)
+            If true and there are less vlm_sizes than volume-groups, the additional volume-groups
+            won't be used.
+            
+            If the count of vlm_sizes matches the number of volume-groups, this "partial" parameter 
+            has no effect.  
     VolumeGroup:
       type: object
       properties:
@@ -3755,8 +3799,6 @@ components:
           format: int32
         props:
           $ref: '#/components/schemas/Properties'
-        select_filter:
-          $ref: '#/components/schemas/AutoSelectFilter'
         uuid:
           type: string
           description: unique object id
@@ -3821,6 +3863,8 @@ components:
           type: array
           items:
             type: string
+        diskless_on_remaining:
+          type: boolean
     Candidate:
       type: object
       properties:

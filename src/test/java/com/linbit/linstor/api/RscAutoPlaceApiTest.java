@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
@@ -101,6 +102,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
     @Bind @Mock
     protected FreeCapacityFetcher freeCapacityFetcher;
+    private ResourceGroupData dfltRscGrp;
 
     @Before
     @Override
@@ -116,6 +118,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 
         commitAndCleanUp(true);
+
+        dfltRscGrp = createDefaultResourceGroup(BOB_ACC_CTX);
     }
 
     @After
@@ -929,7 +933,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             "NotTellingYou",
             ResourceDefinition.TransportType.IP,
             Arrays.asList(DRBD, STORAGE),
-            null
+            null,
+            dfltRscGrp
         );
 
         rscDfnMap.put(rscDfn.getName(), rscDfn);
@@ -1098,6 +1103,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     public List<DeviceProviderKind> getProviderList()
                     {
                         return providerList;
+                    }
+
+                    @Override
+                    public Boolean getDisklessOnRemaining()
+                    {
+                        return disklessOnRemaining;
                     }
                 },
                 disklessOnRemaining,

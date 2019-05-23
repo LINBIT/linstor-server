@@ -20,7 +20,6 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
-import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -34,7 +33,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -50,8 +48,6 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
 
     private final TransactionSimpleObject<ResourceGroupData, String> description;
 
-    private final TransactionList<ResourceGroupData, DeviceLayerKind> layerStack;
-
     private final Props rscDfnGrpProps;
 
     private final TransactionMap<VolumeNumber, VolumeGroup> vlmMap;
@@ -64,12 +60,12 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
 
     private final TransactionSimpleObject<ResourceGroupData, Boolean> deleted;
 
-    ResourceGroupData(
+    public ResourceGroupData(
         UUID uuidRef,
         ObjectProtection objProtRef,
         ResourceGroupName rscGrpNameRef,
         String descriptionRef,
-        List<DeviceLayerKind> layerStackRef,
+        List<DeviceLayerKind> autoPlaceLayerStackRef,
         Integer autoPlaceReplicaCountRef,
         String autoPlaceStorPoolNameRef,
         List<String> autoPlaceDoNotPlaceWithRscListRef,
@@ -77,6 +73,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
         List<String> autoPlaceReplicasOnSameListRef,
         List<String> autoPlaceReplicasOnDifferentListRef,
         List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
+        Boolean autoPlaceDisklessOnRemainingRef,
         Map<VolumeNumber, VolumeGroup> vlmGrpMapRef,
         Map<ResourceName, ResourceDefinition> rscDfnMapRef,
         ResourceGroupDataDatabaseDriver dbDriverRef,
@@ -102,11 +99,6 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
             PropsContainer.buildPath(rscGrpNameRef)
         );
         vlmMap = transObjFactory.createTransactionMap(vlmGrpMapRef, null);
-        layerStack = transObjFactory.createTransactionPrimitiveList(
-            this,
-            layerStackRef,
-            dbDriverRef.getLayerStackDriver()
-        );
 
         rscDfnMap = transObjFactory.createTransactionMap(rscDfnMapRef, null);
 
@@ -118,8 +110,9 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
             autoPlaceDoNotPlaceWithRscRegexRef,
             autoPlaceReplicasOnSameListRef,
             autoPlaceReplicasOnDifferentListRef,
-            layerStack,
+            autoPlaceLayerStackRef,
             autoPlaceAllowedProviderListRef,
+            autoPlaceDisklessOnRemainingRef,
             dbDriverRef,
             transObjFactory,
             transMgrProvider
@@ -130,7 +123,6 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
         transObjs = Arrays.asList(
             objProt,
             rscDfnGrpProps,
-            layerStack,
             autoPlaceConfig,
             vlmMap,
             deleted
@@ -182,6 +174,24 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
     }
 
     @Override
+    public void addResourceDefinition(AccessContext accCtx, ResourceDefinitionData rscDfnRef)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        rscDfnMap.put(rscDfnRef.getName(), rscDfnRef);
+    }
+
+    @Override
+    public void removeResourceDefinition(AccessContext accCtx, ResourceDefinitionData rscDfnRef)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        rscDfnMap.remove(rscDfnRef.getName());
+    }
+
+    @Override
     public boolean hasResourceDefinitions(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
@@ -189,30 +199,12 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
         return !rscDfnMap.isEmpty();
     }
 
-
     @Override
     public Props getRscDfnGrpProps(AccessContext accCtxRef)
         throws AccessDeniedException
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtxRef, objProt, rscDfnGrpProps);
-    }
-
-    @Override
-    public List<DeviceLayerKind> getLayerStack(AccessContext accCtx) throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-        return layerStack;
-    }
-
-    public void setLayerStack(AccessContext accCtx, List<DeviceLayerKind> layerStackRef)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
-        layerStack.clear();
-        layerStack.addAll(layerStackRef);
     }
 
     @Override
@@ -238,6 +230,13 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return vlmMap.get(vlmNr);
+    }
+
+    public List<VolumeGroup> getVolumeGroups(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return Collections.unmodifiableList(new ArrayList<>(vlmMap.values()));
     }
 
     public void putVolumeGroup(AccessContext accCtx, VolumeGroupData vlmGrpDataRef)
@@ -271,6 +270,24 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
     {
         checkDeleted();
         return name.compareTo(other.getName());
+    }
+
+    @Override
+    public RscGrpApi getApiData(AccessContext accCtxRef) throws AccessDeniedException
+    {
+        List<VlmGrpApi> vlmGrpApiList = new ArrayList<>(vlmMap.size());
+        for (VolumeGroup vlmGrp : vlmMap.values())
+        {
+            vlmGrpApiList.add(vlmGrp.getApiData(accCtxRef));
+        }
+        return new RscGrpPojo(
+            objId,
+            name.displayValue,
+            description.get(),
+            rscDfnGrpProps.map(),
+            vlmGrpApiList,
+            autoPlaceConfig.getApiData(accCtxRef)
+        );
     }
 
     @Override
@@ -308,24 +325,5 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
         {
             throw new AccessToDeletedDataException("Access to deleted resource group");
         }
-    }
-
-    @Override
-    public RscGrpApi getApiData(AccessContext accessContextRef) throws AccessDeniedException
-    {
-        List<VlmGrpApi> vlmGrpApiList = new ArrayList<>();
-        for (VolumeGroup vlmGrp : vlmMap.values())
-        {
-            vlmGrpApiList.add(vlmGrp.getApiData(accessContextRef));
-        }
-        return new RscGrpPojo(
-            objId,
-            name.displayValue,
-            description.get(),
-            new ArrayList<>(layerStack),
-            new TreeMap<>(rscDfnGrpProps.map()),
-            vlmGrpApiList,
-            autoPlaceConfig == null ? null : autoPlaceConfig.getApiData(accessContextRef)
-        );
     }
 }

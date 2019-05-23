@@ -11,7 +11,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ProtectedObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 
 import javax.annotation.Nullable;
@@ -35,12 +34,15 @@ public interface ResourceGroup extends TransactionObject, DbgInstanceUuid,
     String setDescription(AccessContext accCtxRef, String descriptionRef)
         throws AccessDeniedException, DatabaseException;
 
+    void addResourceDefinition(AccessContext accCtxRef, ResourceDefinitionData rscDfnRef)
+        throws AccessDeniedException;
+
+    void removeResourceDefinition(AccessContext accCtxRef, ResourceDefinitionData rscDfnRef)
+        throws AccessDeniedException;
+
     boolean hasResourceDefinitions(AccessContext accCtxRef) throws AccessDeniedException;
 
     Props getRscDfnGrpProps(AccessContext accCtxRef)
-        throws AccessDeniedException;
-
-    List<DeviceLayerKind> getLayerStack(AccessContext accCtx)
         throws AccessDeniedException;
 
     AutoSelectorConfig getAutoPlaceConfig();
@@ -57,12 +59,14 @@ public interface ResourceGroup extends TransactionObject, DbgInstanceUuid,
     void delete(AccessContext accCtxRef)
         throws AccessDeniedException, DatabaseException;
 
+    RscGrpApi getApiData(AccessContext accCtxRef)
+        throws AccessDeniedException;
+
     interface RscGrpApi
     {
         @Nullable UUID getUuid();
         String getName();
         String getDescription();
-        List<DeviceLayerKind> getLayerStack();
         Map<String, String> getRcsDfnProps();
         @Nullable AutoSelectFilterApi getAutoSelectFilter();
         List<VlmGrpApi> getVlmGrpList();
@@ -74,6 +78,4 @@ public interface ResourceGroup extends TransactionObject, DbgInstanceUuid,
         Map<ResourceName, ResourceDefinition> getRscDfnMap();
     }
 
-    RscGrpApi getApiData(AccessContext accessContextRef)
-        throws AccessDeniedException;
 }

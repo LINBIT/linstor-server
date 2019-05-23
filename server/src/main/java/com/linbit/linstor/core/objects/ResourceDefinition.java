@@ -6,6 +6,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -145,6 +146,8 @@ public interface ResourceDefinition
     )
         throws AccessDeniedException;
 
+    ResourceGroup getResourceGroup();
+
     @Override
     default int compareTo(ResourceDefinition otherRscDfn)
     {
@@ -237,6 +240,7 @@ public interface ResourceDefinition
     public interface RscDfnApi
     {
         UUID getUuid();
+        RscGrpApi getResourceGroup();
         String getResourceName();
         byte[] getExternalName();
         long getFlags();

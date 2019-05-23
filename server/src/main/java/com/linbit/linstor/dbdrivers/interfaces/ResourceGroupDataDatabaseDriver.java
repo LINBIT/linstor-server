@@ -38,4 +38,6 @@ public interface ResourceGroupDataDatabaseDriver
     CollectionDatabaseDriver<ResourceGroupData, String> getReplicasOnDifferentDriver();
 
     CollectionDatabaseDriver<ResourceGroupData, DeviceProviderKind> getAllowedProviderListDriver();
+
+    SingleColumnDatabaseDriver<ResourceGroupData, Boolean> getDisklessOnRemainingDriver();
 }

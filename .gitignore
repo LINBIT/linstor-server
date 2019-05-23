@@ -8,6 +8,7 @@
 nbproject/
 nbproject/build-impl.xml
 bin/
+.externalToolBuilders/
 
 # build output
 server/generated*

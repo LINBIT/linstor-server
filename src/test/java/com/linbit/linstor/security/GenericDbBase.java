@@ -13,6 +13,7 @@ import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerLinstorModule;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.ControllerArgumentsModule;
@@ -26,6 +27,7 @@ import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -39,6 +41,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPoolDataControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataControllerFactory;
@@ -67,6 +70,7 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -92,6 +96,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -714,6 +719,34 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     )
     {
         return securityTestUtils.createObjectProtection(accCtx, objPath);
+    }
+
+    protected ResourceGroupData createDefaultResourceGroup(AccessContext initCtx) throws InvalidNameException
+    {
+        return new ResourceGroupData(
+            java.util.UUID.randomUUID(),
+            createTestObjectProtection(
+                initCtx,
+                ObjectProtection.buildPath(new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME))
+            ),
+            new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
+            "",
+            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            rscDfnMap,
+            null,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider
+        );
     }
 
     protected FreeSpaceMgr getFreeSpaceMgr(StorPoolDefinition storPoolDfn, Node node)
