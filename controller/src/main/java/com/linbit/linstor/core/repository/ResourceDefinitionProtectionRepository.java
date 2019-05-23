@@ -106,6 +106,7 @@ public class ResourceDefinitionProtectionRepository implements ResourceDefinitio
         }
     }
 
+    @Override
     public CoreModule.ResourceDefinitionMap getMapForView(AccessContext accCtx)
         throws AccessDeniedException
     {

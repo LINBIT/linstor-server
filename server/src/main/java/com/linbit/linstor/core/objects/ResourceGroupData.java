@@ -102,7 +102,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
             PropsContainer.buildPath(rscGrpNameRef)
         );
         vlmMap = transObjFactory.createTransactionMap(vlmGrpMapRef, null);
-        layerStack = transObjFactory.createTransactionListPrimitive(
+        layerStack = transObjFactory.createTransactionPrimitiveList(
             this,
             layerStackRef,
             dbDriverRef.getLayerStackDriver()

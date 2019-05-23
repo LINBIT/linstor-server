@@ -158,4 +158,25 @@ public class SQLUtils
 
         return ret;
     }
+
+    public static Integer getNullableInteger(ResultSet resultSetRef, String column) throws SQLException
+    {
+        Integer ret = resultSetRef.getInt(column);
+        if (resultSetRef.wasNull())
+        {
+            ret = null;
+        }
+        return ret;
+    }
+
+    public static Boolean getNullableBoolean(ResultSet resultSetRef, String column) throws SQLException
+    {
+        Boolean ret = resultSetRef.getBoolean(column);
+        if (resultSetRef.wasNull())
+        {
+            ret = null;
+        }
+        return ret;
+    }
+
 }

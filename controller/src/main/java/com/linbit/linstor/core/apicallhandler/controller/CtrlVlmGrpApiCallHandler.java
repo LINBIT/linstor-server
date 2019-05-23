@@ -336,7 +336,7 @@ public class CtrlVlmGrpApiCallHandler
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_POOL_EXHAUSTED_VLM_NR,
-                    "An exception occured during generation of a volume number."
+                    "An exception occurred during generation of a volume number."
                 ),
                 linStorExc
             );

@@ -66,7 +66,7 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
             storPoolNameRef,
             dbDriverRef.getStorPoolNameDriver()
         );
-        doNotPlaceWithRscList = transactionObjectFactoryRef.createTransactionListPrimitive(
+        doNotPlaceWithRscList = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
             doNotPlaceWithRscListRef,
             dbDriverRef.getDoNotPlaceWithRscListDriver()
@@ -76,17 +76,17 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
             doNotPlaceWithRscRegexRef,
             dbDriverRef.getDoNotPlaceWithRscRegexDriver()
         );
-        replicasOnSameList = transactionObjectFactoryRef.createTransactionListPrimitive(
+        replicasOnSameList = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
             replicasOnSameListRef,
             dbDriverRef.getReplicasOnSameListDriver()
         );
-        replicasOnDifferentList = transactionObjectFactoryRef.createTransactionListPrimitive(
+        replicasOnDifferentList = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
             replicasOnDifferentListRef,
             dbDriverRef.getReplicasOnDifferentDriver()
         );
-        allowedProviderList = transactionObjectFactoryRef.createTransactionListPrimitive(
+        allowedProviderList = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
             allowedProviderListRef,
             dbDriverRef.getAllowedProviderListDriver()

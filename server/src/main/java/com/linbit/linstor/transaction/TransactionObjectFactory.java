@@ -8,7 +8,6 @@ import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +70,7 @@ public class TransactionObjectFactory
         return new TransactionList<PARENT, VALUE>(parent, backingList, dbDriver, transMgrProvider);
     }
 
-    public <PARENT, VALUE> TransactionList<PARENT, VALUE> createTransactionListPrimitive(
+    public <PARENT, VALUE> TransactionList<PARENT, VALUE> createTransactionPrimitiveList(
         PARENT parent,
         List<VALUE> backingList,
         CollectionDatabaseDriver<PARENT, VALUE> dbDriver

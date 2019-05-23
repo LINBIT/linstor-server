@@ -122,7 +122,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         volumeMap = transObjFactory.createTransactionMap(vlmDfnMapRef, null);
         resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
         snapshotDfnMap = transObjFactory.createTransactionMap(snapshotDfnMapRef, null);
-        layerStack = transObjFactory.createTransactionListPrimitive(
+        layerStack = transObjFactory.createTransactionPrimitiveList(
             this,
             layerStackRef,
             dbDriver.getLayerStackDriver()

@@ -1,6 +1,5 @@
 package com.linbit.linstor.transaction;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,6 +12,7 @@ import javax.inject.Provider;
 import com.linbit.MapDatabaseDriver;
 import com.linbit.NoOpMapDatabaseDriver;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 public class TransactionMap<KEY, VALUE extends TransactionObject>
     extends AbsTransactionObject implements Map<KEY, VALUE>
@@ -186,7 +186,7 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
                 {
                     dbDriver.insert(key, value);
                 }
-                catch (SQLException sqlExc)
+                catch (DatabaseException sqlExc)
                 {
                     throw new LinStorDBRuntimeException(
                         "Inserting to the database from a TransactionMap caused exception",
@@ -202,7 +202,7 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
                     {
                         dbDriver.delete(key, oldValue);
                     }
-                    catch (SQLException sqlExc)
+                    catch (DatabaseException sqlExc)
                     {
                         throw new LinStorDBRuntimeException(
                             "Deleting from the database from a TransactionMap caused exception",
@@ -216,7 +216,7 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
                     {
                         dbDriver.update(key, oldValue, value);
                     }
-                    catch (SQLException sqlExc)
+                    catch (DatabaseException sqlExc)
                     {
                         throw new LinStorDBRuntimeException(
                             "Updating the database from a TransactionMap caused exception",

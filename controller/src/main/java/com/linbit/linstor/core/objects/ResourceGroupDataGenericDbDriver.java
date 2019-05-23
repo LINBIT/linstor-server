@@ -255,9 +255,11 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         ResourceGroupName rscGrpName;
         try
         {
+            String rscGrpNameStr = null;
             try
             {
-                rscGrpName = new ResourceGroupName(resultSet.getString(RESOURCE_GROUP_DSP_NAME));
+                rscGrpNameStr = resultSet.getString(RESOURCE_GROUP_DSP_NAME);
+                rscGrpName = new ResourceGroupName(rscGrpNameStr);
             }
             catch (InvalidNameException invalidNameExc)
             {
@@ -266,12 +268,11 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
                         "The display name of a stored ResourceGroup in the table %s could not be restored. " +
                             "(invalid display RscGrpName=%s)",
                         TBL_RESOURCE_GROUPS,
-                        resultSet.getString(RESOURCE_GROUP_DSP_NAME)
+                        rscGrpNameStr
                     ),
                     invalidNameExc
                 );
             }
-
             ObjectProtection objProt = getObjectProtection(rscGrpName);
 
             Map<VolumeNumber, VolumeGroup> vlmGrpMap = new TreeMap<>();
@@ -283,7 +284,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
                 rscGrpName,
                 resultSet.getString(DESCRIPTION),
                 SQLUtils.getAsTypedList(resultSet, LAYER_KIND_STACK, DeviceLayerKind::valueOf),
-                resultSet.getInt(REPLICA_COUNT),
+                SQLUtils.getNullableInteger(resultSet, REPLICA_COUNT),
                 resultSet.getString(POOL_NAME),
                 SQLUtils.getAsStringList(resultSet, DO_NOT_PLACE_WITH_RSC_LIST),
                 resultSet.getString(DO_NOT_PLACE_WITH_RSC_REGEX),

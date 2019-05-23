@@ -1,12 +1,12 @@
 package com.linbit;
 
-import java.sql.SQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 public interface MapDatabaseDriver<T, U>
 {
-    void insert(T key, U value) throws SQLException;
+    void insert(T key, U value) throws DatabaseException;
 
-    void update(T key, U oldValue, U newValue) throws SQLException;
+    void update(T key, U oldValue, U newValue) throws DatabaseException;
 
-    void delete(T key, U value) throws SQLException;
+    void delete(T key, U value) throws DatabaseException;
 }

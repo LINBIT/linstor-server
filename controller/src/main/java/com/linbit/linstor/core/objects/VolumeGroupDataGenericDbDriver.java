@@ -91,9 +91,9 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
 
             errorReporter.logTrace("VolumeGroup created %s", getId(vlmGrp));
         }
-        catch (SQLException exc)
+        catch (SQLException sqlExc)
         {
-            throw new DatabaseException(exc);
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -149,9 +149,9 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
                 }
             }
         }
-        catch (SQLException exc)
+        catch (SQLException sqlExc)
         {
-            throw new DatabaseException(exc);
+            throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace("Loaded %d VolumeGroup", rscGrpMap.size());
         return vlmGrpList;
@@ -197,9 +197,9 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
 
             errorReporter.logTrace("VolumeGroup deleted %s", getId(vlmGrp));
         }
-        catch (SQLException exc)
+        catch (SQLException sqlExc)
         {
-            throw new DatabaseException(exc);
+            throw new DatabaseException(sqlExc);
         }
     }
 

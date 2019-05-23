@@ -329,7 +329,7 @@ class StltSnapshotApiCallHandler
     }
 
     private void checkUuid(Snapshot snapshot, SnapshotPojo snapshotRaw)
-        throws DivergentUuidsException, AccessDeniedException
+        throws DivergentUuidsException
     {
         checkUuid(
             snapshot.getUuid(),
