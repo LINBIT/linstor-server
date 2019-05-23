@@ -1,3 +1,25 @@
+linstor-server (0.9.9-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rest-api: enable compression
+  * rest-api: add /v1/view/storage-pools and pump rest-api to 1.0.4
+  * rest-api-docu: add changelog
+  * rest-api: move apiToJson functions to Json class
+  * rest-api: also return UUID's for linstor objects
+  * rest-api-docu: add script to update the property information and update
+  * rest-api-docu: update with more property info
+  * rest-api-docu: fix wrong resync-after type
+
+  [ Gabor Hernadi ]
+  * Remove DRBD dependency from DISKLESS provider
+  * Fixed resize and detailed size-reporting issue
+  * Fixed Exception when reconnecting to peer
+  * Added WaitTimeoutAfterCreate
+  * Suppressed repeated exception on version-mismatch
+  * Correctly set the rscName in objRef when using extName
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 23 May 2019 08:28:51 +0200
+
 linstor-server (0.9.8-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
