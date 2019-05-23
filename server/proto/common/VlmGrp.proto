@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+// Content of a volume group. Used in both, request and response messages
+message VlmGrp
+{
+    optional string uuid = 1;
+    // null for automatic assignment
+    optional sint32 vlm_nr = 2;
+    required int64 vlm_size = 3;
+    map<string, string> vlm_dfn_props = 4;
+}

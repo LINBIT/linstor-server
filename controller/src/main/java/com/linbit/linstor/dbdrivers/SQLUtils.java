@@ -9,8 +9,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -139,4 +141,21 @@ public class SQLUtils
         }
     }
 
+
+    public static <T> List<T> getAsTypedList(
+        ResultSet resultSet,
+        String columnName,
+        Function<String, T> convertFunction
+    )
+    {
+        List<T> ret = new ArrayList<>();
+        List<String> listStr = getAsStringList(resultSet, columnName);
+
+        for (String strElement : listStr)
+        {
+            ret.add(convertFunction.apply(strElement));
+        }
+
+        return ret;
+    }
 }

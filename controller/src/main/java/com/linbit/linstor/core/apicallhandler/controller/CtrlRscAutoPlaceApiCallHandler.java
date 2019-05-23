@@ -160,7 +160,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         List<Resource> alreadyPlaced =
             privilegedStreamResources(ctrlApiDataLoader.loadRscDfn(rscNameStr, true)).collect(Collectors.toList());
 
-        int additionalPlaceCount = selectFilter.getPlaceCount() - alreadyPlaced.size();
+        int additionalPlaceCount = Optional.ofNullable(selectFilter.getReplicaCount()).orElse(0) - alreadyPlaced.size();
 
         if (additionalPlaceCount < 0)
         {
@@ -203,9 +203,9 @@ public class CtrlRscAutoPlaceApiCallHandler
                 additionalPlaceCount,
                 selectFilter.getReplicasOnDifferentList(),
                 selectFilter.getReplicasOnSameList(),
-                selectFilter.getNotPlaceWithRscRegex(),
+                selectFilter.getDoNotPlaceWithRscRegex(),
                 Stream.concat(
-                    selectFilter.getNotPlaceWithRscList().stream(),
+                    selectFilter.getDoNotPlaceWithRscList().stream(),
                     // Do not attempt to re-use nodes that already have this resource
                     Stream.of(rscNameStr)
                 ).collect(Collectors.toList()),

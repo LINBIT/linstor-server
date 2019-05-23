@@ -600,7 +600,7 @@ paths:
         All other properties are optional.
       responses:
         '201':
-          description: resource-defintion created
+          description: resource-definition created
           content:
             application/json:
               schema:
@@ -894,7 +894,7 @@ paths:
         Required properties is only `size`, all other will be auto generated if not given.
       responses:
         '201':
-          description: volume-defintion created
+          description: volume-definition created
           content:
             application/json:
               schema:
@@ -1785,6 +1785,434 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/resource-groups:
+    get:
+      tags:
+        - developers
+      summary: lists all resource-groups
+      operationId: resourceGroupList
+      description: |
+        Lists all resource groups.
+
+        A single resource group can be queried by adding its name
+        to the resource string like:
+
+        /v1/resource-groups/rscgrp1
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Array of all resource-groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceGroup'
+    post:
+      tags:
+        - developers
+      summary: add a resource-group
+      operationId: resourceGroupCreate
+      description: |
+        Adds a resource-group.
+
+        Only required property is the name of the resource group.
+        All other properties are optional.
+      responses:
+        '201':
+          description: resource-group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceGroup'
+            example:
+              resource_group:
+                name: rscgrp1
+  /v1/resource-groups/{resource-group}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupName'
+    put:
+      tags:
+        - developers
+      summary: modify a resource-group
+      operationId: resourceGroupModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
+        - `PeerSlotsNewResource` - range[`1-31`]
+
+            DRBD peer slots to allocate for newly created resources (default 7), the number of peer slots cannot be changed once the resource is created, so allow sufficient slots to increase redundancy in the future
+
+        - `DrbdProxy/CompressionType` - enum
+            * zlib
+            * lzma
+            * lz4
+
+        - `FileSystem/Type` - enum
+
+            File system type to use
+
+            * ext4
+            * xfs
+
+        - `FileSystem/MkfsParams` - string
+
+            Additional parameters for the mkfs command
+
+        - `NVMe/enabled` - enum
+            * rdma
+            * tcp
+
+        - `NVMe/enabled` - range[`1-65535`]
+        - `DrbdOptions/Disk/read-balancing` - enum
+            * prefer-local
+            * prefer-remote
+            * round-robin
+            * least-pending
+            * when-congested-remote
+            * 32K-striping
+            * 64K-striping
+            * 128K-striping
+            * 256K-striping
+            * 512K-striping
+            * 1M-striping
+
+        - `DrbdOptions/Disk/on-io-error` - enum
+            * pass_on
+            * call-local-io-error
+            * detach
+
+        - `DrbdOptions/Disk/disk-drain` - boolean
+        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
+        - `DrbdOptions/Disk/disable-write-same` - boolean
+        - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
+        - `DrbdOptions/Disk/disk-flushes` - boolean
+        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
+        - `DrbdOptions/Disk/al-updates` - boolean
+        - `DrbdOptions/Disk/md-flushes` - boolean
+        - `DrbdOptions/Disk/disk-barrier` - boolean
+        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+        - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
+        - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
+        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
+        - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
+        - `DrbdOptions/PeerDevice/bitmap` - boolean
+        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
+        - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
+        - `DrbdOptions/Resource/quorum-minimum-redundancy` - enum [`1-32`]
+            * off
+            * majority
+            * all
+
+        - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
+        - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
+        - `DrbdOptions/Resource/quorum` - enum [`1-32`]
+            * off
+            * majority
+            * all
+
+        - `DrbdOptions/Resource/on-no-data-accessible` - enum
+            * io-error
+            * suspend-io
+
+        - `DrbdOptions/Resource/auto-promote` - boolean
+        - `DrbdOptions/Resource/cpu-mask` - string
+        - `DrbdOptions/Resource/twopc-timeout` - range[`50-600`]
+        - `DrbdOptions/Resource/twopc-retry-timeout` - range[`1-50`]
+        - `DrbdOptions/Resource/peer-ack-window` - range[`2048-204800`]
+        - `DrbdOptions/Resource/on-no-quorum` - enum
+            * io-error
+            * suspend-io
+
+        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Net/protocol` - enum
+            * A
+            * B
+            * C
+
+        - `DrbdOptions/Net/allow-two-primaries` - boolean
+        - `DrbdOptions/Net/after-sb-0pri` - enum
+            * disconnect
+            * discard-younger-primary
+            * discard-older-primary
+            * discard-zero-changes
+            * discard-least-changes
+            * discard-local
+            * discard-remote
+
+        - `DrbdOptions/Net/ko-count` - range[`0-200`]
+        - `DrbdOptions/Net/data-integrity-alg` - string
+        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
+        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/transport` - string
+        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
+        - `DrbdOptions/Net/fencing` - enum
+            * dont-care
+            * resource-only
+            * resource-and-stonith
+
+        - `DrbdOptions/Net/csums-alg` - string
+        - `DrbdOptions/Net/always-asbp` - boolean
+        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
+        - `DrbdOptions/Net/on-congestion` - enum
+            * block
+            * pull-ahead
+            * disconnect
+
+        - `DrbdOptions/Net/ping-int` - range[`1-120`]
+        - `DrbdOptions/Net/rr-conflict` - enum
+            * disconnect
+            * call-pri-lost
+            * violently
+
+        - `DrbdOptions/Net/tcp-cork` - boolean
+        - `DrbdOptions/Net/use-rle` - boolean
+        - `DrbdOptions/Net/csums-after-crash-only` - boolean
+        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
+        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
+        - `DrbdOptions/Net/cram-hmac-alg` - string
+        - `DrbdOptions/Net/verify-alg` - string
+        - `DrbdOptions/Net/shared-secret` - string
+        - `DrbdOptions/Net/connect-int` - range[`1-120`]
+        - `DrbdOptions/Net/timeout` - range[`1-600`]
+        - `DrbdOptions/Net/after-sb-2pri` - enum
+            * disconnect
+            * call-pri-lost-after-sb
+            * violently-as0p
+
+        - `DrbdOptions/Net/after-sb-1pri` - enum
+            * disconnect
+            * consensus
+            * discard-secondary
+            * call-pri-lost-after-sb
+            * violently-as0p
+
+        - `DrbdOptions/Handlers/after-resync-target` - string
+        - `DrbdOptions/Handlers/before-resync-target` - string
+        - `DrbdOptions/Handlers/before-resync-source` - string
+        - `DrbdOptions/Handlers/out-of-sync` - string
+        - `DrbdOptions/Handlers/quorum-lost` - string
+        - `DrbdOptions/Handlers/fence-peer` - string
+        - `DrbdOptions/Handlers/unfence-peer` - string
+        - `DrbdOptions/Handlers/initial-split-brain` - string
+        - `DrbdOptions/Handlers/local-io-error` - string
+        - `DrbdOptions/Handlers/pri-lost` - string
+        - `DrbdOptions/Handlers/pri-lost-after-sb` - string
+        - `DrbdOptions/Handlers/pri-on-incon-degr` - string
+        - `DrbdOptions/Handlers/split-brain` - string
+      responses:
+        '200':
+          description: resource-group modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceGroupModify'
+            example:
+              override_props:
+                Aux/testprop: '1'
+              delete_props:
+                - Aux/deleteprop
+    delete:
+      tags:
+        - developers
+      summary: delete a resource-group
+      operationId: resourceGroupDelete
+      description: Delete a resource-group
+      responses:
+        '200':
+          description: resource-group deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-groups/{resource-group}/volume-groups:
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupName'
+    get:
+      tags:
+        - developers
+      summary: lists all volume-groups
+      operationId: volumeGroupList
+      description: |
+        Lists all volume groups.
+
+        A single volume group can be queried by adding its name
+        to the resource string like:
+
+        /v1/resource-groups/rscgrp1/volume-groups/0
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Array of all volume-groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VolumeGroup'
+    post:
+      tags:
+        - developers
+      summary: add a volume-group to a resource
+      operationId: volumeGroupCreate
+      description: |
+        Adds a volume-group.
+
+        Required properties is only `size`, all other will be auto generated if not given.
+      responses:
+        '201':
+          description: volume-group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VolumeGroupCreate'
+            example:
+              volume_group:
+                size_kib: 262144
+  /v1/resource-groups/{resource-group}/volume-groups/{volume_number}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupName'
+      - $ref: '#/components/parameters/VolumeNumber'
+    put:
+      tags:
+        - developers
+      summary: modify a resource-group
+      operationId: volumeGroupModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
+        - `OverrideVlmId` - regex[`.*`]
+
+            Overwrites the generated '<resource-name>_<5 digit volume number>' volume name for migration purposes
+
+        - `AllowLargerVolumeSize` - boolean_true_false
+
+            Do not fail when the underlying volume is larger than expected
+
+        - `FileSystem/Type` - enum
+
+            File system type to use
+
+            * ext4
+            * xfs
+
+        - `FileSystem/MkfsParams` - string
+
+            Additional parameters for the mkfs command
+
+        - `StorDriver/LvcreateType` - enum
+            * linear
+            * striped
+            * mirror
+            * raid0
+            * raid1
+            * raid4
+            * raid5
+            * raid6
+            * raid10
+            * lzma
+            * lz4
+
+        - `DrbdCurrentGi` - regex[`[a-fA-F0-9]{16}`]
+        - `DrbdOptions/Disk/read-balancing` - enum
+            * prefer-local
+            * prefer-remote
+            * round-robin
+            * least-pending
+            * when-congested-remote
+            * 32K-striping
+            * 64K-striping
+            * 128K-striping
+            * 256K-striping
+            * 512K-striping
+            * 1M-striping
+
+        - `DrbdOptions/Disk/on-io-error` - enum
+            * pass_on
+            * call-local-io-error
+            * detach
+
+        - `DrbdOptions/Disk/disk-drain` - boolean
+        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
+        - `DrbdOptions/Disk/disable-write-same` - boolean
+        - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
+        - `DrbdOptions/Disk/disk-flushes` - boolean
+        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
+        - `DrbdOptions/Disk/al-updates` - boolean
+        - `DrbdOptions/Disk/md-flushes` - boolean
+        - `DrbdOptions/Disk/disk-barrier` - boolean
+        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+      responses:
+        '200':
+          description: volume-group modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VolumeGroupModify'
+            example:
+              override_props:
+                Aux/testprop: '1'
+              delete_props:
+                - Aux/deleteprop
+    delete:
+      tags:
+        - developers
+      summary: delete a volume-group
+      operationId: volumeGroupDelete
+      description: Delete a volume-group
+      responses:
+        '200':
+          description: volume-group deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
   /v1/controller/properties:
     get:
       tags:
@@ -2538,6 +2966,13 @@ components:
       description: resource to use
       schema:
         type: string
+    ResourceGroupName:
+      name: resource_group_name
+      in: path
+      required: true
+      description: resource group to use
+      schema:
+        type: string
     Node:
       name: node
       in: path
@@ -2916,7 +3351,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LayerType'
-
     DrbdVolumeDefinition:
       type: object
       properties:
@@ -3269,6 +3703,77 @@ components:
       properties:
         disk_state:
           type: string
+    ResourceGroup:
+      type: object
+      properties:
+        name:
+          type: string
+          default: ''
+          example: rscgrp1
+        description:
+          type: string
+          default: ''
+        layer_stack:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
+        props:
+          $ref: '#/components/schemas/Properties'
+        select_filter:
+          $ref: '#/components/schemas/AutoSelectFilter'
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+    ResourceGroupModify:
+      type: object
+      properties:
+        description:
+          type: string
+          default: ''
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
+        layer_stack:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
+        select_filter:
+          $ref: '#/components/schemas/AutoSelectFilter'
+    VolumeGroup:
+      type: object
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        props:
+          $ref: '#/components/schemas/Properties'
+        select_filter:
+          $ref: '#/components/schemas/AutoSelectFilter'
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+    VolumeGroupModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
     AutoPlaceRequest:
       type: object
       required:

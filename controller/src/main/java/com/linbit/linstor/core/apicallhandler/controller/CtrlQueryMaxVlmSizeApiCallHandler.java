@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelecto
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -76,28 +77,42 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
         Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
-        AutoStorPoolSelectorConfig autoStorPoolSelectorConfig = new AutoStorPoolSelectorConfig(
-            selectFilter.getPlaceCount(),
-            selectFilter.getReplicasOnDifferentList(),
-            selectFilter.getReplicasOnSameList(),
-            selectFilter.getNotPlaceWithRscRegex(),
-            selectFilter.getNotPlaceWithRscList(),
-            selectFilter.getStorPoolNameStr(),
-            selectFilter.getLayerStackList(),
-            selectFilter.getProviderList()
-        );
+        Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> flux;
+        if (selectFilter.getReplicaCount() == null)
+        {
+            flux = Flux.error(
+                new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_PLACE_COUNT,
+                    "Replica count is required for this operation")
+                )
+            );
+        }
+        else
+        {
+            AutoStorPoolSelectorConfig autoStorPoolSelectorConfig = new AutoStorPoolSelectorConfig(
+                selectFilter.getReplicaCount(),
+                selectFilter.getReplicasOnDifferentList(),
+                selectFilter.getReplicasOnSameList(),
+                selectFilter.getDoNotPlaceWithRscRegex(),
+                selectFilter.getDoNotPlaceWithRscList(),
+                selectFilter.getStorPoolNameStr(),
+                selectFilter.getLayerStackList(),
+                selectFilter.getProviderList()
+            );
 
-        List<Candidate> candidates = ctrlAutoStorPoolSelector.getCandidateList(
-            ctrlAutoStorPoolSelector.listAvailableStorPools(),
-            autoStorPoolSelectorConfig,
-            FreeCapacityAutoPoolSelectorUtils.mostFreeCapacityNodeStrategy(thinFreeCapacities)
-        );
+            List<Candidate> candidates = ctrlAutoStorPoolSelector.getCandidateList(
+                ctrlAutoStorPoolSelector.listAvailableStorPools(),
+                autoStorPoolSelectorConfig,
+                FreeCapacityAutoPoolSelectorUtils.mostFreeCapacityNodeStrategy(thinFreeCapacities)
+            );
 
-        List<MaxVlmSizeCandidatePojo> candidatesWithCapacity = candidates.stream()
-            .flatMap(candidate -> candidateWithCapacity(thinFreeCapacities, candidate))
-            .collect(Collectors.toList());
+            List<MaxVlmSizeCandidatePojo> candidatesWithCapacity = candidates.stream()
+                .flatMap(candidate -> candidateWithCapacity(thinFreeCapacities, candidate))
+                .collect(Collectors.toList());
+            flux = Flux.just(makeResponse(candidatesWithCapacity));
+        }
 
-        return Flux.just(makeResponse(candidatesWithCapacity));
+        return flux;
     }
 
     private Stream<MaxVlmSizeCandidatePojo> candidateWithCapacity(

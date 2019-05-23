@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -56,8 +57,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private static final String PATH_STOR_POOL_DFN            = "/storPoolDfnConf/";
     private static final String PATH_NODES                    = "/nodes/";
     private static final String PATH_RESOURCE_DEFINITIONS     = "/resourcedefinitions/";
+    private static final String PATH_RESOURCE_GROUPS          = "/resourcegroups/";
     private static final String PATH_RESOURCES                = "/resources/";
     private static final String PATH_VOLUME_DEFINITIONS       = "/volumedefinitions/";
+    private static final String PATH_VOLUME_GROUPS            = "/volumegroups/";
     private static final String PATH_VOLUMES                  = "/volumes/";
     private static final String PATH_NODE_CON_DEFINITIONS     = "/conDfn/nodes/";
     private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
@@ -2215,6 +2218,14 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
+     * PropsCon-path for ResourceDefinitionGroupData
+     */
+    public static String buildPath(ResourceGroupName resDfnGrpName)
+    {
+        return PATH_RESOURCE_GROUPS + resDfnGrpName.value;
+    }
+
+    /**
      * PropsCon-path for ResourceData
      */
     public static String buildPath(NodeName nodeName, ResourceName resName)
@@ -2230,6 +2241,15 @@ public class PropsContainer extends AbsTransactionObject implements Props
     {
         return PATH_VOLUME_DEFINITIONS + resName.value +
                 PATH_SEPARATOR + volNr.value;
+    }
+
+    /**
+     * PropsCon-path for VolumeDefinitionGroupData
+     */
+    public static String buildPath(ResourceGroupName resGrpName, VolumeNumber volNr)
+    {
+        return PATH_VOLUME_GROUPS + resGrpName.value +
+            PATH_SEPARATOR + volNr.value;
     }
 
     /**

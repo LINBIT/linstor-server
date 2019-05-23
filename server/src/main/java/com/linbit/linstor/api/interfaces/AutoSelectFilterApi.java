@@ -7,13 +7,13 @@ import java.util.List;
 
 public interface AutoSelectFilterApi
 {
-    int getPlaceCount();
+    Integer getReplicaCount();
 
     String getStorPoolNameStr();
 
-    List<String> getNotPlaceWithRscList();
+    List<String> getDoNotPlaceWithRscList();
 
-    String getNotPlaceWithRscRegex();
+    String getDoNotPlaceWithRscRegex();
 
     List<String> getReplicasOnSameList();
 

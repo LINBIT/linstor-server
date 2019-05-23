@@ -481,6 +481,51 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceGroup
+    {
+        public String name = "";
+        public String description = "";
+        public List<String> layer_stack = Collections.emptyList();
+        public Map<String, String> props = Collections.emptyMap();
+        public AutoSelectFilter select_filter;
+        /**
+         * unique object id
+         */
+        public String uuid;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceGroupModify
+    {
+        public String description = "";
+        public Map<String, String> override_props = Collections.emptyMap();
+        public List<String> delete_props = Collections.emptyList();
+        public List<String> delete_namespaces = Collections.emptyList();
+        public List<String> layer_stack = Collections.emptyList();
+        public AutoSelectFilter select_filter;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class VolumeGroup
+    {
+        public Integer volume_number;
+        public Map<String, String> props = Collections.emptyMap();
+        public AutoSelectFilter select_filter;
+        /**
+         * unique object id
+         */
+        public String uuid;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class VolumeGroupModify
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public List<String> delete_props = Collections.emptyList();
+        public List<String> delete_namespaces = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AutoPlaceRequest
     {
         public Boolean diskless_on_remaining = false;

@@ -41,7 +41,8 @@ public class LockGuardFactory
         NODES_MAP(2),
         RSC_DFN_MAP(3),
         STOR_POOL_DFN_MAP(4),
-        KVS_MAP(5);
+        KVS_MAP(5),
+        RSC_GRP_MAP(6);
 
         public final int lockIdx;
 
@@ -62,7 +63,8 @@ public class LockGuardFactory
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock ctrlConfigLock;
     private final ReadWriteLock reconfigurationLock;
-    private final ReadWriteLock pluginConfLock;
+    private final ReadWriteLock kvsMapLock;
+    private final ReadWriteLock rscGrpMapLock;
 
     @Inject
     public LockGuardFactory(
@@ -71,7 +73,8 @@ public class LockGuardFactory
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
-        @Named(CoreModule.KVS_MAP_LOCK) ReadWriteLock kvsMapLockRef
+        @Named(CoreModule.KVS_MAP_LOCK) ReadWriteLock kvsMapLockRef,
+        @Named(CoreModule.RSC_GROUP_MAP_LOCK) ReadWriteLock rscGrpMapLockRef
     )
     {
         reconfigurationLock = reconfigurationLockRef;
@@ -79,7 +82,8 @@ public class LockGuardFactory
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         ctrlConfigLock = ctrlConfigLockRef;
-        pluginConfLock = kvsMapLockRef;
+        kvsMapLock = kvsMapLockRef;
+        rscGrpMapLock = rscGrpMapLockRef;
     }
 
     public LockGuardBuilder create()
@@ -142,7 +146,10 @@ public class LockGuardFactory
                 lock = ctrlConfigLock;
                 break;
             case KVS_MAP:
-                lock = pluginConfLock;
+                lock = kvsMapLock;
+                break;
+            case RSC_GRP_MAP:
+                lock = rscGrpMapLock;
                 break;
             default:
                 throw new ImplementationError("Unknown lock identifier " + lockId.name());

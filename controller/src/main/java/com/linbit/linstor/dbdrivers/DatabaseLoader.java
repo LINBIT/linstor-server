@@ -10,6 +10,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -33,6 +34,8 @@ import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
@@ -107,6 +110,7 @@ public class DatabaseLoader implements DatabaseDriver
     }
 
     private final AccessContext dbCtx;
+    private final ResourceGroupDataGenericDbDriver rscGrpDriver;
     private final NodeDataGenericDbDriver nodeDriver;
     private final NetInterfaceDataGenericDbDriver netIfDriver;
     private final NodeConnectionDataGenericDbDriver nodeConnDriver;
@@ -140,6 +144,7 @@ public class DatabaseLoader implements DatabaseDriver
     @Inject
     public DatabaseLoader(
         @SystemContext AccessContext privCtx,
+        ResourceGroupDataGenericDbDriver rscGrpDriverRef,
         NodeDataGenericDbDriver nodeDriverRef,
         NetInterfaceDataGenericDbDriver netIfDriverRef,
         NodeConnectionDataGenericDbDriver nodeConnDriverRef,
@@ -170,6 +175,7 @@ public class DatabaseLoader implements DatabaseDriver
     )
     {
         dbCtx = privCtx;
+        rscGrpDriver = rscGrpDriverRef;
         nodeDriver = nodeDriverRef;
         netIfDriver = netIfDriverRef;
         nodeConnDriver = nodeConnDriverRef;
@@ -207,6 +213,13 @@ public class DatabaseLoader implements DatabaseDriver
     {
         try
         {
+            // load the resource groups
+            Map<ResourceGroup, ResourceGroup.InitMaps> loadedRscGroupsMap =
+                Collections.unmodifiableMap(rscGrpDriver.loadAll());
+            // temporary map to restore rscDfn <-> rscGroup relations
+            Map<ResourceGroupName, ResourceGroup> tmpRscGroups =
+                mapByName(loadedRscGroupsMap, ResourceGroup::getName);
+
             // load the main objects (nodes, rscDfns, storPoolDfns)
             Map<Node, Node.InitMaps> loadedNodesMap =
                 Collections.unmodifiableMap(nodeDriver.loadAll());
@@ -660,5 +673,4 @@ public class DatabaseLoader implements DatabaseDriver
             );
         };
     }
-
 }

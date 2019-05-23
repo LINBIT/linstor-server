@@ -38,22 +38,30 @@ inner-most (taken last) lock, is:
    or while iterating over storPoolDfnMap items.
    Must be held in writer mode while modifying the storPoolDfnMap.
 
-8. pluginNamespaceLock (ReadWriteLock)
+8. kvsLock (ReadWriteLock)
+   Must be held in reader mode while performing lookups in kvsMap,
+   or while iterating over kvsMap items.
+   Must be held in writer mode while modifying the kvsMap.
 
-9. Node (class Object internal mutex)
+9. rscGrpMapLock (ReadWriteLock
+   Must be held in reader mode while performing lookups in rscGrpMap,
+   or while iterating over rscGrpMap items.
+   Must be held in writer mode while modifying the rscGrpMap.
 
-10. ResourceDefinition (class Object internal mutex)
+10. Node (class Object internal mutex)
 
-11. ResourceDefinition.volList (class Object internal mutex)
+11. ResourceDefinition (class Object internal mutex)
 
-12. ResourceDefinition.connList (class Object internal mutex)
+12. ResourceDefinition.volList (class Object internal mutex)
 
-13. VolumeDefinition (class Object internal mutex)
+13. ResourceDefinition.connList (class Object internal mutex)
 
-14. Resource (class Object internal mutex)
+14. VolumeDefinition (class Object internal mutex)
 
-15. Volume (class Object internal mutex)
+15. Resource (class Object internal mutex)
 
-16. CoreTimer (class Object internal mutex)
+16. Volume (class Object internal mutex)
 
-17. Peer#getSatelliteStateLock (ReadWriteLock)
+17. CoreTimer (class Object internal mutex)
+
+18. Peer#getSatelliteStateLock (ReadWriteLock)

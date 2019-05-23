@@ -2,6 +2,7 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
+import "common/RscGrp.proto";
 import "common/VlmDfn.proto";
 import "common/DrbdRsc.proto";
 import "common/LayerType.proto";
@@ -17,6 +18,7 @@ message RscDfn
     repeated VlmDfn vlm_dfns = 7;
     repeated RscDfnLayerData layer_data = 10;
     optional bytes external_name = 11;
+    optional RscGrp rsc_grp = 12;
 }
 
 message RscDfnLayerData

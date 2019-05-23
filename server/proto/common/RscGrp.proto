@@ -1,0 +1,21 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+import "common/AutoSelectFilter.proto";
+import "common/VlmGrp.proto";
+
+// Content of a resource group. Used in both, request and response messages
+message RscGrp
+{
+    optional string uuid = 1;
+    required string name = 2;
+
+    optional string description = 3;
+    repeated string layer_stack = 4;
+
+    map<string, string> rsc_dfn_props = 5;
+    repeated common.VlmGrp vlm_grp = 6;
+
+    optional AutoSelectFilter select_filter = 7;
+}

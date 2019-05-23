@@ -6,6 +6,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -31,6 +32,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_SEPARATOR               = "/";
     private static final String PATH_RESOURCES               = "/resources/";
     private static final String PATH_RESOURCE_DEFINITIONS    = "/resourcedefinitions/";
+    private static final String PATH_RESOURCE_GROUPS         = "/resourcegroups/";
     private static final String PATH_NODES                   = "/nodes/";
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
     private static final String PATH_FREE_SPACE_MGRS         = "/freespacemgrs/";
@@ -456,6 +458,18 @@ public final class ObjectProtection extends BaseTransactionObject
         return PATH_RESOURCE_DEFINITIONS + resDfnName.value;
     }
 
+
+    /**
+     * ObjProt-Path for ResourceGroups
+     *
+     * @param resGrpName
+     * @return
+     */
+    public static String buildPath(ResourceGroupName rscGrpName)
+    {
+        return PATH_RESOURCE_GROUPS + rscGrpName.value;
+    }
+
     /**
      * ObjProt-Path for Controller
      *
@@ -526,5 +540,4 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         return objPath;
     }
-
 }

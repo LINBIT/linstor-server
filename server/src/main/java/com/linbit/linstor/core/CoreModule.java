@@ -10,11 +10,13 @@ import com.linbit.crypto.LengthPadding;
 import com.linbit.crypto.LengthPaddingImpl;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -43,6 +45,7 @@ public class CoreModule extends AbstractModule
     public static final String STOR_POOL_DFN_MAP_LOCK = "storPoolDfnMapLock";
     public static final String FREE_SPACE_MGR_MAP_LOCK = "freeSpaceMgrMapLock";
     public static final String KVS_MAP_LOCK = "keyValueStoreMapLock";
+    public static final String RSC_GROUP_MAP_LOCK = "rscGrpMapLock";
 
     private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
@@ -65,6 +68,7 @@ public class CoreModule extends AbstractModule
         bind(ResourceDefinitionMapExtName.class).to(ResourceDefinitionMapExtNameImpl.class);
         bind(StorPoolDefinitionMap.class).to(StorPoolDefinitionMapImpl.class);
         bind(KeyValueStoreMap.class).to(KeyValueStoreMapImpl.class);
+        bind(ResourceGroupMap.class).to(ResourceGroupMapImpl.class);
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 
@@ -82,7 +86,8 @@ public class CoreModule extends AbstractModule
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(KVS_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
-
+        bind(ReadWriteLock.class).annotatedWith(Names.named(RSC_GROUP_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
         bind(LengthPadding.class).to(LengthPaddingImpl.class);
     }
 
@@ -111,6 +116,10 @@ public class CoreModule extends AbstractModule
     }
 
     public interface KeyValueStoreMap extends Map<KeyValueStoreName, KeyValueStore>
+    {
+    }
+
+    public interface ResourceGroupMap extends Map<ResourceGroupName, ResourceGroup>
     {
     }
 
@@ -154,8 +163,8 @@ public class CoreModule extends AbstractModule
             int idx = 0;
             while (idx < cmpLength && result == 0)
             {
-                final int unsigned1st = ((int) data1st[idx]) & UNSIGNED_BYTE_MAX;
-                final int unsigned2nd = ((int) data2nd[idx]) & UNSIGNED_BYTE_MAX;
+                final int unsigned1st = (data1st[idx]) & UNSIGNED_BYTE_MAX;
+                final int unsigned2nd = (data2nd[idx]) & UNSIGNED_BYTE_MAX;
 
                 if (unsigned1st < unsigned2nd)
                 {
@@ -210,6 +219,17 @@ public class CoreModule extends AbstractModule
     {
         @Inject
         public KeyValueStoreMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
+        }
+    }
+
+    @Singleton
+    public static class ResourceGroupMapImpl
+    extends TransactionMap<ResourceGroupName, ResourceGroup> implements ResourceGroupMap
+    {
+        @Inject
+        public ResourceGroupMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
             super(new TreeMap<>(), null, transMgrProvider);
         }

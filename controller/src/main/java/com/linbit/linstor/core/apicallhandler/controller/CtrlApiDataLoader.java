@@ -9,6 +9,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -19,6 +20,7 @@ import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionData;
@@ -29,9 +31,11 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -43,6 +47,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler.getRscGrpDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmGrpApiCallHandler.getVlmGrpDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
 
 public class CtrlApiDataLoader
@@ -54,6 +60,7 @@ public class CtrlApiDataLoader
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final KeyValueStoreRepository kvsRepository;
     private final SystemConfRepository systemConfRepository;
+    private final ResourceGroupRepository resourceGroupRepository;
 
     @Inject
     public CtrlApiDataLoader(
@@ -63,7 +70,8 @@ public class CtrlApiDataLoader
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         KeyValueStoreRepository kvsRepositoryRef,
-        SystemConfRepository systemConfRepositoryRef
+        SystemConfRepository systemConfRepositoryRef,
+        ResourceGroupRepository resourceGroupRepositoryRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -73,6 +81,7 @@ public class CtrlApiDataLoader
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         kvsRepository = kvsRepositoryRef;
         systemConfRepository = systemConfRepositoryRef;
+        resourceGroupRepository = resourceGroupRepositoryRef;
     }
 
     public final NodeData loadNode(String nodeNameStr, boolean failIfNull)
@@ -530,6 +539,14 @@ public class CtrlApiDataLoader
         );
     }
 
+    public final ResourceGroupData loadResourceGroup(String rscGrpNameStringRef, boolean failIfNull)
+    {
+        return loadResourceGroup(
+            LinstorParsingUtils.asRscGrpName(rscGrpNameStringRef),
+            failIfNull
+        );
+    }
+
     private VolumeData loadVlm(
         NodeName nodeNameREf,
         ResourceName rscNameRef,
@@ -550,5 +567,90 @@ public class CtrlApiDataLoader
             );
         }
         return (VolumeData) vlm;
+    }
+
+    public final ResourceGroupData loadResourceGroup(ResourceGroupName rscGrpNameRef, boolean failIfNull)
+    {
+        ResourceGroupData rscGrp;
+        try
+        {
+            rscGrp = resourceGroupRepository.get(
+                peerAccCtx.get(),
+                rscGrpNameRef
+            );
+            if (failIfNull && rscGrp == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_RSC_GRP,
+                        "Resource group '" + rscGrpNameRef.displayValue + "' not found."
+                    )
+                    .setCause("The specified resource group '" + rscGrpNameRef.displayValue +
+                        "' could not be found in the database")
+                    .setCorrection("Create a resource group with the name '" +
+                        rscGrpNameRef.displayValue + "' first.")
+                    .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + getRscGrpDescriptionInline(rscGrpNameRef.displayValue),
+                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+            );
+        }
+        return rscGrp;
+    }
+
+    public final VolumeGroupData loadVlmGrp(String rscGrpNameStringRef, int vlmNrInt, boolean failIfNull)
+    {
+        return loadVlmGrp(
+            LinstorParsingUtils.asRscGrpName(rscGrpNameStringRef),
+            LinstorParsingUtils.asVlmNr(vlmNrInt),
+            failIfNull
+        );
+    }
+
+    public final VolumeGroupData loadVlmGrp(
+        ResourceGroupName rscGrpNameRef,
+        VolumeNumber vlmNr,
+        boolean failIfNull
+    )
+    {
+        VolumeGroupData vlmGrp = null;
+        try
+        {
+            ResourceGroupData rscGrp = loadResourceGroup(rscGrpNameRef, failIfNull);
+            if (rscGrp != null)
+            {
+                vlmGrp = (VolumeGroupData) rscGrp.getVolumeGroup(peerAccCtx.get(), vlmNr);
+            }
+            if (failIfNull && vlmGrp == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_VLM_GRP,
+                        "Volume group '" + rscGrpNameRef.displayValue + "' with volume number '" +
+                            vlmNr + "' not found."
+                    )
+                    .setCause("The specified volume group '" + rscGrpNameRef.displayValue +
+                        "' with volume number '" + vlmNr + "' could not be found in the database")
+                    .setCorrection("Create a volume group with the name '" +
+                        rscGrpNameRef.displayValue + "' and volume number '" + vlmNr + "' first.")
+                    .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + getVlmGrpDescriptionInline(rscGrpNameRef.displayValue, vlmNr.value),
+                ApiConsts.FAIL_ACC_DENIED_VLM_GRP
+            );
+        }
+        return vlmGrp;
     }
 }

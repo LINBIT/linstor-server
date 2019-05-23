@@ -10,6 +10,7 @@ import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -408,5 +409,25 @@ public class LinstorParsingUtils
             ret.add(asProviderKind(providerStr));
         }
         return ret;
+    }
+
+    public static ResourceGroupName asRscGrpName(String rscGrpNameStr)
+    {
+        ResourceGroupName rscGrpName;
+        try
+        {
+            rscGrpName = new ResourceGroupName(rscGrpNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_KVS_NAME,
+                    "The given resource group name '" + rscGrpNameStr + "' is invalid."
+                ),
+                invalidNameExc
+            );
+        }
+        return rscGrpName;
     }
 }

@@ -1071,19 +1071,19 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     }
 
                     @Override
-                    public int getPlaceCount()
+                    public Integer getReplicaCount()
                     {
                         return placeCount;
                     }
 
                     @Override
-                    public String getNotPlaceWithRscRegex()
+                    public String getDoNotPlaceWithRscRegex()
                     {
                         return doNotPlaceWithRscRegexStr;
                     }
 
                     @Override
-                    public List<String> getNotPlaceWithRscList()
+                    public List<String> getDoNotPlaceWithRscList()
                     {
                         return doNotPlaceWithRscList;
                     }

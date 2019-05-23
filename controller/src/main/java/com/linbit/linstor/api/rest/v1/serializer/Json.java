@@ -26,12 +26,14 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -43,11 +45,9 @@ import com.linbit.utils.Pair;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Json
 {
@@ -553,7 +553,7 @@ public class Json
         }
 
         @Override
-        public int getPlaceCount()
+        public Integer getReplicaCount()
         {
             return autoSelectFilter.place_count;
         }
@@ -565,13 +565,13 @@ public class Json
         }
 
         @Override
-        public List<String> getNotPlaceWithRscList()
+        public List<String> getDoNotPlaceWithRscList()
         {
             return autoSelectFilter.not_place_with_rsc;
         }
 
         @Override
-        public String getNotPlaceWithRscRegex()
+        public String getDoNotPlaceWithRscRegex()
         {
             return autoSelectFilter.not_place_with_rsc_regex;
         }
@@ -671,5 +671,39 @@ public class Json
         keyValueStore.name = kvsApi.getName();
         keyValueStore.props = kvsApi.getProps();
         return keyValueStore;
+    }
+
+    public static JsonGenTypes.ResourceGroup apiToResourceGroup(
+        ResourceGroup.RscGrpApi rscGrpApi
+    )
+    {
+        JsonGenTypes.ResourceGroup rscGrp = new JsonGenTypes.ResourceGroup();
+        rscGrp.name = rscGrpApi.getName();
+        if (rscGrpApi.getDescription() != null)
+        {
+            rscGrp.description = rscGrpApi.getDescription();
+        }
+        rscGrp.props = rscGrpApi.getRcsDfnProps();
+        rscGrp.uuid = rscGrpApi.getUuid().toString();
+
+        rscGrp.layer_stack = rscGrpApi.getLayerStack().stream().map(Json::getLayerTypeString).collect(Collectors.toList());
+        AutoSelectFilterApi autoSelectApi = rscGrpApi.getAutoSelectFilter();
+        if (autoSelectApi != null)
+        {
+            AutoSelectFilter auto_select_filter = new AutoSelectFilter();
+            auto_select_filter.place_count = autoSelectApi.getReplicaCount();
+            auto_select_filter.storage_pool = autoSelectApi.getStorPoolNameStr();
+            auto_select_filter.not_place_with_rsc = autoSelectApi.getDoNotPlaceWithRscList();
+            auto_select_filter.not_place_with_rsc_regex = autoSelectApi.getDoNotPlaceWithRscRegex();
+            auto_select_filter.replicas_on_same = autoSelectApi.getReplicasOnSameList();
+            auto_select_filter.replicas_on_different = autoSelectApi.getReplicasOnDifferentList();
+            auto_select_filter.layer_stack = autoSelectApi.getLayerStackList().stream()
+                .map(Json::getLayerTypeString).collect(Collectors.toList());
+            auto_select_filter.provider_list = autoSelectApi.getProviderList().stream()
+                .map(Json::deviceProviderKindAsString).collect(Collectors.toList());
+
+            rscGrp.select_filter = auto_select_filter;
+        }
+        return rscGrp;
     }
 }

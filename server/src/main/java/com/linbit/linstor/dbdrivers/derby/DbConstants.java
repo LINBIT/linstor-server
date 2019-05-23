@@ -48,6 +48,8 @@ public class DbConstants
     public static final String TBL_LAYER_LUKS_VOLUMES    = "LAYER_LUKS_VOLUMES";
     public static final String TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS = "LAYER_SWORDFISH_VOLUME_DEFINITIONS";
     public static final String TBL_LAYER_STORAGE_VOLUMES = "LAYER_STORAGE_VOLUMES";
+    public static final String TBL_RESOURCE_GROUPS       = "RESOURCE_GROUPS";
+    public static final String TBL_VOLUME_GROUPS         = "VOLUME_GROUPS";
 
     // SEC_CONFIGURATION column names
     public static final String ENTRY_KEY     = "ENTRY_KEY";
@@ -177,6 +179,18 @@ public class DbConstants
 
     // LAYER_STORAGE_VOLUMES column names
     public static final String PROVIDER_KIND = "PROVIDER_KIND";
+
+    // RESOURCE_GROUP column names
+    public static final String RESOURCE_GROUP_NAME        = "RESOURCE_GROUP_NAME";
+    public static final String RESOURCE_GROUP_DSP_NAME    = "RESOURCE_GROUP_DSP_NAME";
+    public static final String DESCRIPTION                = "DESCRIPTION";
+    public static final String LAYER_KIND_STACK           = "LAYER_KIND_STACK";
+    public static final String REPLICA_COUNT              = "REPLICA_COUNT";
+    public static final String DO_NOT_PLACE_WITH_RSC_REGEX = "DO_NOT_PLACE_WITH_RSC_REGEX";
+    public static final String DO_NOT_PLACE_WITH_RSC_LIST = "DO_NOT_PLACE_WITH_RSC_LIST";
+    public static final String REPLICAS_ON_SAME           = "REPLICAS_ON_SAME";
+    public static final String REPLICAS_ON_DIFFERENT      = "REPLICAS_ON_DIFFERENT";
+    public static final String ALLOWED_PROVIDER_LIST      = "ALLOWED_PROVIDER_LIST";
 
     private DbConstants()
     {

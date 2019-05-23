@@ -1,21 +1,26 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
+import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockObj.KVS_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_GRP_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
@@ -24,6 +29,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +55,8 @@ public class CtrlApiCallHandler
     private final CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandler;
     private final CtrlDrbdProxyModifyApiCallHandler drbdProxyModifyApiCallHandler;
     private final CtrlKvsApiCallHandler kvsApiCallHandler;
+    private final CtrlRscGrpApiCallHandler rscGrpApiCallHandler;
+    private final CtrlVlmGrpApiCallHandler vlmGrpApiCallHandler;
 
     private final LockGuardFactory lockGuardFactory;
 
@@ -71,6 +79,8 @@ public class CtrlApiCallHandler
         CtrlSnapshotRestoreVlmDfnApiCallHandler snapshotRestoreVlmDfnApiCallHandlerRef,
         CtrlDrbdProxyModifyApiCallHandler drbdProxyModifyApiCallHandlerRef,
         CtrlKvsApiCallHandler kvsApiCallHandlerRef,
+        CtrlRscGrpApiCallHandler rscGrpApiCallHandlerRef,
+        CtrlVlmGrpApiCallHandler vlmGrpApiCallHandlerRef,
         LockGuardFactory lockGuardFactoryRef
     )
     {
@@ -91,6 +101,8 @@ public class CtrlApiCallHandler
         snapshotRestoreVlmDfnApiCallHandler = snapshotRestoreVlmDfnApiCallHandlerRef;
         drbdProxyModifyApiCallHandler = drbdProxyModifyApiCallHandlerRef;
         kvsApiCallHandler = kvsApiCallHandlerRef;
+        rscGrpApiCallHandler = rscGrpApiCallHandlerRef;
+        vlmGrpApiCallHandler = vlmGrpApiCallHandlerRef;
         lockGuardFactory = lockGuardFactoryRef;
     }
 
@@ -1191,6 +1203,111 @@ public class CtrlApiCallHandler
                 deletePropKeys,
                 deleteNamespacesRef
             );
+        }
+        return apiCallRc;
+    }
+
+    public ArrayList<ResourceGroup.RscGrpApi> listResourceGroups()
+    {
+        ArrayList<ResourceGroup.RscGrpApi> listResourceGroups;
+        try (LockGuard lg = lockGuardFactory.build(READ, RSC_GRP_MAP))
+        {
+            listResourceGroups = rscGrpApiCallHandler.listResourceGroups();
+        }
+        return listResourceGroups;
+    }
+
+
+    public ApiCallRc createResourceGroup(RscGrpPojo rscGrpPojoRef)
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
+        {
+            apiCallRc = rscGrpApiCallHandler.create(rscGrpPojoRef);
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc modifyResourceGroup(
+        String rscGrpNameRef,
+        String description,
+        Map<String, String> overrideProps,
+        HashSet<String> deletePropKeys,
+        HashSet<String> deleteNamespaces,
+        List<String> overrideLayerStackListRef,
+        AutoSelectFilterApi autoApi
+    )
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
+        {
+            apiCallRc = rscGrpApiCallHandler.modify(
+                rscGrpNameRef,
+                description,
+                overrideProps,
+                deletePropKeys,
+                deleteNamespaces,
+                overrideLayerStackListRef,
+                autoApi
+            );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteResourceGroup(String rscGrpNameStrRef)
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
+        {
+            apiCallRc = rscGrpApiCallHandler.delete(rscGrpNameStrRef);
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc createVlmGrps(String rscGrpNameRef, List<VlmGrpApi> vlmGrpApiListRef)
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
+        {
+            apiCallRc = vlmGrpApiCallHandler.createVlmGrps(
+                rscGrpNameRef,
+                vlmGrpApiListRef
+            );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc modifyVolumeGroup(
+        String rscGrpNameRef,
+        int vlmNrRef,
+        Map<String, String> overrideProps,
+        HashSet<String> deletePropKeys,
+        HashSet<String> deleteNamespaces
+    )
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
+        {
+            apiCallRc = vlmGrpApiCallHandler.modify(
+                rscGrpNameRef,
+                vlmNrRef,
+                overrideProps,
+                deletePropKeys,
+                deleteNamespaces
+            );
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteVolumeGroup(
+        String rscGrpNameRef,
+        int vlmNrRef
+    )
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
+        {
+            apiCallRc = vlmGrpApiCallHandler.delete(rscGrpNameRef, vlmNrRef);
         }
         return apiCallRc;
     }

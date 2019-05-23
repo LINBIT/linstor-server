@@ -8,18 +8,18 @@ import "common/ProviderType.proto";
 message AutoSelectFilter
 {
     // replica count
-    required uint32 place_count = 1;
+    optional uint32 replica_count = 1;
 
     // if this is given, then the auto-place will be limited to only consider this storage pool.
     // if this is not given, auto-place will consider all storage pools, but will choose the same storage pool name on all nodes.
     optional string storage_pool = 2;
 
     // prefer nodes where this list of resources is NOT already deployed
-    repeated string not_place_with_rsc = 3;
+    repeated string do_not_place_with_rsc = 3;
 
     // same as above, but instead of a list, a regular expression of resource names.
     // if both, a list and a regex are given, the resource names from the regex will be added to the given list.
-    optional string not_place_with_rsc_regex = 4;
+    optional string do_not_place_with_rsc_regex = 4;
 
     // select nodes which have the same value of the given list of properties
     // the value can also be pinned with "key=value"

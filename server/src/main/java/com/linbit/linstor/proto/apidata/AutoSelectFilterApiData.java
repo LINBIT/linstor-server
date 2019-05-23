@@ -18,9 +18,9 @@ public class AutoSelectFilterApiData implements AutoSelectFilterApi
     }
 
     @Override
-    public int getPlaceCount()
+    public Integer getReplicaCount()
     {
-        return selectFilterProto.getPlaceCount();
+        return selectFilterProto.hasReplicaCount() ? selectFilterProto.getReplicaCount() : null;
     }
 
     @Override
@@ -35,18 +35,18 @@ public class AutoSelectFilterApiData implements AutoSelectFilterApi
     }
 
     @Override
-    public List<String> getNotPlaceWithRscList()
+    public List<String> getDoNotPlaceWithRscList()
     {
-        return selectFilterProto.getNotPlaceWithRscList();
+        return selectFilterProto.getDoNotPlaceWithRscList();
     }
 
     @Override
-    public String getNotPlaceWithRscRegex()
+    public String getDoNotPlaceWithRscRegex()
     {
         String ret = null;
-        if (selectFilterProto.hasNotPlaceWithRscRegex())
+        if (selectFilterProto.hasDoNotPlaceWithRscRegex())
         {
-            ret = selectFilterProto.getNotPlaceWithRscRegex();
+            ret = selectFilterProto.getDoNotPlaceWithRscRegex();
         }
         return ret;
     }

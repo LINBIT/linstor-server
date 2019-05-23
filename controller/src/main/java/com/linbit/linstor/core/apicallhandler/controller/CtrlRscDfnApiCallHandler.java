@@ -346,7 +346,7 @@ public class CtrlRscDfnApiCallHandler
                 }
                 catch (AccessDeniedException accDeniedExc)
                 {
-                    // don't add storpooldfn without access
+                    // don't add resource definition without access
                 }
             }
         }
