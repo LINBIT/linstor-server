@@ -218,14 +218,21 @@ class CtrlVlmDfnApiCallHandler
                 size,
                 vlmDfnInitFlags
             );
-            Map<String, String> propsMap = getVlmDfnProps(vlmDfn).map();
+            Props vlmDfnProps = getVlmDfnProps(vlmDfn);
+            Map<String, String> propsMap = vlmDfnProps.map();
 
             ctrlPropsHelper.fillProperties(LinStorObject.VOLUME_DEFINITION, vlmDfnApiRef.getVlmDfn().getProps(),
-                getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
+                vlmDfnProps, ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
-            // Set an initial DRBD current generation identifier for use when creating volumes
-            // in a setup that includes thin provisioning storage pools
-            propsMap.put(ApiConsts.KEY_DRBD_CURRENT_GI, GidGenerator.generateRandomGid());
+            if (vlmDfnProps.getProp(ApiConsts.KEY_DRBD_CURRENT_GI, ApiConsts.NAMESPC_DRBD_OPTIONS) == null)
+            {
+                // Set an initial DRBD current generation identifier (if not already set, i.e. when migrating)
+                // for use when creating volumes in a setup that includes thin provisioning storage pools
+                vlmDfnProps.setProp(
+                    ApiConsts.KEY_DRBD_CURRENT_GI,
+                    GidGenerator.generateRandomGid()
+                );
+            }
 
             if (Arrays.asList(vlmDfnInitFlags).contains(VlmDfnFlags.ENCRYPTED))
             {

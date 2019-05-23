@@ -691,8 +691,8 @@ public class DrbdLayer implements DeviceLayer
                 String currentGi = null;
                 try
                 {
-                    currentGi = drbdVlmData.getVlmDfnLayerObject().getVolumeDefinition().getProps(workerCtx)
-                        .getProp(ApiConsts.KEY_DRBD_CURRENT_GI);
+                    currentGi = drbdVlmData.getVlmDfnLayerObject().getVolumeDefinition()
+                        .getProps(workerCtx).getProp(ApiConsts.KEY_DRBD_CURRENT_GI);
                 }
                 catch (InvalidKeyException invKeyExc)
                 {
