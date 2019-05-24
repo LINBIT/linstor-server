@@ -5,10 +5,11 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Injector;
@@ -25,8 +26,11 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 public class GrizzlyHttpService implements SystemService
 {
-    private final HttpServer httpServer;
+    private final ErrorReporter errorReporter;
+    private HttpServer httpServer;
     private ServiceName instanceName;
+    private String listenAddress;
+    private ResourceConfig v1ResourceConfig;
 
     private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
         "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + JsonGenTypes.REST_API_VERSION
@@ -34,14 +38,29 @@ public class GrizzlyHttpService implements SystemService
 
     private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
 
-    public GrizzlyHttpService(Injector injector, Path logDirectory, String listenAddress)
+    public GrizzlyHttpService(Injector injector, ErrorReporter errorReporterRef, String listenAddressRef)
     {
-        ResourceConfig resourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
-        resourceConfig.register(new CORSFilter());
+        errorReporter = errorReporterRef;
+        listenAddress = listenAddressRef;
+        v1ResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
+        v1ResourceConfig.register(new CORSFilter());
 
+        initGrizzly(listenAddress);
+
+        try
+        {
+            instanceName = new ServiceName("GrizzlyHttpServer");
+        }
+        catch (InvalidNameException ignored)
+        {
+        }
+    }
+
+    private void initGrizzly(final String bindAddress)
+    {
         httpServer = GrizzlyHttpServerFactory.createHttpServer(
-            URI.create(String.format("http://%s/v1/", listenAddress)),
-            resourceConfig,
+            URI.create(String.format("http://%s/v1/", bindAddress)),
+            v1ResourceConfig,
             false
         );
 
@@ -71,16 +90,10 @@ public class GrizzlyHttpService implements SystemService
             }
         );
 
-        final AccessLogBuilder builder = new AccessLogBuilder(logDirectory.resolve("rest-access.log").toFile());
+        final AccessLogBuilder builder = new AccessLogBuilder(
+            errorReporter.getLogDirectory().resolve("rest-access.log").toFile()
+        );
         builder.instrument(httpServer.getServerConfiguration());
-
-        try
-        {
-            instanceName = new ServiceName("GrizzlyHttpServer");
-        }
-        catch (InvalidNameException ignored)
-        {
-        }
     }
 
     @Override
@@ -95,6 +108,25 @@ public class GrizzlyHttpService implements SystemService
         try
         {
             httpServer.start();
+        }
+        catch (SocketException sexc)
+        {
+            errorReporter.logError("Unable to start grizzly http server on " + listenAddress + ".");
+            // ipv6 failed, if it is localhost ipv6, retry ipv4
+            if (listenAddress.startsWith("[::]"))
+            {
+                URI uri = URI.create(String.format("http://%s/v1/", listenAddress));
+                errorReporter.logInfo("Trying to start grizzly http server on fallback ipv4: 0.0.0.0:" + uri.getPort());
+                try
+                {
+                    initGrizzly("0.0.0.0:" + uri.getPort());
+                    httpServer.start();
+                }
+                catch (IOException exc)
+                {
+                    throw new SystemServiceStartException("Unable to start grizzly http server on fallback ipv4", exc);
+                }
+            }
         }
         catch (IOException exc)
         {

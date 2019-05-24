@@ -288,7 +288,7 @@ public final class Controller
             if (restEnabled)
             {
                 final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(
-                    injector, errorReporter.getLogDirectory(), restBindAddress
+                    injector, errorReporter, restBindAddress
                 );
                 systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
             }
