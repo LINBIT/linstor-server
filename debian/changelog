@@ -1,3 +1,18 @@
+linstor-server (0.9.10-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * DevMgr: Call forget-peer when remote-rsc is deleted
+  * DrbdLayer: Whitelisted DrbdCurrentGi
+  * DrbdLayer: Fixed forget-peer bug
+  * Partially reverted "LvsUtils now parses json output for 'lvs' and 'vgs'"
+
+  [ Rene Peinthor ]
+  * grizzly-http: try to start on ipv4 if default ipv6 start failed.
+  * ErrorReporter: add a log archive method and task
+  * ErrorReporter: fix possible null pointer exception
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 27 May 2019 13:03:42 +0200
+
 linstor-server (0.9.9-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
