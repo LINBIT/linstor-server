@@ -6,7 +6,7 @@ import javax.inject.Inject;
 
 public class LogArchiveTask implements TaskScheduleService.Task
 {
-    private static final long LOGARCHIVE_SLEEP = 24 * 60 * 60;
+    private static final long LOGARCHIVE_SLEEP = 24 * 60 * 60 * 1_000;
 
     private final ErrorReporter errorReporter;
 
