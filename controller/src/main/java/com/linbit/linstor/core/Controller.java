@@ -199,7 +199,7 @@ public final class Controller
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
             taskScheduleService.addTask(retryResourcesTask);
-            taskScheduleService.addTask(logArchiveTask);
+            // taskScheduleService.addTask(logArchiveTask); disable for now, until also working on satellite
 
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
