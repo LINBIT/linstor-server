@@ -2,13 +2,12 @@ package com.linbit.linstor.logging;
 
 import com.linbit.AutoIndent;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
-import org.slf4j.Logger;
-import org.slf4j.event.Level;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,14 +18,21 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 /**
  * Standard error report generator
@@ -511,6 +517,107 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         }
 
         return errors;
+    }
+
+    private BasicFileAttributes getAttributes(final Path file)
+    {
+        BasicFileAttributes basicFileAttributes = null;
+        try
+        {
+            basicFileAttributes = Files.readAttributes(file, BasicFileAttributes.class);
+        }
+        catch (IOException ignored)
+        {
+        }
+        return basicFileAttributes;
+    }
+
+    public void archiveLogDirectory()
+    {
+        try (Stream<Path> files = Files.list(getLogDirectory()))
+        {
+            logInfo("LogArchive: Running log archive on directory: " + getLogDirectory().toAbsolutePath().normalize());
+            final long startTime = System.currentTimeMillis();
+            int archiveCount = 0;
+            // create a Date instance that is starting 2 months before.
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.MONTH, -1);
+            cal.set(Calendar.DAY_OF_MONTH, 1);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            Date beforeDate = cal.getTime();
+
+            DateFormat df = new SimpleDateFormat("yyyy-MM"); // grouping format
+
+            Map<String, List<Path>> monthGroup = files
+                .filter(file -> file.getFileName().toString().startsWith("ErrorReport"))
+                .filter(file ->
+                {
+                    // only archive files older 2 months (at month starting)
+                    BasicFileAttributes attr = getAttributes(file);
+                    Date createDate = new Date(attr.creationTime().toMillis());
+                    return createDate.before(beforeDate);
+                })
+                .collect(Collectors.groupingBy(file ->
+                {
+                    BasicFileAttributes attr = getAttributes(file);
+                    return attr != null ? df.format(attr.creationTime().toMillis()) : "unknown";
+                }));
+
+            for (String month : monthGroup.keySet())
+            {
+                final Path tarFile = getLogDirectory()
+                    .toAbsolutePath()
+                    .normalize()
+                    .resolve("log-archive-" + month + ".tar.gz");
+
+                File tempLogFiles = File.createTempFile("logarchive-", "-" + month);
+                FileOutputStream fos = new FileOutputStream(tempLogFiles);
+                for (Path logFile : monthGroup.get(month))
+                {
+                    archiveCount++;
+                    fos.write(logFile.getFileName().toString().getBytes());
+                    fos.write("\n".getBytes());
+                }
+                fos.close();
+
+                Process createTar = new ProcessBuilder(
+                    "tar",
+                    "-czf", tarFile.toString(),
+                    "-C", getLogDirectory().toString(),
+                    "-T", tempLogFiles.toString()
+                ).start();
+                try
+                {
+                    createTar.waitFor();
+
+                    for (Path logFile : monthGroup.get(month))
+                    {
+                        Files.delete(logFile);
+                    }
+                }
+                catch (InterruptedException exc)
+                {
+                    throw new LinStorRuntimeException("Unable to tar.gz log archive: " + tarFile.toString(), exc);
+                }
+
+                tempLogFiles.deleteOnExit();
+            }
+            if (archiveCount > 0)
+            {
+                logInfo("LogArchive: Archived %d logs in %dms", archiveCount, System.currentTimeMillis() - startTime);
+            }
+            else
+            {
+                logInfo("LogArchive: No logs to archive.");
+            }
+        }
+        catch (IOException exc)
+        {
+            throw new LinStorRuntimeException("Unable to list log directory", exc);
+        }
     }
 
     @Override

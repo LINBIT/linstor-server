@@ -50,6 +50,7 @@ import com.linbit.linstor.security.DbCoreObjProtInitializer;
 import com.linbit.linstor.security.DbSecurityInitializer;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.RetryResourcesTask;
@@ -121,6 +122,7 @@ public final class Controller
     private final TaskScheduleService taskScheduleService;
     private final PingTask pingTask;
     private final ReconnectorTask reconnectorTask;
+    private final LogArchiveTask logArchiveTask;
 
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
@@ -150,6 +152,7 @@ public final class Controller
         PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef,
         RetryResourcesTask retryResourcesTaskRef,
+        LogArchiveTask logArchiveTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
         SwordfishTargetProcessManager swordfishTargetProcessManagerRef,
@@ -173,6 +176,7 @@ public final class Controller
         taskScheduleService = taskScheduleServiceRef;
         pingTask = pingTaskRef;
         reconnectorTask = reconnectorTaskRef;
+        logArchiveTask = logArchiveTaskRef;
         retryResourcesTask = retryResourcesTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
@@ -195,6 +199,7 @@ public final class Controller
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
             taskScheduleService.addTask(retryResourcesTask);
+            taskScheduleService.addTask(logArchiveTask);
 
             systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);

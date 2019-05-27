@@ -155,4 +155,8 @@ public interface ErrorReporter
     );
 
     Path getLogDirectory();
+
+    default void archiveLogDirectory()
+    {
+    }
 }
