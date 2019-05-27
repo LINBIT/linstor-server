@@ -557,8 +557,13 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 {
                     // only archive files older 2 months (at month starting)
                     BasicFileAttributes attr = getAttributes(file);
-                    Date createDate = new Date(attr.creationTime().toMillis());
-                    return createDate.before(beforeDate);
+                    boolean use = false;
+                    if (attr != null)
+                    {
+                        Date createDate = new Date(attr.creationTime().toMillis());
+                        use = createDate.before(beforeDate);
+                    }
+                    return use;
                 })
                 .collect(Collectors.groupingBy(file ->
                 {
