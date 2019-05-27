@@ -26,9 +26,9 @@ import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.layer.provider.utils.StorageConfigReader;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
-import com.linbit.linstor.storage.utils.lvm.LvmCommands;
-import com.linbit.linstor.storage.utils.lvm.LvmUtils;
-import com.linbit.linstor.storage.utils.lvm.LvmUtils.LvsInfo;
+import com.linbit.linstor.storage.utils.LvmCommands;
+import com.linbit.linstor.storage.utils.LvmUtils;
+import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;

@@ -9,7 +9,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.utils.lvm.LvmUtils;
+import com.linbit.linstor.storage.utils.LvmUtils;
 
 
 public class StorageConfigReader

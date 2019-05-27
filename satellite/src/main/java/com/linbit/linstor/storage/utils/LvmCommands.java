@@ -1,4 +1,4 @@
-package com.linbit.linstor.storage.utils.lvm;
+package com.linbit.linstor.storage.utils;
 
 import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
 
@@ -31,8 +31,10 @@ public class LvmCommands
                 new String[] {
                     "lvs",
                     "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr",
+                    "--separator", LvmUtils.DELIMITER,
+                    "--noheadings",
                     "--units", "k",
-                    "--reportformat", "json"
+                    "--nosuffix"
                 },
                 volumeGroups
             ),
@@ -50,8 +52,10 @@ public class LvmCommands
                 new String[] {
                     "vgs",
                     "-o", "vg_name,vg_extent_size",
+                    "--separator", LvmUtils.DELIMITER,
                     "--units", "k",
-                    "--reportformat", "json"
+                    "--noheadings",
+                    "--nosuffix"
                 },
                 volumeGroups
             ),
@@ -259,7 +263,9 @@ public class LvmCommands
                     "vgs",
                    "-o", "vg_name,vg_size",
                     "--units", "k",
-                    "--reportformat", "json"
+                    "--separator", LvmUtils.DELIMITER,
+                    "--noheadings",
+                    "--nosuffix"
                 },
                 volumeGroups
             ),
@@ -280,7 +286,9 @@ public class LvmCommands
                     "vgs",
                     "-o", "vg_name,vg_free",
                     "--units", "k",
-                    "--reportformat", "json"
+                    "--separator", LvmUtils.DELIMITER,
+                    "--noheadings",
+                    "--nosuffix"
                 },
                 volumeGroups
             ),
@@ -301,7 +309,9 @@ public class LvmCommands
                         "lvs",
                         "-o", "lv_name,lv_size",
                         "--units", "k",
-                        "--reportformat", "json"
+                        "--separator", LvmUtils.DELIMITER,
+                        "--noheadings",
+                        "--nosuffix"
                     },
                     volumeGroups
                 ),
@@ -322,8 +332,9 @@ public class LvmCommands
                         "vgs",
                         "-o", "lv_name,lv_size,data_percent",
                         "--units", "b", // intentionally not "k" as usual
-                        "--reportformat", "json",
-                        "--no-suffix"
+                        "--separator", LvmUtils.DELIMITER,
+                        "--noheadings",
+                        "--nosuffix"
                     },
                     volumeGroups
                 ),
@@ -378,7 +389,7 @@ public class LvmCommands
             {
                 "vgs",
                 "-o", "vg_name",
-                "--reportformat", "json"
+                "--noheadings"
             },
             failMsg,
             failMsg
