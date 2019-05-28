@@ -237,6 +237,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                     errorReporter.logTrace("Lv %s should be deleted but does not exist; no-op", lvId);
                 }
             }
+            // whatever happens, we have to report the free space of these storage pools even if no layer
+            // actually changed anything. The controller simply expects a report of free sizes
+            addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
         }
 
         /*
@@ -350,8 +353,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                 wipeHandler.quickWipe(devicePath);
             }
 
-            addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
-
             addCreatedMsg(vlmData, apiCallRc);
         }
     }
@@ -398,8 +399,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             setAllocatedSize(vlmData, allocatedSize);
             setUsableSize(vlmData, allocatedSize);
 
-            addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
-
             addResizedMsg(vlmData, apiCallRc);
         }
     }
@@ -417,8 +416,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             {
                 DmStatCommands.delete(extCmdFactory.create(), vlmData.getDevicePath());
             }
-
-            addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
 
             if (!vlmData.getVolume().getResource().getStateFlags().isSet(
                 storDriverAccCtx,
@@ -444,8 +441,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             {
                 errorReporter.logTrace("Snapshot '%s' already deleted", snapVlm.toString());
             }
-
-            addChangedStorPool(snapVlm.getStorPool(storDriverAccCtx));
 
             addSnapDeletedMsg(snapVlm, apiCallRc);
         }
@@ -480,8 +475,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
                     errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
                     createSnapshot(vlmData, snapVlm);
 
-                    addChangedStorPool(snapVlm.getStorPool(storDriverAccCtx));
-
                     addSnapCreatedMsg(snapVlm, apiCallRc);
                 }
             }
@@ -499,7 +492,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             if (rollbackTargetSnapshotName != null)
             {
                 rollbackImpl(vlmData, rollbackTargetSnapshotName);
-                addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
             }
         }
     }
