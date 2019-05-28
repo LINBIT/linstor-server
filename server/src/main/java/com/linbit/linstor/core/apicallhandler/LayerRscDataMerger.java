@@ -212,7 +212,11 @@ public class LayerRscDataMerger
         throws IllegalArgumentException, SQLException, ValueOutOfRangeException, AccessDeniedException,
             ExhaustedPoolException, ValueInUseException
     {
-        DrbdRscDfnData rscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+        DrbdRscDfnData rscDfnData = rscDfn.getLayerData(
+            apiCtx,
+            DeviceLayerKind.DRBD,
+            drbdRscDfnPojo.getRscNameSuffix()
+        );
         if (rscDfnData == null)
         {
             rscDfnData = layerDataFactory.createDrbdRscDfnData(
@@ -281,7 +285,11 @@ public class LayerRscDataMerger
                 vlmDfn,
                 drbdVlmDfnPojo.getRscNameSuffix(),
                 drbdVlmDfnPojo.getMinorNr(),
-                vlmDfn.getResourceDefinition().getLayerData(apiCtx, DeviceLayerKind.DRBD)
+                vlmDfn.getResourceDefinition().getLayerData(
+                    apiCtx,
+                    DeviceLayerKind.DRBD,
+                    drbdVlmDfnPojo.getRscNameSuffix()
+                )
             );
             vlmDfn.setLayerData(apiCtx, drbdVlmDfnData);
         }

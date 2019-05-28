@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -515,8 +516,14 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         try
         {
-            DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(peerAccCtx.get(), DeviceLayerKind.DRBD);
-            drbdRscDfnData.setDown(true);
+            Map<String, DrbdRscDfnData> drbdRscDfnDataMap = rscDfn.getLayerData(
+                peerAccCtx.get(),
+                DeviceLayerKind.DRBD
+            );
+            for (DrbdRscDfnData drbdRscDfnData : drbdRscDfnDataMap.values())
+            {
+                drbdRscDfnData.setDown(true);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -550,8 +557,14 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         try
         {
-            DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(peerAccCtx.get(), DeviceLayerKind.DRBD);
-            drbdRscDfnData.setDown(false);
+            Map<String, DrbdRscDfnData> drbdRscDfnDataMap = rscDfn.getLayerData(
+                peerAccCtx.get(),
+                DeviceLayerKind.DRBD
+            );
+            for (DrbdRscDfnData drbdRscDfnData : drbdRscDfnDataMap.values())
+            {
+                drbdRscDfnData.setDown(false);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {

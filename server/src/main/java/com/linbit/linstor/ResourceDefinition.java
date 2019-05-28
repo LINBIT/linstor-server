@@ -119,7 +119,25 @@ public interface ResourceDefinition
     <T extends RscDfnLayerObject> T setLayerData(AccessContext accCtx, T layerData)
         throws AccessDeniedException, SQLException;
 
-    <T extends RscDfnLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
+    /**
+     * Returns a map of <ResourceNameSuffix, RscDfnLayerObject> where the RscDfnLayerObject has
+     * the same DeviceLayerKind as the given argument
+     * @throws AccessDeniedException
+     */
+    <T extends RscDfnLayerObject> Map<String, T> getLayerData(
+        AccessContext accessContextRef,
+        DeviceLayerKind kind
+    )
+        throws AccessDeniedException;
+
+    /**
+     * Returns a single RscDfnLayerObject matching the kind as well as the resourceNameSuffix.
+     */
+    <T extends RscDfnLayerObject> T getLayerData(
+        AccessContext accCtx,
+        DeviceLayerKind kind,
+        String rscNameSuffix
+    )
         throws AccessDeniedException;
 
     @Override

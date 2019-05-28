@@ -33,7 +33,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -79,7 +81,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private final ResourceDefinitionDataDatabaseDriver dbDriver;
 
-    private final TransactionMap<DeviceLayerKind, RscDfnLayerObject> layerStorage;
+    private final TransactionMap<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
 
     private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
@@ -99,7 +101,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
         Map<NodeName, Resource> rscMapRef,
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,
-        Map<DeviceLayerKind, RscDfnLayerObject> layerDataMapRef
+        Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef
     )
         throws SQLException
     {
@@ -381,25 +383,64 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        return (T) layerStorage.put(rscDfnLayerData.getLayerKind(), rscDfnLayerData);
+        return (T) layerStorage.put(
+            new Pair<>(
+                rscDfnLayerData.getLayerKind(),
+                rscDfnLayerData.getRscNameSuffix()
+            ),
+            rscDfnLayerData
+        );
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends RscDfnLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
+    public <T extends RscDfnLayerObject> T getLayerData(
+        AccessContext accCtx,
+        DeviceLayerKind kind,
+        String rscNameSuffixRef
+    )
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        return (T) layerStorage.get(kind);
+        return (T) layerStorage.get(new Pair<>(kind, rscNameSuffixRef));
     }
 
-    public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind)
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends RscDfnLayerObject> Map<String, T> getLayerData(
+        AccessContext accCtx,
+        DeviceLayerKind kind
+    )
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        Map<String, T> ret = new TreeMap<>();
+        for (Entry<Pair<DeviceLayerKind, String>, RscDfnLayerObject> entry : layerStorage.entrySet())
+        {
+            Pair<DeviceLayerKind, String> key = entry.getKey();
+            if (key.objA.equals(kind))
+            {
+                ret.put(key.objB, (T) entry.getValue());
+            }
+        }
+        return ret;
+    }
+
+
+
+    public void removeLayerData(
+        AccessContext accCtx,
+        DeviceLayerKind kind,
+        String rscNameSuffixRef
+    )
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        layerStorage.remove(kind).delete();
+        layerStorage.remove(new Pair<>(kind, rscNameSuffixRef)).delete();
         for (VolumeDefinition vlmDfn : volumeMap.values())
         {
             ((VolumeDefinitionData) vlmDfn).removeLayerData(accCtx, kind);
@@ -497,16 +538,20 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
          *
          * Sorting an enum by default orders by its ordinal number, not alphanumerically.
          */
-        TreeSet<DeviceLayerKind> sortedLayerStack = new TreeSet<>(layerStack);
+        TreeSet<Pair<DeviceLayerKind, String>> sortedLayerStack = new TreeSet<>();
+        for (DeviceLayerKind kind : layerStack)
+        {
+            sortedLayerStack.add(new Pair<>(kind, ""));
+        }
         sortedLayerStack.addAll(layerStorage.keySet());
 
         List<Pair<String, RscDfnLayerDataApi>> layerData = new ArrayList<>();
-        for (DeviceLayerKind kind : sortedLayerStack)
+        for (Pair<DeviceLayerKind, String> pair : sortedLayerStack)
         {
-            RscDfnLayerObject rscDfnLayerObject = layerStorage.get(kind);
+            RscDfnLayerObject rscDfnLayerObject = layerStorage.get(pair);
             layerData.add(
                 new Pair<>(
-                    kind.name(),
+                    pair.objA.name(),
                     rscDfnLayerObject == null ? null : rscDfnLayerObject.getApiData(accCtx)
                 )
             );

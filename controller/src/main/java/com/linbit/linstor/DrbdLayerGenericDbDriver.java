@@ -432,7 +432,11 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                             rscNameSuffix,
                             resultSet.getInt(VLM_MINOR_NR),
                             minorPool,
-                            ((DrbdRscDfnData) vlmDfn.getResourceDefinition().getLayerData(dbCtx, DeviceLayerKind.DRBD)),
+                            (DrbdRscDfnData) vlmDfn.getResourceDefinition().getLayerData(
+                                dbCtx,
+                                DeviceLayerKind.DRBD,
+                                rscNameSuffix
+                            ),
                             this,
                             transMgrProvider
                         );

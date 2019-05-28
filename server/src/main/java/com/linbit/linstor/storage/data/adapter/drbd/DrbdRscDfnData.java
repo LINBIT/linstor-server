@@ -251,7 +251,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     public DrbdRscDfnPojo getApiData(AccessContext accCtxRef)
     {
         return new DrbdRscDfnPojo(
-            suffixedResourceName,
+            resourceNameSuffix,
             peerSlots.get(),
             alStripes,
             alStripeSize,

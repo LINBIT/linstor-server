@@ -181,10 +181,18 @@ public class CtrlLayerStackHelper
             }
             else
             {
-                DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+                DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(
+                    apiCtx,
+                    DeviceLayerKind.DRBD,
+                    ""
+                );
                 if (drbdRscDfnData != null)
                 {
-                    rscDfn.removeLayerData(apiCtx, DeviceLayerKind.DRBD);
+                    rscDfn.removeLayerData(
+                        apiCtx,
+                        DeviceLayerKind.DRBD,
+                        ""
+                    );
                 }
             }
         }
@@ -204,7 +212,7 @@ public class CtrlLayerStackHelper
         throws AccessDeniedException, SQLException, ValueOutOfRangeException,
         ExhaustedPoolException, ValueInUseException
     {
-        DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+        DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD, "");
         if (drbdRscDfnData == null)
         {
             TransportType transportType = transportTypeRef;
@@ -437,7 +445,7 @@ public class CtrlLayerStackHelper
             ValueInUseException
     {
         ResourceDefinition rscDfn = rscRef.getDefinition();
-        DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+        DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD, "");
         if (drbdRscDfnData == null)
         {
             drbdRscDfnData = layerDataFactory.createDrbdRscDfnData(
