@@ -177,6 +177,7 @@ public class RequestHelper
                 asyncResponse::resume,
                 exc ->
                 {
+                    errorReporter.reportError(exc);
                     ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
                     apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage()));
                     asyncResponse.resume(
