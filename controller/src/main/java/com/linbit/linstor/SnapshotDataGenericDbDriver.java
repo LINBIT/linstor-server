@@ -25,6 +25,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -98,7 +99,14 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             stmt.setString(2, snapshot.getNodeName().value);
             stmt.setString(3, snapshot.getResourceName().value);
             stmt.setString(4, snapshot.getSnapshotName().value);
-            stmt.setInt(5, snapshot.getNodeId().value);
+            if (snapshot.getNodeId() == null)
+            {
+                stmt.setNull(5, Types.INTEGER);
+            }
+            else
+            {
+                stmt.setInt(5, snapshot.getNodeId().value);
+            }
             stmt.setLong(6, snapshot.getFlags().getFlagsBits(dbCtx));
             GenericDbDriver.setJsonIfNotNull(stmt, 7, snapshot.getLayerStack(dbCtx));
             stmt.executeUpdate();

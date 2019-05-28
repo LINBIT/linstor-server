@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
+import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -237,10 +238,11 @@ public class CtrlSnapshotRestoreApiCallHandler
         // but it is the easiest way to ensure it is set, should be the same anyway
         toRscDfn.setLayerStack(peerAccCtx.get(), snapshot.getLayerStack(peerAccCtx.get()));
 
+        NodeId restoredNodeId = snapshot.getNodeId();
         ResourceData rsc = ctrlRscCrtApiHelper.createResource(
             toRscDfn,
             node,
-            snapshot.getNodeId().value,
+            restoredNodeId == null ? null : restoredNodeId.value,
             0L,
             snapshot.getLayerStack(peerAccCtx.get())
         );

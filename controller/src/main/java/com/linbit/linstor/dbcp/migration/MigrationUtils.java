@@ -240,4 +240,45 @@ public class MigrationUtils
         }
         return sql;
     }
+
+    public static String dropColumnConstraintNotNull(
+        DbProduct databaseRef,
+        String table,
+        String column
+    )
+    {
+        String sql;
+        switch (databaseRef)
+        {
+            case ASE:
+            case INFORMIX:
+            case ORACLE_RDBMS:
+                sql = String.format("ALTER TABLE %s MODIFY %s DROP NOT NULL", table, column);
+                break;
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case POSTGRESQL:
+                sql = String.format("ALTER TABLE %s ALTER %s DROP NOT NULL;", table, column);
+                break;
+            case MSFT_SQLSERVER:
+                sql = String.format("ALTER TABLE %s ALTER COLUMN %s DROP NOT NULL;", table, column);
+                break;
+            case MARIADB:
+            case MYSQL:
+                sql = String.format(
+                    "ALTER TABLE %s CHANGE COLUMN %s %s DROP NOT NULL;",
+                    table,
+                    column,
+                    column
+                );
+                break;
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + databaseRef);
+        }
+        return sql;
+    }
 }
