@@ -1,23 +1,5 @@
 package com.linbit.linstor.core;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.SatelliteLinstorModule;
@@ -46,7 +28,8 @@ import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateModule;
 import com.linbit.linstor.event.EventModule;
 import com.linbit.linstor.event.serializer.EventSerializer;
-import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -60,6 +43,25 @@ import com.linbit.linstor.security.StltCoreObjProtInitializer;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 /**
  * linstor satellite prototype
@@ -367,12 +369,23 @@ public final class Satellite
                 ProtobufApiCall.class
             );
 
+            /*
+             * Dynamic loading is very slow compared to static loading, each .loadClasses
+             * costs around ~400ms on my system. so we do it static now, there are only 4 event classes anyway
+
             List<Class<? extends EventSerializer>> eventSerializers = classPathLoader.loadClasses(
                 ProtobufEventSerializer.class.getPackage().getName(),
                 packageSuffixes,
                 EventSerializer.class,
                 ProtobufEventSerializer.class
             );
+             */
+
+            List<Class<? extends EventSerializer>> eventSerializers = Arrays.asList(
+                ResourceStateEventSerializer.class,
+                VolumeDiskStateEventSerializer.class
+            );
+
             errorLog.logInfo(String.format(
                 "API classes loading finished: %dms",
                 (System.currentTimeMillis() - startAPIClassLoadingTime))

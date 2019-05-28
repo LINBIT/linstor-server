@@ -33,9 +33,11 @@ import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.event.EventModule;
 import com.linbit.linstor.event.handler.EventHandler;
-import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
+import com.linbit.linstor.event.handler.protobuf.controller.ResourceStateEventHandler;
+import com.linbit.linstor.event.handler.protobuf.controller.VolumeDiskStateEventHandler;
 import com.linbit.linstor.event.serializer.EventSerializer;
-import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -409,6 +411,10 @@ public final class Controller
                 ProtobufApiCall.class
             );
 
+            /*
+             * Dynamic loading is very slow compared to static loading, each .loadClasses
+             * costs around ~400ms on my system. so we do it static now, there are only 4 event classes anyway
+
             List<Class<? extends EventSerializer>> eventSerializers = classPathLoader.loadClasses(
                 ProtobufEventSerializer.class.getPackage().getName(),
                 packageSuffixes,
@@ -421,6 +427,17 @@ public final class Controller
                 packageSuffixes,
                 EventHandler.class,
                 ProtobufEventHandler.class
+            );
+             */
+
+            List<Class<? extends EventSerializer>> eventSerializers = Arrays.asList(
+                ResourceStateEventSerializer.class,
+                VolumeDiskStateEventSerializer.class
+            );
+
+            List<Class<? extends EventHandler>> eventHandlers = Arrays.asList(
+                ResourceStateEventHandler.class,
+                VolumeDiskStateEventHandler.class
             );
             errorLog.logInfo(String.format(
                 "API classes loading finished: %dms",
