@@ -107,7 +107,7 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
     public DrbdVlmDfnPojo getApiData(AccessContext accCtxRef)
     {
         return new DrbdVlmDfnPojo(
-            suffixedResourceName,
+            resourceNameSuffix,
             vlmDfn.getVolumeNumber().value,
             minorNr.value
         );

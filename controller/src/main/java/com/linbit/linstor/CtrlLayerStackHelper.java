@@ -531,7 +531,7 @@ public class CtrlLayerStackHelper
 
             if (!drbdVlmDataMap.containsKey(vlmDfn.getVolumeNumber()))
             {
-                DrbdVlmDfnData drbdVlmDfnData = vlmDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD);
+                DrbdVlmDfnData drbdVlmDfnData = vlmDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD, "");
                 if (drbdVlmDfnData == null)
                 {
                     drbdVlmDfnData = layerDataFactory.createDrbdVlmDfnData(
@@ -688,7 +688,8 @@ public class CtrlLayerStackHelper
             Volume vlm = iterateVolumes.next();
             VlmDfnLayerObject vlmDfnData = vlm.getVolumeDefinition().getLayerData(
                 apiCtx,
-                DeviceLayerKind.STORAGE
+                DeviceLayerKind.STORAGE,
+                ""
             );
 
             DeviceProviderKind kind = vlm.getStorPool(apiCtx).getDeviceProviderKind();

@@ -65,7 +65,10 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
     <T extends VlmDfnLayerObject> T setLayerData(AccessContext accCtx, T layerData)
         throws AccessDeniedException;
 
-    <T extends VlmDfnLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
+    <T extends VlmDfnLayerObject> Map<String, T> getLayerData(AccessContext accCtx, DeviceLayerKind kind)
+        throws AccessDeniedException;
+
+    <T extends VlmDfnLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind, String rscNameSuffix)
         throws AccessDeniedException;
 
     @Override

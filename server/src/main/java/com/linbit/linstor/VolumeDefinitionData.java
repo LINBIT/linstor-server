@@ -34,8 +34,10 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import javax.inject.Provider;
@@ -75,7 +77,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     private transient TransactionSimpleObject<VolumeDefinitionData, String> cryptKey;
 
-    private final Map<DeviceLayerKind, VlmDfnLayerObject> layerStorage;
+    private final Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
 
     VolumeDefinitionData(
         UUID uuid,
@@ -88,7 +90,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
         Map<String, Volume> vlmMapRef,
-        Map<DeviceLayerKind, VlmDfnLayerObject> layerDataMapRef
+        Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
     )
         throws MdException, SQLException
     {
@@ -280,25 +282,58 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        return (T) layerStorage.put(vlmDfnLayerData.getLayerKind(), vlmDfnLayerData);
+        return (T) layerStorage.put(
+            new Pair<>(
+                vlmDfnLayerData.getLayerKind(),
+                vlmDfnLayerData.getRscNameSuffix()
+            ), vlmDfnLayerData
+        );
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends VlmDfnLayerObject> T getLayerData(AccessContext accCtx, DeviceLayerKind kind)
+    public <T extends VlmDfnLayerObject> Map<String, T> getLayerData(
+        AccessContext accCtx,
+        DeviceLayerKind kind
+    )
         throws AccessDeniedException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        return (T) layerStorage.get(kind);
+
+        Map<String, T> ret = new TreeMap<>();
+        for (Entry<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> entry : layerStorage.entrySet())
+        {
+            Pair<DeviceLayerKind, String> key = entry.getKey();
+            if (key.objA.equals(kind))
+            {
+                ret.put(key.objB, (T) entry.getValue());
+            }
+        }
+        return ret;
     }
 
-    public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind)
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends VlmDfnLayerObject> T getLayerData(
+        AccessContext accCtx,
+        DeviceLayerKind kind,
+        String rscNameSuffix
+    )
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        return (T) layerStorage.get(new Pair<>(kind, rscNameSuffix));
+    }
+
+    public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind, String rscNameSuffix)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        layerStorage.remove(kind).delete();
+        layerStorage.remove(new Pair<>(kind, rscNameSuffix)).delete();
     }
 
     @Override
@@ -368,15 +403,20 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
          * Sorting an enum by default orders by its ordinal number, not alphanumerically.
          */
 
-        TreeSet<DeviceLayerKind> layerStack = new TreeSet<>(resourceDfn.getLayerStack(accCtx));
-        layerStack.addAll(layerStorage.keySet());
-
-        for (DeviceLayerKind kind : layerStack)
+        TreeSet<Pair<DeviceLayerKind, String>> sortedLayerStack = new TreeSet<>();
+        for (DeviceLayerKind kind : resourceDfn.getLayerStack(accCtx))
         {
-            VlmDfnLayerObject vlmDfnLayerObject = layerStorage.get(kind);
+            sortedLayerStack.add(new Pair<>(kind, ""));
+        }
+
+        sortedLayerStack.addAll(layerStorage.keySet());
+
+        for (Pair<DeviceLayerKind, String> pair : sortedLayerStack)
+        {
+            VlmDfnLayerObject vlmDfnLayerObject = layerStorage.get(pair);
             layerData.add(
                 new Pair<>(
-                    kind.name(),
+                    pair.objA.name(),
                     vlmDfnLayerObject == null ? null : vlmDfnLayerObject.getApiData(accCtx)
                 )
             );

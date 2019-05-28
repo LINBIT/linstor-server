@@ -273,7 +273,7 @@ public class StorageRscPojo implements RscLayerDataApi
             vlmOdata = vlmOdataRef;
         }
 
-        public String getSuffixedRscName()
+        public String getRscNameSuffix()
         {
             return rscNameSuffix;
         }

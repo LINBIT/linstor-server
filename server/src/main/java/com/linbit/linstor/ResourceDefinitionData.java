@@ -429,8 +429,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return ret;
     }
 
-
-
     public void removeLayerData(
         AccessContext accCtx,
         DeviceLayerKind kind,
@@ -443,7 +441,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         layerStorage.remove(new Pair<>(kind, rscNameSuffixRef)).delete();
         for (VolumeDefinition vlmDfn : volumeMap.values())
         {
-            ((VolumeDefinitionData) vlmDfn).removeLayerData(accCtx, kind);
+            ((VolumeDefinitionData) vlmDfn).removeLayerData(accCtx, kind, rscNameSuffixRef);
         }
     }
 
