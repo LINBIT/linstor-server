@@ -21,13 +21,16 @@ import reactor.core.publisher.Flux;
 public class PeerREST implements Peer
 {
     private final String peerId;
+    private final String userAgent;
     static ServiceName serviceName;
 
     public PeerREST(
-        String peerIdRef
+        String peerIdRef,
+        String userAgentRef
     )
     {
         peerId = peerIdRef;
+        userAgent = userAgentRef;
 
         try
         {
@@ -353,6 +356,11 @@ public class PeerREST implements Peer
     @Override
     public String toString()
     {
-        return "RestClient(" + getId() + ")";
+        String str = "RestClient(" + getId();
+        if (userAgent != null)
+        {
+            str += "; '" + userAgent + "'";
+        }
+        return str + ")";
     }
 }

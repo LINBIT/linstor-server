@@ -56,11 +56,13 @@ public class RequestHelper
     {
         // request.getAuthorization() contains authorization http field
 
-        errorReporter.logDebug("REST access api '%s' from '%s'", apiCall, request.getRemoteAddr());
+        final String userAgent = request.getHeader("User-Agent");
+        Peer peer = new PeerREST(request.getRemoteAddr(), userAgent);
+        errorReporter.logDebug("REST access api '%s' from '%s'", apiCall, peer.toString());
         return  Context.of(
             ApiModule.API_CALL_NAME, apiCall,
             AccessContext.class, publicContext,
-            Peer.class, new PeerREST(request.getRemoteAddr())
+            Peer.class, peer
         );
     }
 
