@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.CtrlLayerStackHelper;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.Node;
@@ -36,6 +35,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.Props;
@@ -100,7 +100,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final CtrlStorPoolResolveHelper ctrlStorPoolResolveHelper;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
-    private final CtrlLayerStackHelper ctrlLayerStackHelper;
+    private final CtrlLayerDataHelper ctrlLayerStackHelper;
     private final ResponseConverter responseConverter;
     private final ResourceStateEvent resourceStateEvent;
     private final EventWaiter eventWaiter;
@@ -118,7 +118,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         CtrlStorPoolResolveHelper ctrlStorPoolResolveHelperRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
-        CtrlLayerStackHelper ctrlLayerStackHelperRef,
+        CtrlLayerDataHelper ctrlLayerStackHelperRef,
         ResponseConverter responseConverterRef,
         ResourceStateEvent resourceStateEventRef,
         EventWaiter eventWaiterRef,

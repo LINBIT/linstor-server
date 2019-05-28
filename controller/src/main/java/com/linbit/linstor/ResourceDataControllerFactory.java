@@ -2,6 +2,8 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -28,7 +30,7 @@ public class ResourceDataControllerFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-    private final CtrlLayerStackHelper layerStackHelper;
+    private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
     public ResourceDataControllerFactory(
@@ -37,7 +39,7 @@ public class ResourceDataControllerFactory
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CtrlLayerStackHelper layerStackHelperRef
+        CtrlLayerDataHelper layerStackHelperRef
     )
     {
         dbDriver = dbDriverRef;
@@ -107,7 +109,10 @@ public class ResourceDataControllerFactory
             throw new ImplementationError("Lowest layer has to be a STORAGE layer. " + new ArrayList<>(layerStack));
         }
 
-        layerStackHelper.ensureStackDataExists(rscData, layerStack, nodeIdIntRef);
+        // TODO: might be a good idea to create this object earlier
+        LayerPayload payload = new LayerPayload();
+        payload.getDrbdRsc().setNodeId(nodeIdIntRef);
+        layerStackHelper.ensureStackDataExists(rscData, layerStack, payload);
 
         return rscData;
     }

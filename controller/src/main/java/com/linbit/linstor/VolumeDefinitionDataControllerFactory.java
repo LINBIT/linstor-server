@@ -6,6 +6,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -27,7 +29,7 @@ public class VolumeDefinitionDataControllerFactory
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final CtrlSecurityObjects secObjs;
-    private final CtrlLayerStackHelper layerStackHelper;
+    private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
     public VolumeDefinitionDataControllerFactory(
@@ -36,7 +38,7 @@ public class VolumeDefinitionDataControllerFactory
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         CtrlSecurityObjects secObjsRef,
-        CtrlLayerStackHelper layerStackHelperRef
+        CtrlLayerDataHelper layerStackHelperRef
     )
     {
         driver = driverRef;
@@ -84,7 +86,11 @@ public class VolumeDefinitionDataControllerFactory
 
         driver.create(vlmDfnData);
         ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
-        layerStackHelper.ensureVlmDfnLayerDataExits(vlmDfnData, minor);
+
+        // TODO: might be a good idea to create this object earlier
+        LayerPayload payload = new LayerPayload();
+        payload.getDrbdVlmDfn().setMinorNr(minor);
+        layerStackHelper.ensureVlmDfnLayerDataExits(vlmDfnData, "", payload);
 
         return vlmDfnData;
     }

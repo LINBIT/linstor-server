@@ -64,7 +64,6 @@ public class LayerDataFactory
     private final Provider<TransactionMgr> transMgrProvider;
     private final TransactionObjectFactory transObjFactory;
 
-
     @Inject
     public LayerDataFactory(
         ResourceLayerIdDatabaseDriver resourceLayerIdDatabaseDriverRef,
@@ -100,9 +99,9 @@ public class LayerDataFactory
         @Nullable RscLayerObject parent,
         DrbdRscDfnData rscDfnData,
         NodeId nodeId,
-        Short peerSlots,
-        Integer alStripes,
-        Long alStripeSize,
+        @Nullable Short peerSlots,
+        @Nullable Integer alStripes,
+        @Nullable Long alStripeSize,
         long initFlags
     )
         throws SQLException

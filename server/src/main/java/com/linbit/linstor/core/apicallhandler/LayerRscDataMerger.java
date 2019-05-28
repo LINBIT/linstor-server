@@ -147,7 +147,7 @@ public class LayerRscDataMerger
         DrbdRscData drbdRscData = null;
         if (parent == null)
         {
-            drbdRscData = rsc.getLayerData(apiCtx);
+            drbdRscData = (DrbdRscData) rsc.getLayerData(apiCtx);
         }
         else
         {
@@ -316,7 +316,7 @@ public class LayerRscDataMerger
         LuksRscData luksRscData = null;
         if (parent == null)
         {
-            luksRscData = rsc.getLayerData(apiCtx);
+            luksRscData = (LuksRscData) rsc.getLayerData(apiCtx);
         }
         else
         {
@@ -401,7 +401,7 @@ public class LayerRscDataMerger
         StorageRscData storRscData = null;
         if (parent == null)
         {
-            storRscData = rsc.getLayerData(apiCtx);
+            storRscData = (StorageRscData) rsc.getLayerData(apiCtx);
         }
         else
         {
@@ -621,7 +621,7 @@ public class LayerRscDataMerger
         NvmeRscData nvmeRscData = null;
         if (parent == null)
         {
-            nvmeRscData = rsc.getLayerData(apiCtx);
+            nvmeRscData = (NvmeRscData) rsc.getLayerData(apiCtx);
         }
         else
         {

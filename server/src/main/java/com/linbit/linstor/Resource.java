@@ -82,7 +82,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
     boolean isDiskless(AccessContext accCtx)
         throws AccessDeniedException;
 
-    <T extends RscLayerObject> T getLayerData(AccessContext accCtx)
+    RscLayerObject getLayerData(AccessContext accCtx)
         throws AccessDeniedException;
 
     void setLayerData(AccessContext accCtx, RscLayerObject layerData)

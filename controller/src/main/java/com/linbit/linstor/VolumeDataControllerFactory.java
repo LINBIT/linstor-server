@@ -2,6 +2,8 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -23,7 +25,7 @@ public class VolumeDataControllerFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-    private final CtrlLayerStackHelper layerStackHelper;
+    private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
     public VolumeDataControllerFactory(
@@ -31,7 +33,7 @@ public class VolumeDataControllerFactory
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CtrlLayerStackHelper layerStackHelperRef
+        CtrlLayerDataHelper layerStackHelperRef
     )
     {
         driver = driverRef;
@@ -78,7 +80,8 @@ public class VolumeDataControllerFactory
         storPool.putVolume(accCtx, volData);
         ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
 
-        layerStackHelper.ensureStackDataExists((ResourceData) rsc, null, null);
+        // TODO: might be a good idea to create this object earlier
+        layerStackHelper.ensureStackDataExists((ResourceData) rsc, null, new LayerPayload());
 
         return volData;
     }

@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
-import com.linbit.linstor.CtrlLayerStackHelper;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NodeId;
@@ -40,6 +39,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -91,7 +91,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
-    private final CtrlLayerStackHelper layerStackHelper;
+    private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
     public CtrlSnapshotCrtApiCallHandler(
@@ -108,7 +108,7 @@ public class CtrlSnapshotCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlLayerStackHelper layerStackHelperRef
+        CtrlLayerDataHelper layerStackHelperRef
     )
     {
         apiCtx = apiCtxRef;

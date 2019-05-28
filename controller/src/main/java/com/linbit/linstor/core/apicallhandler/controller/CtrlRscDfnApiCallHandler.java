@@ -5,7 +5,6 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.CtrlLayerStackHelper;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -39,6 +38,8 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -79,7 +80,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlSecurityObjects secObjs;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final CtrlLayerStackHelper ctrlLayerStackHelper;
+    private final CtrlLayerDataHelper ctrlLayerStackHelper;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -96,7 +97,7 @@ public class CtrlRscDfnApiCallHandler
         CtrlSecurityObjects secObjsRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlLayerStackHelper ctrlLayerStackHelperRef
+        CtrlLayerDataHelper ctrlLayerStackHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -281,12 +282,14 @@ public class CtrlRscDfnApiCallHandler
             }
             if (portInt != null || newRscPeerSlotsRef != null)
             {
-                ctrlLayerStackHelper.ensureDrbdRscDfnExists(
+                // TODO: might be a good idea to create this object earlier
+                LayerPayload payload = new LayerPayload();
+                payload.getDrbdRscDfn().setTcpPort(portInt);
+                payload.getDrbdRscDfn().setPeerSlotsNewResource(newRscPeerSlotsRef);
+                ctrlLayerStackHelper.ensureRequiredRscDfnLayerDataExits(
                     rscDfn,
-                    portInt,
-                    null,
-                    null,
-                    newRscPeerSlotsRef
+                    "",
+                    payload
                 );
             }
 

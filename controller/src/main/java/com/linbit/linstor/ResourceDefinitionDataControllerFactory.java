@@ -6,6 +6,9 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -33,7 +36,7 @@ public class ResourceDefinitionDataControllerFactory
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
-    private final CtrlLayerStackHelper layerStackHelper;
+    private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
     public ResourceDefinitionDataControllerFactory(
@@ -43,7 +46,7 @@ public class ResourceDefinitionDataControllerFactory
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
-        CtrlLayerStackHelper layerStackHelperRef
+        CtrlLayerDataHelper layerStackHelperRef
     )
     {
         driver = driverRef;
@@ -98,7 +101,15 @@ public class ResourceDefinitionDataControllerFactory
         );
 
         driver.create(rscDfn);
-        layerStackHelper.ensureRscDfnLayerDataExitsIfNeeded(rscDfn, port, transType, secret, peerSlotsRef);
+
+        // TODO: might be a good idea to create this object earlier
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.setPeerSlotsNewResource(peerSlotsRef);
+        drbdRscDfn.setTcpPort(port);
+        drbdRscDfn.setSharedSecret(secret);
+        drbdRscDfn.setTransportType(transType);
+        layerStackHelper.ensureRequiredRscDfnLayerDataExits(rscDfn, "", payload);
 
         return rscDfn;
     }

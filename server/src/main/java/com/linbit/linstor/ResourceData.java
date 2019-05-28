@@ -300,12 +300,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends RscLayerObject> T getLayerData(AccessContext accCtx)
+    public RscLayerObject getLayerData(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        return (T) rootLayerData.get();
+        return rootLayerData.get();
     }
 
     @Override
