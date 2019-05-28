@@ -225,6 +225,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             PriorityProps prioProps = new PriorityProps(
                 vlm.getProps(storDriverAccCtx),
                 vlm.getVolumeDefinition().getProps(storDriverAccCtx),
+                vlm.getResourceDefinition().getProps(storDriverAccCtx),
                 vlm.getStorPool(storDriverAccCtx).getProps(storDriverAccCtx)
             );
             type = prioProps.getProp(
