@@ -48,6 +48,8 @@ public class InternalApiConsts
     public static final String API_REQUEST_THIN_FREE_SPACE = "RequestThinFreeSpace";
     public static final String API_REQUEST_VLM_ALLOCATED = "RequestVlmAllocated";
 
+    public static final String API_ARCHIVE_LOGS = "ArchiveLogs";
+
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
