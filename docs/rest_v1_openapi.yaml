@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.5
+      - Added `reports` field to StoragePool object
     * 1.0.4
       - Added /v1/views/storage-pools overview path
       - Added uuid fields for objects
@@ -35,7 +37,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: "1.0.4"
+  version: "1.0.5"
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -2616,6 +2618,12 @@ components:
         - SWORDFISH_TARGET
         - SWORDFISH_INITIATOR
     StoragePool:
+      description: |
+        Contains information about a storage pool.
+
+        If state is `Error` check the storage pool object path for detailed error description:
+
+          /v1/nodes/{nodename}/storage-pools/{poolname}
       type: object
       required:
         - storage_pool_name
@@ -2654,6 +2662,12 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        reports:
+          type: array
+          description: Currently known report messages for this storage pool
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ApiCallRc'
     LayerType:
       type: string
       enum:

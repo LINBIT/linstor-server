@@ -4,7 +4,6 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
@@ -102,76 +101,66 @@ public class StoragePools
             storPoolNames.add(storPoolName);
         }
 
-        Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> flux = ctrlStorPoolListApiCallHandler
+        Flux<List<StorPool.StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
             .listStorPools(nodeNames, storPoolNames)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
-        requestHelper.doFlux(asyncResponse, apiCallRcWithToResponse(flux, nodeName, storPoolName, limit, offset));
+        requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, nodeName, storPoolName, limit, offset));
     }
 
-    Mono<Response> apiCallRcWithToResponse(
-        Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> apiCallRcWithFlux,
+    private Mono<Response> storPoolListToResponse(
+        Flux<List<StorPool.StorPoolApi>> storPoolListFlux,
         String nodeName,
         String storPoolName,
         int limit,
         int offset
     )
     {
-        return apiCallRcWithFlux.flatMap(apiCallRcWith ->
+        return storPoolListFlux.flatMap(storPoolApis ->
         {
             Response resp;
-            if (apiCallRcWith.hasApiCallRc())
+            Stream<StorPool.StorPoolApi> storPoolApiStream = storPoolApis.stream();
+            if (limit > 0)
             {
-                resp = ApiCallRcConverter.toResponse(
-                    apiCallRcWith.getApiCallRc(),
-                    Response.Status.INTERNAL_SERVER_ERROR
-                );
+                storPoolApiStream = storPoolApiStream.skip(offset).limit(limit);
             }
-            else
+            List<JsonGenTypes.StoragePool> storPoolDataList = storPoolApiStream
+                .map(Json::storPoolApiToStoragePool)
+                .collect(Collectors.toList());
+
+            try
             {
-                Stream<StorPool.StorPoolApi> storPoolApiStream = apiCallRcWith.getValue().stream();
-                if (limit > 0)
+                if (storPoolName != null && storPoolDataList.isEmpty())
                 {
-                    storPoolApiStream = storPoolApiStream.skip(offset).limit(limit);
-                }
-                List<JsonGenTypes.StoragePool> storPoolDataList = storPoolApiStream
-                    .map(Json::storPoolApiToStoragePool)
-                    .collect(Collectors.toList());
+                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                    apiCallRc.addEntry(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
+                            String.format("Storage pool '%s' on node '%s' not found.", storPoolName, nodeName)
+                        )
+                    );
 
-                try
-                {
-                    if (storPoolName != null && storPoolDataList.isEmpty())
-                    {
-                        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                        apiCallRc.addEntry(
-                            ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
-                                String.format("Storage pool '%s' on node '%s' not found.", storPoolName, nodeName)
-                            )
-                        );
-
-                        resp = Response
-                            .status(Response.Status.NOT_FOUND)
-                            .entity(ApiCallRcConverter.toJSON(apiCallRc))
-                            .type(MediaType.APPLICATION_JSON)
-                            .build();
-                    }
-                    else
-                    {
-                        resp = Response
-                            .status(Response.Status.OK)
-                            .entity(objectMapper.writeValueAsString(
-                                storPoolName != null ? storPoolDataList.get(0) : storPoolDataList)
-                            )
-                            .type(MediaType.APPLICATION_JSON)
-                            .build();
-                    }
+                    resp = Response
+                        .status(Response.Status.NOT_FOUND)
+                        .entity(ApiCallRcConverter.toJSON(apiCallRc))
+                        .type(MediaType.APPLICATION_JSON)
+                        .build();
                 }
-                catch (JsonProcessingException exc)
+                else
                 {
-                    exc.printStackTrace();
-                    resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    resp = Response
+                        .status(Response.Status.OK)
+                        .entity(objectMapper.writeValueAsString(
+                            storPoolName != null ? storPoolDataList.get(0) : storPoolDataList)
+                        )
+                        .type(MediaType.APPLICATION_JSON)
+                        .build();
                 }
+            }
+            catch (JsonProcessingException exc)
+            {
+                exc.printStackTrace();
+                resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
             }
 
             return Mono.just(resp);

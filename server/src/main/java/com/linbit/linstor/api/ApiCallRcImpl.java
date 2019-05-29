@@ -19,6 +19,11 @@ public class ApiCallRcImpl implements ApiCallRc
     {
     }
 
+    public ApiCallRcImpl(RcEntry entry)
+    {
+        entries.add(entry);
+    }
+
     public ApiCallRcImpl(List<RcEntry> entriesRef)
     {
         entries.addAll(entriesRef);

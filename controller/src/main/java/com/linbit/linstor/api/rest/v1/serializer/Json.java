@@ -18,6 +18,7 @@ import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
@@ -110,6 +111,23 @@ public class Json
         return storPoolDfn;
     }
 
+    public static List<JsonGenTypes.ApiCallRc> apiCallRcToJson(ApiCallRc apiCallRc)
+    {
+        return apiCallRc.getEntries().stream()
+            .map(apiCallRcEntry ->
+            {
+               JsonGenTypes.ApiCallRc jsonApiCallRc = new JsonGenTypes.ApiCallRc();
+              jsonApiCallRc.message = apiCallRcEntry.getMessage();
+              jsonApiCallRc.cause = apiCallRcEntry.getCause();
+              jsonApiCallRc.correction = apiCallRcEntry.getCorrection();
+              jsonApiCallRc.details = apiCallRcEntry.getDetails();
+              jsonApiCallRc.error_report_ids = new ArrayList<>(apiCallRcEntry.getErrorIds());
+              jsonApiCallRc.obj_refs = apiCallRcEntry.getObjRefs();
+              jsonApiCallRc.ret_code = apiCallRcEntry.getReturnCode();
+               return jsonApiCallRc;
+            }).collect(Collectors.toList());
+    }
+
     public static JsonGenTypes.StoragePool storPoolApiToStoragePool(
         StorPool.StorPoolApi storPoolApi
     )
@@ -126,6 +144,7 @@ public class Json
         storPoolData.total_capacity = storPoolApi.getTotalCapacity().orElse(null);
         storPoolData.free_space_mgr_name = storPoolApi.getFreeSpaceManagerName();
         storPoolData.uuid = storPoolApi.getStorPoolUuid().toString();
+        storPoolData.reports = apiCallRcToJson(storPoolApi.getReports());
 
         return storPoolData;
     }

@@ -8,6 +8,8 @@ import java.util.UUID;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
@@ -132,5 +134,11 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     public Map<String, String> getStorPoolStaticTraits()
     {
         return ProtoMapUtils.asMap(storPool.getStaticTraitsList());
+    }
+
+    @Override
+    public ApiCallRc getReports()
+    {
+        return new ApiCallRcImpl();
     }
 }

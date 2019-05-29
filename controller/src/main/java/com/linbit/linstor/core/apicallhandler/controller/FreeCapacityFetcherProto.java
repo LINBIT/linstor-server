@@ -78,15 +78,15 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     public Mono<Map<StorPool.Key, Long>> fetchThinFreeCapacities(Set<NodeName> nodesFilter)
     {
         return fetchThinFreeSpaceInfo(nodesFilter).map(
-            freeSpaceInfo -> freeSpaceInfo.getT1().entrySet().stream().collect(Collectors.toMap(
+            freeSpaceInfo -> freeSpaceInfo.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
-                entry -> entry.getValue().freeCapacity
+                entry -> entry.getValue().getT1().freeCapacity
             ))
         );
     }
 
     @Override
-    public Mono<Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>>> fetchThinFreeSpaceInfo(Set<NodeName> nodesFilter)
+    public Mono<Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>>> fetchThinFreeSpaceInfo(Set<NodeName> nodesFilter)
     {
         return scopeRunner
             .fluxInTransactionlessScope(
@@ -174,11 +174,10 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         return peer;
     }
 
-    private Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>> parseFreeSpaces(
+    private Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> parseFreeSpaces(
         List<Tuple2<NodeName, ByteArrayInputStream>> freeSpaceAnswers)
     {
-        Map<StorPool.Key, SpaceInfo> thinFreeSpaceMap = new HashMap<>();
-        List<ApiCallRc> apiCallRcs = new ArrayList<>();
+        Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> thinFreeSpaceMap = new HashMap<>();
 
         try
         {
@@ -191,6 +190,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
                 MsgIntFreeSpace freeSpaces = MsgIntFreeSpace.parseDelimitedFrom(freeSpaceMsgDataIn);
                 for (StorPoolFreeSpace freeSpace : freeSpaces.getFreeSpacesList())
                 {
+                    List<ApiCallRc> apiCallRcs = new ArrayList<>();
                     if (freeSpace.getErrorsCount() > 0)
                     {
                         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -203,13 +203,11 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
                         }
                         apiCallRcs.add(apiCallRc);
                     }
-                    else
-                    {
-                        thinFreeSpaceMap.put(
-                            new StorPool.Key(nodeName, new StorPoolName(freeSpace.getStorPoolName())),
-                            new SpaceInfo(freeSpace.getTotalCapacity(), freeSpace.getFreeCapacity())
-                        );
-                    }
+
+                    thinFreeSpaceMap.put(
+                        new StorPool.Key(nodeName, new StorPoolName(freeSpace.getStorPoolName())),
+                        Tuples.of(new SpaceInfo(freeSpace.getTotalCapacity(), freeSpace.getFreeCapacity()), apiCallRcs)
+                    );
                 }
             }
         }
@@ -218,6 +216,6 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
             throw new ImplementationError(exc);
         }
 
-        return Tuples.of(thinFreeSpaceMap, apiCallRcs);
+        return thinFreeSpaceMap;
     }
 }

@@ -15,5 +15,5 @@ public interface FreeCapacityFetcher
 {
     Mono<Map<StorPool.Key, Long>> fetchThinFreeCapacities(Set<NodeName> nodesFilter);
 
-    Mono<Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>>> fetchThinFreeSpaceInfo(Set<NodeName> nodesFilter);
+    Mono<Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>>> fetchThinFreeSpaceInfo(Set<NodeName> nodesFilter);
 }

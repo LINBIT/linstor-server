@@ -15,6 +15,7 @@ import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializerBuilder;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
@@ -31,6 +32,8 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.M
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
+
+import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBuilder.serializeApiCallRc;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -112,24 +115,9 @@ public class FullSync implements ApiCall
             Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
                 apiCallHandlerUtils.getAllSpaceInfo(false);
 
-            Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
-
-            spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
-                spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
-                apiRcException -> errorReporter.reportError(apiRcException.getCause())
-            ));
-
-            for (Entry<StorPool, SpaceInfo> entry : spaceInfoMap.entrySet())
+            for (Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry : spaceInfoQueryMap.entrySet())
             {
-                StorPool storPool = entry.getKey();
-                builder.addFreeSpace(
-                    StorPoolFreeSpace.newBuilder()
-                        .setStorPoolUuid(storPool.getUuid().toString())
-                        .setStorPoolName(storPool.getName().displayValue)
-                        .setFreeCapacity(entry.getValue().freeCapacity)
-                        .setTotalCapacity(entry.getValue().totalCapacity)
-                        .build()
-                );
+                builder.addFreeSpace(ProtoCtrlStltSerializerBuilder.buildStorPoolFreeSpace(entry).build());
             }
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

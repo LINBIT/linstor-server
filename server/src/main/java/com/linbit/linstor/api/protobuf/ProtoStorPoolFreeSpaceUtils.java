@@ -42,7 +42,8 @@ public class ProtoStorPoolFreeSpaceUtils
                     UUID.fromString(protoFreeSpace.getStorPoolUuid()),
                     protoFreeSpace.getStorPoolName(),
                     protoFreeSpace.getFreeCapacity(),
-                    protoFreeSpace.getTotalCapacity()
+                    protoFreeSpace.getTotalCapacity(),
+                    ProtoDeserializationUtils.parseApiCallRcList(protoFreeSpace.getErrorsList())
                 )
             );
         }

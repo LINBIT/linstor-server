@@ -66,7 +66,7 @@ public class ListStorPool implements ApiCallReactive
             storPoolNames = filter.getStorPoolNamesList();
         }
 
-        Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> result =
+        Flux<List<StorPool.StorPoolApi>> result =
             ctrlStorPoolListApiCallHandler.listStorPools(nodeNames, storPoolNames);
 
         return result.flatMap(res ->
@@ -74,15 +74,8 @@ public class ListStorPool implements ApiCallReactive
                 () -> Flux.just(
                         clientComSerializer
                             .answerBuilder(ApiConsts.API_LST_STOR_POOL, apiCallId.get())
-                            .storPoolList(res.getValue())
+                            .storPoolList(res)
                             .build())
-                        .concatWith(
-                            Flux.just(clientComSerializer
-                                .answerBuilder(ApiConsts.API_REPLY, apiCallId.get())
-                                .apiCallRcSeries(res.getApiCallRc())
-                                .build()
-                            )
-                        )
             ));
     }
 }

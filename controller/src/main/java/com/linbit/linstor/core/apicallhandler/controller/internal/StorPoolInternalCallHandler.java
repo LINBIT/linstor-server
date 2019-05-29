@@ -192,6 +192,8 @@ public class StorPoolInternalCallHandler
                             StorPoolData storPool = loadStorPool(nodeName, capacityInfoPojo.getStorPoolName(), true);
                             if (storPool.getUuid().equals(capacityInfoPojo.getStorPoolUuid()))
                             {
+                                storPool.clearReports();
+                                storPool.addReports(capacityInfoPojo.getErrors());
                                 setCapacityInfo(
                                     storPool,
                                     capacityInfoPojo.getFreeCapacity(),

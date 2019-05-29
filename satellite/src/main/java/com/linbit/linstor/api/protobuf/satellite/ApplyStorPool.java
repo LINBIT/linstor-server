@@ -81,7 +81,8 @@ public class ApplyStorPool implements ApiCall
             updateId,
             protoStorPool.getFreeSpaceMgrName(),
             Optional.empty(), // free space
-            Optional.empty() // total space
+            Optional.empty(), // total space
+            null
         );
         return storPoolRaw;
     }

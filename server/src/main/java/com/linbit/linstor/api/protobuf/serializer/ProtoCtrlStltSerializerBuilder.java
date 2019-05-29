@@ -30,6 +30,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
@@ -63,6 +64,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.M
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Base64;
+import com.linbit.utils.Either;
 
 import static java.util.stream.Collectors.toList;
 
@@ -849,5 +851,30 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setTakeSnapshot(snapshot.getTakeSnapshot(serializerCtx))
                 .build();
         }
+    }
+
+    public static StorPoolFreeSpace.Builder buildStorPoolFreeSpace(
+        Map.Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry
+    )
+    {
+        StorPool storPool = entry.getKey();
+
+        StorPoolFreeSpace.Builder freeSpaceBuilder = StorPoolFreeSpace.newBuilder()
+            .setStorPoolUuid(storPool.getUuid().toString())
+            .setStorPoolName(storPool.getName().displayValue);
+
+        entry.getValue().consume(
+            spaceInfo -> freeSpaceBuilder
+                .setFreeCapacity(spaceInfo.freeCapacity)
+                .setTotalCapacity(spaceInfo.totalCapacity),
+            apiRcException -> freeSpaceBuilder
+                // required field
+                .setFreeCapacity(0L)
+                // required field
+                .setTotalCapacity(0L)
+                .addAllErrors(serializeApiCallRc(apiRcException.getApiCallRc()))
+        );
+
+        return freeSpaceBuilder;
     }
 }

@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializerBuilder;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
@@ -70,25 +71,7 @@ public class ReqFreeSpace implements ApiCallReactive
         MsgIntFreeSpace.Builder builder = MsgIntFreeSpace.newBuilder();
         for (Map.Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry : freeSpaceMap.entrySet())
         {
-            StorPool storPool = entry.getKey();
-
-            StorPoolFreeSpace.Builder freeSpaceBuilder = StorPoolFreeSpace.newBuilder()
-                .setStorPoolUuid(storPool.getUuid().toString())
-                .setStorPoolName(storPool.getName().displayValue);
-
-            entry.getValue().consume(
-                spaceInfo -> freeSpaceBuilder
-                    .setFreeCapacity(spaceInfo.freeCapacity)
-                    .setTotalCapacity(spaceInfo.totalCapacity),
-                apiRcException -> freeSpaceBuilder
-                    // required field
-                    .setFreeCapacity(0L)
-                    // required field
-                    .setTotalCapacity(0L)
-                    .addAllErrors(serializeApiCallRc(apiRcException.getApiCallRc()))
-            );
-
-            builder.addFreeSpaces(freeSpaceBuilder.build());
+            builder.addFreeSpaces(ProtoCtrlStltSerializerBuilder.buildStorPoolFreeSpace(entry).build());
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         builder.build().writeDelimitedTo(baos);

@@ -6,6 +6,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -17,7 +19,7 @@ import java.util.Map;
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable<StorPool>
+public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable<StorPool>, LinstorDataObject
 {
     /**
      * Returns the {@link UUID} of this object.
@@ -107,6 +109,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         Map<String, String> getStorPoolProps();
         List<Volume.VlmApi> getVlmList();
         Map<String, String> getStorPoolStaticTraits();
+        ApiCallRc getReports();
     }
 
     /**

@@ -15,6 +15,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -26,6 +27,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,43 +63,36 @@ public class CtrlStorPoolListApiCallHandler
         peerAccCtx = peerAccCtxRef;
     }
 
-    public Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> listStorPools(
+    public Flux<List<StorPool.StorPoolApi>> listStorPools(
         List<String> nodeNames,
         List<String> storPoolNames
     )
     {
-        Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> flux;
-        try
-        {
-            final Set<StorPoolName> storPoolsFilter =
-                storPoolNames.stream().map(LinstorParsingUtils::asStorPoolName).collect(Collectors.toSet());
-            final Set<NodeName> nodesFilter =
-                nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
+        Flux<List<StorPool.StorPoolApi>> flux;
+        final Set<StorPoolName> storPoolsFilter =
+            storPoolNames.stream().map(LinstorParsingUtils::asStorPoolName).collect(Collectors.toSet());
+        final Set<NodeName> nodesFilter =
+            nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
 
-            flux = freeCapacityFetcher.fetchThinFreeSpaceInfo(nodesFilter)
-                .flatMapMany(freeCapacityAnswers ->
-                    scopeRunner.fluxInTransactionlessScope(
-                        "Assemble storage pool list",
-                        lockGuardFactory.buildDeferred(LockType.READ, LockObj.STOR_POOL_DFN_MAP),
-                        () -> assembleList(nodesFilter, storPoolsFilter, freeCapacityAnswers)
-                    )
-                );
-        }
-        catch (ApiRcException exc)
-        {
-            flux = Flux.just(new ApiCallRcWith<>(exc.getApiCallRc(), new ArrayList<>()));
-        }
+        flux = freeCapacityFetcher.fetchThinFreeSpaceInfo(nodesFilter)
+            .flatMapMany(freeCapacityAnswers ->
+                scopeRunner.fluxInTransactionlessScope(
+                    "Assemble storage pool list",
+                    lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.STOR_POOL_DFN_MAP),
+                    () -> assembleList(nodesFilter, storPoolsFilter, freeCapacityAnswers)
+                )
+            );
+
         return flux;
     }
 
-    private Flux<ApiCallRcWith<List<StorPool.StorPoolApi>>> assembleList(
+    private Flux<List<StorPool.StorPoolApi>> assembleList(
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolsFilter,
-        Tuple2<Map<StorPool.Key, SpaceInfo>, List<ApiCallRc>> freeCapacityAnswers
+        Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> freeCapacityAnswers
     )
     {
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
-        final Map<StorPool.Key, SpaceInfo> freeCapacityMap = freeCapacityAnswers.getT1();
         try
         {
             storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
@@ -120,14 +115,23 @@ public class CtrlStorPoolListApiCallHandler
                                 Long freeCapacity;
                                 Long totalCapacity;
 
-                                SpaceInfo spaceInfo = freeCapacityMap.get(new StorPool.Key(storPool));
+                                Tuple2<SpaceInfo, List<ApiCallRc>> storageInfo = freeCapacityAnswers.get(
+                                    new StorPool.Key(storPool)
+                                );
+
                                 Peer peer = storPool.getNode().getPeer(peerAccCtx.get());
                                 if (peer == null || !peer.isConnected())
                                 {
                                     freeCapacity = null;
                                     totalCapacity = null;
+                                    storPool.clearReports();
+                                    storPool.addReports(
+                                        new ApiCallRcImpl(
+                                            ResponseUtils.makeNotConnectedWarning(storPool.getNode().getName())
+                                        )
+                                    );
                                 }
-                                else if (spaceInfo == null)
+                                else if (storageInfo == null)
                                 {
                                     freeCapacity = storPool.getFreeSpaceTracker()
                                         .getFreeCapacityLastUpdated(peerAccCtx.get()).orElse(null);
@@ -136,6 +140,13 @@ public class CtrlStorPoolListApiCallHandler
                                 }
                                 else
                                 {
+                                    SpaceInfo spaceInfo = storageInfo.getT1();
+                                    storPool.clearReports();
+                                    for (ApiCallRc apiCallRc : storageInfo.getT2())
+                                    {
+                                        storPool.addReports(apiCallRc);
+                                    }
+
                                     freeCapacity = spaceInfo.freeCapacity;
                                     totalCapacity = spaceInfo.totalCapacity;
                                 }
@@ -166,12 +177,6 @@ public class CtrlStorPoolListApiCallHandler
             );
         }
 
-        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
-        for (ApiCallRc apiCallRc : freeCapacityAnswers.getT2())
-        {
-            apiCallRcs.addEntries(apiCallRc);
-        }
-
-        return Flux.just(new ApiCallRcWith<>(apiCallRcs, storPools));
+        return Flux.just(storPools);
     }
 }

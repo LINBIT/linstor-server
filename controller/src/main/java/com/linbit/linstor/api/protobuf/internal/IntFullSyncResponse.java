@@ -1,8 +1,10 @@
 package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -81,7 +83,8 @@ public class IntFullSyncResponse implements ApiCallReactive
                         UUID.fromString(protoFreeSpace.getStorPoolUuid()),
                         protoFreeSpace.getStorPoolName(),
                         protoFreeSpace.getFreeCapacity(),
-                        protoFreeSpace.getTotalCapacity()
+                        protoFreeSpace.getTotalCapacity(),
+                        ProtoDeserializationUtils.parseApiCallRcList(protoFreeSpace.getErrorsList())
                     )
                 );
             }

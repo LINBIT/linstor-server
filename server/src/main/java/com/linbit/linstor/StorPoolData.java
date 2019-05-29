@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -49,6 +51,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     private final TransactionSimpleObject<StorPoolData, Boolean> deleted;
 
+    private ApiCallRcImpl reports;
+
     StorPoolData(
         UUID id,
         Node nodeRef,
@@ -79,6 +83,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             PropsContainer.buildPath(storPoolDef.getName(), node.getName())
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+
+        reports = new ApiCallRcImpl();
 
         transObjs = Arrays.<TransactionObject>asList(
             volumeMap,
@@ -205,6 +211,24 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         }
     }
 
+    @Override
+    public ApiCallRc getReports()
+    {
+        return reports;
+    }
+
+    @Override
+    public void addReports(ApiCallRc apiCallRc)
+    {
+        reports.addEntries(apiCallRc);
+    }
+
+    @Override
+    public void clearReports()
+    {
+        reports = new ApiCallRcImpl();
+    }
+
     private void checkDeleted()
     {
         if (deleted.get())
@@ -265,7 +289,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             updateId,
             getFreeSpaceTracker().getName().displayValue,
             Optional.ofNullable(freeSpaceRef),
-            Optional.ofNullable(totalSpaceRef)
+            Optional.ofNullable(totalSpaceRef),
+            getReports()
         );
     }
 }

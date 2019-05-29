@@ -2,6 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     private final String freeSpaceManagerName;
     private final Optional<Long> freeSpace;
     private final Optional<Long> totalSpace;
+    private final ApiCallRc reports;
 
     public StorPoolPojo(
         final UUID storPoolUuidRef,
@@ -42,7 +44,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         final Long updateIdRef,
         final String freeSpaceManagerNameRef,
         final Optional<Long> freeSpaceRef,
-        final Optional<Long> totalSpaceRef
+        final Optional<Long> totalSpaceRef,
+        final ApiCallRc reportsRef
     )
     {
         storPoolUuid = storPoolUuidRef;
@@ -60,6 +63,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         freeSpaceManagerName = freeSpaceManagerNameRef;
         freeSpace = freeSpaceRef;
         totalSpace = totalSpaceRef;
+        reports = reportsRef;
     }
 
     @Override
@@ -153,5 +157,11 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     public long getUpdateId()
     {
         return updateId;
+    }
+
+    @Override
+    public ApiCallRc getReports()
+    {
+        return reports;
     }
 }

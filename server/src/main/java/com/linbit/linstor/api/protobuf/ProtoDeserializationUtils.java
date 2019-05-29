@@ -53,6 +53,15 @@ public class ProtoDeserializationUtils
         return entryBuilder.build();
     }
 
+    public static ApiCallRc parseApiCallRcList(
+        List<ApiCallResponseOuterClass.ApiCallResponse> apiCallRcs
+    )
+    {
+        return new ApiCallRcImpl(apiCallRcs.stream()
+            .map(apiCallResponse -> parseApiCallRc(apiCallResponse, ""))
+            .collect(Collectors.toList()));
+    }
+
     private static Map<String, String> readLinStorMap(List<LinStorMapEntryOuterClass.LinStorMapEntry> linStorMap)
     {
         return linStorMap.stream()

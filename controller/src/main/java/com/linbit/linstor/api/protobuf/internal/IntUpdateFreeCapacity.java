@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.internal;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
@@ -46,7 +47,8 @@ public class IntUpdateFreeCapacity implements ApiCall
                     UUID.fromString(proto.getStorPoolUuid()),
                     proto.getStorPoolName(),
                     proto.getFreeCapacity(),
-                    proto.getTotalCapacity()
+                    proto.getTotalCapacity(),
+                    ProtoDeserializationUtils.parseApiCallRcList(proto.getErrorsList())
                 )
             ).collect(Collectors.toList())
         );
