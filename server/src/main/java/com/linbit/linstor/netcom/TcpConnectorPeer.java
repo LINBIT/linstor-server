@@ -519,7 +519,7 @@ public class TcpConnectorPeer implements Peer
         {
             if (ensureAuthenticated)
             {
-                if (authenticated)
+                if (authenticated && !hasFullSyncFailed())
                 {
                     ret = true;
                 }
