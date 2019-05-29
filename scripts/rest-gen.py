@@ -69,7 +69,8 @@ def gen_javadoc(text: str, indent: str, indent_level: int):
     desc_lines = text.strip().split('\n')
     out += indent * indent_level + "/**\n"
     for line in desc_lines:
-        out += indent * indent_level + " * " + line + "\n"
+        text = indent * indent_level + " * " + line
+        out += text.rstrip() + "\n"
     out += indent * indent_level + " */\n"
     return out
 

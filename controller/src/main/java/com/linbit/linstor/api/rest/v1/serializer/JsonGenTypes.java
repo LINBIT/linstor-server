@@ -517,7 +517,7 @@ public class JsonGenTypes
         public Long error_time;
         /**
          * Filename of the error report on the server.
-         * 
+         *
          * Format is:
          * ```ErrorReport-{instanceid}-{nodeid}-{squencenumber}.log```
          */
