@@ -488,16 +488,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             try
             {
                 devHandler.localNodePropsChanged(localNode.getProps(wrkCtx));
-                NodeName localNodeName = localNode.getName();
-                for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
-                {
-                    StorPool storPool = storPoolDfn.getStorPool(wrkCtx, localNodeName);
-                    if (storPool != null)
-                    {
-                        // FIXME check how this can happen...
-                        devHandler.checkConfig(storPool);
-                    }
-                }
             }
             catch (AccessDeniedException exc)
             {

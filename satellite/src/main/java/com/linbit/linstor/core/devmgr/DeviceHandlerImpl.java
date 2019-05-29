@@ -747,11 +747,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         notificationListener.get().notifyFreeSpacesChanged(freeSpaces);
     }
 
-    public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
-    {
-        storageLayer.checkStorPool(storPool);
-    }
-
     private final class AbortLayerProcessingException extends LinStorRuntimeException
     {
         private static final long serialVersionUID = -3885415188860635819L;
