@@ -22,6 +22,7 @@ import com.linbit.linstor.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceConnectionDataGenericDbDriver;
+import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDataGenericDbDriver;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
@@ -54,6 +55,8 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -63,6 +66,7 @@ import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -134,12 +138,14 @@ public class GenericDbDriver implements DatabaseDriver
     private final LuksLayerGenericDbDriver luksLayerDriver;
     private final StorageLayerGenericDbDriver storageLayerDriver;
     private final NvmeLayerGenericDbDriver nvmeLayerDriver;
+    private final Provider<CtrlLayerDataHelper> ctrlLayerDataHelper;
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
+
 
     @Inject
     public GenericDbDriver(
@@ -165,6 +171,7 @@ public class GenericDbDriver implements DatabaseDriver
         LuksLayerGenericDbDriver luksLayerDriverRef,
         StorageLayerGenericDbDriver storageLayerDriverRef,
         NvmeLayerGenericDbDriver nvmeLayerDriverRef,
+        Provider<CtrlLayerDataHelper> ctrlLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
@@ -194,6 +201,7 @@ public class GenericDbDriver implements DatabaseDriver
         luksLayerDriver = luksLayerDriverRef;
         storageLayerDriver = storageLayerDriverRef;
         nvmeLayerDriver = nvmeLayerDriverRef;
+        ctrlLayerDataHelper = ctrlLayerDataHelperRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
@@ -553,6 +561,15 @@ public class GenericDbDriver implements DatabaseDriver
 
         drbdLayerDriver.clearLoadCache();
         storageLayerDriver.clearLoadAllCache();
+
+        CtrlLayerDataHelper layerDataHelper = ctrlLayerDataHelper.get();
+        LayerPayload payload = new LayerPayload();
+        for (Resource rsc : tmpRscMapRef.values())
+        {
+            // initialize all non-persisted, but later serialized variables
+            List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
+            layerDataHelper.ensureStackDataExists((ResourceData) rsc, layerStack, payload);
+        }
     }
 
     private List<RscLayerInfoData> nextRscLayerToLoad(

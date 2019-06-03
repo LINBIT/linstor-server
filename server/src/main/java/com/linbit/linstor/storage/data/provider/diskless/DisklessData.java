@@ -96,6 +96,7 @@ public class DisklessData extends BaseTransactionObject implements VlmProviderOb
         return usableSize.get();
     }
 
+    @Override
     public void setUsableSize(long usableSizeRef) throws SQLException
     {
         usableSize.set(usableSizeRef);

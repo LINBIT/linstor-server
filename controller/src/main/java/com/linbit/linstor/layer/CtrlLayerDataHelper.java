@@ -2,6 +2,7 @@ package com.linbit.linstor.layer;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
@@ -20,6 +21,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
@@ -225,8 +227,6 @@ public class CtrlLayerDataHelper
                 layerStack = layerStackRef;
             }
 
-            RscLayerObject rscObj = null;
-
             if (layerStack.isEmpty())
             {
                 throw new ImplementationError("Cannot create resource with empty layer list");
@@ -239,25 +239,7 @@ public class CtrlLayerDataHelper
 
             for (DeviceLayerKind kind : layerStack)
             {
-                AbsLayerHelper<?, ?, ?, ?> layerHelper;
-                switch (kind)
-                {
-                    case DRBD:
-                        layerHelper = drbdLayerHelper;
-                        break;
-                    case LUKS:
-                        layerHelper = luksLayerHelper;
-                        break;
-                    case STORAGE:
-                        layerHelper = storageLayerHelper;
-                        break;
-                    case NVME:
-                        layerHelper = nvmeLayerHelper;
-                        break;
-                    default:
-                        throw new ImplementationError("No LayerHelper found for kind: " + kind);
-                }
-
+                AbsLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(kind);
                 List<LayerResult> nextLayerData = new ArrayList<>();
 
                 /*
@@ -342,31 +324,16 @@ public class CtrlLayerDataHelper
      * This method will break as soon as we allow DRBD with external meta data above a
      * RAID layer. Who should decide what storage pool to take?
      */
-    StorPool getStorPool(Volume vlmRef, StorageRscData rscDataRef) throws AccessDeniedException
+    StorPool getStorPool(Volume vlmRef, StorageRscData rscDataRef)
+        throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         RscLayerObject child = rscDataRef;
         RscLayerObject parent = rscDataRef.getParent();
         StorPool storPool = null;
         while (parent != null && storPool == null)
         {
-            AbsLayerHelper<?, ?, ?, ?> layerHelper;
-            switch (parent.getLayerKind())
-            {
-                case DRBD:
-                    layerHelper = drbdLayerHelper;
-                    break;
-                case LUKS:
-                    layerHelper = luksLayerHelper;
-                    break;
-                case NVME:
-                    layerHelper = nvmeLayerHelper;
-                    break;
-                case STORAGE:
-                    layerHelper = storageLayerHelper;
-                    break;
-                default:
-                    throw new ImplementationError("Unknown device layer kind '" + parent.getLayerKind() + "'");
-            }
+            AbsLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(parent.getLayerKind());
+
             storPool = layerHelper.getStorPool(vlmRef, child);
 
             child = parent;
@@ -377,6 +344,29 @@ public class CtrlLayerDataHelper
             storPool = vlmRef.getStorPool(apiCtx);
         }
         return storPool;
+    }
+
+    AbsLayerHelper<?, ?, ?, ?> getLayerHelperByKind(DeviceLayerKind kind)
+    {
+        AbsLayerHelper<?, ?, ?, ?> layerHelper;
+        switch (kind)
+        {
+            case DRBD:
+                layerHelper = drbdLayerHelper;
+                break;
+            case LUKS:
+                layerHelper = luksLayerHelper;
+                break;
+            case NVME:
+                layerHelper = nvmeLayerHelper;
+                break;
+            case STORAGE:
+                layerHelper = storageLayerHelper;
+                break;
+            default:
+                throw new ImplementationError("Unknown device layer kind '" + kind + "'");
+        }
+        return layerHelper;
     }
 
     private boolean needsLuksLayer(AccessContext accCtxRef, Resource rscRef)

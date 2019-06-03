@@ -281,7 +281,8 @@ public class DrbdAdm
         String blockDevPath,
         String currentGi,
         String history1Gi,
-        boolean upToDateData
+        boolean upToDateData,
+        boolean internal
     )
         throws ExtCmdFailedException
     {
@@ -302,7 +303,7 @@ public class DrbdAdm
             String.valueOf(minorNr.value),
             "v09",
             blockDevPath,
-            "internal",
+            internal ? "internal" : "flex-external",
             "set-gi", giData
         );
     }

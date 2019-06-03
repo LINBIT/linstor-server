@@ -691,8 +691,8 @@ public class DeviceHandlerImpl implements DeviceHandler
     {
         for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
         {
+            long size = vlm.getVolumeDefinition().getVolumeSize(wrkCtx);
             { // set initial size which will be changed by the actual layers shortly
-                long size = vlm.getVolumeDefinition().getVolumeSize(wrkCtx);
                 vlm.setAllocatedSize(wrkCtx, size);
                 vlm.setUsableSize(wrkCtx, size);
             }
@@ -703,6 +703,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             rscDataList.add(rsc.getLayerData(wrkCtx));
 
             VlmProviderObject vlmData = null;
+            boolean isVlmDataRoot = true;
 
             while (!rscDataList.isEmpty())
             {
@@ -710,12 +711,25 @@ public class DeviceHandlerImpl implements DeviceHandler
                 rscDataList.addAll(rscData.getChildren());
 
                 vlmData = rscData.getVlmProviderObject(vlmNr);
-                layerFactory.getDeviceLayer(rscData.getLayerKind()).updateGrossSize(vlmData);
+                if (vlmData != null)
+                {
+                    if (isVlmDataRoot)
+                    {
+                        /*
+                         * set the usableSize for the root vlmData.
+                         * All layers are expected to set their own gross size (allocated size)
+                         * as well as their child-vlmData's usableSize
+                         */
+                        vlmData.setUsableSize(size);
+                        isVlmDataRoot = false;
+                    }
+                    layerFactory.getDeviceLayer(rscData.getLayerKind()).updateGrossSize(vlmData);
+                }
             }
         }
     }
 
-    // TODO: create delete volume / resource mehtods that (for now) only perform the actual .delete()
+    // TODO: create delete volume / resource methods that (for now) only perform the actual .delete()
     // command. This method should be a central point for future logging or other extensions / purposes
 
     public void fullSyncApplied(Node localNode)

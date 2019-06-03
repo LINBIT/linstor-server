@@ -223,12 +223,9 @@ public class NvmeLayer implements DeviceLayer
     {
         NvmeVlmData nvmeVlmData = (NvmeVlmData) vlmData;
 
-        long allocatedSize = nvmeVlmData.getParentAllocatedSizeOrElse(
-            () -> nvmeVlmData.getVolume().getVolumeDefinition().getVolumeSize(sysCtx)
-        );
-
-        nvmeVlmData.setUsableSize(allocatedSize);
-        nvmeVlmData.setAllocatedSize(allocatedSize);
+        long size = nvmeVlmData.getUsableSize();
+        nvmeVlmData.setAllocatedSize(size);
+        nvmeVlmData.getSingleChild().setUsableSize(size);
     }
 
     @Override

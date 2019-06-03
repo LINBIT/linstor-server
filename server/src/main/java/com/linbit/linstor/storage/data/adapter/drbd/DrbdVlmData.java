@@ -25,10 +25,10 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     private final DrbdVlmDfnData vlmDfnData;
 
     // not persisted, serialized, ctrl and stlt
-    private String metaDiskPath;
     private long allocatedSize;
     private String devicePath;
     private long usableSize;
+    private boolean usingExternalMetaData;
 
     // not persisted, not serialized, stlt only
     private boolean exists;
@@ -57,10 +57,11 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
 
         exists = false;
         failed = false;
-        metaDiskPath = null;
 
         checkMetaData = true;
         isMetaDataNew = false;
+
+        usingExternalMetaData = false;
 
         states = transObjFactoryRef.createTransactionList(this, new ArrayList<>(), null);
 
@@ -111,6 +112,7 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         return usableSize;
     }
 
+    @Override
     public void setUsableSize(long usableSizeRef)
     {
         usableSize = usableSizeRef;
@@ -153,18 +155,38 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     @Override
     public String getMetaDiskPath()
     {
+        String metaDiskPath;
+        if (usingExternalMetaData)
+        {
+            metaDiskPath = getChildBySuffix(DrbdRscData.SUFFIX_META).getDevicePath();
+        }
+        else
+        {
+            metaDiskPath = null; // internal meta data
+        }
         return metaDiskPath;
     }
 
-    public void setMetaDiskPath(String metaDiskPathRef)
+    @Override
+    public String getBackingDevice()
     {
-        metaDiskPath = metaDiskPathRef;
+        return getChildBySuffix(DrbdRscData.SUFFIX_DATA).getDevicePath();
     }
 
     @Override
     public String getDiskState()
     {
         return diskState;
+    }
+
+    public void setUsingExternalMetaData(boolean usingExternalMetaDataRef)
+    {
+        usingExternalMetaData = usingExternalMetaDataRef;
+    }
+
+    public boolean isUsingExternalMetaData()
+    {
+        return usingExternalMetaData;
     }
 
     public void setDiskState(String diskStateRef)
@@ -243,7 +265,8 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
             vlmDfnData.getApiData(accCtxRef),
             devicePath,
             getBackingDevice(),
-            metaDiskPath,
+            usingExternalMetaData,
+            getMetaDiskPath(),
             allocatedSize,
             usableSize,
             diskState

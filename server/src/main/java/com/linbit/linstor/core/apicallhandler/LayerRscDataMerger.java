@@ -269,9 +269,9 @@ public class LayerRscDataMerger
             drbdVlmData.setAllocatedSize(vlmPojo.getAllocatedSize());
             drbdVlmData.setDevicePath(vlmPojo.getDevicePath());
             drbdVlmData.setDiskState(vlmPojo.getDiskState());
-            drbdVlmData.setMetaDiskPath(vlmPojo.getMetaDisk());
             drbdVlmData.setUsableSize(vlmPojo.getUsableSize());
         }
+        drbdVlmData.setUsingExternalMetaData(vlmPojo.isUsingExternalMetaData());
     }
 
     private DrbdVlmDfnData restoreDrbdVlmDfn(VolumeDefinition vlmDfn, DrbdVlmDfnPojo drbdVlmDfnPojo)

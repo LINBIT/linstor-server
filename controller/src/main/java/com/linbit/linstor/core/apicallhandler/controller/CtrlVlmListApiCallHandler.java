@@ -280,7 +280,25 @@ public class CtrlVlmListApiCallHandler
 
     public static String getVlmDescriptionInline(String nodeNameStr, String rscNameStr, Integer vlmNr)
     {
-        return "volume with volume number '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" +
-            nodeNameStr + "'";
+        return "volume '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" + nodeNameStr + "'";
+    }
+
+    public static String getVlmDescription(Volume vlm)
+    {
+        return getVlmDescription(vlm.getResource(), vlm.getVolumeDefinition());
+    }
+
+    public static String getVlmDescription(Resource rsc, VolumeDefinition vlmDfn)
+    {
+        return getVlmDescription(
+            rsc.getAssignedNode().getName().displayValue,
+            rsc.getDefinition().getName().displayValue,
+            vlmDfn.getVolumeNumber().value
+        );
+    }
+
+    public static String getVlmDescription(String nodeNameStr, String rscNameStr, Integer vlmNr)
+    {
+        return "Volume '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" + nodeNameStr + "'";
     }
 }

@@ -751,12 +751,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
     @Override
     public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
     {
-        setExpectedUsableSize(
-            (LAYER_DATA) vlmData,
-            vlmData.getParentAllocatedSizeOrElse(
-                () -> vlmData.getVolume().getVolumeDefinition().getVolumeSize(storDriverAccCtx)
-            )
-        );
+        // usable size was just updated (set) by the layer above us. copy that, so we can
+        // update it again with the actual usable size when we are finished
+        setExpectedUsableSize((LAYER_DATA) vlmData, vlmData.getUsableSize());
     }
 
     @Override

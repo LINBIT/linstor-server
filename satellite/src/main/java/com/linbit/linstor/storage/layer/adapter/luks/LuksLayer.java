@@ -104,11 +104,10 @@ public class LuksLayer implements DeviceLayer
     {
         LuksVlmData luksData = (LuksVlmData) vlmData;
 
-        long parentAllocatedSize = luksData.getParentAllocatedSizeOrElse(
-            () -> luksData.getVolume().getVolumeDefinition().getVolumeSize(sysCtx)
-        );
-        luksData.setUsableSize(parentAllocatedSize);
-        luksData.setAllocatedSize(parentAllocatedSize + 2 * MIB);
+        long size = luksData.getUsableSize() + 2 * MIB;
+        luksData.setAllocatedSize(size);
+
+        luksData.getSingleChild().setUsableSize(size);
     }
 
     @Override

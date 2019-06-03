@@ -58,7 +58,6 @@ import com.linbit.utils.AccessUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -175,7 +174,6 @@ public class DrbdLayer implements DeviceLayer
         try
         {
             DrbdVlmData drbdVlmData = (DrbdVlmData) vlmData;
-
             String peerSlotsProp = vlmData.getVolume().getResource()
                 .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
             // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
@@ -183,18 +181,32 @@ public class DrbdLayer implements DeviceLayer
             short peerSlots = peerSlotsProp == null ?
                 InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
 
-            long netSize = drbdVlmData.getParentAllocatedSizeOrElse(
-                () -> vlmData.getVolume().getVolumeDefinition().getVolumeSize(workerCtx)
-            );
-            long grossSize = new MetaData().getGrossSize(
-                netSize,
-                peerSlots,
-                DrbdLayer.FIXME_AL_STRIPES,
-                DrbdLayer.FIXME_AL_STRIPE_SIZE
-            );
+            long netSize = drbdVlmData.getUsableSize();
 
-            drbdVlmData.setUsableSize(netSize);
-            drbdVlmData.setAllocatedSize(grossSize);
+            if (drbdVlmData.isUsingExternalMetaData())
+            {
+                long extMdSize = new MetaData().getExternalMdSize(
+                    netSize,
+                    peerSlots,
+                    DrbdLayer.FIXME_AL_STRIPES,
+                    DrbdLayer.FIXME_AL_STRIPE_SIZE
+                );
+                drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
+
+                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(netSize);
+                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META).setUsableSize(extMdSize);
+            }
+            else
+            {
+                long grossSize = new MetaData().getGrossSize(
+                    netSize,
+                    peerSlots,
+                    DrbdLayer.FIXME_AL_STRIPES,
+                    DrbdLayer.FIXME_AL_STRIPE_SIZE
+                );
+                drbdVlmData.setAllocatedSize(grossSize);
+                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(grossSize);
+            }
         }
         catch (InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |
             MinAlSizeException | MaxAlSizeException | AlStripesException | PeerCountException exc)
@@ -282,11 +294,22 @@ public class DrbdLayer implements DeviceLayer
             drbdRscData.getResource().getStateFlags().isSet(workerCtx, RscFlags.DISK_REMOVING)
         )
         {
+            RscLayerObject dataChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_DATA);
             resourceProcessorProvider.get().process(
-                drbdRscData.getSingleChild(),
+                dataChild,
                 snapshots,
                 apiCallRc
             );
+
+            RscLayerObject metaChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+            if (metaChild != null)
+            {
+                resourceProcessorProvider.get().process(
+                    metaChild,
+                    snapshots,
+                    apiCallRc
+                );
+            }
         }
     }
 
@@ -417,7 +440,9 @@ public class DrbdLayer implements DeviceLayer
                     {
                         drbdUtils.resize(
                             drbdVlmData,
-                            VolumeUtils.isVolumeThinlyBacked(drbdVlmData)
+                            // TODO: not sure if we should "--assume-clean" if data device is only partially
+                            // thinly backed
+                            VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false)
                         );
                     }
                 }
@@ -607,14 +632,17 @@ public class DrbdLayer implements DeviceLayer
     private boolean hasMetaData(DrbdVlmData drbdVlmData)
         throws VolumeException
     {
-        VlmProviderObject backingVlmData = drbdVlmData.getSingleChild();
-
-        String backingDiskPath = backingVlmData.getDevicePath();
+        String metaDiskPath = drbdVlmData.getMetaDiskPath();
+        if (metaDiskPath == null)
+        {
+            // internal meta data
+            metaDiskPath = drbdVlmData.getBackingDevice();
+        }
 
         MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
         try
         {
-            mdUtils.readObject(backingDiskPath);
+            mdUtils.readObject(metaDiskPath);
         }
         catch (IOException exc)
         {
@@ -640,7 +668,7 @@ public class DrbdLayer implements DeviceLayer
                 try
                 {
                     isMetaDataCorrupt = !drbdUtils.hasMetaData(
-                        backingDiskPath,
+                        metaDiskPath,
                         drbdVlmData.getVlmDfnLayerObject().getMinorNr().value,
                         "internal"
                     );
@@ -695,7 +723,7 @@ public class DrbdLayer implements DeviceLayer
             );
             drbdVlmData.setMetaDataIsNew(true);
 
-            if (VolumeUtils.isVolumeThinlyBacked(drbdVlmData))
+            if (VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true))
             {
                 String currentGi = null;
                 try
@@ -727,13 +755,23 @@ public class DrbdLayer implements DeviceLayer
                         null
                     );
                 }
+
+                String metaDiskPath = drbdVlmData.getMetaDiskPath();
+                boolean internal = false;
+                if (metaDiskPath == null)
+                {
+                    // internal metadata
+                    metaDiskPath = drbdVlmData.getBackingDevice();
+                    internal = true;
+                }
                 drbdUtils.setGi(
                     drbdVlmData.getRscLayerObject().getNodeId(),
                     drbdVlmData.getVlmDfnLayerObject().getMinorNr(),
-                    drbdVlmData.getBackingDevice(),
+                    metaDiskPath,
                     currentGi,
                     null,
-                    true
+                    true,
+                    internal
                 );
             }
         }
@@ -1087,7 +1125,7 @@ public class DrbdLayer implements DeviceLayer
                 boolean haveFatVlm = false;
                 for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
-                    if (!VolumeUtils.isVolumeThinlyBacked(drbdVlmData))
+                    if (!VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false))
                     {
                         haveFatVlm = true;
                         break;

@@ -24,4 +24,9 @@ public interface VlmLayerObject extends VlmProviderObject
     {
         return DeviceProviderKind.FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER;
     }
+
+    default VlmProviderObject getChildBySuffix(String suffixRef)
+    {
+        return getRscLayerObject().getChildBySuffix(suffixRef).getVlmProviderObject(getVlmNr());
+    }
 }

@@ -176,7 +176,7 @@ public class MkfsUtils
                         );
                         if (fsType.equals(ApiConsts.VAL_FS_TYPE_EXT4))
                         {
-                            if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject))
+                            if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject, false))
                             {
                                 mkfsParametes += " -E nodiscard";
                             }
@@ -184,7 +184,7 @@ public class MkfsUtils
                         }
                         else if (fsType.equals(ApiConsts.VAL_FS_TYPE_XFS))
                         {
-                            if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject))
+                            if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject, false))
                             {
                                 mkfsParametes += " -K";
                             }

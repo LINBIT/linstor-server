@@ -2,16 +2,20 @@ package com.linbit.linstor.layer;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeIdAlloc;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
@@ -20,6 +24,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -40,8 +45,11 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDfnData, DrbdVlmDfnData>
@@ -54,10 +62,19 @@ class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDf
         @ApiContext AccessContext apiCtx,
         LayerDataFactory layerDataFactory,
         @Named(LinStor.SATELLITE_PROPS)Props stltConfRef,
-        @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPool
+        @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPool,
+        Provider<CtrlLayerDataHelper> layerHelperProviderRef
     )
     {
-        super(errorReporter, apiCtx, layerDataFactory, layerRscIdPool, DrbdRscData.class, DeviceLayerKind.DRBD);
+        super(
+            errorReporter,
+            apiCtx,
+            layerDataFactory,
+            layerRscIdPool,
+            DrbdRscData.class,
+            DeviceLayerKind.DRBD,
+            layerHelperProviderRef
+        );
         stltConf = stltConfRef;
     }
 
@@ -206,36 +223,154 @@ class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDf
     }
 
     @Override
+    protected boolean needsChildVlm(RscLayerObject childRscDataRef, Volume vlmRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        boolean needsChild;
+        RscLayerObject drbdRscData = childRscDataRef.getParent();
+        if (childRscDataRef.getResourceNameSuffix().equals(drbdRscData.getResourceNameSuffix()))
+        {
+            // data child
+            needsChild = true;
+        }
+        else
+        {
+            needsChild = isUsingExternalMetaData(vlmRef);
+        }
+        return needsChild;
+    }
+
+    @Override
     protected DrbdVlmData createVlmLayerData(
         DrbdRscData drbdRscData,
         Volume vlm,
         LayerPayload payload
     )
         throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException, LinStorException
+            ValueInUseException, LinStorException, InvalidKeyException
     {
         DrbdVlmDfnData drbdVlmDfnData = ensureVolumeDefinitionExists(
             vlm.getVolumeDefinition(),
             drbdRscData.getResourceNameSuffix(),
             payload
         );
-        return layerDataFactory.createDrbdVlmData(
+        DrbdVlmData drbdVlmData = layerDataFactory.createDrbdVlmData(
             vlm,
             drbdRscData,
             drbdVlmDfnData
         );
+
+        drbdVlmData.setUsingExternalMetaData(isUsingExternalMetaData(vlm));
+        return drbdVlmData;
+    }
+
+    @Override
+    protected void mergeVlmData(DrbdVlmData drbdVlmData, Volume vlmRef, LayerPayload payloadRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        drbdVlmData.setUsingExternalMetaData(isUsingExternalMetaData(vlmRef));
+    }
+
+    private boolean isUsingExternalMetaData(Volume vlmRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        return isExternalMetaDataPool(
+            new PriorityProps(
+                vlmRef.getVolumeDefinition().getProps(apiCtx),
+                vlmRef.getResource().getProps(apiCtx),
+                vlmRef.getResourceDefinition().getProps(apiCtx),
+                vlmRef.getResource().getAssignedNode().getProps(apiCtx)
+            ).getProp(
+                ApiConsts.KEY_STOR_POOL_DRBD_META_NAME
+            )
+        );
+    }
+
+    private boolean isExternalMetaDataPool(String metaPoolStr)
+    {
+        return metaPoolStr != null &&
+            !metaPoolStr.trim().isEmpty() &&
+            !metaPoolStr.equalsIgnoreCase(ApiConsts.VAL_STOR_POOL_DRBD_META_INTERNAL);
     }
 
     @Override
     protected List<String> getRscNameSuffixes(DrbdRscData rscDataRef)
+        throws AccessDeniedException, InvalidKeyException
     {
-        return super.getRscNameSuffixes(rscDataRef); // TODO: will change when external metadata are implemented
+        boolean allVlmsUseInternalMetaData = true;
+        Resource rsc = rscDataRef.getResource();
+        ResourceDefinition rscDfn = rsc.getDefinition();
+
+        Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
+        Props rscProps = rsc.getProps(apiCtx);
+        Props rscDfnProps = rscDfn.getProps(apiCtx);
+        Props nodeProps = rsc.getAssignedNode().getProps(apiCtx);
+
+        while (iterateVolumeDfn.hasNext())
+        {
+            String metaPool = new PriorityProps(
+                iterateVolumeDfn.next().getProps(apiCtx),
+                rscProps,
+                rscDfnProps,
+                nodeProps
+            ).getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
+            if (isExternalMetaDataPool(metaPool))
+            {
+                allVlmsUseInternalMetaData = false;
+                break;
+            }
+        }
+
+        List<String> ret;
+        if (allVlmsUseInternalMetaData)
+        {
+            ret = Arrays.asList("");
+        }
+        else
+        {
+            ret = Arrays.asList("", DrbdRscData.SUFFIX_META);
+        }
+
+        return ret;
     }
 
     @Override
     protected StorPool getStorPool(Volume vlmRef, RscLayerObject childRef)
+        throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
-        return null; // TODO change when implementing external metadata
+        StorPool metaStorPool = null;
+        if (childRef.getSuffixedResourceName().contains(DrbdRscData.SUFFIX_META))
+        {
+            VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
+            Resource rsc = vlmRef.getResource();
+            Node node = rsc.getAssignedNode();
+            PriorityProps prioProps = new PriorityProps(
+                vlmDfn.getProps(apiCtx),
+                rsc.getProps(apiCtx),
+                vlmDfn.getResourceDefinition().getProps(apiCtx),
+                node.getProps(apiCtx)
+            );
+
+            String metaStorPoolStr = prioProps.getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
+            if (
+                isExternalMetaDataPool(metaStorPoolStr) &&
+                rsc.getStateFlags().isUnset(apiCtx, RscFlags.DISKLESS)
+            )
+            {
+                metaStorPool = node.getStorPool(apiCtx, new StorPoolName(metaStorPoolStr));
+                if (metaStorPool == null)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
+                            "Configured (meta) storage pool '" + metaStorPoolStr + "' not found on " +
+                            CtrlNodeApiCallHandler.getNodeDescriptionInline(node))
+                    );
+                }
+            }
+        }
+
+        return metaStorPool;
     }
 
     private NodeId getNodeId(Integer nodeIdIntRef, DrbdRscDfnData drbdRscDfnData)

@@ -117,6 +117,13 @@ public class SfTargetData extends BaseTransactionObject implements SfTargetVlmPr
     }
 
     @Override
+    public void setUsableSize(long netSizeRef) throws SQLException
+    {
+        // no-op
+        // TODO: sure about this no-op?
+    }
+
+    @Override
     public String getDevicePath()
     {
         return DEV_NULL;

@@ -59,6 +59,23 @@ public interface RscLayerObject extends LayerObject
         return ret;
     }
 
+    default RscLayerObject getChildBySuffix(String suffixRef)
+    {
+        Iterator<RscLayerObject> iterator = getChildren().iterator();
+        RscLayerObject ret = null;
+        String suffix = getResourceNameSuffix() + suffixRef;
+        while (iterator.hasNext())
+        {
+            RscLayerObject rscObj = iterator.next();
+            if (rscObj.getResourceNameSuffix().equals(suffix))
+            {
+                ret = rscObj;
+                break;
+            }
+        }
+        return ret;
+    }
+
     default ResourceName getResourceName()
     {
         return getResource().getDefinition().getName();
@@ -91,5 +108,6 @@ public interface RscLayerObject extends LayerObject
     void remove(VolumeNumber vlmNrRef) throws SQLException;
 
     boolean checkFileSystem();
+
     void disableCheckFileSystem();
 }

@@ -193,6 +193,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         private final DrbdVlmDfnPojo drbdVlmDfn;
         private final String devicePath;
         private final String backingDisk;
+        private final boolean usingExternalMetaData;
         private final String metaDisk;
         private final long allocatedSize;
         private final long usableSize;
@@ -202,6 +203,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             DrbdVlmDfnPojo drbdVlmDfnRef,
             String devicePathRef,
             String backingDiskRef,
+            boolean usingExternalMetaDataRef,
             String metaDiskRef,
             long allocatedSizeRef,
             long usableSizeRef,
@@ -212,6 +214,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             drbdVlmDfn = drbdVlmDfnRef;
             devicePath = devicePathRef;
             backingDisk = backingDiskRef;
+            usingExternalMetaData = usingExternalMetaDataRef;
             metaDisk = metaDiskRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
@@ -231,6 +234,11 @@ public class DrbdRscPojo implements RscLayerDataApi
         public String getBackingDisk()
         {
             return backingDisk;
+        }
+
+        public boolean isUsingExternalMetaData()
+        {
+            return usingExternalMetaData;
         }
 
         public String getMetaDisk()
@@ -256,6 +264,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             return drbdVlmDfn.vlmNr;
         }
 
+        @Override
         public String getDiskState()
         {
             return diskState;

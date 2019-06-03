@@ -19,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
@@ -30,6 +31,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.sql.SQLException;
@@ -49,7 +51,8 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         CtrlSecurityObjects secObjsRef,
-        LengthPadding cryptoLenPadRef
+        LengthPadding cryptoLenPadRef,
+        Provider<CtrlLayerDataHelper> layerHelperProviderRef
     )
     {
         super(
@@ -58,7 +61,8 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
             layerDataFactoryRef,
             layerRscIdPoolRef,
             LuksRscData.class,
-            DeviceLayerKind.LUKS
+            DeviceLayerKind.LUKS,
+            layerHelperProviderRef
         );
         secObjs = secObjsRef;
         cryptoLenPad = cryptoLenPadRef;
@@ -123,6 +127,13 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
     }
 
     @Override
+    protected boolean needsChildVlm(RscLayerObject childRscDataRef, Volume vlmRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        return true;
+    }
+
+    @Override
     protected LuksVlmData createVlmLayerData(
         LuksRscData luksRscData,
         Volume vlm,
@@ -155,5 +166,12 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
             luksRscData,
             encryptedVlmDfnKey
         );
+    }
+
+    @Override
+    protected void mergeVlmData(LuksVlmData vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        // nothing to do
     }
 }

@@ -86,6 +86,9 @@ public class MetaData extends MdCommon implements MetaDataApi
     @SuppressWarnings("checkstyle:constantname")
     public static final long DIVISOR_kiB = 1024;
 
+    @SuppressWarnings("checkstyle:constantname")
+    private static final long DRBD_MIN_EXT_META_SIZE_kiB = 1024;
+
     @Inject
     public MetaData()
     {
@@ -190,6 +193,22 @@ public class MetaData extends MdCommon implements MetaDataApi
         long alSize = getAlSize(alStripes, alStripeSize);
         long bitmapSize = getBitmapExternalSize(sizeEff, peers);
         long mdSize = alignUp(alSize + bitmapSize + DRBD_MD_SUPERBLK_kiB, DRBD_MD_ALIGN_kiB);
+
+        if (mdSize < DRBD_MIN_EXT_META_SIZE_kiB)
+        {
+            /*
+             * copied from drbdmeta.c
+             *
+             * reiserfs sb offset is 64k plus
+             * align it to 4k, in case someone has unusual hard sect size (!= 512),
+             * otherwise direct io will fail with EINVAL
+             *
+             * copied from drbd_nl.c
+             *
+             * at least one MB, otherwise it does not make sense
+             */
+            mdSize = DRBD_MIN_EXT_META_SIZE_kiB;
+        }
 
         return mdSize;
     }

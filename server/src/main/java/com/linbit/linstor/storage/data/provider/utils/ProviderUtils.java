@@ -28,7 +28,7 @@ public class ProviderUtils
             rscDataList.addAll(rscData.getChildren());
 
             VlmProviderObject vlmData = rscData.getVlmProviderObject(vlmNr);
-            if (!(vlmData instanceof VlmLayerObject))
+            if (vlmData != null && !(vlmData instanceof VlmLayerObject))
             {
                 sum += vlmData.getAllocatedSize();
             }

@@ -11,6 +11,7 @@ import com.linbit.utils.ExceptionThrowingSupplier;
 
 import javax.annotation.Nullable;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -64,6 +65,8 @@ public interface VlmProviderObject extends LayerObject
         }
         return ret;
     }
+
+    void setUsableSize(long netSizeRef) throws SQLException;
 
     long getUsableSize();
 

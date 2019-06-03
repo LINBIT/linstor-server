@@ -29,6 +29,9 @@ import java.util.Set;
 
 public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObject
 {
+    public static final String SUFFIX_DATA = "";
+    public static final String SUFFIX_META = ".meta"; // . is not a valid character in ResourceName
+
     // unmodifiable data, once initialized
     private final DrbdRscDfnData drbdRscDfnData;
     private final NodeId nodeId;

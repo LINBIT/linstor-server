@@ -125,16 +125,10 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
         return copy;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
     {
-        setUsableSize(
-            (LAYER_DATA) vlmData,
-            vlmData.getParentAllocatedSizeOrElse(
-                () -> vlmData.getVlmDfnLayerObject().getVolumeDefinition().getVolumeSize(sysCtx)
-            )
-        );
+        // usable size was just updated (set) by the layer above us. nothing to do here
     }
 
     @Override

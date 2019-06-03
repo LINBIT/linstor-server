@@ -2,6 +2,7 @@ package com.linbit.linstor.layer;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
@@ -14,6 +15,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -36,8 +38,6 @@ import java.sql.SQLException;
 @Singleton
 class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObject, RscDfnLayerObject, VlmDfnLayerObject>
 {
-    private final Provider<CtrlLayerDataHelper> layerHelperProvider;
-
     @Inject
     StorageLayerHelper(
         ErrorReporter errorReporterRef,
@@ -53,9 +53,9 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
             layerDataFactoryRef,
             layerRscIdPoolRef,
             StorageRscData.class,
-            DeviceLayerKind.STORAGE
+            DeviceLayerKind.STORAGE,
+            layerHelperProviderRef
         );
-        layerHelperProvider = layerHelperProviderRef;
     }
 
     @Override
@@ -117,15 +117,22 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     }
 
     @Override
+    protected boolean needsChildVlm(RscLayerObject childRscDataRef, Volume vlmRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        throw new ImplementationError("Storage layer should not have child volumes to be asked for");
+    }
+
+    @Override
     protected VlmProviderObject createVlmLayerData(
         StorageRscData rscData,
         Volume vlm,
         LayerPayload payload
     )
         throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException, LinStorException
+            ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
     {
-        StorPool storPool = layerHelperProvider.get().getStorPool(vlm, rscData);
+        StorPool storPool = layerDataHelperProvider.get().getStorPool(vlm, rscData);
 
         DeviceProviderKind kind = storPool.getDeviceProviderKind();
         VlmProviderObject vlmData = rscData.getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber());
@@ -182,6 +189,13 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
             }
         }
         return vlmData;
+    }
+
+    @Override
+    protected void mergeVlmData(VlmProviderObject vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        // nothing to do
     }
 
     private SfVlmDfnData ensureSfVlmDfnExists(

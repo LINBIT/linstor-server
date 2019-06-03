@@ -12,6 +12,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
@@ -24,6 +25,7 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.sql.SQLException;
@@ -36,7 +38,8 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
-        @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef
+        @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
+        Provider<CtrlLayerDataHelper> layerHelperProviderRef
     )
     {
         super(
@@ -45,7 +48,8 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
             layerDataFactoryRef,
             layerRscIdPoolRef,
             NvmeRscData.class,
-            DeviceLayerKind.NVME
+            DeviceLayerKind.NVME,
+            layerHelperProviderRef
         );
     }
 
@@ -108,10 +112,24 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
     }
 
     @Override
+    protected boolean needsChildVlm(RscLayerObject childRscDataRef, Volume vlmRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        return true;
+    }
+
+    @Override
     protected NvmeVlmData createVlmLayerData(NvmeRscData nvmeRscData, Volume vlm, LayerPayload payload)
         throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException
     {
         return layerDataFactory.createNvmeVlmData(vlm, nvmeRscData);
+    }
+
+    @Override
+    protected void mergeVlmData(NvmeVlmData vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        // nothing to do
     }
 }

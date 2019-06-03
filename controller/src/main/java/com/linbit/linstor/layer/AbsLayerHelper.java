@@ -2,6 +2,7 @@ package com.linbit.linstor.layer;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
@@ -14,6 +15,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.layer.CtrlLayerDataHelper.LayerResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
@@ -22,6 +24,8 @@ import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+
+import javax.inject.Provider;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -41,13 +45,16 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
     private final Class<RSC> rscClass;
     private final DeviceLayerKind kind;
 
+    protected final Provider<CtrlLayerDataHelper> layerDataHelperProvider;
+
     AbsLayerHelper(
         ErrorReporter errorReporterRef,
         AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
         DynamicNumberPool layerRscIdPoolRef,
         Class<RSC> rscClassRef,
-        DeviceLayerKind kindRef
+        DeviceLayerKind kindRef,
+        Provider<CtrlLayerDataHelper> ctrlLayerDataHelperProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -56,6 +63,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         layerRscIdPool = layerRscIdPoolRef;
         rscClass = rscClassRef;
         kind = kindRef;
+        layerDataHelperProvider = ctrlLayerDataHelperProviderRef;
     }
 
     /**
@@ -138,6 +146,8 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
      *
      * @param layerStackRef
      * @throws LinStorException
+     * @throws InvalidKeyException
+     * @throws InvalidNameException
      */
     @SuppressWarnings("unchecked")
     public LayerResult ensureRscDataCreated(
@@ -147,7 +157,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         RscLayerObject parentObjectRef
     )
         throws SQLException, ExhaustedPoolException, ValueOutOfRangeException,
-            ValueInUseException, LinStorException
+            ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
     {
         RSC rscData = null;
         if (parentObjectRef == null)
@@ -160,7 +170,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
                         rootData.getClass().getSimpleName()
                 );
             }
-            // Suppressing warning as we have already performed a class check.
+            // Suppressing "unchecked cast" warning as we have already performed a class check.
             rscData = (RSC) rootData;
         }
         else
@@ -169,7 +179,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
             {
                 if (rscNameSuffixRef.equals(child.getResourceNameSuffix()))
                 {
-                    // Suppressing warning as the layer list cannot be altered once deployed.
+                    // Suppressing "unchecked cast" warning as the layer list cannot be altered once deployed.
                     rscData = (RSC) child;
                     break;
                 }
@@ -197,12 +207,46 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
 
             VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
-            if (!vlmLayerObjects.containsKey(vlmNr))
+            VLM vlmData = vlmLayerObjects.get(vlmNr);
+            if (vlmData == null)
             {
-                vlmLayerObjects.put(
-                    vlmNr,
-                    createVlmLayerData(rscData, vlm, payloadRef)
-                );
+                /* first ask the parent if it needs a child object for this volume
+                 * the answer could be no if a DRBD layer has one external (-> "" and ".meta" child)
+                 * but also an internal volume.
+                 *
+                 * DRBD LAYER       rscObj ""
+                 *                      vlm 0   (external)
+                 *                      vlm 1   (internal)
+                 * STORAGE_LAYER    rscObj ""   // data device for drbd
+                 *                      vlm 0
+                 *                      vlm 1
+                 *                  rscObj ".meta" // meta device for drbd
+                 *                      vlm 0   (need meta-device)
+                 *                      -       (does not need meta device)
+                 */
+
+                boolean needsChild;
+                if (parentObjectRef != null)
+                {
+                    needsChild = layerDataHelperProvider.get()
+                        .getLayerHelperByKind(parentObjectRef.getLayerKind())
+                        .needsChildVlm(rscData, vlm);
+                }
+                else
+                {
+                    needsChild = true;
+                }
+                if (needsChild)
+                {
+                    vlmLayerObjects.put(
+                        vlmNr,
+                        createVlmLayerData(rscData, vlm, payloadRef)
+                    );
+                }
+            }
+            else
+            {
+                mergeVlmData(vlmData, vlm, payloadRef);
             }
             existingVlmsDataToBeDeleted.remove(vlmNr);
         }
@@ -223,8 +267,12 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
      *
      * @param rscDataRef
      * @return
+     * @throws InvalidKeyException
+     * @throws AccessDeniedException
      */
+    @SuppressWarnings("unused") // exceptions needed by implementations
     protected List<String> getRscNameSuffixes(RSC rscDataRef)
+        throws AccessDeniedException, InvalidKeyException
     {
         return Arrays.asList(rscDataRef.getResourceNameSuffix());
     }
@@ -234,8 +282,13 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
      * @param vlmRef
      * @param childRef
      * @return
+     * @throws AccessDeniedException
+     * @throws InvalidKeyException
+     * @throws InvalidNameException
      */
+    @SuppressWarnings("unused") // exceptions needed by implementations
     protected StorPool getStorPool(Volume vlmRef, RscLayerObject childRef)
+        throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         return null;
     }
@@ -267,6 +320,9 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
     protected abstract void mergeRscDfnData(RSC_DFN rscDfn, LayerPayload payload)
         throws SQLException, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException;
 
+    protected abstract boolean needsChildVlm(RscLayerObject childRscDataRef, Volume vlmRef)
+        throws AccessDeniedException, InvalidKeyException;
+
     protected abstract VLM_DFN createVlmDfnData(
         VolumeDefinition vlmDfnRef,
         String rscNameSuffixRef,
@@ -286,5 +342,13 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         LayerPayload payloadRef
     )
         throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException, LinStorException;
+            ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException;
+
+    protected abstract void mergeVlmData(
+        VLM vlmDataRef,
+        Volume vlm,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, InvalidKeyException;
+
 }

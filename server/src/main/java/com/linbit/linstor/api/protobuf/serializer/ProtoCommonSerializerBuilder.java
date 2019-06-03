@@ -1186,7 +1186,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             DrbdVlm.Builder builder = DrbdVlm.newBuilder()
                 .setDrbdVlmDfn(buildDrbdVlmDfnData(drbdVlmDfnPojo))
                 .setAllocatedSize(drbdVlmPojo.getAllocatedSize())
-                .setUsableSize(drbdVlmPojo.getUsableSize());
+                .setUsableSize(drbdVlmPojo.getUsableSize())
+                .setUsingExternalMetaData(drbdVlmPojo.isUsingExternalMetaData());
             if (drbdVlmPojo.getDevicePath() != null)
             {
                 builder.setDevicePath(drbdVlmPojo.getDevicePath());
