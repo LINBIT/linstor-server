@@ -7,7 +7,7 @@ apply plugin: 'application'
 
 sourceCompatibility = 1.8
 
-def protobufVersion = '3.2.0'
+def protobufVersion = '3.8.0'
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 def logbackConfig = "logback.xml"
 def jvmOpts = ["-Xms32M", "-XX:MinHeapFreeRatio=40", "-XX:MaxHeapFreeRatio=70"]
@@ -50,6 +50,7 @@ subprojects {
             compile group: 'com.google.inject', name: 'guice', version: '4.2.2'
             compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.2'
 
+            // stick with the non lite RUNTIME version, until it is uploaded to maven repo
             compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
             compile 'info.picocli:picocli:3.9.5'
