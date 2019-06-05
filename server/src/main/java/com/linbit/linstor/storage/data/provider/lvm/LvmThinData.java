@@ -26,7 +26,7 @@ public class LvmThinData extends LvmData
         Provider<TransactionMgr> transMgrProvider
     )
     {
-        super(vlm, rscData, transObjFactory, transMgrProvider);
+        super(vlm, rscData, DeviceProviderKind.LVM_THIN, transObjFactory, transMgrProvider);
     }
 
     public String getThinPool()
@@ -39,10 +39,14 @@ public class LvmThinData extends LvmData
         thinPool = thinPoolRef;
     }
 
-    @Override
-    public DeviceProviderKind getProviderKind()
+    public void setAllocatedPercent(float dataPercentRef)
     {
-        return DeviceProviderKind.LVM_THIN;
+        dataPercent = dataPercentRef;
+    }
+
+    public float getDataPercent()
+    {
+        return dataPercent;
     }
 
     @Override
@@ -55,15 +59,5 @@ public class LvmThinData extends LvmData
             getUsableSize(),
             new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
         );
-    }
-
-    public void setAllocatedPercent(float dataPercentRef)
-    {
-        dataPercent = dataPercentRef;
-    }
-
-    public float getDataPercent()
-    {
-        return dataPercent;
     }
 }

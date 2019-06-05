@@ -202,7 +202,7 @@ public class LayerDataFactory
     public DisklessData createDisklessData(
         Volume vlm,
         long usableSize,
-        RscLayerObject rscData
+        StorageRscData rscData
     )
         throws SQLException
     {

@@ -144,7 +144,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         String rscSuffixRef,
         RscLayerObject parentRef
     )
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         Map<VolumeNumber, VlmProviderObject> vlmMap = new TreeMap<>();
         StorageRscData storageRscData = new StorageRscData(
@@ -203,7 +203,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         StorageRscData rscDataRef,
         StorVlmInfoData vlmInfo
     )
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         VlmProviderObject vlmProviderObj;
         switch (vlmInfo.kind)
