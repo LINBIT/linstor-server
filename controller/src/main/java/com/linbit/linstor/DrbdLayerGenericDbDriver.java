@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
@@ -100,18 +101,15 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         " SELECT " + StringUtils.join(", ", RSC_ALL_FIELDS) +
         " FROM " + TBL_LAYER_DRBD_RESOURCES +
         " WHERE " + LAYER_RESOURCE_ID + " = ?";
-    private static final String SELECT_RSC_DFN_BY_NAME =
-        " SELECT " + StringUtils.join(", ", RSC_DFN_ALL_FIELDS) +
-        " FROM " + TBL_LAYER_DRBD_RESOURCE_DEFINITIONS +
-        " WHERE " + RESOURCE_NAME        + " = ? AND " +
-                    RESOURCE_NAME_SUFFIX + " = ?";
+    private static final String SELECT_ALL_RSC_DFN_AND_VLM_DFN =
+        " SELECT " +
+            joinAs(", ", "RD.", "RD_", RSC_DFN_ALL_FIELDS) + ", " +
+            joinAs(", ", "VD.", "VD_", VLM_DFN_ALL_FIELDS) +
+        " FROM " + TBL_LAYER_DRBD_RESOURCE_DEFINITIONS + " AS RD" +
+        " LEFT OUTER JOIN " + TBL_LAYER_DRBD_VOLUME_DEFINITIONS + " AS VD" +
+            " ON RD." + RESOURCE_NAME + " = VD." + RESOURCE_NAME + " AND" +
+            "    RD." + RESOURCE_NAME_SUFFIX + " = VD." + RESOURCE_NAME_SUFFIX;
     // DrbdVlmData has nothing we have to store -> no database table
-    private static final String SELECT_VLM_DFN_BY_RSC_NAME_AND_VLM_NR =
-        " SELECT " + StringUtils.join(", ", VLM_DFN_ALL_FIELDS) +
-        " FROM " + TBL_LAYER_DRBD_VOLUME_DEFINITIONS +
-        " WHERE " + RESOURCE_NAME        + " = ? AND " +
-                    RESOURCE_NAME_SUFFIX + " = ? AND " +
-                    VLM_NR               + " = ?";
 
     private static final String INSERT_RSC =
         " INSERT INTO " + TBL_LAYER_DRBD_RESOURCES +
@@ -177,8 +175,8 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     private final RscDfnTransportTypeDriver rscDfnTransportTypeDriver;
     private final RscDfnPeerSlotsDriver rscDfnPeerSlotsDriver;
 
-    private final Map<ResourceDefinition, Pair<DrbdRscDfnData, List<DrbdRscData>>> drbdRscDfnCache;
-    private final Map<VolumeDefinition, DrbdVlmDfnData> drbdVlmDfnCache;
+    private final Map<Pair<ResourceDefinition, String>, Pair<DrbdRscDfnData, List<DrbdRscData>>> drbdRscDfnCache;
+    private final Map<Pair<VolumeDefinition, String>, DrbdVlmDfnData> drbdVlmDfnCache;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
 
@@ -211,6 +209,20 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         drbdVlmDfnCache = new HashMap<>();
     }
 
+    private static String joinAs(String delimiter, String tablePrefix, String colPrefix, String[] array)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (String str : array)
+        {
+            sb.append(tablePrefix).append(str)
+                .append(" AS ")
+                .append(colPrefix).append(str)
+                .append(delimiter);
+        }
+        sb.setLength(sb.length() - delimiter.length());
+        return sb.toString();
+    }
+
     /*
      * These caches are only used during loading. Having them cleared after having loaded all data
      * these caches should never be used again.
@@ -219,6 +231,127 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     {
         drbdRscDfnCache.clear();
         drbdVlmDfnCache.clear();
+    }
+
+
+    /**
+     * Loads the layer data for the given {@link ResourceDefinition}s if available.
+     *
+     * @param rscDfnMap
+     * @throws SQLException
+     */
+    public void loadLayerData(Map<ResourceName, ResourceDefinition> rscDfnMap) throws SQLException
+    {
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RSC_DFN_AND_VLM_DFN))
+        {
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                while (resultSet.next())
+                {
+                    ResourceName rscName = getResourceName(resultSet, "RD_" + RESOURCE_NAME);
+                    ResourceDefinition rscDfn = rscDfnMap.get(rscName);
+                    if (rscDfn == null)
+                    {
+                        throw new LinStorSqlRuntimeException(
+                            "Loaded drbd resource definition data for non existent resource definition '" +
+                                rscName + "'"
+                        );
+                    }
+                    String rscNameSuffix = resultSet.getString("RD_" + RESOURCE_NAME_SUFFIX);
+                    DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(dbCtx, DeviceLayerKind.DRBD, rscNameSuffix);
+                    if (drbdRscDfnData == null)
+                    {
+                        short peerSlots = resultSet.getShort("RD_" + PEER_SLOTS);
+                        int alStripes = resultSet.getInt("RD_" + AL_STRIPES);
+                        long alStripeSize = resultSet.getLong("RD_" + AL_STRIPE_SIZE);
+                        int tcpPort = resultSet.getInt("RD_" + TCP_PORT);
+
+                        TransportType transportType = TransportType.byValue(
+                            resultSet.getString("RD_" + TRANSPORT_TYPE)
+                        );
+                        String secret = resultSet.getString("RD_" + SECRET);
+
+                        List<DrbdRscData> rscDataList = new ArrayList<>();
+
+                        drbdRscDfnData = new DrbdRscDfnData(
+                            rscDfn,
+                            rscNameSuffix,
+                            peerSlots,
+                            alStripes,
+                            alStripeSize,
+                            tcpPort,
+                            transportType,
+                            secret,
+                            rscDataList,
+                            new TreeMap<>(),
+                            tcpPortPool,
+                            this,
+                            transObjFactory,
+                            transMgrProvider
+                        );
+                        Pair<DrbdRscDfnData, List<DrbdRscData>> pair = new Pair<>(drbdRscDfnData, rscDataList);
+                        drbdRscDfnCache.put(new Pair<>(rscDfn, rscNameSuffix), pair);
+
+                        rscDfn.setLayerData(dbCtx, drbdRscDfnData);
+                    }
+
+                    // drbdRscDfnData is now restored. If "VD_" columns are not empty, restore the DrbdVlmDfnData
+                    Integer vlmNr = resultSet.getInt("VD_" + VLM_NR);
+                    if (!resultSet.wasNull())
+                    {
+                        VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(dbCtx, new VolumeNumber(vlmNr));
+                        if (vlmDfn == null)
+                        {
+                            throw new LinStorSqlRuntimeException(
+                                "Loaded drbd volume definition data for non existent volume definition '" +
+                                    rscName + "', vlmNr: " + vlmNr
+                            );
+                        }
+                        Integer minor = resultSet.getInt("VD_" + VLM_MINOR_NR);
+                        DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
+                            vlmDfn,
+                            rscNameSuffix,
+                            minor,
+                            minorPool,
+                            (DrbdRscDfnData) vlmDfn.getResourceDefinition().getLayerData(
+                                dbCtx,
+                                DeviceLayerKind.DRBD,
+                                rscNameSuffix
+                            ),
+                            this,
+                            transMgrProvider
+                        );
+                        drbdVlmDfnCache.put(new Pair<>(vlmDfn, rscNameSuffix), drbdVlmDfnData);
+
+                        vlmDfn.setLayerData(dbCtx, drbdVlmDfnData);
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+        }
+        catch (ValueOutOfRangeException | ExhaustedPoolException | ValueInUseException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private ResourceName getResourceName(ResultSet resultSet, String columnName) throws SQLException
+    {
+        ResourceName rscName;
+        try
+        {
+            rscName = new ResourceName(resultSet.getString(columnName));
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new LinStorSqlRuntimeException(
+                "Failed to restore stored resourceName [" + resultSet.getString(columnName) + "]"
+            );
+        }
+        return rscName;
     }
 
     /**
@@ -238,7 +371,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         String rscSuffixRef,
         RscLayerObject parentRef
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         Pair<DrbdRscData, Set<RscLayerObject>> ret;
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_RSC_BY_ID))
@@ -248,7 +381,9 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             {
                 if (resultSet.next())
                 {
-                    Pair<DrbdRscDfnData, List<DrbdRscData>> drbdRscDfnDataPair = loadRscDfnData(rsc, rscSuffixRef);
+                    Pair<DrbdRscDfnData, List<DrbdRscData>> drbdRscDfnDataPair = drbdRscDfnCache.get(
+                        new Pair<>(rsc.getDefinition(), rscSuffixRef)
+                    );
                     Set<RscLayerObject> children = new HashSet<>();
                     Map<VolumeNumber, DrbdVlmData> vlmMap = new TreeMap<>();
 
@@ -309,89 +444,19 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                     throw new ImplementationError("Requested id [" + id + "] was not found in the database");
                 }
             }
-            catch (ValueOutOfRangeException | ExhaustedPoolException | ValueInUseException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-        }
-        return ret;
-    }
-
-    private Pair<DrbdRscDfnData, List<DrbdRscData>> loadRscDfnData(Resource rscRef, String rscSuffix)
-        throws SQLException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException
-    {
-        DrbdRscDfnData drbdRscDfnData;
-
-        ResourceDefinition rscDfn = rscRef.getDefinition();
-        Pair<DrbdRscDfnData, List<DrbdRscData>> ret = drbdRscDfnCache.get(rscDfn);
-        if (ret == null)
-        {
-            try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_RSC_DFN_BY_NAME))
-            {
-                stmt.setString(1, rscDfn.getName().value);
-                stmt.setString(2, rscSuffix);
-
-                try (ResultSet resultSet = stmt.executeQuery())
-                {
-                    List<DrbdRscData> rscDataList = new ArrayList<>();
-
-                    if (resultSet.next())
-                    {
-                        short peerSlots = resultSet.getShort(PEER_SLOTS);
-                        int alStripes = resultSet.getInt(AL_STRIPES);
-                        long alStripeSize = resultSet.getLong(AL_STRIPE_SIZE);
-
-                        TransportType transportType = TransportType.byValue(resultSet.getString(TRANSPORT_TYPE));
-                        String secret = resultSet.getString(SECRET);
-
-                        drbdRscDfnData =
-                            new DrbdRscDfnData(
-                                rscDfn,
-                                rscSuffix,
-                                peerSlots,
-                                alStripes,
-                                alStripeSize,
-                                resultSet.getInt(TCP_PORT),
-                                transportType,
-                                secret,
-                                rscDataList,
-                                new TreeMap<>(),
-                                tcpPortPool,
-                                this,
-                                transObjFactory,
-                                transMgrProvider
-                            );
-                        ret = new Pair<>(drbdRscDfnData, rscDataList);
-                        drbdRscDfnCache.put(rscDfn, ret);
-
-                        rscDfn.setLayerData(dbCtx, drbdRscDfnData);
-                    }
-                    else
-                    {
-                        throw new LinStorSqlRuntimeException(
-                            "Required DrbdResourceDefinition does not exist. " +
-                            rscDfn.getName() + " " + rscSuffix
-                        );
-                    }
-                }
-            }
         }
         return ret;
     }
 
     private void restoreDrbdVolumes(DrbdRscData rscData, Map<VolumeNumber, DrbdVlmData> vlmMap)
-        throws SQLException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException
     {
         Iterator<Volume> vlmIt = rscData.getResource().iterateVolumes();
         while (vlmIt.hasNext())
         {
             Volume vlm = vlmIt.next();
 
-            DrbdVlmDfnData drbdVlmDfnData = loadDrbdVlmDfnData(
-                vlm.getVolumeDefinition(),
-                rscData.getResourceNameSuffix()
+            DrbdVlmDfnData drbdVlmDfnData = drbdVlmDfnCache.get(
+                new Pair<>(vlm.getVolumeDefinition(), rscData.getResourceNameSuffix())
             );
 
             if (drbdVlmDfnData != null)
@@ -408,48 +473,6 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                 );
             }
         }
-    }
-
-    private DrbdVlmDfnData loadDrbdVlmDfnData(VolumeDefinition vlmDfn, String rscNameSuffix)
-        throws SQLException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException
-    {
-        DrbdVlmDfnData drbdVlmDfnData = drbdVlmDfnCache.get(vlmDfn);
-
-        if (drbdVlmDfnData == null)
-        {
-            try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_VLM_DFN_BY_RSC_NAME_AND_VLM_NR))
-            {
-                stmt.setString(1, vlmDfn.getResourceDefinition().getName().value);
-                stmt.setString(2, rscNameSuffix);
-                stmt.setInt(3, vlmDfn.getVolumeNumber().value);
-                try (ResultSet resultSet = stmt.executeQuery())
-                {
-                    if (resultSet.next())
-                    {
-                        drbdVlmDfnData = new DrbdVlmDfnData(
-                            vlmDfn,
-                            rscNameSuffix,
-                            resultSet.getInt(VLM_MINOR_NR),
-                            minorPool,
-                            (DrbdRscDfnData) vlmDfn.getResourceDefinition().getLayerData(
-                                dbCtx,
-                                DeviceLayerKind.DRBD,
-                                rscNameSuffix
-                            ),
-                            this,
-                            transMgrProvider
-                        );
-                        drbdVlmDfnCache.put(vlmDfn, drbdVlmDfnData);
-
-                        vlmDfn.setLayerData(dbCtx, drbdVlmDfnData);
-                    }
-                    // else: this volume definition is not a drbd volume (or we lost some data)
-                }
-            }
-        }
-
-        return drbdVlmDfnData;
     }
 
     @Override

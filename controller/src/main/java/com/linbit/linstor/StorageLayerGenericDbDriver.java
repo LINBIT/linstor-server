@@ -133,6 +133,11 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         cachedStorVlmInfoByRscLayerId = null;
     }
 
+    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws SQLException
+    {
+        sfDbDriver.loadLayerData(tmpRscDfnMapRef);
+    }
+
     public Pair<? extends RscLayerObject, Set<RscLayerObject>> load(
         Resource resourceRef,
         int rscIdRef,

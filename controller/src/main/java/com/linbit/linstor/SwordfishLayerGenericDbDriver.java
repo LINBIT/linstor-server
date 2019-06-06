@@ -1,8 +1,11 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -15,7 +18,6 @@ import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME;
@@ -71,7 +73,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
     private final Provider<TransactionMgr> transMgrProvider;
     private final VlmDfnOdataDriver vlmDfnOdataDriver;
 
-    private Map<Triple<String, String, Integer>, Pair<SfVlmDfnInfo, SfVlmDfnData>> sfVlmDfnInfoCache;
+    private Map<Triple<String, String, Integer>, SfVlmDfnData> sfVlmDfnInfoCache;
 
     @Inject
     public SwordfishLayerGenericDbDriver(
@@ -89,7 +91,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         vlmDfnOdataDriver = new VlmDfnOdataDriver();
     }
 
-    public void fetchForLoadAll() throws SQLException
+    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws SQLException
     {
         sfVlmDfnInfoCache = new HashMap<>();
 
@@ -99,25 +101,57 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             {
                 while (resultSet.next())
                 {
-                    String rscName = resultSet.getString(RESOURCE_NAME);
+                    String rscNameStr = resultSet.getString(RESOURCE_NAME);
                     String rscNameSuffix = resultSet.getString(RESOURCE_NAME_SUFFIX);
-                    int vlmNr = resultSet.getInt(VLM_NR);
+                    int vlmNrInt = resultSet.getInt(VLM_NR);
                     String sfVlmOdataId = resultSet.getString(SF_VLM_ODATA);
-                    sfVlmDfnInfoCache.put(
-                        new Triple<>(
-                            rscName,
-                            rscNameSuffix,
-                            vlmNr
-                        ),
-                        new Pair<>(
-                            new SfVlmDfnInfo(rscName, vlmNr, sfVlmOdataId),
-                            null
-                        )
+                    Triple<String, String, Integer> key = new Triple<>(
+                        rscNameStr,
+                        rscNameSuffix,
+                        vlmNrInt
                     );
+                    SfVlmDfnData sfVlmDfnData;
+
+                    ResourceName rscName;
+                    try
+                    {
+                        rscName = new ResourceName(rscNameStr);
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new LinStorSqlRuntimeException(
+                            "Failed to restore stored resourceName [" + rscNameStr + "]"
+                        );
+                    }
+                    ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rscName);
+                    if (rscDfn == null)
+                    {
+                        throw new LinStorSqlRuntimeException(
+                            "Loaded swordfish volume definition data for non existent resource definition '" +
+                                rscNameStr + "'"
+                        );
+                    }
+                    VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(dbCtx, new VolumeNumber(vlmNrInt));
+                    sfVlmDfnData = new SfVlmDfnData(
+                        vlmDfn,
+                        sfVlmOdataId,
+                        rscNameSuffix,
+                        this,
+                        transObjFactory,
+                        transMgrProvider
+                    );
+                    sfVlmDfnInfoCache.put(key, sfVlmDfnData);
                 }
             }
         }
-
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     public void clearLoadAllCache()
@@ -127,16 +161,15 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
     }
 
     public VlmProviderObject load(Volume vlmRef, StorageRscData rscDataRef, DeviceProviderKind kindRef)
-        throws AccessDeniedException
     {
-        Pair<SfVlmDfnInfo, SfVlmDfnData> sfVlmDfnInfo = sfVlmDfnInfoCache.get(
+        SfVlmDfnData sfVlmDfnData = sfVlmDfnInfoCache.get(
             new Triple<>(
                 rscDataRef.getResourceName().displayValue,
                 rscDataRef.getResourceNameSuffix(),
                 vlmRef.getVolumeDefinition().getVolumeNumber().value
             )
         );
-        if (sfVlmDfnInfo == null)
+        if (sfVlmDfnData == null)
         {
             throw new ImplementationError(
                 String.format(
@@ -147,21 +180,6 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             );
         }
 
-        SfVlmDfnData vlmDfnData = sfVlmDfnInfo.objB;
-        if (vlmDfnData == null)
-        {
-            vlmDfnData = new SfVlmDfnData(
-                vlmRef.getVolumeDefinition(),
-                sfVlmDfnInfo.objA.sfVlmOdataId,
-                rscDataRef.getResourceNameSuffix(),
-                this,
-                transObjFactory,
-                transMgrProvider
-            );
-            vlmRef.getVolumeDefinition().setLayerData(dbCtx, vlmDfnData);
-            sfVlmDfnInfo.objB = vlmDfnData;
-        }
-
         VlmProviderObject vlmData = null;
         switch (kindRef)
         {
@@ -169,7 +187,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
                 vlmData = new SfInitiatorData(
                     rscDataRef,
                     vlmRef,
-                    vlmDfnData,
+                    sfVlmDfnData,
                     transObjFactory,
                     transMgrProvider
                 );
@@ -178,7 +196,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
                 vlmData = new SfTargetData(
                     vlmRef,
                     rscDataRef,
-                    vlmDfnData,
+                    sfVlmDfnData,
                     transObjFactory,
                     transMgrProvider
                 );
@@ -278,23 +296,6 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         return "(SuffResName=" + vlmDfnData.getSuffixedResourceName() +
             ", VlmNr=" + vlmDfnData.getVolumeDefinition().getVolumeNumber().value +
             ")";
-    }
-
-    private static class SfVlmDfnInfo
-    {
-        @SuppressWarnings("unused")
-        final String suffixedRscName;
-        @SuppressWarnings("unused")
-        final int vlmNr;
-        final String sfVlmOdataId;
-
-        SfVlmDfnInfo(String suffixedRscNameRef, int vlmNrRef, String sfVlmOdataIdRef)
-        {
-            super();
-            suffixedRscName = suffixedRscNameRef;
-            vlmNr = vlmNrRef;
-            sfVlmOdataId = sfVlmOdataIdRef;
-        }
     }
 
     private class VlmDfnOdataDriver implements SingleColumnDatabaseDriver<SfVlmDfnData, String>

@@ -172,7 +172,7 @@ public class DbConstants
     public static final String ENCRYPTED_PASSWORD = "ENCRYPTED_PASSWORD";
 
     // LAYER_SWORDFISH_VOLUME_DEFINITIONS column names
-    public static final String SF_VLM_ODATA = "SF_VLM_ODATA";
+    public static final String SF_VLM_ODATA = "VLM_ODATA";
 
     // LAYER_STORAGE_VOLUMES column names
     public static final String PROVIDER_KIND = "PROVIDER_KIND";

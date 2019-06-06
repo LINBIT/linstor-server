@@ -432,8 +432,8 @@ public class GenericDbDriver implements DatabaseDriver
                 mapByName(loadedKeyValueStoreMap, KeyValueStore::getName);
             keyValueStoreMap.putAll(tmpKeyValueStoreMap);
 
-            // load layered resource objects
-            loadLayeredResourceObects(tmpRscMap);
+            // load layer objects
+            loadLayerObects(tmpRscDfnMap);
 
             nodesMap.putAll(tmpNodesMap);
             rscDfnMap.putAll(tmpRscDfnMap);
@@ -458,11 +458,19 @@ public class GenericDbDriver implements DatabaseDriver
             Collectors.toMap(nameMapper, Function.identity(), throwingMerger(), TreeMap::new));
     }
 
-    private void loadLayeredResourceObects(Map<Pair<NodeName, ResourceName>, Resource> tmpRscMapRef)
+    private void loadLayerObects(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef)
         throws SQLException, AccessDeniedException
     {
-        List<RscLayerInfoData> rscLayerInfoList = rscLayerObjDriver.loadAllResourceIds();
         storageLayerDriver.fetchForLoadAll();
+
+        // load RscDfnLayerObjects and VlmDfnLayerObjects
+        drbdLayerDriver.loadLayerData(tmpRscDfnMapRef);
+        storageLayerDriver.loadLayerData(tmpRscDfnMapRef);
+        // no *DfnLayerObjects for nvme
+        // no *DfnLayerObjects for luks
+
+        // load RscLayerObjects and VlmLayerObjects
+        List<RscLayerInfoData> rscLayerInfoList = rscLayerObjDriver.loadAllResourceIds();
 
         Set<Integer> parentIds = null;
         boolean loadNext = true;
@@ -478,7 +486,8 @@ public class GenericDbDriver implements DatabaseDriver
             for (RscLayerInfoData rli : nextRscInfoToLoad)
             {
                 Pair<? extends RscLayerObject, Set<RscLayerObject>> rscLayerObjectPair;
-                Resource rsc = tmpRscMapRef.get(new Pair<>(rli.nodeName, rli.resourceName));
+                ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rli.resourceName);
+                Resource rsc = rscDfn.getResource(dbCtx, rli.nodeName);
 
                 RscLayerObject parent = null;
                 Set<RscLayerObject> parentsChildren = null;
