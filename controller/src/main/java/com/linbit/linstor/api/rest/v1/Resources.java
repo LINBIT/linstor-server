@@ -164,13 +164,16 @@ public class Resources
         nodes.add(nodeName);
         rscNames.add(rscName);
 
-        Flux<ApiCallRcWith<ResourceList>> flux = ctrlVlmListApiCallHandler.listVlms(nodes, new ArrayList<>(), rscNames)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
+        RequestHelper.safeAsyncResponse(asyncResponse, () ->
+        {
+            Flux<ApiCallRcWith<ResourceList>> flux = ctrlVlmListApiCallHandler.listVlms(nodes, new ArrayList<>(), rscNames)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
 
-        requestHelper.doFlux(
-            asyncResponse,
-            listVolumesApiCallRcWithToResponse(flux, rscName, nodeName, vlmNr, limit, offset)
-        );
+            requestHelper.doFlux(
+                asyncResponse,
+                listVolumesApiCallRcWithToResponse(flux, rscName, nodeName, vlmNr, limit, offset)
+            );
+        });
     }
 
     private Mono<Response> listVolumesApiCallRcWithToResponse(

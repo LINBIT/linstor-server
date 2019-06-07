@@ -187,6 +187,20 @@ public class RequestHelper
             );
     }
 
+    static void safeAsyncResponse(AsyncResponse asyncResponse, Runnable restAction)
+    {
+        try
+        {
+            restAction.run();
+        }
+        catch (ApiRcException apiExc)
+        {
+            asyncResponse.resume(
+                ApiCallRcConverter.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)
+            );
+        }
+    }
+
     static Response notFoundResponse(final long retcode, final String message)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();

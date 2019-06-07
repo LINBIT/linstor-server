@@ -71,14 +71,17 @@ public class View
         List<String> storagePoolsFilter = storagePools != null ? storagePools : Collections.emptyList();
         List<String> resourcesFilter = resources != null ? resources : Collections.emptyList();
 
-        Flux<ApiCallRcWith<ResourceList>> flux = ctrlVlmListApiCallHandler.listVlms(
-            nodesFilter, storagePoolsFilter, resourcesFilter)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
+        RequestHelper.safeAsyncResponse(asyncResponse, () ->
+        {
+            Flux<ApiCallRcWith<ResourceList>> flux = ctrlVlmListApiCallHandler.listVlms(
+                nodesFilter, storagePoolsFilter, resourcesFilter)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
 
-        requestHelper.doFlux(
-            asyncResponse,
-            listVolumesApiCallRcWithToResponse(flux, limit, offset)
-        );
+            requestHelper.doFlux(
+                asyncResponse,
+                listVolumesApiCallRcWithToResponse(flux, limit, offset)
+            );
+        });
     }
 
     private Mono<Response> listVolumesApiCallRcWithToResponse(
@@ -143,11 +146,14 @@ public class View
         List<String> nodesFilter = nodes != null ? nodes : Collections.emptyList();
         List<String> storagePoolsFilter = storagePools != null ? storagePools : Collections.emptyList();
 
-        Flux<List<StorPool.StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-            .listStorPools(nodesFilter, storagePoolsFilter)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
+        RequestHelper.safeAsyncResponse(asyncResponse, () ->
+        {
+            Flux<List<StorPool.StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
+                .listStorPools(nodesFilter, storagePoolsFilter)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
-        requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, limit, offset));
+            requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, limit, offset));
+        });
     }
 
     private Mono<Response> storPoolListToResponse(

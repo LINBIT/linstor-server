@@ -101,11 +101,14 @@ public class StoragePools
             storPoolNames.add(storPoolName);
         }
 
-        Flux<List<StorPool.StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-            .listStorPools(nodeNames, storPoolNames)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
+        RequestHelper.safeAsyncResponse(asyncResponse, () ->
+        {
+            Flux<List<StorPool.StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
+                .listStorPools(nodeNames, storPoolNames)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
-        requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, nodeName, storPoolName, limit, offset));
+            requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, nodeName, storPoolName, limit, offset));
+        });
     }
 
     private Mono<Response> storPoolListToResponse(
