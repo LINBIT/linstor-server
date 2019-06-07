@@ -7,6 +7,7 @@ ENV GRADLE_VERSION 4.4.1
 ENV LINSTOR_TGZNAME linstor-server
 ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
 
+USER root
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
 RUN groupadd makepkg # !lbbuild
 RUN useradd -m -g makepkg makepkg # !lbbuild
