@@ -107,7 +107,7 @@ public class RscInternalCallHandler
         {
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            Node node = nodeRepository.get(apiCtx, nodeName);
+            Node node = nodeRepository.get(apiCtx, nodeName); // TODO use CtrlApiLoader.loadNode
 
             if (node != null)
             {
