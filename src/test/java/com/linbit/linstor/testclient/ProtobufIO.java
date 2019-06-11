@@ -23,7 +23,7 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.protobuf.Message;
+import com.google.protobuf.MessageLite;
 
 import static com.linbit.linstor.api.ApiConsts.MASK_ERROR;
 import static com.linbit.linstor.api.ApiConsts.MASK_INFO;
@@ -83,7 +83,7 @@ public class ProtobufIO
         thread.start();
     }
 
-    public long send(String apiCall, Message msg) throws IOException
+    public long send(String apiCall, MessageLite msg) throws IOException
     {
         return send(
             getNextApiCallId(),
@@ -92,7 +92,7 @@ public class ProtobufIO
         );
     }
 
-    public long send(long apiCallIdRef, String apiCallRef, Message... messages) throws IOException
+    public long send(long apiCallIdRef, String apiCallRef, MessageLite... messages) throws IOException
     {
         MsgHeader headerMsg = MsgHeader.newBuilder()
             .setMsgType(MsgHeader.MsgType.API_CALL)
@@ -104,7 +104,7 @@ public class ProtobufIO
         baos = new ByteArrayOutputStream();
         headerMsg.writeDelimitedTo(baos);
 
-        for (Message msg : messages)
+        for (MessageLite msg : messages)
         {
             msg.writeDelimitedTo(baos);
         }
