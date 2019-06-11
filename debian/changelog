@@ -1,3 +1,35 @@
+linstor-server (0.9.11-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Snapshots: fixed NPE with storage-only snapshots
+  * Storage: always report free spaces
+  * Whitelisted LvcreateType for resource-definitions
+  * LayerData: RscDfn now supports multiple instances of same kind
+  * LayerData: VlmDfn now supports mulitple instances of same kind
+  * LayerData: Reworked creation of layerData
+  * DB: Fixed rscDfn and vlmDfn layer data loading
+  * linstor-common: removed "update=rebase" from .gitmodules
+
+  [ Rene Peinthor ]
+  * logarchive: add API call on satellite and trigger on task run
+  * rest-api: add user-agent information to peer
+  * apiloading: Do not dynamically load event classes
+  * rest-api: report exceptions on errors in flux streams
+  * rest-gen.py: fix generated trailing spaces
+  * devicemanager: storage pool config is already checked by update free space
+  * tcpconnectorpeer: peer is not online if fullsync failed
+  * storagepools: Attach apicall reports as state to StorPoolData
+  * gradle-protobuf: update to 3.8 and use lite classes, runtime will follow
+  * rest-api: Add safeAsyncResponse to handle ApiRcExceptions
+  * internalhandler: add todos
+  * gradle/protobuf: switch to javalite runtime
+
+  [ Roland Kammerer ]
+  * docker: base images on UBI
+  * docker: fix lbbuild
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 11 Jun 2019 13:17:06 +0200
+
 linstor-server (0.9.10-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
