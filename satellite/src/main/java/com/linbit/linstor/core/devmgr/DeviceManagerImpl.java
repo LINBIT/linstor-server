@@ -16,7 +16,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -1030,40 +1029,46 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         // Since the local node no longer has the resource, it also does not need
                         // to know about the resource definition any longer, therefore
                         // delete the resource definition as well
+                        curRscDfn.delete(wrkCtx); // just to be sure
                         rscDfnMap.remove(curRscName);
-                        transMgrProvider.get().commit();
                     }
                 }
 
                 for (Resource remoteRsc : remoteResourcesToDeleteRef)
                 {
-                    // if the remote resource never gets deleted, it will cause a
-                    // divergent UUID exception when the "same" remote resource gets
-                    // recreated
-                    Node remoteNode = remoteRsc.getAssignedNode();
-                    remoteRsc.delete(wrkCtx);
 
-                    /*
-                     *  Bugfix: if the remoteRsc was the last resource of the remote node
-                     *  we will no longer receive updates about the remote node (why should we?)
-                     *  The problem is, that if the remote node gets completely deleted
-                     *  on the controller, and later recreated, and that "new" node deploys
-                     *  a resource we are also interested in, we will receive the "new" node's UUID.
-                     *  However, we will still find our old node-reference when looking up the
-                     *  "new" node's name and therefore we will find the old node's UUID and check it
-                     *  against the "new" node's UUID.
-                     *  This will cause a UUID mismatch upon resource-creation on the other node
-                     *  (which will trigger an update to us as we also need to know about the new resource
-                     *  and it's node)
-                     *
-                     *  Therefore, we have to remove the remoteNode completely if it has no
-                     *  resources left
-                     */
-                    if (!remoteNode.iterateResources(wrkCtx).hasNext())
+                    if (!remoteRsc.isDeleted())
                     {
-                        nodesMap.remove(remoteNode.getName());
-                        remoteNode.delete(wrkCtx);
+                        // if the remote resource never gets deleted, it will cause a
+                        // divergent UUID exception when the "same" remote resource gets
+                        // recreated
+                        Node remoteNode = remoteRsc.getAssignedNode();
+                        remoteRsc.delete(wrkCtx);
+
+                        /*
+                         *  Bugfix: if the remoteRsc was the last resource of the remote node
+                         *  we will no longer receive updates about the remote node (why should we?)
+                         *  The problem is, that if the remote node gets completely deleted
+                         *  on the controller, and later recreated, and that "new" node deploys
+                         *  a resource we are also interested in, we will receive the "new" node's UUID.
+                         *  However, we will still find our old node-reference when looking up the
+                         *  "new" node's name and therefore we will find the old node's UUID and check it
+                         *  against the "new" node's UUID.
+                         *  This will cause a UUID mismatch upon resource-creation on the other node
+                         *  (which will trigger an update to us as we also need to know about the new resource
+                         *  and it's node)
+                         *
+                         *  Therefore, we have to remove the remoteNode completely if it has no
+                         *  resources left
+                         */
+                        if (!remoteNode.iterateResources(wrkCtx).hasNext())
+                        {
+                            nodesMap.remove(remoteNode.getName());
+                            remoteNode.delete(wrkCtx);
+                        }
                     }
+                    // else the remoteRsc and if needed also the remoteNode were already deleted
+                    // when the resource-definition was cleaned up
                 }
 
                 // From the perspective of this satellite, once a volume is deleted the corresponding peer volumes are
@@ -1080,6 +1085,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         }
                     }
                 }
+                transMgrProvider.get().commit();
             }
             finally
             {
