@@ -154,19 +154,18 @@ project(':server') {
         commandLine 'make', '-C', '../linstor-common', 'java'
 
         inputs.files(fileTree("../linstor-common"))
-        outputs.dir(file("${projectDir}/generated-src"))
+        outputs.files(file("${projectDir}/generated-src/com/linbit/linstor/api/ApiConsts.java"),
+                "${projectDir}/generated-src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java"
+        )
         dependsOn generateProto
     }
 
     task cleanProto(type:Exec) {
         commandLine 'make', '-C', "${projectDir}/proto", 'clean-proto'
-        outputs.dir(file("${projectDir}/generated-src"))
     }
 
     task cleanCommon(type:Exec) {
         commandLine 'make', '-C', "../linstor-common", 'cleanjava'
-
-        outputs.dir(file("${projectDir}/generated-src"))
     }
 
     processResources.dependsOn versionInfo
