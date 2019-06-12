@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal;
+
+// Debug command reply
+message MsgDebugReply
+{
+    // Debug command standard output
+    repeated string debug_out   = 1;
+
+    // Debug command error output
+    repeated string debug_err   = 2;
+}

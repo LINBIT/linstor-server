@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+import "linstor/proto/common/LinStorMapEntry.proto";
+
+message IntController
+{
+    repeated common.LinStorMapEntry props = 1;
+}

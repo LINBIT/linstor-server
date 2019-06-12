@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.responses;
+option go_package = "responses";
+
+// API Version
+// Requested by: none - this message is send to any inbound connection after being accepted / opened.
+message MsgApiVersion
+{
+    required uint32 version = 1;
+    required uint32 min_version = 2;
+    optional uint64 features = 3;
+    optional string controller_info = 4;
+}

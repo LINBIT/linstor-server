@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+
+// Internal message used to set the master key
+message MsgIntSetMasterKey
+{
+    string master_key = 1;
+}

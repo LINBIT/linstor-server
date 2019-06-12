@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+option go_package = "common";
+
+// Nvme layer specific properties. See RscLayerData.proto for shared properties
+message NvmeRsc
+{
+    required uint64         flags = 1;
+    repeated NvmeVlm        nvme_vlms = 2;
+}
+
+message NvmeVlm
+{
+    required uint32         vlm_nr = 1;
+    optional string         device_path = 2;
+    optional string         backing_device = 3;
+    optional int64          allocated_size = 4;
+    optional int64          usable_size = 5;
+    optional string         disk_state = 6;
+}
+

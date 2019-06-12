@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+
+// Internal message indicating that a snapshot is no longer in-progress
+message MsgIntSnapshotEndedData
+{
+    string rsc_name          = 1;
+    string snapshot_name     = 2;
+    sint64 full_sync_id      = 3;
+    sint64 update_id         = 4;
+}

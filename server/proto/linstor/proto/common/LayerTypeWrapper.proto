@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+option go_package = "common";
+
+import "linstor/proto/common/LayerType.proto";
+
+// A wrapper for the LayerType enum. This message is only used to wrap a proto2 enum to make it usable from proto3 messages.
+message LayerTypeWrapper
+{
+    required common.LayerType type = 1;
+}

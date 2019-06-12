@@ -137,25 +137,34 @@ project(':server') {
      * For package builds this task is run in the 'make debrelease' stage, the generated sources are bundled in the package
      * tarball, and it is then skipped when the package is finally built.
      */
-    task generateJava(type:Exec) {
+    task generateProto(type:Exec) {
         doFirst {
             if (!protoc.exists()) {
                 throw new GradleException("'protoc' binary not found; run the task 'getProtoc' to download the binary")
             }
         }
 
-        workingDir '../linstor-common'
+        commandLine 'make', '-C', "${projectDir}/proto", "PROTOC=" + protoc, 'proto'
 
-        commandLine 'make', "PROTOC=" + protoc, 'java'
+        inputs.files(fileTree("${projectDir}/proto"))
+        outputs.dir(file("${projectDir}/generated-src"))
+    }
+
+    task generateJava(type:Exec) {
+        commandLine 'make', '-C', '../linstor-common', 'java'
 
         inputs.files(fileTree("../linstor-common"))
+        outputs.dir(file("${projectDir}/generated-src"))
+        dependsOn generateProto
+    }
+
+    task cleanProto(type:Exec) {
+        commandLine 'make', '-C', "${projectDir}/proto", 'clean-proto'
         outputs.dir(file("${projectDir}/generated-src"))
     }
 
     task cleanCommon(type:Exec) {
-        workingDir '../linstor-common'
-
-        commandLine 'make', 'cleanjava'
+        commandLine 'make', '-C', "../linstor-common", 'cleanjava'
 
         outputs.dir(file("${projectDir}/generated-src"))
     }
@@ -168,10 +177,7 @@ project(':server') {
 
     clean {
         delete "${projectDir}/generated-resources"
-    }
-
-    clean {
-        dependsOn cleanCommon
+        dependsOn cleanCommon, cleanProto
     }
 }
 

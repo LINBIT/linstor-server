@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal;
+
+// Remote debug command
+message MsgDebugCommand
+{
+    // Command line for the debug console
+    string  cmd_line    = 1;
+}

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+
+// Internal message containing the crypt key
+message MsgIntCryptKey
+{
+    bytes  crypt_key = 1;
+    sint64 full_sync_id = 2;
+    sint64 update_id = 3;
+}

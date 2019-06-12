@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+import "linstor/proto/common/StorPoolFreeSpace.proto";
+
+// Internal message indicating the success of full sync
+// If the full sync was successful, this message will also contain the free space for each storage pool of the satellite
+message MsgIntFullSyncResponse
+{
+    bool success = 1;
+
+    // A List of FreeSpace messages. Empty if full sync failed
+    repeated common.StorPoolFreeSpace free_space = 2;
+}

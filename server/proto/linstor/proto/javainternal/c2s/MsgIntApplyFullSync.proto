@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+import "linstor/proto/javainternal/c2s/IntController.proto";
+import "linstor/proto/javainternal/c2s/IntNode.proto";
+import "linstor/proto/javainternal/c2s/IntStorPool.proto";
+import "linstor/proto/javainternal/c2s/IntRsc.proto";
+import "linstor/proto/javainternal/c2s/IntSnapshot.proto";
+
+// Internal message containing a full synchronization of the resource specific data
+message MsgIntApplyFullSync
+{
+    // Node data (including satellites local node, this time containing props, etc)
+    repeated IntNode         nodes       = 1;
+
+    // Satellite specific storage pools (including stor pool definitions) 
+    repeated IntStorPool     stor_pools  = 2;
+
+    // Satellite specific resources (including resource definition, volume definitions and volumes)
+    repeated IntRsc          rscs        = 3;
+
+    sint64                   full_sync_timestamp = 4;
+    string                   master_key  = 5;
+
+    // Satellite conf properties (drbd options)
+    IntController            ctrl        = 6;
+
+    // Satellite specific in-progress snapshots (including resource definition, snapshot volume definitions etc)
+    repeated IntSnapshot     snapshots   = 7;
+}

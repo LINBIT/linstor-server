@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.requests;
+option go_package = "requests";
+
+// SignIn - Authenticate identity
+// ApiConsts.API_SIGN_IN
+message MsgSignIn
+{
+    // Name of the identity to sign in
+    required string id_name = 1;
+
+    // Password associated with the identity
+    required string password = 2;
+}
