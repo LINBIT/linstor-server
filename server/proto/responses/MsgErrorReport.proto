@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.responses;
+
+// Contains an error report
+// Requested by: MsgReqErrorReport, ApiConsts.API_REQ_ERROR_REPORTS
+message MsgErrorReport
+{
+    required string node_names = 1;
+    // Datetime as unixtimestamp UTC
+    required uint64 error_time = 2;
+    // Log filename
+    required string filename = 3;
+    // Text
+    optional string text = 4;
+}

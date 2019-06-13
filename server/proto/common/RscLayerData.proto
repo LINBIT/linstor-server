@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+import "common/DrbdRsc.proto";
+import "common/LuksRsc.proto";
+import "common/StorageRsc.proto";
+import "common/NvmeRsc.proto";
+import "common/LayerType.proto";
+
+// Shared properties of layered resource data. See DrbdRsc.proto, LuksRsc.proto and StorageRsc.proto for concrete types
+message RscLayerData
+{
+    required int32              id = 1;
+    repeated RscLayerData       children = 2;
+    required string             rsc_name_suffix = 3;
+    required LayerType          layer_type = 4;
+    optional DrbdRsc            drbd = 6;
+    optional LuksRsc            luks = 7;
+    optional StorageRsc         storage = 8;
+    optional NvmeRsc            nvme = 9;
+}

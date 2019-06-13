@@ -1,0 +1,43 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto;
+
+// Message header
+message MsgHeader
+{
+    enum MsgType
+    {
+        // Initiate an API that does not expect an answer.
+        // * api_call_id is not required.
+        // * msg_content is required and determines the API to be called.
+        ONEWAY = 0;
+
+        // Initiate an API that expects an answer.
+        // * api_call_id is required.
+        // * msg_content is required and determines the API to be called.
+        API_CALL = 1;
+
+        // Answer an API_CALL. Multiple answers may be sent for a single API_CALL.
+        // * api_call_id must match the api_call_id from the API_CALL.
+        // * msg_content is required.
+        ANSWER = 2;
+
+        // Indicate that the answers for an API_CALL are complete.
+        // * api_call_id must match the api_call_id from the API_CALL.
+        // * msg_content is not required.
+        COMPLETE = 3;
+    }
+
+    // The type of this message.
+    optional MsgType msg_type = 1;
+
+    // Identifying number for this message.
+    //
+    // Answers to this message will be sent back with the same api_call_id.
+    optional int64 api_call_id = 2;
+
+    // Indicate the message content that follows this header.
+    //
+    // For ONEWAY and API_CALL messages, this is the name of the API call to execute.
+    optional string msg_content = 3;
+}

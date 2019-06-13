@@ -1,6 +1,6 @@
 # protobuf
-COMMONSRC=$(wildcard linstor/proto/*.proto)  $(wildcard linstor/proto/common/*.proto) $(wildcard linstor/proto/eventdata/*.proto)  $(wildcard linstor/proto/requests/*.proto) $(wildcard linstor/proto/responses/*.proto)
-JAVASRC=$(wildcard linstor/proto/javainternal/*.proto) $(wildcard linstor/proto/javainternal/c2s/*.proto) $(wildcard linstor/proto/javainternal/s2c/*.proto)
+COMMONSRC=$(wildcard ./*.proto)  $(wildcard ./common/*.proto) $(wildcard ./eventdata/*.proto)  $(wildcard ./requests/*.proto) $(wildcard ./responses/*.proto)
+JAVASRC=$(wildcard ./javainternal/*.proto) $(wildcard ./javainternal/c2s/*.proto) $(wildcard ./javainternal/s2c/*.proto)
 COMMONNOEND=$(COMMONSRC:.proto=)
 JAVANOEND=$(COMMONNOEND) $(JAVASRC:.proto=)
 JAVABASEOUT=../generated-src

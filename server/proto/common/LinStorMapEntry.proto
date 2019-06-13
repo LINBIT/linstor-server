@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+// Protoc >= 3.0.0 is able to compile map<string, string> types, but currently not all systems have support for >= 3.0.0 we want to build for.
+message LinStorMapEntry {
+    required string key = 1;
+    required string value = 2;
+}

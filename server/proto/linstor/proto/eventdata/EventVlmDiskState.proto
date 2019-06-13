@@ -1,9 +1,0 @@
-syntax = "proto2";
-
-package com.linbit.linstor.proto.eventdata;
-option go_package = "eventdata";
-
-message EventVlmDiskState
-{
-    optional string disk_state = 1;
-}

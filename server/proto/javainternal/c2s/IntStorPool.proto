@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+import "common/StorPool.proto";
+import "common/StorPoolDfn.proto";
+
+message IntStorPool
+{
+    common.StorPool        stor_pool = 1;
+    common.StorPoolDfn     stor_pool_dfn = 2;
+}

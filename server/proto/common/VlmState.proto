@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+message VlmState
+{
+    required sint32 vlm_nr = 1;
+    optional string disk_state = 10;
+}

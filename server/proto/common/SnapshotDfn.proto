@@ -1,0 +1,28 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+// Snapshot
+message SnapshotDfn
+{
+    optional string uuid = 1;
+    required string snapshot_name = 2;
+    optional string rsc_dfn_uuid = 3;
+    required string rsc_name = 4;
+    repeated string snapshot_dfn_flags = 5;
+    repeated Snapshot snapshots = 6;
+    repeated SnapshotVlmDfn snapshot_vlm_dfns = 7;
+}
+
+message Snapshot
+{
+    required string node_name = 1;
+}
+
+message SnapshotVlmDfn
+{
+    optional sint32 vlm_nr = 1;
+
+    // Volume size (in kiB)
+    required int64 vlm_size = 2;
+}

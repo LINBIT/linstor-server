@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+import "common/StorPoolFreeSpace.proto";
+
+// Internal message answering a free space request
+message MsgIntFreeSpace
+{
+    // A List of FreeSpace messages
+    repeated common.StorPoolFreeSpace free_spaces = 1;
+}

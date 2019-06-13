@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+// Filter object for list messages
+message Filter
+{
+    repeated string node_names = 1;
+    repeated string stor_pool_names = 2;
+    repeated string resource_names = 3;
+}

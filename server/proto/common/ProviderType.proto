@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+enum ProviderType
+{
+    UNKNOWN_PROVIDER = 0;
+
+    DISKLESS = 1;
+
+    LVM = 2;
+    LVM_THIN = 3;
+    ZFS = 4;
+    ZFS_THIN = 5;
+    SWORDFISH_TARGET = 6;
+    SWORDFISH_INITIATOR = 7;
+}

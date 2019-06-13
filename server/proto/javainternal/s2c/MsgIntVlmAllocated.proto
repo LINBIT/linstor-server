@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+import "common/ApiCallResponse.proto";
+
+// Internal message answering a volume allocated capacity request
+message MsgIntVlmAllocated
+{
+    repeated VlmAllocated allocated_capacities = 1;
+}
+
+message VlmAllocated
+{
+    string rsc_name = 1;
+    sint32 vlm_nr = 2;
+
+    // Allocated capacity for this volume (in KiB)
+    uint64 allocated = 3;
+
+    repeated common.ApiCallResponse errors = 4;
+}

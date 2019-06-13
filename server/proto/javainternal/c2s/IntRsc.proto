@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+import "common/Node.proto";
+import "common/Rsc.proto";
+import "common/RscDfn.proto";
+import "common/RscConn.proto";
+
+// LinStor - Internal message containing a resource
+message IntRsc
+{
+    common.Rsc              local_rsc = 1;
+    common.RscDfn           rsc_dfn = 2;
+    // List of peer resources (including node-specific resource configuration)
+    repeated IntOtherRsc    other_resources = 3;
+    repeated common.RscConn rsc_connections = 4;
+}
+
+message IntOtherRsc
+{
+    common.Node    node = 1;
+    common.Rsc     rsc = 2;
+}
