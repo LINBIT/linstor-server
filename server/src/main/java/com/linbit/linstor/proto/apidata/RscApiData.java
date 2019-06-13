@@ -3,9 +3,9 @@ package com.linbit.linstor.proto.apidata;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.proto.common.RscOuterClass;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -59,7 +59,7 @@ public class RscApiData implements Resource.RscApi
     @Override
     public Map<String, String> getProps()
     {
-        return ProtoMapUtils.asMap(rsc.getPropsList());
+        return rsc.getPropsMap();
     }
 
     @Override

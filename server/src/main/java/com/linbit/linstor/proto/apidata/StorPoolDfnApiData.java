@@ -1,10 +1,8 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -41,11 +39,6 @@ public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi
     @Override
     public Map<String, String> getProps()
     {
-        Map<String, String> propsMap = new HashMap<>();
-        for (LinStorMapEntryOuterClass.LinStorMapEntry entry : storPoolDfn.getPropsList())
-        {
-            propsMap.put(entry.getKey(), entry.getValue());
-        }
-        return propsMap;
+        return storPoolDfn.getPropsMap();
     }
 }

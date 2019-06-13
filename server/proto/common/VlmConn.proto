@@ -2,8 +2,6 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
-import "common/LinStorMapEntry.proto";
-
 // Volume connection
 message VlmConn
 {
@@ -14,5 +12,5 @@ message VlmConn
     required sint32 volume_nr = 5;
     optional string vlm_1_uuid = 6;
     optional string vlm_2_uuid = 7;
-    repeated common.LinStorMapEntry volume_conn_props = 8;
+    map<string, string> volume_conn_props = 8;
 }

@@ -2,15 +2,13 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
-import "common/LinStorMapEntry.proto";
-
 message ApiCallResponse
 {
     // return code (see consts.json)
     required uint64 ret_code = 1;
 
     // object references
-    repeated LinStorMapEntry obj_refs = 2;
+    map<string, string> obj_refs = 2;
 
     required string message = 3;
     optional string cause = 4;

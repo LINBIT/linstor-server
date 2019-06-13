@@ -6,7 +6,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;
-import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -15,7 +14,6 @@ import com.linbit.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
@@ -46,7 +44,7 @@ public class ProtoDeserializationUtils
             entryBuilder.setDetails(apiCallResponse.getDetails());
         }
 
-        entryBuilder.putAllObjRefs(readLinStorMap(apiCallResponse.getObjRefsList()));
+        entryBuilder.putAllObjRefs(apiCallResponse.getObjRefsMap());
 
         entryBuilder.addAllErrorIds(apiCallResponse.getErrorReportIdsList());
 
@@ -60,15 +58,6 @@ public class ProtoDeserializationUtils
         return new ApiCallRcImpl(apiCallRcs.stream()
             .map(apiCallResponse -> parseApiCallRc(apiCallResponse, ""))
             .collect(Collectors.toList()));
-    }
-
-    private static Map<String, String> readLinStorMap(List<LinStorMapEntryOuterClass.LinStorMapEntry> linStorMap)
-    {
-        return linStorMap.stream()
-            .collect(Collectors.toMap(
-                LinStorMapEntryOuterClass.LinStorMapEntry::getKey,
-                LinStorMapEntryOuterClass.LinStorMapEntry::getValue
-            ));
     }
 
     public static byte[] extractByteArray(ByteString protoBytes)

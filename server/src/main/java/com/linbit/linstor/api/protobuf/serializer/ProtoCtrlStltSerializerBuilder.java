@@ -1,19 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import com.google.protobuf.ByteString;
-
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnection;
@@ -27,7 +13,6 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -35,14 +20,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
-import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
-import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
-import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
-import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
+import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf.Builder;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
@@ -61,10 +40,30 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyNodeOuterClass.MsgIn
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgIntApplyRsc;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.google.protobuf.ByteString;
 
 import static java.util.stream.Collectors.toList;
 
@@ -647,8 +646,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllNodeConns(
                     getNodeConns(node, relatedNodes)
                 )
-                .addAllProps(
-                    ProtoMapUtils.fromMap(node.getProps(serializerCtx).map())
+                .putAllProps(
+                    node.getProps(serializerCtx).map()
                 )
                 .build();
         }
@@ -702,11 +701,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                             .setOtherNodeType(otherNode.getNodeType(serializerCtx).name())
                             .setOtherNodeFlags(otherNode.getFlags().getFlagsBits(serializerCtx))
                             .setNodeConnUuid(nodeConnection.getUuid().toString())
-                            .addAllNodeConnProps(
-                                ProtoMapUtils.fromMap(
-                                    nodeConnection.getProps(serializerCtx).map()
-                                )
-                            )
+                            .putAllNodeConnProps(nodeConnection.getProps(serializerCtx).map())
                             .build()
                     );
                 }
@@ -738,7 +733,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         private IntController buildControllerDataMsg()
         {
             return IntController.newBuilder()
-                .addAllProps(ProtoMapUtils.fromMap(ctrlConfProps.map()))
+                .putAllProps(ctrlConfProps.map())
                 .build();
         }
     }
@@ -838,13 +833,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setRscName(rscDfn.getName().displayValue)
                 .setRscDfnUuid(rscDfn.getUuid().toString())
                 .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
-                .addAllRscDfnProps(ProtoMapUtils.fromMap(rscDfn.getProps(serializerCtx).map()))
+                .putAllRscDfnProps(rscDfn.getProps(serializerCtx).map())
                 .setSnapshotUuid(snapshot.getUuid().toString())
                 .setSnapshotName(snapshotDfn.getName().displayValue)
                 .setSnapshotDfnUuid(snapshotDfn.getUuid().toString())
                 .addAllSnapshotVlmDfns(snapshotVlmDfns)
                 .setSnapshotDfnFlags(snapshotDfn.getFlags().getFlagsBits(serializerCtx))
-                .addAllSnapshotDfnProps(ProtoMapUtils.fromMap(snapshotDfn.getProps(serializerCtx).map()))
+                .putAllSnapshotDfnProps(snapshotDfn.getProps(serializerCtx).map())
                 .addAllSnapshotVlms(snapshotVlms)
                 .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
                 .setSuspendResource(snapshot.getSuspendResource(serializerCtx))

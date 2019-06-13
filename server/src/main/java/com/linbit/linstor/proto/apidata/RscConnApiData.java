@@ -1,11 +1,10 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.ResourceConnection;
+import com.linbit.linstor.proto.common.RscConnOuterClass;
+
 import java.util.Map;
 import java.util.UUID;
-
-import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.common.RscConnOuterClass;
 
 public class RscConnApiData implements ResourceConnection.RscConnApi
 {
@@ -43,7 +42,7 @@ public class RscConnApiData implements ResourceConnection.RscConnApi
     @Override
     public Map<String, String> getProps()
     {
-        return ProtoMapUtils.asMap(rscConnProto.getRscConnPropsList());
+        return rscConnProto.getRscConnPropsMap();
     }
 
     @Override
@@ -67,7 +66,7 @@ public class RscConnApiData implements ResourceConnection.RscConnApi
         rscConnBld.setNodeName1(apiResourceConn.getSourceNodeName());
         rscConnBld.setNodeName2(apiResourceConn.getTargetNodeName());
         rscConnBld.setRscName(apiResourceConn.getResourceName());
-        rscConnBld.addAllRscConnProps(ProtoMapUtils.fromMap(apiResourceConn.getProps()));
+        rscConnBld.putAllRscConnProps(apiResourceConn.getProps());
         rscConnBld.setRscConnUuid(apiResourceConn.getUuid().toString());
         rscConnBld.addAllRscConnFlags(ResourceConnection.RscConnFlags.toStringList(apiResourceConn.getFlags()));
         if (apiResourceConn.getPort() != null)

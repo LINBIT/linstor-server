@@ -1,18 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import com.google.protobuf.ByteString;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.FreeSpaceTracker;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -40,20 +27,25 @@ import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
-import com.linbit.linstor.api.pojo.LuksRscPojo;
-import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
-import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
-import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.MsgHeaderOuterClass;
+import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
 import com.linbit.linstor.proto.common.FilterOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;
@@ -67,6 +59,7 @@ import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
+import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass;
@@ -74,6 +67,7 @@ import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
+import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.DisklessVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
@@ -84,24 +78,16 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishTarget;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsVlm;
+import com.linbit.linstor.proto.common.VlmDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
-import com.linbit.linstor.proto.common.StorPoolOuterClass;
-import com.linbit.linstor.proto.common.VlmDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmOuterClass;
-import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
-import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
-import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
-import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
-import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.common.VlmOuterClass.VlmLayerData;
-import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
-import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
@@ -115,6 +101,19 @@ import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.google.protobuf.ByteString;
 
 public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSerializerBuilder
 {
@@ -530,7 +529,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setUuid(node.getUuid().toString())
             .setName(node.getName().displayValue)
             .setType(node.getNodeType(accCtx).name())
-            .addAllProps(ProtoMapUtils.fromMap(nodeProps))
+            .putAllProps(nodeProps)
             .addAllNetInterfaces(
                 serializeNetInterfaces(
                     accCtx,
@@ -605,7 +604,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setRscName(rscDfnapi.getResourceName())
             .setRscDfnUuid(rscDfnapi.getUuid().toString())
             .addAllVlmDfns(serializeVolumeDefinition(rscDfnapi.getVlmDfnList()))
-            .addAllRscDfnProps(ProtoMapUtils.fromMap(rscDfnapi.getProps()))
+            .putAllRscDfnProps(rscDfnapi.getProps())
             .addAllLayerData(LayerObjectSerializer.serializeRscDfnLayerData(rscDfnapi));
         if (rscDfnapi.getExternalName() != null)
         {
@@ -657,7 +656,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setVlmDfnUuid(vlmDfnApi.getUuid().toString())
             .setVlmSize(vlmDfnApi.getSize())
             .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmDfnApi.getFlags()))
-            .addAllVlmProps(ProtoMapUtils.fromMap(vlmDfnApi.getProps()))
+            .putAllVlmProps(vlmDfnApi.getProps())
             .addAllLayerData(LayerObjectSerializer.seriailzeVlmDfnLayerData(vlmDfnApi.getVlmDfnLayerData()));
         if (vlmDfnApi.getVolumeNr() != null)
         {
@@ -678,7 +677,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeUuid(rsc.getAssignedNode().getUuid().toString())
             .setNodeName(rsc.getAssignedNode().getName().displayValue)
             .setRscDfnUuid(rsc.getDefinition().getUuid().toString())
-            .addAllProps(ProtoMapUtils.fromMap(rsc.getProps(accCtx).map()))
+            .putAllProps(rsc.getProps(accCtx).map())
             .addAllRscFlags(Resource.RscFlags.toStringList(rsc.getStateFlags().getFlagsBits(accCtx)))
             .addAllVlms(serializeVolumeList(accCtx, rsc.streamVolumes().collect(Collectors.toList())))
             .setLayerObject(LayerObjectSerializer.serializeLayerObject(rsc.getLayerData(accCtx), accCtx))
@@ -695,7 +694,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeUuid(rscApi.getNodeUuid().toString())
             .setNodeName(rscApi.getNodeName())
             .setRscDfnUuid(rscApi.getRscDfnUuid().toString())
-            .addAllProps(ProtoMapUtils.fromMap(rscApi.getProps()))
+            .putAllProps(rscApi.getProps())
             .addAllRscFlags(
                 FlagsHelper.toStringList(
                     Resource.RscFlags.class,
@@ -735,7 +734,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setRscName(rscConn.getSourceResource(accCtx).getDefinition().getName().displayValue)
             .setRsc1Uuid(rscConn.getSourceResource(accCtx).getUuid().toString())
             .setRsc2Uuid(rscConn.getTargetResource(accCtx).getUuid().toString())
-            .addAllRscConnProps(ProtoMapUtils.fromMap(rscConn.getProps(accCtx).map()))
+            .putAllRscConnProps(rscConn.getProps(accCtx).map())
             .addAllRscConnFlags(
                 FlagsHelper.toStringList(
                     ResourceConnection.RscConnFlags.class,
@@ -765,13 +764,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setStorPoolDfnUuid(storPool.getDefinition(accCtx).getUuid().toString())
             .setStorPoolName(storPool.getName().displayValue)
             .setProviderKind(asProviderType(storPool.getDeviceProviderKind()))
-            .addAllProps(ProtoMapUtils.fromMap(storPool.getProps(accCtx).map()))
+            .putAllProps(storPool.getProps(accCtx).map())
             .addAllVlms(serializeVolumeList(accCtx, storPool.getVolumes(accCtx)))
-            .addAllStaticTraits(
-                ProtoMapUtils.fromMap(
-                    storPool.getDeviceProviderKind().getStorageDriverKind().getStaticTraits()
-                )
-            );
+            .putAllStaticTraits(storPool.getDeviceProviderKind().getStorageDriverKind().getStaticTraits());
         FreeSpaceTracker freeSpaceTracker = storPool.getFreeSpaceTracker();
         if (freeSpaceTracker.getTotalCapacity(accCtx).isPresent())
         {
@@ -839,9 +834,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeUuid(apiStorPool.getNodeUuid().toString())
             .setStorPoolDfnUuid(apiStorPool.getStorPoolDfnUuid().toString())
             .setProviderKind(asProviderType(apiStorPool.getDeviceProviderKind()))
-            .addAllProps(ProtoMapUtils.fromMap(apiStorPool.getStorPoolProps()))
+            .putAllProps(apiStorPool.getStorPoolProps())
             .addAllVlms(serializeVolumeList(apiStorPool.getVlmList()))
-            .addAllStaticTraits(ProtoMapUtils.fromMap(apiStorPool.getStorPoolStaticTraits()))
+            .putAllStaticTraits(apiStorPool.getStorPoolStaticTraits())
             .setFreeSpaceMgrName(apiStorPool.getFreeSpaceManagerName());
         if (apiStorPool.getFreeCapacity().isPresent())
         {
@@ -868,7 +863,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return StorPoolDfnOuterClass.StorPoolDfn.newBuilder()
             .setStorPoolName(storPoolDfn.getName().displayValue)
             .setUuid(storPoolDfn.getUuid().toString())
-            .addAllProps(ProtoMapUtils.fromMap(storPoolDfn.getProps(accCtx).map()))
+            .putAllProps(storPoolDfn.getProps(accCtx).map())
             .build();
     }
 
@@ -879,7 +874,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return StorPoolDfnOuterClass.StorPoolDfn.newBuilder()
             .setStorPoolName(storPoolDfnApi.getName())
             .setUuid(storPoolDfnApi.getUuid().toString())
-            .addAllProps(ProtoMapUtils.fromMap(storPoolDfnApi.getProps()))
+            .putAllProps(storPoolDfnApi.getProps())
             .build();
     }
 
@@ -916,11 +911,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setStorPoolUuid(vlmApi.getStorPoolUuid().toString())
                 .setStorPoolName(vlmApi.getStorPoolName())
                 .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()))
-                .addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()))
+                .putAllVlmProps(vlmApi.getVlmProps())
                 .setProviderKind(asProviderType(vlmApi.getStorPoolDeviceProviderKind()))
                 .setStorPoolDfnUuid(vlmApi.getStorPoolDfnUuid().toString())
-                .addAllStorPoolDfnProps(ProtoMapUtils.fromMap(vlmApi.getStorPoolDfnProps()))
-                .addAllStorPoolProps(ProtoMapUtils.fromMap(vlmApi.getStorPoolProps()))
+                .putAllStorPoolDfnProps(vlmApi.getStorPoolDfnProps())
+                .putAllStorPoolProps(vlmApi.getStorPoolProps())
                 .addAllLayerData(LayerObjectSerializer.serializeVlm(vlmApi.getVlmLayerData()));
 
             if (vlmApi.getDevicePath() != null)
@@ -962,7 +957,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 msgApiCallResponseBuilder.setMessage(apiCallEntry.getMessage());
             }
             msgApiCallResponseBuilder.addAllErrorReportIds(apiCallEntry.getErrorIds());
-            msgApiCallResponseBuilder.addAllObjRefs(ProtoMapUtils.fromMap(apiCallEntry.getObjRefs()));
+            msgApiCallResponseBuilder.putAllObjRefs(apiCallEntry.getObjRefs());
 
             ApiCallResponseOuterClass.ApiCallResponse protoMsg = msgApiCallResponseBuilder.build();
 

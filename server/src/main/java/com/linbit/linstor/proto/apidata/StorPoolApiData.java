@@ -1,20 +1,17 @@
 package com.linbit.linstor.proto.apidata;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  *
@@ -116,12 +113,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     @Override
     public Map<String, String> getStorPoolProps()
     {
-        Map<String, String> ret = new HashMap<>();
-        for (LinStorMapEntryOuterClass.LinStorMapEntry entry : storPool.getPropsList())
-        {
-            ret.put(entry.getKey(), entry.getValue());
-        }
-        return ret;
+        return storPool.getPropsMap();
     }
 
     @Override
@@ -133,7 +125,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     @Override
     public Map<String, String> getStorPoolStaticTraits()
     {
-        return ProtoMapUtils.asMap(storPool.getStaticTraitsList());
+        return storPool.getStaticTraitsMap();
     }
 
     @Override

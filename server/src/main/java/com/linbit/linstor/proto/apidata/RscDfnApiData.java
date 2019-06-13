@@ -4,13 +4,11 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
-import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -62,12 +60,7 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
     @Override
     public Map<String, String> getProps()
     {
-        Map<String, String> ret = new HashMap<>();
-        for (LinStorMapEntryOuterClass.LinStorMapEntry entry : rscDfn.getRscDfnPropsList())
-        {
-            ret.put(entry.getKey(), entry.getValue());
-        }
-        return ret;
+        return rscDfn.getRscDfnPropsMap();
     }
 
     @Override

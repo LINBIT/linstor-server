@@ -1,9 +1,5 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
@@ -13,7 +9,6 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializerBuilder;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -22,7 +17,6 @@ import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
@@ -33,18 +27,18 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClas
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
-import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBuilder.serializeApiCallRc;
-
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_FULL_SYNC_DATA,
@@ -99,7 +93,7 @@ public class FullSync implements ApiCall
         );
 
         boolean success = apiCallHandler.applyFullSync(
-            ProtoMapUtils.asMap(msgIntControllerData.getPropsList()),
+            msgIntControllerData.getPropsMap(),
             nodes,
             storPools,
             resources,

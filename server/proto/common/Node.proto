@@ -2,7 +2,6 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
-import "common/LinStorMapEntry.proto";
 import "common/NetInterface.proto";
 
 message Node
@@ -23,7 +22,7 @@ message Node
     optional string uuid = 1;
     required string name = 2;
     required string type = 3;
-    repeated common.LinStorMapEntry props = 4;
+    map<string, string> props = 4;
     repeated string flags = 5;
     repeated NetInterface net_interfaces = 6;
     optional ConnectionStatus connection_status = 7;

@@ -4,7 +4,6 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
@@ -66,15 +65,15 @@ public class ApplyStorPool implements ApiCall
         StorPoolOuterClass.StorPool protoStorPool = intStorPool.getStorPool();
         StorPoolDfnOuterClass.StorPoolDfn protoStorPoolDfn = intStorPool.getStorPoolDfn();
 
-        StorPoolPojo storPoolRaw = new StorPoolPojo(
+        return new StorPoolPojo(
             UUID.fromString(protoStorPool.getStorPoolUuid()),
             UUID.fromString(protoStorPool.getNodeUuid()),
             nodeName,
             protoStorPool.getStorPoolName(),
             UUID.fromString(protoStorPool.getStorPoolDfnUuid()),
             ProtoDeserializationUtils.parseDeviceProviderKind(protoStorPool.getProviderKind()),
-            ProtoMapUtils.asMap(protoStorPool.getPropsList()),
-            ProtoMapUtils.asMap(protoStorPoolDfn.getPropsList()),
+            protoStorPool.getPropsMap(),
+            protoStorPoolDfn.getPropsMap(),
             null, // List<Vlmapi> vlmRefs
             Collections.<String, String>emptyMap(),
             fullSyncId,
@@ -84,7 +83,6 @@ public class ApplyStorPool implements ApiCall
             Optional.empty(), // total space
             null
         );
-        return storPoolRaw;
     }
 
 }

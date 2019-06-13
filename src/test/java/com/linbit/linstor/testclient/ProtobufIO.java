@@ -1,11 +1,13 @@
 package com.linbit.linstor.testclient;
 
-import com.linbit.linstor.api.ApiRcUtils;
-
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
-import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
+
+import static com.linbit.linstor.api.ApiConsts.MASK_ERROR;
+import static com.linbit.linstor.api.ApiConsts.MASK_INFO;
+import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -19,15 +21,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.protobuf.MessageLite;
-
-import static com.linbit.linstor.api.ApiConsts.MASK_ERROR;
-import static com.linbit.linstor.api.ApiConsts.MASK_INFO;
-import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 
 public class ProtobufIO
 {
@@ -336,32 +333,6 @@ public class ProtobufIO
         }
     }
 
-
-    protected Iterable<LinStorMapEntry> asLinStorMapEntryList(Map<String, String> map)
-    {
-        List<LinStorMapEntry> list = new ArrayList<>(map.size());
-        for (Map.Entry<String, String> entry : map.entrySet())
-        {
-            list.add(
-                LinStorMapEntry.newBuilder()
-                    .setKey(entry.getKey())
-                    .setValue(entry.getValue())
-                    .build()
-            );
-        }
-        return list;
-    }
-
-    protected Map<String, String> asMap(List<LinStorMapEntry> list)
-    {
-        Map<String, String> map = new TreeMap<>();
-        for (LinStorMapEntry entry : list)
-        {
-            map.put(entry.getKey(), entry.getValue());
-        }
-        return map;
-    }
-
     public void shutdown() throws IOException
     {
         shutdown = true;
@@ -439,7 +410,7 @@ public class ProtobufIO
                             String cause = response.getCause();
                             String correction = response.getCorrection();
                             String details = response.getDetails();
-                            Map<String, String> objRefsMap = asMap(response.getObjRefsList());
+                            Map<String, String> objRefsMap = response.getObjRefsMap();
 
                             callback(protoHeader.getApiCallId(), retCode, message, cause, correction,
                                 details, objRefsMap);

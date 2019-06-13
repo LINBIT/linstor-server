@@ -2,7 +2,6 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
-import "common/LinStorMapEntry.proto";
 import "common/DrbdRsc.proto";
 import "common/LuksRsc.proto";
 import "common/StorageRsc.proto";
@@ -22,7 +21,7 @@ message Vlm
     optional string stor_pool_name = 5;
 
     repeated string vlm_flags = 6;
-    repeated common.LinStorMapEntry vlm_props = 7;
+    map<string, string> vlm_props = 7;
 
     // Storage pool's driver simple name
     // in case we have to create a new storage pool
@@ -32,8 +31,8 @@ message Vlm
     // in case we have to create a new storage pool definition
     optional string stor_pool_dfn_uuid = 9;
 
-    repeated common.LinStorMapEntry stor_pool_dfn_props = 10;
-    repeated common.LinStorMapEntry stor_pool_props = 11;
+    map<string, string> stor_pool_dfn_props = 10;
+    map<string, string> stor_pool_props = 11;
     optional string device_path = 12;
 
     // Allocated size of the deployed volume reported by the backing device (in KiB)

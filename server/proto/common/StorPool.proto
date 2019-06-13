@@ -2,7 +2,6 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
-import "common/LinStorMapEntry.proto";
 import "common/Vlm.proto";
 import "common/StorPoolFreeSpace.proto";
 import "common/ProviderType.proto";
@@ -16,9 +15,9 @@ message StorPool
     optional string stor_pool_dfn_uuid = 4;
     required string stor_pool_name = 5;
     required ProviderType provider_kind = 6;
-    repeated common.LinStorMapEntry props = 7;
+    map<string, string> props = 7;
     repeated Vlm vlms = 8;
-    repeated common.LinStorMapEntry static_traits = 9;
+    map<string, string> static_traits = 9;
     optional StorPoolFreeSpace free_space = 10;
     optional string free_space_mgr_name = 11;
 }

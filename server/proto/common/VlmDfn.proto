@@ -2,7 +2,6 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
-import "common/LinStorMapEntry.proto";
 import "common/DrbdRsc.proto";
 import "common/StorageRsc.proto";
 import "common/LayerType.proto";
@@ -19,7 +18,7 @@ message VlmDfn
     required int64 vlm_size = 3;
 
     repeated string vlm_flags = 5;
-    repeated common.LinStorMapEntry vlm_props = 6;
+    map<string, string> vlm_props = 6;
 
     repeated VlmDfnLayerData layer_data = 7;
 }

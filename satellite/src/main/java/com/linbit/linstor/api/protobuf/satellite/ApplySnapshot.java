@@ -9,7 +9,6 @@ import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapshot;
@@ -85,7 +84,7 @@ public class ApplySnapshot implements ApiCall
                     snapshotData.getRscName(),
                     null,
                     snapshotData.getRscDfnFlags(),
-                    ProtoMapUtils.asMap(snapshotData.getRscDfnPropsList()),
+                    snapshotData.getRscDfnPropsMap(),
                     null,
                     Collections.emptyList()
                 ),
@@ -93,7 +92,7 @@ public class ApplySnapshot implements ApiCall
                 snapshotData.getSnapshotName(),
                 snapshotVlmDfns,
                 snapshotData.getSnapshotDfnFlags(),
-                ProtoMapUtils.asMap(snapshotData.getSnapshotDfnPropsList())
+                snapshotData.getSnapshotDfnPropsMap()
             ),
             UUID.fromString(snapshotData.getSnapshotUuid()),
             snapshotData.getFlags(),

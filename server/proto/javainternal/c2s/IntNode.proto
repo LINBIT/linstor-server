@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
-import "common/LinStorMapEntry.proto";
 
 // Internal message containing a node
 message IntNode
@@ -12,7 +11,7 @@ message IntNode
     string                      type = 4;
     repeated IntNetIf           net_ifs = 5;
     repeated IntNodeConn        node_conns = 6;
-    repeated common.LinStorMapEntry    props = 7;
+    map<string, string>         props = 7;
 }
 
 message IntNetIf
@@ -31,6 +30,6 @@ message IntNodeConn
     string                      other_node_type = 3;
     sint64                      other_node_flags = 4;
     string                      node_conn_uuid = 5;
-    repeated common.LinStorMapEntry    node_conn_props = 6;
+    map<string, string>         node_conn_props = 6;
     string                      other_node_diskless_stor_pool_uuid = 7;
 }

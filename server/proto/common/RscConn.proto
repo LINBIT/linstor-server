@@ -2,8 +2,6 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
-import "common/LinStorMapEntry.proto";
-
 // Resource connection
 message RscConn
 {
@@ -13,7 +11,7 @@ message RscConn
     required string rsc_name = 4;
     optional string rsc_1_uuid = 5;
     optional string rsc_2_uuid = 6;
-    repeated common.LinStorMapEntry rsc_conn_props = 7;
+    map<string, string> rsc_conn_props = 7;
     repeated string rsc_conn_flags = 8;
     optional sint32 port = 9;
 }

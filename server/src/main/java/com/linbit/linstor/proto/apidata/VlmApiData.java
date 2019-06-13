@@ -1,23 +1,19 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.Volume;
-import java.util.Map;
-
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
-import com.linbit.linstor.api.protobuf.ProtoMapUtils;
-import com.linbit.linstor.proto.common.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class VlmApiData implements VlmApi
 {
@@ -97,22 +93,19 @@ public class VlmApiData implements VlmApi
     @Override
     public Map<String, String> getVlmProps()
     {
-        return vlm.getVlmPropsList().stream()
-            .collect(Collectors.toMap(LinStorMapEntry::getKey, LinStorMapEntry::getValue));
+        return vlm.getVlmPropsMap();
     }
 
     @Override
     public Map<String, String> getStorPoolDfnProps()
     {
-        return vlm.getStorPoolDfnPropsList().stream()
-            .collect(Collectors.toMap(LinStorMapEntry::getKey, LinStorMapEntry::getValue));
+        return vlm.getStorPoolDfnPropsMap();
     }
 
     @Override
     public Map<String, String> getStorPoolProps()
     {
-        return vlm.getStorPoolPropsList().stream()
-            .collect(Collectors.toMap(LinStorMapEntry::getKey, LinStorMapEntry::getValue));
+        return vlm.getStorPoolPropsMap();
     }
 
     @Override
@@ -150,7 +143,7 @@ public class VlmApiData implements VlmApi
             builder.setDevicePath(vlmApi.getDevicePath());
         }
         builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
-        builder.addAllVlmProps(ProtoMapUtils.fromMap(vlmApi.getVlmProps()));
+        builder.putAllVlmProps(vlmApi.getVlmProps());
         vlmApi.getAllocatedSize().ifPresent(builder::setAllocatedSize);
 
         return builder.build();
