@@ -5,6 +5,8 @@ import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource.RscApi;
+import com.linbit.linstor.Resource.RscWithPayloadApi;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -16,10 +18,10 @@ import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.apidata.RscWithPayloadApiData;
+import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.VlmApiData;
 import com.linbit.linstor.proto.common.RscOuterClass;
-import com.linbit.linstor.proto.requests.MsgCrtRscOuterClass.RscWithPayload;
+import com.linbit.linstor.proto.common.RscOuterClass.Rsc;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -188,16 +190,12 @@ public class RscApiTest extends ApiTestBase
             rscCrtApiCallHandler.createResource(
                 Collections.singletonList(
                     new RscWithPayloadApiData(
-                        RscWithPayload.newBuilder()
-                            .setRsc(
-                                RscOuterClass.Rsc.newBuilder()
-                                    .setNodeName(nodeName)
-                                    .setName(rscName)
-                                    .addAllRscFlags(flags)
-                                    .addAllProps(ProtoMapUtils.fromMap(rscPropsMap))
-                                    .addAllVlms(VlmApiData.toVlmProtoList(vlmApiDataList))
-                                    .build()
-                            )
+                        RscOuterClass.Rsc.newBuilder()
+                            .setNodeName(nodeName)
+                            .setName(rscName)
+                            .addAllRscFlags(flags)
+                            .addAllProps(ProtoMapUtils.fromMap(rscPropsMap))
+                            .addAllVlms(VlmApiData.toVlmProtoList(vlmApiDataList))
                             .build()
                     )
                 )
@@ -205,6 +203,44 @@ public class RscApiTest extends ApiTestBase
             .subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
+
+    }
+
+    private class RscWithPayloadApiData implements RscWithPayloadApi
+    {
+        private RscApiData rscApi;
+        private Integer drbdNodeId;
+        private List<String> layerStackList;
+
+        RscWithPayloadApiData(Rsc rscRef)
+        {
+            this(rscRef, null, Collections.emptyList());
+        }
+        RscWithPayloadApiData(Rsc rscRef, Integer drbdNodeIdRef, List<String> layerStackListRef)
+        {
+            rscApi = new RscApiData(rscRef);
+            drbdNodeId = drbdNodeIdRef;
+            layerStackList = layerStackListRef;
+        }
+
+        @Override
+        public RscApi getRscApi()
+        {
+            return rscApi;
+        }
+
+        @Override
+        public List<String> getLayerStack()
+        {
+            return layerStackList;
+        }
+
+        @Override
+        public Integer getDrbdNodeId()
+        {
+            return drbdNodeId;
+        }
+
 
     }
 }

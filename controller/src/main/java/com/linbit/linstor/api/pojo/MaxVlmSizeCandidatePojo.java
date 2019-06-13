@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.protobuf;
+package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 

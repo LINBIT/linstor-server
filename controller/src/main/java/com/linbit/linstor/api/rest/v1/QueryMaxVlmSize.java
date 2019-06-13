@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.MaxVlmSizeCandidatePojo;
+import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlQueryMaxVlmSizeApiCallHandler;

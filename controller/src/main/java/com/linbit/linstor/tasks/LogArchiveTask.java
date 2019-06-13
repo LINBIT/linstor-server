@@ -4,7 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -25,7 +25,7 @@ public class LogArchiveTask implements TaskScheduleService.Task
     private final NodeRepository nodeRepository;
     private final LockGuardFactory lockGuardFactory;
     private final AccessContext sysCtx;
-    private final CtrlClientSerializer ctrlClientSerializer;
+    private final CtrlStltSerializer ctrlStltSerializer;
 
     @Inject
     public LogArchiveTask(
@@ -33,14 +33,14 @@ public class LogArchiveTask implements TaskScheduleService.Task
         NodeRepository nodeRepositoryRef,
         LockGuardFactory lockGuardFactoryRef,
         @SystemContext AccessContext sysCtxRef,
-        CtrlClientSerializer ctrlClientSerializerRef
+        CtrlStltSerializer ctrlClientSerializerRef
     )
     {
         errorReporter = errorReporterRef;
         nodeRepository = nodeRepositoryRef;
         lockGuardFactory = lockGuardFactoryRef;
         sysCtx = sysCtxRef;
-        ctrlClientSerializer = ctrlClientSerializerRef;
+        ctrlStltSerializer = ctrlClientSerializerRef;
     }
 
     @Override
@@ -56,7 +56,7 @@ public class LogArchiveTask implements TaskScheduleService.Task
                 if (nodePeer != null && nodePeer.isConnected())
                 {
                     nodePeer.sendMessage(
-                        ctrlClientSerializer.onewayBuilder(InternalApiConsts.API_ARCHIVE_LOGS).build()
+                        ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_ARCHIVE_LOGS).build()
                     );
                 }
             }

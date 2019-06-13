@@ -5,7 +5,7 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -46,7 +46,7 @@ public class CtrlErrorListApiCallHandler
     private final ScopeRunner scopeRunner;
     private final ErrorReporter errorReporter;
     private final NodeRepository nodeRepository;
-    private final CtrlClientSerializer clientComSerializer;
+    private final CtrlStltSerializer stltComSerializer;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
 
@@ -54,7 +54,7 @@ public class CtrlErrorListApiCallHandler
     public CtrlErrorListApiCallHandler(
         ErrorReporter errorReporterRef,
         NodeRepository nodeRepositoryRef,
-        CtrlClientSerializer clientComSerializerRef,
+        CtrlStltSerializer clientComSerializerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef
@@ -62,7 +62,7 @@ public class CtrlErrorListApiCallHandler
         {
         errorReporter = errorReporterRef;
         nodeRepository = nodeRepositoryRef;
-        clientComSerializer = clientComSerializerRef;
+        stltComSerializer = clientComSerializerRef;
         peerAccCtx = peerAccCtxRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
@@ -125,7 +125,7 @@ public class CtrlErrorListApiCallHandler
         Flux<ByteArrayInputStream> fluxReturn = Flux.empty();
         if (peer != null)
         {
-            byte[] msg = clientComSerializer.headerlessBuilder()
+            byte[] msg = stltComSerializer.headerlessBuilder()
                 .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
             fluxReturn = peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg)
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
