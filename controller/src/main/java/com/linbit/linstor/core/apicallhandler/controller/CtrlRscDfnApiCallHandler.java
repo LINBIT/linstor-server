@@ -17,6 +17,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMapExtName;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -53,6 +54,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.debug.HexViewer;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
@@ -453,12 +455,29 @@ public class CtrlRscDfnApiCallHandler
                 {
                     rscName = createResourceName(extName, resourceDefinitionRepository.getMapForView(peerAccCtx.get()));
 
-                    if (resourceDefinitionRepository.getMapForViewExtName(peerAccCtx.get()).containsKey(extName))
+                    if (extName.length == 0)
                     {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_EXISTS_EXT_NAME,
-                            "External name " + new String(extName) + " already taken!")
-                        );
+                        // Discard zero-length external names, as those are used to trigger
+                        // generation of a UUID-based resource name and are not supposed to be stored
+                        extName = null;
+                    }
+                    else
+                    {
+                        ResourceDefinitionMapExtName extNameMap =
+                            resourceDefinitionRepository.getMapForViewExtName(peerAccCtx.get());
+                        if (extNameMap.containsKey(extName))
+                        {
+                            ApiCallRcImpl.EntryBuilder errorRcBld = ApiCallRcImpl.entryBuilder(
+                                ApiConsts.FAIL_EXISTS_EXT_NAME,
+                                "The specified external name is already registered"
+                            );
+                            errorRcBld.setDetails(
+                                "The external name data is:\n" +
+                                HexViewer.binaryToHexDump(extName)
+                            );
+                            ApiCallRcEntry errorRc = errorRcBld.build();
+                            throw new ApiRcException(errorRc);
+                        }
                     }
                 }
                 catch (AccessDeniedException accDeniedExc)

@@ -54,20 +54,16 @@ public class ExternalNameConverter
         throws InvalidNameException
     {
         ResourceName rscName = null;
-        if (genInput.length == 0)
-        {
-            String uuidStr = UUID_NAME_PREFIX + UUID.randomUUID().toString();
-            rscName = new ResourceName(uuidStr);
-        }
-        else if (genInput.length > MAX_INPUT_LENGTH)
+        if (genInput.length > MAX_INPUT_LENGTH)
         {
             throw new InvalidNameException(
                 "Resource name generation failed, data input length of " + genInput.length + " bytes exceeds " +
-                    "maximum length of " + MAX_INPUT_LENGTH + " bytes",
+                "maximum length of " + MAX_INPUT_LENGTH + " bytes",
                 new String(genInput)
             );
         }
         else
+        if (genInput.length > 0)
         {
             String truncName = new String(genInput, 0, Math.min(genInput.length, ResourceName.MAX_LENGTH));
             for (Mode genMode = Mode.PREFIX_UUID; rscName == null && genMode != Mode.FAIL; genMode = genMode.advance())
@@ -98,11 +94,12 @@ public class ExternalNameConverter
                         }
                         break;
                     case TRANSLATE:
-                        // Generate a valid resource name by translating characters that are not valid in resource names
-                        // to other characters that are valid
+                        // Generate a valid resource name by translating characters that are
+                        // not valid in resource names to other characters that are valid
                         rscName = translateGenInput(genInput);
                         break;
-                    case FAIL: // fall-through
+                    case FAIL:
+                        // fall-through
                     default:
                         throw new ImplementationError("Unhandled enumeration value " + genMode.name());
                 }

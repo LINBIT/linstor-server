@@ -62,17 +62,14 @@ public class HexViewer
                     System.out.printf(" | %s\u001b[0;32m\n", plainText.toString());
                     plainText.setLength(0);
                 }
+                System.out.printf("%008X | ", index);
             }
             else
             {
                 System.out.print(" ");
             }
 
-            int value = data[index];
-            if (value < 0)
-            {
-                value += 0x100;
-            }
+            int value = Byte.toUnsignedInt(data[index]);
             System.out.printf("%02X", value);
 
             if (isDisplayChar[value])
@@ -94,6 +91,61 @@ public class HexViewer
             System.out.print(space);
         }
         System.out.printf(" | %s\u001b[0;32m\n", plainText.toString());
+    }
+
+    public static String binaryToHexDump(final byte[] data)
+    {
+        StringBuilder hexDump = new StringBuilder();
+        if (data.length == 0)
+        {
+            hexDump.append("<Zero length data>");
+        }
+        else
+        {
+            StringBuilder plainText = new StringBuilder();
+            int index = 0;
+            while (index < data.length)
+            {
+                if (index % 8 == 0)
+                {
+                    if (index > 0)
+                    {
+                        hexDump.append(" | ");
+                        hexDump.append(plainText);
+                        hexDump.append('\n');
+                        plainText.setLength(0);
+                    }
+                    hexDump.append(String.format("%08X | ", index));
+                }
+                else
+                {
+                    hexDump.append(" ");
+                }
+
+                int value = Byte.toUnsignedInt(data[index]);
+                hexDump.append(String.format("%02X", value));
+
+                if (isDisplayChar[value])
+                {
+                    plainText.append((char) data[index]);
+                }
+                else
+                {
+                    plainText.append("?");
+                }
+                ++index;
+            }
+            if (index % 8 > 0)
+            {
+                int factor = 8 - (index % 8);
+                char[] space = new char[factor * 3];
+                Arrays.fill(space, ' ');
+                hexDump.append(space);
+            }
+            hexDump.append(" | ");
+            hexDump.append(plainText);
+        }
+        return hexDump.toString();
     }
 
     private HexViewer()
