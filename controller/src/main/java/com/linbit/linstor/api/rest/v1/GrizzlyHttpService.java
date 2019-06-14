@@ -45,8 +45,6 @@ public class GrizzlyHttpService implements SystemService
         v1ResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
         v1ResourceConfig.register(new CORSFilter());
 
-        initGrizzly(listenAddress);
-
         try
         {
             instanceName = new ServiceName("GrizzlyHttpServer");
@@ -107,6 +105,7 @@ public class GrizzlyHttpService implements SystemService
     {
         try
         {
+            initGrizzly(listenAddress);
             httpServer.start();
         }
         catch (SocketException sexc)
