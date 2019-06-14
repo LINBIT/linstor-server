@@ -31,7 +31,7 @@ gen_go() {
 		for f in model_*.go; do
 			tail +$NRHDR "$f" > "../${dstdir}/${f}"
 		done
-	)
+	) || die "Subshell did not terminate successfully"
 }
 
 [ $# -ne 2 ] && help
