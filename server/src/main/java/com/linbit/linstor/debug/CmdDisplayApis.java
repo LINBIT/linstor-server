@@ -7,6 +7,7 @@ import com.linbit.linstor.security.AccessContext;
 
 import java.io.PrintStream;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Displays a list of currently available remote API calls
@@ -44,10 +45,13 @@ public class CmdDisplayApis extends BaseDebugCmd
     )
         throws Exception
     {
+        TreeMap<String, ApiCallDescriptor> sortedApiObjList = new TreeMap<>();
+        sortedApiObjList.putAll(apiCallDescriptors);
         int count = 0;
-        for (ApiCallDescriptor apiObj : apiCallDescriptors.values())
+        for (Map.Entry<String, ApiCallDescriptor> apiObjEntry : sortedApiObjList.entrySet())
         {
-            debugOut.printf("\u001b[1;37m%s\u001b[0m\n", apiObj.getName());
+            debugOut.printf("\u001b[1;37m%s\u001b[0m\n", apiObjEntry.getKey());
+            ApiCallDescriptor apiObj = apiObjEntry.getValue();
             String description = apiObj.getDescription();
             if (description != null)
             {
