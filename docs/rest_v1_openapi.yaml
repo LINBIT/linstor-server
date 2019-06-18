@@ -135,20 +135,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                node_type:
-                  type: string
-                override_props:
-                  $ref: '#/components/schemas/Properties'
-                delete_props:
-                  type: array
-                  items:
-                    type: string
-                delete_namespaces:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/StoragePoolDefinitionModify'
             example:
               override_props:
                 Aux/testprop: '1'
