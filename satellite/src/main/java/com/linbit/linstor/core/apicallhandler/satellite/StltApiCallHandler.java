@@ -219,9 +219,6 @@ public class StltApiCallHandler
     {
         AuthenticationResult authResult;
 
-        // get satellites current hostname
-        final String hostName = getHostname();
-
         synchronized (dataToApply)
         {
             dataToApply.clear(); // controller should not have sent us anything before the authentication.
@@ -262,7 +259,7 @@ public class StltApiCallHandler
             stltConf.setProp(LinStor.KEY_NODE_NAME, nodeName);
             transMgrProvider.get().commit();
 
-            authResult = deviceLayerChecker.getSupportedLayerAndProvider(hostName);
+            authResult = deviceLayerChecker.getSupportedLayerAndProvider(nodeName);
         }
         catch (AccessDeniedException | InvalidKeyException | InvalidValueException | SQLException exc)
         {
