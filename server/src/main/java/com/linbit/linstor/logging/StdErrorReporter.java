@@ -18,6 +18,7 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -439,8 +441,29 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         final Set<String> ids)
     {
         TreeSet<ErrorReport> errors = new TreeSet<>();
-        final Date now = new Date(System.currentTimeMillis());
         final List<String> fileIds = ids.stream().map(s -> "ErrorReport-" + s).collect(Collectors.toList());
+
+        Function<FileTime, Boolean> sinceFct;
+        if (since.isPresent())
+        {
+            long sinceTimestamp = since.get().getTime();
+            sinceFct = (fileTime) -> sinceTimestamp < fileTime.toMillis();
+        }
+        else
+        {
+            sinceFct = (fileTime) -> true;
+        }
+
+        Function<FileTime, Boolean> toFct;
+        if (to.isPresent())
+        {
+            long toTimestamp = to.get().getTime();
+            toFct = (fileTime) -> toTimestamp > fileTime.toMillis();
+        }
+        else
+        {
+            toFct = (fileTime) -> true;
+        }
 
         if (fileIds.isEmpty())
         {
@@ -475,8 +498,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                         {
                             BasicFileAttributes attr = Files.readAttributes(file, BasicFileAttributes.class);
 
-                            if (since.orElse(new Date(0)).getTime() < attr.creationTime().toMillis() &&
-                                attr.creationTime().toMillis() < to.orElse(now).getTime())
+                            if (sinceFct.apply(attr.creationTime()) && toFct.apply(attr.creationTime()))
                             {
                                 StringBuilder sb = new StringBuilder();
                                 if (withText)
