@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceConnection;
@@ -22,6 +23,8 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -139,6 +142,9 @@ public class CtrlDrbdProxyEnableApiCallHandler
 
         enableLocalProxyFlag(rscConn);
 
+        // set protocol A as default
+        setPropHardcoded(rscConn, "protocol", "A", ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
@@ -157,6 +163,35 @@ public class CtrlDrbdProxyEnableApiCallHandler
             .<ApiCallRc>just(responses)
             .concatWith(satelliteUpdateResponses)
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
+    }
+
+    private void setPropHardcoded(
+        ResourceConnection rscConn,
+        String key,
+        String value,
+        String namespace
+    )
+    {
+        try
+        {
+            rscConn.getProps(peerAccCtx.get()).setProp(key, value, namespace);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "accessing properties of " + getResourceConnectionDescriptionInline(apiCtx, rscConn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError("Invalid hardcoded resource-connection properties", exc);
+        }
+        catch (SQLException exc)
+        {
+            throw new ApiSQLException(exc);
+        }
     }
 
     private void enableLocalProxyFlag(ResourceConnection rscConn)

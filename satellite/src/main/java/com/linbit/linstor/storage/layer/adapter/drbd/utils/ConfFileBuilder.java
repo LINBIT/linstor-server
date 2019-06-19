@@ -254,9 +254,9 @@ public class ConfFileBuilder
                                 try (Section ignore = new Section())
                                 {
                                     appendDrbdOptions(
-                                            LinStorObject.CONTROLLER,
-                                            rscConnProps,
-                                            ApiConsts.NAMESPC_DRBD_NET_OPTIONS
+                                        LinStorObject.CONTROLLER,
+                                        rscConnProps,
+                                        ApiConsts.NAMESPC_DRBD_NET_OPTIONS
                                     );
                                 }
                             }
@@ -268,11 +268,11 @@ public class ConfFileBuilder
                                 try (Section ignore = new Section())
                                 {
                                     appendConflictingDrbdOptions(
-                                            LinStorObject.CONTROLLER,
-                                            "resource-definition",
-                                            rscDfn.getProps(accCtx),
-                                            rscConnProps,
-                                            ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                                        LinStorObject.CONTROLLER,
+                                        "resource-definition",
+                                        rscDfn.getProps(accCtx),
+                                        rscConnProps,
+                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
                                     );
                                 }
                             }
