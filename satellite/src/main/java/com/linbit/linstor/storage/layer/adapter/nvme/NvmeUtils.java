@@ -152,7 +152,7 @@ public class NvmeUtils
                 Files.createDirectories(portsPath);
                 Files.write(
                     portsPath.resolve("addr_traddr"), ipAddr.getAddress().getBytes()
-                    );
+                );
 
                 // set the transport type and port
                 String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE);
@@ -480,6 +480,7 @@ public class NvmeUtils
         {
             errorReporter.logDebug("NVMe: creating namespace: " + namespacePath.getFileName());
             Files.createDirectories(namespacePath);
+            errorReporter.logDebug("NVMe: exposing device: " + new String(backingDevice));
             Files.write(namespacePath.resolve("device_path"), backingDevice);
             Files.write(namespacePath.resolve("enable"), "1".getBytes());
         }

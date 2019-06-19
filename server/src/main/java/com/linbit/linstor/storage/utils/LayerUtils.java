@@ -10,6 +10,7 @@ import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,37 +29,42 @@ public class LayerUtils
 
         NODES.get(DRBD).addChildren(LUKS, STORAGE);
         NODES.get(LUKS).addChildren(STORAGE);
-        NODES.get(NVME).addChildren(STORAGE);
+        NODES.get(NVME).addChildren(LUKS, STORAGE);
 
         NODES.get(STORAGE).setAllowedEnd(true);
-
 
         ensureAllRulesEndWithStorage();
     }
 
     public static boolean isLayerKindStackAllowed(List<DeviceLayerKind> kindList)
     {
-        LayerNode currentLayer = TOPMOST_NODE;
         boolean allowed = false;
-        if (kindList.isEmpty())
+
+        // check for duplicates
+        Set<DeviceLayerKind> duplicateCheck = new HashSet<>(kindList);
+        if (duplicateCheck.size() == kindList.size())
         {
-            currentLayer = null;
-        }
-        else
-        {
-            allowed = true;
-            for (DeviceLayerKind kind : kindList)
+            LayerNode currentLayer = TOPMOST_NODE;
+            if (kindList.isEmpty())
             {
-                currentLayer = currentLayer.successor.get(kind);
-                if (currentLayer == null)
+                currentLayer = null;
+            }
+            else
+            {
+                allowed = true;
+                for (DeviceLayerKind kind : kindList)
+                {
+                    currentLayer = currentLayer.successor.get(kind);
+                    if (currentLayer == null)
+                    {
+                        allowed = false;
+                        break;
+                    }
+                }
+                if (allowed && currentLayer != null && !currentLayer.endAllowed)
                 {
                     allowed = false;
-                    break;
                 }
-            }
-            if (allowed && currentLayer != null && !currentLayer.endAllowed)
-            {
-                allowed = false;
             }
         }
         return allowed;
