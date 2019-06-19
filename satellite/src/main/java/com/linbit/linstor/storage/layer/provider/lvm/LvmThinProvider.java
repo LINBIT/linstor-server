@@ -1,8 +1,6 @@
 package com.linbit.linstor.storage.layer.provider.lvm;
 
 import com.linbit.ImplementationError;
-import com.linbit.SizeConv;
-import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
@@ -76,7 +74,7 @@ public class LvmThinProvider extends LvmProvider
         else
         {
             lvmThinData.setThinPool(infoRef.thinPool);
-            lvmThinData.setAllocatedPercent(infoRef.dataPercent);
+            lvmThinData.setAllocatedPercent(infoRef.dataPercent / 100.0f);
             if (!infoRef.attributes.contains("a"))
             {
                 LvmCommands.activateVolume(
@@ -273,11 +271,7 @@ public class LvmThinProvider extends LvmProvider
     {
         LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
         long allocatedSize = super.getAllocatedSize(vlmDataRef);
-        return SizeConv.convert(
-            (long) (allocatedSize * lvmThinData.getDataPercent()),
-            SizeUnit.UNIT_B,
-            SizeUnit.UNIT_kB
-        );
+        return (long) (allocatedSize * lvmThinData.getDataPercent());
     }
 
     private String getVolumeGroupForLvs(StorPool storPool) throws StorageException
