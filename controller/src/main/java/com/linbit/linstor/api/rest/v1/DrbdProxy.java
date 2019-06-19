@@ -104,7 +104,6 @@ public class DrbdProxy
     @PUT
     public Response modifyProxy(
         @Context Request request,
-        @Suspended AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
         String jsonData
     )
