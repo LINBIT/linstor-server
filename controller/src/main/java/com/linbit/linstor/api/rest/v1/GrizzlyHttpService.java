@@ -5,12 +5,20 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
+
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
 
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.google.inject.Injector;
 import org.glassfish.grizzly.http.CompressionConfig;
@@ -31,6 +39,8 @@ public class GrizzlyHttpService implements SystemService
     private ServiceName instanceName;
     private String listenAddress;
     private ResourceConfig v1ResourceConfig;
+    private final DbConnectionPool dbConnectionPool;
+    private final Map<ServiceName, SystemService> systemServiceMap;
 
     private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
         "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + JsonGenTypes.REST_API_VERSION
@@ -38,12 +48,19 @@ public class GrizzlyHttpService implements SystemService
 
     private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
 
-    public GrizzlyHttpService(Injector injector, ErrorReporter errorReporterRef, String listenAddressRef)
+    public GrizzlyHttpService(
+        Injector injector,
+        ErrorReporter errorReporterRef,
+        Map<ServiceName, SystemService> systemServiceMapRef,
+        String listenAddressRef
+    )
     {
         errorReporter = errorReporterRef;
         listenAddress = listenAddressRef;
         v1ResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
         v1ResourceConfig.register(new CORSFilter());
+        dbConnectionPool = injector.getInstance(DbConnectionPool.class);
+        systemServiceMap = systemServiceMapRef;
 
         try
         {
@@ -74,11 +91,58 @@ public class GrizzlyHttpService implements SystemService
                 @Override
                 public void service(Request request, Response response) throws Exception
                 {
-                    if (request.getMethod() == Method.GET && request.getHttpHandlerPath().equals("/"))
+                    if (request.getMethod() == Method.GET)
                     {
-                        response.setContentType("text/html");
-                        response.setContentLength(INDEX_CONTENT.length());
-                        response.getWriter().write(INDEX_CONTENT);
+                        if (request.getHttpHandlerPath().equals("/"))
+                        {
+                            response.setContentType("text/html");
+                            response.setContentLength(INDEX_CONTENT.length());
+                            response.getWriter().write(INDEX_CONTENT);
+                        }
+                        else if (request.getHttpHandlerPath().equals("/health"))
+                        {
+                            Connection conn = null;
+                            try
+                            {
+                                conn = dbConnectionPool.getConnection();
+                                conn.createStatement().executeQuery("SELECT 1 FROM " + TBL_SEC_CONFIGURATION);
+
+                                List<String> notRunning = systemServiceMap.values().stream()
+                                    .filter(service -> !service.isStarted())
+                                    .map(service -> service.getServiceName().getDisplayName())
+                                    .collect(Collectors.toList());
+                                if (notRunning.isEmpty())
+                                {
+                                    response.setStatus(HttpStatus.OK_200);
+                                }
+                                else
+                                {
+                                    final String errorMsg = "Services not running: " +
+                                        String.join(",", notRunning);
+                                    response.setContentLength(errorMsg.length());
+                                    response.getWriter().write(errorMsg);
+                                    response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+                                }
+                            }
+                            catch (SQLException exc)
+                            {
+                                final String errorMsg = "Failed to connect to database: " + exc.getMessage();
+                                response.setContentLength(errorMsg.length());
+                                response.getWriter().write(errorMsg);
+                                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+                            }
+                            finally
+                            {
+                                if (conn != null)
+                                {
+                                    dbConnectionPool.returnConnection(conn);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            response.setStatus(HttpStatus.NOT_FOUND_404);
+                        }
                     }
                     else
                     {
