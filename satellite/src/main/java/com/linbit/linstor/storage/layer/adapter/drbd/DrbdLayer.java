@@ -311,6 +311,12 @@ public class DrbdLayer implements DeviceLayer
             Path resFile = asResourceFile(drbdRscData, false);
             errorReporter.logTrace("Deleting res file: %s ", resFile);
             Files.deleteIfExists(resFile);
+
+            drbdRscData.setExists(false);
+            for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            {
+                drbdVlmData.setExists(false);
+            }
         }
         catch (ExtCmdFailedException cmdExc)
         {
@@ -513,10 +519,12 @@ public class DrbdLayer implements DeviceLayer
             for (DrbdVlmData drbdVlmData : volumesToDelete)
             {
                 detachDrbdVolume(drbdVlmData, false);
+                drbdVlmData.setExists(false);
             }
             for (DrbdVlmData drbdVlmData : volumesToMakeDiskless)
             {
                 detachDrbdVolume(drbdVlmData, true);
+                drbdVlmData.setExists(false);
             }
         }
         return checkMetaData;

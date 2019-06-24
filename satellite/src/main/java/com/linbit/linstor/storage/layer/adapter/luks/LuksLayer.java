@@ -168,6 +168,7 @@ public class LuksLayer implements DeviceLayer
                 {
                     cryptSetup.closeLuksDevice(identifier);
                     vlmData.setOpened(false);
+                    vlmData.setExists(false);
                 }
             }
 

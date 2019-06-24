@@ -21,6 +21,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.SysFsHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -80,6 +81,8 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final StorageLayer storageLayer;
     private final ExtCmdFactory extCmdFactory;
 
+    private final SysFsHandler sysFsHandler;
+
     @Inject
     public DeviceHandlerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
@@ -90,7 +93,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         LayerFactory layerFactoryRef,
         StorageLayer storageLayerRef,
         ResourceStateEvent resourceStateEventRef,
-        ExtCmdFactory extCmdFactoryRef
+        ExtCmdFactory extCmdFactoryRef,
+        SysFsHandler sysFsHandlerRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -103,6 +107,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         storageLayer = storageLayerRef;
         resourceStateEvent = resourceStateEventRef;
         extCmdFactory = extCmdFactoryRef;
+        sysFsHandler = sysFsHandlerRef;
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -311,6 +316,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                         Volume vlm = iterateVolumes.next();
                         if (vlm.getFlags().isSet(wrkCtx, VlmFlags.DELETE))
                         {
+                            // verify if all VlmProviderObject were deleted correctly
+                            ensureAllVlmDataDeleted(rscLayerObject, vlm.getVolumeDefinition().getVolumeNumber());
                             vlmListNotifyDelete.add(vlm);
                         }
                     }
@@ -326,8 +333,6 @@ public class DeviceHandlerImpl implements DeviceHandler
                         // snapshot.delete is done by the deviceManager
                     }
                 }
-
-
 
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
@@ -408,6 +413,22 @@ public class DeviceHandlerImpl implements DeviceHandler
                 );
             }
             notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
+        }
+        sysFsHandler.updateSysFsSettings(resourceList);
+    }
+
+    private void ensureAllVlmDataDeleted(RscLayerObject rscLayerObjectRef, VolumeNumber volumeNumberRef)
+        throws ImplementationError
+    {
+        VlmProviderObject vlmData = rscLayerObjectRef.getVlmProviderObject(volumeNumberRef);
+        if (vlmData.exists())
+        {
+            throw new ImplementationError("Layer '" + rscLayerObjectRef.getLayerKind() + " did not delete the volume " +
+                volumeNumberRef + " of resource " + rscLayerObjectRef.getSuffixedResourceName() + " properly");
+        }
+        for (RscLayerObject child : rscLayerObjectRef.getChildren())
+        {
+            ensureAllVlmDataDeleted(child, volumeNumberRef);
         }
     }
 

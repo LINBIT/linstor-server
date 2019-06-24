@@ -105,6 +105,10 @@ public class NvmeLayer implements DeviceLayer
             {
                 nvmeUtils.disconnect(nvmeRscData);
                 nvmeRscData.setExists(false);
+                for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                {
+                    nvmeVlmData.setExists(false);
+                }
             }
             // connect
             else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
@@ -137,6 +141,10 @@ public class NvmeLayer implements DeviceLayer
                     nvmeUtils.deleteTargetRsc(nvmeRscData, sysCtx);
                     resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                     nvmeRscData.setExists(false);
+                    for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                    {
+                        nvmeVlmData.setExists(false);
+                    }
                 }
                 else
                 {
