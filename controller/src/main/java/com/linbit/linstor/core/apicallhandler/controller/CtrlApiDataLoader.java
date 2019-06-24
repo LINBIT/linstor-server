@@ -23,6 +23,8 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.PeerContext;
@@ -478,5 +480,42 @@ public class CtrlApiDataLoader
             );
         }
         return kvs;
+    }
+
+    public VolumeData loadVlm(
+        String nodeNameStrRef,
+        String rscNameStrRef,
+        Integer vlmNrIntRef,
+        boolean failIfNull
+    )
+    {
+        return loadVlm(
+            LinstorParsingUtils.asNodeName(nodeNameStrRef),
+            LinstorParsingUtils.asRscName(rscNameStrRef),
+            LinstorParsingUtils.asVlmNr(vlmNrIntRef),
+            failIfNull
+        );
+    }
+
+    private VolumeData loadVlm(
+        NodeName nodeNameREf,
+        ResourceName rscNameRef,
+        VolumeNumber vlmNrRef,
+        boolean failIfNullRef
+    )
+    {
+        ResourceData rsc = loadRsc(nodeNameREf, rscNameRef, failIfNullRef);
+        Volume vlm = rsc.getVolume(vlmNrRef);
+        if (vlm == null && failIfNullRef)
+        {
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_NOT_FOUND_VLM,
+                    CtrlVlmApiCallHandler.getVlmDescription(nodeNameREf, rscNameRef, vlmNrRef) + " not found."
+                )
+                .build()
+            );
+        }
+        return (VolumeData) vlm;
     }
 }

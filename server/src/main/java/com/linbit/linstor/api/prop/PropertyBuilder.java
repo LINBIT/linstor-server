@@ -54,6 +54,9 @@ public class PropertyBuilder
             case NUMERIC_OR_SYMBOL:
                 prop = new NumericOrSymbolProperty(name, key, min, max, buildValuesEnumRegex(), internal, info);
                 break;
+            case LONG:
+                prop = new RangeProperty(name, key, Long.MIN_VALUE, Long.MAX_VALUE, internal, info);
+                break;
             default:
                 throw new ImplementationError("Unknown property type: " + type, null);
         }

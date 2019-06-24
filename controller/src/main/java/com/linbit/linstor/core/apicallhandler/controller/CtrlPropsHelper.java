@@ -50,7 +50,7 @@ public class CtrlPropsHelper
     }
 
     public void checkPrefNic(AccessContext accessContext, Node node, String prefNic, long maskObj)
-            throws AccessDeniedException, InvalidNameException
+        throws AccessDeniedException, InvalidNameException
     {
         if (prefNic != null)
         {

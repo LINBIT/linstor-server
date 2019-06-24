@@ -355,6 +355,14 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class VolumeModify
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public List<String> delete_props = Collections.emptyList();
+        public List<String> delete_namespaces = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class DrbdVolume
     {
         public DrbdVolumeDefinition drbd_volume_definition;

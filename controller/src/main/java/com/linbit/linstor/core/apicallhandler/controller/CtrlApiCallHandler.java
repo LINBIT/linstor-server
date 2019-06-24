@@ -12,7 +12,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
-
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockObj.KVS_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -38,6 +37,7 @@ public class CtrlApiCallHandler
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
     private final CtrlRscApiCallHandler rscApiCallHandler;
+    private final CtrlVlmApiCallHandler vlmApiCallHandler;
     private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
     private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
     private final CtrlNodeConnectionApiCallHandler nodeConnApiCallHandler;
@@ -59,6 +59,7 @@ public class CtrlApiCallHandler
         CtrlRscDfnApiCallHandler rscDfnApiCallHandlerRef,
         CtrlVlmDfnApiCallHandler vlmDfnApiCallHandlerRef,
         CtrlRscApiCallHandler rscApiCallHandlerRef,
+        CtrlVlmApiCallHandler vlmApiCallHandlerRef,
         CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandlerRef,
         CtrlStorPoolApiCallHandler storPoolApiCallHandlerRef,
         CtrlNodeConnectionApiCallHandler nodeConnApiCallHandlerRef,
@@ -78,6 +79,7 @@ public class CtrlApiCallHandler
         rscDfnApiCallHandler = rscDfnApiCallHandlerRef;
         vlmDfnApiCallHandler = vlmDfnApiCallHandlerRef;
         rscApiCallHandler = rscApiCallHandlerRef;
+        vlmApiCallHandler = vlmApiCallHandlerRef;
         storPoolDfnApiCallHandler = storPoolDfnApiCallHandlerRef;
         storPoolApiCallHandler = storPoolApiCallHandlerRef;
         nodeConnApiCallHandler = nodeConnApiCallHandlerRef;
@@ -1144,6 +1146,32 @@ public class CtrlApiCallHandler
         try (LockGuard lg = lockGuardFactory.build(WRITE, KVS_MAP))
         {
             apiCallRc = kvsApiCallHandler.deleteKvs(kvsUuid, kvsName);
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc modifyVlm(
+        UUID uuidRef,
+        String nodeNameRef,
+        String rscNameRef,
+        Integer vlmNrRef,
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespacesRef
+    )
+    {
+        ApiCallRc apiCallRc;
+        try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
+        {
+            apiCallRc = vlmApiCallHandler.modifyVolume(
+                uuidRef,
+                nodeNameRef,
+                rscNameRef,
+                vlmNrRef,
+                overridePropsRef,
+                deletePropKeys,
+                deleteNamespacesRef
+            );
         }
         return apiCallRc;
     }

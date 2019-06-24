@@ -15,7 +15,8 @@ public interface Property
         BOOLEAN_TRUE_FALSE,
         RANGE("numeric"),
         STRING,
-        NUMERIC_OR_SYMBOL;
+        NUMERIC_OR_SYMBOL,
+        LONG;
 
         private String[] alternativeNames;
 

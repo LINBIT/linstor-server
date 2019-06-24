@@ -21,12 +21,14 @@ info:
 
     Changelog:
 
+    * 1.0.6
+      - Added VolumeModify type
     * 1.0.5
       - Added `reports` field to StoragePool object
     * 1.0.4
       - Added /v1/views/storage-pools overview path
       - Added uuid fields for objects
-    * 1.0.3:
+    * 1.0.3
       - Added /v1/vies/resources overview path
       - documentation schema extraction
     * 1.0.2
@@ -37,7 +39,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: "1.0.5"
+  version: "1.0.6"
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -903,6 +905,7 @@ paths:
             * lzma
             * lz4
 
+        - `DrbdCurrentGi` - regex[`[a-fA-F0-9]{16}`]
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -1098,7 +1101,7 @@ paths:
 
       responses:
         '200':
-          description: resource-definition modified
+          description: resource modified
           content:
             application/json:
               schema:
@@ -1154,6 +1157,34 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Volume'
+    put:
+      tags:
+        - developers
+      summary: modify a volume
+      operationId: volumeModify
+      description: |
+        Sets or modifies properties
+
+        Possible properties are:
+        - `sys/fs/blkio_throttle_read` - number
+        - `sys/fs/blkio_throttle_write` - number
+      responses:
+        '200':
+          description: volume modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VolumeModify'
+            example:
+              override_props:
+                Aux/testprop: '1'
+              delete_props:
+                - Aux/deleteprop
   /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2956,6 +2987,19 @@ components:
           type: integer
           format: int32
     ResourceModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
+    VolumeModify:
       type: object
       properties:
         override_props:
