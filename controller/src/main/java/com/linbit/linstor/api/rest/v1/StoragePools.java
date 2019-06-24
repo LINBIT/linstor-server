@@ -214,7 +214,7 @@ public class StoragePools
         String jsonData
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request), () ->
+        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL, request), () ->
             {
                 JsonGenTypes.StoragePoolDefinitionModify modifyData = objectMapper
                     .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
