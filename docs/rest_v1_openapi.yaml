@@ -22,14 +22,14 @@ info:
     Changelog:
 
     * 1.0.6
-      - Added VolumeModify type
+      - Added /v1/resource-definitions/{rscName}/resources/{nodeName}/volumes/{vlmnr} PUT
     * 1.0.5
       - Added `reports` field to StoragePool object
     * 1.0.4
       - Added /v1/views/storage-pools overview path
       - Added uuid fields for objects
     * 1.0.3
-      - Added /v1/vies/resources overview path
+      - Added /v1/views/resources overview path
       - documentation schema extraction
     * 1.0.2
       - Added /v1/storage-pool-definitions object path
