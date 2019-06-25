@@ -50,16 +50,15 @@ subprojects {
             compile group: 'com.google.inject', name: 'guice', version: '4.2.2'
             compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.2'
 
-            // stick with the non lite RUNTIME version, until it is uploaded to maven repo
             compile group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
 
             compile 'info.picocli:picocli:3.9.5'
-            compile group: 'io.projectreactor', name: 'reactor-core', version: '3.2.3.RELEASE'
-            compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+            compile group: 'io.projectreactor', name: 'reactor-core', version: '3.2.9.RELEASE'
+            compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
             compile 'org.apache.httpcomponents:httpclient:4.5.7'
-            compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.8'
-            compile 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
+            compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.9'
+            compile 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
         }
     }
 }
@@ -256,8 +255,8 @@ project(':controller') {
             compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
             compile group: 'javax.activation', name: 'activation', version: '1.1.1'
 
-            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.5.0'
-            compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.5.0'
+            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.6.0'
+            compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.6.2'
             compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.4'
             runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
@@ -340,9 +339,9 @@ dependencies {
     compile project(':controller'), project(':satellite')
     testCompile project(':controller'), project(':satellite')
 
-    def powerMockVersion = '2.0.0-RC.4'
+    def powerMockVersion = '2.0.2'
     testCompile group: 'junit', name: 'junit', version: '4.+'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
     testCompile group: 'org.powermock', name: 'powermock-core', version: powerMockVersion
     testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: powerMockVersion
     testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: powerMockVersion
@@ -350,8 +349,8 @@ dependencies {
     testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
     testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 
-    testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
-    testCompile group: 'io.projectreactor', name: 'reactor-test', version: '3.2.3.RELEASE'
+    testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.2.2'
+    testCompile group: 'io.projectreactor', name: 'reactor-test', version: '3.2.9.RELEASE'
 }
 
 /////////////////////////// Start scripts ///////////////////////////
