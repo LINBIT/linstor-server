@@ -1,3 +1,43 @@
+linstor-server (0.9.12-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * DevMgr: Fixed deletion of multiple resources
+  * Proto: Removed no longer used API entry points
+  * Proto: Moved .proto files
+  * DRBD: fixed `uname -n` check
+  * Drbd-Proxy: Set protocol A as default
+  * LvmThin: Fixed incorrectly displayed allocated size
+  * Nvme,Luks: Enabled nvme op top of luks layer
+  * VlmApi: Added modify props
+  * Stlt: Added SysFsHandler
+  * CtrlVlmApi: Removed unintentional code duplication
+
+  [ Rene Peinthor ]
+  * gradle/common: move proto files into linstor project
+  * gradle: fix java generated files dependencies
+  * protobuf: use map<string, string> instead of LinStorMapEntry
+  * rest-api: fix NPE on grizzly service restart
+  * list-errorreports: use lambdas for since/to check
+  * rest-api-docu: Fix storage pool definition modify schema type
+  * allow PrefNic property on Node
+  * rest-api/drbdproxy: fix no response for modifyProxy
+  * rest-api: add a /health uri resource for kubernetes liveness probes
+  * gradle: update 3rd party libraries
+  * rest-api-doc: improve changelog and push REST_API_VERSION to 1.0.6
+
+  [ Roland Kammerer ]
+  * apidiffgo.sh: add script to easy API updates
+  * apidiffgo: die if subshell errors out
+
+  [ Robert Altnoeder ]
+  * Reintegrate authentication and version info
+  * Sort API list in debug output
+
+  [ Rainer Laschober ]
+  * Set correct api call for modifyStorPool
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 25 Jun 2019 10:28:03 +0200
+
 linstor-server (0.9.11-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
