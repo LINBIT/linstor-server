@@ -87,50 +87,39 @@ public class RetryResourcesTask implements Task
         {
             rscsToRetry = getResourcesToRetry();
         }
-        Map<Node, List<Resource>> groupedResources = groupByNode(rscsToRetry);
 
-        for (Entry<Node, List<Resource>> entry : groupedResources.entrySet())
+        for (Resource rsc : rscsToRetry)
         {
-            retry(entry.getKey(), entry.getValue());
-        }
-        return TASK_TIMEOUT;
-    }
-
-    private void retry(Node node, List<Resource> list)
-    {
-        try
-        {
-            Peer peer = node.getPeer(sysCtx);
-            for (Resource rsc : list)
+            if (!rsc.isDeleted())
             {
-                if (!rsc.isDeleted() && !node.isDeleted())
+                try
                 {
-                    // only update the one satellite, not every involved satellites
-                    peer.sendMessage(
-                        serializer
-                            .onewayBuilder(InternalApiConsts.API_CHANGED_RSC)
-                            .changedResource(
-                                rsc.getUuid(),
-                                rsc.getDefinition().getName().displayValue
-                            )
-                            .build()
-                    );
+                    if (!rsc.getAssignedNode().isDeleted())
+                    {
+                        Peer peer = rsc.getAssignedNode().getPeer(sysCtx);
+                        // only update the one satellite, not every involved satellites
+                        peer.sendMessage(
+                            serializer
+                                .onewayBuilder(InternalApiConsts.API_CHANGED_RSC)
+                                .changedResource(
+                                    rsc.getUuid(),
+                                    rsc.getDefinition().getName().displayValue
+                                )
+                                .build()
+                        );
+                    }
+                    else
+                    {
+                        failedResources.remove(rsc);
+                    }
                 }
-                else
+                catch (AccessDeniedException accDeniedExc)
                 {
-                    failedResources.remove(rsc);
+                    errorReporter.reportError(new ImplementationError(accDeniedExc));
                 }
             }
         }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            errorReporter.reportError(new ImplementationError(accDeniedExc));
-        }
-    }
-
-    private Map<Node, List<Resource>> groupByNode(List<Resource> rscsToRetry)
-    {
-        return rscsToRetry.stream().collect(Collectors.groupingBy(Resource::getAssignedNode));
+        return TASK_TIMEOUT;
     }
 
     private List<Resource> getResourcesToRetry()
