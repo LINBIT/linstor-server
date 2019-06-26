@@ -31,6 +31,7 @@ public class TaskScheduleService implements SystemService, Runnable
 
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "Task schedule service";
+    private static final long DEFAULT_RETRY_DELAY = 60_000;
 
     static
     {
@@ -259,7 +260,24 @@ public class TaskScheduleService implements SystemService, Runnable
 
     private void execute(Task task, long now)
     {
-        long delay = task.run();
+        long delay = DEFAULT_RETRY_DELAY;
+        try
+        {
+            delay = task.run();
+        }
+        catch (Exception exc)
+        {
+            errorReporter.reportError(
+                Level.ERROR,
+                new ImplementationError(
+                    "Unhandled exception caught in " + TaskScheduleService.class.getName(),
+                    exc
+                ),
+                null,
+                null,
+                "This exception was generated in the service thread of the service '" + SERVICE_NAME + "'"
+            );
+        }
 
         // Reschedule the task if a non-negative delay was requested
         if (delay >= 0)
