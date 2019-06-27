@@ -63,7 +63,6 @@ public class VolumeDataFactory
             UUID.randomUUID(),
             rsc,
             vlmDfn,
-            storPool,
             StateFlagsBits.getMask(flags),
             driver,
             propsContainerFactory,
@@ -73,7 +72,6 @@ public class VolumeDataFactory
         );
         driver.create(volData);
         ((ResourceData) rsc).putVolume(accCtx, volData);
-        storPool.putVolume(accCtx, volData);
         ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
 
         return volData;
@@ -84,7 +82,6 @@ public class VolumeDataFactory
         UUID vlmUuid,
         Resource rsc,
         VolumeDefinition vlmDfn,
-        StorPool storPoolRef,
         Volume.VlmFlags[] flags
     )
     {
@@ -98,7 +95,6 @@ public class VolumeDataFactory
                     vlmUuid,
                     rsc,
                     vlmDfn,
-                    storPoolRef,
                     StateFlagsBits.getMask(flags),
                     driver,
                     propsContainerFactory,
@@ -107,7 +103,6 @@ public class VolumeDataFactory
                     new TreeMap<>()
                 );
                 ((ResourceData) rsc).putVolume(accCtx, vlmData);
-                storPoolRef.putVolume(accCtx, vlmData);
                 ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, vlmData);
 
                 vlmData.setAllocatedSize(accCtx, vlmDfn.getVolumeSize(accCtx));

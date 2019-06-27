@@ -6,6 +6,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -14,7 +15,7 @@ import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -160,7 +161,13 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         sfVlmDfnInfoCache = null;
     }
 
-    public VlmProviderObject load(Volume vlmRef, StorageRscData rscDataRef, DeviceProviderKind kindRef)
+    public VlmProviderObject load(
+        Volume vlmRef,
+        StorageRscData rscDataRef,
+        DeviceProviderKind kindRef,
+        StorPool storPoolRef,
+        StorageLayerDatabaseDriver storageLayerDbDriverRef
+    )
     {
         SfVlmDfnData sfVlmDfnData = sfVlmDfnInfoCache.get(
             new Triple<>(
@@ -188,6 +195,8 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
                     rscDataRef,
                     vlmRef,
                     sfVlmDfnData,
+                    storPoolRef,
+                    storageLayerDbDriverRef,
                     transObjFactory,
                     transMgrProvider
                 );
@@ -197,6 +206,8 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
                     vlmRef,
                     rscDataRef,
                     sfVlmDfnData,
+                    storPoolRef,
+                    storageLayerDbDriverRef,
                     transObjFactory,
                     transMgrProvider
                 );

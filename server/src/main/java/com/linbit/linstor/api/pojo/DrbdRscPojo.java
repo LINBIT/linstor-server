@@ -210,7 +210,6 @@ public class DrbdRscPojo implements RscLayerDataApi
             String diskStateRef
         )
         {
-            super();
             drbdVlmDfn = drbdVlmDfnRef;
             devicePath = devicePathRef;
             backingDisk = backingDiskRef;
@@ -220,6 +219,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             usableSize = usableSizeRef;
             diskState = diskStateRef;
         }
+
         public DrbdVlmDfnPojo getDrbdVlmDfn()
         {
             return drbdVlmDfn;

@@ -49,11 +49,6 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
     void removeVolumeConnection(AccessContext accCtx, VolumeConnection volumeConnection)
         throws AccessDeniedException;
 
-    StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
-
-    void setStorPool(AccessContext accCtx, StorPool storPool)
-        throws AccessDeniedException, SQLException;
-
     String getDevicePath(AccessContext accCtx) throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
@@ -153,19 +148,21 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
     {
         UUID getVlmUuid();
         UUID getVlmDfnUuid();
-        String getStorPoolName();
-        UUID getStorPoolUuid();
-        DeviceProviderKind getStorPoolDeviceProviderKind();
         String getDevicePath();
         int getVlmNr();
         long getFlags();
         Map<String, String> getVlmProps();
-        UUID getStorPoolDfnUuid();
-        Map<String, String> getStorPoolDfnProps();
-        Map<String, String> getStorPoolProps();
         Optional<Long> getAllocatedSize();
         Optional<Long> getUsableSize();
         List<Pair<String, VlmLayerDataApi>> getVlmLayerData();
+
+        // the following methods should be removed, but will stay for a while for client-compatibility
+        @Deprecated
+        /** returns the name of the storage pool of the vlmLayerObject with "" as resource name suffix */
+        String getStorPoolName();
+        @Deprecated
+        /** returns the DeviceProviderKind of the storage pool of the vlmLayerObject with "" as resource name suffix */
+        DeviceProviderKind getStorPoolDeviceProviderKind();
     }
 
 

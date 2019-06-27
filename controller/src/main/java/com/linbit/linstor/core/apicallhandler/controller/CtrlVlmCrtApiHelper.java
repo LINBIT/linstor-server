@@ -31,7 +31,10 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 @Singleton
 public class CtrlVlmCrtApiHelper
@@ -61,38 +64,68 @@ public class CtrlVlmCrtApiHelper
         Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
-        return createVolumeResolvingStorPool(rsc, vlmDfn, thinFreeCapacities, null, null);
-    }
-
-    public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
-        Resource rsc,
-        VolumeDefinition vlmDfn,
-        Map<StorPool.Key, Long> thinFreeCapacities,
-        String blockDevice,
-        String metaDisk
-    )
-    {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         boolean isDiskless = isDiskless(rsc);
         StorPool storPool = storPoolResolveHelper.resolveStorPool(rsc, vlmDfn, isDiskless).extractApiCallRc(apiCallRc);
 
+        Map<String, StorPool> storPoolMap = new TreeMap<>();
+        storPoolMap.put("", storPool);
+
         return new ApiCallRcWith<>(apiCallRc, createVolume(
             rsc,
             vlmDfn,
-            storPool,
-            thinFreeCapacities,
-            blockDevice,
-            metaDisk
+            storPoolMap,
+            thinFreeCapacities
         ));
     }
 
     public VolumeData createVolume(
         Resource rsc,
         VolumeDefinition vlmDfn,
-        StorPool storPool,
-        Map<StorPool.Key, Long> thinFreeCapacities,
-        String blockDevice,
-        String metaDisk
+        Map<String, StorPool> storPoolMapRef,
+        Map<StorPool.Key, Long> thinFreeCapacities
+    )
+    {
+        checkIfStorPoolsAreUsable(rsc, vlmDfn, storPoolMapRef, thinFreeCapacities);
+
+        VolumeData vlm;
+        try
+        {
+            vlm = volumeDataFactory.create(
+                peerAccCtx.get(),
+                rsc,
+                vlmDfn,
+                null // flags
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "register " + getVlmDescriptionInline(rsc, vlmDfn),
+                ApiConsts.FAIL_ACC_DENIED_VLM
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_VLM,
+                "The " + getVlmDescriptionInline(rsc, vlmDfn) + " already exists"
+            ), dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ApiSQLException(sqlExc);
+        }
+
+        return vlm;
+    }
+
+    private void checkIfStorPoolsAreUsable(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        Map<String, StorPool> storPoolMapRef,
+        Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         /*
@@ -104,11 +137,37 @@ public class CtrlVlmCrtApiHelper
          * exists on the storPool, which means we will not consume additional $volumeSize space
          */
 
-        DeviceProviderKind driverKind = storPool.getDeviceProviderKind();
-        if (driverKind.hasBackingDevice())
+        Set<StorPool> disklessPools = new HashSet<>();
+        Set<StorPool> thinPools = new HashSet<>();
+        Set<StorPool> poolsToCheck = new HashSet<>();
+
+        for (StorPool storPool : storPoolMapRef.values())
+        {
+            DeviceProviderKind devProviderKind = storPool.getDeviceProviderKind();
+            if (devProviderKind.hasBackingDevice())
+            {
+                if (devProviderKind.usesThinProvisioning())
+                {
+                    thinPools.add(storPool);
+                }
+                else
+                {
+                    poolsToCheck.add(storPool);
+                }
+            }
+            else
+            {
+                disklessPools.add(storPool);
+            }
+        }
+
+        if (thinFreeCapacities != null)
+        {
+            poolsToCheck.addAll(thinPools);
+        }
+        for (StorPool storPool : poolsToCheck)
         {
             if (getPeerPrivileged(rsc.getAssignedNode()).getConnectionStatus() == Peer.ConnectionStatus.ONLINE &&
-                (thinFreeCapacities != null || !driverKind.usesThinProvisioning()) &&
                 !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
             )
             {
@@ -138,7 +197,8 @@ public class CtrlVlmCrtApiHelper
                 }
             }
         }
-        else
+
+        if (!disklessPools.isEmpty())
         {
             if (!LayerUtils.hasLayer(
                     CtrlRscToggleDiskApiCallHandler.getLayerData(peerAccCtx.get(), rsc),
@@ -154,39 +214,6 @@ public class CtrlVlmCrtApiHelper
                 ));
             }
         }
-
-        VolumeData vlm;
-        try
-        {
-            vlm = volumeDataFactory.create(
-                peerAccCtx.get(),
-                rsc,
-                vlmDfn,
-                storPool,
-                null // flags
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "register " + getVlmDescriptionInline(rsc, vlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_VLM
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_EXISTS_VLM,
-                "The " + getVlmDescriptionInline(rsc, vlmDfn) + " already exists"
-            ), dataAlreadyExistsExc);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ApiSQLException(sqlExc);
-        }
-
-        return vlm;
     }
 
     private Peer getPeerPrivileged(Node assignedNode)

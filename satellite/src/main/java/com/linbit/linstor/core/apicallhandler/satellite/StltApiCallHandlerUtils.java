@@ -19,9 +19,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
@@ -104,7 +103,6 @@ public class StltApiCallHandlerUtils
                 if (storPool.getDeviceProviderKind().usesThinProvisioning() &&
                     (storPoolFilter.isEmpty() || storPoolFilter.contains(storPool.getName())))
                 {
-
                     DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
                     if (deviceProvider == null)
                     {
@@ -116,8 +114,9 @@ public class StltApiCallHandlerUtils
                             .build()
                         );
 
-                        for (Volume vlm : storPool.getVolumes(apiCtx))
+                        for (VlmProviderObject vlmProviderObject : storPool.getVolumes(apiCtx))
                         {
+                            Volume vlm = vlmProviderObject.getVolume();
                             if (
                                 resourceFilter.isEmpty() ||
                                 resourceFilter.contains(vlm.getResourceDefinition().getName())
@@ -148,8 +147,9 @@ public class StltApiCallHandlerUtils
 
                 for (StorPool storPool : entry.getValue())
                 {
-                    for (Volume vlm : storPool.getVolumes(apiCtx))
+                    for (VlmProviderObject vlmProviderObject : storPool.getVolumes(apiCtx))
                     {
+                        Volume vlm = vlmProviderObject.getVolume();
                         if (resourceFilter.isEmpty() || resourceFilter.contains(vlm.getResourceDefinition().getName()))
                         {
                             List<RscLayerObject> rscLayerData = LayerUtils.getChildLayerDataByKind(
@@ -239,35 +239,6 @@ public class StltApiCallHandlerUtils
         }
 
         return spaceMap;
-    }
-
-    private Either<Long, ApiRcException> getVlmAllocatedOrError(Volume vlm)
-        throws AccessDeniedException
-    {
-        return Either.left(getVlmAllocated(vlm));
-    }
-
-    private Long getVlmAllocated(Volume vlm)
-        throws AccessDeniedException
-    {
-        long allocated;
-        StorPool storPool = vlm.getStorPool(apiCtx);
-        DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
-        if (deviceProvider == null)
-        {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_UNKNOWN_ERROR,
-                    "Device provider for pool '" + storPool.getName() + "' not found"
-                )
-                .build()
-            );
-        }
-        else
-        {
-            allocated = ProviderUtils.getAllocatedSize(vlm, apiCtx);
-        }
-        return allocated;
     }
 
     private Either<SpaceInfo, ApiRcException> getStoragePoolSpaceInfoOrError(StorPool storPool)

@@ -136,7 +136,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             uuid,
             res,
             volDfn,
-            storPool,
             VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
@@ -170,7 +169,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             res,
             volDfn,
-            storPool,
             new VlmFlags[] {VlmFlags.DELETE}
         );
         commit();
@@ -206,7 +204,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             uuid,
             res,
             volDfn,
-            storPool,
             VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
@@ -218,13 +215,11 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
         Map<Pair<NodeName, ResourceName>, ResourceData> rscMap = new HashMap<>();
         Map<Pair<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap = new HashMap<>();
-        Map<Pair<NodeName, StorPoolName>, StorPoolData> storPoolMap = new HashMap<>();
 
         rscMap.put(new Pair<>(nodeName, resName), res);
         vlmDfnMap.put(new Pair<>(resName, volNr), volDfn);
-        storPoolMap.put(new Pair<>(nodeName, storPoolName), storPool);
 
-        Map<VolumeData, InitMaps> vlmMap = driver.loadAll(rscMap, vlmDfnMap, storPoolMap);
+        Map<VolumeData, InitMaps> vlmMap = driver.loadAll(rscMap, vlmDfnMap);
 
         assertEquals(1, vlmMap.size());
 
@@ -239,7 +234,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             uuid,
             res,
             volDfn,
-            storPool,
             VlmFlags.DELETE.flagValue,
             driver,
             propsContainerFactory,
@@ -262,7 +256,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             res,
             volDfn,
-            storPool,
             null
         );
 
@@ -278,7 +271,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             uuid,
             res,
             volDfn,
-            storPool,
             0L,
             driver,
             propsContainerFactory,
@@ -315,7 +307,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             uuid,
             res,
             volDfn,
-            storPool,
             0L,
             driver,
             propsContainerFactory,
@@ -343,7 +334,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             uuid,
             res,
             volDfn,
-            storPool,
             0L,
             driver,
             propsContainerFactory,
@@ -396,7 +386,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             uuid,
             res,
             volDfn,
-            storPool,
             0L,
             driver,
             propsContainerFactory,
@@ -412,7 +401,6 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             res,
             volDfn,
-            storPool,
             null
         );
     }

@@ -20,10 +20,14 @@ public class RscApiData implements Resource.RscApi
     private final RscOuterClass.Rsc rsc;
     private final RscLayerDataApi layerObjectApiData;
 
-    public RscApiData(RscOuterClass.Rsc rscRef)
+    public RscApiData(RscOuterClass.Rsc rscRef, long fullSyncId, long updateId)
     {
         rsc = rscRef;
-        layerObjectApiData = ProtoLayerUtils.extractRscLayerData(rsc.getLayerObject());
+        layerObjectApiData = ProtoLayerUtils.extractRscLayerData(
+            rsc.getLayerObject(),
+            fullSyncId,
+            updateId
+        );
     }
 
     @Override

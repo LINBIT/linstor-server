@@ -14,6 +14,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
@@ -57,6 +58,19 @@ public class CtrlStorPoolResolveHelper
     )
     {
         return resolveStorPool(peerCtxProvider.get(), rsc, vlmDfn, isRscDiskless, true);
+    }
+
+    /**
+     * Resolves the correct storage pool and also handles error/warnings in diskless modes.
+     */
+    public ApiCallRcWith<StorPool> resolveStorPool(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        boolean isRscDiskless,
+        boolean throwExcIfStorPoolIsNull
+    )
+    {
+        return resolveStorPool(peerCtxProvider.get(), rsc, vlmDfn, isRscDiskless, throwExcIfStorPoolIsNull);
     }
 
     /**
@@ -151,18 +165,20 @@ public class CtrlStorPoolResolveHelper
     {
         DeviceProviderKind driverKind = storPool.getDeviceProviderKind();
 
-        for (Resource rsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
+        for (Resource peerRsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
-            if (!rsc.isDiskless(apiCtx) && !rsc.getAssignedNode().getName().equals(nodeName))
+            if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getAssignedNode().getName().equals(nodeName))
             {
-                Volume vlm = rsc.getVolume(vlmDfn.getVolumeNumber());
-                if (vlm != null)
+                Volume peerVlm = peerRsc.getVolume(vlmDfn.getVolumeNumber());
+                if (peerVlm != null)
                 {
-                    StorPool peerStorPool = vlm.getStorPool(apiCtx);
-                    DeviceProviderKind peerKind = peerStorPool.getDeviceProviderKind();
-                    if (!driverKind.equals(peerKind))
+                    for (StorPool peerStorPool : LayerVlmUtils.getStorPoolSet(peerVlm, apiCtx))
                     {
-                        throw new ApiRcException(makeInvalidDriverKindError(driverKind, peerKind));
+                        DeviceProviderKind peerKind = peerStorPool.getDeviceProviderKind();
+                        if (!driverKind.equals(peerKind))
+                        {
+                            throw new ApiRcException(makeInvalidDriverKindError(driverKind, peerKind));
+                        }
                     }
                 }
             }

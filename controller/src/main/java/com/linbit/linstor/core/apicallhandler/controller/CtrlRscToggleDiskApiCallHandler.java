@@ -41,10 +41,11 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -64,6 +65,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
@@ -309,31 +311,50 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         // Resolve storage pool now so that nothing is committed if the storage pool configuration is invalid
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
+        Set<RscLayerObject> storRscDataList = getStorageResourceLayerDataPriveleged(rsc);
+        if (storRscDataList.size() != 1)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Toggle disk on volumes with multiple storage pools is not supported (yet)"
+                )
+            );
+        }
+        RscLayerObject storRscData = storRscDataList.iterator().next();
+
         while (vlmIter.hasNext())
         {
             Volume vlm = vlmIter.next();
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
 
-            StorPool storPool = ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlmDfn, removeDisk)
-                .extractApiCallRc(responses);
+            StorPool storPool = ctrlStorPoolResolveHelper.resolveStorPool(
+                rsc,
+                vlmDfn,
+                removeDisk
+            ).extractApiCallRc(responses);
 
             if (!removeDisk)
             {
-                setStorPool(vlm, storPool);
-                removeStorageLayerData(rsc);
-                ctrlLayerStackHelper.ensureStackDataExists(rsc, null, null);
+                setStorPoolPrivileged(
+                    storRscData.getVlmProviderObject(vlmDfn.getVolumeNumber()),
+                    storPool
+                );
             }
-            // else (if we are removing disk) we first have to remove the actual disk.
-            // that means we can only update the storage layer if the deviceManager already got rid
-            // of the actual volume(s)
         }
 
         if (removeDisk)
         {
+            // diskful -> diskless
             markDiskRemoveRequested(rsc);
+
+            // before we can update the layerData we first have to remove the actual disk.
+            // that means we can only update the storage layer if the deviceManager already got rid
+            // of the actual volume(s)
         }
         else
         {
+            // diskless -> diskful
             markDiskAddRequested(rsc);
 
             if (migrateFromNodeNameStr != null && !migrateFromNodeNameStr.isEmpty())
@@ -360,6 +381,36 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk));
+    }
+
+    private Set<RscLayerObject> getStorageResourceLayerDataPriveleged(ResourceData rsc)
+    {
+        Set<RscLayerObject> storRscData;
+        try
+        {
+            storRscData = LayerRscUtils.getRscDataByProvider(rsc.getLayerData(apiCtx), DeviceLayerKind.STORAGE);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return storRscData;
+    }
+
+    private void setStorPoolPrivileged(VlmProviderObject vlmProviderObjectRef, StorPool storPool)
+    {
+        try
+        {
+            vlmProviderObjectRef.setStorPool(apiCtx, storPool);
+        }
+        catch (SQLException exc)
+        {
+            throw new ApiSQLException(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     // Restart from here when connection established and flag set
@@ -418,6 +469,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             {
                 markDiskAdding(rsc);
             }
+
             ctrlTransactionHelper.commit();
 
             String actionSelf = removeDisk ? "Removed disk on {0}" : null;
@@ -513,19 +565,27 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
 
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
+        Set<RscLayerObject> storRscDataList = getStorageResourceLayerDataPriveleged(rsc);
+        if (storRscDataList.size() != 1)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Toggle disk on volumes with multiple storage pools is not supported (yet)"
+                )
+            );
+        }
+        RscLayerObject storRscData = storRscDataList.iterator().next();
         while (vlmIter.hasNext())
         {
             Volume vlm = vlmIter.next();
-
-            StorPool storPool = ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlm.getVolumeDefinition(), removeDisk)
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+            StorPool storPool = ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlmDfn, removeDisk)
                 .extractApiCallRc(responses);
-
-            setStorPool(vlm, storPool);
-            if (removeDisk)
-            {
-                removeStorageLayerData(rsc);
-                ctrlLayerStackHelper.ensureStackDataExists(rsc, null, null);
-            }
+            setStorPoolPrivileged(
+                storRscData.getVlmProviderObject(vlmDfn.getVolumeNumber()),
+                storPool
+            );
         }
 
         ctrlTransactionHelper.commit();
@@ -710,7 +770,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 List<VlmProviderObject> vlmDataList = new ArrayList<>(rscLayerObject.getVlmLayerObjects().values());
                 for (VlmProviderObject vlmData : vlmDataList)
                 {
-                    rscLayerObject.remove(vlmData.getVlmNr());
+                    rscLayerObject.remove(peerAccCtx.get(), vlmData.getVlmNr());
                 }
             }
 
@@ -859,18 +919,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 Resource.RscFlags.DISK_REMOVING,
                 Resource.RscFlags.DISK_REMOVE_REQUESTED
             );
-        }
-        catch (AccessDeniedException | SQLException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
-    private void setStorPool(Volume vlm, StorPool storPool)
-    {
-        try
-        {
-            vlm.setStorPool(apiCtx, storPool);
         }
         catch (AccessDeniedException | SQLException exc)
         {

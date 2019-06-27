@@ -1,14 +1,12 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -117,12 +115,6 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     }
 
     @Override
-    public List<Volume.VlmApi> getVlmList()
-    {
-        return VlmApiData.toApiList(storPool.getVlmsList());
-    }
-
-    @Override
     public Map<String, String> getStorPoolStaticTraits()
     {
         return storPool.getStaticTraitsMap();
@@ -132,5 +124,11 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     public ApiCallRc getReports()
     {
         return new ApiCallRcImpl();
+    }
+
+    @Override
+    public Map<String, String> getStorPoolDfnProps()
+    {
+        return storPool.getStorPoolDfnProps();
     }
 }

@@ -1,8 +1,12 @@
 package com.linbit.linstor.storage.data.provider;
 
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -20,12 +24,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class AbsStorageVlmData extends BaseTransactionObject implements VlmProviderObject
+public abstract class AbsStorageVlmData extends BaseTransactionObject
+    implements VlmProviderObject, Comparable<AbsStorageVlmData>
 {
     // unmodifiable data, once initialized
     protected final Volume vlm;
     protected final StorageRscData rscData;
     protected final DeviceProviderKind providerKind;
+
+    // persisted, serialized
+    protected final TransactionSimpleObject<VlmProviderObject, StorPool> storPool;
 
     // not persisted, serialized
     // TODO: introduce flags instead of exists, failed, sizeStates, states
@@ -44,6 +52,8 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject implements
     public AbsStorageVlmData(
         Volume vlmRef,
         StorageRscData rscDataRef,
+        StorPool storPoolRef,
+        StorageLayerDatabaseDriver dbDriverRef,
         DeviceProviderKind providerKindRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
@@ -62,6 +72,12 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject implements
         sizeState = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         states = transObjFactory.createTransactionList(this, new ArrayList<>(), null);
+
+        storPool = transObjFactory.createTransactionSimpleObject(
+            this,
+            storPoolRef,
+            dbDriverRef.getStorPoolDriver()
+        );
 
         transObjs = new ArrayList<>(
             // this way subclasses can still extend the list
@@ -170,6 +186,24 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject implements
     }
 
     @Override
+    public StorPool getStorPool()
+    {
+        return storPool.get();
+    }
+
+    @Override
+    public void setStorPool(AccessContext accCtx, StorPool storPoolRef) throws SQLException, AccessDeniedException
+    {
+        StorPool oldStorPool = storPool.get();
+        if (oldStorPool != null)
+        {
+            oldStorPool.removeVolume(accCtx, this);
+        }
+        storPool.set(storPoolRef);
+        storPoolRef.putVolume(accCtx, this);
+    }
+
+    @Override
     public RscLayerObject getRscLayerObject()
     {
         return rscData;
@@ -194,5 +228,11 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject implements
     public long getExepectedSize()
     {
         return expectedSize;
+    }
+
+    @Override
+    public int compareTo(AbsStorageVlmData other)
+    {
+        return vlm.compareTo(other.vlm);
     }
 }

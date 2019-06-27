@@ -3,7 +3,6 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.linstor.LuksLayerGenericDbDriver;
 import com.linbit.linstor.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.FreeSpaceMgr;
 import com.linbit.linstor.FreeSpaceMgrName;
@@ -11,6 +10,7 @@ import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.LuksLayerGenericDbDriver;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.Node;
@@ -26,9 +26,8 @@ import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDataGenericDbDriver;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionDataGenericDbDriver;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.ResourceLayerIdGenericDbDriver;
-import com.linbit.linstor.ResourceLayerIdGenericDbDriver.RscLayerInfoData;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.SnapshotDefinition;
@@ -51,6 +50,8 @@ import com.linbit.linstor.VolumeDataGenericDbDriver;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.ResourceLayerIdGenericDbDriver.RscLayerInfoData;
+import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
@@ -60,7 +61,7 @@ import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
@@ -82,6 +83,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
@@ -331,16 +333,15 @@ public class GenericDbDriver implements DatabaseDriver
             );
 
             // loading volumes
-            Map<Volume, Volume.InitMaps> loadedVolumes = Collections.unmodifiableMap(vlmDriver.loadAll(
-                tmpRscMap,
-                tmpVlmDfnMap,
-                tmpStorPoolMap
-            ));
+            Map<Volume, Volume.InitMaps> loadedVolumes = Collections.unmodifiableMap(
+                vlmDriver.loadAll(
+                    tmpRscMap,
+                    tmpVlmDfnMap
+                )
+            );
 
             for (Volume vlm : loadedVolumes.keySet())
             {
-                loadedStorPools.get(vlm.getStorPool(dbCtx)).getVolumeMap()
-                    .put(Volume.getVolumeKey(vlm), vlm);
                 loadedResources.get(vlm.getResource()).getVlmMap()
                     .put(vlm.getVolumeDefinition().getVolumeNumber(), vlm);
                 loadedVlmDfnMap.get(vlm.getVolumeDefinition()).getVlmMap()
@@ -410,7 +411,7 @@ public class GenericDbDriver implements DatabaseDriver
                     .put(snapshot.getNodeName(), snapshot);
             }
 
-            Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot> tmpSnapshotMap =
+            Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> tmpSnapshotMap =
                 mapByName(loadedSnapshots, snapshot -> new Triple<>(
                     snapshot.getNodeName(),
                     snapshot.getResourceName(),
@@ -440,8 +441,26 @@ public class GenericDbDriver implements DatabaseDriver
                 mapByName(loadedKeyValueStoreMap, KeyValueStore::getName);
             keyValueStoreMap.putAll(tmpKeyValueStoreMap);
 
+            // temporary storPool map
+            Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapForLayers =
+                new TreeMap<>();
+            for (Entry<StorPool, StorPool.InitMaps> entry : loadedStorPools.entrySet())
+            {
+                StorPool storPool = entry.getKey();
+                tmpStorPoolMapForLayers.put(
+                    new Pair<>(
+                        storPool.getNode().getName(),
+                        storPool.getName()
+                    ),
+                    new Pair<>(
+                        storPool,
+                        entry.getValue()
+                    )
+                );
+            }
+
             // load layer objects
-            loadLayerObects(tmpRscDfnMap);
+            loadLayerObects(tmpRscDfnMap, tmpSnapshotMap, tmpStorPoolMapForLayers);
 
             nodesMap.putAll(tmpNodesMap);
             rscDfnMap.putAll(tmpRscDfnMap);
@@ -466,10 +485,14 @@ public class GenericDbDriver implements DatabaseDriver
             Collectors.toMap(nameMapper, Function.identity(), throwingMerger(), TreeMap::new));
     }
 
-    private void loadLayerObects(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef)
+    private void loadLayerObects(
+        Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
+        Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> tmpSnapshotMapRef,
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
+    )
         throws SQLException, AccessDeniedException
     {
-        storageLayerDriver.fetchForLoadAll();
+        storageLayerDriver.fetchForLoadAll(tmpStorPoolMapRef);
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
         drbdLayerDriver.loadLayerData(tmpRscDfnMapRef);
@@ -477,6 +500,24 @@ public class GenericDbDriver implements DatabaseDriver
         // no *DfnLayerObjects for nvme
         // no *DfnLayerObjects for luks
 
+        List<Resource> resourcesWithLayerData = loadRscLayerData(tmpRscDfnMapRef);
+
+        drbdLayerDriver.clearLoadCache();
+        storageLayerDriver.clearLoadAllCache();
+
+        CtrlLayerDataHelper layerDataHelper = ctrlLayerDataHelper.get();
+        LayerPayload payload = new LayerPayload();
+        for (Resource rsc : resourcesWithLayerData)
+        {
+            // initialize all non-persisted, but later serialized variables
+            List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
+            layerDataHelper.ensureStackDataExists((ResourceData) rsc, layerStack, payload);
+        }
+    }
+
+    private List<Resource> loadRscLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef)
+        throws SQLException, AccessDeniedException, ImplementationError
+    {
         // load RscLayerObjects and VlmLayerObjects
         List<RscLayerInfoData> rscLayerInfoList = rscLayerObjDriver.loadAllResourceIds();
 
@@ -484,6 +525,7 @@ public class GenericDbDriver implements DatabaseDriver
         boolean loadNext = true;
         Map<Integer, Pair<RscLayerObject, Set<RscLayerObject>>> rscLayerObjectChildren = new HashMap<>();
 
+        List<Resource> resourcesWithLayerData = new ArrayList<>();
         while (loadNext)
         {
             // we need to load in a top-down fashion.
@@ -497,14 +539,16 @@ public class GenericDbDriver implements DatabaseDriver
                 ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rli.resourceName);
                 Resource rsc = rscDfn.getResource(dbCtx, rli.nodeName);
 
+                resourcesWithLayerData.add(rsc);
+
                 RscLayerObject parent = null;
-                Set<RscLayerObject> parentsChildren = null;
+                Set<RscLayerObject> currentRscLayerDatasChildren = null;
                 if (rli.parentId != null)
                 {
                     Pair<RscLayerObject, Set<RscLayerObject>> pair = rscLayerObjectChildren.get(rli.parentId);
 
                     parent = pair.objA;
-                    parentsChildren = pair.objB;
+                    currentRscLayerDatasChildren = pair.objB;
                 }
                 switch (rli.kind)
                 {
@@ -551,25 +595,14 @@ public class GenericDbDriver implements DatabaseDriver
                 }
                 else
                 {
-                    parentsChildren.add(rscLayerObject);
+                    currentRscLayerDatasChildren.add(rscLayerObject);
                 }
 
                 // rli will be the parent for the next iteration
                 parentIds.add(rli.id);
             }
         }
-
-        drbdLayerDriver.clearLoadCache();
-        storageLayerDriver.clearLoadAllCache();
-
-        CtrlLayerDataHelper layerDataHelper = ctrlLayerDataHelper.get();
-        LayerPayload payload = new LayerPayload();
-        for (Resource rsc : tmpRscMapRef.values())
-        {
-            // initialize all non-persisted, but later serialized variables
-            List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
-            layerDataHelper.ensureStackDataExists((ResourceData) rsc, layerStack, payload);
-        }
+        return resourcesWithLayerData;
     }
 
     private List<RscLayerInfoData> nextRscLayerToLoad(

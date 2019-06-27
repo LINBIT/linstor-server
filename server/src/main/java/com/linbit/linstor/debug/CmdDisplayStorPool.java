@@ -10,6 +10,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.utils.TreePrinter;
 import com.linbit.utils.UuidUtils;
 
@@ -157,17 +158,18 @@ public class CmdDisplayStorPool extends BaseDebugCmd
                         .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(storPool.getNode()))
                         .leaf("Driver name: %s", storPool.getDeviceProviderKind());
 
-                    Collection<Volume> volumes = storPool.getVolumes(accCtx);
+                    Collection<VlmProviderObject> vlmLayerDataCollection = storPool.getVolumes(accCtx);
 
                     treeBuilder
-                        .branch("Volumes (count: %d)", volumes.size());
+                        .branch("Volumes (count: %d)", vlmLayerDataCollection.size());
 
-                    for (Volume volume : volumes)
+                    for (VlmProviderObject vlmLayerData : vlmLayerDataCollection)
                     {
+                        Volume vlm = vlmLayerData.getVolume();
                         treeBuilder
-                            .branch("Volume %s", volume.getUuid().toString().toUpperCase())
-                            .leaf("Flags: %016X", volume.getFlags().getFlagsBits(accCtx))
-                            .leaf("Volume number: %s", volume.getVolumeDefinition().getVolumeNumber())
+                            .branch("Volume %s", vlm.getUuid().toString().toUpperCase())
+                            .leaf("Flags: %016X", vlm.getFlags().getFlagsBits(accCtx))
+                            .leaf("Volume number: %s", vlm.getVolumeDefinition().getVolumeNumber())
                             .endBranch();
                     }
 

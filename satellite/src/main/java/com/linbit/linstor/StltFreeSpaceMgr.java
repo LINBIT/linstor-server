@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 
@@ -55,24 +56,31 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
-    public void vlmCreating(AccessContext accCtx, Volume vlm)
+    public void vlmCreating(AccessContext accCtx, VlmProviderObject vlm)
         throws AccessDeniedException
     {
         // Ignore
     }
 
     @Override
-    public void ensureVlmNoLongerCreating(AccessContext accCtxRef, Volume vlmRef) throws AccessDeniedException
+    public void ensureVlmNoLongerCreating(AccessContext accCtxRef, VlmProviderObject vlmRef)
+        throws AccessDeniedException
+    {
+        // Trust me, I no longer track vlmProviderObject as "creating"
+    }
+
+    @Override
+    public void vlmCreationFinished(
+        AccessContext accCtx,
+        VlmProviderObject vlm,
+        Long freeCapacityRef,
+        Long totalCapacityRef
+    )
+        throws AccessDeniedException
     {
         // I'm positive
     }
 
-    @Override
-    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, Long freeCapacityRef, Long totalCapacityRef)
-        throws AccessDeniedException
-    {
-        // Ignore
-    }
 
     @Override
     public Optional<Long> getFreeCapacityLastUpdated(AccessContext accCtx)

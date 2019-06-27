@@ -1,19 +1,24 @@
 package com.linbit.linstor.api.protobuf;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
+import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
@@ -168,6 +173,35 @@ public class ProtoDeserializationUtils
                 throw new ImplementationError("Unknown (proto) LayerType: " + layerTypeRef);
         }
         return kind;
+    }
+
+    public static StorPoolApi parseStorPool(StorPool storPoolProto, long fullSyncId, long updateId)
+    {
+        return new StorPoolPojo(
+            UUID.fromString(storPoolProto.getStorPoolUuid()),
+            UUID.fromString(storPoolProto.getNodeUuid()),
+            storPoolProto.getNodeName(),
+            storPoolProto.getStorPoolName(),
+            UUID.fromString(storPoolProto.getStorPoolDfnUuid()),
+            parseDeviceProviderKind(storPoolProto.getProviderKind()),
+            storPoolProto.getPropsMap(),
+            storPoolProto.getStorPoolDfnPropsMap(),
+            storPoolProto.getStaticTraitsMap(),
+            fullSyncId,
+            updateId,
+            storPoolProto.getFreeSpaceMgrName(),
+            Optional.ofNullable(
+                storPoolProto.hasFreeSpace() && storPoolProto.getFreeSpace().hasFreeCapacity() ?
+                    storPoolProto.getFreeSpace().getFreeCapacity() :
+                    null
+            ),
+            Optional.ofNullable(
+                storPoolProto.hasFreeSpace() && storPoolProto.getFreeSpace().hasTotalCapacity() ?
+                    storPoolProto.getFreeSpace().getTotalCapacity() :
+                    null
+            ),
+            null
+        );
     }
 
     private ProtoDeserializationUtils()

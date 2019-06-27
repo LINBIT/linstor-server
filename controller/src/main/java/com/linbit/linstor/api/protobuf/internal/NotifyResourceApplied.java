@@ -44,7 +44,11 @@ public class NotifyResourceApplied implements ApiCall
 
         rscInternalCallHandler.updateVolumeData(
             msgIntAppliedRsc.getRscId().getName(),
-            ProtoLayerUtils.extractRscLayerData(msgIntAppliedRsc.getLayerObject()),
+            ProtoLayerUtils.extractRscLayerData(
+                msgIntAppliedRsc.getLayerObject(),
+                -1, // we are on the controller now, so we do not care about fullSyncdId
+                -1  // we are on the controller now, so we do not care about updateId
+            ),
             ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
                 msgIntAppliedRsc.getFreeSpaceList()
             )

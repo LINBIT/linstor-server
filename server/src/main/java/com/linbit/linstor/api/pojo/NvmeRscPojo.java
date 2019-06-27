@@ -75,7 +75,6 @@ public class NvmeRscPojo implements RscLayerDataApi
             String diskStateRef
         )
         {
-            super();
             vlmNr = vlmNrRef;
             devicePath = devicePathRef;
             backingDisk = backingDiskRef;

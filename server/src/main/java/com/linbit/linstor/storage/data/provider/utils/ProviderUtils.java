@@ -5,9 +5,10 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+
 import java.util.LinkedList;
 
 public class ProviderUtils

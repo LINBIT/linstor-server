@@ -8,7 +8,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import java.sql.SQLException;
 import java.util.Collection;

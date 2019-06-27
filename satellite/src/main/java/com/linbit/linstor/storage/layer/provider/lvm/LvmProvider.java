@@ -19,7 +19,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
@@ -164,7 +164,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
      * Expected to be overridden (extended) by LvmThinProvider
      */
     protected void updateInfo(LvmData vlmData, LvsInfo info)
-        throws AccessDeniedException, SQLException, StorageException
+        throws SQLException, AccessDeniedException, StorageException
     {
         vlmData.setIdentifier(asLvIdentifier(vlmData));
         if (info == null)
@@ -188,9 +188,9 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         }
     }
 
-    protected String extractVolumeGroup(LvmData vlmData) throws AccessDeniedException
+    protected String extractVolumeGroup(LvmData vlmData)
     {
-        return getVolumeGroup(vlmData.getVolume().getStorPool(storDriverAccCtx));
+        return getVolumeGroup(vlmData.getStorPool());
     }
 
     /*
@@ -226,7 +226,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                 vlm.getProps(storDriverAccCtx),
                 vlm.getVolumeDefinition().getProps(storDriverAccCtx),
                 vlm.getResourceDefinition().getProps(storDriverAccCtx),
-                vlm.getStorPool(storDriverAccCtx).getProps(storDriverAccCtx)
+                vlmDataRef.getStorPool().getProps(storDriverAccCtx)
             );
             type = prioProps.getProp(
                 ApiConsts.KEY_STOR_POOL_LVCREATE_TYPE,
@@ -425,7 +425,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             String volumeGroup = vlmData.getVolumeGroup();
             if (volumeGroup == null)
             {
-                volumeGroup = getVolumeGroup(vlmData.getVolume().getStorPool(storDriverAccCtx));
+                volumeGroup = getVolumeGroup(vlmData.getStorPool());
                 vlmData.setVolumeGroup(volumeGroup);
             }
             if (volumeGroup != null)

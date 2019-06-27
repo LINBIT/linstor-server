@@ -7,8 +7,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import com.linbit.ImplementationError;
@@ -27,6 +29,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -41,6 +44,10 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.Pair;
 
 import org.slf4j.event.Level;
@@ -403,8 +410,8 @@ public class ConfFileBuilder
                         else
                         {
                             // ...or fall back to previous implementation
-                            appendConnectionHost(port, rscConn, getPreferredNetIf(localRsc));
-                            appendConnectionHost(port, rscConn, getPreferredNetIf(peerRsc));
+                            appendConnectionHost(port, rscConn, getPreferredNetIf(localRscData));
+                            appendConnectionHost(port, rscConn, getPreferredNetIf(peerRscData));
                         }
                     }
                 }
@@ -699,24 +706,44 @@ public class ConfFileBuilder
         }
     }
 
-    private NetInterface getPreferredNetIf(Resource rsc)
+    private NetInterface getPreferredNetIf(DrbdRscData peerRscDataRef)
     {
         NetInterface preferredNetIf = null;
         try
         {
-            Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
-            PriorityProps prioProps = new PriorityProps(
-                rsc.getProps(accCtx),
-                iterateVolumes.hasNext() ?
-                    iterateVolumes.next().getStorPool(accCtx).getProps(accCtx) :
-                    null, // prioProps will skip null props-instances
-                rsc.getAssignedNode().getProps(accCtx)
-            );
+            TreeMap<VolumeNumber, DrbdVlmData> sortedVlmData = new TreeMap<>(peerRscDataRef.getVlmLayerObjects());
+            Entry<VolumeNumber, DrbdVlmData> firstVolumeEntry = sortedVlmData.firstEntry();
+            Resource rsc = peerRscDataRef.getResource();
+            Node node = rsc.getAssignedNode();
+
+            PriorityProps prioProps = new PriorityProps();
+
+            if (firstVolumeEntry != null)
+            {
+                VolumeNumber firstVlmNr = firstVolumeEntry.getKey();
+                List<RscLayerObject> storageRscList = LayerUtils.getChildLayerDataByKind(
+                    firstVolumeEntry.getValue().getRscLayerObject(),
+                    DeviceLayerKind.STORAGE
+                );
+                for (RscLayerObject rscObj : storageRscList)
+                {
+                    VlmProviderObject vlmProviderObject = rscObj.getVlmProviderObject(firstVlmNr);
+                    if (vlmProviderObject != null)
+                    {
+                        prioProps.addProps(
+                            vlmProviderObject.getStorPool().getProps(accCtx)
+                        );
+                    }
+                }
+            }
+            prioProps.addProps(rsc.getProps(accCtx));
+            prioProps.addProps(node.getProps(accCtx));
+
             String prefNic = prioProps.getProp(ApiConsts.KEY_STOR_POOL_PREF_NIC);
 
             if (prefNic != null)
             {
-                preferredNetIf = rsc.getAssignedNode().getNetInterface(
+                preferredNetIf = node.getNetInterface(
                     accCtx,
                     new NetInterfaceName(prefNic)
                 );
@@ -732,14 +759,13 @@ public class ConfFileBuilder
             // fallback if preferred couldn't be found
             if (preferredNetIf == null)
             {
-                Node assgNode = rsc.getAssignedNode();
                 // Try to find the 'default' network interface
-                preferredNetIf = assgNode.getNetInterface(accCtx, NetInterfaceName.DEFAULT_NET_INTERFACE_NAME);
+                preferredNetIf = node.getNetInterface(accCtx, NetInterfaceName.DEFAULT_NET_INTERFACE_NAME);
                 // If there is not even a 'default', use the first one that is found in the node's
                 // list of network interfaces
                 if (preferredNetIf == null)
                 {
-                    preferredNetIf = assgNode.streamNetInterfaces(accCtx).findFirst().orElse(null);
+                    preferredNetIf = node.streamNetInterfaces(accCtx).findFirst().orElse(null);
                 }
             }
         }

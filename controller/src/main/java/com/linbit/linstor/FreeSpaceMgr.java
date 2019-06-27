@@ -5,6 +5,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -32,7 +33,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     private final TransactionSimpleObject<FreeSpaceMgr, Long> freeCapacity;
     private final TransactionSimpleObject<FreeSpaceMgr, Long> totalCapacity;
 
-    private final TransactionSet<FreeSpaceMgr, Volume> pendingVolumesToAdd;
+    private final TransactionSet<FreeSpaceMgr, VlmProviderObject> pendingVolumesToAdd;
 
     public FreeSpaceMgr(
         AccessContext privCtxRef,
@@ -96,16 +97,16 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     }
 
     /**
-     * This method should be called when a volume was just created but not yet deployed
+     * This method should be called when a storage-volume was just created but not yet deployed
      * on the {@link Satellite}.
      *
-     * Pending volumes only change the outcome of {@link #getFreeSpaceCurrentEstimation()}
+     * Pending storage-volumes only change the outcome of {@link #getFreeSpaceCurrentEstimation()}
      * but not of {@link #getFreeSpaceLastUpdated()}.
      *
      * @param vlm
      */
     @Override
-    public void vlmCreating(AccessContext accCtx, Volume vlm) throws AccessDeniedException
+    public void vlmCreating(AccessContext accCtx, VlmProviderObject vlm) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
         // TODO: add check if vlm is part of a registered storPool
@@ -118,7 +119,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @throws AccessDeniedException
      */
     @Override
-    public void ensureVlmNoLongerCreating(AccessContext accCtx, Volume vlm)
+    public void ensureVlmNoLongerCreating(AccessContext accCtx, VlmProviderObject vlm)
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -140,7 +141,12 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @param totalCapacityRef
      */
     @Override
-    public void vlmCreationFinished(AccessContext accCtx, Volume vlm, Long freeCapacityRef, Long totalCapacityRef)
+    public void vlmCreationFinished(
+        AccessContext accCtx,
+        VlmProviderObject vlm,
+        Long freeCapacityRef,
+        Long totalCapacityRef
+    )
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -187,22 +193,16 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         long sum = 0;
-        try
+        HashSet<VlmProviderObject> pendingAddVlmCopy;
+        synchronized (pendingVolumesToAdd)
         {
-            HashSet<Volume> pendingAddCopy;
-            synchronized (pendingVolumesToAdd)
-            {
-                pendingAddCopy = new HashSet<>(pendingVolumesToAdd);
-            }
-
-            for (Volume vlm : pendingAddCopy)
-            {
-                sum += vlm.getVolumeDefinition().getVolumeSize(privCtx);
-            }
+            pendingAddVlmCopy = new HashSet<>(pendingVolumesToAdd);
         }
-        catch (AccessDeniedException accDeniedExc)
+        for (VlmProviderObject vlm : pendingAddVlmCopy)
         {
-            throw new ImplementationError("Privileged access context has not enough privileges", accDeniedExc);
+            sum += vlm.getAllocatedSize();
+        }
+        {
         }
         return sum;
     }

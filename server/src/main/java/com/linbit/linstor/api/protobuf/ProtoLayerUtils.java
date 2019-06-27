@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
@@ -31,7 +32,6 @@ import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
-import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeRsc;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
@@ -40,7 +40,6 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlmDfn;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
-import com.linbit.linstor.proto.common.VlmOuterClass.VlmLayerData;
 import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
@@ -48,7 +47,11 @@ import java.util.List;
 
 public class ProtoLayerUtils
 {
-    public static RscLayerDataApi extractRscLayerData(RscLayerData protoRscData)
+    public static RscLayerDataApi extractRscLayerData(
+        RscLayerData protoRscData,
+        long fullSyncId,
+        long updateId
+    )
     {
         RscLayerDataApi ret;
         switch (protoRscData.getLayerType())
@@ -77,7 +80,7 @@ public class ProtoLayerUtils
 
                         for (DrbdVlm protoDrbdVlm : protoDrbdRsc.getDrbdVlmsList())
                         {
-                            drbdRscPojo.getVolumeList().add(extractDrbdVlm(protoDrbdVlm));
+                            drbdRscPojo.getVolumeList().add(extractDrbdVlm(protoDrbdVlm, fullSyncId, updateId));
                         }
 
                         ret = drbdRscPojo;
@@ -123,7 +126,13 @@ public class ProtoLayerUtils
                         );
                         for (StorageVlm protoVlm : protoRscData.getStorage().getStorageVlmsList())
                         {
-                            storageRscPojo.getVolumeList().add(extractStorageVlm(protoVlm));
+                            storageRscPojo.getVolumeList().add(
+                                extractStorageVlm(
+                                    protoVlm,
+                                    fullSyncId,
+                                    updateId
+                                )
+                            );
                         }
 
                         ret = storageRscPojo;
@@ -138,7 +147,6 @@ public class ProtoLayerUtils
             {
                 if (protoRscData.hasNvme())
                 {
-                    NvmeRsc protoNvmeRsc = protoRscData.getNvme();
                     NvmeRscPojo nvmeRscPojo = new NvmeRscPojo(
                         protoRscData.getId(),
                         new ArrayList<>(),
@@ -147,7 +155,7 @@ public class ProtoLayerUtils
                     );
                     for (NvmeVlm protoVlm : protoRscData.getNvme().getNvmeVlmsList())
                     {
-                        nvmeRscPojo.getVolumeList().add(extractNvmeVlm(protoVlm));
+                        nvmeRscPojo.getVolumeList().add(extractNvmeVlm(protoVlm, fullSyncId, updateId));
                     }
 
                     ret = nvmeRscPojo;
@@ -173,7 +181,7 @@ public class ProtoLayerUtils
         {
             for (RscLayerData childrenProto : protoRscData.getChildrenList())
             {
-                ret.getChildren().add(extractRscLayerData(childrenProto));
+                ret.getChildren().add(extractRscLayerData(childrenProto, fullSyncId, updateId));
             }
         }
 
@@ -218,73 +226,6 @@ public class ProtoLayerUtils
         }
 
         return str;
-    }
-
-    public static List<Pair<String, VlmLayerDataApi>> extractVlmLayerData(
-        List<VlmLayerData> vlmLayerDataList
-    )
-    {
-        List<Pair<String, VlmLayerDataApi>> ret = new ArrayList<>();
-
-        for (VlmLayerData vlmLayerData : vlmLayerDataList)
-        {
-            Pair<String, VlmLayerDataApi> pair = new Pair<>();
-            pair.objA = layerType2layerString(vlmLayerData.getLayerType());
-
-            VlmLayerDataApi vlmLayerDataApi;
-
-            switch (vlmLayerData.getLayerType())
-            {
-                case LUKS:
-                    if (vlmLayerData.hasLuks())
-                    {
-                        vlmLayerDataApi = extractLuksVlm(vlmLayerData.getLuks());
-                    }
-                    else
-                    {
-                        vlmLayerDataApi = null;
-                    }
-                    break;
-                case DRBD:
-                    if (vlmLayerData.hasDrbd())
-                    {
-                        vlmLayerDataApi = extractDrbdVlm(vlmLayerData.getDrbd());
-                    }
-                    else
-                    {
-                        vlmLayerDataApi = null;
-                    }
-                    break;
-                case STORAGE:
-                    if (vlmLayerData.hasStorage())
-                    {
-                        vlmLayerDataApi = extractStorageVlm(vlmLayerData.getStorage());
-                    }
-                    else
-                    {
-                        vlmLayerDataApi = null;
-                    }
-                    break;
-                case NVME:
-                    if (vlmLayerData.hasNvme())
-                    {
-                        vlmLayerDataApi = extractNvmeVlm(vlmLayerData.getNvme());
-                    }
-                    else
-                    {
-                        vlmLayerDataApi = null;
-                    }
-                    break;
-                case UNKNOWN_LAYER: // fall-through
-                default:
-                    throw new ImplementationError(
-                        "Unknown VlmLayerData (proto) kind: " + vlmLayerData.getLayerType()
-                    );
-            }
-            pair.objB = vlmLayerDataApi;
-            ret.add(pair);
-        }
-        return ret;
     }
 
     public static List<Pair<String, RscDfnLayerDataApi>> extractRscDfnLayerData(RscDfn rscDfnRef)
@@ -390,7 +331,7 @@ public class ProtoLayerUtils
         return drbdRscDfnPojo;
     }
 
-    private static DrbdVlmPojo extractDrbdVlm(DrbdVlm protoDrbdVlm)
+    private static DrbdVlmPojo extractDrbdVlm(DrbdVlm protoDrbdVlm, long fullSyncId, long updateId)
     {
         DrbdVlmDfn protoDrbdVlmDfn = protoDrbdVlm.getDrbdVlmDfn();
         return new DrbdVlmPojo(
@@ -429,7 +370,9 @@ public class ProtoLayerUtils
     }
 
     private static VlmLayerDataApi extractStorageVlm(
-        StorageVlm protoVlm
+        StorageVlm protoVlm,
+        long fullSyncId,
+        long updateId
     )
         throws ImplementationError
     {
@@ -439,16 +382,21 @@ public class ProtoLayerUtils
         long allocatedSize = protoVlm.getAllocatedSize();
         long usableSize = protoVlm.getUsableSize();
         String diskState = protoVlm.getDiskState();
-        switch (protoVlm.getProviderKind())
+        StorPoolApi storPoolApi = ProtoDeserializationUtils.parseStorPool(
+            protoVlm.getStoragePool(),
+            fullSyncId,
+            updateId
+        );
+        switch (storPoolApi.getDeviceProviderKind())
         {
             case DISKLESS:
-                ret = new DisklessVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, null);
+                ret = new DisklessVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, null, storPoolApi);
                 break;
             case LVM:
-                ret = new LvmVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState);
+                ret = new LvmVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
             case LVM_THIN:
-                ret = new LvmThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState);
+                ret = new LvmThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
             case SWORDFISH_INITIATOR:
                 {
@@ -464,7 +412,8 @@ public class ProtoLayerUtils
                             devicePath,
                             allocatedSize,
                             usableSize,
-                            diskState
+                            diskState,
+                            storPoolApi
                         );
                     }
                     else
@@ -487,7 +436,8 @@ public class ProtoLayerUtils
                                 protoSfVlmDfn.getVlmOdata()
                             ),
                             allocatedSize,
-                            usableSize
+                            usableSize,
+                            storPoolApi
                         );
                     }
                     else
@@ -499,16 +449,16 @@ public class ProtoLayerUtils
                 }
                 break;
             case ZFS:
-                ret = new ZfsVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState);
+                ret = new ZfsVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
             case ZFS_THIN:
-                ret = new ZfsThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState);
+                ret = new ZfsThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
-            case UNKNOWN_PROVIDER: // fall-through
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 throw new ImplementationError(
                     "Unexpected provider type in proto message: " +
-                        protoVlm.getProviderKind() +
+                        storPoolApi.getDeviceProviderKind() +
                         " vlm nr :" + protoVlm.getVlmNr()
                 );
         }
@@ -545,7 +495,7 @@ public class ProtoLayerUtils
         return vlmDfnApi;
     }
 
-    private static NvmeVlmPojo extractNvmeVlm(NvmeVlm protoNvmeVlm)
+    private static NvmeVlmPojo extractNvmeVlm(NvmeVlm protoNvmeVlm, long fullSyncId, long updateId)
     {
         return new NvmeVlmPojo(
             protoNvmeVlm.getVlmNr(),

@@ -6,8 +6,9 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -115,13 +116,18 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     }
 
     @Override
-    public void remove(VolumeNumber vlmNrRef) throws SQLException
+    public void remove(AccessContext accCtx, VolumeNumber vlmNrRef)
+        throws SQLException, AccessDeniedException
     {
         for (RscLayerObject rscLayerObject : children)
         {
-            rscLayerObject.remove(vlmNrRef);
+            rscLayerObject.remove(accCtx, vlmNrRef);
         }
         VLM_TYPE vlm = vlmMap.remove(vlmNrRef);
+        if (!(vlm instanceof VlmLayerObject))
+        {
+            vlm.getStorPool().removeVolume(accCtx, vlm);
+        }
         deleteVlmFromDatabase(vlm);
     }
 
@@ -150,11 +156,13 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
         return childrenPojos;
     }
 
+    @Override
     public boolean checkFileSystem()
     {
         return checkFileSystem;
     }
 
+    @Override
     public void disableCheckFileSystem()
     {
         this.checkFileSystem = false;

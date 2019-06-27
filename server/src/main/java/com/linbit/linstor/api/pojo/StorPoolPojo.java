@@ -1,11 +1,9 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +18,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     private final DeviceProviderKind deviceProviderKind;
     private final Map<String, String> storPoolProps;
     private final Map<String, String> storPoolDfnProps;
-    private final List<Volume.VlmApi> vlms;
     private final Map<String, String> storPoolStaticTraits;
     private final Long fullSyncId;
     private final Long updateId;
@@ -38,7 +35,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         final DeviceProviderKind deviceProviderKindRef,
         final Map<String, String> storPoolPropsRef,
         final Map<String, String> storPoolDfnPropsRef,
-        final List<Volume.VlmApi> vlmsRef,
         final Map<String, String> storPoolStaticTraitsRef,
         final Long fullSyncIdRef,
         final Long updateIdRef,
@@ -56,7 +52,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         deviceProviderKind = deviceProviderKindRef;
         storPoolProps = storPoolPropsRef;
         storPoolDfnProps = storPoolDfnPropsRef;
-        vlms = vlmsRef;
         storPoolStaticTraits = storPoolStaticTraitsRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
@@ -129,12 +124,6 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     public Map<String, String> getStorPoolDfnProps()
     {
         return storPoolDfnProps;
-    }
-
-    @Override
-    public List<Volume.VlmApi> getVlmList()
-    {
-        return vlms;
     }
 
     @Override

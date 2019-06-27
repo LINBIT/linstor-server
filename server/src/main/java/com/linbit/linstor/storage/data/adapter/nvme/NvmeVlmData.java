@@ -1,9 +1,11 @@
 package com.linbit.linstor.storage.data.adapter.nvme;
 
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.nvme.NvmeVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -96,6 +98,7 @@ public class NvmeVlmData extends BaseTransactionObject implements NvmeVlmObject
         return usableSize;
     }
 
+    @Override
     public void setUsableSize(long usableSizeRef)
     {
         usableSize = usableSizeRef;

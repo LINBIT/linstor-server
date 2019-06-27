@@ -25,6 +25,7 @@ import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
@@ -40,6 +41,8 @@ import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
@@ -50,12 +53,17 @@ import com.linbit.linstor.core.DivergentDataException;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
-import com.linbit.linstor.core.apicallhandler.LayerRscDataMerger;
+import com.linbit.linstor.core.apicallhandler.StltLayerRscDataMerger;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.utils.Pair;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -96,7 +104,7 @@ class StltRscApiCallHandler
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
-    private final LayerRscDataMerger layerRscDataMerger;
+    private final StltLayerRscDataMerger layerRscDataMerger;
     private final StltCryptApiCallHelper cryptHelper;
 
     @Inject
@@ -120,7 +128,7 @@ class StltRscApiCallHandler
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionDataSatelliteFactory resourceConnectionDataFactoryRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
-        LayerRscDataMerger layerRscDataMergerRef,
+        StltLayerRscDataMerger layerRscDataMergerRef,
         StltCryptApiCallHelper cryptHelperRef
     )
     {
@@ -281,7 +289,8 @@ class StltRscApiCallHandler
                     RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
                     rscRawData.getLocalRscProps(),
                     rscRawData.getLocalVlms(),
-                    false
+                    false,
+                    rscRawData.getLayerData()
                 );
 
                 createdRscSet.add(new Resource.Key(localRsc));
@@ -317,10 +326,11 @@ class StltRscApiCallHandler
                         RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
                         otherRscRaw.getRscProps(),
                         otherRscRaw.getVlms(),
-                        true
+                        true,
+                        otherRscRaw.getRscLayerDataPojo()
                     );
 
-                    layerRscDataMerger.restoreLayerData(remoteRsc, otherRscRaw.getRscLayerDataPojo());
+                    layerRscDataMerger.restoreLayerData(remoteRsc, otherRscRaw.getRscLayerDataPojo(), true);
 
                     createdRscSet.add(new Resource.Key(remoteRsc));
                 }
@@ -366,11 +376,11 @@ class StltRscApiCallHandler
                     // all the corresponding volumes for deletion
                     for (VlmApi vlmApi : rscRawData.getLocalVlms())
                     {
-                        Volume vlm = localRsc.getVolume(new VolumeNumber(vlmApi.getVlmNr()));
+                        Volume localVlm = localRsc.getVolume(new VolumeNumber(vlmApi.getVlmNr()));
 
-                        if (vlm != null)
+                        if (localVlm != null)
                         {
-                            mergeVlm(vlm, vlmApi, false);
+                            mergeVlm(localVlm, vlmApi, false);
                         }
                         else
                         {
@@ -471,7 +481,8 @@ class StltRscApiCallHandler
                             RscFlags.restoreFlags(otherRsc.getRscFlags()),
                             otherRsc.getRscProps(),
                             otherRsc.getVlms(),
-                            true
+                            true,
+                            otherRsc.getRscLayerDataPojo()
                         );
 
                         createdRscSet.add(new Resource.Key(remoteRsc));
@@ -502,14 +513,14 @@ class StltRscApiCallHandler
                             // all the corresponding volumes for deletion
                             for (VlmApi remoteVlmApi : otherRsc.getVlms())
                             {
-                                Volume vlm = remoteRsc.getVolume(new VolumeNumber(remoteVlmApi.getVlmNr()));
-                                if (vlm == null)
+                                Volume remoteVlm = remoteRsc.getVolume(new VolumeNumber(remoteVlmApi.getVlmNr()));
+                                if (remoteVlm == null)
                                 {
                                     createVlm(remoteVlmApi, remoteRsc, true);
                                 }
                                 else
                                 {
-                                    mergeVlm(vlm, remoteVlmApi, true);
+                                    mergeVlm(remoteVlm, remoteVlmApi, true);
                                 }
                             }
                         }
@@ -519,8 +530,7 @@ class StltRscApiCallHandler
 
                         updatedRscSet.add(new Resource.Key(remoteRsc));
                     }
-
-                    layerRscDataMerger.restoreLayerData(remoteRsc, otherRsc.getRscLayerDataPojo());
+                    layerRscDataMerger.restoreLayerData(remoteRsc, otherRsc.getRscLayerDataPojo(), true);
                 }
                 // all resources have been created, updated or deleted
 
@@ -585,7 +595,7 @@ class StltRscApiCallHandler
                 }
             }
 
-            layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getLayerData());
+            layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getLayerData(), false);
 
             cryptHelper.decryptAllNewLuksVlmKeys(false);
 
@@ -633,9 +643,11 @@ class StltRscApiCallHandler
         RscFlags[] flags,
         Map<String, String> rscProps,
         List<VolumeData.VlmApi> vlms,
-        boolean remoteRsc
+        boolean remoteRsc,
+        RscLayerDataApi rscLayerDataApi
     )
-        throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException
+        throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException,
+            SQLException
     {
         ResourceData rsc = resourceDataFactory.getInstanceSatellite(
             apiCtx,
@@ -657,8 +669,6 @@ class StltRscApiCallHandler
         rscDataProps.map().putAll(rscProps);
         rscDataProps.keySet().retainAll(rscProps.keySet());
 
-        // XXX ensure to apply possible changes in layerData
-
         for (Volume.VlmApi vlmRaw : vlms)
         {
             createVlm(vlmRaw, rsc, remoteRsc);
@@ -672,10 +682,9 @@ class StltRscApiCallHandler
         Resource rsc,
         boolean remoteRsc
     )
-        throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException
+        throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException,
+            SQLException
     {
-        StorPool storPool = getStorPool(rsc, vlmApi, remoteRsc);
-
         VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
         VolumeData vlm = volumeDataFactory.getInstanceSatellite(
@@ -683,7 +692,6 @@ class StltRscApiCallHandler
             vlmApi.getVlmUuid(),
             rsc,
             vlmDfn,
-            storPool,
             Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
         );
 
@@ -699,8 +707,6 @@ class StltRscApiCallHandler
         {
             checkUuid(vlm, vlmApi);
         }
-        StorPool storPool = getStorPool(vlm.getResource(), vlmApi, remoteRsc);
-        vlm.setStorPool(apiCtx, storPool);
 
         Props vlmProps = vlm.getProps(apiCtx);
         vlmProps.map().putAll(vlmApi.getVlmProps());
@@ -708,64 +714,87 @@ class StltRscApiCallHandler
         vlm.getFlags().resetFlagsTo(apiCtx, Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
     }
 
-    private StorPool getStorPool(Resource rsc, VlmApi vlmApi, boolean remoteRsc)
-        throws AccessDeniedException, InvalidNameException, DivergentDataException
+    private void restoreStorPools(Volume vlmRef, VlmApi vlmApiRef, boolean remoteRscRef)
+        throws AccessDeniedException, InvalidNameException, DivergentDataException, SQLException
     {
-        StorPool storPool = rsc.getAssignedNode().getStorPool(
-            apiCtx,
-            new StorPoolName(vlmApi.getStorPoolName())
-        );
+        VolumeNumber vlmNr = vlmRef.getVolumeDefinition().getVolumeNumber();
+        Resource rsc = vlmRef.getResource();
+        Node node = rsc.getAssignedNode();
+        NodeName nodeName = node.getName();
 
-        if (storPool == null)
+        Map<String, VlmProviderObject> storVlmObjMap = LayerRscUtils.getRscDataByProvider(
+            rsc.getLayerData(apiCtx),
+            DeviceLayerKind.STORAGE
+        ).stream().collect(Collectors.toMap(
+            rscObj -> rscObj.getResourceNameSuffix(),
+            rscObj -> rscObj.getVlmProviderObject(vlmNr)
+        ));
+
+        for (Pair<String, VlmLayerDataApi> pair : vlmApiRef.getVlmLayerData())
         {
-            if (remoteRsc)
+            VlmLayerDataApi vlmApi = pair.objB;
+            StorPoolApi storPoolApi = vlmApi.getStorPoolApi();
+            if (!storPoolApi.getNodeName().equalsIgnoreCase(nodeName.displayValue))
             {
-                StorPoolDefinition storPoolDfn =
-                    storPoolDfnMap.get(new StorPoolName(vlmApi.getStorPoolName()));
-                if (storPoolDfn == null)
+                throw new DivergentDataException("VlmLayerData from volume " + vlmRef + " contains a reference to " +
+                    "a storage pool of a different satellite (" + vlmApi.getStorPoolApi().getNodeName() + ")");
+            }
+
+            StorPoolName storPoolName = new StorPoolName(vlmApi.getStorPoolApi().getStorPoolName());
+            StorPool storPool = node.getStorPool(apiCtx, storPoolName);
+            if (storPool == null)
+            {
+                if (remoteRscRef)
                 {
-                    storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+                    StorPoolDefinition storPoolDfn =
+                        storPoolDfnMap.get(new StorPoolName(storPoolApi.getStorPoolName()));
+                    if (storPoolDfn == null)
+                    {
+                        storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+                            apiCtx,
+                            storPoolApi.getStorPoolDfnUuid(),
+                            new StorPoolName(storPoolApi.getStorPoolName())
+                        );
+                        storPoolDfn.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolDfnProps());
+                        storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
+                    }
+                    storPool = storPoolDataFactory.getInstanceSatellite(
                         apiCtx,
-                        vlmApi.getStorPoolDfnUuid(),
-                        new StorPoolName(vlmApi.getStorPoolName())
+                        storPoolApi.getStorPoolUuid(),
+                        rsc.getAssignedNode(),
+                        storPoolDfn,
+                        storPoolApi.getDeviceProviderKind(),
+                        freeSpaceMgrFactory.getInstance()
                     );
+                    storPool.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolProps());
 
-                    storPoolDfn.getProps(apiCtx).map().putAll(vlmApi.getStorPoolDfnProps());
-
-                    storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                 }
-
-                storPool = storPoolDataFactory.getInstanceSatellite(
-                    apiCtx,
-                    vlmApi.getStorPoolUuid(),
-                    rsc.getAssignedNode(),
-                    storPoolDfn,
-                    vlmApi.getStorPoolDeviceProviderKind(),
-                    freeSpaceMgrFactory.getInstance()
-                );
-                storPool.getProps(apiCtx).map().putAll(vlmApi.getStorPoolProps());
+                else
+                {
+                    throw new DivergentDataException("Unknown StorPool: '" + storPoolApi.getStorPoolName() + "'");
+                }
             }
-            else
+            if (!remoteRscRef && !storPool.getUuid().equals(storPoolApi.getStorPoolUuid()))
             {
-                throw new DivergentDataException("Unknown StorPool: '" + vlmApi.getStorPoolName() + "'");
+                throw new DivergentUuidsException(
+                    "StorPool",
+                    storPool.toString(),
+                    storPoolApi.getStorPoolName(),
+                    storPool.getUuid(),
+                    storPoolApi.getStorPoolUuid()
+                );
             }
-        }
-        if (!remoteRsc && !storPool.getUuid().equals(vlmApi.getStorPoolUuid()))
-        {
-            throw new DivergentUuidsException(
-                "StorPool",
-                storPool.toString(),
-                vlmApi.getStorPoolName(),
-                storPool.getUuid(),
-                vlmApi.getStorPoolUuid()
-            );
-        }
 
-        Props storPoolProps = storPool.getProps(apiCtx);
-        storPoolProps.map().putAll(vlmApi.getStorPoolProps());
-        storPoolProps.keySet().retainAll(vlmApi.getStorPoolProps().keySet());
+            storVlmObjMap.get(pair.objA).setStorPool(apiCtx, storPool);
 
-        return storPool;
+            Props storPoolProps = storPool.getProps(apiCtx);
+            storPoolProps.map().putAll(storPoolApi.getStorPoolProps());
+            storPoolProps.keySet().retainAll(storPoolApi.getStorPoolProps().keySet());
+
+
+
+
+        }
     }
 
     private void checkUuid(Node node, OtherRscPojo otherRsc)

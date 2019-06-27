@@ -29,8 +29,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.utils.DmStatCommands;
@@ -242,7 +242,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             }
             // whatever happens, we have to report the free space of these storage pools even if no layer
             // actually changed anything. The controller simply expects a report of free sizes
-            addChangedStorPool(vlmData.getVolume().getStorPool(storDriverAccCtx));
+            addChangedStorPool(vlmData.getStorPool());
         }
 
         /*
@@ -338,7 +338,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             String devicePath = getDevicePath(storageName, lvId);
             setDevicePath(vlmData, devicePath);
 
-            StorPool storPool = vlmData.getVolume().getStorPool(storDriverAccCtx);
+            StorPool storPool = vlmData.getStorPool();
             long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
             waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
 

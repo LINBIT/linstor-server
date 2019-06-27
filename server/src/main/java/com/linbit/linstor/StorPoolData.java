@@ -12,6 +12,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -22,7 +23,6 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -47,7 +47,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final StorPoolDataDatabaseDriver dbDriver;
     private final FreeSpaceTracker freeSpaceTracker;
 
-    private final TransactionMap<String, Volume> volumeMap;
+    private final TransactionMap<String, VlmProviderObject> vlmProviderMap;
 
     private final TransactionSimpleObject<StorPoolData, Boolean> deleted;
 
@@ -63,7 +63,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef,
-        Map<String, Volume> volumeMapRef
+        Map<String, VlmProviderObject> volumeMapRef
     )
         throws SQLException
     {
@@ -77,7 +77,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         freeSpaceTracker = freeSpaceTrackerRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
-        volumeMap = transObjFactory.createTransactionMap(volumeMapRef, null);
+        vlmProviderMap = transObjFactory.createTransactionMap(volumeMapRef, null);
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName())
@@ -87,7 +87,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         reports = new ApiCallRcImpl();
 
         transObjs = Arrays.<TransactionObject>asList(
-            volumeMap,
+            vlmProviderMap,
             props,
             deleted,
             freeSpaceTracker
@@ -144,43 +144,34 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public void putVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
+    public void putVolume(AccessContext accCtx, VlmProviderObject vlmProviderObj) throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        volumeMap.put(Volume.getVolumeKey(volume), volume);
-        freeSpaceTracker.vlmCreating(accCtx, volume);
+        vlmProviderMap.put(vlmProviderObj.getVolumeKey(), vlmProviderObj);
+        freeSpaceTracker.vlmCreating(accCtx, vlmProviderObj);
     }
 
     @Override
-    public void removeVolume(AccessContext accCtx, Volume volume)
+    public void removeVolume(AccessContext accCtx, VlmProviderObject vlmProviderObj)
         throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        freeSpaceTracker.ensureVlmNoLongerCreating(accCtx, volume);
+        freeSpaceTracker.ensureVlmNoLongerCreating(accCtx, vlmProviderObj);
 
-        volumeMap.remove(Volume.getVolumeKey(volume));
+        vlmProviderMap.remove(vlmProviderObj.getVolumeKey());
     }
 
     @Override
-    public boolean containsVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
-    {
-        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-
-        return volumeMap.containsKey(Volume.getVolumeKey(volume));
-    }
-
-    @Override
-    public Collection<Volume> getVolumes(AccessContext accCtx) throws AccessDeniedException
+    public Collection<VlmProviderObject> getVolumes(AccessContext accCtx) throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        return volumeMap.values();
+        return vlmProviderMap.values();
     }
 
     @Override
@@ -269,11 +260,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     )
         throws AccessDeniedException
     {
-        ArrayList<Volume.VlmApi> vlms = new ArrayList<>();
-        for (Volume vlm : getVolumes(accCtx))
-        {
-            vlms.add(vlm.getApiData(null, accCtx));
-        }
         return new StorPoolPojo(
             getUuid(),
             getNode().getUuid(),
@@ -283,7 +269,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             getDeviceProviderKind(),
             getProps(accCtx).map(),
             getDefinition(accCtx).getProps(accCtx).map(),
-            vlms,
             getTraits(accCtx),
             fullSyncId,
             updateId,

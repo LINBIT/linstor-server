@@ -1,42 +1,41 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.SnapshotVolume;
-
 import java.util.UUID;
 
 public class SnapshotVlmPojo implements SnapshotVolume.SnapshotVlmApi
 {
-    private final String storagePoolName;
-    private final UUID storagePoolUuid;
+    private final String storPoolName;
+    private final UUID storPoolUuid;
     private final UUID snapshotVlmDfnUuid;
     private final UUID snapshotVlmUuid;
     private final int snapshotVlmNr;
 
     public SnapshotVlmPojo(
-        final String storagePoolNameRef,
-        final UUID storagePoolUuidRef,
+        final String storPoolNameRef,
+        final UUID storPoolUuidRef,
         final UUID snapshotVlmDfnUuidRef,
         final UUID snapshotVlmUuidRef,
         final int snapshotVlmNrRef
     )
     {
-        storagePoolName = storagePoolNameRef;
-        storagePoolUuid = storagePoolUuidRef;
+        storPoolName = storPoolNameRef;
+        storPoolUuid = storPoolUuidRef;
         snapshotVlmDfnUuid = snapshotVlmDfnUuidRef;
         snapshotVlmUuid = snapshotVlmUuidRef;
         snapshotVlmNr = snapshotVlmNrRef;
     }
 
     @Override
-    public String getStorPoolName()
+    public UUID getStorPoolUuid()
     {
-        return storagePoolName;
+        return storPoolUuid;
     }
 
     @Override
-    public UUID getStorPoolUuid()
+    public String getStorPoolName()
     {
-        return storagePoolUuid;
+        return storPoolName;
     }
 
     @Override

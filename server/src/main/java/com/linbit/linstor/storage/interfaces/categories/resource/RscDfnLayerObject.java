@@ -1,8 +1,9 @@
-package com.linbit.linstor.storage.interfaces.categories;
+package com.linbit.linstor.storage.interfaces.categories.resource;
 
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.storage.interfaces.categories.LayerObject;
 
 import java.sql.SQLException;
 

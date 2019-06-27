@@ -10,9 +10,10 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -124,17 +125,22 @@ public class SysFsHandler
     {
         Volume vlm = vlmDataRef.getVolume();
         Resource rsc = vlm.getResource();
-        StorPool storPool = vlm.getStorPool(apiCtx);
-        String expectedThrottle = new PriorityProps(
-            vlm.getProps(apiCtx),
-            vlm.getVolumeDefinition().getProps(apiCtx),
-            rsc.getProps(apiCtx),
-            vlm.getResourceDefinition().getProps(apiCtx),
-            storPool.getProps(apiCtx),
-            storPool.getDefinition(apiCtx).getProps(apiCtx),
-            rsc.getAssignedNode().getProps(apiCtx),
-            satelliteProps
-        ).getProp(
+        PriorityProps priorityProps = new PriorityProps();
+        priorityProps.addProps(vlm.getProps(apiCtx));
+        priorityProps.addProps(vlm.getVolumeDefinition().getProps(apiCtx));
+        priorityProps.addProps(rsc.getProps(apiCtx));
+        priorityProps.addProps(vlm.getResourceDefinition().getProps(apiCtx));
+
+        for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlm, apiCtx))
+        {
+            priorityProps.addProps(storPool.getProps(apiCtx));
+            priorityProps.addProps(storPool.getDefinition(apiCtx).getProps(apiCtx));
+        }
+
+        priorityProps.addProps(rsc.getAssignedNode().getProps(apiCtx));
+        priorityProps.addProps(satelliteProps);
+
+        String expectedThrottle = priorityProps.getProp(
             apiKey,
             ApiConsts.NAMESPC_SYS_FS
         );

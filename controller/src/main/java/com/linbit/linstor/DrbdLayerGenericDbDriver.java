@@ -22,14 +22,13 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
-
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.AL_STRIPES;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.AL_STRIPE_SIZE;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.FLAGS;

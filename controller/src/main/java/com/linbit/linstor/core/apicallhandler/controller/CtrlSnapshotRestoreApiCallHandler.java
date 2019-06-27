@@ -47,6 +47,7 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -283,9 +284,10 @@ public class CtrlSnapshotRestoreApiCallHandler
                 throw new ImplementationError("Expected snapshot volume missing");
             }
 
-            StorPool storPool = fromSnapshotVolume.getStorPool(peerAccCtx.get());
+            Map<String, StorPool> storPool = new HashMap<>();
+            storPool.put("", fromSnapshotVolume.getStorPool(peerAccCtx.get()));
 
-            Volume vlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null, null, null);
+            Volume vlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null);
             Props vlmProps = vlm.getProps(peerAccCtx.get());
             vlmProps.setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);

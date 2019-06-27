@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.google.common.io.Resources;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
@@ -319,6 +320,36 @@ public class MigrationUtils
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + dbProduct);
+        }
+        return sql;
+    }
+
+    public static String dropColumnConstraint(
+        DbProduct dbProductRef,
+        String table,
+        String constraintName
+    )
+    {
+        String sql;
+        switch (dbProductRef)
+        {
+            case ASE:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case INFORMIX:
+            case MARIADB:
+            case MSFT_SQLSERVER:
+            case MYSQL:
+            case ORACLE_RDBMS:
+            case POSTGRESQL:
+                sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s", table, constraintName);
+                break;
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
         }
         return sql;
     }

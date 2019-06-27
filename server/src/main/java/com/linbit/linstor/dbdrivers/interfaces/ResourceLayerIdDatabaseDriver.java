@@ -4,8 +4,8 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.storage.AbsRscData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import java.sql.SQLException;

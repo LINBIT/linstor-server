@@ -7,13 +7,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObject;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,31 +53,31 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     /**
      * Registers the volume to this storPool
      */
-    void putVolume(AccessContext accCtx, Volume volume)
+    void putVolume(AccessContext accCtx, VlmProviderObject vlmProviderObject)
         throws AccessDeniedException;
 
     /**
      * Removes the volume from this storPool
      */
-    void removeVolume(AccessContext accCtx, Volume volume)
-        throws AccessDeniedException;
-
-    /**
-     * Returns true if the storage pool contains the given volume.
-     */
-    boolean containsVolume(AccessContext accCtx, Volume volume)
+    void removeVolume(AccessContext accCtx, VlmProviderObject vlmProviderObject)
         throws AccessDeniedException;
 
     /**
      * Returns all currently registered volumes
      */
-    Collection<Volume> getVolumes(AccessContext accCtx)
+    Collection<VlmProviderObject> getVolumes(AccessContext accCtx)
         throws AccessDeniedException;
 
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    StorPoolApi getApiData(Long totalSpace, Long freeSpace, AccessContext accCtx, Long fullSyncId, Long updateId)
+    StorPoolApi getApiData(
+        Long totalSpace,
+        Long freeSpace,
+        AccessContext accCtx,
+        Long fullSyncId,
+        Long updateId
+    )
         throws AccessDeniedException;
 
     FreeSpaceTracker getFreeSpaceTracker();
@@ -107,8 +106,8 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         Optional<Long> getTotalCapacity();
 
         Map<String, String> getStorPoolProps();
-        List<Volume.VlmApi> getVlmList();
         Map<String, String> getStorPoolStaticTraits();
+        Map<String, String> getStorPoolDfnProps();
         ApiCallRc getReports();
     }
 
@@ -187,6 +186,6 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
 
     public interface InitMaps
     {
-        Map<String, Volume> getVolumeMap();
+        Map<String, VlmProviderObject> getVolumeMap();
     }
 }

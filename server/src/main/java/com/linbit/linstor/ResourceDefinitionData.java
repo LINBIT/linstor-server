@@ -15,7 +15,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;

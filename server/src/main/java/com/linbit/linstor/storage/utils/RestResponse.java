@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+
 import java.util.Map;
 
 public interface RestResponse<T>

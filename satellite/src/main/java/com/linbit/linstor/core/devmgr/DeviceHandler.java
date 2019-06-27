@@ -6,7 +6,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 

@@ -28,7 +28,9 @@ import javax.inject.Singleton;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 @Singleton
 public class LvmThinProvider extends LvmProvider
@@ -68,7 +70,7 @@ public class LvmThinProvider extends LvmProvider
         LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
         if (infoRef == null)
         {
-            lvmThinData.setThinPool(getThinPool(vlmDataRef.getVolume().getStorPool(storDriverAccCtx)));
+            lvmThinData.setThinPool(getThinPool(vlmDataRef.getStorPool()));
             lvmThinData.setAllocatedPercent(0);
         }
         else
@@ -86,18 +88,24 @@ public class LvmThinProvider extends LvmProvider
         }
     }
 
-    private String asFullQualifiedLvIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
+    private List<String> asFullQualifiedLvIdentifierList(String rscNameSuffix, SnapshotVolume snapVlm)
         throws AccessDeniedException
     {
-        return
-            getVolumeGroup(snapVlm.getStorPool(storDriverAccCtx)) + File.separator +
+        List<String> fqLvIdList = new ArrayList<>();
+
+        StorPool storPool = snapVlm.getStorPool(storDriverAccCtx);
+        fqLvIdList.add(
+            getVolumeGroup(storPool) + File.separator +
             String.format(
                 FORMAT_SNAP_VLM_TO_LVM_ID,
                 snapVlm.getResourceName().displayValue,
                 rscNameSuffix,
                 snapVlm.getVolumeNumber().value,
                 snapVlm.getSnapshotName().displayValue
-            );
+            )
+        );
+
+        return fqLvIdList;
     }
 
     @Override
@@ -136,7 +144,28 @@ public class LvmThinProvider extends LvmProvider
         throws StorageException, AccessDeniedException, SQLException
     {
         // FIXME: RAID: rscNameSuffix
-        return infoListCache.get(asFullQualifiedLvIdentifier("", snapVlm)) != null;
+
+        boolean oneExists = false;
+        boolean allExsits = true;
+        List<String> identifierList = asFullQualifiedLvIdentifierList("", snapVlm);
+
+        for (String snapLvId : identifierList)
+        {
+            if (infoListCache.get(snapLvId) != null)
+            {
+                oneExists = true;
+            }
+            else
+            {
+                allExsits = false;
+            }
+        }
+        if (oneExists && !allExsits)
+        {
+            // FIXME: what the heck should we do now?
+            errorReporter.logError("Some, but not all LVs of snapshot " + snapVlm + " exist.");
+        }
+        return allExsits;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;

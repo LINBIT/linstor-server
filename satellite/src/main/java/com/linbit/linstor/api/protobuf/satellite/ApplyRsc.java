@@ -20,7 +20,6 @@ import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
-import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
@@ -88,7 +87,11 @@ public class ApplyRsc implements ApiCall
 
         List<VolumeDefinition.VlmDfnApi> vlmDfns = extractVlmDfns(rscDfn.getVlmDfnsList());
         List<Volume.VlmApi> localVlms = extractRawVolumes(localRsc.getVlmsList());
-        List<OtherRscPojo> otherRscList = extractRawOtherRsc(intRscData.getOtherResourcesList());
+        List<OtherRscPojo> otherRscList = extractRawOtherRsc(
+            intRscData.getOtherResourcesList(),
+            fullSyncId,
+            updateId
+        );
         List<ResourceConnection.RscConnApi> rscConns = extractRscConn(
             rscDfn.getRscName(),
             intRscData.getRscConnectionsList()
@@ -149,7 +152,11 @@ public class ApplyRsc implements ApiCall
             vlmDfns,
             layerData
         );
-        RscLayerDataApi rscLayerData = ProtoLayerUtils.extractRscLayerData(localRsc.getLayerObject());
+        RscLayerDataApi rscLayerData = ProtoLayerUtils.extractRscLayerData(
+            localRsc.getLayerObject(),
+            fullSyncId,
+            updateId
+        );
         return new RscPojo(
             localRsc.getName(),
             localRsc.getNodeName(),
@@ -191,24 +198,22 @@ public class ApplyRsc implements ApiCall
         List<Volume.VlmApi> list = new ArrayList<>();
         for (Vlm vol : localVolumesList)
         {
-
             list.add(
                 new VlmPojo(
-                    vol.getStorPoolName(),
-                    UUID.fromString(vol.getStorPoolUuid()),
                     UUID.fromString(vol.getVlmDfnUuid()),
                     UUID.fromString(vol.getVlmUuid()),
                     vol.getDevicePath(),
                     vol.getVlmNr(),
                     Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
                     vol.getVlmPropsMap(),
-                    ProtoDeserializationUtils.parseDeviceProviderKind(vol.getProviderKind()),
-                    UUID.fromString(vol.getStorPoolDfnUuid()),
-                    vol.getStorPoolDfnPropsMap(),
-                    vol.getStorPoolPropsMap(),
                     Optional.empty(),
                     Optional.empty(),
-                    ProtoLayerUtils.extractVlmLayerData(vol.getLayerDataList())
+
+                    // protobuf does not support circular imports, which is what we are creating here
+                    // therefore, we skip this data. satellite should get the layerData from rsc-level.
+                    Collections.emptyList(),
+                    null, // no need for compat on stlt
+                    null// no need for compat on stlt
                 )
             );
         }
@@ -238,7 +243,11 @@ public class ApplyRsc implements ApiCall
             .collect(Collectors.toList());
     }
 
-    static List<OtherRscPojo> extractRawOtherRsc(List<IntOtherRsc> otherResourcesList)
+    static List<OtherRscPojo> extractRawOtherRsc(
+        List<IntOtherRsc> otherResourcesList,
+        long fullSyncId,
+        long updateId
+    )
     {
         List<OtherRscPojo> list = new ArrayList<>();
         for (IntOtherRsc intOtherRsc : otherResourcesList)
@@ -260,7 +269,11 @@ public class ApplyRsc implements ApiCall
                     extractRawVolumes(
                         protoRsc.getVlmsList()
                     ),
-                    ProtoLayerUtils.extractRscLayerData(protoRsc.getLayerObject())
+                    ProtoLayerUtils.extractRscLayerData(
+                        protoRsc.getLayerObject(),
+                        fullSyncId,
+                        updateId
+                    )
                 )
             );
         }

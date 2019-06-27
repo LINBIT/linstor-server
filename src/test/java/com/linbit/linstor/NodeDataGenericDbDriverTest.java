@@ -408,7 +408,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 res1,
                 volDfn,
-                storPool1,
                 new VlmFlags[] {}
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
@@ -431,7 +430,6 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 res2,
                 volDfn,
-                storPool2,
                 new VlmFlags[] {}
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);

@@ -7,7 +7,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -21,6 +20,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -296,10 +296,12 @@ public class CtrlAutoStorPoolSelector
                     List<Node> nodesToRemove = new ArrayList<>();
                     for (Node node : entry.getValue())
                     {
-                        Collection<Volume> volumes = node.getStorPool(apiAccCtx, entry.getKey()).getVolumes(apiAccCtx);
-                        for (Volume vlm : volumes)
+                        Collection<VlmProviderObject> volumes = node
+                            .getStorPool(apiAccCtx, entry.getKey())
+                            .getVolumes(apiAccCtx);
+                        for (VlmProviderObject vlm : volumes)
                         {
-                            if (notPlaceWithRscList.contains(vlm.getResourceDefinition().getName().value))
+                            if (notPlaceWithRscList.contains(vlm.getVolume().getResourceDefinition().getName().value))
                             {
                                 nodesToRemove.add(node);
                                 break;

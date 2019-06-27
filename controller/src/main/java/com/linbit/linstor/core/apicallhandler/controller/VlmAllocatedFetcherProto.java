@@ -29,6 +29,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.Ms
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.VlmAllocated;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.locks.LockGuard;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -137,7 +138,7 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
             .filter(storPool -> storPool.getDeviceProviderKind().usesThinProvisioning())
             .filter(storPool -> storPoolFilter.isEmpty() || storPoolFilter.contains(storPool.getName()))
             .flatMap(this::streamVolumes)
-            .map(Volume::getResourceDefinition)
+            .map(vlmData -> vlmData.getVolume().getResourceDefinition())
             .map(ResourceDefinition::getName)
             .anyMatch(rscName -> resourceFilter.isEmpty() || resourceFilter.contains(rscName));
     }
@@ -185,9 +186,9 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         return storPoolStream;
     }
 
-    private Stream<Volume> streamVolumes(StorPool storPool)
+    private Stream<VlmProviderObject> streamVolumes(StorPool storPool)
     {
-        Stream<Volume> vlmStream;
+        Stream<VlmProviderObject> vlmStream;
         try
         {
             vlmStream = storPool.getVolumes(peerAccCtx.get()).stream();

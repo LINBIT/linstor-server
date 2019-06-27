@@ -7,6 +7,7 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
@@ -33,7 +34,7 @@ import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -202,7 +203,8 @@ public class LayerDataFactory
     public DisklessData createDisklessData(
         Volume vlm,
         long usableSize,
-        StorageRscData rscData
+        StorageRscData rscData,
+        StorPool storPoolRef
     )
         throws SQLException
     {
@@ -210,6 +212,8 @@ public class LayerDataFactory
             vlm,
             rscData,
             usableSize,
+            storPoolRef,
+            storageDbDriver,
             transObjFactory,
             transMgrProvider
         );
@@ -317,11 +321,18 @@ public class LayerDataFactory
         );
     }
 
-    public LvmData createLvmData(Volume vlm, StorageRscData rscData) throws SQLException
+    public LvmData createLvmData(
+        Volume vlm,
+        StorageRscData rscData,
+        StorPool storPoolRef
+    )
+        throws SQLException
     {
         LvmData lvmData = new LvmData(
             vlm,
             rscData,
+            storPoolRef,
+            storageDbDriver,
             transObjFactory,
             transMgrProvider
         );
@@ -329,11 +340,18 @@ public class LayerDataFactory
         return lvmData;
     }
 
-    public LvmThinData createLvmThinData(Volume vlm, StorageRscData rscData) throws SQLException
+    public LvmThinData createLvmThinData(
+        Volume vlm,
+        StorageRscData rscData,
+        StorPool storPoolRef
+    )
+        throws SQLException
     {
         LvmThinData lvmThinData = new LvmThinData(
             vlm,
             rscData,
+            storPoolRef,
+            storageDbDriver,
             transObjFactory,
             transMgrProvider
         );
@@ -344,7 +362,8 @@ public class LayerDataFactory
     public SfInitiatorData createSfInitData(
         Volume vlmRef,
         StorageRscData storRscDataRef,
-        SfVlmDfnData sfVlmDfnData
+        SfVlmDfnData sfVlmDfnData,
+        StorPool storPoolRef
     )
         throws SQLException
     {
@@ -352,6 +371,8 @@ public class LayerDataFactory
             storRscDataRef,
             vlmRef,
             sfVlmDfnData,
+            storPoolRef,
+            storageDbDriver,
             transObjFactory,
             transMgrProvider
         );
@@ -363,7 +384,8 @@ public class LayerDataFactory
     public SfTargetData createSfTargetData(
         Volume vlm,
         StorageRscData rscData,
-        SfVlmDfnData sfVlmDfnData
+        SfVlmDfnData sfVlmDfnData,
+        StorPool storPoolRef
     )
         throws SQLException
     {
@@ -371,6 +393,8 @@ public class LayerDataFactory
             vlm,
             rscData,
             sfVlmDfnData,
+            storPoolRef,
+            storageDbDriver,
             transObjFactory,
             transMgrProvider
         );
@@ -402,7 +426,8 @@ public class LayerDataFactory
     public ZfsData createZfsData(
         Volume vlm,
         StorageRscData rscData,
-        DeviceProviderKind kind
+        DeviceProviderKind kind,
+        StorPool storPoolRef
     )
         throws SQLException
     {
@@ -410,6 +435,8 @@ public class LayerDataFactory
             vlm,
             rscData,
             kind,
+            storPoolRef,
+            storageDbDriver,
             transObjFactory,
             transMgrProvider
         );

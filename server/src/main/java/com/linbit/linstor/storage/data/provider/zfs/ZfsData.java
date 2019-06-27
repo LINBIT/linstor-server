@@ -1,14 +1,17 @@
 package com.linbit.linstor.storage.data.provider.zfs;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.storage.ZfsProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -32,6 +35,8 @@ public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
         Volume vlmRef,
         StorageRscData rscDataRef,
         DeviceProviderKind kindRef,
+        StorPool storPoolRef,
+        StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -39,6 +44,8 @@ public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
         super(
             vlmRef,
             rscDataRef,
+            storPoolRef,
+            dbDriverRef,
             kindRef,
             transObjFactory,
             transMgrProviderRef
@@ -72,7 +79,7 @@ public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
     }
 
     @Override
-    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         VlmLayerDataApi pojo;
         if (providerKind.equals(DeviceProviderKind.ZFS))
@@ -82,7 +89,8 @@ public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
                 getDevicePath(),
                 getAllocatedSize(),
                 getUsableSize(),
-                new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
+                new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
+                storPool.get().getApiData(null, null, accCtxRef, null, null)
             );
         }
         else
@@ -92,7 +100,8 @@ public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
                 getDevicePath(),
                 getAllocatedSize(),
                 getUsableSize(),
-                new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
+                new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
+                storPool.get().getApiData(null, null, accCtxRef, null, null)
             );
         }
         return pojo;

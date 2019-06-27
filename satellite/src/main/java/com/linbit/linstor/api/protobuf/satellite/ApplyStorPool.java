@@ -74,7 +74,6 @@ public class ApplyStorPool implements ApiCall
             ProtoDeserializationUtils.parseDeviceProviderKind(protoStorPool.getProviderKind()),
             protoStorPool.getPropsMap(),
             protoStorPoolDfn.getPropsMap(),
-            null, // List<Vlmapi> vlmRefs
             Collections.<String, String>emptyMap(),
             fullSyncId,
             updateId,

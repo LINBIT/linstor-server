@@ -13,6 +13,7 @@ import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
@@ -24,6 +25,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_PREF_NIC;
 
@@ -38,6 +40,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Class for processing NvmeRscData
@@ -611,11 +615,18 @@ public class NvmeUtils
     {
         PriorityProps prioProps = new PriorityProps();
         Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+
+        Set<StorPool> storPools = new TreeSet<>();
         while (iterateVolumes.hasNext())
         {
             Volume vlm = iterateVolumes.next();
-            prioProps.addProps(vlm.getStorPool(accCtx).getProps(accCtx));
             prioProps.addProps(vlm.getProps(accCtx));
+
+            storPools.addAll(LayerVlmUtils.getStorPoolSet(vlm, accCtx));
+        }
+        for (StorPool storPool : storPools)
+        {
+            prioProps.addProps(storPool.getProps(accCtx));
         }
         prioProps.addProps(rsc.getProps(accCtx));
         prioProps.addProps(rsc.getAssignedNode().getProps(accCtx));

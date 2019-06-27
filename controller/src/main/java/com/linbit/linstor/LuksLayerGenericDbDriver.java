@@ -13,7 +13,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;

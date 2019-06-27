@@ -9,6 +9,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
@@ -289,14 +290,15 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                     SnapshotVolume snapshotVlm = snapshot.getSnapshotVolume(peerAccCtx.get(), vlmDfn.getVolumeNumber());
                     if (snapshotVlm != null)
                     {
-                        if (snapshotVlm.getStorPool(peerAccCtx.get()).getDeviceProviderKind().isSnapshotDependent())
+                        StorPool storPool = snapshotVlm.getStorPool(apiCtx);
+                        if (storPool.getDeviceProviderKind().isSnapshotDependent())
                         {
                             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                                 ApiConsts.FAIL_EXISTS_SNAPSHOT,
                                 "Volume definition " + vlmDfn.getVolumeNumber() + " of '" + rscDfn.getName() +
-                                    "' cannot be deleted because dependent snapshot '" + snapshot.getSnapshotName() +
-                                    "' is present on node '" + snapshot.getNodeName() + "'"
-                            ));
+                                "' cannot be deleted because dependent snapshot '" + snapshot.getSnapshotName() +
+                                "' is present on node '" + snapshot.getNodeName() + "'"
+                                ));
                         }
                     }
                 }

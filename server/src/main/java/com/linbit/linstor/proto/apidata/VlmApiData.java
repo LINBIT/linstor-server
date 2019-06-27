@@ -3,8 +3,6 @@ package com.linbit.linstor.proto.apidata;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
-import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
@@ -18,12 +16,10 @@ import java.util.UUID;
 public class VlmApiData implements VlmApi
 {
     private final Vlm vlm;
-    private final List<Pair<String, VlmLayerDataApi>> layerData;
 
     public VlmApiData(Vlm vlmRef)
     {
         vlm = vlmRef;
-        layerData = ProtoLayerUtils.extractVlmLayerData(vlmRef.getLayerDataList());
     }
 
     @Override
@@ -41,13 +37,7 @@ public class VlmApiData implements VlmApi
     @Override
     public String getStorPoolName()
     {
-        return vlm.getStorPoolName();
-    }
-
-    @Override
-    public UUID getStorPoolUuid()
-    {
-        return vlm.hasStorPoolUuid() ? UUID.fromString(vlm.getStorPoolUuid()) : null;
+        return null; // only needed for compat, not available on protobuf (as that is java-internal only)
     }
 
     @Override
@@ -71,41 +61,13 @@ public class VlmApiData implements VlmApi
     @Override
     public DeviceProviderKind getStorPoolDeviceProviderKind()
     {
-        DeviceProviderKind kind = null;
-        if (vlm.hasProviderKind())
-        {
-            kind = ProtoDeserializationUtils.parseDeviceProviderKind(vlm.getProviderKind());
-        }
-        return kind;
-    }
-
-    @Override
-    public UUID getStorPoolDfnUuid()
-    {
-        UUID storPoolDfnUuid = null;
-        if (vlm.hasStorPoolDfnUuid())
-        {
-            storPoolDfnUuid = UUID.fromString(vlm.getVlmDfnUuid());
-        }
-        return storPoolDfnUuid;
+        return null; // only needed for compat, not available on protobuf (as that is java-internal only)
     }
 
     @Override
     public Map<String, String> getVlmProps()
     {
         return vlm.getVlmPropsMap();
-    }
-
-    @Override
-    public Map<String, String> getStorPoolDfnProps()
-    {
-        return vlm.getStorPoolDfnPropsMap();
-    }
-
-    @Override
-    public Map<String, String> getStorPoolProps()
-    {
-        return vlm.getStorPoolPropsMap();
     }
 
     @Override
@@ -127,7 +89,7 @@ public class VlmApiData implements VlmApi
     @Override
     public List<Pair<String, VlmLayerDataApi>> getVlmLayerData()
     {
-        return layerData;
+        return null; // only needed for compat, not available on protobuf (as that is java-internal only)
     }
 
     public static Vlm toVlmProto(final VlmApi vlmApi)
@@ -135,8 +97,6 @@ public class VlmApiData implements VlmApi
         Vlm.Builder builder = Vlm.newBuilder();
         builder.setVlmUuid(vlmApi.getVlmUuid().toString());
         builder.setVlmDfnUuid(vlmApi.getVlmDfnUuid().toString());
-        builder.setStorPoolName(vlmApi.getStorPoolName());
-        builder.setStorPoolUuid(vlmApi.getStorPoolUuid().toString());
         builder.setVlmNr(vlmApi.getVlmNr());
         if (vlmApi.getDevicePath() != null)
         {

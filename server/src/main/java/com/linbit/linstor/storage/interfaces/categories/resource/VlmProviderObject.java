@@ -1,10 +1,14 @@
-package com.linbit.linstor.storage.interfaces.categories;
+package com.linbit.linstor.storage.interfaces.categories.resource;
 
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.LayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.ExceptionThrowingSupplier;
@@ -80,5 +84,19 @@ public interface VlmProviderObject extends LayerObject
 
     String getIdentifier();
 
-    VlmLayerDataApi asPojo(AccessContext accCtxRef);
+    VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException;
+
+    StorPool getStorPool();
+
+    void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws SQLException, AccessDeniedException;
+
+    default String getVolumeKey()
+    {
+        Volume volume = getVolume();
+        NodeName nodeName = volume.getResource().getAssignedNode().getName();
+        ResourceName rscName = volume.getResourceDefinition().getName();
+        String rscNameSuffix = getRscLayerObject().getResourceNameSuffix();
+        VolumeNumber volNr = getVlmNr();
+        return "vlm: " + nodeName.value + "/" + rscName.value + rscNameSuffix + "/" + volNr.value;
+    }
 }

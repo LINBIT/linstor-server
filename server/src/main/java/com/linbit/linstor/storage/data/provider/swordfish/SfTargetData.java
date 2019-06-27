@@ -1,9 +1,12 @@
 package com.linbit.linstor.storage.data.provider.swordfish;
 
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishTargetVlmPojo;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.interfaces.layers.storage.SfTargetVlmProviderObject;
@@ -27,6 +30,8 @@ public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProvid
         Volume vlmRef,
         StorageRscData rscDataRef,
         SfVlmDfnData vlmDfnDataRef,
+        StorPool storPoolRef,
+        StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -34,6 +39,8 @@ public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProvid
         super(
             vlmRef,
             rscDataRef,
+            storPoolRef,
+            dbDriverRef,
             DeviceProviderKind.SWORDFISH_TARGET,
             transObjFactory,
             transMgrProvider
@@ -93,12 +100,13 @@ public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProvid
     }
 
     @Override
-    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         return new SwordfishTargetVlmPojo(
             vlmDfnData.getApiData(accCtxRef),
             getAllocatedSize(),
-            getUsableSize()
+            getUsableSize(),
+            storPool.get().getApiData(null, null, accCtxRef, null, null)
         );
     }
 }

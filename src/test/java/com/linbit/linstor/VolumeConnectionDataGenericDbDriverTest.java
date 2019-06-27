@@ -132,14 +132,12 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             resSrc,
             volDfn,
-            storPool1,
             null
         );
         volDst = volumeDataFactory.create(
             SYS_CTX,
             resDst,
             volDfn,
-            storPool2,
             null
         );
     }

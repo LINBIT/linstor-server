@@ -751,23 +751,47 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         ResourceName rscName = new ResourceName(TEST_RSC_NAME);
         Assert.assertEquals(
             "stor",
-            nodesMap.get(new NodeName("stlt1")).getResource(GenericDbBase.SYS_CTX, rscName)
-                .iterateVolumes().next().getStorPool(GenericDbBase.SYS_CTX).getName().displayValue
+            nodesMap.get(new NodeName("stlt1"))
+                .getResource(GenericDbBase.SYS_CTX, rscName)
+                .getLayerData(SYS_CTX) // drbd layer
+                .getSingleChild() // storage layer
+                .getVlmProviderObject(new VolumeNumber(0))
+                .getStorPool()
+                .getName()
+                .displayValue
         );
         Assert.assertEquals(
             "stor",
-            nodesMap.get(new NodeName("stlt2")).getResource(GenericDbBase.SYS_CTX, rscName)
-                .iterateVolumes().next().getStorPool(GenericDbBase.SYS_CTX).getName().displayValue
+            nodesMap.get(new NodeName("stlt2"))
+                .getResource(GenericDbBase.SYS_CTX, rscName)
+                .getLayerData(SYS_CTX) // drbd layer
+                .getSingleChild() // storage layer
+                .getVlmProviderObject(new VolumeNumber(0))
+                .getStorPool()
+                .getName()
+                .displayValue
         );
         Assert.assertEquals(
             "stor2",
-            nodesMap.get(new NodeName("stlt3")).getResource(GenericDbBase.SYS_CTX, rscName)
-                .iterateVolumes().next().getStorPool(GenericDbBase.SYS_CTX).getName().displayValue
+            nodesMap.get(new NodeName("stlt3"))
+                .getResource(GenericDbBase.SYS_CTX, rscName)
+                .getLayerData(SYS_CTX) // drbd layer
+                .getSingleChild() // storage layer
+                .getVlmProviderObject(new VolumeNumber(0))
+                .getStorPool()
+                .getName()
+                .displayValue
         );
         Assert.assertEquals(
             "stor2",
-            nodesMap.get(new NodeName("stlt4")).getResource(GenericDbBase.SYS_CTX, rscName)
-                .iterateVolumes().next().getStorPool(GenericDbBase.SYS_CTX).getName().displayValue
+            nodesMap.get(new NodeName("stlt4"))
+                .getResource(GenericDbBase.SYS_CTX, rscName)
+                .getLayerData(SYS_CTX) // drbd layer
+                .getSingleChild() // storage layer
+                .getVlmProviderObject(new VolumeNumber(0))
+                .getStorPool()
+                .getName()
+                .displayValue
         );
     }
 
@@ -868,7 +892,16 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             while (vlmIt.hasNext())
             {
                 Volume vlm = vlmIt.next();
-                assertEquals(storPoolName, vlm.getStorPool(GenericDbBase.SYS_CTX).getName());
+                assertEquals(
+                    storPoolName,
+                    vlm.getResource()
+                        .getLayerData(SYS_CTX) // drbd layer
+                        .getSingleChild() // storage layer
+                        .getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber())
+                        .getStorPool()
+                        .getName()
+                        .displayValue
+                );
             }
         }
     }

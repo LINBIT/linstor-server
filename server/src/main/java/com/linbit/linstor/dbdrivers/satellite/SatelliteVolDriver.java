@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -22,13 +21,6 @@ public class SatelliteVolDriver implements VolumeDataDatabaseDriver
     public StateFlagsPersistence<VolumeData> getStateFlagsPersistence()
     {
         return (StateFlagsPersistence<VolumeData>) stateFlagsDriver;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public SingleColumnDatabaseDriver<VolumeData, StorPool> getStorPoolDriver()
-    {
-        return (SingleColumnDatabaseDriver<VolumeData, StorPool>) singleColDriver;
     }
 
     @Override

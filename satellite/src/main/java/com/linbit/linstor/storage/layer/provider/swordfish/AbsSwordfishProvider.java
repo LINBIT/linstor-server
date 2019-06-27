@@ -20,7 +20,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
@@ -261,7 +261,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
         for (LAYER_DATA vlmData : vlmDataList)
         {
             createImpl(vlmData);
-            changedStorPools.add(vlmData.getVolume().getStorPool(sysCtx));
+            changedStorPools.add(vlmData.getStorPool());
             addCreatedMsg(vlmData, apiCallRc);
         }
     }
@@ -272,7 +272,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
         for (LAYER_DATA vlmData : deleteList)
         {
             deleteImpl(vlmData);
-            changedStorPools.add(vlmData.getVolume().getStorPool(sysCtx));
+            changedStorPools.add(vlmData.getStorPool());
             addDeletedMsg(vlmData, apiCallRc);
         }
     }

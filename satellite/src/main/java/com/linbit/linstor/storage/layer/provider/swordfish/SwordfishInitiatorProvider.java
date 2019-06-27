@@ -18,7 +18,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.storage.SfInitiatorVlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
@@ -258,7 +258,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         clearAndSet(vlmData, SfInitiatorData.WAITING_ATTACHABLE);
 
         ReadOnlyProps stltRoProps = stltConfigAccessor.getReadonlyProps();
-        Props storPoolProps = vlmData.getVolume().getStorPool(sysCtx).getProps(sysCtx);
+        Props storPoolProps = vlmData.getStorPool().getProps(sysCtx);
         long pollAttachVlmTimeout = prioStorDriverPropsAsLong(
             StorageConstants.CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY,
             POLL_VLM_ATTACH_TIMEOUT_DEFAULT,
@@ -363,7 +363,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         throws StorageException, AccessDeniedException, InvalidKeyException
     {
         ReadOnlyProps stltRoProps = stltConfigAccessor.getReadonlyProps();
-        Props storPoolProps = vlmData.getVolume().getStorPool(sysCtx).getProps(sysCtx);
+        Props storPoolProps = vlmData.getStorPool().getProps(sysCtx);
         long pollGrepNvmeUuidTimeout = prioStorDriverPropsAsLong(
             StorageConstants.CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY,
             POLL_GREP_TIMEOUT_DEFAULT,

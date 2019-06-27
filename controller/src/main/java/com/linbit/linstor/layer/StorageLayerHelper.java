@@ -20,10 +20,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
-import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
@@ -149,7 +149,8 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
                         vlmData = layerDataFactory.createSfInitData(
                             vlm,
                             rscData,
-                            vlmDfnData
+                            vlmDfnData,
+                            storPool
                         );
                     }
                     break;
@@ -162,7 +163,8 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
                         vlmData = layerDataFactory.createSfTargetData(
                             vlm,
                             rscData,
-                            vlmDfnData
+                            vlmDfnData,
+                            storPool
                         );
                     }
                     break;
@@ -170,32 +172,42 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
                     vlmData = layerDataFactory.createDisklessData(
                         vlm,
                         vlm.getVolumeDefinition().getVolumeSize(apiCtx),
-                        rscData
+                        rscData,
+                        storPool
                     );
                     break;
                 case LVM:
-                    vlmData = layerDataFactory.createLvmData(vlm, rscData);
+                    vlmData = layerDataFactory.createLvmData(vlm, rscData, storPool);
                     break;
                 case LVM_THIN:
-                    vlmData = layerDataFactory.createLvmThinData(vlm, rscData);
+                    vlmData = layerDataFactory.createLvmThinData(vlm, rscData, storPool);
                     break;
                 case ZFS: // fall-through
                 case ZFS_THIN:
-                    vlmData = layerDataFactory.createZfsData(vlm, rscData, kind);
+                    vlmData = layerDataFactory.createZfsData(vlm, rscData, kind, storPool);
                     break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 default:
                     throw new ImplementationError("Unexpected kind: " + kind);
             }
+            storPool.putVolume(apiCtx, vlmData);
         }
         return vlmData;
     }
 
     @Override
     protected void mergeVlmData(VlmProviderObject vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
-        throws AccessDeniedException, InvalidKeyException
+        throws AccessDeniedException, InvalidKeyException, InvalidNameException, SQLException
     {
-        // nothing to do
+        // if storage pool changed (i.e. because of a toggle disk) we need to update that
+
+        StorPool currentStorPool = vlmDataRef.getStorPool();
+
+        StorPool newStorPool = getStorPool(vlmRef, vlmDataRef.getRscLayerObject());
+        if (newStorPool != null && !newStorPool.equals(currentStorPool))
+        {
+            vlmDataRef.setStorPool(apiCtx, newStorPool);
+        }
     }
 
     private SfVlmDfnData ensureSfVlmDfnExists(

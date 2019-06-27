@@ -17,9 +17,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 

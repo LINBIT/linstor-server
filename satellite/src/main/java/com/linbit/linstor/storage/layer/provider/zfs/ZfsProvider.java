@@ -15,7 +15,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject.Size;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
@@ -32,6 +32,7 @@ import javax.inject.Singleton;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,11 +137,17 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
         );
     }
 
-    private String asFullQualifiedLvIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
+    private List<String> asFullQualifiedLvIdentifierList(String rscNameSuffix, SnapshotVolume snapVlm)
         throws AccessDeniedException
     {
-        return getZPool(snapVlm.getStorPool(storDriverAccCtx)) + File.separator +
-            asLvIdentifier(rscNameSuffix, snapVlm);
+        List<String> fqLvIdList = new ArrayList<>();
+
+        fqLvIdList.add(
+            getZPool(snapVlm.getStorPool(storDriverAccCtx)) + File.separator +
+                asLvIdentifier(rscNameSuffix, snapVlm)
+        );
+
+        return fqLvIdList;
     }
 
     private String asLvIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
@@ -210,7 +217,28 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
         throws StorageException, AccessDeniedException, SQLException
     {
         // FIXME: RAID: rscNameSuffix
-        return infoListCache.get(asFullQualifiedLvIdentifier("", snapVlm)) != null;
+
+        boolean oneExists = false;
+        boolean allExsits = true;
+        List<String> identifierList = asFullQualifiedLvIdentifierList("", snapVlm);
+
+        for (String snapLvId : identifierList)
+        {
+            if (infoListCache.get(snapLvId) != null)
+            {
+                oneExists = true;
+            }
+            else
+            {
+                allExsits = false;
+            }
+        }
+        if (oneExists && !allExsits)
+        {
+            // FIXME: what the heck should we do now?
+            errorReporter.logError("Some, but not all zfs volumes of snapshot " + snapVlm + " exist.");
+        }
+        return allExsits;
     }
 
     @Override
@@ -362,9 +390,9 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
          */
         for (ZfsData vlmData : vlmDataList)
         {
-            storPools.add(vlmData.getVolume().getStorPool(storDriverAccCtx));
+            storPools.add(vlmData.getStorPool());
 
-            vlmData.setZPool(getZPool(vlmData.getVolume().getStorPool(storDriverAccCtx)));
+            vlmData.setZPool(getZPool(vlmData.getStorPool()));
             vlmData.setIdentifier(asLvIdentifier(vlmData));
             ZfsInfo info = infoListCache.get(vlmData.getFullQualifiedLvIdentifier());
 

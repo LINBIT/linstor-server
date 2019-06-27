@@ -9,6 +9,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPrivileged;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_INITIATOR;
@@ -133,7 +134,8 @@ public class ResourceCreateCheck
         {
             ret = ResourceRole.NVME_TARGET;
         }
-        else if (
+        else
+        if (
             volumes.stream().anyMatch(
                 vlm -> execPrivileged(
                     () -> DeviceLayerKind.NVME.equals(
@@ -146,26 +148,18 @@ public class ResourceCreateCheck
             ret = ResourceRole.NVME_INITIATOR;
         }
         else if (
-            volumes.stream().anyMatch(
-                vlm -> execPrivileged(
-                    () -> SWORDFISH_TARGET.equals(
-                        vlm.getStorPool(accessContext).getDeviceProviderKind()
-                    )
-                )
+            volumes.stream()
+                .flatMap(vlm -> execPrivileged(() -> LayerVlmUtils.getStorPoolSet(vlm, accessContext).stream()))
+                .anyMatch(storpool -> SWORDFISH_TARGET.equals(storpool.getDeviceProviderKind()))
             )
-        )
         {
             ret = ResourceRole.SWORDFISH_TARGET;
         }
         else if (
-            volumes.stream().anyMatch(
-                vlm -> execPrivileged(
-                    () -> DeviceProviderKind.SWORDFISH_INITIATOR.equals(
-                        vlm.getStorPool(accessContext).getDeviceProviderKind()
-                    )
-                )
+            volumes.stream()
+                .flatMap(vlm -> execPrivileged(() -> LayerVlmUtils.getStorPoolSet(vlm, accessContext).stream()))
+                .anyMatch(storPool -> DeviceProviderKind.SWORDFISH_INITIATOR.equals(storPool.getDeviceProviderKind()))
             )
-        )
         {
             ret = ResourceRole.SWORDFISH_INITIATOR;
         }
@@ -195,16 +189,16 @@ public class ResourceCreateCheck
                 )
         );
         hasSwordfishTarget = execPrivileged(
-            () -> rscDfn.streamResource(accessContext)).flatMap(tmpRsc -> tmpRsc.streamVolumes()).anyMatch(
-                vlm -> execPrivileged(
-                    () -> SWORDFISH_TARGET.equals(vlm.getStorPool(accessContext).getDeviceProviderKind())
-                )
+            () -> rscDfn.streamResource(accessContext))
+                .flatMap(tmpRsc -> tmpRsc.streamVolumes())
+                .flatMap(vlm -> execPrivileged(() -> LayerVlmUtils.getStorPoolSet(vlm, accessContext).stream()))
+                .anyMatch(storPool -> SWORDFISH_TARGET.equals(storPool.getDeviceProviderKind())
         );
         hasSwordfishInitiator = execPrivileged(
-            () -> rscDfn.streamResource(accessContext)).flatMap(tmpRsc -> tmpRsc.streamVolumes()).anyMatch(
-                vlm -> execPrivileged(
-                    () -> SWORDFISH_INITIATOR.equals(vlm.getStorPool(accessContext).getDeviceProviderKind())
-                )
+            () -> rscDfn.streamResource(accessContext))
+                .flatMap(tmpRsc -> tmpRsc.streamVolumes())
+                .flatMap(vlm -> execPrivileged(() -> LayerVlmUtils.getStorPoolSet(vlm, accessContext).stream()))
+                .anyMatch(storPool -> SWORDFISH_INITIATOR.equals(storPool.getDeviceProviderKind())
         );
     }
 }

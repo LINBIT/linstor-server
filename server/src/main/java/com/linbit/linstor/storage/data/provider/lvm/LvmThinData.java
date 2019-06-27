@@ -1,9 +1,12 @@
 package com.linbit.linstor.storage.data.provider.lvm;
 
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -22,11 +25,13 @@ public class LvmThinData extends LvmData
     public LvmThinData(
         Volume vlm,
         StorageRscData rscData,
+        StorPool storPoolRef,
+        StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
     {
-        super(vlm, rscData, DeviceProviderKind.LVM_THIN, transObjFactory, transMgrProvider);
+        super(vlm, rscData, storPoolRef, dbDriverRef, DeviceProviderKind.LVM_THIN, transObjFactory, transMgrProvider);
     }
 
     public String getThinPool()
@@ -50,14 +55,15 @@ public class LvmThinData extends LvmData
     }
 
     @Override
-    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         return new LvmThinVlmPojo(
             getVlmNr().value,
             getDevicePath(),
             getAllocatedSize(),
             getUsableSize(),
-            new ArrayList<>(getStates()).toString() // avoid "TransactionList " in the toString()
+            new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
+            storPool.get().getApiData(null, null, accCtxRef, null, null)
         );
     }
 }

@@ -8,7 +8,7 @@ import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.Pair;

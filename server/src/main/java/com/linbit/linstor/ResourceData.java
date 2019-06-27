@@ -12,7 +12,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -257,7 +257,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         VolumeNumber vlmNr = vol.getVolumeDefinition().getVolumeNumber();
         volumeMap.remove(vlmNr);
-        rootLayerData.get().remove(vlmNr);
+        rootLayerData.get().remove(accCtx, vlmNr);
     }
 
     @Override

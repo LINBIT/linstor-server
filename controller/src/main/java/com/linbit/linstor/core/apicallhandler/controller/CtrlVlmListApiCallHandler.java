@@ -11,6 +11,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -23,7 +24,9 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -124,12 +127,30 @@ public class CtrlVlmListApiCallHandler
 
                             // build volume list filtered by storage pools (if provided)
                             List<Volume.VlmApi> volumes = new ArrayList<>();
+                            List<RscLayerObject> storageRscList = LayerUtils.getChildLayerDataByKind(
+                                rsc.getLayerData(peerAccCtx.get()),
+                                DeviceLayerKind.STORAGE
+                            );
                             Iterator<Volume> itVolumes = rsc.iterateVolumes();
                             while (itVolumes.hasNext())
                             {
                                 Volume vlm = itVolumes.next();
-                                if (storPoolsFilter.isEmpty() ||
-                                    storPoolsFilter.contains(vlm.getStorPool(peerAccCtx.get()).getName()))
+                                boolean addToList = storPoolsFilter.isEmpty();
+                                if (!addToList)
+                                {
+                                    VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+                                    for (RscLayerObject storageRsc : storageRscList)
+                                    {
+                                        if (storPoolsFilter.contains(
+                                            storageRsc.getVlmProviderObject(vlmNr).getStorPool().getName())
+                                        )
+                                        {
+                                            addToList = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (addToList)
                                 {
                                     volumes.add(vlm.getApiData(
                                         getAllocated(vlmAllocatedCapacities, vlm),
@@ -215,8 +236,12 @@ public class CtrlVlmListApiCallHandler
     private Long getAllocated(Map<Volume.Key, Long> vlmAllocatedCapacities, Volume vlm)
         throws AccessDeniedException
     {
-        Long allocated;
-        DeviceProviderKind driverKind = vlm.getStorPool(peerAccCtx.get()).getDeviceProviderKind();
+        // TODO: test if this works as intended
+        return vlmAllocatedCapacities.get(vlm.getKey());
+
+        /*
+        Long allocated = null;
+        DeviceProviderKind driverKind = vlm.getStorPools(peerAccCtx.get()).getDeviceProviderKind();
         if (driverKind.hasBackingDevice())
         {
             allocated = getDiskAllocated(vlmAllocatedCapacities, vlm);
@@ -238,31 +263,32 @@ public class CtrlVlmListApiCallHandler
             allocated = maxAllocated;
         }
         return allocated;
+        */
     }
 
-    private Long getDiskAllocated(Map<Volume.Key, Long> vlmAllocatedCapacities, Volume vlm)
-        throws AccessDeniedException
-    {
-        Long allocated;
-        Long fetchedAllocated = vlmAllocatedCapacities.get(vlm.getKey());
-        if (fetchedAllocated != null)
-        {
-            allocated = fetchedAllocated;
-        }
-        else
-        {
-            DeviceProviderKind driverKind = vlm.getStorPool(peerAccCtx.get()).getDeviceProviderKind();
-            if (driverKind.usesThinProvisioning() || !driverKind.hasBackingDevice())
-            {
-                allocated = null;
-            }
-            else
-            {
-                allocated = vlm.getVolumeDefinition().getVolumeSize(peerAccCtx.get());
-            }
-        }
-        return allocated;
-    }
+//    private Long getDiskAllocated(Map<Volume.Key, Long> vlmAllocatedCapacities, Volume vlm)
+//        throws AccessDeniedException
+//    {
+//        Long allocated;
+//        Long fetchedAllocated = vlmAllocatedCapacities.get(vlm.getKey());
+//        if (fetchedAllocated != null)
+//        {
+//            allocated = fetchedAllocated;
+//        }
+//        else
+//        {
+//            DeviceProviderKind driverKind = vlm.getStorPools(peerAccCtx.get()).getDeviceProviderKind();
+//            if (driverKind.usesThinProvisioning() || !driverKind.hasBackingDevice())
+//            {
+//                allocated = null;
+//            }
+//            else
+//            {
+//                allocated = vlm.getVolumeDefinition().getVolumeSize(peerAccCtx.get());
+//            }
+//        }
+//        return allocated;
+//    }
 
     public static String getVlmDescriptionInline(Volume vlm)
     {

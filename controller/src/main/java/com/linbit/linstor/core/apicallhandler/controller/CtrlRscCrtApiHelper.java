@@ -47,7 +47,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -228,27 +229,62 @@ public class CtrlRscCrtApiHelper
     {
         try
         {
-            DeviceProviderKind deviceProviderKind = vlmRef.getStorPool(peerAccCtx.get()).getDeviceProviderKind();
-            if (
-                deviceProviderKind.usesThinProvisioning() &&
-                LayerUtils.hasLayer(vlmRef.getResource().getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD)
-            )
+            RscLayerObject rscLayerObj = vlmRef.getResource().getLayerData(peerAccCtx.get());
+            if (LayerUtils.hasLayer(rscLayerObj, DeviceLayerKind.DRBD))
             {
+                boolean hasThinStorPool = false;
+                boolean hasFatStorPool = false;
+                String granularity = "8192"; // take ZFS, unless we have at least one LVM
+
+                List<RscLayerObject> storageRscLayerObjList = LayerUtils.getChildLayerDataByKind(
+                    rscLayerObj,
+                    DeviceLayerKind.STORAGE
+                );
+                for (RscLayerObject storageRsc : storageRscLayerObjList)
+                {
+                    for (VlmProviderObject storageVlm : storageRsc.getVlmLayerObjects().values())
+                    {
+                        DeviceProviderKind devProviderKind = storageVlm.getStorPool().getDeviceProviderKind();
+                        switch (devProviderKind)
+                        {
+                            case DISKLESS: // fall-through
+                            case SWORDFISH_INITIATOR: // fall-through
+                            case SWORDFISH_TARGET:
+                                // ignored
+                                break;
+                            case LVM: // fall-through
+                            case ZFS:
+                                hasFatStorPool = true;
+                                break;
+                            case LVM_THIN:
+                                granularity = "65536";
+                                // fall-through
+                            case ZFS_THIN:
+                                hasThinStorPool = true;
+                                break;
+                            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                            default:
+                                throw new ImplementationError("Unknown deviceProviderKind: " + devProviderKind);
+
+                        }
+                    }
+                }
+                if (hasThinStorPool && hasFatStorPool)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_STOR_DRIVER,
+                            "Mixing thin and thick storage pools are not allowed"
+                        )
+                    );
+                }
+
                 //TODO: make these default drbd-properties configurable (provider-specific?)
 
                 Props props = vlmRef.getVolumeDefinition().getProps(peerAccCtx.get());
                 if (props.getProp("rs-discard-granularity", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
                 {
-                    String dflt;
-                    if (deviceProviderKind.equals(DeviceProviderKind.ZFS_THIN))
-                    {
-                        dflt = "8192";
-                    }
-                    else
-                    {
-                        dflt = "65536";
-                    }
-                    props.setProp("rs-discard-granularity", dflt,  ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                    props.setProp("rs-discard-granularity", granularity,  ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
                 }
                 if (props.getProp("discard-zeroes-if-aligned", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
                 {

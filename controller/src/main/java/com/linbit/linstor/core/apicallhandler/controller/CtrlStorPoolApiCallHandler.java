@@ -2,9 +2,9 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -24,6 +24,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
@@ -170,18 +171,19 @@ public class CtrlStorPoolApiCallHandler
                     .build()
                 );
             }
-            Collection<Volume> volumes = getVolumes(storPool);
+            Collection<VlmProviderObject> volumes = getVolumes(storPool);
             if (!volumes.isEmpty())
             {
                 StringBuilder volListSb = new StringBuilder();
-                for (Volume vol : volumes)
+                for (VlmProviderObject vlmObj : volumes)
                 {
+                    Resource rsc = vlmObj.getVolume().getResource();
                     volListSb.append("\n   Node name: '")
-                         .append(vol.getResource().getAssignedNode().getName().displayValue)
+                         .append(rsc.getAssignedNode().getName().displayValue)
                          .append("', resource name: '")
-                         .append(vol.getResource().getDefinition().getName().displayValue)
+                         .append(rsc.getDefinition().getName().displayValue)
                          .append("', volume number: ")
-                         .append(vol.getVolumeDefinition().getVolumeNumber().value);
+                         .append(vlmObj.getVlmNr().value);
                 }
 
                 String correction = volumes.size() == 1 ?
@@ -228,9 +230,9 @@ public class CtrlStorPoolApiCallHandler
         return responses;
     }
 
-    private Collection<Volume> getVolumes(StorPoolData storPool)
+    private Collection<VlmProviderObject> getVolumes(StorPoolData storPool)
     {
-        Collection<Volume> volumes;
+        Collection<VlmProviderObject> volumes;
         try
         {
             volumes = storPool.getVolumes(peerAccCtx.get());

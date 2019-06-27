@@ -1,7 +1,8 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;

@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -76,6 +77,7 @@ public class StorageRscPojo implements RscLayerDataApi
         private final long usableSize;
         private final String diskState;
         private final DeviceProviderKind kind;
+        private final StorPoolApi storPoolApi;
 
         AbsVlmProviderPojo(
             int vlmNrRef,
@@ -83,6 +85,7 @@ public class StorageRscPojo implements RscLayerDataApi
             long allocatedSizeRef,
             long usableSizeRef,
             String diskStateRef,
+            StorPoolApi storPoolApiRef,
             DeviceProviderKind kindRef
         )
         {
@@ -91,6 +94,7 @@ public class StorageRscPojo implements RscLayerDataApi
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             diskState = diskStateRef;
+            storPoolApi = storPoolApiRef;
             kind = kindRef;
         }
 
@@ -131,6 +135,12 @@ public class StorageRscPojo implements RscLayerDataApi
         }
 
         @Override
+        public StorPoolApi getStorPoolApi()
+        {
+            return storPoolApi;
+        }
+
+        @Override
         public DeviceLayerKind getLayerKind()
         {
             return STORAGE;
@@ -144,10 +154,11 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, DISKLESS);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, DISKLESS);
         }
     }
 
@@ -158,10 +169,11 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, LVM);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, LVM);
         }
     }
 
@@ -172,10 +184,11 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, LVM_THIN);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, LVM_THIN);
         }
     }
 
@@ -186,10 +199,11 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, ZFS);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, ZFS);
         }
     }
 
@@ -200,10 +214,11 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, ZFS_THIN);
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, ZFS_THIN);
         }
     }
 
@@ -214,10 +229,11 @@ public class StorageRscPojo implements RscLayerDataApi
         public SwordfishTargetVlmPojo(
             SwordfishVlmDfnPojo vlmDfnRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            StorPoolApi storPoolApiRef
         )
         {
-            super(vlmDfnRef.vlmNr, null, allocatedSizeRef, usableSizeRef, null, SWORDFISH_TARGET);
+            super(vlmDfnRef.vlmNr, null, allocatedSizeRef, usableSizeRef, null, storPoolApiRef, SWORDFISH_TARGET);
             vlmDfn = vlmDfnRef;
         }
 
@@ -236,7 +252,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
         )
         {
             super(
@@ -245,6 +262,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 allocatedSizeRef,
                 usableSizeRef,
                 diskStateRef,
+                storPoolApiRef,
                 SWORDFISH_INITIATOR
             );
             vlmDfn = vlmDfnRef;

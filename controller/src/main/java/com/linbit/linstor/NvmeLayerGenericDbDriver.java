@@ -8,7 +8,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -86,7 +86,7 @@ public class NvmeLayerGenericDbDriver implements NvmeLayerDatabaseDriver
         {
             vlmMap.put(
                 vlm.getVolumeDefinition().getVolumeNumber(),
-                new NvmeVlmData(vlm, new Pair<>(nvmeRscData, children).objA, transObjFactory, transMgrProvider)
+                new NvmeVlmData(vlm, nvmeRscData, transObjFactory, transMgrProvider)
             );
         }
         return new Pair<>(nvmeRscData, children);

@@ -1,12 +1,15 @@
 package com.linbit.linstor.storage.data.provider.diskless;
 
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -21,6 +24,8 @@ public class DisklessData extends AbsStorageVlmData
         Volume vlmRef,
         StorageRscData rscDataRef,
         long usableSizeRef,
+        StorPool storPoolRef,
+        StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -29,6 +34,8 @@ public class DisklessData extends AbsStorageVlmData
         super(
             vlmRef,
             rscDataRef,
+            storPoolRef,
+            dbDriverRef,
             DeviceProviderKind.DISKLESS,
             transObjFactory,
             transMgrProvider
@@ -67,14 +74,15 @@ public class DisklessData extends AbsStorageVlmData
     }
 
     @Override
-    public VlmLayerDataApi asPojo(AccessContext accCtxRef)
+    public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         return new DisklessVlmPojo(
             vlm.getVolumeDefinition().getVolumeNumber().value,
             getDevicePath(),
             getAllocatedSize(),
             getUsableSize(),
-            null
+            null,
+            storPool.get().getApiData(null, null, accCtxRef, null, null)
         );
     }
 }

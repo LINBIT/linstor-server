@@ -3,7 +3,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.storage.AbsRscData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

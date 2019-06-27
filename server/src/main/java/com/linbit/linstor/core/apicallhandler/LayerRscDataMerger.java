@@ -2,12 +2,15 @@ package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
@@ -44,9 +47,9 @@ import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
@@ -58,8 +61,8 @@ import java.sql.SQLException;
 @Singleton
 public class LayerRscDataMerger
 {
-    private final AccessContext apiCtx;
-    private final LayerDataFactory layerDataFactory;
+    protected final AccessContext apiCtx;
+    protected final LayerDataFactory layerDataFactory;
 
     @Inject
     public LayerRscDataMerger(
@@ -76,23 +79,25 @@ public class LayerRscDataMerger
         RscLayerObject restore(
             Resource rsc,
             RscLayerDataApi rscLayerDataPojo,
-            RscLayerObject parent
+            RscLayerObject parent,
+            boolean remoteResourceRef
         )
             throws SQLException, ValueOutOfRangeException, AccessDeniedException, IllegalArgumentException,
-                ExhaustedPoolException, ValueInUseException;
+                ExhaustedPoolException, ValueInUseException, InvalidNameException;
     }
 
     public void restoreLayerData(
         Resource rsc,
-        RscLayerDataApi rscLayerDataPojo
+        RscLayerDataApi rscLayerDataPojo,
+        boolean remoteResource
     )
     {
         try
         {
-            restore(rsc, rscLayerDataPojo, null);
+            restore(rsc, rscLayerDataPojo, null, remoteResource);
         }
         catch (AccessDeniedException | SQLException | ValueOutOfRangeException | IllegalArgumentException |
-            ExhaustedPoolException | ValueInUseException exc)
+            ExhaustedPoolException | ValueInUseException | InvalidNameException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -101,10 +106,11 @@ public class LayerRscDataMerger
     private void restore(
         Resource rsc,
         RscLayerDataApi rscLayerDataPojo,
-        RscLayerObject parent
+        RscLayerObject parent,
+        boolean remoteResourceRef
     )
         throws AccessDeniedException, SQLException, IllegalArgumentException,
-            ImplementationError, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException
+            ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException, InvalidNameException
     {
         RscDataExtractor rscRestorer;
         switch (rscLayerDataPojo.getLayerKind())
@@ -124,18 +130,19 @@ public class LayerRscDataMerger
             default:
                 throw new ImplementationError("Unexpected layer kind: " + rscLayerDataPojo.getLayerKind());
         }
-        RscLayerObject rscLayerObject = rscRestorer.restore(rsc, rscLayerDataPojo, parent);
+        RscLayerObject rscLayerObject = rscRestorer.restore(rsc, rscLayerDataPojo, parent, remoteResourceRef);
 
         for (RscLayerDataApi childRscPojo : rscLayerDataPojo.getChildren())
         {
-            restore(rsc, childRscPojo, rscLayerObject);
+            restore(rsc, childRscPojo, rscLayerObject, remoteResourceRef);
         }
     }
 
     private DrbdRscData restoreDrbdRscData(
         Resource rsc,
         RscLayerDataApi rscDataPojo,
-        RscLayerObject parent
+        RscLayerObject parent,
+        boolean ignoredRemoteResource
     )
         throws SQLException, ValueOutOfRangeException, AccessDeniedException, IllegalArgumentException,
             ExhaustedPoolException, ValueInUseException
@@ -195,7 +202,7 @@ public class LayerRscDataMerger
             Volume vlm = rsc.getVolume(vlmNr);
             if (vlm == null)
             {
-                drbdRscData.remove(vlmNr);
+                drbdRscData.remove(apiCtx, vlmNr);
             }
             else
             {
@@ -307,7 +314,8 @@ public class LayerRscDataMerger
     private LuksRscData restoreLuksRscData(
         Resource rsc,
         RscLayerDataApi rscDataPojo,
-        RscLayerObject parent
+        RscLayerObject parent,
+        boolean ignoredRemoteResource
     )
         throws AccessDeniedException, SQLException, ValueOutOfRangeException
     {
@@ -349,7 +357,7 @@ public class LayerRscDataMerger
             Volume vlm = rsc.getVolume(vlmNr);
             if (vlm == null)
             {
-                luksRscData.remove(vlmNr);
+                luksRscData.remove(apiCtx, vlmNr);
             }
             else
             {
@@ -393,9 +401,10 @@ public class LayerRscDataMerger
     private StorageRscData restoreStorageRscData(
         Resource rsc,
         RscLayerDataApi rscDataPojo,
-        RscLayerObject parent
+        RscLayerObject parent,
+        boolean remoteResource
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException
+        throws AccessDeniedException, SQLException, ValueOutOfRangeException, InvalidNameException
     {
         StorageRscPojo storRscPojo = (StorageRscPojo) rscDataPojo;
         StorageRscData storRscData = null;
@@ -438,36 +447,44 @@ public class LayerRscDataMerger
             Volume vlm = rsc.getVolume(vlmNr);
             if (vlm == null)
             {
-                storRscData.remove(vlmNr);
+                storRscData.remove(apiCtx, vlmNr);
             }
             else
             {
-                restoreStorVlm(vlm, storRscData, vlmPojo);
+                restoreStorVlm(vlm, storRscData, vlmPojo, remoteResource);
             }
         }
         return storRscData;
     }
 
-    private void restoreStorVlm(
+    protected void restoreStorVlm(
         Volume vlm,
         StorageRscData storRscData,
-        VlmLayerDataApi vlmPojo
+        VlmLayerDataApi vlmPojo,
+        boolean remoteResourceRef
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, InvalidNameException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
 
+        StorPool storPool = getStoragePool(vlm, vlmPojo, remoteResourceRef);
         VlmProviderObject vlmData = storRscData.getVlmLayerObjects().get(vlmNr);
+
         switch (vlmPojo.getProviderKind())
         {
             case DISKLESS:
                 if (vlmData == null || !(vlmData instanceof DisklessData))
                 {
+                    if (vlmData != null)
+                    {
+                        storRscData.remove(apiCtx, vlmNr); // replace old vlmData
+                    }
                     vlmData = layerDataFactory.createDisklessData(
                         vlm,
                         vlmPojo.getUsableSize(),
-                        storRscData
+                        storRscData,
+                        storPool
                     );
                 }
                 else
@@ -479,7 +496,11 @@ public class LayerRscDataMerger
             case LVM:
                 if (vlmData == null || !(vlmData instanceof LvmData))
                 {
-                    vlmData = layerDataFactory.createLvmData(vlm, storRscData);
+                    if (vlmData != null)
+                    {
+                        storRscData.remove(apiCtx, vlmNr); // replace old vlmData
+                    }
+                    vlmData = layerDataFactory.createLvmData(vlm, storRscData, storPool);
                 }
                 else
                 {
@@ -492,7 +513,11 @@ public class LayerRscDataMerger
             case LVM_THIN:
                 if (vlmData == null || !(vlmData instanceof LvmThinData))
                 {
-                    vlmData = layerDataFactory.createLvmThinData(vlm, storRscData);
+                    if (vlmData != null)
+                    {
+                        storRscData.remove(apiCtx, vlmNr); // replace old vlmData
+                    }
+                    vlmData = layerDataFactory.createLvmThinData(vlm, storRscData, storPool);
                 }
                 else
                 {
@@ -505,13 +530,18 @@ public class LayerRscDataMerger
             case SWORDFISH_INITIATOR:
                 if (vlmData == null || !(vlmData instanceof SfInitiatorData))
                 {
+                    if (vlmData != null)
+                    {
+                        storRscData.remove(apiCtx, vlmNr); // replace old vlmData
+                    }
                     vlmData = layerDataFactory.createSfInitData(
                         vlm,
                         storRscData,
                         restoreSfVlmDfn(
                             vlm.getVolumeDefinition(),
                             ((SwordfishInitiatorVlmPojo) vlmPojo).getVlmDfn()
-                        )
+                        ),
+                        storPool
                     );
                 }
                 else
@@ -525,13 +555,18 @@ public class LayerRscDataMerger
             case SWORDFISH_TARGET:
                 if (vlmData == null || !(vlmData instanceof SfTargetData))
                 {
+                    if (vlmData != null)
+                    {
+                        storRscData.remove(apiCtx, vlmNr); // replace old vlmData
+                    }
                     vlmData = layerDataFactory.createSfTargetData(
                         vlm,
                         storRscData,
                         restoreSfVlmDfn(
                             vlm.getVolumeDefinition(),
                             ((SwordfishInitiatorVlmPojo) vlmPojo).getVlmDfn()
-                        )
+                        ),
+                        storPool
                     );
                 }
                 else
@@ -544,7 +579,11 @@ public class LayerRscDataMerger
             case ZFS_THIN:
                 if (vlmData == null || !(vlmData instanceof ZfsData))
                 {
-                    vlmData = layerDataFactory.createZfsData(vlm, storRscData, vlmPojo.getProviderKind());
+                    if (vlmData != null)
+                    {
+                        storRscData.remove(apiCtx, vlmNr); // replace old vlmData
+                    }
+                    vlmData = layerDataFactory.createZfsData(vlm, storRscData, vlmPojo.getProviderKind(), storPool);
                 }
                 else
                 {
@@ -559,6 +598,8 @@ public class LayerRscDataMerger
                 throw new ImplementationError("Unexpected DeviceProviderKind: " + vlmPojo.getProviderKind());
 
         }
+
+        vlmData.setStorPool(apiCtx, storPool);
         storRscData.getVlmLayerObjects().put(vlmNr, vlmData);
     }
 
@@ -613,7 +654,12 @@ public class LayerRscDataMerger
         return (T) matchingChild;
     }
 
-    private NvmeRscData restoreNvmeRscData(Resource rsc, RscLayerDataApi rscDataPojo, RscLayerObject parent)
+    private NvmeRscData restoreNvmeRscData(
+        Resource rsc,
+        RscLayerDataApi rscDataPojo,
+        RscLayerObject parent,
+        boolean ignoredRemoteResource
+    )
         throws AccessDeniedException, SQLException, ValueOutOfRangeException
     {
         NvmeRscPojo nvmeRscPojo = (NvmeRscPojo) rscDataPojo;
@@ -654,7 +700,7 @@ public class LayerRscDataMerger
             Volume vlm = rsc.getVolume(vlmNr);
             if (vlm == null)
             {
-                nvmeRscData.remove(vlmNr);
+                nvmeRscData.remove(apiCtx, vlmNr);
             }
             else
             {
@@ -698,5 +744,12 @@ public class LayerRscDataMerger
         {
             newParent.getChildren().add(child);
         }
+    }
+
+    protected StorPool getStoragePool(Volume vlmRef, VlmLayerDataApi vlmPojoRef, boolean remoteResourceRef)
+        throws InvalidNameException, AccessDeniedException
+    {
+        StorPoolName storPoolName = new StorPoolName(vlmPojoRef.getStorPoolApi().getStorPoolName());
+        return vlmRef.getResource().getAssignedNode().getStorPool(apiCtx, storPoolName);
     }
 }

@@ -18,10 +18,10 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
@@ -253,7 +253,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
 
         for (VolumeNumber vlmNr : existingVlmsDataToBeDeleted)
         {
-            vlmLayerObjects.remove(vlmNr);
+            rscData.remove(apiCtx, vlmNr);
         }
 
         return new LayerResult(
@@ -287,7 +287,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
      * @throws InvalidNameException
      */
     @SuppressWarnings("unused") // exceptions needed by implementations
-    protected StorPool getStorPool(Volume vlmRef, RscLayerObject childRef)
+    protected StorPool getStorPool(Volume vlmRef, RscLayerObject rscDataRef)
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         return null;
@@ -349,6 +349,6 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         Volume vlm,
         LayerPayload payloadRef
     )
-        throws AccessDeniedException, InvalidKeyException;
+        throws AccessDeniedException, InvalidKeyException, InvalidNameException, SQLException;
 
 }

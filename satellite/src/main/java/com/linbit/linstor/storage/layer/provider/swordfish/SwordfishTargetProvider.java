@@ -17,7 +17,7 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.utils.HttpHeader;
@@ -177,7 +177,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     {
         VolumeDefinition vlmDfn = vlmData.getVlmDfnLayerObject().getVolumeDefinition();
         long sizeInKiB = vlmData.getAllocatedSize();
-        StorPool storPool = vlmData.getVolume().getStorPool(sysCtx);
+        StorPool storPool = vlmData.getStorPool();
         Props storPoolProps = storPool.getProps(sysCtx);
 
         // POST to volumes collection

@@ -45,7 +45,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
@@ -64,7 +64,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
+import static com.linbit.linstor.utils.layer.LayerVlmUtils.getStorPoolMap;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
@@ -471,19 +471,26 @@ public class CtrlSnapshotCrtApiCallHandler
             while (vlmIterator.hasNext())
             {
                 Volume vlm = vlmIterator.next();
-                StorPool storPool = getStorPool(vlm);
+                Map<String, StorPool> storPoolMap = getStorPoolMap(
+                    vlm,
+                    apiCtx,
+                    CtrlVlmListApiCallHandler::getVlmDescriptionInline
+                );
 
-                if (!storPool.getDeviceProviderKind().isSnapshotSupported())
+                for (StorPool storPool : storPoolMap.values())
                 {
-                    throw new ApiRcException(ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
-                            "Storage driver '" + storPool.getDeviceProviderKind() + "' " + "does not support snapshots."
-                        )
-                        .setDetails("Used for storage pool '" + storPool.getName() + "'" +
-                            " on '" + rsc.getAssignedNode().getName() + "'.")
-                        .build()
-                    );
+                    if (!storPool.getDeviceProviderKind().isSnapshotSupported())
+                    {
+                        throw new ApiRcException(ApiCallRcImpl
+                            .entryBuilder(
+                                ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
+                                "Storage driver '" + storPool.getDeviceProviderKind() + "' " + "does not support snapshots."
+                            )
+                            .setDetails("Used for storage pool '" + storPool.getName() + "'" +
+                                " on '" + rsc.getAssignedNode().getName() + "'.")
+                            .build()
+                        );
+                    }
                 }
             }
         }
@@ -710,7 +717,11 @@ public class CtrlSnapshotCrtApiCallHandler
                 peerAccCtx.get(),
                 snapshot,
                 snapshotVolumeDefinition,
-                getStorPool(rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()))
+                getStorPoolMap(
+                    rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()),
+                    apiCtx,
+                    CtrlVlmListApiCallHandler::getVlmDescriptionInline
+                ).get("")
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -792,24 +803,6 @@ public class CtrlSnapshotCrtApiCallHandler
             );
         }
         return props;
-    }
-
-    private StorPool getStorPool(Volume vlm)
-    {
-        StorPool storPool;
-        try
-        {
-            storPool = vlm.getStorPool(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "get storage pool of " + getVlmDescriptionInline(vlm),
-                ApiConsts.FAIL_ACC_DENIED_VLM
-            );
-        }
-        return storPool;
     }
 
     private List<String> getDrbdMetaDiskPath(Volume vlm)

@@ -11,7 +11,8 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Iterator;

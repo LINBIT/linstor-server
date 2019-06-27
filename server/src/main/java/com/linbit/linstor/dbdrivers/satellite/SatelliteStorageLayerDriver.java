@@ -1,9 +1,11 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
+import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -14,6 +16,7 @@ import java.sql.SQLException;
 public class SatelliteStorageLayerDriver implements StorageLayerDatabaseDriver
 {
     private static final SatelliteResourceLayerIdDriver NO_OP_ID_DRIVER = new SatelliteResourceLayerIdDriver();
+    private static final SingleColumnDatabaseDriver<?, ?> NO_OP_SINGLE_COL_DRIVER = new SatelliteSingleColDriver<>();
 
     @Inject
     public SatelliteStorageLayerDriver()
@@ -48,5 +51,11 @@ public class SatelliteStorageLayerDriver implements StorageLayerDatabaseDriver
     public ResourceLayerIdDatabaseDriver getIdDriver()
     {
         return NO_OP_ID_DRIVER;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<VlmProviderObject, StorPool> getStorPoolDriver()
+    {
+        return (SingleColumnDatabaseDriver<VlmProviderObject, StorPool>) NO_OP_SINGLE_COL_DRIVER;
     }
 }

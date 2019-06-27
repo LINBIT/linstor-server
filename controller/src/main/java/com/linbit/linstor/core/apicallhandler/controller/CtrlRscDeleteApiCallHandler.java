@@ -9,6 +9,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -203,14 +204,15 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 {
                     for (SnapshotVolume snapshotVlm : snapshot.getAllSnapshotVolumes(peerAccCtx.get()))
                     {
-                        if (snapshotVlm.getStorPool(peerAccCtx.get()).getDeviceProviderKind().isSnapshotDependent())
+                        StorPool storPool = snapshotVlm.getStorPool(apiCtx);
+                        if (storPool.getDeviceProviderKind().isSnapshotDependent())
                         {
                             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                                 ApiConsts.FAIL_EXISTS_SNAPSHOT,
                                 "Resource '" + rsc.getDefinition().getName() + "' cannot be deleted because volume " +
                                     snapshotVlm.getVolumeNumber() + " has dependent snapshot '" +
                                     snapshot.getSnapshotName() + "'"
-                            ));
+                                ));
                         }
                     }
                 }

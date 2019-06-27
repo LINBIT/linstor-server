@@ -26,7 +26,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import javax.inject.Inject;
@@ -341,7 +341,17 @@ public class CtrlLayerDataHelper
         }
         if (storPool == null)
         {
-            storPool = vlmRef.getStorPool(apiCtx);
+            ApiCallRcImpl dummyApiCallRc = new ApiCallRcImpl();
+            Resource rsc = vlmRef.getResource();
+            VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
+
+            boolean isDiskless = isDiskless(rsc);
+            storPool = storPoolResolveHelper.resolveStorPool(
+                rsc,
+                vlmDfn,
+                isDiskless,
+                isDiskRemoving(rsc)
+            ).extractApiCallRc(dummyApiCallRc);
         }
         return storPool;
     }
@@ -416,6 +426,34 @@ public class CtrlLayerDataHelper
             }
         }
         return foundSwordfishKind;
+    }
+
+    private boolean isDiskless(Resource rsc)
+    {
+        boolean isDiskless;
+        try
+        {
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS);
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+        return isDiskless;
+    }
+
+    private boolean isDiskRemoving(Resource rsc)
+    {
+        boolean isDiskless;
+        try
+        {
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_REMOVING);
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+        return isDiskless;
     }
 
     /*

@@ -16,67 +16,44 @@ import java.util.UUID;
  */
 public class VlmPojo implements Volume.VlmApi
 {
-    private final String storagePoolName;
-    private final UUID storagePoolUuid;
     private final UUID vlmDfnUuid;
     private final UUID vlmUuid;
     private final String devicePath;
     private final int vlmNr;
     private final long vlmFlags;
     private final Map<String, String> vlmProps;
-    private final DeviceProviderKind deviceProviderKind;
-    private final UUID storPoolDfnUuid;
-    private Map<String, String> storPoolDfnProps;
-    private Map<String, String> storPoolProps;
     private final Optional<Long> allocated;
     private Optional<Long> usableSize;
     private final List<Pair<String, VlmLayerDataApi>> layerData;
 
+    private final String compatStorPoolName;
+    private final DeviceProviderKind compatDevProviderKind;
+
     public VlmPojo(
-        final String storagePoolNameRef,
-        final UUID storagePoolUuidRef,
         final UUID vlmDfnUuidRef,
         final UUID vlmUuidRef,
         final String devicePathRef,
         final int vlmNrRef,
         final long vlmFlagsRef,
         final Map<String, String> vlmPropsRef,
-        final DeviceProviderKind deviceProviderKindRef,
-        final UUID storPoolDfnUuidRef,
-        final Map<String, String> storPoolDfnPropsRef,
-        final Map<String, String> storPoolPropsRef,
         final Optional<Long> allocatedRef,
         final Optional<Long> usableSizeRef,
-        final List<Pair<String, VlmLayerDataApi>> layerDataRef
+        final List<Pair<String, VlmLayerDataApi>> layerDataRef,
+        final String compatStorPoolNameRef,
+        final DeviceProviderKind compatDevProviderKindRef
     )
     {
-        storagePoolName = storagePoolNameRef;
-        storagePoolUuid = storagePoolUuidRef;
         vlmDfnUuid = vlmDfnUuidRef;
         vlmUuid = vlmUuidRef;
         devicePath = devicePathRef;
         vlmNr = vlmNrRef;
         vlmFlags = vlmFlagsRef;
         vlmProps = vlmPropsRef;
-        deviceProviderKind = deviceProviderKindRef;
-        storPoolDfnUuid = storPoolDfnUuidRef;
-        storPoolDfnProps = storPoolDfnPropsRef;
-        storPoolProps = storPoolPropsRef;
         allocated = allocatedRef;
         usableSize = usableSizeRef;
         layerData = layerDataRef;
-    }
-
-    @Override
-    public String getStorPoolName()
-    {
-        return storagePoolName;
-    }
-
-    @Override
-    public UUID getStorPoolUuid()
-    {
-        return storagePoolUuid;
+        compatStorPoolName = compatStorPoolNameRef;
+        compatDevProviderKind = compatDevProviderKindRef;
     }
 
     @Override
@@ -116,30 +93,6 @@ public class VlmPojo implements Volume.VlmApi
     }
 
     @Override
-    public DeviceProviderKind getStorPoolDeviceProviderKind()
-    {
-        return deviceProviderKind;
-    }
-
-    @Override
-    public UUID getStorPoolDfnUuid()
-    {
-        return storPoolDfnUuid;
-    }
-
-    @Override
-    public Map<String, String> getStorPoolDfnProps()
-    {
-        return storPoolDfnProps;
-    }
-
-    @Override
-    public Map<String, String> getStorPoolProps()
-    {
-        return storPoolProps;
-    }
-
-    @Override
     public Optional<Long> getAllocatedSize()
     {
         return allocated;
@@ -155,5 +108,17 @@ public class VlmPojo implements Volume.VlmApi
     public List<Pair<String, VlmLayerDataApi>> getVlmLayerData()
     {
         return layerData;
+    }
+
+    @Override
+    public String getStorPoolName()
+    {
+        return compatStorPoolName;
+    }
+
+    @Override
+    public DeviceProviderKind getStorPoolDeviceProviderKind()
+    {
+        return compatDevProviderKind;
     }
 }

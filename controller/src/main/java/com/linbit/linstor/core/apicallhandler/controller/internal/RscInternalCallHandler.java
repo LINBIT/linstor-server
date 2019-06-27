@@ -14,6 +14,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -27,7 +28,11 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.RetryResourcesTask;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
@@ -37,6 +42,7 @@ import javax.inject.Provider;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Function;
@@ -186,16 +192,20 @@ public class RscInternalCallHandler
             ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
             Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
-            layerRscDataMerger.restoreLayerData(rsc, rscLayerDataPojoRef);
+            layerRscDataMerger.restoreLayerData(rsc, rscLayerDataPojoRef, false);
+
+            Set<RscLayerObject> storageResources = LayerRscUtils.getRscDataByProvider(
+                rsc.getLayerData(apiCtx),
+                DeviceLayerKind.STORAGE
+            );
 
             Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
             while (iterateVolumes.hasNext())
             {
                 Volume vlm = iterateVolumes.next();
+                VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
 
-                VlmLayerDataApi vlmLayerDataPojo = rscLayerDataPojoRef.getVolumeMap().get(
-                    vlm.getVolumeDefinition().getVolumeNumber().value
-                );
+                VlmLayerDataApi vlmLayerDataPojo = rscLayerDataPojoRef.getVolumeMap().get(vlmNr.value);
 
                 if (vlmLayerDataPojo != null)
                 {
@@ -203,26 +213,34 @@ public class RscInternalCallHandler
                     vlm.setUsableSize(apiCtx, vlmLayerDataPojo.getUsableSize());
                     vlm.setAllocatedSize(apiCtx, ProviderUtils.getAllocatedSize(vlm, apiCtx));
 
-                    StorPool storPool = vlm.getStorPool(apiCtx);
-                    CapacityInfoPojo capacityInfo =
-                        storPoolToCapacityInfoMap.get(storPool.getName());
-
-                    storPool.getFreeSpaceTracker().vlmCreationFinished(
-                        apiCtx,
-                        vlm,
-                        capacityInfo == null ? null : capacityInfo.getFreeCapacity(),
-                        capacityInfo == null ? null : capacityInfo.getTotalCapacity()
-                    );
-
-                    if (capacityInfo == null && !storPool.getDeviceProviderKind().usesThinProvisioning())
+                    for (RscLayerObject storageRsc : storageResources)
                     {
-                        errorReporter.logWarning(
-                            String.format(
-                                "No freespace info for storage pool '%s' on node: %s",
-                                storPool.getName().value,
-                                nodeName.displayValue
-                            )
-                        );
+                        VlmProviderObject vlmProviderObject = storageRsc.getVlmProviderObject(vlmNr);
+                        if (vlmProviderObject != null)
+                        {
+                            StorPool storPool = vlmProviderObject.getStorPool();
+
+                            CapacityInfoPojo capacityInfo =
+                                storPoolToCapacityInfoMap.get(storPool.getName());
+
+                            storPool.getFreeSpaceTracker().vlmCreationFinished(
+                                apiCtx,
+                                vlmProviderObject,
+                                capacityInfo == null ? null : capacityInfo.getFreeCapacity(),
+                                    capacityInfo == null ? null : capacityInfo.getTotalCapacity()
+                                );
+
+                            if (capacityInfo == null && !storPool.getDeviceProviderKind().usesThinProvisioning())
+                            {
+                                errorReporter.logWarning(
+                                    String.format(
+                                        "No freespace info for storage pool '%s' on node: %s",
+                                        storPool.getName().value,
+                                        nodeName.displayValue
+                                    )
+                                );
+                            }
+                        }
                     }
                 }
                 else

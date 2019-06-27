@@ -27,8 +27,8 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
@@ -346,7 +346,6 @@ public class ConfFileBuilderTest
         when(volume.getFlags()).thenReturn(volumeFlags);
         when(volume.getVolumeDefinition()).thenReturn(volumeDefinition);
         when(volume.getResourceDefinition()).thenReturn(resourceDefinition);
-        when(volume.getStorPool(accessContext)).thenReturn(storPool);
         when(volume.getProps(accessContext)).thenReturn(vlmProps);
         when(volume.getResource()).thenReturn(resource);
 
@@ -478,7 +477,17 @@ public class ConfFileBuilderTest
                 );
                 drbdRscDataVlmMap.put(vlmNr, drbdVlmData);
 
-                vlmProviderMap.put(vlmNr, new LvmData(vlm, storRscData, transObjFactory, transMgrProvider));
+                vlmProviderMap.put(
+                    vlmNr,
+                    new LvmData(
+                        vlm,
+                        storRscData,
+                        storPool,
+                        STORAGE_LAYER_NO_OP_DRIVER,
+                        transObjFactory,
+                        transMgrProvider
+                    )
+                );
             }
 
             drbdRscDataChildren.add(storRscData);

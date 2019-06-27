@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage.utils;
 
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import java.util.HashSet;
 import java.util.Set;

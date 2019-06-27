@@ -3,7 +3,8 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

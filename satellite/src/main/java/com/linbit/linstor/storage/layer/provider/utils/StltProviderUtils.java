@@ -2,7 +2,7 @@ package com.linbit.linstor.storage.layer.provider.utils;
 
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 public class StltProviderUtils
 {

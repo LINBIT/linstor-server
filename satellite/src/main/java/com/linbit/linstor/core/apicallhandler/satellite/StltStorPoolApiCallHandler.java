@@ -13,7 +13,6 @@ import com.linbit.linstor.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -28,6 +27,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -152,10 +152,10 @@ class StltStorPoolApiCallHandler
                 storPoolProps.map().putAll(storPoolRaw.getStorPoolProps());
                 storPoolProps.keySet().retainAll(storPoolRaw.getStorPoolProps().keySet());
 
-                Collection<Volume> volumes = storPool.getVolumes(apiCtx);
-                for (Volume vlm : volumes)
+                Collection<VlmProviderObject> vlmDataCol = storPool.getVolumes(apiCtx);
+                for (VlmProviderObject vlmData : vlmDataCol)
                 {
-                    ResourceDefinition rscDfn = vlm.getResourceDefinition();
+                    ResourceDefinition rscDfn = vlmData.getVolume().getResourceDefinition();
                     changedResources.add(rscDfn.getName());
                 }
             }

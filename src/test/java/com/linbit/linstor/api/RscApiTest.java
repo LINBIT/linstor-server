@@ -215,9 +215,10 @@ public class RscApiTest extends ApiTestBase
         {
             this(rscRef, null, Collections.emptyList());
         }
+
         RscWithPayloadApiData(Rsc rscRef, Integer drbdNodeIdRef, List<String> layerStackListRef)
         {
-            rscApi = new RscApiData(rscRef);
+            rscApi = new RscApiData(rscRef, 0, 0);
             drbdNodeId = drbdNodeIdRef;
             layerStackList = layerStackListRef;
         }

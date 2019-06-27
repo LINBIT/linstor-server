@@ -14,13 +14,17 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.TreePrinter;
 import com.linbit.utils.UuidUtils;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -192,12 +196,12 @@ public class CmdDisplayResource extends BaseDebugCmd
                         {
                             Volume vlm = vlmIter.next();
                             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-                            String storPoolName = "<default>";
+                            List<String> storPoolNames = new ArrayList<>();
                             {
-                                StorPool vlmStorPool = vlm.getStorPool(accCtx);
-                                if (vlmStorPool != null)
+                                Set<StorPool> vlmStorPools = LayerVlmUtils.getStorPoolSet(vlm, accCtx);
+                                for (StorPool storPool : vlmStorPools)
                                 {
-                                    storPoolName = vlmStorPool.getName().displayValue;
+                                    storPoolNames.add(storPool.getName().displayValue);
                                 }
                             }
                             treeBuilder.branch("Volume %d", vlmDfn.getVolumeNumber().value)
@@ -205,7 +209,10 @@ public class CmdDisplayResource extends BaseDebugCmd
                                 .leaf("Volume definition UUID: %s", vlmDfn.getUuid().toString().toUpperCase())
                                 .leaf("Size:     %16d", vlmDfn.getVolumeSize(accCtx))
                                 .leaf("Flags:    %016x", vlm.getFlags().getFlagsBits(accCtx))
-                                .leaf("Storage pool: %s", storPoolName)
+                                .leaf("Storage pool%s: %s",
+                                    storPoolNames.size() == 1 ? "" : "s",
+                                    storPoolNames.size() == 1 ? storPoolNames.get(0) : storPoolNames.toString()
+                                )
                                 .endBranch();
                         }
 

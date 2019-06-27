@@ -8,6 +8,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.UUID;
 
 public class SnapshotVolumeDataSatelliteFactory
@@ -48,7 +49,9 @@ public class SnapshotVolumeDataSatelliteFactory
                     snapshot,
                     snapshotVolumeDefinition,
                     storPool,
-                    driver, transObjFactory, transMgrProvider
+                    driver,
+                    transObjFactory,
+                    transMgrProvider
                 );
                 snapshot.addSnapshotVolume(accCtx, snapshotVolume);
             }

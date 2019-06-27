@@ -107,14 +107,12 @@ public class ConnectionPropsTest extends GenericDbBase
             SYS_CTX,
             res1,
             volDfn,
-            storPool1,
             null
         );
         vol2 = volumeDataFactory.create(
             SYS_CTX,
             res2,
             volDfn,
-            storPool2,
             null
         );
 

@@ -51,6 +51,7 @@ subprojects {
             compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.2'
 
             compile group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
+//            compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
             compile 'info.picocli:picocli:3.9.5'
             compile group: 'io.projectreactor', name: 'reactor-core', version: '3.2.9.RELEASE'

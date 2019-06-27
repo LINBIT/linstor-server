@@ -13,6 +13,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -213,7 +214,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     )
         throws SQLException
     {
-        Map<String, Volume> vlmMap = new TreeMap<>();
+        Map<String, VlmProviderObject> vlmMap = new TreeMap<>();
         StorPoolData storPool = new StorPoolData(
             java.util.UUID.fromString(resultSet.getString(SP_UUID)),
             node,
@@ -322,15 +323,15 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
 
     private class StorPoolInitMaps implements StorPool.InitMaps
     {
-        private final Map<String, Volume> vlmMap;
+        private final Map<String, VlmProviderObject> vlmMap;
 
-        StorPoolInitMaps(Map<String, Volume> vlmMapRef)
+        StorPoolInitMaps(Map<String, VlmProviderObject> vlmMapRef)
         {
             vlmMap = vlmMapRef;
         }
 
         @Override
-        public Map<String, Volume> getVolumeMap()
+        public Map<String, VlmProviderObject> getVolumeMap()
         {
             return vlmMap;
         }

@@ -1,4 +1,4 @@
-package com.linbit.linstor.storage.interfaces.categories;
+package com.linbit.linstor.storage.interfaces.categories.resource;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.Resource;
@@ -7,6 +7,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.LayerObject;
 
 import javax.annotation.Nullable;
 
@@ -105,7 +106,7 @@ public interface RscLayerObject extends LayerObject
 
     void delete() throws SQLException;
 
-    void remove(VolumeNumber vlmNrRef) throws SQLException;
+    void remove(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException, SQLException;
 
     boolean checkFileSystem();
 

@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.interfaces.layers.nvme;
 
-import com.linbit.linstor.storage.interfaces.categories.VlmLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 public interface NvmeVlmObject extends VlmLayerObject

@@ -1,8 +1,8 @@
 package com.linbit.linstor.core;
 
-import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorRuntimeException;
 
-public class DivergentDataException extends LinStorException
+public class DivergentDataException extends LinStorRuntimeException
 {
     private static final long serialVersionUID = 1568799801992745931L;
 

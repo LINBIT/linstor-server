@@ -12,8 +12,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.interfaces.categories.RscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -54,8 +55,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
     // Reference to the volume definition that defines this volume
     private final VolumeDefinition volumeDfn;
 
-    private final TransactionSimpleObject<VolumeData, StorPool> storPool;
-
     // Properties container for this volume
     private final Props volumeProps;
 
@@ -80,7 +79,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         UUID uuid,
         Resource resRef,
         VolumeDefinition volDfnRef,
-        StorPool storPoolRef,
         long initFlags,
         VolumeDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
@@ -99,12 +97,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         volumeDfn = volDfnRef;
         devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         dbDriver = dbDriverRef;
-
-        storPool = transObjFactory.createTransactionSimpleObject(
-            this,
-            storPoolRef,
-            dbDriver.getStorPoolDriver()
-        );
 
         flags = transObjFactory.createStateFlagsImpl(
             resRef.getObjProt(),
@@ -131,7 +123,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         transObjs = Arrays.asList(
             resource,
             volumeDfn,
-            storPool,
             volumeConnections,
             volumeProps,
             usableSize,
@@ -245,34 +236,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException
-    {
-        checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return storPool.get();
-    }
-
-    @Override
-    public void setStorPool(AccessContext accCtx, StorPool storPoolRef)
-        throws AccessDeniedException, SQLException
-    {
-        checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-
-        StorPool oldStorPool = storPool.get();
-        oldStorPool.removeVolume(accCtx, this);
-
-        storPool.set(storPoolRef);
-        storPoolRef.putVolume(accCtx, this);
-    }
-
-    @Override
     public StateFlags<VlmFlags> getFlags()
     {
         checkDeleted();
         return flags;
     }
-
 
     @Override
     public String getDevicePath(AccessContext accCtx) throws AccessDeniedException
@@ -402,7 +370,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
             }
 
             ((ResourceData) resource).removeVolume(accCtx, this);
-            storPool.get().removeVolume(accCtx, this);
             ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
 
             volumeProps.delete();
@@ -433,16 +400,21 @@ public class VolumeData extends BaseTransactionObject implements Volume
     @Override
     public Volume.VlmApi getApiData(Long allocated, AccessContext accCtx) throws AccessDeniedException
     {
+        VolumeNumber vlmNr = getVolumeDefinition().getVolumeNumber();
         List<Pair<String, VlmLayerDataApi>> layerDataList = new ArrayList<>();
+
+        StorPool compatStorPool = null;
 
         LinkedList<RscLayerObject> rscLayersToExpand = new LinkedList<>();
         rscLayersToExpand.add(resource.getLayerData(accCtx));
         while (!rscLayersToExpand.isEmpty())
         {
-            RscLayerObject rscLayer = rscLayersToExpand.removeFirst();
-
-            for (VlmProviderObject vlmProvider : rscLayer.getVlmLayerObjects().values())
+            RscLayerObject rscLayerObject = rscLayersToExpand.removeFirst();
+            VlmProviderObject vlmProvider = rscLayerObject.getVlmLayerObjects().get(vlmNr);
+            if (vlmProvider != null)
             {
+                // vlmProvider is null is a layer (like DRBD) does not need for all volumes backing vlmProvider
+                // (like in the case of mixed internal and external meta-data)
                 layerDataList.add(
                     new Pair<>(
                         vlmProvider.getLayerKind().name(),
@@ -450,25 +422,37 @@ public class VolumeData extends BaseTransactionObject implements Volume
                     )
                 );
             }
-            rscLayersToExpand.addAll(rscLayer.getChildren());
+
+            // deprecated - only for compatibility with old versions
+            if (rscLayerObject.getResourceNameSuffix().equals("")) // for "" resources vlmProvider always have to exist
+            {
+                compatStorPool = vlmProvider.getStorPool();
+            }
+
+            rscLayersToExpand.addAll(rscLayerObject.getChildren());
+        }
+
+
+        String compatStorPoolName = null;
+        DeviceProviderKind compatStorPoolKind = null;
+        if (compatStorPool != null)
+        {
+            compatStorPoolName = compatStorPool.getName().displayValue;
+            compatStorPoolKind = compatStorPool.getDeviceProviderKind();
         }
 
         return new VlmPojo(
-            getStorPool(accCtx).getName().getDisplayName(),
-            getStorPool(accCtx).getUuid(),
             getVolumeDefinition().getUuid(),
             getUuid(),
             getDevicePath(accCtx),
-            getVolumeDefinition().getVolumeNumber().value,
+            vlmNr.value,
             getFlags().getFlagsBits(accCtx),
             getProps(accCtx).map(),
-            getStorPool(accCtx).getDeviceProviderKind(),
-            getStorPool(accCtx).getDefinition(accCtx).getUuid(),
-            getStorPool(accCtx).getDefinition(accCtx).getProps(accCtx).map(),
-            getStorPool(accCtx).getProps(accCtx).map(),
             Optional.ofNullable(allocated),
             Optional.ofNullable(usableSize.get()),
-            layerDataList
+            layerDataList,
+            compatStorPoolName,
+            compatStorPoolKind
         );
     }
 

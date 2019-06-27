@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.interfaces.layers.drbd;
 
 import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.storage.interfaces.categories.RscDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 
 import java.sql.SQLException;
 

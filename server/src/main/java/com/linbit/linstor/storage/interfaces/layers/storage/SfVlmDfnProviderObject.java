@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.interfaces.layers.storage;
 
-import com.linbit.linstor.storage.interfaces.categories.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 
 public interface SfVlmDfnProviderObject extends VlmDfnLayerObject
 {
