@@ -39,10 +39,12 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static com.linbit.linstor.netcom.Peer.ConnectionStatus.NO_STLT_CONN;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
@@ -187,6 +189,7 @@ class CtrlNetIfApiCallHandler
             setAddress(netIf, addressStr);
 
             Node node = netIf.getNode();
+
             if (stltPort != null && stltEncrType != null)
             {
                 TcpPortNumber oldPort = netIf.getStltConnPort(apiCtx);
@@ -304,9 +307,10 @@ class CtrlNetIfApiCallHandler
             else
             {
                 Node node = netIf.getNode();
+
                 boolean closeConnection = false;
                 closeConnection = netIf.equals(
-                    node.getSatelliteConnection(apiCtx)
+                    node.getSatelliteConnection(peerAccCtx.get())
                 );
 
                 UUID uuid = netIf.getUuid();
@@ -323,7 +327,31 @@ class CtrlNetIfApiCallHandler
                     // when the sending takes too long, the connection will be already closed (next statement)
                     // for now, just close the connection. once a new connection is established, the
                     // satellite gets a full sync anyways
-                    node.getPeer(apiCtx).closeConnection();
+                    node.getPeer(peerAccCtx.get()).closeConnection();
+                }
+
+                int stltConnCount = 0;
+                Iterator<NetInterface> netIfIterator = node.iterateNetInterfaces(peerAccCtx.get());
+                while (netIfIterator.hasNext())
+                {
+                    NetInterface netInterface = netIfIterator.next();
+                    if (netInterface.isUsableAsStltConn(peerAccCtx.get()))
+                    {
+                        stltConnCount++;
+                    }
+                }
+
+                // no satellite connection configured
+                if (stltConnCount == 0)
+                {
+                    node.getPeer(apiCtx).setConnectionStatus(NO_STLT_CONN);
+
+                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                        ApiConsts.CONN_STATUS_NO_STLT_CONN,
+                        firstLetterCaps(getNetIfDescriptionInline(nodeNameStr, netIfNameStr)) +
+                            " was the last connection to the satellite! To fix this, create at least one netInterface" +
+                            " as satellite connection."
+                    ));
                 }
             }
         }
