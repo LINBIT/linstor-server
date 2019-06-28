@@ -172,7 +172,7 @@ class CtrlNetIfApiCallHandler
 
             NodeType nodeType = netIf.getNode().getNodeType(apiCtx);
 
-            boolean needsReconnect = addressChanged(netIf, addressStr);
+            boolean needsReconnect = addressStr != null;
 
             if (needsReconnect && NodeType.SWORDFISH_TARGET.equals(nodeType))
             {
@@ -186,7 +186,10 @@ class CtrlNetIfApiCallHandler
                 );
             }
 
-            setAddress(netIf, addressStr);
+            if (needsReconnect)
+            {
+                setAddress(netIf, addressStr);
+            }
 
             Node node = netIf.getNode();
 
@@ -347,10 +350,10 @@ class CtrlNetIfApiCallHandler
                     node.getPeer(apiCtx).setConnectionStatus(NO_STLT_CONN);
 
                     throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                        ApiConsts.CONN_STATUS_NO_STLT_CONN,
+                        ApiConsts.WARN_NO_STLT_CONN_DEFINED,
                         firstLetterCaps(getNetIfDescriptionInline(nodeNameStr, netIfNameStr)) +
-                            " was the last connection to the satellite! To fix this, create at least one netInterface" +
-                            " as satellite connection."
+                            " was the last connection to the satellite! \n" +
+                            "To fix this, create at least one netInterface as satellite connection."
                     ));
                 }
             }
@@ -512,24 +515,6 @@ class CtrlNetIfApiCallHandler
             throw new ApiSQLException(sqlExc);
         }
         return changed;
-    }
-
-    private boolean addressChanged(NetInterface netIf, String addressStr)
-    {
-        boolean ret;
-        try
-        {
-            ret = !netIf.getAddress(peerAccCtx.get()).getAddress().equals(addressStr);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "access " + getNetIfDescriptionInline(netIf),
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        return ret;
     }
 
     private void deleteNetIf(NetInterface netIf)
