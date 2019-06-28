@@ -192,38 +192,42 @@ public class CtrlNodeApiCallHandler
 
             if (getCurrentStltConn(node) == null)
             {
-                responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
+                node = null;
+
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.WARN_NO_STLT_CONN_DEFINED,
                     "No satellite connection defined for " + getNodeDescriptionInline(nodeNameStr)
                 ));
             }
-
-            nodeRepository.put(apiCtx, nodeName, node);
-
-            if (type.isDeviceProviderKindAllowed(DeviceProviderKind.DISKLESS))
+            else
             {
-                // create default diskless storage pool
-                // this has to happen AFTER we added the node into the nodeRepository
-                // otherwise createStorPool will not find the node by its nodeNameStr
-                storPoolHelper.createStorPool(
-                    nodeNameStr,
-                    LinStor.DISKLESS_STOR_POOL_NAME,
-                    DeviceProviderKind.DISKLESS,
-                    (String) null
-                );
-            }
+                nodeRepository.put(apiCtx, nodeName, node);
 
-            if (autoCommit)
-            {
-                ctrlTransactionHelper.commit();
-            }
+                if (type.isDeviceProviderKindAllowed(DeviceProviderKind.DISKLESS))
+                {
+                    // create default diskless storage pool
+                    // this has to happen AFTER we added the node into the nodeRepository
+                    // otherwise createStorPool will not find the node by its nodeNameStr
+                    storPoolHelper.createStorPool(
+                        nodeNameStr,
+                        LinStor.DISKLESS_STOR_POOL_NAME,
+                        DeviceProviderKind.DISKLESS,
+                        (String) null
+                    );
+                }
 
-            responseConverter.addWithOp(responses, context,
-                ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
+                if (autoCommit)
+                {
+                    ctrlTransactionHelper.commit();
+                }
 
-            if (startConnecting)
-            {
-                satelliteConnector.startConnecting(node, peerAccCtx.get());
+                responseConverter.addWithOp(responses, context,
+                    ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
+
+                if (startConnecting)
+                {
+                    satelliteConnector.startConnecting(node, peerAccCtx.get());
+                }
             }
         }
         return node;
