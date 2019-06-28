@@ -217,6 +217,7 @@ paths:
                   address: 10.0.0.2
                   satellite_port: 3366
                   satellite_encryption_type: Plain
+                  is_active: true
         description: Node to add to Linstor
   /v1/nodes/{node}:
     parameters:
@@ -2627,6 +2628,8 @@ components:
           enum:
             - Plain
             - SSL
+        is_active:
+          type: boolean
         uuid:
           type: string
           description: unique object id

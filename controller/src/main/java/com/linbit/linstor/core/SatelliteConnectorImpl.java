@@ -65,10 +65,10 @@ public class SatelliteConnectorImpl implements SatelliteConnector
                 nodeType.equals(NodeType.SWORDFISH_TARGET)
             )
             {
-                NetInterface stltConn = node.getSatelliteConnection(accCtx);
-                if (stltConn != null)
+                NetInterface activeStltConn = node.getActiveStltConn(accCtx);
+                if (activeStltConn != null)
                 {
-                    EncryptionType type = stltConn.getStltConnEncryptionType(accCtx);
+                    EncryptionType type = activeStltConn.getStltConnEncryptionType(accCtx);
                     String serviceType;
                     switch (type)
                     {
@@ -106,8 +106,8 @@ public class SatelliteConnectorImpl implements SatelliteConnector
                         {
                             connectSatelliteAsync(
                                 new InetSocketAddress(
-                                    stltConn.getAddress(accCtx).getAddress(),
-                                    stltConn.getStltConnPort(accCtx).value
+                                    activeStltConn.getAddress(accCtx).getAddress(),
+                                    activeStltConn.getStltConnPort(accCtx).value
                                 ),
                                 tcpConnector,
                                 node
@@ -117,8 +117,8 @@ public class SatelliteConnectorImpl implements SatelliteConnector
                         {
                             connectSatellite(
                                 new InetSocketAddress(
-                                    stltConn.getAddress(accCtx).getAddress(),
-                                    stltConn.getStltConnPort(accCtx).value
+                                    activeStltConn.getAddress(accCtx).getAddress(),
+                                    activeStltConn.getStltConnPort(accCtx).value
                                 ),
                                 tcpConnector,
                                 node,

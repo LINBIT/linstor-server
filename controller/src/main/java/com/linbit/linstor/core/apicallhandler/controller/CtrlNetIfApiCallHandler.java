@@ -2,15 +2,14 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.EncryptionType;
-import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataFactory;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.annotation.ApiContext;
@@ -34,6 +33,12 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_ENCRYPT_TYPE;
+import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NET_PORT;
+import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NODE_TYPE;
+import static com.linbit.linstor.netcom.Peer.ConnectionStatus.NO_STLT_CONN;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -43,9 +48,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-
-import static com.linbit.linstor.netcom.Peer.ConnectionStatus.NO_STLT_CONN;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
 class CtrlNetIfApiCallHandler
@@ -95,7 +97,8 @@ class CtrlNetIfApiCallHandler
         String netIfNameStr,
         String address,
         Integer stltPort,
-        String stltEncrType
+        String stltEncrType,
+        boolean isActive
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -113,32 +116,44 @@ class CtrlNetIfApiCallHandler
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_NODE_TYPE,
-                        "Only one network interface allowed for 'swordfish target' nodes"
+                        FAIL_INVLD_NODE_TYPE,
+                        "Only one network interface allowed for 'swordfish target' nodes" //FIXME?
                     )
                 );
             }
 
             NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
-
-            if (node.getSatelliteConnection(apiCtx) != null && stltPort != null)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_STLT_CONN,
-                        "Only one satellite connection allowed"
-                    ), new LinStorException("This node has already a satellite connection defined"));
-                }
-
             NetInterfaceData netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
 
-            if (stltPort != null && stltEncrType != null)
+            if (node.getActiveStltConn(peerAccCtx.get()) == null || isActive)
             {
-                node.setSatelliteConnection(apiCtx, netIf);
-                satelliteConnector.startConnecting(node, apiCtx);
+                if (stltPort != null && stltEncrType != null)
+                {
+                    node.setActiveStltConn(apiCtx, netIf);
+                    satelliteConnector.startConnecting(node, apiCtx);
+                }
+                else if (isActive)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            FAIL_INVLD_NET_PORT | FAIL_INVLD_ENCRYPT_TYPE, //TODO rigth?
+                            "No satellite port / encryption type set for active satellite connection"
+                        )
+                    );
+                }
             }
 
             ctrlTransactionHelper.commit();
+
+            if (node.getActiveStltConn(peerAccCtx.get()) == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.WARN_NO_STLT_CONN_DEFINED,
+                    "No active satellite-connection configured on node '" + nodeNameStr + "'! \n" +
+                        "To fix this, create at least one netInterface with a valid PORT and COMMUNICATION-TYPE."
+                ));
+            }
+
             responseConverter.addWithOp(responses, context,
                 ApiSuccessUtils.defaultRegisteredEntry(netIf.getUuid(), getNetIfDescriptionInline(netIf)));
             responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node));
@@ -156,7 +171,8 @@ class CtrlNetIfApiCallHandler
         String netIfNameStr,
         String addressStr,
         Integer stltPort,
-        String stltEncrType
+        String stltEncrType,
+        boolean isActive
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -178,7 +194,7 @@ class CtrlNetIfApiCallHandler
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.entryBuilder(
-                        ApiConsts.FAIL_INVLD_NODE_TYPE,
+                        FAIL_INVLD_NODE_TYPE,
                         "Modifying netinterface " + getNetIfDescriptionInline(netIf) + " failed"
                     )
                     .setCause("Changing the address of a swordfish_target is prohibited")
@@ -214,11 +230,19 @@ class CtrlNetIfApiCallHandler
                     sfTargetProcessMgr.startLocalSatelliteProcess(node);
                 }
 
-                NetInterface currStltConn = getSatelliteConnection(node);
-                if (currStltConn == null)
+                if (isActive)
                 {
-                    setSatelliteConnection(node, netIf);
+                    node.setActiveStltConn(peerAccCtx.get(), netIf);
                 }
+            }
+            else if (isActive)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        FAIL_INVLD_NET_PORT | FAIL_INVLD_ENCRYPT_TYPE, //TODO rigth?
+                        "No satellite port / encryption type set for active satellite connection"
+                    )
+                );
             }
 
             ctrlTransactionHelper.commit();
@@ -232,6 +256,15 @@ class CtrlNetIfApiCallHandler
                 satelliteConnector.startConnecting(node, apiCtx);
             }
             responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node));
+
+            if (node.getActiveStltConn(peerAccCtx.get()) == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.WARN_NO_STLT_CONN_DEFINED,
+                    "No active satellite-connection configured on node '" + nodeNameStr + "'! \n" +
+                        "To fix this, create at least one netInterface with a valid PORT and COMMUNICATION-TYPE."
+                ));
+            }
         }
         catch (Exception | ImplementationError exc)
         {
@@ -239,44 +272,6 @@ class CtrlNetIfApiCallHandler
         }
 
         return responses;
-    }
-
-    private NetInterface getSatelliteConnection(Node node)
-    {
-        NetInterface netIf = null;
-        try
-        {
-            netIf = node.getSatelliteConnection(peerAccCtx.get());
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "access the current satellite connection",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        return netIf;
-    }
-
-    private void setSatelliteConnection(Node node, NetInterface netIf)
-    {
-        try
-        {
-            node.setSatelliteConnection(peerAccCtx.get(), netIf);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "set the current satellite connection",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
-        }
-        catch (SQLException exc)
-        {
-            throw new ApiSQLException(exc);
-        }
     }
 
 
@@ -311,17 +306,11 @@ class CtrlNetIfApiCallHandler
             {
                 Node node = netIf.getNode();
 
-                boolean closeConnection = false;
-                closeConnection = netIf.equals(
-                    node.getSatelliteConnection(peerAccCtx.get())
-                );
+                NetInterface activeStltConn = node.getActiveStltConn(peerAccCtx.get());
+                boolean closeConnection = activeStltConn != null && netIf.getUuid().equals(activeStltConn.getUuid());
 
                 UUID uuid = netIf.getUuid();
                 deleteNetIf(netIf);
-
-                ctrlTransactionHelper.commit();
-                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                    uuid, getNetIfDescriptionInline(nodeNameStr, netIfNameStr)));
 
                 if (closeConnection)
                 {
@@ -331,21 +320,27 @@ class CtrlNetIfApiCallHandler
                     // for now, just close the connection. once a new connection is established, the
                     // satellite gets a full sync anyways
                     node.getPeer(peerAccCtx.get()).closeConnection();
-                }
 
-                int stltConnCount = 0;
-                Iterator<NetInterface> netIfIterator = node.iterateNetInterfaces(peerAccCtx.get());
-                while (netIfIterator.hasNext())
-                {
-                    NetInterface netInterface = netIfIterator.next();
-                    if (netInterface.isUsableAsStltConn(peerAccCtx.get()))
+                    // look for another net interface configured as satellite connection and set it as active
+                    Iterator<NetInterface> netIfIterator = node.iterateNetInterfaces(peerAccCtx.get());
+                    while (netIfIterator.hasNext())
                     {
-                        stltConnCount++;
+                        NetInterface netInterface = netIfIterator.next();
+                        if (netInterface.isUsableAsStltConn(peerAccCtx.get()))
+                        {
+                            node.setActiveStltConn(peerAccCtx.get(), netInterface);
+                            satelliteConnector.startConnecting(node, apiCtx);
+                            break;
+                        }
                     }
                 }
 
-                // no satellite connection configured
-                if (stltConnCount == 0)
+                ctrlTransactionHelper.commit();
+                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                    uuid, getNetIfDescriptionInline(nodeNameStr, netIfNameStr)));
+
+                // no active satellite connection configured
+                if (node.getActiveStltConn(peerAccCtx.get()) == null)
                 {
                     node.getPeer(apiCtx).setConnectionStatus(NO_STLT_CONN);
 
@@ -353,7 +348,8 @@ class CtrlNetIfApiCallHandler
                         ApiConsts.WARN_NO_STLT_CONN_DEFINED,
                         firstLetterCaps(getNetIfDescriptionInline(nodeNameStr, netIfNameStr)) +
                             " was the last connection to the satellite! \n" +
-                            "To fix this, create at least one netInterface as satellite connection."
+                            "To fix this, create at least one netInterface with a valid " +
+                            "PORT and COMMUNICATION-TYPE."
                     ));
                 }
             }

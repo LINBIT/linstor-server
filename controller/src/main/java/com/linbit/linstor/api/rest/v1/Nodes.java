@@ -250,7 +250,12 @@ public class Nodes
                 ArrayList<JsonGenTypes.NetInterface> netIfs = new ArrayList<>();
                 for (NetInterface.NetInterfaceApi netif : netIfApiStream.collect(Collectors.toList()))
                 {
-                    netIfs.add(Json.apiToNetInterface(netif));
+                    JsonGenTypes.NetInterface netIfResp = Json.apiToNetInterface(netif);
+                    if (netif.getUuid().equals(optNode.get().getActiveStltConn().getUuid()))
+                    {
+                        netIfResp.is_active = Boolean.TRUE;
+                    }
+                    netIfs.add(netIfResp);
                 }
 
                 resp = RequestHelper.queryRequestResponse(
@@ -291,7 +296,8 @@ public class Nodes
                 netInterfaceData.name,
                 netInterfaceData.address,
                 netInterfaceData.satellite_port,
-                netInterfaceData.satellite_encryption_type
+                netInterfaceData.satellite_encryption_type,
+                netInterfaceData.is_active
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
@@ -316,7 +322,8 @@ public class Nodes
                 netIfName,
                 netInterfaceData.address,
                 netInterfaceData.satellite_port,
-                netInterfaceData.satellite_encryption_type
+                netInterfaceData.satellite_encryption_type,
+                netInterfaceData.is_active
             );
 
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);

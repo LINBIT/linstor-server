@@ -950,7 +950,8 @@ public class CtrlApiCallHandler
         String netIfName,
         String address,
         Integer stltPort,
-        String stltEncrType
+        String stltEncrType,
+        boolean isActive
     )
     {
         ApiCallRc apiCallRc;
@@ -962,7 +963,8 @@ public class CtrlApiCallHandler
                 netIfName,
                 address,
                 stltPort,
-                stltEncrType
+                stltEncrType,
+                isActive
             );
         }
         return apiCallRc;
@@ -973,7 +975,8 @@ public class CtrlApiCallHandler
         String netIfName,
         String address,
         Integer stltPort,
-        String stltEncrType
+        String stltEncrType,
+        boolean isActive
     )
     {
         ApiCallRc apiCallRc;
@@ -985,7 +988,8 @@ public class CtrlApiCallHandler
                 netIfName,
                 address,
                 stltPort,
-                stltEncrType
+                stltEncrType,
+                isActive
             );
         }
         return apiCallRc;

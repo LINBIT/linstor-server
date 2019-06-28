@@ -161,8 +161,6 @@ public class CtrlNodeApiCallHandler
             ctrlPropsHelper.fillProperties(
                 LinStorObject.NODE, propsMap, ctrlPropsHelper.getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
 
-            Map<String, NetInterface> netIfMap = new TreeMap<>();
-
             for (NetInterfaceApi netIfApi : netIfs)
             {
                 TcpPortNumber port = null;
@@ -182,18 +180,17 @@ public class CtrlNodeApiCallHandler
                 );
 
                 if (netIfApi.isUsableAsSatelliteConnection() &&
-                    getCurrentStltConn(node) == null
+                    getActiveStltConn(node) == null
                 )
                 {
-                    setCurrentStltConn(node, netIf);
+                    setActiveStltConn(node, netIf);
                 }
-                netIfMap.put(netIfApi.getName(), netIf);
+
+                node.addNetInterface(peerAccCtx.get(), netIf);
             }
 
-            if (getCurrentStltConn(node) == null)
+            if (getActiveStltConn(node) == null)
             {
-                node = null;
-
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.WARN_NO_STLT_CONN_DEFINED,
                     "No satellite connection defined for " + getNodeDescriptionInline(nodeNameStr)
@@ -305,11 +302,11 @@ public class CtrlNodeApiCallHandler
         return responses;
     }
 
-    private void setCurrentStltConn(Node node, NetInterfaceData netIf)
+    private void setActiveStltConn(Node node, NetInterfaceData netIf)
     {
         try
         {
-            node.setSatelliteConnection(peerAccCtx.get(), netIf);
+            node.setActiveStltConn(peerAccCtx.get(), netIf);
         }
         catch (AccessDeniedException exc)
         {
@@ -325,12 +322,12 @@ public class CtrlNodeApiCallHandler
         }
     }
 
-    private NetInterface getCurrentStltConn(Node node)
+    private NetInterface getActiveStltConn(Node node)
     {
         NetInterface netIf = null;
         try
         {
-            netIf = node.getSatelliteConnection(peerAccCtx.get());
+            netIf = node.getActiveStltConn(peerAccCtx.get());
         }
         catch (AccessDeniedException exc)
         {

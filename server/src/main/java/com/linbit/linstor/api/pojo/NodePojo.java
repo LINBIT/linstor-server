@@ -1,12 +1,13 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.Node.NodeApi;
+import com.linbit.linstor.netcom.Peer;
+
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import com.linbit.linstor.Node.NodeApi;
-import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.netcom.Peer;
 
 public class NodePojo implements NodeApi, Comparable<NodePojo>
 {
@@ -15,7 +16,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final String nodeType;
     private final Peer.ConnectionStatus connectionStatus;
     private final long nodeFlags;
-    private final List<NetInterface.NetInterfaceApi> nodeNetInterfaces;
+    private final List<NetInterfaceApi> nodeNetInterfaces;
+    private final NetInterfaceApi nodeActiveStltConn;
     private final List<NodeConnPojo> nodeConns;
     private final Map<String, String> nodeProps;
     private final Long fullSyncId;
@@ -26,7 +28,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         final String nodeNameRef,
         final String nodeTypeRef,
         final long nodeFlagsRef,
-        final List<NetInterface.NetInterfaceApi> nodeNetInterfacesRef,
+        final List<NetInterfaceApi> nodeNetInterfacesRef,
+        @Nullable final NetInterfaceApi nodeActiveStltConnRef,
         final List<NodeConnPojo> nodeConnsRef,
         final Map<String, String> nodePropsRef,
         final Peer.ConnectionStatus connectionStatusRef,
@@ -39,6 +42,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         nodeType = nodeTypeRef;
         nodeFlags = nodeFlagsRef;
         nodeNetInterfaces = nodeNetInterfacesRef;
+        nodeActiveStltConn = nodeActiveStltConnRef;
         nodeConns = nodeConnsRef;
         nodeProps = nodePropsRef;
         connectionStatus = connectionStatusRef;
@@ -76,9 +80,15 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     }
 
     @Override
-    public List<NetInterface.NetInterfaceApi> getNetInterfaces()
+    public List<NetInterfaceApi> getNetInterfaces()
     {
         return nodeNetInterfaces;
+    }
+
+    @Override
+    public NetInterfaceApi getActiveStltConn()
+    {
+        return nodeActiveStltConn;
     }
 
     public List<NodeConnPojo> getNodeConns()

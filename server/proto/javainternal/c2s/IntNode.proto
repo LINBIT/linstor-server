@@ -12,6 +12,7 @@ message IntNode
     repeated IntNetIf           net_ifs = 5;
     repeated IntNodeConn        node_conns = 6;
     map<string, string>         props = 7;
+    IntNetIf                    active_stlt_conn = 8;
 }
 
 message IntNetIf

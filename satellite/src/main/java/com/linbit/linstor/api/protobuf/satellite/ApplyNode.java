@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
@@ -58,6 +59,7 @@ public class ApplyNode implements ApiCall
             nodeData.getType(),
             nodeData.getFlags(),
             extractNetIfs(nodeData.getNetIfsList()),
+            null,
             extractNodeConns(nodeData.getNodeConnsList()),
             nodeData.getPropsMap(),
             Peer.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller

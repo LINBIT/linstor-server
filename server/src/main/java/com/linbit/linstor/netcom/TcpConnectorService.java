@@ -315,19 +315,19 @@ public class TcpConnectorService implements Runnable, TcpConnector
         }
         else
         {
-            NetInterface stltConn;
+            NetInterface activeStltConn;
             try
             {
-                stltConn = peer.getNode().getSatelliteConnection(privilegedAccCtx);
-                if (stltConn == null)
+                activeStltConn = peer.getNode().getActiveStltConn(privilegedAccCtx);
+                if (activeStltConn == null)
                 {
                     // this might happen when the node was rolled back and thus no longer has any content
                     address = getInetSockAddress(peer);
                 }
                 else
                 {
-                    final String host = stltConn.getAddress(privilegedAccCtx).getAddress();
-                    final int port = stltConn.getStltConnPort(privilegedAccCtx).value;
+                    final String host = activeStltConn.getAddress(privilegedAccCtx).getAddress();
+                    final int port = activeStltConn.getStltConnPort(privilegedAccCtx).value;
                     address = new InetSocketAddress(host, port);
                 }
             }

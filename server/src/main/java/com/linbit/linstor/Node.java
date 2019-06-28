@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -106,10 +107,10 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
 
     Peer getPeer(AccessContext accCtx) throws AccessDeniedException;
 
-    NetInterface getSatelliteConnection(AccessContext accCtx)
+    NetInterface getActiveStltConn(AccessContext accCtx)
         throws AccessDeniedException;
 
-    void setSatelliteConnection(AccessContext accCtx, NetInterface netIf)
+    void setActiveStltConn(AccessContext accCtx, NetInterface netIf)
         throws AccessDeniedException, SQLException;
 
     /**
@@ -292,6 +293,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         Map<String, String> getProps();
         long getFlags();
         List<NetInterface.NetInterfaceApi> getNetInterfaces();
+        NetInterfaceApi getActiveStltConn();
     }
 
     interface InitMaps

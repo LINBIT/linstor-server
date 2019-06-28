@@ -246,7 +246,7 @@ public class GenericDbDriver implements DatabaseDriver
                 String curStltConnName = node.getProps(dbCtx).getProp(ApiConsts.KEY_CUR_STLT_CONN_NAME);
                 if (netIf.getName().value.equalsIgnoreCase(curStltConnName))
                 {
-                    node.setSatelliteConnection(dbCtx, netIf);
+                    node.setActiveStltConn(dbCtx, netIf);
                 }
             }
 

@@ -43,9 +43,11 @@ import com.linbit.utils.Pair;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Json
 {
@@ -69,9 +71,20 @@ public class Json
         nd.connection_status = nodeApi.connectionStatus().toString();
         nd.props = nodeApi.getProps();
         nd.flags = Node.NodeFlag.toStringList(nodeApi.getFlags());
-        nd.net_interfaces = nodeApi.getNetInterfaces().stream()
-            .map(Json::apiToNetInterface)
-            .collect(Collectors.toList());
+
+        List<JsonGenTypes.NetInterface> netIfsList =
+            nodeApi.getNetInterfaces().stream().map(Json::apiToNetInterface).collect(Collectors.toList());
+        NetInterface.NetInterfaceApi activeStltConn = nodeApi.getActiveStltConn();
+        for (JsonGenTypes.NetInterface netInterface : netIfsList)
+        {
+            if (activeStltConn != null && netInterface.uuid.equalsIgnoreCase(activeStltConn.getUuid().toString()))
+            {
+                netInterface.is_active = Boolean.TRUE;
+            }
+
+        }
+
+        nd.net_interfaces = netIfsList;
         nd.uuid = nodeApi.getUuid().toString();
         return nd;
     }
@@ -86,6 +99,7 @@ public class Json
             netif.satellite_encryption_type = netIfApi.getSatelliteConnectionEncryptionType();
             netif.satellite_port = netIfApi.getSatelliteConnectionPort();
         }
+        netif.is_active = Boolean.FALSE; // default value
         netif.uuid = netIfApi.getUuid().toString();
         return netif;
     }

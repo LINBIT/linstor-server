@@ -81,6 +81,7 @@ public class JsonGenTypes
         public String address;
         public Integer satellite_port;
         public String satellite_encryption_type;
+        public Boolean is_active;
         /**
          * unique object id
          */

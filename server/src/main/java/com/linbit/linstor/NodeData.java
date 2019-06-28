@@ -24,8 +24,8 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-import javax.inject.Provider;
 
+import javax.inject.Provider;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,7 +88,7 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private transient Peer peer;
 
-    private transient TransactionSimpleObject<NodeData, NetInterface> currentStltConn;
+    private transient TransactionSimpleObject<NodeData, NetInterface> activeStltConn;
 
     private final TransactionSimpleObject<NodeData, Boolean> deleted;
 
@@ -178,7 +178,7 @@ public class NodeData extends BaseTransactionObject implements Node
             this, checkedType, dbDriver.getNodeTypeDriver()
         );
 
-        currentStltConn = transObjFactory.createTransactionSimpleObject(this, null, null);
+        activeStltConn = transObjFactory.createTransactionSimpleObject(this, null, null);
         transObjs = Arrays.<TransactionObject>asList(
             flags,
             nodeType,
@@ -189,8 +189,7 @@ public class NodeData extends BaseTransactionObject implements Node
             storPoolMap,
             nodeConnections,
             nodeProps,
-            deleted,
-            currentStltConn
+            deleted, activeStltConn
         );
     }
 
@@ -397,7 +396,7 @@ public class NodeData extends BaseTransactionObject implements Node
         return netInterfaceMap.get(niName);
     }
 
-    void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    public void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -412,9 +411,9 @@ public class NodeData extends BaseTransactionObject implements Node
 
         netInterfaceMap.remove(niRef.getName());
 
-        if (Objects.equals(currentStltConn.get(), niRef))
+        if (Objects.equals(activeStltConn.get(), niRef))
         {
-            removeSatelliteconnection(accCtx);
+            removeActiveSatelliteconnection(accCtx);
         }
     }
 
@@ -553,19 +552,19 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public NetInterface getSatelliteConnection(AccessContext accCtx) throws AccessDeniedException
+    public NetInterface getActiveStltConn(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return currentStltConn.get();
+        return activeStltConn.get();
     }
 
     @Override
-    public void setSatelliteConnection(AccessContext accCtx, NetInterface satelliteConnectionRef)
+    public void setActiveStltConn(AccessContext accCtx, NetInterface satelliteConnectionRef)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        currentStltConn.set(satelliteConnectionRef);
+        activeStltConn.set(satelliteConnectionRef);
         try
         {
             nodeProps.setProp(
@@ -579,11 +578,11 @@ public class NodeData extends BaseTransactionObject implements Node
         }
     }
 
-    void removeSatelliteconnection(AccessContext accCtx)
+    void removeActiveSatelliteconnection(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        currentStltConn.set(null);
+        activeStltConn.set(null);
         try
         {
             nodeProps.removeProp(ApiConsts.KEY_CUR_STLT_CONN_NAME);
@@ -706,6 +705,7 @@ public class NodeData extends BaseTransactionObject implements Node
             getNodeType(accCtx).name(),
             getFlags().getFlagsBits(accCtx),
             netInterfaces,
+            activeStltConn.get() != null ? activeStltConn.get().getApiData(accCtx) : null,
             nodeConns,
             getProps(accCtx).map(),
             tmpPeer != null ? tmpPeer.getConnectionStatus() : Peer.ConnectionStatus.UNKNOWN,
