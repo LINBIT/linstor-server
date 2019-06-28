@@ -244,7 +244,8 @@ public class MigrationUtils
     public static String dropColumnConstraintNotNull(
         DbProduct databaseRef,
         String table,
-        String column
+        String column,
+        String columnDefinition  // column type definition without the NOT NULL clause
     )
     {
         String sql;
@@ -269,15 +270,55 @@ public class MigrationUtils
             case MARIADB:
             case MYSQL:
                 sql = String.format(
-                    "ALTER TABLE %s CHANGE COLUMN %s %s DROP NOT NULL;",
+                    "ALTER TABLE %s MODIFY COLUMN %s %s;",
                     table,
                     column,
-                    column
+                    columnDefinition
                 );
                 break;
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + databaseRef);
+        }
+        return sql;
+    }
+
+    public static String dropForeignKeyConstraint(
+        DbProduct dbProduct,
+        String table,
+        String fkName
+    )
+    {
+        String sql;
+        switch (dbProduct)
+        {
+            case ASE:
+            case INFORMIX:
+            case ORACLE_RDBMS:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case POSTGRESQL:
+            case MSFT_SQLSERVER:
+                sql = String.format(
+                    "ALTER TABLE %s DROP CONSTRAINT %s;",
+                    table,
+                    fkName
+                );
+                break;
+            case MARIADB:
+            case MYSQL:
+                sql = String.format(
+                    "ALTER TABLE %s DROP FOREIGN KEY %s;",
+                    table,
+                    fkName
+                );
+                break;
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProduct);
         }
         return sql;
     }

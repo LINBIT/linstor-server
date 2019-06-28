@@ -30,7 +30,8 @@ public class Migration_2019_05_27_Snapshot_NodeId_Nullable extends LinstorMigrat
             MigrationUtils.dropColumnConstraintNotNull(
                 MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData()),
                 TBL_SNAPSHOT,
-                S_NODE_ID
+                S_NODE_ID,
+                "INTEGER DEFAULT 0"
             )
         );
     }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 
 import java.sql.Connection;
@@ -16,45 +17,86 @@ public class Migration_2019_03_15_FixConstraints extends LinstorMigration
     public void migrate(Connection connection)
         throws Exception
     {
+        DatabaseInfo.DbProduct dbProduct = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
         attemptSql(
             connection,
-            "ALTER TABLE VOLUME_DEFINITIONS DROP CONSTRAINT FK_VD_RSC_DFN;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "VOLUME_DEFINITIONS",
+                "FK_VD_RSC_DFN"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE RESOURCES DROP CONSTRAINT FK_R_RSC_DFNS;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "RESOURCES",
+                "FK_R_RSC_DFNS"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE SNAPSHOT_VOLUMES DROP CONSTRAINT FK_SV_SNAPSHOTS;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "SNAPSHOT_VOLUMES",
+                "FK_SV_SNAPSHOTS"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE VOLUMES DROP CONSTRAINT FK_V_VLM_DFNS;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "VOLUMES",
+                "FK_V_VLM_DFNS"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE LAYER_DRBD_VOLUME_DEFINITIONS DROP CONSTRAINT FK_LDRD_VD;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "LAYER_DRBD_VOLUME_DEFINITIONS",
+                "FK_LDRD_VD"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE LAYER_SWORDFISH_VOLUME_DEFINITIONS DROP CONSTRAINT FK_LSFVD_VD;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "LAYER_SWORDFISH_VOLUME_DEFINITIONS",
+                "FK_LSFVD_VD"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE RESOURCE_CONNECTIONS DROP CONSTRAINT FK_RC_RSCS_SRC;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "RESOURCE_CONNECTIONS",
+                "FK_RC_RSCS_SRC"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE RESOURCE_CONNECTIONS DROP CONSTRAINT FK_RC_RSCS_DST;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "RESOURCE_CONNECTIONS",
+                "FK_RC_RSCS_DST"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE LAYER_RESOURCE_IDS DROP CONSTRAINT FK_LRI_RESOURCES;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "LAYER_RESOURCE_IDS",
+                "FK_LRI_RESOURCES"
+            )
         );
         attemptSql(
             connection,
-            "ALTER TABLE VOLUMES DROP CONSTRAINT FK_V_RSCS;"
+            MigrationUtils.dropForeignKeyConstraint(
+                dbProduct,
+                "VOLUMES",
+                "FK_V_RSCS"
+            )
         );
 
         GenericDbDriver.runSql(
