@@ -404,6 +404,11 @@ public class CtrlRscDfnApiCallHandler
     )
         throws InvalidNameException
     {
+        if (rscNameStr == null)
+        {
+            throw new ImplementationError("Resource name must not be null!");
+        }
+
         TransportType transportType = null;
         if (transportTypeStr != null && !transportTypeStr.trim().isEmpty())
         {
@@ -420,65 +425,35 @@ public class CtrlRscDfnApiCallHandler
             }
         }
 
-        if (rscNameStr == null)
-        {
-            throw new ImplementationError("Resource name must not be null!");
-        }
-
+        boolean generatedRscName = false;
         ResourceName rscName = null;
         if (!rscNameStr.isEmpty())
         {
-            if (extName != null && extName.length != 0)
+            // A resource name was specified, an external name may have been specified optionally
+            rscName = LinstorParsingUtils.asRscName(rscNameStr);
+
+            if (extName != null)
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_EXT_NAME,
-                    "Either a resource name or an external name must be present, but not both!")
-                );
-            }
-            else
-            {
-                rscName = LinstorParsingUtils.asRscName(rscNameStr);
+                // throws ApiRcException if the external name is not unique
+                checkExtNameUnique(extName, peerAccCtx.get(), resourceDefinitionRepository);
             }
         }
         else
         {
-            if (extName == null)
+            generatedRscName = true;
+            // The zero-length resource name was specified, the resource name will be generated
+            // depending on the contents of the specified external name
+            if (extName != null)
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_MISSING_EXT_NAME,
-                    "Either a resource name or an external name must be present!")
-                );
-            }
-            else
-            {
+                // throws ApiRcException if the external name is not unique
+                checkExtNameUnique(extName, peerAccCtx.get(), resourceDefinitionRepository);
+
                 try
                 {
+                    // Create a unique resource name from the specified external name
+                    // Falls back to a prefix + UUID name if the resource name collides with an existing one
+                    // A prefix + UUID name is also created if a zero-length external name is specified
                     rscName = createResourceName(extName, resourceDefinitionRepository.getMapForView(peerAccCtx.get()));
-
-                    if (extName.length == 0)
-                    {
-                        // Discard zero-length external names, as those are used to trigger
-                        // generation of a UUID-based resource name and are not supposed to be stored
-                        extName = null;
-                    }
-                    else
-                    {
-                        ResourceDefinitionMapExtName extNameMap =
-                            resourceDefinitionRepository.getMapForViewExtName(peerAccCtx.get());
-                        if (extNameMap.containsKey(extName))
-                        {
-                            ApiCallRcImpl.EntryBuilder errorRcBld = ApiCallRcImpl.entryBuilder(
-                                ApiConsts.FAIL_EXISTS_EXT_NAME,
-                                "The specified external name is already registered"
-                            );
-                            errorRcBld.setDetails(
-                                "The external name data is:\n" +
-                                HexViewer.binaryToHexDump(extName)
-                            );
-                            ApiCallRcEntry errorRc = errorRcBld.build();
-                            throw new ApiRcException(errorRc);
-                        }
-                    }
                 }
                 catch (AccessDeniedException accDeniedExc)
                 {
@@ -489,6 +464,35 @@ public class CtrlRscDfnApiCallHandler
                     );
                 }
             }
+            else
+            {
+                ApiCallRcImpl.EntryBuilder rcEntry = ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_MISSING_EXT_NAME,
+                    "The resource name generation for the creation of a new resource definition failed"
+                );
+                rcEntry.setCause(
+                    "Name generation was selected by specifying a zero-length resource name,\n" +
+                    "but the external name field required for name generation is not present\n" +
+                    "in the API call data"
+                );
+                rcEntry.setCorrection(
+                    "For name generation from an external name\n" +
+                    "- Specify a non-zero-length external name to induce resource name generation\n" +
+                    "  based on the specified external name" +
+                    "- Specify a zero-length external name to induce generation of a random\n" +
+                    "  resource name (Prefix + UUID)\n" +
+                    "or\n" +
+                    "- Specify a non-zero-length resource name to avoid resource name generation"
+                );
+                throw new ApiRcException(rcEntry.build());
+            }
+        }
+
+        // Discard zero-length external names, as those are used to trigger
+        // generation of a UUID-based resource name and are not supposed to be stored
+        if (extName != null && extName.length == 0)
+        {
+            extName = null;
         }
 
         if (!layerStack.isEmpty())
@@ -548,20 +552,36 @@ public class CtrlRscDfnApiCallHandler
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_RSC_PORT, String.format(
-                "The specified TCP port '%d' is invalid.",
-                portInt
-            )), exc);
+            ApiCallRcImpl.EntryBuilder rcEntry = ApiCallRcImpl.entryBuilder(
+                ApiConsts.FAIL_INVLD_RSC_PORT,
+                "The creation of a new resource definition failed due to an invalid TCP port number"
+            );
+            rcEntry.setCause(String.format("The specified number %d is not a valid TCP port number", portInt));
+            rcEntry.setDetails(getCrtRscDfnName(rscName, generatedRscName));
+            throw new ApiRcException(rcEntry.build(), exc);
         }
         catch (ExhaustedPoolException exc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+            ApiCallRcImpl.EntryBuilder rcEntry = ApiCallRcImpl.entryBuilder(
                 ApiConsts.FAIL_POOL_EXHAUSTED_TCP_PORT,
-                "Could not find free TCP port"
-            ), exc);
+                "The creation of a new resource definition failed, because no TCP port number\n" +
+                "could be allocated for the resource definition"
+            );
+            rcEntry.setCause("TCP port number allocation failed, because the pool of free numbers is exhausted");
+            rcEntry.setCorrection(
+                "- Increase the size of the free TCP port number pool by extending the\n" +
+                "  port number range for automatic allocation\n" +
+                "or\n" +
+                "- Delete existing resource definitions that have a TCP port number within\n" +
+                "  the port number range for automatic allocation, if those resource definitions\n" +
+                "  are no longer needed"
+            );
+            rcEntry.setDetails(getCrtRscDfnName(rscName, generatedRscName));
+            throw new ApiRcException(rcEntry.build(), exc);
         }
         catch (AccessDeniedException accDeniedExc)
         {
+
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "create " + getRscDfnDescriptionInline(rscNameStr),
@@ -574,10 +594,12 @@ public class CtrlRscDfnApiCallHandler
         }
         catch (LinStorDataAlreadyExistsException exc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+            ApiCallRcImpl.EntryBuilder rcEntry = ApiCallRcImpl.entryBuilder(
                 ApiConsts.FAIL_EXISTS_RSC_DFN,
-                firstLetterCaps(getRscDfnDescriptionInline(rscNameStr)) + " already exists."
-            ), exc);
+                "The creation of a new resource definition failed due to a name collision"
+            );
+            rcEntry.setCause("A resource definition with the name '" + rscNameStr + "' already exists");
+            throw new ApiRcException(rcEntry.build(), exc);
         }
         return rscDfn;
     }
@@ -659,6 +681,19 @@ public class CtrlRscDfnApiCallHandler
         return "resource definition '" + rscName + "'";
     }
 
+    public static String getCrtRscDfnName(final ResourceName rscName, final boolean generated)
+    {
+        StringBuilder nameInfo = new StringBuilder();
+        nameInfo.append("The name for the new resource definition was '");
+        nameInfo.append(rscName.displayValue);
+        nameInfo.append("'");
+        if (generated)
+        {
+            nameInfo.append("\nThis resource name was generated from external name data");
+        }
+        return nameInfo.toString();
+    }
+
     static ResponseContext makeResourceDefinitionContext(
         ApiOperation operation,
         String rscNameStr
@@ -674,5 +709,44 @@ public class CtrlRscDfnApiCallHandler
             ApiConsts.MASK_RSC_DFN,
             objRefs
         );
+    }
+
+    private static void checkExtNameUnique(
+        final byte[] extName,
+        final AccessContext accCtx,
+        final ResourceDefinitionRepository rscDfnRps
+    )
+        throws ApiRcException, ApiAccessDeniedException
+    {
+        if (extName.length > 0)
+        {
+            try
+            {
+                // Check whether the specified external name is already registered
+                ResourceDefinitionMapExtName extNameMap =
+                    rscDfnRps.getMapForViewExtName(accCtx);
+                if (extNameMap.containsKey(extName))
+                {
+                    ApiCallRcImpl.EntryBuilder errorRcBld = ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_EXISTS_EXT_NAME,
+                        "The specified external name is already registered"
+                    );
+                    errorRcBld.setDetails(
+                        "The external name data is:\n" +
+                        HexViewer.binaryToHexDump(extName)
+                    );
+                    ApiCallRcEntry errorRc = errorRcBld.build();
+                    throw new ApiRcException(errorRc);
+                }
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ApiAccessDeniedException(
+                    accDeniedExc,
+                    "getMapForView / getMapForViewExtName",
+                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+                );
+            }
+        }
     }
 }
