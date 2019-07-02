@@ -1,5 +1,8 @@
 package com.linbit;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 
@@ -8,7 +11,7 @@ import java.util.Arrays;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class AutoIndent
+public final class AutoIndent
 {
     public static final int DEFAULT_INDENTATION = 4;
 
@@ -21,10 +24,42 @@ public class AutoIndent
     }
 
     public static void printWithIndent(
-        PrintStream output,
-        int indent,
-        String text
+        final PrintStream output,
+        final int indent,
+        final String text
     )
+    {
+        // PrintStream catches IOExceptions internally, so they can be caught and ignored
+        try
+        {
+            streamIndentImpl(output, indent, text.getBytes());
+        }
+        catch (IOException ignored)
+        {
+        }
+    }
+
+    public static String formatWithIndent(final int indent, final String text)
+    {
+        // ByteArrayOutputStream does not throw IOExceptions on write() or flush(),
+        // so they can be caught and ignored here
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try
+        {
+            streamIndentImpl(output, indent, text.getBytes());
+        }
+        catch (IOException ignored)
+        {
+        }
+        return output.toString();
+    }
+
+    private static void streamIndentImpl(
+        final OutputStream output,
+        final int indent,
+        final byte[] data
+    )
+        throws IOException
     {
         byte[] spacer;
         if (indent <= CACHED_SPACER_SIZE)
@@ -36,7 +71,6 @@ public class AutoIndent
             spacer = new byte[indent];
             Arrays.fill(spacer, (byte) ' ');
         }
-        byte[] data = text.getBytes();
         int offset = 0;
         for (int index = 0; index < data.length; ++index)
         {
@@ -47,7 +81,7 @@ public class AutoIndent
                     output.write(spacer, 0, indent);
                     output.write(data, offset, index - offset);
                 }
-                output.println();
+                output.write('\n');
                 offset = index + 1;
             }
         }
@@ -55,8 +89,9 @@ public class AutoIndent
         {
             output.write(spacer, 0, indent);
             output.write(data, offset, data.length - offset);
-            output.println();
+            output.write('\n');
         }
+        output.flush();
     }
 
     private AutoIndent()

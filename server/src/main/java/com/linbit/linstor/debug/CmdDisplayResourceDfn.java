@@ -1,5 +1,6 @@
 package com.linbit.linstor.debug;
 
+import com.linbit.AutoIndent;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -148,6 +149,16 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
                         objProt.getOwner().name.displayValue
                     )
                     .leaf("Security type: %-24s", objProt.getSecurityType().name.displayValue);
+
+                byte[] extName = rscDfnRef.getExternalName();
+                if (extName != null)
+                {
+                    String extNameDump = AutoIndent.formatWithIndent(
+                        4,
+                        HexViewer.binaryToHexDump(extName)
+                    );
+                    treeBuilder.leaf("External name:\n%s", extNameDump);
+                }
 
                 Iterator<VolumeDefinition> vlmDfnIter = rscDfnRef.iterateVolumeDfn(accCtx);
 
