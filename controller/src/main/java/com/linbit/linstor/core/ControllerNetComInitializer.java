@@ -398,10 +398,10 @@ public final class ControllerNetComInitializer
                         initCtx,
                         ctrlConnTracker,
                         sslProtocol,
-                        keyStoreFile,
+                        keyStoreFilePath.toString(),
                         keyStorePw.toCharArray(),
                         keyPw.toCharArray(),
-                        trustStoreFile,
+                        trustStoreFilePath.toString(),
                         trustStorPw.toCharArray()
                     );
                     try
