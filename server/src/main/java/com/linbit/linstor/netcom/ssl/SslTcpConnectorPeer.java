@@ -62,7 +62,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         {
             // Server mode
             sslEngine = sslCtx.createSSLEngine();
-            sslEngine.setNeedClientAuth(false);
+            sslEngine.setNeedClientAuth(true);
             sslEngine.setUseClientMode(false);
         }
 
@@ -120,7 +120,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         {
             // Server mode
             sslEngine = sslCtx.createSSLEngine();
-            sslEngine.setNeedClientAuth(false);
+            sslEngine.setNeedClientAuth(true);
             sslEngine.setUseClientMode(false);
         }
 
