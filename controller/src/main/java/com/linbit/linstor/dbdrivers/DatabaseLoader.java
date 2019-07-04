@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
@@ -139,6 +140,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.ResourceGroupMap rscGrpMap;
+    private final CoreModule.ResourceDefinitionMapExtName rscDfnMapExtName;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
@@ -175,6 +177,7 @@ public class DatabaseLoader implements DatabaseDriver
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.ResourceGroupMap rscGrpMapRef,
+        CoreModule.ResourceDefinitionMapExtName rscDfnMapExtNameRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
         CoreModule.KeyValueStoreMap keyValueStoreMapRef
@@ -208,6 +211,7 @@ public class DatabaseLoader implements DatabaseDriver
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         rscGrpMap = rscGrpMapRef;
+        rscDfnMapExtName = rscDfnMapExtNameRef;
         storPoolDfnMap = storPoolDfnMapRef;
         freeSpaceMgrMap = freeSpaceMgrMapRef;
         keyValueStoreMap = keyValueStoreMapRef;
@@ -494,6 +498,27 @@ public class DatabaseLoader implements DatabaseDriver
             rscGrpMap.putAll(tmpRscGroups);
             storPoolDfnMap.putAll(tmpStorPoolDfnMap);
             freeSpaceMgrMap.putAll(tmpFreeSpaceMgrMap);
+
+            // load external names
+            for (ResourceDefinition rscDfn : tmpRscDfnMap.values())
+            {
+                final byte[] extName = rscDfn.getExternalName();
+                if (extName != null)
+                {
+                    final ResourceDefinition otherRscDfn = rscDfnMapExtName.putIfAbsent(extName, rscDfn);
+                    if (otherRscDfn != null)
+                    {
+                        // TODO: DatabaseException constructors should probably be extended to simplify
+                        //       throwing exceptions with meaningful messages
+                        DatabaseException dbExc = new DatabaseException(null);
+                        dbExc.setDescriptionText(
+                            "Duplicate external name, resource definitions: " +
+                            rscDfn.getName() + ", " + otherRscDfn.getName()
+                        );
+                        throw dbExc;
+                    }
+                }
+            }
         }
         catch (AccessDeniedException exc)
         {
