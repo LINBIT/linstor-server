@@ -269,7 +269,7 @@ public final class ControllerNetComInitializer
             try
             {
                 String dfltPlainConSvc = ctrlConf.getProp(PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC);
-                if (dfltPlainConSvc == null || dfltPlainConSvc.equals(""))
+                if (dfltPlainConSvc == null || dfltPlainConSvc.isEmpty())
                 {
                     TransactionMgr transMgr = null;
                     try
@@ -410,7 +410,7 @@ public final class ControllerNetComInitializer
                         String dfltSslSvcName = ctrlConf.getProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC);
 
                         if (!serviceName.value.equals(dfltDebugSslSvcName.toUpperCase()) &&
-                            (dfltSslSvcName == null || dfltSslSvcName.equals("")))
+                            (dfltSslSvcName == null || dfltSslSvcName.isEmpty()))
                         {
                             TransactionMgr transMgr = null;
                             try

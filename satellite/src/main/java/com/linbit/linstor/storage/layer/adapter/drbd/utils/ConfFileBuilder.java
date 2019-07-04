@@ -775,7 +775,7 @@ public class ConfFileBuilder
                 if (!isPeerRsc)
                 {
                     String backingDiskPath = vlmData.getBackingDevice();
-                    if (backingDiskPath.trim().equals(""))
+                    if (backingDiskPath.trim().isEmpty())
                     {
                         throw new LinStorRuntimeException(
                             "Local volume does an empty block device. This might be result of an other error.",
@@ -804,7 +804,7 @@ public class ConfFileBuilder
             else
             {
                 String tmpMeta = vlmData.getMetaDiskPath();
-                if (tmpMeta.trim().equals(""))
+                if (tmpMeta.trim().isEmpty())
                 {
                     metaDisk = "internal";
                 }

@@ -162,7 +162,7 @@ public class CtrlRscDfnApiCallHandler
                 peerSlotsRef
             );
 
-            if (rscNameStr.trim().equals(""))
+            if (rscNameStr.trim().isEmpty())
             {
                 // an external name was given which means that we have to update the object-references
                 // so the response of this create API is correctly filled
@@ -389,7 +389,7 @@ public class CtrlRscDfnApiCallHandler
         throws InvalidNameException
     {
         TransportType transportType = null;
-        if (transportTypeStr != null && !transportTypeStr.trim().equals(""))
+        if (transportTypeStr != null && !transportTypeStr.trim().isEmpty())
         {
             try
             {
@@ -410,7 +410,7 @@ public class CtrlRscDfnApiCallHandler
         }
 
         ResourceName rscName = null;
-        if (!rscNameStr.equals(""))
+        if (!rscNameStr.isEmpty())
         {
             if (extName != null && extName.length != 0)
             {

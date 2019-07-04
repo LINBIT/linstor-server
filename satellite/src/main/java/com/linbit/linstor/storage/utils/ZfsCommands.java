@@ -33,7 +33,7 @@ public class ZfsCommands
     public static OutputData getExtentSize(ExtCmd extCmd, String zpool, String identifier) throws StorageException
     {
         String fullQualifiedId;
-        if (identifier == null || identifier.trim().equals(""))
+        if (identifier == null || identifier.trim().isEmpty())
         {
             fullQualifiedId = zpool;
         }
