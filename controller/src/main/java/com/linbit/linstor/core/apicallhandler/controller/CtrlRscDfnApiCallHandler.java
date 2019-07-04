@@ -57,7 +57,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.debug.HexViewer;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
