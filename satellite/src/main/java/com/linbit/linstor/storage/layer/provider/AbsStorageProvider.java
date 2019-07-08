@@ -37,6 +37,7 @@ import com.linbit.linstor.storage.layer.provider.utils.DmStatCommands;
 import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.AccessUtils;
+import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
 
 import javax.inject.Provider;
@@ -175,6 +176,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             .collect(
                 Collectors.partitioningBy(
                     snapVlm -> AccessUtils.execPrivileged(
+                        // explicit cast to make eclipse compiler happy
+                        (ExceptionThrowingSupplier<Boolean, AccessDeniedException>)
                         () -> snapVlm.getSnapshot().getFlags().isSet(storDriverAccCtx, SnapshotFlags.DELETE)
                     )
                 )
