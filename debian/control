@@ -22,6 +22,8 @@ Description: DRBD distributed resource management utility
 
 Package: linstor-controller
 Architecture: all
+# Pre-Depends for the postinst script
+Pre-Depends: default-jre-headless
 Depends: ${misc:Depends},
          linstor-common (= ${binary:Version}),
 Description: DRBD distributed resource management utility
