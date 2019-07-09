@@ -101,7 +101,7 @@ public class CtrlAuthenticator
         {
             errorReporter.logWarning(
                 "Unable to complete authentication with peer '%s' because the node has been deleted", node);
-            flux = Flux.error(new ImplementationError("completeAuthenticateion called on deleted peer"));
+            flux = Flux.error(new ImplementationError("complete authentication called on deleted peer"));
         }
         else
         {
