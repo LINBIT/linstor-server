@@ -43,6 +43,8 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFl
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -254,13 +256,36 @@ class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDf
             drbdRscData.getResourceNameSuffix(),
             payload
         );
+        String extMetaStorPoolNameStr = getExtMetaDataStorPoolName(vlm);
+        StorPool extMetaStorPool = null;
+        if (isExternalMetaDataPool(extMetaStorPoolNameStr))
+        {
+            try
+            {
+                extMetaStorPool = vlm.getResource().getAssignedNode().getStorPool(
+                    apiCtx,
+                    new StorPoolName(extMetaStorPoolNameStr)
+                );
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
+                        "The " + getVlmDescriptionInline(vlm) + " specified '" + extMetaStorPoolNameStr +
+                        "' as the storage pool for external meta-data. That name is invalid."
+                    ),
+                    exc
+                );
+            }
+        }
         DrbdVlmData drbdVlmData = layerDataFactory.createDrbdVlmData(
             vlm,
+            extMetaStorPool,
             drbdRscData,
             drbdVlmDfnData
         );
 
-        drbdVlmData.setUsingExternalMetaData(isUsingExternalMetaData(vlm));
         return drbdVlmData;
     }
 
@@ -268,21 +293,24 @@ class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDf
     protected void mergeVlmData(DrbdVlmData drbdVlmData, Volume vlmRef, LayerPayload payloadRef)
         throws AccessDeniedException, InvalidKeyException
     {
-        drbdVlmData.setUsingExternalMetaData(isUsingExternalMetaData(vlmRef));
+        // nothing to do
     }
 
     private boolean isUsingExternalMetaData(Volume vlmRef)
         throws AccessDeniedException, InvalidKeyException
     {
-        return isExternalMetaDataPool(
-            new PriorityProps(
-                vlmRef.getVolumeDefinition().getProps(apiCtx),
-                vlmRef.getResource().getProps(apiCtx),
-                vlmRef.getResourceDefinition().getProps(apiCtx),
-                vlmRef.getResource().getAssignedNode().getProps(apiCtx)
-            ).getProp(
-                ApiConsts.KEY_STOR_POOL_DRBD_META_NAME
-            )
+        return isExternalMetaDataPool(getExtMetaDataStorPoolName(vlmRef));
+    }
+
+    private String getExtMetaDataStorPoolName(Volume vlmRef) throws InvalidKeyException, AccessDeniedException
+    {
+        return new PriorityProps(
+            vlmRef.getVolumeDefinition().getProps(apiCtx),
+            vlmRef.getResource().getProps(apiCtx),
+            vlmRef.getResourceDefinition().getProps(apiCtx),
+            vlmRef.getResource().getAssignedNode().getProps(apiCtx)
+        ).getProp(
+            ApiConsts.KEY_STOR_POOL_DRBD_META_NAME
         );
     }
 

@@ -145,7 +145,7 @@ public class LayerRscDataMerger
         boolean ignoredRemoteResource
     )
         throws SQLException, ValueOutOfRangeException, AccessDeniedException, IllegalArgumentException,
-            ExhaustedPoolException, ValueInUseException
+            ExhaustedPoolException, ValueInUseException, InvalidNameException
     {
         DrbdRscPojo drbdRscPojo = (DrbdRscPojo) rscDataPojo;
 
@@ -254,7 +254,7 @@ public class LayerRscDataMerger
 
     private void restoreDrbdVlm(Volume vlm, DrbdRscData rscData, DrbdVlmPojo vlmPojo)
         throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException
+            ValueInUseException, InvalidNameException
     {
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
@@ -264,8 +264,18 @@ public class LayerRscDataMerger
         DrbdVlmData drbdVlmData = rscData.getVlmLayerObjects().get(vlmNr);
         if (drbdVlmData == null)
         {
+            StorPool extMetaStorPool = null;
+            String extMetaStorPoolNameStr = vlmPojo.getExternalMetaDataStorPool();
+            if (extMetaStorPoolNameStr != null)
+            {
+                extMetaStorPool = vlm.getResource().getAssignedNode().getStorPool(
+                    apiCtx,
+                    new StorPoolName(extMetaStorPoolNameStr)
+                );
+            }
             drbdVlmData = layerDataFactory.createDrbdVlmData(
                 vlm,
+                extMetaStorPool,
                 rscData,
                 drbdVlmDfnData
             );
@@ -278,7 +288,6 @@ public class LayerRscDataMerger
             drbdVlmData.setDiskState(vlmPojo.getDiskState());
             drbdVlmData.setUsableSize(vlmPojo.getUsableSize());
         }
-        drbdVlmData.setUsingExternalMetaData(vlmPojo.isUsingExternalMetaData());
     }
 
     private DrbdVlmDfnData restoreDrbdVlmDfn(VolumeDefinition vlmDfn, DrbdVlmDfnPojo drbdVlmDfnPojo)

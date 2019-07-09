@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.7
+      - Added ext_meta_stor_pool to DrbdVolume
     * 1.0.6
       - Added /v1/resource-definitions/{rscName}/resources/{nodeName}/volumes/{vlmnr} PUT
     * 1.0.5
@@ -3035,6 +3037,9 @@ components:
         disk_state:
           type: string
           description: String describing current volume state
+        ext_meta_stor_pool:
+          type: string
+          description: Storage pool name used for external meta data; null for internal
 
     LUKSVolume:
       type: object

@@ -43,6 +43,7 @@ public class DbConstants
     public static final String TBL_LAYER_RESOURCE_IDS    = "LAYER_RESOURCE_IDS";
     public static final String TBL_LAYER_DRBD_RESOURCE_DEFINITIONS = "LAYER_DRBD_RESOURCE_DEFINITIONS";
     public static final String TBL_LAYER_DRBD_RESOURCES  = "LAYER_DRBD_RESOURCES";
+    public static final String TBL_LAYER_DRBD_VOLUMES    = "LAYER_DRBD_VOLUMES";
     public static final String TBL_LAYER_DRBD_VOLUME_DEFINITIONS = "LAYER_DRBD_VOLUME_DEFINITIONS";
     public static final String TBL_LAYER_LUKS_VOLUMES    = "LAYER_LUKS_VOLUMES";
     public static final String TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS = "LAYER_SWORDFISH_VOLUME_DEFINITIONS";

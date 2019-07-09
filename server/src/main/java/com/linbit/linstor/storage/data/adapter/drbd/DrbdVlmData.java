@@ -4,7 +4,6 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -15,7 +14,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,12 +24,12 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     private final Volume vlm;
     private final DrbdRscData rscData;
     private final DrbdVlmDfnData vlmDfnData;
+    private final StorPool externalMetaDataStorPool;
 
     // not persisted, serialized, ctrl and stlt
     private long allocatedSize;
     private String devicePath;
     private long usableSize;
-    private boolean usingExternalMetaData;
 
     // not persisted, not serialized, stlt only
     private boolean exists;
@@ -48,6 +46,7 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         Volume vlmRef,
         DrbdRscData rscDataRef,
         DrbdVlmDfnData vlmDfnDataRef,
+        StorPool extMetaDataStorPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -64,7 +63,7 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         checkMetaData = true;
         isMetaDataNew = false;
 
-        usingExternalMetaData = false;
+        externalMetaDataStorPool = extMetaDataStorPoolRef;
 
         states = transObjFactoryRef.createTransactionList(this, new ArrayList<>(), null);
 
@@ -159,15 +158,20 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     public String getMetaDiskPath()
     {
         String metaDiskPath;
-        if (usingExternalMetaData)
-        {
-            metaDiskPath = getChildBySuffix(DrbdRscData.SUFFIX_META).getDevicePath();
-        }
-        else
+        if (getExternalMetaDataStorPool() == null)
         {
             metaDiskPath = null; // internal meta data
         }
+        else
+        {
+            metaDiskPath = getChildBySuffix(DrbdRscData.SUFFIX_META).getDevicePath();
+        }
         return metaDiskPath;
+    }
+
+    public boolean isUsingExternalMetaData()
+    {
+        return getExternalMetaDataStorPool() != null;
     }
 
     @Override
@@ -180,16 +184,6 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     public String getDiskState()
     {
         return diskState;
-    }
-
-    public void setUsingExternalMetaData(boolean usingExternalMetaDataRef)
-    {
-        usingExternalMetaData = usingExternalMetaDataRef;
-    }
-
-    public boolean isUsingExternalMetaData()
-    {
-        return usingExternalMetaData;
     }
 
     public void setDiskState(String diskStateRef)
@@ -237,6 +231,11 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         isMetaDataNew = isMetaDataNewRef;
     }
 
+    public StorPool getExternalMetaDataStorPool()
+    {
+        return externalMetaDataStorPool;
+    }
+
     @Override
     public Volume getVolume()
     {
@@ -264,11 +263,16 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     @Override
     public DrbdVlmPojo asPojo(AccessContext accCtxRef)
     {
+        String externalMetaDataStorPoolName = null;
+        if (getExternalMetaDataStorPool() != null)
+        {
+            externalMetaDataStorPoolName = getExternalMetaDataStorPool().getName().displayValue;
+        }
         return new DrbdVlmPojo(
             vlmDfnData.getApiData(accCtxRef),
             devicePath,
             getBackingDevice(),
-            usingExternalMetaData,
+            externalMetaDataStorPoolName,
             getMetaDiskPath(),
             allocatedSize,
             usableSize,

@@ -1137,8 +1137,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             DrbdVlm.Builder builder = DrbdVlm.newBuilder()
                 .setDrbdVlmDfn(buildDrbdVlmDfnData(drbdVlmDfnPojo))
                 .setAllocatedSize(drbdVlmPojo.getAllocatedSize())
-                .setUsableSize(drbdVlmPojo.getUsableSize())
-                .setUsingExternalMetaData(drbdVlmPojo.isUsingExternalMetaData());
+                .setUsableSize(drbdVlmPojo.getUsableSize());
             if (drbdVlmPojo.getDevicePath() != null)
             {
                 builder.setDevicePath(drbdVlmPojo.getDevicePath());
@@ -1154,6 +1153,10 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             if (drbdVlmPojo.getDiskState() != null)
             {
                 builder.setDiskState(drbdVlmPojo.getDiskState());
+            }
+            if (drbdVlmPojo.getExternalMetaDataStorPool() != null)
+            {
+                builder.setExternalMetaDataStorPool(drbdVlmPojo.getExternalMetaDataStorPool());
             }
 
             DrbdVlm drbbVlm = builder.build();

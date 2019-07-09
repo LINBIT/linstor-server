@@ -338,7 +338,9 @@ public class ProtoLayerUtils
             extractDrbdVlmDfn(protoDrbdVlmDfn),
             protoDrbdVlm.getDevicePath(),
             protoDrbdVlm.getBackingDevice(),
-            protoDrbdVlm.getUsingExternalMetaData(),
+            protoDrbdVlm.hasExternalMetaDataStorPool() ?
+                protoDrbdVlm.getExternalMetaDataStorPool() :
+                null,
             protoDrbdVlm.getMetaDisk(),
             protoDrbdVlm.getAllocatedSize(),
             protoDrbdVlm.getUsableSize(),

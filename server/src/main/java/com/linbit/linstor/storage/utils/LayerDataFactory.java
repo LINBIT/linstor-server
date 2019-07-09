@@ -184,6 +184,7 @@ public class LayerDataFactory
 
     public DrbdVlmData createDrbdVlmData(
         Volume vlm,
+        StorPool extMetaStorPool,
         DrbdRscData rscData,
         DrbdVlmDfnData vlmDfnData
     )
@@ -193,6 +194,7 @@ public class LayerDataFactory
             vlm,
             rscData,
             vlmDfnData,
+            extMetaStorPool,
             transObjFactory,
             transMgrProvider
         );

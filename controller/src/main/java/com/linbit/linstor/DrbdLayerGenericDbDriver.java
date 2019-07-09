@@ -7,6 +7,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
@@ -33,7 +34,9 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.AL_STRIPES;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.AL_STRIPE_SIZE;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.FLAGS;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.NODE_ID;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.NODE_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.PEER_SLOTS;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.POOL_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.SECRET;
@@ -41,6 +44,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME_SUFFI
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TCP_PORT;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TRANSPORT_TYPE;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_RESOURCES;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_VOLUMES;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_RESOURCE_DEFINITIONS;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_VOLUME_DEFINITIONS;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_MINOR_NR;
@@ -55,10 +59,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +80,13 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         AL_STRIPE_SIZE,
         FLAGS,
         NODE_ID
+    };
+    private static final String[] VLM_ALL_FIELDS =
+    {
+        LAYER_RESOURCE_ID,
+        VLM_NR,
+        NODE_NAME,
+        POOL_NAME
     };
     private static final String[] RSC_DFN_ALL_FIELDS =
     {
@@ -100,6 +111,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         " SELECT " + StringUtils.join(", ", RSC_ALL_FIELDS) +
         " FROM " + TBL_LAYER_DRBD_RESOURCES +
         " WHERE " + LAYER_RESOURCE_ID + " = ?";
+    private static final String SELECT_VLM_BY_RSC_ID =
+        " SELECT " + StringUtils.join(", ", VLM_ALL_FIELDS) +
+        " FROM " + TBL_LAYER_DRBD_VOLUMES +
+        " WHERE " + LAYER_RESOURCE_ID + " = ?";
     private static final String SELECT_ALL_RSC_DFN_AND_VLM_DFN =
         " SELECT " +
             joinAs(", ", "RD.", "RD_", RSC_DFN_ALL_FIELDS) + ", " +
@@ -114,6 +129,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         " INSERT INTO " + TBL_LAYER_DRBD_RESOURCES +
         " ( " + StringUtils.join(", ", RSC_ALL_FIELDS) + " ) " +
         " VALUES ( " + StringUtils.repeat("?", ", ", RSC_ALL_FIELDS.length) + " )";
+    private static final String INSERT_VLM =
+        " INSERT INTO " + TBL_LAYER_DRBD_VOLUMES +
+        " ( " + StringUtils.join(", ", VLM_ALL_FIELDS) + " ) " +
+        " VALUES ( " + StringUtils.repeat("?", ", ", VLM_ALL_FIELDS.length) + " )";
     private static final String INSERT_RSC_DFN =
         " INSERT INTO " + TBL_LAYER_DRBD_RESOURCE_DEFINITIONS +
         " ( " + StringUtils.join(", ", RSC_DFN_ALL_FIELDS) + " ) " +
@@ -357,6 +376,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * Fully loads a {@link DrbdRscData} object, including the {@link DrbdRscDfnData}, {@link DrbdVlmData} and
      * {@link DrbdVlmDfnData}
      * @param parentRef
+     * @param storPoolMapRef
      *
      * @return a {@link Pair}, where the first object is the actual DrbdRscData and the second object
      * is the first objects backing list of the children-resource layer data. This list is expected to be filled
@@ -368,7 +388,8 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         Resource rsc,
         int id,
         String rscSuffixRef,
-        RscLayerObject parentRef
+        RscLayerObject parentRef,
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> storPoolMapRef
     )
         throws SQLException
     {
@@ -436,7 +457,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                     );
                     drbdRscDfnDataPair.objB.add(ret.objA);
 
-                    restoreDrbdVolumes(ret.objA, vlmMap);
+                    restoreDrbdVolumes(ret.objA, vlmMap, storPoolMapRef);
                 }
                 else
                 {
@@ -447,28 +468,82 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         return ret;
     }
 
-    private void restoreDrbdVolumes(DrbdRscData rscData, Map<VolumeNumber, DrbdVlmData> vlmMap)
+    private void restoreDrbdVolumes(
+        DrbdRscData rscData,
+        Map<VolumeNumber, DrbdVlmData> vlmMap,
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> storPoolMapRef
+    )
+        throws SQLException
     {
-        Iterator<Volume> vlmIt = rscData.getResource().iterateVolumes();
-        while (vlmIt.hasNext())
+        Resource rsc = rscData.getResource();
+        NodeName currentNodeName = rsc.getAssignedNode().getName();
+
+        try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_VLM_BY_RSC_ID))
         {
-            Volume vlm = vlmIt.next();
+            stmt.setInt(1, rscData.getRscLayerId());
 
-            DrbdVlmDfnData drbdVlmDfnData = drbdVlmDfnCache.get(
-                new Pair<>(vlm.getVolumeDefinition(), rscData.getResourceNameSuffix())
-            );
-
-            if (drbdVlmDfnData != null)
+            int vlmNrInt = -1;
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                vlmMap.put(
-                    vlm.getVolumeDefinition().getVolumeNumber(),
-                    new DrbdVlmData(
-                        vlm,
-                        rscData,
-                        drbdVlmDfnData,
-                        transObjFactory,
-                        transMgrProvider
-                    )
+                while (resultSet.next())
+                {
+                    vlmNrInt = resultSet.getInt(VLM_NR);
+                    String extMetaStorPoolNameStr = resultSet.getString(POOL_NAME);
+
+                    VolumeNumber vlmNr;
+                    vlmNr = new VolumeNumber(vlmNrInt);
+
+                    Volume vlm = rsc.getVolume(vlmNr);
+
+                    VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+                    DrbdVlmDfnData drbdVlmDfnData = drbdVlmDfnCache.get(
+                        new Pair<>(vlmDfn, rscData.getResourceNameSuffix())
+                    );
+
+                    StorPool extMetaDataStorPool = null;
+                    if (extMetaStorPoolNameStr != null)
+                    {
+                        StorPoolName extStorPoolName = new StorPoolName(extMetaStorPoolNameStr);
+                        extMetaDataStorPool = storPoolMapRef.get(
+                            new Pair<>(currentNodeName, extStorPoolName)
+                        ).objA;
+                    }
+
+                    if (drbdVlmDfnData != null)
+                    {
+                        vlmMap.put(
+                            vlm.getVolumeDefinition().getVolumeNumber(),
+                            new DrbdVlmData(
+                                vlm,
+                                rscData,
+                                drbdVlmDfnData,
+                                extMetaDataStorPool,
+                                transObjFactory,
+                                transMgrProvider
+                            )
+                        );
+                    }
+                    else
+                    {
+                        throw new ImplementationError("Trying to load drbdVlm without drbdVlmDfn. " +
+                            "layerId: " + rscData.getRscLayerId() + " node name: " + currentNodeName +
+                            " resource name: " + rsc.getDefinition().getName() + " vlmNr " + vlmNrInt);
+                    }
+
+                }
+            }
+            catch (ValueOutOfRangeException exc)
+            {
+                throw new LinStorSqlRuntimeException(
+                    "Failed to restore stored volume number " + vlmNrInt +
+                        " for resource layer id: " + rscData.getRscLayerId()
+                );
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new LinStorSqlRuntimeException(
+                    "Failed to restore stored storage pool name '" + exc.invalidName +
+                        "' for resource layer id " + rscData.getRscLayerId() + " vlmNr: " + vlmNrInt
                 );
             }
         }
@@ -522,8 +597,26 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     @Override
     public void persist(DrbdVlmData drbdVlmDataRef) throws SQLException
     {
-        // no-op - there is no special database table.
-        // this method only exists if DrbdVlmData will get a database table in future.
+        errorReporter.logTrace("Creating DrbdVlmData %s", getId(drbdVlmDataRef));
+        try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
+        {
+            stmt.setLong(1, drbdVlmDataRef.getRscLayerId());
+            stmt.setInt(2, drbdVlmDataRef.getVlmNr().value);
+            StorPool externalMetaDataStorPool = drbdVlmDataRef.getExternalMetaDataStorPool();
+            if (externalMetaDataStorPool != null)
+            {
+                stmt.setString(3, externalMetaDataStorPool.getNode().getName().value);
+                stmt.setString(4, externalMetaDataStorPool.getName().value);
+            }
+            else
+            {
+                stmt.setNull(3, Types.VARCHAR);
+                stmt.setNull(4, Types.VARCHAR);
+            }
+
+            stmt.executeUpdate();
+            errorReporter.logTrace("DrbdVlmData created %s", getId(drbdVlmDataRef));
+        }
     }
 
     @Override
@@ -632,10 +725,16 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
+    private String getId(DrbdVlmData drbdVlmData)
+    {
+        return "(LayerRscId=" + drbdVlmData.getRscLayerId() +
+            ", VlmNr=" + drbdVlmData.getVlmNr() +
+            ")";
+    }
+
     private String getId(DrbdRscData drbdRscData)
     {
         return "(LayerRscId=" + drbdRscData.getRscLayerId() +
-            ", SuffResName=" + drbdRscData.getSuffixedResourceName() +
             ")";
     }
 

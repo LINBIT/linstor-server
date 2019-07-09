@@ -472,6 +472,7 @@ public class ConfFileBuilderTest
                     vlm,
                     rscData,
                     drbdVlmDfnData,
+                    null,
                     transObjFactory,
                     transMgrProvider
                 );

@@ -381,7 +381,10 @@ public class JsonGenTypes
          * String describing current volume state
          */
         public String disk_state;
-        public Boolean using_external_meta_data;
+        /**
+         * Storage pool name used for external meta data; null for internal
+         */
+        public String ext_meta_stor_pool;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -500,7 +500,7 @@ public class GenericDbDriver implements DatabaseDriver
         // no *DfnLayerObjects for nvme
         // no *DfnLayerObjects for luks
 
-        List<Resource> resourcesWithLayerData = loadRscLayerData(tmpRscDfnMapRef);
+        List<Resource> resourcesWithLayerData = loadRscLayerData(tmpRscDfnMapRef, tmpStorPoolMapRef);
 
         drbdLayerDriver.clearLoadCache();
         storageLayerDriver.clearLoadAllCache();
@@ -515,7 +515,10 @@ public class GenericDbDriver implements DatabaseDriver
         }
     }
 
-    private List<Resource> loadRscLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef)
+    private List<Resource> loadRscLayerData(
+        Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
+    )
         throws SQLException, AccessDeniedException, ImplementationError
     {
         // load RscLayerObjects and VlmLayerObjects
@@ -557,7 +560,8 @@ public class GenericDbDriver implements DatabaseDriver
                             rsc,
                             rli.id,
                             rli.rscSuffix,
-                            parent
+                            parent,
+                            tmpStorPoolMapRef
                         );
                         break;
                     case LUKS:

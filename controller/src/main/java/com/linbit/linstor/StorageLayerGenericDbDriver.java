@@ -123,7 +123,9 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         // will be extended later with loadStorSnapVlmsIntoCache(tmpStorPoolMapRef);
     }
 
-    private void loadStorVlmsIntoCache(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef)
+    private void loadStorVlmsIntoCache(
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
+    )
         throws SQLException
     {
         cachedStorVlmInfoByRscLayerId = new HashMap<>();

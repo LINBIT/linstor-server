@@ -434,10 +434,10 @@ public class Json
         drbdVolume.device_path = drbdVlmPojo.getDevicePath();
         drbdVolume.backing_device = drbdVlmPojo.getBackingDisk();
         drbdVolume.meta_disk = drbdVlmPojo.getMetaDisk();
-        drbdVolume.using_external_meta_data = drbdVlmPojo.isUsingExternalMetaData();
         drbdVolume.allocated_size_kib = drbdVlmPojo.getAllocatedSize();
         drbdVolume.usable_size_kib = drbdVlmPojo.getUsableSize();
         drbdVolume.disk_state = drbdVlmPojo.getDiskState();
+        drbdVolume.ext_meta_stor_pool = drbdVlmPojo.getExternalMetaDataStorPool();
         return drbdVolume;
     }
 
