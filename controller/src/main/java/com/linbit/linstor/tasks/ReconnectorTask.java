@@ -1,20 +1,32 @@
 package com.linbit.linstor.tasks;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+
+import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 
 @Singleton
 public class ReconnectorTask implements Task
@@ -27,17 +39,26 @@ public class ReconnectorTask implements Task
     private PingTask pingTask;
     private final Provider<CtrlAuthenticator> authenticatorProvider;
     private final Provider<SatelliteConnector> satelliteConnector;
+    private final TransactionMgrGenerator transactionMgrGenerator;
+    private final LinStorScope reconnScope;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public ReconnectorTask(
         ErrorReporter errorReporterRef,
         Provider<CtrlAuthenticator> authenticatorRef,
-        Provider<SatelliteConnector> satelliteConnectorRef
+        Provider<SatelliteConnector> satelliteConnectorRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef,
+        LinStorScope reconnScopeRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         errorReporter = errorReporterRef;
         authenticatorProvider = authenticatorRef;
         satelliteConnector = satelliteConnectorRef;
+        reconnScope = reconnScopeRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        transactionMgrGenerator = transactionMgrGeneratorRef;
     }
 
     void setPingTask(PingTask pingTaskRef)
@@ -115,7 +136,63 @@ public class ReconnectorTask implements Task
                         Node node = peer.getNode();
                         if (node != null && !node.isDeleted())
                         {
-                            peerSet.add(peer.getConnector().reconnect(peer));
+                            boolean hasEnteredScope = false;
+                            TransactionMgr transMgr = null;
+                            try (LockGuard lockGuard = lockGuardFactory
+                                .create()
+                                .read(CTRL_CONFIG)
+                                .write(NODES_MAP)
+                                .build()
+                            )
+                            {
+                                reconnScope.enter();
+                                hasEnteredScope = true;
+                                transMgr = transactionMgrGenerator.startTransaction();
+                                reconnScope.seed(TransactionMgr.class, transMgr);
+
+                                // look for another netIf configured as satellite connection and set it as active
+                                NetInterface currentActiveStltConn = node.getActiveStltConn(peer.getAccessContext());
+                                Iterator<NetInterface> netIfIt = node.iterateNetInterfaces(peer.getAccessContext());
+                                while (netIfIt.hasNext())
+                                {
+                                    NetInterface netInterface = netIfIt.next();
+                                    if (!netInterface.equals(currentActiveStltConn) &&
+                                        netInterface.isUsableAsStltConn(peer.getAccessContext()))
+                                    {
+                                        errorReporter.logDebug("Setting new active satellite connection: '" +
+                                            netInterface.getName() + "'"
+                                        );
+                                        node.setActiveStltConn(peer.getAccessContext(), netInterface);
+                                        break;
+                                    }
+                                }
+
+                                transMgr.commit();
+                                peerSet.add(peer.getConnector().reconnect(peer));
+                            }
+                            catch (AccessDeniedException | SQLException exc)
+                            {
+                                errorReporter.logError(exc.getMessage());
+                            }
+                            finally
+                            {
+                                if (hasEnteredScope)
+                                {
+                                    reconnScope.exit();
+                                }
+                                if (transMgr != null)
+                                {
+
+                                    try
+                                    {
+                                        transMgr.rollback();
+                                    }
+                                    catch (SQLException exc)
+                                    {
+                                        errorReporter.reportError(exc);
+                                    }
+                                }
+                            }
                         }
                         else
                         {

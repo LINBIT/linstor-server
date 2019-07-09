@@ -98,7 +98,7 @@ class CtrlNetIfApiCallHandler
         String address,
         Integer stltPort,
         String stltEncrType,
-        boolean isActive
+        boolean setActive
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -125,14 +125,14 @@ class CtrlNetIfApiCallHandler
             NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
             NetInterfaceData netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
 
-            if (node.getActiveStltConn(peerAccCtx.get()) == null || isActive)
+            if (node.getActiveStltConn(peerAccCtx.get()) == null || setActive)
             {
                 if (stltPort != null && stltEncrType != null)
                 {
                     node.setActiveStltConn(apiCtx, netIf);
                     satelliteConnector.startConnecting(node, apiCtx);
                 }
-                else if (isActive)
+                else if (setActive)
                 {
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
@@ -172,7 +172,7 @@ class CtrlNetIfApiCallHandler
         String addressStr,
         Integer stltPort,
         String stltEncrType,
-        boolean isActive
+        boolean setActive
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -185,10 +185,15 @@ class CtrlNetIfApiCallHandler
         try
         {
             NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr);
-
+            Node node = netIf.getNode();
             NodeType nodeType = netIf.getNode().getNodeType(apiCtx);
+            boolean isModifyingActiveStltConn =
+                netIf.getUuid().equals(node.getActiveStltConn(peerAccCtx.get()).getUuid());
 
-            boolean needsReconnect = addressStr != null;
+            // reconnect necessary if ip or port changes on the active stlt conn
+            boolean needsReconnect =
+                !isModifyingActiveStltConn && setActive ||
+                isModifyingActiveStltConn && (addressStr != null || stltPort != null && stltEncrType != null);
 
             if (needsReconnect && NodeType.SWORDFISH_TARGET.equals(nodeType))
             {
@@ -202,12 +207,10 @@ class CtrlNetIfApiCallHandler
                 );
             }
 
-            if (needsReconnect)
+            if (addressStr != null)
             {
                 setAddress(netIf, addressStr);
             }
-
-            Node node = netIf.getNode();
 
             if (stltPort != null && stltEncrType != null)
             {
@@ -223,26 +226,29 @@ class CtrlNetIfApiCallHandler
                     sfTargetPortPool.allocate(stltPort);
                     needsStartProc = true;
                 }
-                needsReconnect = setStltConn(netIf, stltPort, stltEncrType);
+                needsReconnect = setStltConn(netIf, stltPort, stltEncrType) || setActive;
 
                 if (needsStartProc)
                 {
                     sfTargetProcessMgr.startLocalSatelliteProcess(node);
                 }
+            }
 
-                if (isActive)
+            if (setActive)
+            {
+                if (netIf.isUsableAsStltConn(peerAccCtx.get()))
                 {
                     node.setActiveStltConn(peerAccCtx.get(), netIf);
                 }
-            }
-            else if (isActive)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        FAIL_INVLD_NET_PORT | FAIL_INVLD_ENCRYPT_TYPE, //TODO rigth?
-                        "No satellite port / encryption type set for active satellite connection"
-                    )
-                );
+                else
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            FAIL_INVLD_NET_PORT | FAIL_INVLD_ENCRYPT_TYPE,
+                            "No satellite port / encryption type set for active satellite connection"
+                        )
+                    );
+                }
             }
 
             ctrlTransactionHelper.commit();

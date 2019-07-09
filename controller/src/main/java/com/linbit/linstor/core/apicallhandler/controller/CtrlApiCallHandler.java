@@ -951,12 +951,17 @@ public class CtrlApiCallHandler
         String address,
         Integer stltPort,
         String stltEncrType,
-        boolean isActive
+        boolean setActive
     )
     {
         ApiCallRc apiCallRc;
 
-        try (LockGuard lg = lockGuardFactory.build(READ, CTRL_CONFIG, NODES_MAP))
+        try (LockGuard lg = lockGuardFactory
+            .create()
+            .read(CTRL_CONFIG)
+            .write(NODES_MAP)
+            .build()
+        )
         {
             apiCallRc = netIfApiCallHandler.createNetIf(
                 nodeName,
@@ -964,7 +969,7 @@ public class CtrlApiCallHandler
                 address,
                 stltPort,
                 stltEncrType,
-                isActive
+                setActive
             );
         }
         return apiCallRc;
@@ -976,12 +981,17 @@ public class CtrlApiCallHandler
         String address,
         Integer stltPort,
         String stltEncrType,
-        boolean isActive
+        boolean setActive
     )
     {
         ApiCallRc apiCallRc;
 
-        try (LockGuard lg = lockGuardFactory.build(READ, CTRL_CONFIG, NODES_MAP))
+        try (LockGuard lg = lockGuardFactory
+            .create()
+            .read(CTRL_CONFIG)
+            .write(NODES_MAP)
+            .build()
+        )
         {
             apiCallRc = netIfApiCallHandler.modifyNetIf(
                 nodeName,
@@ -989,7 +999,7 @@ public class CtrlApiCallHandler
                 address,
                 stltPort,
                 stltEncrType,
-                isActive
+                setActive
             );
         }
         return apiCallRc;
@@ -1002,7 +1012,12 @@ public class CtrlApiCallHandler
     {
         ApiCallRc apiCallRc;
 
-        try (LockGuard lg = lockGuardFactory.build(READ, CTRL_CONFIG, NODES_MAP))
+        try (LockGuard lg = lockGuardFactory
+            .create()
+            .read(CTRL_CONFIG)
+            .write(NODES_MAP)
+            .build()
+        )
         {
             apiCallRc = netIfApiCallHandler.deleteNetIf(nodeName, netIfName);
         }

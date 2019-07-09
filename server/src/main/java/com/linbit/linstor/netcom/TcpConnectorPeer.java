@@ -481,6 +481,9 @@ public class TcpConnectorPeer implements Peer
         connected = false;
         authenticated = false;
 
+        // deactivate all interest in READ or WRITE operations
+        setOpInterest(0);
+
         synchronized (openRpcs)
         {
             // preventing ConcurrentModificationException with "#apiCall's fluxSink.onDispose(...openRpcs.remove(...))
