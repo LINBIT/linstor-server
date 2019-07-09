@@ -7,9 +7,15 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.READ;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -48,6 +54,8 @@ public class StoragePools
     private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
     private final CtrlStorPoolApiCallHandler ctrlStorPoolApiCallHandler;
     private final CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtApiCallHandler;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final LockGuardFactory lockGuardFactory;
     private final ObjectMapper objectMapper;
 
     @Inject
@@ -55,13 +63,17 @@ public class StoragePools
         RequestHelper requestHelperRef,
         CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef,
         CtrlStorPoolApiCallHandler ctrlStorPoolApiCallHandlerRef,
-        CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtApiCallHandlerRef
+        CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtApiCallHandlerRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
         ctrlStorPoolApiCallHandler = ctrlStorPoolApiCallHandlerRef;
         ctrlStorPoolCrtApiCallHandler = ctrlStorPoolCrtApiCallHandlerRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        lockGuardFactory = lockGuardFactoryRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -103,11 +115,32 @@ public class StoragePools
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
-            Flux<List<StorPool.StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-                .listStorPools(nodeNames, storPoolNames)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
+            // check the node was accessed with the FQDN, needs context
+            Response nodeCheck = requestHelper.doInScope(
+                requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request),
+                () ->
+                {
+                    try (LockGuard lg = lockGuardFactory.build(READ, NODES_MAP))
+                    {
+                        ctrlApiDataLoader.loadNode(LinstorParsingUtils.asNodeName(nodeName), true, true);
+                    }
+                    return null;
+                },
+                false
+            );
 
-            requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, nodeName, storPoolName, limit, offset));
+            if (nodeCheck == null)
+            {
+                Flux<List<StorPool.StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
+                    .listStorPools(nodeNames, storPoolNames)
+                    .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
+
+                requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, nodeName, storPoolName, limit, offset));
+            }
+            else
+            {
+                asyncResponse.resume(nodeCheck);
+            }
         });
     }
 

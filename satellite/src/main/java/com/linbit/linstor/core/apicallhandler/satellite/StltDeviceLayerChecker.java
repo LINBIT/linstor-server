@@ -166,9 +166,15 @@ public class StltDeviceLayerChecker
         boolean ret = false;
         try
         {
+            // parse only the hostname part, if domain empty use as full name
+            String hostname = nodeNameRef.contains(".") ?
+                nodeNameRef.substring(0, nodeNameRef.indexOf(".")) : nodeNameRef;
             OutputData out = extCmdFactory.create().exec("uname", "-n");
+            String uname = new String(out.stdoutData).trim();
+
+            // check if hostname matches or hostname + "." + domain
             ret = out.exitCode == 0 &&
-                nodeNameRef.equalsIgnoreCase(new String(out.stdoutData).trim());
+                (uname.equalsIgnoreCase(hostname) || uname.equalsIgnoreCase(nodeNameRef));
         }
         catch (ChildProcessTimeoutException | IOException ignored)
         {

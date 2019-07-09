@@ -248,6 +248,9 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
                             setMinorNr(key, namespace, normalized, apiCallRc);
                             break;
+                        case ApiConsts.KEY_SEARCH_DOMAIN:
+                            systemConfRepository.setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                            break;
                         default:
                             systemConfRepository.setStltProp(peerAccCtx.get(), fullKey, normalized);
                             break;

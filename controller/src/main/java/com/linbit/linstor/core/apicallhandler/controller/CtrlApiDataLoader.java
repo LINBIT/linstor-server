@@ -23,6 +23,7 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinitionData;
@@ -32,6 +33,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -48,6 +51,7 @@ public class CtrlApiDataLoader
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final KeyValueStoreRepository kvsRepository;
+    private final SystemConfRepository systemConfRepository;
 
     @Inject
     public CtrlApiDataLoader(
@@ -55,7 +59,8 @@ public class CtrlApiDataLoader
         NodeRepository nodeRepositoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
-        KeyValueStoreRepository kvsRepositoryRef
+        KeyValueStoreRepository kvsRepositoryRef,
+        SystemConfRepository systemConfRepositoryRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -63,6 +68,7 @@ public class CtrlApiDataLoader
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         kvsRepository = kvsRepositoryRef;
+        systemConfRepository = systemConfRepositoryRef;
     }
 
     public final NodeData loadNode(String nodeNameStr, boolean failIfNull)
@@ -72,12 +78,35 @@ public class CtrlApiDataLoader
 
     public final NodeData loadNode(NodeName nodeName, boolean failIfNull)
     {
+        return loadNode(nodeName, failIfNull, false);
+    }
+
+    public final NodeData loadNode(NodeName nodeName, boolean failIfNull, boolean ignoreSearchDomain)
+    {
         NodeData node;
+        NodeName fqdnName = nodeName;
         try
         {
+            // if node name is a short name, try to append search domain (if there is any)
+            if (!ignoreSearchDomain && !nodeName.getDisplayName().contains("."))
+            {
+                final Props ctrlProps = systemConfRepository.getCtrlConfForView(peerAccCtx.get());
+                try
+                {
+                    final String domain = ctrlProps.getProp(ApiConsts.KEY_SEARCH_DOMAIN);
+                    if (domain != null)
+                    {
+                        fqdnName = LinstorParsingUtils.asNodeName(nodeName.getDisplayName() + "." + domain);
+                    }
+                }
+                catch (InvalidKeyException ignored)
+                {
+                }
+            }
+
             node = nodeRepository.get(
                 peerAccCtx.get(),
-                nodeName
+                fqdnName
             );
 
             if (failIfNull && node == null)
@@ -85,10 +114,10 @@ public class CtrlApiDataLoader
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(
                         ApiConsts.FAIL_NOT_FOUND_NODE,
-                        "Node '" + nodeName.displayValue + "' not found."
+                        "Node '" + fqdnName.displayValue + "' not found."
                     )
-                    .setCause("The specified node '" + nodeName.displayValue + "' could not be found in the database")
-                    .setCorrection("Create a node with the name '" + nodeName.displayValue + "' first.")
+                    .setCause("The specified node '" + fqdnName.displayValue + "' could not be found in the database")
+                    .setCorrection("Create a node with the name '" + fqdnName.displayValue + "' first.")
                     .build()
                 );
             }
@@ -97,7 +126,7 @@ public class CtrlApiDataLoader
         {
             throw new ApiAccessDeniedException(
                 accDenied,
-                "loading node '" + nodeName.displayValue + "'.",
+                "loading node '" + fqdnName.displayValue + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
