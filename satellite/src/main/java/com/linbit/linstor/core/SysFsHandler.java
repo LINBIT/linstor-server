@@ -145,6 +145,12 @@ public class SysFsHandler
             setSysFs(sysFsPath, majMinRef + " " + expectedThrottle);
             deviceThrottleMap.put(majMinRef, expectedThrottle);
         }
+        else
+        if (expectedThrottle == null && knownThrottle != null)
+        {
+            setSysFs(sysFsPath, majMinRef + " 0");
+            deviceThrottleMap.remove(majMinRef);
+        }
     }
 
     private String getMajorMinor(VlmProviderObject vlmDataRef) throws StorageException
@@ -180,11 +186,6 @@ public class SysFsHandler
         else
         {
             deviceMajorMinorMap.remove(vlmDataRef);
-            if (majMin != null)
-            {
-                cgroupBlkioThrottleReadBpsDeviceMap.remove(majMin);
-                cgroupBlkioThrottleWriteBpsDeviceMap.remove(majMin);
-            }
         }
 
         return majMin;
