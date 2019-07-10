@@ -173,7 +173,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             vlmData.setVolumeGroup(extractVolumeGroup(vlmData));
             vlmData.setDevicePath(null);
             vlmData.setAllocatedSize(-1);
-            vlmData.setUsableSize(-1);
+            // vlmData.setUsableSize(-1);
             vlmData.setDevicePath(null);
         }
         else

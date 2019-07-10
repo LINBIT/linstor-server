@@ -12,7 +12,6 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeIdAlloc;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
@@ -54,7 +53,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDfnData, DrbdVlmDfnData>
+public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDfnData, DrbdVlmDfnData>
 {
     private final Props stltConf;
 
@@ -256,6 +255,20 @@ class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDf
             drbdRscData.getResourceNameSuffix(),
             payload
         );
+        StorPool extMetaStorPool = getExternalMetaDiskStorPool(vlm);
+        DrbdVlmData drbdVlmData = layerDataFactory.createDrbdVlmData(
+            vlm,
+            extMetaStorPool,
+            drbdRscData,
+            drbdVlmDfnData
+        );
+
+        return drbdVlmData;
+    }
+
+    private StorPool getExternalMetaDiskStorPool(Volume vlm)
+        throws InvalidKeyException, AccessDeniedException
+    {
         String extMetaStorPoolNameStr = getExtMetaDataStorPoolName(vlm);
         StorPool extMetaStorPool = null;
         if (isExternalMetaDataPool(extMetaStorPoolNameStr))
@@ -279,21 +292,14 @@ class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDf
                 );
             }
         }
-        DrbdVlmData drbdVlmData = layerDataFactory.createDrbdVlmData(
-            vlm,
-            extMetaStorPool,
-            drbdRscData,
-            drbdVlmDfnData
-        );
-
-        return drbdVlmData;
+        return extMetaStorPool;
     }
 
     @Override
     protected void mergeVlmData(DrbdVlmData drbdVlmData, Volume vlmRef, LayerPayload payloadRef)
         throws AccessDeniedException, InvalidKeyException
     {
-        // nothing to do
+        // no-op
     }
 
     private boolean isUsingExternalMetaData(Volume vlmRef)
@@ -369,23 +375,50 @@ class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDf
         StorPool metaStorPool = null;
         if (childRef.getSuffixedResourceName().contains(DrbdRscData.SUFFIX_META))
         {
+            DrbdVlmData drbdVlmData = (DrbdVlmData) childRef.getParent().getVlmProviderObject(
+                vlmRef.getVolumeDefinition().getVolumeNumber()
+            );
+            metaStorPool = drbdVlmData.getExternalMetaDataStorPool();
+        }
+        return metaStorPool;
+    }
+
+    @Override
+    protected void resetStoragePools(RscLayerObject rscDataRef)
+        throws AccessDeniedException, SQLException, InvalidKeyException
+    {
+        DrbdRscData drbdRscData = (DrbdRscData) rscDataRef;
+        for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+        {
+            drbdVlmData.setExternalMetaDataStorPool(
+                getExternalMetaDiskStorPool(drbdVlmData.getVolume())
+            );
+        }
+    }
+
+    public StorPool getMetaStorPool(Volume vlmRef, AccessContext accCtx)
+        throws AccessDeniedException, InvalidNameException
+    {
+        StorPool metaStorPool = null;
+        try
+        {
             VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
             Resource rsc = vlmRef.getResource();
             Node node = rsc.getAssignedNode();
             PriorityProps prioProps = new PriorityProps(
-                vlmDfn.getProps(apiCtx),
-                rsc.getProps(apiCtx),
-                vlmDfn.getResourceDefinition().getProps(apiCtx),
-                node.getProps(apiCtx)
+                vlmDfn.getProps(accCtx),
+                rsc.getProps(accCtx),
+                vlmDfn.getResourceDefinition().getProps(accCtx),
+                node.getProps(accCtx)
             );
 
             String metaStorPoolStr = prioProps.getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
             if (
                 isExternalMetaDataPool(metaStorPoolStr) &&
-                rsc.getStateFlags().isUnset(apiCtx, RscFlags.DISKLESS)
+                rsc.getStateFlags().isUnset(accCtx, Resource.RscFlags.DISKLESS)
             )
             {
-                metaStorPool = node.getStorPool(apiCtx, new StorPoolName(metaStorPoolStr));
+                metaStorPool = node.getStorPool(accCtx, new StorPoolName(metaStorPoolStr));
                 if (metaStorPool == null)
                 {
                     throw new ApiRcException(
@@ -396,6 +429,10 @@ class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDf
                     );
                 }
             }
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError("Invalid hardcoded property key");
         }
         return metaStorPool;
     }

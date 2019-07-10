@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
@@ -43,6 +44,13 @@ public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
     public StateFlagsPersistence<DrbdRscData> getRscStateFlagPersistence()
     {
         return (StateFlagsPersistence<DrbdRscData>) noopStateFlagsDriver;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SingleColumnDatabaseDriver<DrbdVlmData, StorPool> getExtStorPoolDriver()
+    {
+        return (SingleColumnDatabaseDriver<DrbdVlmData, StorPool>) noopSingleColDriver;
     }
 
     @SuppressWarnings("unchecked")

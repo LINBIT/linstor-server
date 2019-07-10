@@ -174,4 +174,10 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
     {
         // nothing to do
     }
+
+    @Override
+    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, SQLException
+    {
+        // nothing to do
+    }
 }

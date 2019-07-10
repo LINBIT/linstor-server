@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
@@ -60,6 +61,13 @@ public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
     public String getZPool()
     {
         return zpool;
+    }
+
+    @Override
+    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws SQLException, AccessDeniedException
+    {
+        super.setStorPool(accCtxRef, storPoolRef);
+        zpool = null; // force Zfs(Thin)Provider to repeat the lookup using the new storage pool
     }
 
     public void setZPool(String zpoolRef)

@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.data.adapter.drbd;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
@@ -11,9 +12,11 @@ import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +27,9 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     private final Volume vlm;
     private final DrbdRscData rscData;
     private final DrbdVlmDfnData vlmDfnData;
-    private final StorPool externalMetaDataStorPool;
+
+    // persisted, serialized, ctrl and stlt
+    private final TransactionSimpleObject<DrbdVlmData, StorPool> externalMetaDataStorPool;
 
     // not persisted, serialized, ctrl and stlt
     private long allocatedSize;
@@ -47,6 +52,7 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         DrbdRscData rscDataRef,
         DrbdVlmDfnData vlmDfnDataRef,
         StorPool extMetaDataStorPoolRef,
+        DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProvider
     )
@@ -63,7 +69,11 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         checkMetaData = true;
         isMetaDataNew = false;
 
-        externalMetaDataStorPool = extMetaDataStorPoolRef;
+        externalMetaDataStorPool = transObjFactoryRef.createTransactionSimpleObject(
+            this,
+            extMetaDataStorPoolRef,
+            dbDriverRef.getExtStorPoolDriver()
+        );
 
         states = transObjFactoryRef.createTransactionList(this, new ArrayList<>(), null);
 
@@ -233,7 +243,12 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
 
     public StorPool getExternalMetaDataStorPool()
     {
-        return externalMetaDataStorPool;
+        return externalMetaDataStorPool.get();
+    }
+
+    public void setExternalMetaDataStorPool(StorPool extMetaStorPool) throws SQLException
+    {
+        externalMetaDataStorPool.set(extMetaStorPool);
     }
 
     @Override

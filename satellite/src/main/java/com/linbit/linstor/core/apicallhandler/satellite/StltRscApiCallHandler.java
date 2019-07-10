@@ -330,7 +330,7 @@ class StltRscApiCallHandler
                         otherRscRaw.getRscLayerDataPojo()
                     );
 
-                    layerRscDataMerger.restoreLayerData(remoteRsc, otherRscRaw.getRscLayerDataPojo(), true);
+                    layerRscDataMerger.mergeLayerData(remoteRsc, otherRscRaw.getRscLayerDataPojo(), true);
 
                     createdRscSet.add(new Resource.Key(remoteRsc));
                 }
@@ -530,7 +530,7 @@ class StltRscApiCallHandler
 
                         updatedRscSet.add(new Resource.Key(remoteRsc));
                     }
-                    layerRscDataMerger.restoreLayerData(remoteRsc, otherRsc.getRscLayerDataPojo(), true);
+                    layerRscDataMerger.mergeLayerData(remoteRsc, otherRsc.getRscLayerDataPojo(), true);
                 }
                 // all resources have been created, updated or deleted
 
@@ -595,7 +595,7 @@ class StltRscApiCallHandler
                 }
             }
 
-            layerRscDataMerger.restoreLayerData(localRsc, rscRawData.getLayerData(), false);
+            layerRscDataMerger.mergeLayerData(localRsc, rscRawData.getLayerData(), false);
 
             cryptHelper.decryptAllNewLuksVlmKeys(false);
 

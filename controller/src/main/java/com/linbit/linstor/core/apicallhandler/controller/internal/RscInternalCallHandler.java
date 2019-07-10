@@ -21,7 +21,7 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.apicallhandler.LayerRscDataMerger;
+import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -62,7 +62,7 @@ public class RscInternalCallHandler
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
-    private final LayerRscDataMerger layerRscDataMerger;
+    private final CtrlRscLayerDataMerger layerRscDataMerger;
     private final RetryResourcesTask retryResourceTask;
 
     @Inject
@@ -77,7 +77,7 @@ public class RscInternalCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        LayerRscDataMerger layerRscDataMergerRef,
+        CtrlRscLayerDataMerger layerRscDataMergerRef,
         RetryResourcesTask retryResourceTaskRef
     )
     {
@@ -192,7 +192,7 @@ public class RscInternalCallHandler
             ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
             Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
-            layerRscDataMerger.restoreLayerData(rsc, rscLayerDataPojoRef, false);
+            layerRscDataMerger.mergeLayerData(rsc, rscLayerDataPojoRef, false);
 
             Set<RscLayerObject> storageResources = LayerRscUtils.getRscDataByProvider(
                 rsc.getLayerData(apiCtx),

@@ -349,6 +349,9 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         Volume vlm,
         LayerPayload payloadRef
     )
-        throws AccessDeniedException, InvalidKeyException, InvalidNameException, SQLException;
+        throws AccessDeniedException, InvalidKeyException, InvalidNameException, SQLException,
+        ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException, LinStorException;
 
+    protected abstract void resetStoragePools(RscLayerObject rscDataRef)
+        throws AccessDeniedException, SQLException, InvalidKeyException;
 }

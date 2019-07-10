@@ -195,6 +195,7 @@ public class LayerDataFactory
             rscData,
             vlmDfnData,
             extMetaStorPool,
+            drbdDbDriver,
             transObjFactory,
             transMgrProvider
         );

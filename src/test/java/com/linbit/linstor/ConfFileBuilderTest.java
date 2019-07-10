@@ -473,6 +473,7 @@ public class ConfFileBuilderTest
                     rscData,
                     drbdVlmDfnData,
                     null,
+                    DRBD_LAYER_NO_OP_DRIVER,
                     transObjFactory,
                     transMgrProvider
                 );

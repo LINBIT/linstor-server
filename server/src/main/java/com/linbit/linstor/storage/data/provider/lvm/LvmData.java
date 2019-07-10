@@ -16,7 +16,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
-
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class LvmData extends AbsStorageVlmData implements LvmProviderObject
@@ -69,6 +69,13 @@ public class LvmData extends AbsStorageVlmData implements LvmProviderObject
     public @Nullable VlmDfnLayerObject getVlmDfnLayerObject()
     {
         return null; // no special VlmDfnLayerObject for LVM
+    }
+
+    @Override
+    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws SQLException, AccessDeniedException
+    {
+        super.setStorPool(accCtxRef, storPoolRef);
+        volumeGroup = null; // force LvmProvider to repeat the lookup using the new storage pool
     }
 
     public String getVolumeGroup()

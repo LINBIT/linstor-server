@@ -11,6 +11,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -34,6 +35,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.sql.SQLException;
+import java.util.HashSet;
 
 @Singleton
 class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObject, RscDfnLayerObject, VlmDfnLayerObject>
@@ -197,16 +199,38 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
 
     @Override
     protected void mergeVlmData(VlmProviderObject vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
-        throws AccessDeniedException, InvalidKeyException, InvalidNameException, SQLException
+        throws InvalidKeyException, InvalidNameException, SQLException, ValueOutOfRangeException,
+            ExhaustedPoolException, ValueInUseException, LinStorException
     {
         // if storage pool changed (i.e. because of a toggle disk) we need to update that
 
         StorPool currentStorPool = vlmDataRef.getStorPool();
 
-        StorPool newStorPool = getStorPool(vlmRef, vlmDataRef.getRscLayerObject());
+        StorageRscData storageRscData = (StorageRscData) vlmDataRef.getRscLayerObject();
+        StorPool newStorPool = layerDataHelperProvider.get().getStorPool(
+            vlmRef,
+            storageRscData
+        );
+
         if (newStorPool != null && !newStorPool.equals(currentStorPool))
         {
-            vlmDataRef.setStorPool(apiCtx, newStorPool);
+            VlmProviderObject vlmData = vlmDataRef;
+            if (!currentStorPool.getDeviceProviderKind().equals(newStorPool.getDeviceProviderKind()))
+            {
+                // if the kind changes, we basically need a new vlmData
+                vlmData = createVlmLayerData(
+                    storageRscData,
+                    vlmRef,
+                    payloadRef
+                );
+                VolumeNumber vlmNr = vlmData.getVlmNr();
+                storageRscData.remove(apiCtx, vlmNr);
+                storageRscData.getVlmLayerObjects().put(vlmNr, vlmData);
+            }
+            else
+            {
+                vlmDataRef.setStorPool(apiCtx, newStorPool);
+            }
         }
     }
 
@@ -238,5 +262,18 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
             );
         }
         return (SfVlmDfnData) vlmDfnData;
+    }
+
+    @Override
+    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, SQLException
+    {
+        // changing storage pools allows other DeviceProviders than before. Therefore we simply delete
+        // all storage volumes as they will be re-created soon
+
+        HashSet<VolumeNumber> vlmNrs = new HashSet<>(rscDataRef.getVlmLayerObjects().keySet());
+        for (VolumeNumber vlmNr : vlmNrs)
+        {
+            rscDataRef.remove(apiCtx, vlmNr);
+        }
     }
 }

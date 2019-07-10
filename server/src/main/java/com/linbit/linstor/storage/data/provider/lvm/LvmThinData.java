@@ -14,6 +14,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class LvmThinData extends LvmData
@@ -32,6 +33,13 @@ public class LvmThinData extends LvmData
     )
     {
         super(vlm, rscData, storPoolRef, dbDriverRef, DeviceProviderKind.LVM_THIN, transObjFactory, transMgrProvider);
+    }
+
+    @Override
+    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws SQLException, AccessDeniedException
+    {
+        super.setStorPool(accCtxRef, storPoolRef);
+        thinPool = null; // force LvmThinProvider to repeat the lookup using the new storage pool
     }
 
     public String getThinPool()

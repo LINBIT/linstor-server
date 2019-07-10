@@ -6,6 +6,7 @@ import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinitionRepository;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
@@ -22,6 +23,8 @@ import javax.inject.Named;
 import java.sql.SQLException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import com.google.inject.Key;
 
 public class DbDataInitializer
 {
@@ -78,6 +81,11 @@ public class DbDataInitializer
             transMgr = new ControllerTransactionMgr(dbConnPool);
             initScope.enter();
             initScope.seed(TransactionMgr.class, transMgr);
+
+            // rebuilding layerData also runs an additional check to verify the used storage pools
+            // which needs a peerContext.
+            initScope.seed(Key.get(AccessContext.class, PeerContext.class), initCtx);
+
 
             // Replacing the entire configuration requires locking out all other tasks
             //

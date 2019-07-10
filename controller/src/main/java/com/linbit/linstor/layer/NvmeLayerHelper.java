@@ -132,4 +132,10 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
     {
         // nothing to do
     }
+
+    @Override
+    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, SQLException
+    {
+        // nothing to do
+    }
 }

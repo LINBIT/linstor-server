@@ -35,6 +35,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 @Singleton
@@ -210,7 +211,7 @@ public class CtrlLayerDataHelper
     }
 
     public void ensureStackDataExists(
-        ResourceData rscDataRef,
+        ResourceData rscRef,
         List<DeviceLayerKind> layerStackRef,
         LayerPayload payload
     )
@@ -220,7 +221,7 @@ public class CtrlLayerDataHelper
             List<DeviceLayerKind> layerStack;
             if (layerStackRef == null || layerStackRef.isEmpty())
             {
-                layerStack = getLayerStack(rscDataRef);
+                layerStack = getLayerStack(rscRef);
             }
             else
             {
@@ -256,7 +257,7 @@ public class CtrlLayerDataHelper
                     {
                         RscLayerObject currentRscObj = currentData.rscObj;
                         result = layerHelper.ensureRscDataCreated(
-                            rscDataRef,
+                            rscRef,
                             payload,
                             rscNameSuffix,
                             currentRscObj
@@ -278,7 +279,7 @@ public class CtrlLayerDataHelper
                 }
             }
 
-            rscDataRef.setLayerData(apiCtx, rootObj);
+            rscRef.setLayerData(apiCtx, rootObj);
         }
         catch (AccessDeniedException exc)
         {
@@ -294,6 +295,51 @@ public class CtrlLayerDataHelper
                 ),
                 exc
             );
+        }
+        catch (SQLException exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SQL,
+                    "An sql excption occured while creating layer data"
+                ),
+                exc
+            );
+        }
+        catch (Exception exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An excption occured while creating layer data"
+                ),
+                exc
+            );
+        }
+    }
+
+    public void resetStoragePools(ResourceData rscRef)
+    {
+        try
+        {
+            LinkedList<RscLayerObject> rscDataToProcess = new LinkedList<>();
+            rscDataToProcess.add(rscRef.getLayerData(apiCtx));
+
+            while (!rscDataToProcess.isEmpty())
+            {
+                RscLayerObject rscData = rscDataToProcess.removeFirst();
+                getLayerHelperByKind(rscData.getLayerKind()).resetStoragePools(rscData);
+
+                rscDataToProcess.addAll(rscData.getChildren());
+            }
+
+            ensureStackDataExists(rscRef, null, new LayerPayload());
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
         catch (SQLException exc)
         {
@@ -345,11 +391,10 @@ public class CtrlLayerDataHelper
             Resource rsc = vlmRef.getResource();
             VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
 
-            boolean isDiskless = isDiskless(rsc);
             storPool = storPoolResolveHelper.resolveStorPool(
                 rsc,
                 vlmDfn,
-                isDiskless,
+                isDiskless(rsc) && !isDiskAddRequested(rsc),
                 isDiskRemoving(rsc)
             ).extractApiCallRc(dummyApiCallRc);
         }
@@ -426,6 +471,20 @@ public class CtrlLayerDataHelper
             }
         }
         return foundSwordfishKind;
+    }
+
+    private boolean isDiskAddRequested(Resource rsc)
+    {
+        boolean isDiskAddRequested;
+        try
+        {
+            isDiskAddRequested = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_ADD_REQUESTED);
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+        return isDiskAddRequested;
     }
 
     private boolean isDiskless(Resource rsc)

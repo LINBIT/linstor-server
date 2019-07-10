@@ -159,6 +159,12 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         " UPDATE " + TBL_LAYER_DRBD_RESOURCES +
         " SET " + FLAGS + " = ? " +
         " WHERE " + LAYER_RESOURCE_ID + " = ?";
+    private static final String UPDATE_VLM_EXT_STOR_POOL =
+        " UPDATE " + TBL_LAYER_DRBD_VOLUMES+
+        " SET " + NODE_NAME + " = ?, " +
+                  POOL_NAME + " = ? " +
+        " WHERE " + LAYER_RESOURCE_ID + " = ? AND " +
+                    VLM_NR            + " = ?";
     private static final String UPDATE_RSC_DFN_SECRET =
         " UPDATE " + TBL_LAYER_DRBD_RESOURCE_DEFINITIONS +
         " SET " + SECRET + " = ? " +
@@ -188,6 +194,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     private final Provider<TransactionMgr> transMgrProvider;
 
     private final RscFlagsDriver rscStatePersistence;
+    private final VlmExtStorPoolDriver vlmExtStorPoolDriver;
     private final RscDfnSecretDriver rscDfnSecretDriver;
     private final RscDfnTcpPortDriver rscDfnTcpPortDriver;
     private final RscDfnTransportTypeDriver rscDfnTransportTypeDriver;
@@ -218,6 +225,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         minorPool = minorPoolRef;
 
         rscStatePersistence = new RscFlagsDriver();
+        vlmExtStorPoolDriver = new VlmExtStorPoolDriver();
         rscDfnSecretDriver = new RscDfnSecretDriver();
         rscDfnTcpPortDriver = new RscDfnTcpPortDriver();
         rscDfnTransportTypeDriver = new RscDfnTransportTypeDriver();
@@ -518,6 +526,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                                 rscData,
                                 drbdVlmDfnData,
                                 extMetaDataStorPool,
+                                this,
                                 transObjFactory,
                                 transMgrProvider
                             )
@@ -697,6 +706,12 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     }
 
     @Override
+    public SingleColumnDatabaseDriver<DrbdVlmData, StorPool> getExtStorPoolDriver()
+    {
+        return vlmExtStorPoolDriver;
+    }
+
+    @Override
     public ResourceLayerIdDatabaseDriver getIdDriver()
     {
         return idDriver;
@@ -795,6 +810,54 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             {
                 GenericDbDriver.handleAccessDeniedException(accDeniedExc);
             }
+        }
+    }
+
+    private class VlmExtStorPoolDriver implements SingleColumnDatabaseDriver<DrbdVlmData, StorPool>
+    {
+        @Override
+        public void update(DrbdVlmData drbdVlmData, StorPool storPool) throws SQLException
+        {
+            String fromStr = null;
+            String toStr = null;
+            if (drbdVlmData.getExternalMetaDataStorPool() != null)
+            {
+                fromStr = drbdVlmData.getExternalMetaDataStorPool().getName().displayValue;
+            }
+            if (storPool != null)
+            {
+                toStr = storPool.getName().displayValue;
+            }
+            errorReporter.logTrace(
+                "Updating DrbdVlmData's external storage pool from [%s] to [%s] %s",
+                fromStr,
+                toStr,
+                getId(drbdVlmData)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_VLM_EXT_STOR_POOL))
+            {
+                if (storPool == null)
+                {
+                    stmt.setNull(1, Types.VARCHAR);
+                    stmt.setNull(2, Types.VARCHAR);
+                }
+                else
+                {
+                    stmt.setString(1, storPool.getNode().getName().value);
+                    stmt.setString(2, storPool.getName().value);
+                }
+
+                stmt.setLong(3, drbdVlmData.getRscLayerId());
+                stmt.setInt(4, drbdVlmData.getVlmNr().value);
+
+                stmt.executeUpdate();
+            }
+            errorReporter.logTrace(
+                "DrbdVlmData's external storage pool updated from [%s] to [%s] %s",
+                fromStr,
+                toStr,
+                getId(drbdVlmData)
+            );
         }
     }
 
