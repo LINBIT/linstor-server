@@ -95,7 +95,8 @@ public class CtrlVlmCrtApiHelper
                 peerAccCtx.get(),
                 rsc,
                 vlmDfn,
-                null // flags
+                null, // flags
+                storPoolMapRef
             );
         }
         catch (AccessDeniedException accDeniedExc)

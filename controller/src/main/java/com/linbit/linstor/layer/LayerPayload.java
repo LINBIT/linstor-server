@@ -6,6 +6,10 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.utils.Pair;
+
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 public class LayerPayload
@@ -14,11 +18,14 @@ public class LayerPayload
     DrbdRscDfnPayload drbdRscDfn;
     DrbdVlmDfnPayload drbdVlmDfn;
 
+    Map<Pair<String, Integer>, StorageVlmPayload> storagePayload;
+
     public LayerPayload()
     {
         drbdRsc = new DrbdRscPayload();
         drbdRscDfn = new DrbdRscDfnPayload();
         drbdVlmDfn = new DrbdVlmDfnPayload();
+        storagePayload = new TreeMap<>();
     }
 
     public class DrbdRscPayload
@@ -111,6 +118,31 @@ public class LayerPayload
         return drbdVlmDfn;
     }
 
+    public class StorageVlmPayload
+    {
+        String storPoolName;
+
+        public StorageVlmPayload(String storPoolNameRef)
+        {
+            storPoolName = storPoolNameRef;
+        }
+
+        public String getStorPoolName()
+        {
+            return storPoolName;
+        }
+    }
+
+    public StorageVlmPayload getStorageVlmPayload(String rscNameSuffix, int vlmNr)
+    {
+        return storagePayload.get(new Pair<>(rscNameSuffix, vlmNr));
+    }
+
+    public LayerPayload putStorageVlmPayload(String rscNameSuffix, int vlmNr, String storPoolName)
+    {
+        storagePayload.put(new Pair<>(rscNameSuffix, vlmNr), new StorageVlmPayload(storPoolName));
+        return this;
+    }
 
 
     public LayerPayload extractFrom(Props props)

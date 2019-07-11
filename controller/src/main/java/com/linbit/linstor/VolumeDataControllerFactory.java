@@ -15,6 +15,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -46,7 +48,8 @@ public class VolumeDataControllerFactory
         AccessContext accCtx,
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Volume.VlmFlags[] flags
+        Volume.VlmFlags[] flags,
+        Map<String, StorPool> storPoolMapRef
     )
         throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -76,8 +79,13 @@ public class VolumeDataControllerFactory
         ((ResourceData) rsc).putVolume(accCtx, volData);
         ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
 
-        // TODO: might be a good idea to create this object earlier
-        layerStackHelper.ensureStackDataExists((ResourceData) rsc, null, new LayerPayload());
+        LayerPayload payload = new LayerPayload();
+        int vlmNr = vlmDfn.getVolumeNumber().value;
+        for (Entry<String, StorPool> entry : storPoolMapRef.entrySet())
+        {
+            payload.putStorageVlmPayload(entry.getKey(), vlmNr, entry.getValue().getName().displayValue);
+        }
+        layerStackHelper.ensureStackDataExists((ResourceData) rsc, null, payload);
 
         return volData;
     }

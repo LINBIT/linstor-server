@@ -134,7 +134,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
         throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
     {
-        StorPool storPool = layerDataHelperProvider.get().getStorPool(vlm, rscData);
+        StorPool storPool = layerDataHelperProvider.get().getStorPool(vlm, rscData, payload);
 
         DeviceProviderKind kind = storPool.getDeviceProviderKind();
         VlmProviderObject vlmData = rscData.getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber());
@@ -209,7 +209,8 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
         StorageRscData storageRscData = (StorageRscData) vlmDataRef.getRscLayerObject();
         StorPool newStorPool = layerDataHelperProvider.get().getStorPool(
             vlmRef,
-            storageRscData
+            storageRscData,
+            payloadRef
         );
 
         if (newStorPool != null && !newStorPool.equals(currentStorPool))

@@ -10,6 +10,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
@@ -20,6 +21,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
+import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -365,17 +367,25 @@ public class CtrlLayerDataHelper
         }
     }
 
-    /*
-     * XXX: DRBD external meta data above RAID layer
-     * This method will break as soon as we allow DRBD with external meta data above a
-     * RAID layer. Who should decide what storage pool to take?
-     */
-    StorPool getStorPool(Volume vlmRef, StorageRscData rscDataRef)
+    StorPool getStorPool(Volume vlmRef, StorageRscData rscDataRef, LayerPayload payloadRef)
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
+        StorPool storPool = null;
+
+        StorageVlmPayload storageVlmPayload = payloadRef.getStorageVlmPayload(
+            rscDataRef.getResourceNameSuffix(),
+            vlmRef.getVolumeDefinition().getVolumeNumber().value
+        );
+        if (storageVlmPayload != null)
+        {
+            storPool = vlmRef.getResource().getAssignedNode().getStorPool(
+                apiCtx,
+                new StorPoolName(storageVlmPayload.storPoolName)
+            );
+        }
+
         RscLayerObject child = rscDataRef;
         RscLayerObject parent = rscDataRef.getParent();
-        StorPool storPool = null;
         while (parent != null && storPool == null)
         {
             AbsLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(parent.getLayerKind());
