@@ -629,6 +629,11 @@ public class GenericDbDriver implements DatabaseDriver
             }
         }
         scanner.close();
+        String nonTerminatedStatement = cmdBuilder.toString();
+        if (!nonTerminatedStatement.trim().isEmpty())
+        {
+            GenericDbUtils.executeStatement(con, nonTerminatedStatement);
+        }
     }
 
     public static void runSql(Connection con, BufferedReader br)
@@ -649,6 +654,11 @@ public class GenericDbDriver implements DatabaseDriver
                     GenericDbUtils.executeStatement(con, cmd);
                 }
             }
+        }
+        String nonTerminatedStatement = cmdBuilder.toString();
+        if (!nonTerminatedStatement.trim().isEmpty())
+        {
+            GenericDbUtils.executeStatement(con, nonTerminatedStatement);
         }
     }
 
