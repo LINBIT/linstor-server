@@ -29,6 +29,7 @@ import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -47,6 +48,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPool
 public class CtrlApiDataLoader
 {
     private final Provider<AccessContext> peerAccCtx;
+    private final AccessContext systemCtx;
     private final NodeRepository nodeRepository;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
@@ -56,6 +58,7 @@ public class CtrlApiDataLoader
     @Inject
     public CtrlApiDataLoader(
         @PeerContext Provider<AccessContext> peerAccCtxRef,
+        @SystemContext AccessContext sysCtxRef,
         NodeRepository nodeRepositoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
@@ -64,6 +67,7 @@ public class CtrlApiDataLoader
     )
     {
         peerAccCtx = peerAccCtxRef;
+        systemCtx = sysCtxRef;
         nodeRepository = nodeRepositoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
@@ -90,7 +94,7 @@ public class CtrlApiDataLoader
             // if node name is a short name, try to append search domain (if there is any)
             if (!ignoreSearchDomain && !nodeName.getDisplayName().contains("."))
             {
-                final Props ctrlProps = systemConfRepository.getCtrlConfForView(peerAccCtx.get());
+                final Props ctrlProps = systemConfRepository.getCtrlConfForView(systemCtx); // TODO: use user properties
                 try
                 {
                     final String domain = ctrlProps.getProp(ApiConsts.KEY_SEARCH_DOMAIN);
