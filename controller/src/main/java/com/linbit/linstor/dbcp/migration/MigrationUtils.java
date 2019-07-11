@@ -324,15 +324,18 @@ public class MigrationUtils
         return sql;
     }
 
-    public static String dropColumnConstraint(
+    public static String dropColumnConstraintForeignKey(
         DbProduct dbProductRef,
         String table,
         String constraintName
     )
     {
-        String sql;
+        String sql = null;
         switch (dbProductRef)
         {
+            case MARIADB:
+                sql = String.format("ALTER TABLE %s DROP FOREIGN KEY %s;", table, constraintName);
+                break;
             case ASE:
             case DB2:
             case DB2_I:
@@ -340,12 +343,41 @@ public class MigrationUtils
             case DERBY:
             case H2:
             case INFORMIX:
-            case MARIADB:
             case MSFT_SQLSERVER:
             case MYSQL:
             case ORACLE_RDBMS:
             case POSTGRESQL:
-                sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s", table, constraintName);
+                sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s;", table, constraintName);
+                break;
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+        }
+        return sql;
+    }
+
+    public static String dropColumnConstraint(
+        DbProduct dbProductRef,
+        String table,
+        String constraintName
+    )
+    {
+        String sql = null;
+        switch (dbProductRef)
+        {
+            case MARIADB:
+            case ASE:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case INFORMIX:
+            case MSFT_SQLSERVER:
+            case MYSQL:
+            case ORACLE_RDBMS:
+            case POSTGRESQL:
+                sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s;", table, constraintName);
                 break;
             case UNKNOWN:
             default:

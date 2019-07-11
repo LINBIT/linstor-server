@@ -55,9 +55,9 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
 
             GenericDbDriver.runSql(
                 connection,
-                "UPDATE LAYER_STORAGE_VOLUMES LSV SET LSV.NODE_NAME=" +
+                "UPDATE LAYER_STORAGE_VOLUMES LSV SET NODE_NAME=" +
                 "(" +
-                    " SELECT V.NODE_NAME FROM LINSTOR.LAYER_RESOURCE_IDS LRI, LINSTOR.VOLUMES V " +
+                    " SELECT V.NODE_NAME FROM LAYER_RESOURCE_IDS LRI, VOLUMES V " +
                     " WHERE LSV.LAYER_RESOURCE_ID = LRI.LAYER_RESOURCE_ID AND" +
                     "  V.NODE_NAME = LRI.NODE_NAME AND" +
                     "  V.RESOURCE_NAME = LRI.RESOURCE_NAME AND" +
@@ -66,9 +66,9 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
             );
             GenericDbDriver.runSql(
                 connection,
-                "UPDATE LAYER_STORAGE_VOLUMES LSV SET LSV.STOR_POOL_NAME=" +
+                "UPDATE LAYER_STORAGE_VOLUMES LSV SET STOR_POOL_NAME=" +
                 "(" +
-                    "SELECT V.STOR_POOL_NAME FROM LINSTOR.LAYER_RESOURCE_IDS LRI, LINSTOR.VOLUMES V " +
+                    "SELECT V.STOR_POOL_NAME FROM LAYER_RESOURCE_IDS LRI, VOLUMES V " +
                     " WHERE LSV.LAYER_RESOURCE_ID = LRI.LAYER_RESOURCE_ID AND " +
                     "  V.NODE_NAME = LRI.NODE_NAME AND " +
                     "  V.RESOURCE_NAME = LRI.RESOURCE_NAME AND " +
@@ -104,7 +104,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
 
             GenericDbDriver.runSql(
                 connection,
-                MigrationUtils.dropColumnConstraint(dbProduct, "VOLUMES", "FK_V_STOR_POOL_DFNS")
+                MigrationUtils.dropColumnConstraintForeignKey(dbProduct, "VOLUMES", "FK_V_STOR_POOL_DFNS")
             );
             GenericDbDriver.runSql(
                 connection,
