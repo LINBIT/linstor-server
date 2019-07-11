@@ -161,6 +161,41 @@ public class CryptSetupCommands implements Luks
         }
     }
 
+    public void deleteHeaders(String backingDeviceRef) throws StorageException
+    {
+        try
+        {
+            final ExtCmd extCommand = extCmdFactory.create();
+
+            OutputData outputData = extCommand.exec(
+                "shred",
+                "-s", "2M",
+                "-z",
+                backingDeviceRef
+            );
+            ExtCmdUtils.checkExitCode(
+                outputData,
+                StorageException::new,
+                "Failed to erase LUKS headers from device '" + backingDeviceRef + "'"
+            );
+        }
+        catch (IOException ioExc)
+        {
+            throw new StorageException(
+                "Failed to initialize dm-crypt",
+                ioExc
+            );
+        }
+        catch (ChildProcessTimeoutException exc)
+        {
+            throw new StorageException(
+                "Initializing dm-crypt device timed out",
+                exc
+            );
+        }
+    }
+
+
     public boolean hasLuksFormat(LuksVlmData vlmData) throws StorageException
     {
         boolean hasLuks = false;
