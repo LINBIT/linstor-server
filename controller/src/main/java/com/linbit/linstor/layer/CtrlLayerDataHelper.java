@@ -289,7 +289,6 @@ public class CtrlLayerDataHelper
         }
         catch (ExhaustedPoolException exc)
         {
-            errorReporter.reportError(exc);
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_POOL_EXHAUSTED_RSC_LAYER_ID,
@@ -300,7 +299,6 @@ public class CtrlLayerDataHelper
         }
         catch (SQLException exc)
         {
-            errorReporter.reportError(exc);
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_SQL,
@@ -311,7 +309,6 @@ public class CtrlLayerDataHelper
         }
         catch (Exception exc)
         {
-            errorReporter.reportError(exc);
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR,
