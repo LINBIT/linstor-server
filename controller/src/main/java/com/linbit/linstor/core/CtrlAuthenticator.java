@@ -169,7 +169,7 @@ public class CtrlAuthenticator
                 ioExc,
                 apiCtx,
                 peer,
-                "An IO exception occured while parsing the authentication response"
+                "An IO exception occurred while parsing the authentication response"
             );
            authResponseFlux = Flux.empty();
         }

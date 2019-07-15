@@ -762,7 +762,7 @@ public class GenericDbDriver implements DatabaseDriver
             catch (IOException exc)
             {
                 throw new LinStorSqlRuntimeException(
-                    "Exception occured while serializing to json array: " + obj.toString(),
+                    "Exception occurred while serializing to json array: " + obj.toString(),
                     exc
                 );
             }
@@ -787,7 +787,7 @@ public class GenericDbDriver implements DatabaseDriver
         catch (IOException | SQLException exc)
         {
             throw new LinStorSqlRuntimeException(
-                "Exception occured while deserializing from json array",
+                "Exception occurred while deserializing from json array",
                 exc
             );
         }

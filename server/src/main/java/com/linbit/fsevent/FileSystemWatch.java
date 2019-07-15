@@ -1074,7 +1074,7 @@ public class FileSystemWatch implements Runnable, SystemService
                     ioExc,
                     null,
                     null,
-                    "An IO exception occured when trying to register a file watch event"
+                    "An IO exception occurred when trying to register a file watch event"
                 );
             }
         }

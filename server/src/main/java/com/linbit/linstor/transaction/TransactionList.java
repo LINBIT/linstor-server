@@ -316,7 +316,7 @@ public class TransactionList<PARENT, VALUE>
         }
         catch (SQLException exc)
         {
-            throw new LinStorRuntimeException("An SQL exception occured while adding an element", exc);
+            throw new LinStorRuntimeException("An SQL exception occurred while adding an element", exc);
         }
     }
 
@@ -328,7 +328,7 @@ public class TransactionList<PARENT, VALUE>
         }
         catch (SQLException exc)
         {
-            throw new LinStorSqlRuntimeException("An SQL exception occured while deleting an element", exc);
+            throw new LinStorSqlRuntimeException("An SQL exception occurred while deleting an element", exc);
         }
     }
 

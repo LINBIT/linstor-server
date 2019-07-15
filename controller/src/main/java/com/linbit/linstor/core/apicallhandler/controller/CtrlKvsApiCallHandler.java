@@ -87,7 +87,7 @@ public class CtrlKvsApiCallHandler
                 "ObjProt of non-existing KeyValueStore denies access of registering the KeyValueStore in question."
             ),
             new LinStorException(
-                "An accessDeniedException occured during creation of a KSV (KeyValueStore). That means the " +
+                "An accessDeniedException occurred during creation of a KSV (KeyValueStore). That means the " +
                     "ObjectProtection (of the non-existing KVS) denied access to the KVS. " +
                     "It is possible that someone has modified the database accordingly. Please " +
                     "file a bug report otherwise.",

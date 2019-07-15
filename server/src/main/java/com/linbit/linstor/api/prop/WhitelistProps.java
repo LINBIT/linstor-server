@@ -225,7 +225,7 @@ public class WhitelistProps
         catch (IOException exc)
         {
             throw new LinStorRuntimeException(
-                "IO Exception occured while reading drbd options xml",
+                "IO Exception occurred while reading drbd options xml",
                 exc
             );
         }

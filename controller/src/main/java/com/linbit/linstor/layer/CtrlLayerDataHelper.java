@@ -302,7 +302,7 @@ public class CtrlLayerDataHelper
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_SQL,
-                    "An sql excption occured while creating layer data"
+                    "An sql exception occurred while creating layer data"
                 ),
                 exc
             );
@@ -312,7 +312,7 @@ public class CtrlLayerDataHelper
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR,
-                    "An excption occured while creating layer data"
+                    "An exception occurred while creating layer data"
                 ),
                 exc
             );
@@ -346,7 +346,7 @@ public class CtrlLayerDataHelper
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_SQL,
-                    "An sql excption occured while creating layer data"
+                    "An sql exception occurred while creating layer data"
                 ),
                 exc
             );
@@ -357,7 +357,7 @@ public class CtrlLayerDataHelper
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR,
-                    "An excption occured while creating layer data"
+                    "An exception occurred while creating layer data"
                 ),
                 exc
             );

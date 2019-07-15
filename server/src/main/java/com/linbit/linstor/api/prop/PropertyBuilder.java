@@ -96,7 +96,7 @@ public class PropertyBuilder
             {
                 throw new LinStorRuntimeException(
                     "Failed to generate whitelist for properties.",
-                    "An error occured while resolving the API property key: '" + keyPart,
+                    "An error occurred while resolving the API property key: '" + keyPart,
                     null, // cause
                     null, // correction
                     "Rule name: " + name + ".\nOrig keys: " + Arrays.toString(keyRef),

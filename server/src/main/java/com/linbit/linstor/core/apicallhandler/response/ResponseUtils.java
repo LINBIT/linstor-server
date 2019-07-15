@@ -195,7 +195,7 @@ public class ResponseUtils
     public static String getSqlMsg(String action)
     {
         return String.format(
-            "A database error occured while %s.",
+            "A database error occurred while %s.",
             action
         );
     }

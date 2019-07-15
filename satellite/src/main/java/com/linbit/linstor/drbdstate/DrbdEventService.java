@@ -146,11 +146,11 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
             catch (Exception exc)
             {
                  errorReporter.reportError(new ImplementationError(
-                    "Unknown exception occured while parsing event from DRBD. Restarting events2",
+                    "Unknown exception occurred while parsing event from DRBD. Restarting events2",
                     exc
                 ));
 
-                errorReporter.logError("Unknown exception occured while parsing event from DRBD");
+                errorReporter.logError("Unknown exception occurred while parsing event from DRBD");
                 restartEvents2Stream(RESTART_EVENTS2_STREAM_TIMEOUT);
             }
         }

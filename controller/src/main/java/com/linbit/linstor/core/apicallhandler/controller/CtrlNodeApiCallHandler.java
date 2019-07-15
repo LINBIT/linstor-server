@@ -497,7 +497,7 @@ public class CtrlNodeApiCallHandler
                     "ObjProt of non-existing Node denies access of registering the Node in question."
                 ),
                 new LinStorException(
-                    "An accessDeniedException occured during creation of a node. That means the " +
+                    "An accessDeniedException occurred during creation of a node. That means the " +
                         "ObjectProtection (of the non-existing Node) denied access to the node. " +
                         "It is possible that someone has modified the database accordingly. Please " +
                         "file a bug report otherwise.",

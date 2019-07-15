@@ -110,7 +110,7 @@ public interface ErrorReporter
         Throwable errorInfo,
         AccessContext accCtx,
         Peer client,
-        // Information about the context in which the problem occured, e.g., the API call being performed
+        // Information about the context in which the problem occurred, e.g., the API call being performed
         String contextInfo
     );
 
@@ -129,7 +129,7 @@ public interface ErrorReporter
         Throwable errorInfo,
         AccessContext accCtx,
         Peer client,
-        // Information about the context in which the problem occured, e.g., the API call being performed
+        // Information about the context in which the problem occurred, e.g., the API call being performed
         String contextInfo
     );
 
@@ -150,7 +150,7 @@ public interface ErrorReporter
         LinStorException errorInfo,
         AccessContext accCtx,
         Peer client,
-        // Information about the context in which the problem occured, e.g., the API call being performed
+        // Information about the context in which the problem occurred, e.g., the API call being performed
         String contextInfo
     );
 

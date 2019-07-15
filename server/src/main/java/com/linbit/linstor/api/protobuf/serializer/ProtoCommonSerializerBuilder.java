@@ -119,7 +119,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     protected final ErrorReporter errorReporter;
     protected final AccessContext serializerCtx;
     protected final ByteArrayOutputStream baos;
-    private boolean exceptionOccured;
+    private boolean exceptionoccurred;
 
     public ProtoCommonSerializerBuilder(
         final ErrorReporter errReporterRef,
@@ -133,7 +133,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         this.serializerCtx = serializerCtxRef;
 
         baos = new ByteArrayOutputStream();
-        exceptionOccured = false;
+        exceptionoccurred = false;
         if (msgContent != null || apiCallId != null)
 
         {
@@ -144,7 +144,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             catch (IOException exc)
             {
                 errorReporter.reportError(exc);
-                exceptionOccured = true;
+                exceptionoccurred = true;
             }
         }
     }
@@ -153,7 +153,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     public byte[] build()
     {
         byte[] ret;
-        if (exceptionOccured)
+        if (exceptionoccurred)
         {
             ret = new byte[0]; // do not send corrupted data
         }
@@ -201,7 +201,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     protected void handleIOException(IOException exc)
     {
         errorReporter.reportError(exc);
-        exceptionOccured = true;
+        exceptionoccurred = true;
     }
 
     protected void handleAccessDeniedException(AccessDeniedException accDeniedExc)
@@ -212,7 +212,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 accDeniedExc
             )
         );
-        exceptionOccured = true;
+        exceptionoccurred = true;
     }
 
     @Override

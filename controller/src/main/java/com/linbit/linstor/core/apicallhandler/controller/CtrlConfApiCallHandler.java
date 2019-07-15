@@ -420,7 +420,7 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                errorMsg = "An unknown error occured while deleting controller config prop with key '" +
+                errorMsg = "An unknown error occurred while deleting controller config prop with key '" +
                     key + "' in namespace '" + namespace + "'.";
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
             }
@@ -507,7 +507,7 @@ public class CtrlConfApiCallHandler
         {
             ResponseUtils.reportStatic(
                 exc,
-                "Unknown error occured while validating the passphrase",
+                "Unknown error occurred while validating the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
                 null,
                 apiCallRc,
@@ -663,7 +663,7 @@ public class CtrlConfApiCallHandler
         {
             ResponseUtils.reportStatic(
                 exc,
-                "An unknown exception occured while setting the passphrase",
+                "An unknown exception occurred while setting the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
                 null,
                 apiCallRc,
@@ -855,7 +855,7 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                errorMsg = "An unknown exception occured verifying the given TCP port '" + strTcpPort +
+                errorMsg = "An unknown exception occurred verifying the given TCP port '" + strTcpPort +
                     "'.";
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
             }
@@ -936,7 +936,7 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                errorMsg = "An unknown exception occured verifying the given minor number'" + strMinorNr +
+                errorMsg = "An unknown exception occurred verifying the given minor number'" + strMinorNr +
                     "'.";
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
             }

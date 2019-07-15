@@ -395,7 +395,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     errMsg = exc.getMessage();
                     if (errMsg == null)
                     {
-                        errMsg = "An unknown exception occured while processing the resource " + rscName.displayValue;
+                        errMsg = "An unknown exception occurred while processing the resource " + rscName.displayValue;
                     }
 
                     cause = null;
@@ -547,7 +547,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
                     ApiCallRcImpl.entryBuilder(
                         ApiConsts.FAIL_UNKNOWN_ERROR,
-                        "An error occured while cleaning up layer '" + layer.getName() + "'"
+                        "An error occurred while cleaning up layer '" + layer.getName() + "'"
                     )
                     .setCause(exc.getCauseText())
                     .setCorrection(exc.getCorrectionText())

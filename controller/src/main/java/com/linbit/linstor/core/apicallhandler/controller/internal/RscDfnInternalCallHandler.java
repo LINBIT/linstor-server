@@ -124,7 +124,7 @@ public class RscDfnInternalCallHandler
         catch (SQLException sqlExc)
         {
             String errorMessage = String.format(
-                "A database error occured while trying to rollback the deletion of " +
+                "A database error occurred while trying to rollback the deletion of " +
                     "resource definition '%s'.",
                 rscNameStr
             );

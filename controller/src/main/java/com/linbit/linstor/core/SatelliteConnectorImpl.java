@@ -192,7 +192,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
                         satelliteAddress.getAddress().getHostAddress(),
                         satelliteAddress.getPort()
                     ),
-                    "IOException occured. See cause for further details",
+                    "IOException occurred. See cause for further details",
                     null,
                     null,
                     ioExc

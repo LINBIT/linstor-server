@@ -127,7 +127,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
         }
         catch (SQLException exc)
         {
-            throw new LinStorSqlRuntimeException("An SQL exception occured while adding an element", exc);
+            throw new LinStorSqlRuntimeException("An SQL exception occurred while adding an element", exc);
         }
         return ret;
     }
@@ -145,7 +145,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
             }
             catch (SQLException exc)
             {
-                throw new LinStorSqlRuntimeException("An SQL exception occured while deleting an element", exc);
+                throw new LinStorSqlRuntimeException("An SQL exception occurred while deleting an element", exc);
             }
         }
         return ret;

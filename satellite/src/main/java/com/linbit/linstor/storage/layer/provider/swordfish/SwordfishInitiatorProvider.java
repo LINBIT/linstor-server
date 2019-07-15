@@ -448,7 +448,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         }
         catch (IOException ioExc)
         {
-            throw new StorageException("IO exception occured", ioExc);
+            throw new StorageException("IO exception occurred", ioExc);
         }
         return path;
     }
