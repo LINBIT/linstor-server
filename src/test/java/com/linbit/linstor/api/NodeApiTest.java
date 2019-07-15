@@ -192,6 +192,7 @@ public class NodeApiTest extends ApiTestBase
     @Test
     public void modSuccess() throws Exception
     {
+        seedDefaultPeerRule.setDefaultPeerAccessContext(BOB_ACC_CTX);
         enterScope();
         evaluateTest(
             new ModifyNodeCall(ApiConsts.MODIFIED) // nothing to do

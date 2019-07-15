@@ -258,7 +258,10 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         testScope.seed(TransactionMgr.class, transMgr);
         if (seedDefaultPeerRule.shouldSeedDefaultPeer())
         {
-            testScope.seed(Key.get(AccessContext.class, PeerContext.class), BOB_ACC_CTX);
+            testScope.seed(
+                Key.get(AccessContext.class, PeerContext.class),
+                seedDefaultPeerRule.getDefaultPeerAccessContext()
+            );
             testScope.seed(Peer.class, mockPeer);
         }
     }

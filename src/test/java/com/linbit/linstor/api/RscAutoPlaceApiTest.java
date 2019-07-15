@@ -106,6 +106,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     @Override
     public void setUp() throws Exception
     {
+        seedDefaultPeerRule.setDefaultPeerAccessContext(BOB_ACC_CTX);
         super.setUp();
         createRscDfn(TEST_RSC_NAME, TEST_TCP_PORT_NR);
         MINOR_GEN.set(MINOR_NR_MIN);

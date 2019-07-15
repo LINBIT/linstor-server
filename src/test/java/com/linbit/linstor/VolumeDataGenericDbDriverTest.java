@@ -62,6 +62,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @SuppressWarnings("checkstyle:magicnumber")
     public void setUp() throws Exception
     {
+        seedDefaultPeerRule.setDefaultPeerAccessContext(SYS_CTX);
         super.setUpAndEnterScope();
         assertEquals(TBL_VOLUMES + " table's column count has changed. Update tests accordingly!",
             8,
@@ -169,7 +170,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             res,
             volDfn,
-            new VlmFlags[] {VlmFlags.DELETE}
+            new VlmFlags[] {VlmFlags.DELETE},
+            Collections.singletonMap("", storPool)
         );
         commit();
 
@@ -256,7 +258,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             res,
             volDfn,
-            null
+            null,
+            Collections.singletonMap("", storPool)
         );
 
         // no clearCaches
@@ -401,7 +404,8 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             res,
             volDfn,
-            null
+            null,
+            Collections.emptyMap()
         );
     }
 

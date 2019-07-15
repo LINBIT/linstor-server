@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -79,6 +78,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     @Before
     public void setUp() throws Exception
     {
+        seedDefaultPeerRule.setDefaultPeerAccessContext(SYS_CTX);
         super.setUpAndEnterScope();
         assertEquals(
             "NODES table's column count has changed. Update tests accordingly!",
@@ -408,7 +408,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 res1,
                 volDfn,
-                new VlmFlags[] {}
+                new VlmFlags[] {},
+                Collections.singletonMap("", storPool1)
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
             vol1Uuid = vol1.getUuid();
@@ -430,7 +431,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 res2,
                 volDfn,
-                new VlmFlags[] {}
+                new VlmFlags[] {},
+                Collections.singletonMap("", storPool2)
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);
             vol2Uuid = vol2.getUuid();

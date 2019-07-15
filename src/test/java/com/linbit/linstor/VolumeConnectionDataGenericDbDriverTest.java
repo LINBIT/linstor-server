@@ -84,7 +84,9 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @SuppressWarnings("checkstyle:magicnumber")
     public void setUp() throws Exception
     {
+        seedDefaultPeerRule.setDefaultPeerAccessContext(SYS_CTX);
         super.setUpAndEnterScope();
+
         assertEquals(
             TBL_VOLUME_CONNECTIONS + " table's column count has changed. Update tests accordingly!",
             5,
@@ -132,13 +134,15 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX,
             resSrc,
             volDfn,
-            null
+            null,
+            Collections.singletonMap("", storPool1)
         );
         volDst = volumeDataFactory.create(
             SYS_CTX,
             resDst,
             volDfn,
-            null
+            null,
+            Collections.singletonMap("", storPool2)
         );
     }
 

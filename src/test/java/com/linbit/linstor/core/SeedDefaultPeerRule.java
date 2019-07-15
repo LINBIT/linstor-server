@@ -33,6 +33,11 @@ public class SeedDefaultPeerRule implements TestRule
         defaultPeerAccessContext = defaultPeerAccessContextRef;
     }
 
+    public AccessContext getDefaultPeerAccessContext()
+    {
+        return defaultPeerAccessContext;
+    }
+
     @Override
     public Statement apply(final Statement base, final Description description)
     {

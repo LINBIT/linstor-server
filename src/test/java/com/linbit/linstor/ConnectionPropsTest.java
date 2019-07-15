@@ -60,6 +60,7 @@ public class ConnectionPropsTest extends GenericDbBase
     @Before
     public void setUp() throws Exception
     {
+        seedDefaultPeerRule.setDefaultPeerAccessContext(SYS_CTX);
         super.setUpAndEnterScope();
 
         nodeName1 = new NodeName("Node1");
@@ -107,13 +108,15 @@ public class ConnectionPropsTest extends GenericDbBase
             SYS_CTX,
             res1,
             volDfn,
-            null
+            null,
+            Collections.singletonMap("", storPool1)
         );
         vol2 = volumeDataFactory.create(
             SYS_CTX,
             res2,
             volDfn,
-            null
+            null,
+            Collections.singletonMap("", storPool2)
         );
 
         nodeCon = nodeConnectionDataFactory.create(SYS_CTX, node1, node2);
