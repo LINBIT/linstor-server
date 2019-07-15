@@ -279,6 +279,20 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
                     apiCtx,
                     new StorPoolName(extMetaStorPoolNameStr)
                 );
+
+                if (extMetaStorPool == null)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
+                            "The " + getVlmDescriptionInline(vlm) + " specified '" + extMetaStorPoolNameStr +
+                                "' as the storage pool for external meta-data. Node " +
+                                vlm.getResource().getAssignedNode().getName() + " does not have a storage pool" +
+                                " with that name"
+                        )
+                    );
+                }
+
             }
             catch (InvalidNameException exc)
             {
