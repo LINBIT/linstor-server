@@ -42,6 +42,7 @@ public class InternalApiConsts
     public static final String API_APPLY_STOR_POOL         = "ApplyStorPool";
     public static final String API_APPLY_STOR_POOL_DELETED = "ApplyDeletedStorPool";
     public static final String API_UPDATE_FREE_CAPACITY    = "UpdateFreeCapacity";
+    public static final String API_NOTIFY_STOR_POOL_APPLIED  = "NotifyStorPoolApplied";
 
     public static final String API_CRYPT_KEY = "cryptKey";
 

@@ -301,7 +301,12 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     )
         throws StorageException, AccessDeniedException
     {
-        return FileUtils.getInfoList(extCmdFactory.create());
+        Map<String, FileInfo> infoList = FileUtils.getInfoList(extCmdFactory.create());
+        for (Entry<String, FileInfo> entry : infoList.entrySet())
+        {
+            loDevs.put(entry.getValue().loPath.toString(), entry.getKey());
+        }
+        return infoList;
     }
 
     @Override

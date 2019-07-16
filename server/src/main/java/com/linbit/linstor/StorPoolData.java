@@ -51,6 +51,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     private final TransactionSimpleObject<StorPoolData, Boolean> deleted;
 
+    /**
+     * This boolean is only asked if the deviceProviderKind is FILE or FILE_THIN. Otherwise
+     * the query is forwarded to the deviceProviderKind
+     */
+    private final TransactionSimpleObject<StorPoolData, Boolean> supportsSnapshots;
+
     private ApiCallRcImpl reports;
 
     StorPoolData(
@@ -83,6 +89,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             PropsContainer.buildPath(storPoolDef.getName(), node.getName())
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+        supportsSnapshots = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         reports = new ApiCallRcImpl();
 
@@ -218,6 +225,33 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     public void clearReports()
     {
         reports = new ApiCallRcImpl();
+    }
+
+    public void setSupportsSnapshot(AccessContext accCtx, boolean supportsSnapshotsRef)
+        throws AccessDeniedException, SQLException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        supportsSnapshots.set(supportsSnapshotsRef);
+    }
+
+    @Override
+    public boolean isSnapshotSupported(AccessContext accCtx) throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        boolean ret;
+        if (deviceProviderKind.equals(DeviceProviderKind.FILE) ||
+            deviceProviderKind.equals(DeviceProviderKind.FILE_THIN))
+        {
+            ret = supportsSnapshots.get();
+        }
+        else
+        {
+            ret = deviceProviderKind.isSnapshotSupported();
+        }
+        return supportsSnapshots.get();
     }
 
     private void checkDeleted()

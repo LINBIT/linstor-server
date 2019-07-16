@@ -28,6 +28,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -143,7 +144,9 @@ class StltStorPoolApiCallHandler
                 throw new ImplementationError("ApplyChanges called with invalid localnode", new NullPointerException());
             }
             storPool = localNode.getStorPool(apiCtx, storPoolName);
-            if (storPool != null)
+
+            boolean storPoolExists = storPool != null;
+            if (storPoolExists)
             {
                 checkUuid(storPool, storPoolRaw);
                 checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
@@ -199,22 +202,44 @@ class StltStorPoolApiCallHandler
             }
             transMgrProvider.get().commit();
 
-            errorReporter.logInfo(
-                "Storage pool '%s' created.",
-                storPoolName.displayValue
-            );
+            if (storPoolExists)
+            {
+                errorReporter.logInfo(
+                    "Storage pool '%s' updated.",
+                    storPoolName.displayValue
+                );
+            }
+            else
+            {
+                errorReporter.logInfo(
+                    "Storage pool '%s' created.",
+                    storPoolName.displayValue
+                );
+            }
 
             storPoolSet.add(storPoolName);
 
             SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool);
-            if (spaceInfo != null && !storPool.getDeviceProviderKind().usesThinProvisioning())
+            DeviceProviderKind kind = storPool.getDeviceProviderKind();
+            boolean isFileKind = kind.equals(DeviceProviderKind.FILE) || kind.equals(DeviceProviderKind.FILE_THIN);
+            if (spaceInfo != null && (!kind.usesThinProvisioning() || isFileKind))
             {
+                boolean supportsSnapshots;
+                if (isFileKind)
+                {
+                    supportsSnapshots = storPool.isSnapshotSupported(apiCtx);
+                }
+                else
+                {
+                    supportsSnapshots = kind.isSnapshotSupported();
+                }
+
                 Map<StorPool, SpaceInfo> tmpMap = new HashMap<>();
                 tmpMap.put(storPool, spaceInfo);
                 controllerPeerConnector.getControllerPeer().sendMessage(
                     ctrlStltSerializer
-                        .onewayBuilder(InternalApiConsts.API_UPDATE_FREE_CAPACITY)
-                        .updateFreeCapacities(tmpMap)
+                        .onewayBuilder(InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED)
+                        .storPoolApplied(storPool, spaceInfo, supportsSnapshots)
                         .build()
                 );
             }

@@ -34,6 +34,9 @@ import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPool
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -236,5 +239,25 @@ public class StorPoolInternalCallHandler
         }
         // else: the node is deleted, thus if it still has any storpools left, those will
         // soon be deleted as well.
+    }
+
+    public void handleStorPoolApplied(
+        String storPoolNameRef,
+        boolean supportsSnapshotsRef,
+        CapacityInfoPojo capacityInfoPojoRef
+    )
+    {
+        Peer currentPeer = peer.get();
+        StorPoolData storPool;
+        try
+        {
+            storPool = (StorPoolData) currentPeer.getNode().getStorPool(apiCtx, new StorPoolName(storPoolNameRef));
+            storPool.setSupportsSnapshot(apiCtx, supportsSnapshotsRef);
+        }
+        catch (AccessDeniedException | InvalidNameException | SQLException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        updateRealFreeSpace(currentPeer, Collections.singletonList(capacityInfoPojoRef));
     }
 }

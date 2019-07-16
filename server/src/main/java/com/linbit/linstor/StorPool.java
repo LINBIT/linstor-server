@@ -71,6 +71,8 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    boolean isSnapshotSupported(AccessContext accCtxRef) throws AccessDeniedException;
+
     StorPoolApi getApiData(
         Long totalSpace,
         Long freeSpace,
@@ -188,4 +190,5 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     {
         Map<String, VlmProviderObject> getVolumeMap();
     }
+
 }
