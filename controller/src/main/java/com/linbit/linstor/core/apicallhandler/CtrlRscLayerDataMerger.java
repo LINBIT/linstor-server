@@ -35,6 +35,7 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
@@ -285,19 +286,47 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected VlmProviderObject createZfsData(Volume arg0, StorageRscData arg1, VlmLayerDataApi arg2, StorPool arg3)
+    protected VlmProviderObject createZfsData(
+        Volume vlm,
+        StorageRscData storRscData,
+        VlmLayerDataApi vlmDataApi,
+        StorPool StorPool
+    )
         throws SQLException
     {
         throw new ImplementationError("Received unknown zfs storage volume from satellite");
     }
 
     @Override
-    protected void mergeZfsData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws SQLException
+    protected void mergeZfsData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef)
+        throws SQLException
     {
         ZfsData zfsData = (ZfsData) vlmDataRef;
         zfsData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         zfsData.setDevicePath(vlmPojoRef.getDevicePath());
         zfsData.setUsableSize(vlmPojoRef.getUsableSize());
+    }
+
+    @Override
+    protected VlmProviderObject createFileData(
+        Volume vlm,
+        StorageRscData storRsc,
+        VlmLayerDataApi vlmDataApi,
+        StorPool storPool
+    )
+        throws SQLException
+    {
+        throw new ImplementationError("Received unknown file storage volume from satellite");
+    }
+
+    @Override
+    protected void mergeFileData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef)
+        throws SQLException
+    {
+        FileData fileData = (FileData) vlmDataRef;
+        fileData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
+        fileData.setDevicePath(vlmPojoRef.getDevicePath());
+        fileData.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override

@@ -62,6 +62,11 @@ public class StorageConstants
     public static final int CONFIG_SF_RETRY_COUNT_DEFAULT = 5;
     public static final long CONFIG_SF_RETRY_DELAY_DEFAULT = 2000L;
 
+    /*
+     * FILE
+     */
+    public static final String CONFIG_FILE_DIRECTORY_KEY = ApiConsts.KEY_STOR_POOL_FILE_DIRECTORY;
+
     static
     {
         KEY_DESCRIPTION.put(CONFIG_LVM_VOLUME_GROUP_KEY, "The volume group the driver should use");

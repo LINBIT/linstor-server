@@ -11,12 +11,16 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.LvmUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 
 public class StorageConfigReader
 {
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
-
 
     public static void checkVolumeGroupEntry(ExtCmd extCmd, Props props)
         throws StorageException
@@ -42,7 +46,7 @@ public class StorageConfigReader
                     Integer.MAX_VALUE,
                     VALID_CHARS,
                     VALID_INNER_CHARS
-                    );
+                );
             }
             catch (InvalidNameException invalidNameExc)
             {
@@ -53,7 +57,7 @@ public class StorageConfigReader
                     cause,
                     "Specify a valid and existing volume group name",
                     null
-                    );
+                );
             }
 
             LvmUtils.checkVgExists(extCmd, volumeGroup); // throws an exception
@@ -99,6 +103,42 @@ public class StorageConfigReader
         catch (InvalidKeyException exc)
         {
             throw new ImplementationError("Invalid hardcoded storPool prop key", exc);
+        }
+    }
+
+    public static void checkFileStorageDirectoryEntry(Props propsRef)
+        throws StorageException
+    {
+        Path path = null;
+        try
+        {
+            String dirStr = propsRef.getProp(StorageConstants.CONFIG_FILE_DIRECTORY_KEY);
+            if (dirStr == null)
+            {
+                throw new StorageException("Mandatory property for storage directory missing");
+            }
+            path = Paths.get(dirStr);
+            if (!Files.exists(path))
+            {
+                if (!Files.exists(path.getParent()))
+                {
+                    throw new StorageException("Parent directory of '" + path + "' does not exist. ");
+                }
+                Files.createDirectory(path);
+            }
+            if (!path.isAbsolute())
+            {
+                throw new StorageException("Path for storage directory (FILE provider) has to be an absolute path.\n" +
+                    path);
+            }
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError("Invalid hardcoded storPool prop key", exc);
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException("IOException occurred when creating directory '" + path + "'", exc);
         }
     }
 }

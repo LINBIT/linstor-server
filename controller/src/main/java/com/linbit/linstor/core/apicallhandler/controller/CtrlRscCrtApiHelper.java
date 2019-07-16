@@ -256,10 +256,15 @@ public class CtrlRscCrtApiHelper
                             case ZFS:
                                 hasFatStorPool = true;
                                 break;
+                            case FILE:
+                                // TODO: introduce storage pool specific distinction about this
+                                hasFatStorPool = true;
+                                break;
                             case LVM_THIN:
                                 granularity = "65536";
                                 // fall-through
-                            case ZFS_THIN:
+                            case ZFS_THIN: // fall-through
+                            case FILE_THIN:
                                 hasThinStorPool = true;
                                 break;
                             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:

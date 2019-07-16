@@ -1,5 +1,7 @@
 package com.linbit.linstor.storage.kinds;
 
+import com.linbit.linstor.storage.FileDriverKind;
+import com.linbit.linstor.storage.FileThinDriverKind;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
@@ -72,6 +74,22 @@ public enum DeviceProviderKind
         false,
         new SwordfishInitiatorDriverKind()
     // no startup verifications
+    ),
+    FILE(
+        false,
+        false,
+        true,
+        true,
+        false,
+        new FileDriverKind()
+    ),
+    FILE_THIN(
+        true,
+        false,
+        true,
+        true,
+        true,
+        new FileThinDriverKind()
     ),
     FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER(
         false,

@@ -13,6 +13,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
@@ -289,6 +290,18 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
             case ZFS: // fall-trough
             case ZFS_THIN:
                 vlmProviderObj = new ZfsData(
+                    vlmRef,
+                    rscDataRef,
+                    vlmInfo.kind,
+                    vlmInfo.storPool,
+                    this,
+                    transObjFactory,
+                    transMgrProvider
+                );
+                break;
+            case FILE: // fall-through
+            case FILE_THIN:
+                vlmProviderObj = new FileData(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.kind,

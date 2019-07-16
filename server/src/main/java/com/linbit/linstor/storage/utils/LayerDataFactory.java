@@ -28,6 +28,7 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
@@ -445,5 +446,21 @@ public class LayerDataFactory
         );
         storageDbDriver.persist(zfsData);
         return zfsData;
+    }
+
+    public FileData createFileData(Volume vlm, StorageRscData rscData, DeviceProviderKind kind, StorPool storPool)
+        throws SQLException
+    {
+        FileData fileData = new FileData(
+            vlm,
+            rscData,
+            kind,
+            storPool,
+            storageDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+        storageDbDriver.persist(fileData);
+        return fileData;
     }
 }

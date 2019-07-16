@@ -14,4 +14,6 @@ enum ProviderType
     ZFS_THIN = 5;
     SWORDFISH_TARGET = 6;
     SWORDFISH_INITIATOR = 7;
+    FILE = 8;
+    FILE_THIN = 9;
 }

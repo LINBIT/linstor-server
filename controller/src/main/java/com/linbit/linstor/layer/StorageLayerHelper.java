@@ -188,6 +188,10 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
                 case ZFS_THIN:
                     vlmData = layerDataFactory.createZfsData(vlm, rscData, kind, storPool);
                     break;
+                case FILE: // fall-through
+                case FILE_THIN:
+                    vlmData = layerDataFactory.createFileData(vlm, rscData, kind, storPool);
+                    break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 default:
                     throw new ImplementationError("Unexpected kind: " + kind);

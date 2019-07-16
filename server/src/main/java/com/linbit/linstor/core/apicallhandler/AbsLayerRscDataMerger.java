@@ -34,6 +34,7 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
@@ -378,6 +379,21 @@ public abstract class AbsLayerRscDataMerger
                     mergeZfsData(vlmPojo, vlmData);
                 }
                 break;
+            case FILE: // fall-through
+            case FILE_THIN:
+                if (vlmData == null || !(vlmData instanceof FileData))
+                {
+                    if (vlmData != null)
+                    {
+                        removeStorageVlm(storRscData, vlmNr);
+                    }
+                    vlmData = createFileData(vlm, storRscData, vlmPojo, storPool);
+                }
+                else
+                {
+                    mergeFileData(vlmPojo, vlmData);
+                }
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unexpected DeviceProviderKind: " + vlmPojo.getProviderKind());
@@ -587,6 +603,16 @@ public abstract class AbsLayerRscDataMerger
         throws SQLException;
 
     protected abstract void mergeZfsData(VlmLayerDataApi vlmPojo, VlmProviderObject vlmData) throws SQLException;
+
+    protected abstract VlmProviderObject createFileData(
+        Volume vlm,
+        StorageRscData storRscData,
+        VlmLayerDataApi vlmPojo,
+        StorPool storPool
+    )
+        throws SQLException;
+
+    protected abstract void mergeFileData(VlmLayerDataApi vlmPojo, VlmProviderObject vlmData) throws SQLException;
 
     protected abstract void setStorPool(VlmProviderObject vlmDataRef, StorPool storPoolRef)
         throws AccessDeniedException, SQLException;

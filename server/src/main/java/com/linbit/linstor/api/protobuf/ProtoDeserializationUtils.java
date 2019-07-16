@@ -123,6 +123,12 @@ public class ProtoDeserializationUtils
                 case ZFS_THIN:
                     kind = DeviceProviderKind.ZFS_THIN;
                     break;
+                case FILE:
+                    kind = DeviceProviderKind.FILE;
+                    break;
+                case FILE_THIN:
+                    kind = DeviceProviderKind.FILE_THIN;
+                    break;
                 case UNKNOWN_PROVIDER: // fall-through
                 default:
                     throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);

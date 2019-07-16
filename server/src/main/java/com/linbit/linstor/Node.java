@@ -139,7 +139,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
                 DeviceProviderKind.LVM_THIN,
                 DeviceProviderKind.SWORDFISH_INITIATOR,
                 DeviceProviderKind.ZFS,
-                DeviceProviderKind.ZFS_THIN
+                DeviceProviderKind.ZFS_THIN,
+                DeviceProviderKind.FILE,
+                DeviceProviderKind.FILE_THIN
             )
         ),
         COMBINED(
@@ -150,7 +152,9 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
                 DeviceProviderKind.LVM_THIN,
                 DeviceProviderKind.SWORDFISH_INITIATOR,
                 DeviceProviderKind.ZFS,
-                DeviceProviderKind.ZFS_THIN
+                DeviceProviderKind.ZFS_THIN,
+                DeviceProviderKind.FILE,
+                DeviceProviderKind.FILE_THIN
             )
         ),
         AUXILIARY(4, Collections.emptyList()),

@@ -218,6 +218,8 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             case LVM_THIN:
             case ZFS:
             case ZFS_THIN:
+            case FILE:
+            case FILE_THIN:
             default:
                 throw new LinStorSqlRuntimeException("Invalid DeviceProviderKind: '" + kindRef + "'");
         }

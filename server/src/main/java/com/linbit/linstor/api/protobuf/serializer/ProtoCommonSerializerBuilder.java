@@ -69,6 +69,8 @@ import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.DisklessVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.FileThinVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.FileVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
@@ -815,6 +817,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case ZFS_THIN:
                 type = ProviderType.ZFS_THIN;
                 break;
+            case FILE:
+                type = ProviderType.FILE;
+                break;
+            case FILE_THIN:
+                type = ProviderType.FILE_THIN;
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unknown storage driver: " + deviceProviderKindRef);
@@ -1313,6 +1321,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                                 .build()
                             );
                     }
+                    break;
+                case FILE:
+                    builder.setFile(FileVlm.newBuilder().build());
+                    break;
+                case FILE_THIN:
+                    builder.setFileThin(FileThinVlm.newBuilder().build());
                     break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 default:

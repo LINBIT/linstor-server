@@ -373,6 +373,12 @@ public class LinstorParsingUtils
             case "SWORDFISH_INITIATOR":
                 kind = DeviceProviderKind.SWORDFISH_INITIATOR;
                 break;
+            case "FILE":
+                kind = DeviceProviderKind.FILE;
+                break;
+            case "FILE_THIN":
+                kind = DeviceProviderKind.FILE_THIN;
+                break;
             default:
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

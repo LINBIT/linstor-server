@@ -335,8 +335,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             String storageName = getStorageName(vlmData);
             String lvId = asLvIdentifier(vlmData);
 
+            // some providers cannot construct a device path in the next call and therefore return null here
             String devicePath = getDevicePath(storageName, lvId);
+
+            // those providers will most likely also skip setting the (null) devicePath.
             setDevicePath(vlmData, devicePath);
+
+            // however, those providers have to have a different method in getting the device path which means
+            // the correct device path was already set since the "createLvImpl" or "restoreSnapshot" call.
+            devicePath = vlmData.getDevicePath();
 
             StorPool storPool = vlmData.getStorPool();
             long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
