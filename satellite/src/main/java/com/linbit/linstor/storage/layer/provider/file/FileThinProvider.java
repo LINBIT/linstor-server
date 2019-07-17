@@ -12,6 +12,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.FileCommands;
+import com.linbit.linstor.storage.utils.LosetupCommands;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -59,6 +60,23 @@ public class FileThinProvider extends FileProvider
             fileData.getExepectedSize()
         );
         createLoopDevice(fileData, backingFile);
+    }
+
+
+    @Override
+    protected void resizeLvImpl(FileData fileData)
+        throws StorageException, AccessDeniedException
+    {
+        // no special command for resize, just "re-allocate" to the needed size
+        FileCommands.createThin(
+            extCmdFactory.create(),
+            fileData.getStorageDirectory().resolve(fileData.getIdentifier()),
+            fileData.getExepectedSize()
+        );
+        LosetupCommands.resize(
+            extCmdFactory.create(),
+            fileData.getDevicePath()
+        );
     }
 
 }

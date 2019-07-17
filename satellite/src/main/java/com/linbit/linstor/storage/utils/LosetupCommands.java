@@ -55,4 +55,17 @@ public class LosetupCommands
             "Failed to detach loop back device '" + devPath + "'"
         );
     }
+
+    public static OutputData resize(ExtCmd extCmd, String loopDevicePath) throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "losetup",
+                "-c", loopDevicePath
+            },
+            "Failed to resize loop back device",
+            "Failed to resize loop back device '" + loopDevicePath + "'"
+        );
+    }
 }

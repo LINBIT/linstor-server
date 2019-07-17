@@ -240,10 +240,19 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     }
 
     @Override
-    protected void resizeLvImpl(FileData vlmData)
+    protected void resizeLvImpl(FileData fileData)
         throws StorageException, AccessDeniedException
     {
-        // no-op
+        // no special command for resize, just "re-allocate" to the needed size
+        FileCommands.createFat(
+            extCmdFactory.create(),
+            fileData.getStorageDirectory().resolve(fileData.getIdentifier()),
+            fileData.getExepectedSize()
+        );
+        LosetupCommands.resize(
+            extCmdFactory.create(),
+            fileData.getDevicePath()
+        );
     }
 
     @Override
