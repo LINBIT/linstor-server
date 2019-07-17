@@ -260,7 +260,6 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         throws StorageException, SQLException
     {
         String devicePath = fileData.getDevicePath();
-        LosetupCommands.detach(extCmdFactory.create(), devicePath);
 
         Path storageDirectory = fileData.getStorageDirectory();
         // just make sure to not colide with any other ongoing wipe-lv-name
@@ -277,6 +276,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
             {
                 try
                 {
+                    LosetupCommands.detach(extCmdFactory.create(), devicePath);
                     FileCommands.delete(
                         storageDirectory,
                         newId
@@ -286,6 +286,10 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
                 catch (SQLException exc)
                 {
                     throw new ImplementationError(exc);
+                }
+                catch (StorageException exc)
+                {
+                    errorReporter.reportError(exc);
                 }
             }
         );
@@ -460,7 +464,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
             {
                 createLoopDevice(fileData, backingFile);
                 infoList.put(
-                    fileData.getDevicePath(),
+                    backingFile.toString(),
                     new FileInfo(
                         Paths.get(fileData.getDevicePath()),
                         backingFile
