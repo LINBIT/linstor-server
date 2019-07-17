@@ -94,6 +94,11 @@ public class ApiCallRcImpl implements ApiCallRc
         return entryBuilder;
     }
 
+    public static ApiCallRcImpl singleApiCallRc(long returnCode, String message)
+    {
+        return singletonApiCallRc(simpleEntry(returnCode, message));
+    }
+
     public static ApiCallRcEntry simpleEntry(long returnCodeRef, String messageRef)
     {
         return entryBuilder(returnCodeRef, messageRef).build();
