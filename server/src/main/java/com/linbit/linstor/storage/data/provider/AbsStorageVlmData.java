@@ -235,4 +235,12 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
     {
         return vlm.compareTo(other.vlm);
     }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " [" + vlm.toString() +
+            ", RscNameSuffix: " + rscData.getResourceNameSuffix() +
+            "]";
+    }
 }

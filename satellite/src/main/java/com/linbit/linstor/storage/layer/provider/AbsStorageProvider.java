@@ -29,6 +29,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -56,7 +57,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObject> implements DeviceProvider
+public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmData> implements DeviceProvider
 {
     private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 500;
     public static final long SIZE_OF_NOT_FOUND_STOR_POOL = -1;
@@ -142,7 +143,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
     {
         clearCache(false);
 
-        List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) rawVlmDataList;
+        Object intentionalTypeEreasure = rawVlmDataList;
+        List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) intentionalTypeEreasure;
 
         updateVolumeAndSnapshotStates(snapVlms, vlmDataList);
 
@@ -170,7 +172,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         {
             throw new ImplementationError("Process was called without previous prepare()");
         }
-        List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) rawVlmDataList;
+        Object intentionalTypeEreasure = rawVlmDataList;
+        List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) intentionalTypeEreasure;
 
         Map<Boolean, List<SnapshotVolume>> groupedSnapshotVolumesByDeletingFlag = snapshotVlms.stream()
             .collect(
@@ -350,6 +353,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
             waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
 
             long allocatedSize = getAllocatedSize(vlmData);
+            long minSize = kind.usesThinProvisioning() ? 0 : vlmData.getExepectedSize();
+            if (allocatedSize < minSize)
+            {
+                throw new StorageException("Size of create volume is too low. Expected " +
+                    minSize + ". Actual: " + allocatedSize + ". Volume: " + vlmData);
+            }
+
             setAllocatedSize(vlmData, allocatedSize);
             setUsableSize(vlmData, allocatedSize);
 
