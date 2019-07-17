@@ -254,6 +254,14 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         return supportsSnapshots.get();
     }
 
+    public boolean isSnapshotSupportedInitialized(AccessContext accCtx) throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return supportsSnapshots.get() != null;
+    }
+
     private void checkDeleted()
     {
         if (deleted.get())

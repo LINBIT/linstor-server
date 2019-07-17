@@ -76,7 +76,7 @@ public enum DeviceProviderKind
     // no startup verifications
     ),
     FILE(
-        false,
+        true,
         false,
         true,
         true,

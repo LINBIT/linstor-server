@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -35,22 +36,29 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 
-import com.google.common.io.Files;
-
 @Singleton
 public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 {
-    private static final String FORMAT_RSC_TO_ID = "%s%s_%05d.img";
+    private static final String DUMMY_LINSTOR_TEST_SOURCE = "LinstorSnapshotTestSource.img";
+    private static final String DUMMY_LINSTOR_TEST_TARGET = "LinstorSnapshotTestTarget.img";
+
+    private static final String FORMAT_VLM_TO_ID_BASE = "%s%s_%05d";
+    private static final String FORMAT_VLM_TO_ID = FORMAT_VLM_TO_ID_BASE + ".img";
+    private static final String FORMAT_SNAP_VLM_TO_ID = FORMAT_VLM_TO_ID_BASE + "_%s.img";
+
     private static final String FORMAT_ID_WIPE_IN_PROGRESS = "%s_linstor_wiping_in_progress";
 
     private static final String LODEV_FILE = "/var/lib/linstor/losetup.dmp";
@@ -167,7 +175,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
      * Might be overridden (extended) by future *Providers
      */
     protected void updateInfo(FileData fileData, FileInfo info)
-        throws SQLException
+        throws SQLException, StorageException
     {
         fileData.setIdentifier(asLvIdentifier(fileData));
         if (info == null)
@@ -189,7 +197,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         }
     }
 
-    protected Path extractStorageDirectory(FileData fileData)
+    protected Path extractStorageDirectory(FileData fileData) throws StorageException
     {
         return getStorageDirectory(fileData.getStorPool());
     }
@@ -209,22 +217,17 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         throws StorageException, AccessDeniedException, SQLException
     {
         Path backingFile = fileData.getStorageDirectory().resolve(fileData.getIdentifier());
-        if (fileData.getProviderKind().usesThinProvisioning())
-        {
-            FileCommands.createThin(
-                extCmdFactory.create(),
-                backingFile,
-                fileData.getExepectedSize()
-            );
-        }
-        else
-        {
-            FileCommands.createFat(
-                extCmdFactory.create(),
-                backingFile,
-                fileData.getExepectedSize()
-            );
-        }
+        FileCommands.createFat(
+            extCmdFactory.create(),
+            backingFile,
+            fileData.getExepectedSize()
+        );
+        createLoopDevice(fileData, backingFile);
+    }
+
+    protected void createLoopDevice(FileData fileData, Path backingFile)
+        throws StorageException, SQLException
+    {
         String loDev = new String(
             LosetupCommands.attach(
                 extCmdFactory.create(),
@@ -281,6 +284,126 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     }
 
     @Override
+    protected void createSnapshot(FileData fileData, SnapshotVolume snapVlmRef)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        Path storageDirectory = fileData.getStorageDirectory();
+        FileCommands.createSnapshot(
+            extCmdFactory.create(),
+            storageDirectory.resolve(fileData.getIdentifier()),
+            storageDirectory.resolve(
+                asFullQualifiedPath(
+                    fileData.getRscLayerObject().getResourceNameSuffix(),
+                    snapVlmRef
+                )
+            )
+        );
+    }
+
+    @Override
+    protected void restoreSnapshot(String sourceLvIdRef, String sourceSnapNameRef, FileData fileData)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        // sourceLvIdRef is something like "rsc_00000.img"
+        // sourceSnapNameRef is something like "snap"
+        // we need to concatenate sourceLvIdRef and sourceSnapNameRef with the result of
+        // something like "rsc_00000_snap.img"
+
+        String snapId = sourceLvIdRef
+            .substring(0, sourceLvIdRef.length() - 4) // cuts the trailing ".img"
+            + "_" + sourceSnapNameRef + ".img";
+
+        Path storageDirectory = fileData.getStorageDirectory();
+        Path devPath = storageDirectory.resolve(fileData.getIdentifier());
+        FileCommands.copy(
+            extCmdFactory.create(),
+            storageDirectory.resolve(
+               snapId
+            ),
+            devPath
+        );
+        createLoopDevice(fileData, devPath);
+    }
+
+    @Override
+    protected void deleteSnapshot(String rscNameSuffixRef, SnapshotVolume snapVlmRef)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        FileCommands.delete(
+            getStorageDirectory(snapVlmRef.getStorPool(storDriverAccCtx)),
+            asSnapshotFileName(
+                snapVlmRef.getResourceName().displayValue,
+                rscNameSuffixRef,
+                snapVlmRef.getVolumeNumber().value,
+                snapVlmRef.getSnapshotName().displayValue
+            )
+        );
+    }
+
+    @Override
+    protected boolean snapshotExists(SnapshotVolume snapVlmRef)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        return Files.exists(asFullQualifiedPath("", snapVlmRef));
+    }
+
+    @Override
+    protected void rollbackImpl(FileData fileData, String rollbackTargetSnapshotNameRef)
+        throws StorageException, AccessDeniedException, SQLException
+    {
+        Path storageDirectory = fileData.getStorageDirectory();
+        Path snapPath = getSnapVlmPath(
+            fileData.getStorageDirectory(),
+            fileData.getRscLayerObject().getResourceName().displayValue,
+            fileData.getRscLayerObject().getResourceNameSuffix(),
+            fileData.getVlmNr().value,
+            rollbackTargetSnapshotNameRef
+        );
+        // do not use java.nio.file.Files.copy ! that seems to do something different (and does not work
+        // for this method :) )
+        FileCommands.copy(
+            extCmdFactory.create(),
+            snapPath,
+            storageDirectory.resolve(fileData.getIdentifier())
+        );
+    }
+
+    private Path getSnapVlmPath (
+        Path storageDirectoryRef,
+        String rscName,
+        String rscSuffix,
+        int vlmNr,
+        String snapName
+    )
+    {
+        return storageDirectoryRef.resolve(asSnapshotFileName(rscName, rscSuffix, vlmNr, snapName));
+    }
+
+    private String asSnapshotFileName(String rscName, String rscSuffix, int vlmNr, String snapName)
+    {
+        return String.format(
+            FORMAT_SNAP_VLM_TO_ID,
+            rscName,
+            rscSuffix,
+            vlmNr,
+            snapName
+        );
+    }
+
+    private Path asFullQualifiedPath(String rscNameSuffix, SnapshotVolume snapVlm)
+        throws AccessDeniedException, StorageException
+    {
+        StorPool storPool = snapVlm.getStorPool(storDriverAccCtx);
+        return getSnapVlmPath(
+            getStorageDirectory(storPool),
+            snapVlm.getResourceName().displayValue,
+            rscNameSuffix,
+            snapVlm.getVolumeNumber().value,
+            snapVlm.getSnapshotName().displayValue
+        );
+    }
+
+    @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
         Map<String, Long> freeSizes = FileUtils.getDirFreeSizes(changedStoragePoolStrings);
@@ -299,13 +422,44 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         List<FileData> fileDataList,
         List<SnapshotVolume> snapVlms
     )
-        throws StorageException, AccessDeniedException
+        throws StorageException, AccessDeniedException, SQLException
     {
+        // It is possible that the backing file still exists for a logical volume, but the loop-device does not
+        Map<String, FileData> backingFileToFileDataMap = new HashMap<>();
+        for (FileData fileData : fileDataList)
+        {
+            backingFileToFileDataMap.put(
+                getFullQualifiedIdentifier(fileData),
+                fileData
+            );
+        }
+
         Map<String, FileInfo> infoList = FileUtils.getInfoList(extCmdFactory.create());
         for (Entry<String, FileInfo> entry : infoList.entrySet())
         {
-            loDevs.put(entry.getValue().loPath.toString(), entry.getKey());
+            String backingFile = entry.getKey();
+            backingFileToFileDataMap.remove(backingFile);
+            loDevs.put(entry.getValue().loPath.toString(), backingFile);
         }
+
+        for (Entry<String, FileData> entry : backingFileToFileDataMap.entrySet())
+        {
+            FileData fileData = entry.getValue();
+            Path backingFile = Paths.get(entry.getKey());
+
+            if (Files.exists(backingFile))
+            {
+                createLoopDevice(fileData, backingFile);
+                infoList.put(
+                    fileData.getDevicePath(),
+                    new FileInfo(
+                        Paths.get(fileData.getDevicePath()),
+                        backingFile
+                    )
+                );
+            }
+        }
+
         return infoList;
     }
 
@@ -320,7 +474,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     protected String asLvIdentifier(ResourceName resourceName, String rscNameSuffix, VolumeNumber volumeNumber)
     {
         return String.format(
-            FORMAT_RSC_TO_ID,
+            FORMAT_VLM_TO_ID,
             resourceName.displayValue,
             rscNameSuffix,
             volumeNumber.value
@@ -328,12 +482,12 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     }
 
     @Override
-    protected String getStorageName(StorPool storPoolRef)
+    protected String getStorageName(StorPool storPoolRef) throws StorageException
     {
         return getStorageDirectory(storPoolRef).toString();
     }
 
-    protected Path getStorageDirectory(StorPool storPool)
+    protected Path getStorageDirectory(StorPool storPool) throws StorageException
     {
         Path dir;
         try
@@ -348,7 +502,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
             }
             else
             {
-                dir = null;
+                throw new StorageException("Unset storage directory for " + storPool);
             }
         }
         catch (InvalidKeyException | AccessDeniedException exc)
@@ -367,23 +521,13 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     @Override
     public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        Path directoryName = getStorageDirectory(storPool);
-        if (directoryName == null)
-        {
-            throw new StorageException("Unset storage directory for " + storPool);
-        }
-        return directoryName.toFile().getTotalSpace();
+        return FileUtils.getPoolCapacity(extCmdFactory.create(), getStorageDirectory(storPool));
     }
 
     @Override
     public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        Path directoryName = getStorageDirectory(storPool);
-        if (directoryName == null)
-        {
-            throw new StorageException("Unset storage directory for " + storPool);
-        }
-        return directoryName.toFile().getFreeSpace();
+        return FileUtils.getFreeSpace(extCmdFactory.create(), getStorageDirectory(storPool));
     }
 
     @Override
@@ -393,6 +537,56 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
             storPool.getProps(storDriverAccCtx)
         );
         StorageConfigReader.checkFileStorageDirectoryEntry(props);
+
+        // try to create a dummy snapshot to verify if we can
+        StorPoolData storPoolData = (StorPoolData) storPool;
+        if (!storPoolData.isSnapshotSupportedInitialized(storDriverAccCtx))
+        {
+            try
+            {
+                String dirStr = props.getProp(StorageConstants.CONFIG_FILE_DIRECTORY_KEY);
+                Path storageDirectory = Paths.get(dirStr);
+                Path dummyVlmPath = storageDirectory.resolve(DUMMY_LINSTOR_TEST_SOURCE);
+                Path dummyTargetPath = storageDirectory.resolve(Paths.get(DUMMY_LINSTOR_TEST_TARGET));
+                try
+                {
+                    dummyVlmPath.toFile().createNewFile();
+                }
+                catch (IOException exc)
+                {
+                    throw new StorageException("Cannot create dummy file in given storage directory '" + dummyVlmPath + "'", exc);
+                }
+
+                try
+                {
+                    FileCommands.createSnapshot(
+                        extCmdFactory.create(),
+                        dummyVlmPath,
+                        dummyTargetPath
+                    );
+                    storPoolData.setSupportsSnapshot(storDriverAccCtx, true);
+                }
+                catch (StorageException ignored)
+                {
+                    storPoolData.setSupportsSnapshot(storDriverAccCtx, false);
+                }
+                finally
+                {
+                    if (Files.exists(dummyTargetPath))
+                    {
+                        dummyTargetPath.toFile().delete();
+                    }
+                    if (Files.exists(dummyVlmPath))
+                    {
+                        dummyVlmPath.toFile().delete();
+                    }
+                }
+            }
+            catch (SQLException| InvalidKeyException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
     }
 
     @Override
@@ -420,7 +614,11 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 
         try
         {
-            Files.move(tmp, new File(LODEV_FILE));
+            Files.move(
+                tmp.toPath(),
+                new File(LODEV_FILE).toPath(),
+                StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+            );
         }
         catch (IOException exc)
         {

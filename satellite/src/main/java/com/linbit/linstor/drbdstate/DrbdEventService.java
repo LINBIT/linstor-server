@@ -169,7 +169,6 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
         {
             errorReporter.logTrace("Restarting DRBD 'events2' in " + timeout + "ms");
         }
-new Exception().printStackTrace();
         try
         {
             if (timeout > 0)

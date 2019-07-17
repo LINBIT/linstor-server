@@ -1,5 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
@@ -28,14 +30,18 @@ public class FileUtils
         public final Path loPath;
         public final long size;
 
-        FileInfo(Path loPathRef, Path backingPathRef)
+        public FileInfo(Path loPathRef, Path backingPathRef)
         {
             loPath = loPathRef;
 
             directory = backingPathRef.getParent();
             identifier = backingPathRef.getFileName().toString();
 
-            size = backingPathRef.toFile().length();
+            size = SizeConv.convert(
+                backingPathRef.toFile().length(),
+                SizeUnit.UNIT_B,
+                SizeUnit.UNIT_KiB
+            );
         }
     }
 
@@ -58,8 +64,8 @@ public class FileUtils
                         new FileInfo(
                             Paths.get(data[LosetupCommands.LOSETUP_LIST_DEV_NAME_IDX]),
                             Paths.get(data[LosetupCommands.LOSETUP_LIST_BACK_FILE_IDX])
-                            )
-                        );
+                        )
+                    );
                 }
             }
         }
@@ -82,5 +88,27 @@ public class FileUtils
             }
         }
         return ret;
+    }
+
+
+    public static long getPoolCapacity(ExtCmd extCmd, Path storageDirectoryRef) throws StorageException
+    {
+        return parseSimpleDfOutput(FileCommands.getTotalCapacity(extCmd, storageDirectoryRef));
+    }
+
+    public static long getFreeSpace(ExtCmd extCmd, Path storageDirectoryRef) throws StorageException
+    {
+        return parseSimpleDfOutput(FileCommands.getFreeSpace(extCmd, storageDirectoryRef));
+    }
+
+    private static long parseSimpleDfOutput(OutputData outputData)
+    {
+        String outStr = new String(outputData.stdoutData);
+        String data = outStr.split("\n")[1]; // [0] is the header
+        return SizeConv.convert(
+            Long.parseLong(data.trim()),
+            SizeUnit.UNIT_B,
+            SizeUnit.UNIT_KiB
+        );
     }
 }

@@ -79,4 +79,65 @@ public class FileCommands
     {
         storageDirectoryRef.resolve(newIdRef).toFile().delete();
     }
+
+    public static OutputData createSnapshot(ExtCmd extCmd, Path fromPath, Path toPath) throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "cp",
+                "--reflink=always",
+                fromPath.toString(),
+                toPath.toString()
+            },
+            "Failed to create snapshot of file volume",
+            "Failed to create snapshot '" + toPath + "' of file volume '" + fromPath + "'"
+        );
+    }
+
+    public static OutputData copy(ExtCmd extCmd, Path fromPath, Path toPath) throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "cp",
+                fromPath.toString(),
+                toPath.toString()
+            },
+            "Failed to copy file",
+            "Failed to copy '" + fromPath + "' to '" + toPath + "'"
+        );
+    }
+
+    public static OutputData getTotalCapacity(ExtCmd extCmd, Path storageDirectory)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "df",
+                "-B", "1", // in bytes
+                "--output=size",
+                storageDirectory.toString()
+            },
+            "Failed to fetch pool capacity",
+            "Failed to fetch capacity of storage pool '" + storageDirectory + "'"
+        );
+    }
+
+    public static OutputData getFreeSpace(ExtCmd extCmd, Path storageDirectory)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "df",
+                "-B", "1", // in bytes
+                "--output=avail",
+                storageDirectory.toString()
+            },
+            "Failed to fetch pool free space",
+            "Failed to fetch free space of storage pool '" + storageDirectory + "'"
+        );
+    }
 }

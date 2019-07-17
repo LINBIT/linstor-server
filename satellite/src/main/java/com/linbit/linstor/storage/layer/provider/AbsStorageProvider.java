@@ -392,7 +392,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         return timeout;
     }
 
-    protected void addChangedStorPool(StorPool storPoolRef) throws AccessDeniedException
+    protected void addChangedStorPool(StorPool storPoolRef) throws AccessDeniedException, StorageException
     {
         changedStorPools.add(storPoolRef);
         changedStoragePoolStrings.add(getStorageName(storPoolRef));
@@ -523,7 +523,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         StorPool storPool,
         Consumer<Map<String, Long>> consumer
     )
-        throws AccessDeniedException
+        throws AccessDeniedException, StorageException
     {
         addChangedStorPool(storPool);
         postRunVolumeNotifications.add(consumer);
@@ -780,7 +780,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
     @Override
     public abstract long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException;
 
-    protected abstract String getStorageName(StorPool storPoolRef) throws AccessDeniedException;
+    protected abstract String getStorageName(StorPool storPoolRef) throws AccessDeniedException, StorageException;
 
     @SuppressWarnings("unused")
     protected void createSnapshot(LAYER_DATA vlmData, SnapshotVolume snapVlm)
@@ -825,7 +825,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends VlmProviderObj
         List<LAYER_DATA> vlmDataList,
         List<SnapshotVolume> snapVlmsRef
     )
-        throws StorageException, AccessDeniedException;
+        throws StorageException, AccessDeniedException, SQLException;
 
     protected abstract void updateStates(List<LAYER_DATA> vlmDataList, Collection<SnapshotVolume> snapVlms)
         throws StorageException, AccessDeniedException, SQLException;
