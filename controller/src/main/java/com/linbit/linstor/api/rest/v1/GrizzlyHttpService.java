@@ -5,11 +5,13 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
 
+import javax.ws.rs.ext.ExceptionMapper;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
@@ -59,6 +61,7 @@ public class GrizzlyHttpService implements SystemService
         listenAddress = listenAddressRef;
         v1ResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
         v1ResourceConfig.register(new CORSFilter());
+        registerExceptionMappers(v1ResourceConfig);
         dbConnectionPool = injector.getInstance(DbConnectionPool.class);
         systemServiceMap = systemServiceMapRef;
 
@@ -156,6 +159,22 @@ public class GrizzlyHttpService implements SystemService
             errorReporter.getLogDirectory().resolve("rest-access.log").toFile()
         );
         builder.instrument(httpServer.getServerConfiguration());
+    }
+
+    private void registerExceptionMappers(ResourceConfig resourceConfig)
+    {
+        resourceConfig.register(new ExceptionMapper<ApiRcException>()
+        {
+            @Override
+            public javax.ws.rs.core.Response toResponse(ApiRcException exception)
+            {
+                errorReporter.reportError(exception);
+                return ApiCallRcConverter.toResponse(
+                    exception.getApiCallRc(),
+                    javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR
+                );
+            }
+        });
     }
 
     @Override
