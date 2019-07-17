@@ -61,6 +61,6 @@ RUN mkdir /var/log/linstor-controller
 RUN chown -R root:linstor /etc/linstor /var/lib/linstor /var/log/linstor-controller
 RUN chmod g+w /etc/linstor /var/lib/linstor /var/log/linstor-controller
 
-EXPOSE 3376/tcp 3377/tcp 3370/tcp
+EXPOSE 3376/tcp 3377/tcp 3370/tcp 3371/tcp
 USER linstor
 ENTRYPOINT ["/usr/share/linstor-server/bin/Controller", "--logs=/var/log/linstor-controller", "--config-directory=/etc/linstor", "--rest-bind=0.0.0.0:3370"]

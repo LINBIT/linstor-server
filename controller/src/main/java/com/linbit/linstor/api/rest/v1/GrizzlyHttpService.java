@@ -15,6 +15,7 @@ import javax.ws.rs.ext.ExceptionMapper;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -27,10 +28,13 @@ import org.glassfish.grizzly.http.CompressionConfig;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
 import org.glassfish.grizzly.http.server.accesslog.AccessLogBuilder;
 import org.glassfish.grizzly.http.util.HttpStatus;
+import org.glassfish.grizzly.ssl.SSLContextConfigurator;
+import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -38,15 +42,19 @@ public class GrizzlyHttpService implements SystemService
 {
     private final ErrorReporter errorReporter;
     private HttpServer httpServer;
+    private HttpServer httpsServer;
     private ServiceName instanceName;
     private String listenAddress;
+    private String listenAddressSecure;
+    private Path keyStoreFile;
+    private String keyStorePassword;
     private ResourceConfig v1ResourceConfig;
     private final DbConnectionPool dbConnectionPool;
     private final Map<ServiceName, SystemService> systemServiceMap;
 
     private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
-        "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + JsonGenTypes.REST_API_VERSION
-        + "\">Documentation</a></body></html>";
+        "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + JsonGenTypes.REST_API_VERSION +
+        "\">Documentation</a></body></html>";
 
     private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
 
@@ -54,15 +62,21 @@ public class GrizzlyHttpService implements SystemService
         Injector injector,
         ErrorReporter errorReporterRef,
         Map<ServiceName, SystemService> systemServiceMapRef,
-        String listenAddressRef
+        String listenAddressRef,
+        String listenAddressSecureRef,
+        Path keyStoreFileRef,
+        String keyStorePasswordRef
     )
     {
         errorReporter = errorReporterRef;
+        dbConnectionPool = injector.getInstance(DbConnectionPool.class);
         listenAddress = listenAddressRef;
+        listenAddressSecure = listenAddressSecureRef;
+        keyStoreFile = keyStoreFileRef;
+        keyStorePassword = keyStorePasswordRef;
         v1ResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
         v1ResourceConfig.register(new CORSFilter());
         registerExceptionMappers(v1ResourceConfig);
-        dbConnectionPool = injector.getInstance(DbConnectionPool.class);
         systemServiceMap = systemServiceMapRef;
 
         try
@@ -74,21 +88,9 @@ public class GrizzlyHttpService implements SystemService
         }
     }
 
-    private void initGrizzly(final String bindAddress)
+    private void addRootHandler(HttpServer httpServerRef)
     {
-        httpServer = GrizzlyHttpServerFactory.createHttpServer(
-            URI.create(String.format("http://%s/v1/", bindAddress)),
-            v1ResourceConfig,
-            false
-        );
-
-        CompressionConfig compressionConfig = httpServer.getListener("grizzly").getCompressionConfig();
-        compressionConfig.setCompressionMode(CompressionConfig.CompressionMode.ON);
-        compressionConfig.setCompressibleMimeTypes("text/plain", "text/html", "application/json");
-        compressionConfig.setCompressionMinSize(COMPRESSION_MIN_SIZE);
-
-
-        httpServer.getServerConfiguration().addHttpHandler(
+        httpServerRef.getServerConfiguration().addHttpHandler(
             new HttpHandler()
             {
                 @Override
@@ -154,11 +156,154 @@ public class GrizzlyHttpService implements SystemService
                 }
             }
         );
+    }
 
+    private void addHTTPSRedirectHandler(HttpServer httpServerRef, int httpsPort)
+    {
+        httpServerRef.getServerConfiguration().addHttpHandler(
+            new HttpHandler()
+            {
+                @Override
+                public void service(Request request, Response response) throws Exception
+                {
+                    if (request.getMethod() == Method.GET)
+                    {
+                        if (request.getHttpHandlerPath().equals("/"))
+                        {
+                            response.setContentType("text/html");
+                            response.setContentLength(INDEX_CONTENT.length());
+                            response.getWriter().write(INDEX_CONTENT);
+                        }
+                        else if (request.getHttpHandlerPath().equals("/health"))
+                        {
+                            Connection conn = null;
+                            try
+                            {
+                                conn = dbConnectionPool.getConnection();
+                                conn.createStatement().executeQuery("SELECT 1 FROM " + TBL_SEC_CONFIGURATION);
+
+                                List<String> notRunning = systemServiceMap.values().stream()
+                                    .filter(service -> !service.isStarted())
+                                    .map(service -> service.getServiceName().getDisplayName())
+                                    .collect(Collectors.toList());
+                                if (notRunning.isEmpty())
+                                {
+                                    response.setStatus(HttpStatus.OK_200);
+                                }
+                                else
+                                {
+                                    final String errorMsg = "Services not running: " +
+                                        String.join(",", notRunning);
+                                    response.setContentLength(errorMsg.length());
+                                    response.getWriter().write(errorMsg);
+                                    response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+                                }
+                            }
+                            catch (SQLException exc)
+                            {
+                                final String errorMsg = "Failed to connect to database: " + exc.getMessage();
+                                response.setContentLength(errorMsg.length());
+                                response.getWriter().write(errorMsg);
+                                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+                            }
+                            finally
+                            {
+                                if (conn != null)
+                                {
+                                    dbConnectionPool.returnConnection(conn);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            response.setStatus(HttpStatus.NOT_FOUND_404);
+                            response.sendRedirect(
+                                String.format("https://%s:%d", request.getServerName(), httpsPort) +
+                                    request.getHttpHandlerPath()
+                            );
+                        }
+                    }
+                    else
+                    {
+                        response.setStatus(HttpStatus.NOT_FOUND_404);
+                        response.sendRedirect(
+                            String.format("https://%s:%d", request.getServerName(), httpsPort) +
+                            request.getHttpHandlerPath());
+                    }
+                }
+            }
+        );
+    }
+
+    private void enableCompression(HttpServer httpServerRef)
+    {
+        CompressionConfig compressionConfig = httpServerRef.getListener("grizzly").getCompressionConfig();
+        compressionConfig.setCompressionMode(CompressionConfig.CompressionMode.ON);
+        compressionConfig.setCompressibleMimeTypes("text/plain", "text/html", "application/json");
+        compressionConfig.setCompressionMinSize(COMPRESSION_MIN_SIZE);
+    }
+
+    private void initGrizzly(final String bindAddress, final String httpsBindAddress)
+    {
         final AccessLogBuilder builder = new AccessLogBuilder(
             errorReporter.getLogDirectory().resolve("rest-access.log").toFile()
         );
-        builder.instrument(httpServer.getServerConfiguration());
+
+        if (keyStoreFile != null)
+        {
+            final URI httpsUri = URI.create(String.format("https://%s/v1/", httpsBindAddress));
+
+            // only install a redirect handler for http
+            httpServer = GrizzlyHttpServerFactory.createHttpServer(
+                URI.create(String.format("http://%s", bindAddress)),
+                false
+            );
+
+            addHTTPSRedirectHandler(httpServer, httpsUri.getPort());
+
+            httpsServer = GrizzlyHttpServerFactory.createHttpServer(
+                httpsUri,
+                v1ResourceConfig,
+                false
+            );
+
+            SSLContextConfigurator sslCon = new SSLContextConfigurator();
+            sslCon.setSecurityProtocol("TLS");
+            sslCon.setKeyStoreFile(keyStoreFile.toString());
+            sslCon.setKeyStorePass(keyStorePassword);
+
+            for (NetworkListener netListener : httpsServer.getListeners())
+            {
+                netListener.setSecure(true);
+                SSLEngineConfigurator ssle = new SSLEngineConfigurator(sslCon);
+                ssle.setWantClientAuth(false);
+                ssle.setClientMode(false);
+                ssle.setNeedClientAuth(false);
+                netListener.setSSLEngineConfig(ssle);
+            }
+
+            enableCompression(httpsServer);
+
+            addRootHandler(httpsServer);
+
+            builder.instrument(httpServer.getServerConfiguration());
+            builder.instrument(httpsServer.getServerConfiguration());
+        }
+        else
+        {
+            httpsServer = null;
+            httpServer = GrizzlyHttpServerFactory.createHttpServer(
+                URI.create(String.format("http://%s/v1/", bindAddress)),
+                v1ResourceConfig,
+                false
+            );
+
+            addRootHandler(httpServer);
+
+            builder.instrument(httpServer.getServerConfiguration());
+        }
+
+        enableCompression(httpServer);
     }
 
     private void registerExceptionMappers(ResourceConfig resourceConfig)
@@ -188,8 +333,13 @@ public class GrizzlyHttpService implements SystemService
     {
         try
         {
-            initGrizzly(listenAddress);
+            initGrizzly(listenAddress, listenAddressSecure);
             httpServer.start();
+
+            if (httpsServer != null)
+            {
+                httpsServer.start();
+            }
         }
         catch (SocketException sexc)
         {
@@ -198,11 +348,17 @@ public class GrizzlyHttpService implements SystemService
             if (listenAddress.startsWith("[::]"))
             {
                 URI uri = URI.create(String.format("http://%s/v1/", listenAddress));
-                errorReporter.logInfo("Trying to start grizzly http server on fallback ipv4: 0.0.0.0:" + uri.getPort());
+                URI uriSecure = URI.create(String.format("https://%s/v1/", listenAddressSecure));
+                errorReporter.logInfo("Trying to start grizzly http server on fallback ipv4: 0.0.0.0");
                 try
                 {
-                    initGrizzly("0.0.0.0:" + uri.getPort());
+                    initGrizzly("0.0.0.0:" + uri.getPort(), "0.0.0.0:" + uriSecure.getPort());
                     httpServer.start();
+
+                    if (httpsServer != null)
+                    {
+                        httpsServer.start();
+                    }
                 }
                 catch (IOException exc)
                 {
@@ -220,12 +376,20 @@ public class GrizzlyHttpService implements SystemService
     public void shutdown()
     {
         httpServer.shutdownNow();
+        if (httpsServer != null)
+        {
+            httpsServer.shutdownNow();
+        }
     }
 
     @Override
     public void awaitShutdown(long timeout)
     {
         httpServer.shutdown(timeout, TimeUnit.SECONDS);
+        if (httpsServer != null)
+        {
+            httpsServer.shutdown(timeout, TimeUnit.SECONDS);
+        }
     }
 
     @Override

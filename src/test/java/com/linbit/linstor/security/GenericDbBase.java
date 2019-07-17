@@ -45,9 +45,12 @@ import com.linbit.linstor.VolumeDataControllerFactory;
 import com.linbit.linstor.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.ControllerArgumentsModule;
+import com.linbit.linstor.core.ControllerCmdlArguments;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DbDataInitializer;
+import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.core.SeedDefaultPeerRule;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -239,6 +242,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new TestApiModule(),
             new ControllerSecurityModule(),
             new ApiCallHandlerModule(),
+            new ControllerArgumentsModule(new ControllerCmdlArguments(), new LinstorConfigToml()),
             additionalModule,
             BoundFieldModule.of(this)
         );

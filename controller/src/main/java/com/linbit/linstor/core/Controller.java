@@ -12,7 +12,6 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
@@ -63,6 +62,8 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
@@ -72,6 +73,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.moandjiezana.toml.Toml;
 import org.slf4j.event.Level;
 
 /**
@@ -81,14 +83,17 @@ import org.slf4j.event.Level;
  */
 public final class Controller
 {
+    public static final String LINSTOR_CONFIG = "linstor.toml";
     private static final String PROPSCON_KEY_NETCOM = "netcom";
 
     public static final int API_VERSION = 4;
     public static final int API_MIN_VERSION = API_VERSION;
 
     private static final String ENV_REST_BIND_ADDRESS = "LS_REST_BIND_ADDRESS";
-    private static final String DEFAULT_HTTP_LISTEN_ADDRESS = "::";
-    private static final String DEFAULT_HTTP_REST_PORT = "3370";
+    private static final String ENV_REST_BIND_ADDRESS_SECURE = "LS_REST_BIND_ADDRESS_SECURE";
+    public static final String DEFAULT_HTTP_LISTEN_ADDRESS = "::";
+    public static final int DEFAULT_HTTP_REST_PORT = 3370;
+    public static final int DEFAULT_HTTPS_REST_PORT = 3371;
 
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
@@ -134,6 +139,8 @@ public final class Controller
 
     private RetryResourcesTask retryResourcesTask;
 
+    private final LinstorConfigToml linstorConfig;
+
     @Inject
     public Controller(
         ErrorReporter errorReporterRef,
@@ -158,7 +165,8 @@ public final class Controller
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
         SwordfishTargetProcessManager swordfishTargetProcessManagerRef,
-        WhitelistProps whitelistPropsRef
+        WhitelistProps whitelistPropsRef,
+        LinstorConfigToml linstorConfigRef
     )
     {
         errorReporter = errorReporterRef;
@@ -184,6 +192,7 @@ public final class Controller
         controllerNetComInitializer = controllerNetComInitializerRef;
         swordfishTargetProcessManager = swordfishTargetProcessManagerRef;
         whitelistProps = whitelistPropsRef;
+        linstorConfig = linstorConfigRef;
     }
 
     public void start(Injector injector, ControllerCmdlArguments cArgs)
@@ -250,15 +259,36 @@ public final class Controller
         }
     }
 
+    private String restBindAddress(final String bindAddr, final int bindPort)
+    {
+        String restBindAddress;
+
+        // Detect IPv6 addresses since they require a different bind address format
+        if (bindAddr.indexOf(':') != -1)
+        {
+            restBindAddress = String.format("[%s]:%d", bindAddr, bindPort);
+        }
+        else
+        {
+            restBindAddress = String.format("%s:%d", bindAddr, bindPort);
+        }
+
+        return restBindAddress;
+    }
+
     private void initializeRestServer(Injector injector, ControllerCmdlArguments cArgs)
     {
         boolean restEnabled = true;
         String restBindAddress;
+        String restBindAddresSecure;
+        Path keyStorePath = null;
+        String keyStorePassword = "";
         try
         {
             if (cArgs.getRESTBindAddress() != null)
             {
                 restBindAddress = cArgs.getRESTBindAddress();
+                restBindAddresSecure = cArgs.getRESTBindAddressSecure();
             }
             else
             {
@@ -269,40 +299,49 @@ public final class Controller
                 }
                 else
                 {
-                    restEnabled = Boolean.parseBoolean(
-                        ctrlConf.getPropWithDefault(ApiConsts.KEY_ENABLED, ApiConsts.NAMESPC_REST, "true")
+                    restEnabled = linstorConfig.getHTTP().isEnabled();
+
+                    restBindAddress = restBindAddress(
+                        linstorConfig.getHTTP().getListenAddr(),
+                        linstorConfig.getHTTP().getPort()
                     );
-                    String restListenAddr = ctrlConf.getPropWithDefault(
-                        ApiConsts.KEY_BIND_ADDR, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_LISTEN_ADDRESS
-                    );
-                    int restListenPort = Integer.parseInt(
-                        ctrlConf.getPropWithDefault(
-                            ApiConsts.KEY_BIND_PORT, ApiConsts.NAMESPC_REST, DEFAULT_HTTP_REST_PORT
-                        )
-                    );
-                    // Detect IPv6 addresses since they require a different bind address format
-                    if (restListenAddr.indexOf(':') != -1)
-                    {
-                        restBindAddress = String.format("[%s]:%d", restListenAddr, restListenPort);
-                    }
-                    else
-                    {
-                        restBindAddress = String.format("%s:%d", restListenAddr, restListenPort);
-                    }
                 }
+
+                final String envRESTBindAddressSecure = System.getenv(ENV_REST_BIND_ADDRESS_SECURE);
+                if (envRESTBindAddressSecure != null)
+                {
+                    restBindAddresSecure = envRESTBindAddressSecure;
+                }
+                else
+                {
+                    restBindAddresSecure = restBindAddress(
+                        linstorConfig.getHTTPS().getListenAddr(),
+                        linstorConfig.getHTTPS().getPort()
+                    );
+                }
+
+                final String keyStorePathProp = linstorConfig.getHTTPS().getKeystore();
+                if (keyStorePathProp != null)
+                {
+                    keyStorePath = Paths.get(keyStorePathProp);
+                }
+
+                keyStorePassword = linstorConfig.getHTTPS().getKeystorePassword();
             }
 
             if (restEnabled)
             {
                 final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(
-                    injector, errorReporter, systemServicesMap, restBindAddress
+                    injector,
+                    errorReporter,
+                    systemServicesMap,
+                    restBindAddress,
+                    restBindAddresSecure,
+                    keyStorePath,
+                    keyStorePassword
                 );
                 systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
             }
-        }
-        catch (NumberFormatException nfExc)
-        {
-            errorReporter.reportError(Level.ERROR, nfExc);
         }
         catch (Exception exc)
         {
@@ -370,6 +409,26 @@ public final class Controller
         }
     }
 
+    private static LinstorConfigToml parseControllerConfig(ErrorReporter errorReporter, ControllerCmdlArguments cArgs)
+    {
+        LinstorConfigToml linstorConfig = new LinstorConfigToml();
+        Path linstorConfigPath = cArgs.getConfigurationDirectory().resolve(LINSTOR_CONFIG).normalize();
+        if (Files.exists(linstorConfigPath))
+        {
+            try
+            {
+                linstorConfig = new Toml().read(linstorConfigPath.toFile()).to(LinstorConfigToml.class);
+            }
+            catch (RuntimeException tomlExc)
+            {
+                errorReporter.logError("Error parsing '%s': %s", linstorConfigPath.toString(), tomlExc.getMessage());
+                System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
+            }
+        }
+
+        return linstorConfig;
+    }
+
     public static void main(String[] args)
     {
         ControllerCmdlArguments cArgs = ControllerArgumentParser.parseCommandLine(args);
@@ -389,6 +448,8 @@ public final class Controller
             cArgs.isPrintStacktraces(),
             LinStor.getHostName()
         );
+
+        LinstorConfigToml linstorConfig = parseControllerConfig(errorLog, cArgs);
 
         boolean dbgCnsEnabled = false;
         Controller instance = null;
@@ -451,7 +512,7 @@ public final class Controller
                 new LoggingModule(errorLog),
                 new SecurityModule(),
                 new ControllerSecurityModule(),
-                new ControllerArgumentsModule(cArgs),
+                new ControllerArgumentsModule(cArgs, linstorConfig),
                 new CoreTimerModule(),
                 new MetaDataModule(),
                 new ControllerLinstorModule(),

@@ -61,6 +61,9 @@ public class InternalApiConsts
     // Incorrect parameters on the command line
     public static final int EXIT_CODE_CMDLINE_ERROR = 1;
 
+    // TOML parse error on startup
+    public static final int EXIT_CODE_CONFIG_PARSE_ERROR = 2;
+
     // Startup failed because the default NetCom service could not be initialized
     public static final int EXIT_CODE_NETCOM_ERROR = 20;
 

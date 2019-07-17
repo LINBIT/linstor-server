@@ -261,6 +261,9 @@ project(':controller') {
             compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.4'
             runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
+            // toml parsing library
+            compile group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
+
 //            runtime 'org.mariadb.jdbc:mariadb-java-client:2.2.6'
 //            runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
         }

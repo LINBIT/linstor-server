@@ -34,6 +34,12 @@ class ControllerArgumentParser
     )
     private String restBindAddress = null;
 
+    @CommandLine.Option(
+        names = {"--rest-bind-secure"},
+        description = "Bind address for the REST HTTPS server. e.g. 0.0.0.0:3371"
+    )
+    private String restBindAddressSecure = null;
+
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
     private boolean versionInfoRequested;
 
@@ -106,6 +112,11 @@ class ControllerArgumentParser
         if (linArgParser.restBindAddress != null)
         {
             cArgs.setRESTBindAddress(linArgParser.restBindAddress);
+        }
+
+        if (linArgParser.restBindAddressSecure != null)
+        {
+            cArgs.setRESTBindAddressSecure(linArgParser.restBindAddressSecure);
         }
 
         cArgs.setPrintStacktraces(linArgParser.printStackTrace);

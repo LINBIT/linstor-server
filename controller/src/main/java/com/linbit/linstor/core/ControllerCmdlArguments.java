@@ -6,6 +6,7 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
     private int inMemoryDbPort;
     private String inMemoryDbAddress;
     private String restBindAddress;
+    private String restBindAddressSecure;
 
     public ControllerCmdlArguments()
     {
@@ -50,8 +51,17 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
         return restBindAddress;
     }
 
+    public String getRESTBindAddressSecure()
+    {
+        return restBindAddressSecure;
+    }
+
     public void setRESTBindAddress(String restBindAddressRef)
     {
         restBindAddress = restBindAddressRef;
+    }
+    public void setRESTBindAddressSecure(String restBindAddressRef)
+    {
+        restBindAddressSecure = restBindAddressRef;
     }
 }
