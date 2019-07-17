@@ -855,13 +855,7 @@ paths:
   /v1/resource-definitions/{resource}/volume-definitions/{volume_number}:
     parameters:
       - $ref: '#/components/parameters/Resource'
-      - name: volume_number
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int32
-          description: Volume number of the definition
+      - $ref: '#/components/parameters/VolumeNumber'
     put:
       tags:
         - developers
@@ -1159,6 +1153,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Volume'
+
+  /v1/resource-definitions/{resource}/resources/{node}/volumes/{volume_number}:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/VolumeNumber'
     put:
       tags:
         - developers
@@ -1187,6 +1187,7 @@ paths:
                 Aux/testprop: '1'
               delete_props:
                 - Aux/deleteprop
+
   /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2483,6 +2484,14 @@ components:
       description: target node of the connection
       schema:
         type: string
+    VolumeNumber:
+      name: volume_number
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        description: Volume number of the definition
   responses:
     InvalidInput:
       description: invalid input, or request failed
