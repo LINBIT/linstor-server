@@ -233,8 +233,7 @@ public final class ControllerNetComInitializer
         Path path = Paths.get(filePath);
         if (!path.isAbsolute())
         {
-            path = Paths.get(controllerCmdlArguments.getConfigurationDirectory())
-                .resolve(path);
+            path = controllerCmdlArguments.getConfigurationDirectory().resolve(path);
         }
 
         return path;

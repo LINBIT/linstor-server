@@ -1,5 +1,8 @@
 package com.linbit.linstor.core;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class LinStorCmdlArguments
 {
     private String configurationDirectory;
@@ -19,9 +22,13 @@ public class LinStorCmdlArguments
         configurationDirectory = workingDirectoryRef;
     }
 
-    public String getConfigurationDirectory()
+    /**
+     * Returns the absolute config directory path.
+     * @return Path to the configuration directory
+     */
+    public Path getConfigurationDirectory()
     {
-        return configurationDirectory;
+        return Paths.get(configurationDirectory).toAbsolutePath();
     }
 
     public void setStartDebugConsole(final boolean startDebugConsoleRef)

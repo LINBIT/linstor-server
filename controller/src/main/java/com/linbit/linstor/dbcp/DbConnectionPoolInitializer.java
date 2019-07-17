@@ -78,7 +78,7 @@ public class DbConnectionPoolInitializer
         Properties dbProps = new Properties();
         if (args.getInMemoryDbType() == null)
         {
-            Path dbConfigFile = Paths.get(args.getConfigurationDirectory(), DB_CONF_FILE);
+            Path dbConfigFile = args.getConfigurationDirectory().resolve(DB_CONF_FILE);
             try (InputStream dbPropsIn = new FileInputStream(dbConfigFile.toFile()))
             {
                 dbProps.loadFromXML(dbPropsIn);

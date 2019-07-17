@@ -2,6 +2,8 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.InternalApiConsts;
 import java.io.File;
+import java.nio.file.Path;
+
 import picocli.CommandLine;
 
 class SatelliteArgumentParser
@@ -86,7 +88,7 @@ class SatelliteArgumentParser
         if (linArgParser.configurationDirectory != null)
         {
             cArgs.setConfigurationDirectory(linArgParser.configurationDirectory + "/");
-            File workingDir = new File(cArgs.getConfigurationDirectory());
+            File workingDir = cArgs.getConfigurationDirectory().toFile();
             if (workingDir.exists() && !workingDir.isDirectory())
             {
                 System.err.println("Error: Given configuration directory is no directory");

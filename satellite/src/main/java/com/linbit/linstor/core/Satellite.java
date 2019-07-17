@@ -175,7 +175,7 @@ public final class Satellite
             errorReporter.logInfo("Initializing main network communications service");
             if (!satelliteNetComInitializer.initMainNetComService(
                 initCtx,
-                Paths.get(satelliteCmdlArguments.getConfigurationDirectory()),
+                satelliteCmdlArguments.getConfigurationDirectory(),
                 satelliteCmdlArguments.getBindAddress(),
                 satelliteCmdlArguments.getPlainPortOverride())
             )
