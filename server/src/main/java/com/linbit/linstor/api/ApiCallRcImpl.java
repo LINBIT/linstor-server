@@ -99,9 +99,24 @@ public class ApiCallRcImpl implements ApiCallRc
         return singletonApiCallRc(simpleEntry(returnCode, message));
     }
 
+    public static ApiCallRcImpl singleApiCallRc(long returnCode, LinStorException linExc)
+    {
+        return singletonApiCallRc(ApiCallRcImpl.copyFromLinstorExc(returnCode, linExc));
+    }
+
+    public static ApiCallRcImpl singleApiCallRc(long returnCode, String message, String cause)
+    {
+        return singletonApiCallRc(simpleEntry(returnCode, message, cause));
+    }
+
     public static ApiCallRcEntry simpleEntry(long returnCodeRef, String messageRef)
     {
         return entryBuilder(returnCodeRef, messageRef).build();
+    }
+
+    public static ApiCallRcEntry simpleEntry(long returnCode, String message, String cause)
+    {
+        return entryBuilder(returnCode, message).setCause(cause).build();
     }
 
     public static class ApiCallRcEntry implements ApiCallRc.RcEntry
