@@ -54,8 +54,11 @@ public class FileUtils
         final String stdOut = new String(outputData.stdoutData);
         if (!stdOut.trim().isEmpty())
         {
-            for (final String line : stdOut.split("\n"))
+            final String[] lines = stdOut.split("\n");
+            // idx starts at 1 so we can skip the HEADER row "NAME BACK-FILE"
+            for (int idx = 1; idx < lines.length; ++idx)
             {
+                final String line = lines[idx];
                 final String[] data = line.trim().split("\\s+");
                 if (!data[LosetupCommands.LOSETUP_LIST_BACK_FILE_IDX].equals("BACK_FILE"))
                 {

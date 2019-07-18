@@ -61,7 +61,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 
     private static final String FORMAT_ID_WIPE_IN_PROGRESS = "%s_linstor_wiping_in_progress";
 
-    private static final String LODEV_FILE = "/var/lib/linstor/losetup.dmp";
+    private static final String LODEV_FILE = "/var/lib/linstor/loop_device_mapping";
     private static final String LODEV_FILE_TMP = LODEV_FILE + ".tmp";
 
     private final Map<String, String> loDevs = new TreeMap<>();
@@ -608,7 +608,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         StringBuilder sb = new StringBuilder();
         for (Entry<String, String> entry : loDevs.entrySet())
         {
-            sb.append(entry.getKey()).append(" ").append(entry.getValue()).append("\n");
+            sb.append(entry.getKey()).append(":").append(entry.getValue()).append("\n");
         }
         if (sb.length() > 0)
         {
