@@ -1,16 +1,19 @@
 package com.linbit.linstor.security;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Singleton;
 import java.security.NoSuchAlgorithmException;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
 public class ControllerSecurityModule extends AbstractModule
 {
@@ -41,20 +44,29 @@ public class ControllerSecurityModule extends AbstractModule
 
     @Provides
     @Singleton
-    public Authentication initializeAuthentication(
+    public CtrlAuthentication initializeAuthentication(
         @SystemContext AccessContext initCtx,
+        @PublicContext AccessContext publicCtx,
         ErrorReporter errorLogRef,
         ControllerDatabase dbConnPool,
-        DbAccessor securityDbDriver
+        DbAccessor securityDbDriver,
+        LinstorConfigToml linstorConfigToml
     )
         throws InitializationException
     {
         errorLogRef.logInfo("Initializing authentication subsystem");
 
-        Authentication authentication;
+        CtrlAuthentication authentication;
         try
         {
-            authentication = new Authentication(initCtx, dbConnPool, securityDbDriver, errorLogRef);
+            authentication = new CtrlAuthentication(
+                initCtx,
+                publicCtx,
+                dbConnPool,
+                securityDbDriver,
+                errorLogRef,
+                linstorConfigToml
+            );
         }
         catch (AccessDeniedException accExc)
         {

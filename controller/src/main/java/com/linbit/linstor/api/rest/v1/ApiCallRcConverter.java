@@ -9,6 +9,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -90,6 +91,7 @@ public class ApiCallRcConverter
     static Response toResponse(ApiCallRc apiCallRc, Response.Status successStatus)
     {
         Response.Status status = successStatus;
+        HashMap<String, String> header = new HashMap<>();
 
         for (ApiCallRc.RcEntry rc : apiCallRc.getEntries())
         {
@@ -101,6 +103,15 @@ public class ApiCallRcConverter
                 {
                     status = Response.Status.NOT_FOUND;
                 }
+                else if (rc.getReturnCode() == ApiConsts.FAIL_SIGN_IN)
+                {
+                    status = Response.Status.FORBIDDEN;
+                }
+                else if (rc.getReturnCode() == ApiConsts.FAIL_SIGN_IN_MISSING_CREDENTIALS)
+                {
+                    status = Response.Status.UNAUTHORIZED;
+                    header.put("WWW-Authenticate", "Basic realm=\"Linstor\"");
+                }
                 else
                 {
                     status = Response.Status.INTERNAL_SERVER_ERROR;
@@ -109,7 +120,14 @@ public class ApiCallRcConverter
             }
         }
 
-        return Response.status(status).entity(toJSON(apiCallRc)).type(MediaType.APPLICATION_JSON).build();
+        Response.ResponseBuilder builder = Response.status(status);
+
+        for (Map.Entry<String, String> entry : header.entrySet())
+        {
+            builder.header(entry.getKey(), entry.getValue());
+        }
+
+        return builder.entity(toJSON(apiCallRc)).type(MediaType.APPLICATION_JSON).build();
     }
 
     static void handleJsonParseException(IOException ioexc, AsyncResponse asyncResponse)

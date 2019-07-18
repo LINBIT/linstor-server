@@ -6,6 +6,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -15,6 +16,7 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
@@ -24,13 +26,17 @@ public class PeerREST implements Peer
     private final String userAgent;
     static ServiceName serviceName;
 
+    private AccessContext accessContext;
+
     public PeerREST(
         String peerIdRef,
-        String userAgentRef
+        String userAgentRef,
+        AccessContext defaultCtx
     )
     {
         peerId = peerIdRef;
         userAgent = userAgentRef;
+        accessContext = defaultCtx;
 
         try
         {
@@ -62,12 +68,14 @@ public class PeerREST implements Peer
     @Override
     public AccessContext getAccessContext()
     {
-        return null;
+        return accessContext;
     }
 
     @Override
     public void setAccessContext(AccessContext privilegedCtx, AccessContext newAccCtx) throws AccessDeniedException
     {
+        privilegedCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+        accessContext = newAccCtx;
     }
 
     @Override

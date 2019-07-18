@@ -58,8 +58,48 @@ public class LinstorConfigToml
         }
     }
 
+    public static class LDAP
+    {
+        private boolean enabled = false;
+        private boolean allow_public_access = false;
+        private String uri = "ldap://localhost";
+        private String dn = "uid={user}";
+        private String search_base = "";
+        private String search_filter = "";
+
+        public boolean isEnabled()
+        {
+            return enabled;
+        }
+        public boolean allowPublicAccess()
+        {
+            return allow_public_access;
+        }
+
+        public String getUri()
+        {
+            return uri;
+        }
+
+        public String getDN()
+        {
+            return dn;
+        }
+
+        public String getSearchBase()
+        {
+            return search_base;
+        }
+
+        public String getSearchFilter()
+        {
+            return search_filter;
+        }
+    }
+
     private HTTP http = new HTTP();
     private HTTPS https = new HTTPS();
+    private LDAP ldap = new LDAP();
 
     public HTTP getHTTP()
     {
@@ -69,5 +109,10 @@ public class LinstorConfigToml
     public HTTPS getHTTPS()
     {
         return https;
+    }
+
+    public LDAP getLDAP()
+    {
+        return ldap;
     }
 }

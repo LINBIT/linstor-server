@@ -1,22 +1,35 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.PublicContext;
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerREST;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.CtrlAuthentication;
+import com.linbit.linstor.security.IdentityName;
+import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.security.SignInException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -26,42 +39,152 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Key;
-import com.linbit.linstor.annotation.PublicContext;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 public class RequestHelper
 {
     protected final ErrorReporter errorReporter;
     private final LinStorScope apiCallScope;
+    private final AccessContext sysContext;
     private final AccessContext publicContext;
     private final TransactionMgrGenerator transactionMgrGenerator;
+    private final CtrlAuthentication authentication;
+    private final LinstorConfigToml linstorConfig;
 
     @Inject
     public RequestHelper(
             ErrorReporter errorReporterRef,
             LinStorScope apiCallScopeRef,
+            @SystemContext AccessContext sysContextRef,
             @PublicContext AccessContext accessContextRef,
-            TransactionMgrGenerator transactionMgrGeneratorRef
+            TransactionMgrGenerator transactionMgrGeneratorRef,
+            CtrlAuthentication authenticationRef,
+            LinstorConfigToml linstorConfigRef
         )
     {
         errorReporter = errorReporterRef;
         apiCallScope = apiCallScopeRef;
+        sysContext = sysContextRef;
         publicContext = accessContextRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
+        authentication = authenticationRef;
+        linstorConfig = linstorConfigRef;
+    }
+
+    private Tuple2<String, String> parseBasicAuthHeader(String authorization)
+    {
+        String user = "";
+        String password = "";
+        String[] authFields = authorization.split(" ", 2);
+        if (authFields.length > 0)
+        {
+            if (authFields[0].equals("Basic"))
+            {
+                if (authFields.length > 1)
+                {
+                    String authToken = new String(
+                        Base64.getDecoder().decode(authFields[1]),
+                        StandardCharsets.UTF_8
+                    );
+
+                    final String[] authTokenFields = authToken.split(":", 2);
+                    if (authTokenFields.length > 1)
+                    {
+                        user = authTokenFields[0];
+                        password = authTokenFields[1];
+                    }
+                }
+                else
+                {
+                    ApiCallRcImpl apiCallRc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_INVLD_ENCRYPT_TYPE,
+                        "Basic authentication doesn't contain credential token."
+                    );
+                    throw new ApiRcException(apiCallRc);
+                }
+            }
+            else
+            {
+                ApiCallRcImpl apiCallRc = ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_INVLD_ENCRYPT_TYPE,
+                    "Invalid Authorization method, only 'Basic' supported."
+                );
+                throw new ApiRcException(apiCallRc);
+            }
+        }
+        return Tuples.of(user, password);
+    }
+
+    private void checkLDAPAuth(Peer peer, String authHeader)
+    {
+        if (linstorConfig.getLDAP().isEnabled())
+        {
+            // request.getAuthorization() contains authorization http field
+            if (authHeader != null)
+            {
+                Tuple2<String, String> userPassword = parseBasicAuthHeader(authHeader);
+                String user = userPassword.getT1();
+                String password = userPassword.getT2();
+
+                try
+                {
+                    AccessContext clientCtx = authentication.signIn(
+                        new IdentityName(user),
+                        password.getBytes(StandardCharsets.UTF_8)
+                    );
+                    AccessContext privCtx = sysContext.clone();
+                    privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                    peer.setAccessContext(privCtx, clientCtx);
+                }
+                catch (AccessDeniedException accExc)
+                {
+                    throw new ImplementationError(
+                        "Enabling privileges on the system context failed",
+                        accExc
+                    );
+                }
+                catch (InvalidNameException nameExc)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_SIGN_IN, nameExc.getMessage())
+                    );
+                }
+                catch (SignInException signIgnExc)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_SIGN_IN, signIgnExc)
+                    );
+                }
+            }
+            else
+            {
+                if (!linstorConfig.getLDAP().allowPublicAccess())
+                {
+                    ApiCallRc apiCallRc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_SIGN_IN_MISSING_CREDENTIALS,
+                        "Login required but no 'Authorization' header given."
+                    );
+                    throw new ApiRcException(apiCallRc);
+                }
+            }
+        }
     }
 
     Context createContext(String apiCall, org.glassfish.grizzly.http.server.Request request)
     {
-        // request.getAuthorization() contains authorization http field
-
         final String userAgent = request.getHeader("User-Agent");
-        Peer peer = new PeerREST(request.getRemoteAddr(), userAgent);
+        Peer peer = new PeerREST(request.getRemoteAddr(), userAgent, publicContext);
+
+        checkLDAPAuth(peer, request.getAuthorization());
+
         errorReporter.logDebug("REST access api '%s' from '%s'", apiCall, peer.toString());
         return  Context.of(
             ApiModule.API_CALL_NAME, apiCall,
-            AccessContext.class, publicContext,
+            AccessContext.class, peer.getAccessContext(),
             Peer.class, peer
         );
     }

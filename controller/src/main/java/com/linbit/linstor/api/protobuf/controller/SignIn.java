@@ -1,9 +1,5 @@
 package com.linbit.linstor.api.protobuf.controller;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.PeerContext;
@@ -19,11 +15,14 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.requests.MsgSignInOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.Authentication;
+import com.linbit.linstor.security.CtrlAuthentication;
 import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SignInException;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -37,7 +36,7 @@ import java.io.InputStream;
 public class SignIn implements ApiCall
 {
     private final ErrorReporter errorReporter;
-    private final Authentication idAuthentication;
+    private final CtrlAuthentication idAuthentication;
     private final ApiCallAnswerer apiCallAnswerer;
     private final AccessContext sysCtx;
     private final Provider<AccessContext> clientCtxProvider;
@@ -46,7 +45,7 @@ public class SignIn implements ApiCall
     @Inject
     public SignIn(
         ErrorReporter errorReporterRef,
-        Authentication idAuthenticationRef,
+        CtrlAuthentication idAuthenticationRef,
         ApiCallAnswerer apiCallAnswererRef,
         @SystemContext AccessContext sysCtxRef,
         @PeerContext Provider<AccessContext> clientCtxProviderRef,
@@ -88,7 +87,7 @@ public class SignIn implements ApiCall
         {
             String reportId = errorReporter.reportError(ioExc, clientCtx, clientProvider.get(), "Sign-in");
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
-            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
+            rcEntry.setReturnCode(ApiConsts.FAIL_SIGN_IN);
             rcEntry.setMessage("Sgn-in failed");
             rcEntry.setCause("The sign-in request could not be processed due to an I/O error");
             rcEntry.setCorrection(
@@ -105,7 +104,7 @@ public class SignIn implements ApiCall
         catch (InvalidNameException nameExc)
         {
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
-            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
+            rcEntry.setReturnCode(ApiConsts.FAIL_SIGN_IN);
             rcEntry.setMessage(nameExc.getMessage());
             if (idNameText != null)
             {
@@ -116,7 +115,7 @@ public class SignIn implements ApiCall
         catch (SignInException signInExc)
         {
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
-            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
+            rcEntry.setReturnCode(ApiConsts.FAIL_SIGN_IN);
             rcEntry.setMessage(signInExc.getDescriptionText());
             rcEntry.setCause(signInExc.getCauseText());
             rcEntry.setCorrection(signInExc.getCorrectionText());
