@@ -47,6 +47,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -465,34 +466,54 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private void ensureDriversSupportSnapshots(Resource rsc)
     {
-        if (!isDisklessPrivileged(rsc))
+        try
         {
-            Iterator<Volume> vlmIterator = rsc.iterateVolumes();
-            while (vlmIterator.hasNext())
+            if (!isDisklessPrivileged(rsc))
             {
-                Volume vlm = vlmIterator.next();
-                Map<String, StorPool> storPoolMap = getStorPoolMap(
-                    vlm,
-                    apiCtx,
-                    CtrlVlmListApiCallHandler::getVlmDescriptionInline
-                );
-
-                for (StorPool storPool : storPoolMap.values())
+                Iterator<Volume> vlmIterator = rsc.iterateVolumes();
+                while (vlmIterator.hasNext())
                 {
-                    if (!storPool.getDeviceProviderKind().isSnapshotSupported())
+                    Volume vlm = vlmIterator.next();
+                    Map<String, StorPool> storPoolMap = getStorPoolMap(
+                        vlm,
+                        apiCtx,
+                        CtrlVlmListApiCallHandler::getVlmDescriptionInline
+                    );
+
+                    for (StorPool storPool : storPoolMap.values())
                     {
-                        throw new ApiRcException(ApiCallRcImpl
-                            .entryBuilder(
-                                ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
-                                "Storage driver '" + storPool.getDeviceProviderKind() + "' " + "does not support snapshots."
-                            )
-                            .setDetails("Used for storage pool '" + storPool.getName() + "'" +
-                                " on '" + rsc.getAssignedNode().getName() + "'.")
-                            .build()
-                        );
+                        DeviceProviderKind providerKind = storPool.getDeviceProviderKind();
+                        boolean supportsSnapshot;
+                        if (providerKind.equals(DeviceProviderKind.FILE) ||
+                            providerKind.equals(DeviceProviderKind.FILE_THIN)
+                        )
+                        {
+                            supportsSnapshot = storPool.isSnapshotSupported(apiCtx);
+                        }
+                        else
+                        {
+                            supportsSnapshot = providerKind.isSnapshotSupported();
+                        }
+
+                        if (!supportsSnapshot)
+                        {
+                            throw new ApiRcException(ApiCallRcImpl
+                                .entryBuilder(
+                                    ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
+                                    "Storage driver '" + providerKind + "' " + "does not support snapshots."
+                                )
+                                .setDetails("Used for storage pool '" + storPool.getName() + "'" +
+                                    " on '" + rsc.getAssignedNode().getName() + "'.")
+                                .build()
+                            );
+                        }
                     }
                 }
             }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
