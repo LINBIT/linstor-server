@@ -5,6 +5,7 @@ import java.util.Properties;
 
 import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.DatabaseInfoImpl;
+import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.MigrationUtils;
 
 public class TestDbConnectionPoolLoader
@@ -24,8 +25,8 @@ public class TestDbConnectionPoolLoader
         DB_PROPS.setProperty("password", DB_PASSWORD);
 
         DatabaseInfo dbInfo = new DatabaseInfoImpl();
-        DbConnectionPool dbConnPool = new DbConnectionPool(dbInfo);
-        dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
+        DbConnectionPool dbConnPool = new DbConnectionPool(dbInfo, new LinstorConfigToml());
+        dbConnPool.initializeDataSource(DB_URL);
         MigrationUtils.setDatabaseInfo(dbInfo);
 
         return dbConnPool;

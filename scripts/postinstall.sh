@@ -5,17 +5,24 @@ DEF_LOCATION="/usr/share/linstor-server"
 # DEF_PWD="linstor"
 DEF_VARLIB_LINSTOR="/var/lib/linstor"
 DEF_DB="${DEF_VARLIB_LINSTOR}/linstordb"
-DEF_LINSTOR_CFG="/etc/linstor"
-DEF_DB_CFG="${DEF_LINSTOR_CFG}/database.cfg"
+DEF_LINSTOR_CFG_DIR="/etc/linstor"
+DEF_DB_CFG="${DEF_LINSTOR_CFG_DIR}/database.cfg"
+DEF_LINSTOR_CFG="${DEF_LINSTOR_CFG_DIR}/linstor.toml"
 DEF_DB_TYPE="h2"
 
-[ ! -d ${DEF_LINSTOR_CFG} ] && mkdir "$DEF_LINSTOR_CFG"
+[ ! -d ${DEF_LINSTOR_CFG_DIR} ] && mkdir "$DEF_LINSTOR_CFG_DIR"
 [ ! -d ${DEF_VARLIB_LINSTOR} ] && mkdir "$DEF_VARLIB_LINSTOR"
 
 # always create a backup of the current DB
 CURRENT_DB=${DEF_DB}.mv.db
 [ -f "$CURRENT_DB" ] && cp "$CURRENT_DB" "${CURRENT_DB}-$(date --iso-8601=minutes).bak"
 
-[ -f ${DEF_DB_CFG} ] && { echo "Database config already created, exiting"; exit 0; }
+if [ -f ${DEF_DB_CFG} ]; then
+    ${DEF_LOCATION}/bin/linstor-config migrate-database-config ${DEF_DB_CFG} ${DEF_LINSTOR_CFG}
+    mv ${DEF_DB_CFG} "${DEF_DB_CFG}.bak"
+    exit 0;
+fi
 
-${DEF_LOCATION}/bin/linstor-config create-db-file --dbtype=${DEF_DB_TYPE} ${DEF_DB} > ${DEF_DB_CFG}
+[ -f ${DEF_LINSTOR_CFG} ] && { echo "Linstor config toml file already exists, exiting"; exit 0; }
+
+${DEF_LOCATION}/bin/linstor-config create-db-file --dbtype=${DEF_DB_TYPE} ${DEF_DB} > ${DEF_LINSTOR_CFG}

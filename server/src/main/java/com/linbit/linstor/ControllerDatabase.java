@@ -19,7 +19,7 @@ public interface ControllerDatabase extends SystemService
     void setTimeout(int timeout);
     void setMaxOpenPreparedStatements(int maxOpen);
 
-    void initializeDataSource(String dbConnectionUrl, Properties props)
+    void initializeDataSource(String dbConnectionUrl)
         throws SQLException;
 
     Connection getConnection() throws SQLException;

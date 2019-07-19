@@ -324,6 +324,10 @@ public final class Controller
                 if (keyStorePathProp != null)
                 {
                     keyStorePath = Paths.get(keyStorePathProp);
+                    if (!keyStorePath.isAbsolute())
+                    {
+                        keyStorePath = cArgs.getConfigurationDirectory().resolve(keyStorePath);
+                    }
                 }
 
                 keyStorePassword = linstorConfig.getHTTPS().getKeystorePassword();

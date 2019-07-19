@@ -97,9 +97,32 @@ public class LinstorConfigToml
         }
     }
 
+    public static class DB
+    {
+        private String user = "linstor";
+        private String password = "linstor";
+        private String connection_url = "jdbc:h2:/var/lib/linstor/linstordb";
+
+        public String getUser()
+        {
+            return user;
+        }
+
+        public String getPassword()
+        {
+            return password;
+        }
+
+        public String getConnectionUrl()
+        {
+            return connection_url;
+        }
+    }
+
     private HTTP http = new HTTP();
     private HTTPS https = new HTTPS();
     private LDAP ldap = new LDAP();
+    private DB db = new DB();
 
     public HTTP getHTTP()
     {
@@ -114,5 +137,10 @@ public class LinstorConfigToml
     public LDAP getLDAP()
     {
         return ldap;
+    }
+
+    public DB getDB()
+    {
+        return db;
     }
 }

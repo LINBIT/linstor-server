@@ -2,52 +2,41 @@ package com.linbit.linstor.dbcp;
 
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.ControllerCmdlArguments;
+import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.MigrationUtils;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.GenericDbUtils;
-import com.linbit.linstor.dbdrivers.H2DatabaseInfo;
 import com.linbit.linstor.logging.ErrorReporter;
-
-import javax.inject.Inject;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Properties;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
 
+import javax.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+
 public class DbConnectionPoolInitializer
 {
-    // Database configuration file path
-    private static final String DB_CONF_FILE = "database.cfg";
-
-    // Database connection URL configuration key
-    private static final String DB_CONN_URL = "connection-url";
-
-    private static final String DEFAULT_DB_PATH = "/tmp/linstor";
-
     private static final String DERBY_CONNECTION_TEST_SQL =
         "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
 
     private final ErrorReporter errorLog;
     private final ControllerCmdlArguments args;
     private final DbConnectionPool dbConnPool;
+    private final LinstorConfigToml linstorConfig;
 
     @Inject
     public DbConnectionPoolInitializer(
         ErrorReporter errorLogRef,
         ControllerCmdlArguments argsRef,
-        DbConnectionPool dbConnPoolRef
+        DbConnectionPool dbConnPoolRef,
+        LinstorConfigToml linstorConfigRef
     )
     {
 
         errorLog = errorLogRef;
         args = argsRef;
         dbConnPool = dbConnPoolRef;
+        linstorConfig = linstorConfigRef;
     }
 
     public void initialize()
@@ -55,14 +44,10 @@ public class DbConnectionPoolInitializer
     {
         errorLog.logInfo("Initializing the database connection pool");
 
-        Properties dbProps = loadDatabaseConfiguration();
-        String connectionUrl = getConnectionUrl(dbProps);
+        String connectionUrl = getConnectionUrl();
         String dbType = getDbType(connectionUrl);
 
-        dbConnPool.initializeDataSource(
-            connectionUrl,
-            dbProps
-        );
+        dbConnPool.initializeDataSource(connectionUrl);
 
         MigrationUtils.setDatabaseInfo(dbConnPool.getDatabaseInfo());
         dbConnPool.migrate(dbType);
@@ -72,34 +57,12 @@ public class DbConnectionPoolInitializer
         applyConfigurationArguments();
     }
 
-    private Properties loadDatabaseConfiguration()
-        throws InitializationException
-    {
-        Properties dbProps = new Properties();
-        if (args.getInMemoryDbType() == null)
-        {
-            Path dbConfigFile = args.getConfigurationDirectory().resolve(DB_CONF_FILE);
-            try (InputStream dbPropsIn = new FileInputStream(dbConfigFile.toFile()))
-            {
-                dbProps.loadFromXML(dbPropsIn);
-            }
-            catch (IOException ioExc)
-            {
-                throw new InitializationException("Failed to load database configuration", ioExc);
-            }
-        }
-        return dbProps;
-    }
-
-    private String getConnectionUrl(Properties dbProps)
+    private String getConnectionUrl()
     {
         String connectionUrl;
         if (args.getInMemoryDbType() == null)
         {
-            connectionUrl = dbProps.getProperty(
-                DB_CONN_URL,
-                new H2DatabaseInfo().jdbcUrl(DEFAULT_DB_PATH)
-            );
+            connectionUrl = linstorConfig.getDB().getConnectionUrl();
         }
         else
         {

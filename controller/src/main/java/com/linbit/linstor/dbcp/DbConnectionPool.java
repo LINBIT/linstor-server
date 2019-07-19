@@ -10,6 +10,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.GenericDbUtils;
@@ -59,12 +60,12 @@ public class DbConnectionPool implements ControllerDatabase
 
     private ServiceName serviceNameInstance;
     private String dbConnectionUrl;
-    private Properties props;
     private AtomicBoolean atomicStarted = new AtomicBoolean(false);
 
     private ThreadLocal<List<Connection>> threadLocalConnections;
 
     private final DatabaseInfo dbInfo;
+    private final LinstorConfigToml linstorConfig;
 
     static
     {
@@ -80,12 +81,14 @@ public class DbConnectionPool implements ControllerDatabase
 
     @Inject
     public DbConnectionPool(
-        final DatabaseInfo dbInfoRef
+        final DatabaseInfo dbInfoRef,
+        LinstorConfigToml linstorConfigRef
     )
     {
         serviceNameInstance = SERVICE_NAME;
         threadLocalConnections = new ThreadLocal<>();
         dbInfo = dbInfoRef;
+        linstorConfig = linstorConfigRef;
     }
 
     @Override
@@ -115,12 +118,10 @@ public class DbConnectionPool implements ControllerDatabase
     }
 
     @Override
-    public void initializeDataSource(String dbConnectionUrlRef, Properties propsRef)
+    public void initializeDataSource(String dbConnectionUrlRef)
     {
         ErrorCheck.ctorNotNull(DbConnectionPool.class, String.class, dbConnectionUrlRef);
-        ErrorCheck.ctorNotNull(DbConnectionPool.class, Properties.class, propsRef);
         dbConnectionUrl = dbConnectionUrlRef;
-        props = propsRef;
 
         try
         {
@@ -254,6 +255,9 @@ public class DbConnectionPool implements ControllerDatabase
     {
         if (!atomicStarted.getAndSet(true))
         {
+            Properties props = new Properties();
+            props.setProperty("user", linstorConfig.getDB().getUser());
+            props.setProperty("password", linstorConfig.getDB().getPassword());
             ConnectionFactory connFactory = new DriverManagerConnectionFactory(dbConnectionUrl, props);
             PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
 
