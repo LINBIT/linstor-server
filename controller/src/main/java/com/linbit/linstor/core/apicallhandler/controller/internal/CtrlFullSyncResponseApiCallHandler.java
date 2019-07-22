@@ -54,7 +54,7 @@ public class CtrlFullSyncResponseApiCallHandler
 
     public Flux<?> fullSyncSuccess()
     {
-        return fullSyncFailed(satelliteProvider.get());
+        return fullSyncSuccess(satelliteProvider.get());
     }
 
     public Flux<?> fullSyncSuccess(Peer satellitePeerRef)

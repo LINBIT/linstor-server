@@ -240,7 +240,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
         }
     }
 
-    private String getId(AbsRscData rscData)
+    private String getId(AbsRscData<?> rscData)
     {
         return "(" + rscData.getClass().getSimpleName() + ", " +
             "Node: " + rscData.getResource().getAssignedNode().getName().displayValue +

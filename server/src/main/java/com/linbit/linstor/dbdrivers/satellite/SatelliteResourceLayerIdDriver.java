@@ -26,9 +26,9 @@ public class SatelliteResourceLayerIdDriver implements ResourceLayerIdDatabaseDr
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<AbsRscData, RscLayerObject> getParentDriver()
+    public SingleColumnDatabaseDriver<AbsRscData<?>, RscLayerObject> getParentDriver()
     {
-        return (SingleColumnDatabaseDriver<AbsRscData, RscLayerObject>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<AbsRscData<?>, RscLayerObject>) noopSingleColDriver;
     }
 
     @Override
