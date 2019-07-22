@@ -119,6 +119,10 @@ public class NvmeLayer implements DeviceLayer
                     throw new StorageException("Failed to set NVMe device path!");
                 }
                 nvmeRscData.setExists(true);
+                for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                {
+                    nvmeVlmData.setExists(true);
+                }
             }
             else
             {
@@ -205,6 +209,10 @@ public class NvmeLayer implements DeviceLayer
                         throw new ImplementationError(exc);
                     }
                     nvmeRscData.setExists(true); // sanity check
+                    for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                    {
+                        nvmeVlmData.setExists(true);
+                    }
                 }
                 // create
                 else
