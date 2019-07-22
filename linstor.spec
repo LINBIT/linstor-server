@@ -53,6 +53,8 @@ cp %{_builddir}/%{NAME_VERS}/scripts/firewalld/linstor-satellite.xml %{buildroot
 mkdir -p %{buildroot}/%{_sysconfdir}/drbd.d/
 cp %{_builddir}/%{NAME_VERS}/scripts/linstor-resources.res %{buildroot}/%{_sysconfdir}/drbd.d/
 touch %{buildroot}/%{LS_PREFIX}/{.server,.satellite,.controller}
+mkdir -p %{buildroot}/%{_sysconfdir}/linstor
+cp %{_builddir}/%{NAME_VERS}/docs/linstor.toml-example %{buildroot}/%{_sysconfdir}/linstor/
 
 ### common
 %package common
@@ -89,6 +91,7 @@ Linstor controller manages linstor satellites and persistant data storage.
 %{LS_PREFIX}/bin/controller.postinst.sh
 %{_unitdir}/linstor-controller.service
 %{FIREWALLD_SERVICES}/linstor-controller.xml
+%{_sysconfdir}/linstor/linstor.toml-example
 
 %post controller
 %{LS_PREFIX}/bin/controller.postinst.sh

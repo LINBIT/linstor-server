@@ -1,0 +1,38 @@
+[db]
+  user = "linstor"
+  password = "linstor"
+
+  # jdbc connection url
+  connection_url = "jdbc:h2:/var/lib/linstor/linstordb"
+
+[http]
+  enabled = true
+  port = 3370
+
+[https]
+  enabled = true
+  port = 3371
+
+  # keystore containing the https server certificate
+  keystore = "/path/to/valid/file.jks"
+
+  # keystore password to unlock the server certificate
+  keystore_password = "linstor"
+
+[ldap]
+  enabled = false
+
+  # allow_public_access: if no authorization fields are given allow users to work with the public context
+  allow_public_access = false
+
+  # uri: ldap uri to use e.g.: ldap://hostname
+  uri = ""
+
+  # distinguished name: {user} can be used as template for the user name
+  dn = "uid={user}"
+
+  # search base for the search_filter field
+  search_base = ""
+
+  # search_filter: ldap filter to restrict users on memberships
+  search_filter = ""
