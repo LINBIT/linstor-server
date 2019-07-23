@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.6";
+    public static final String REST_API_VERSION = "1.0.7";
 
     /**
      * Common api reply structure
@@ -81,6 +81,9 @@ public class JsonGenTypes
         public String address;
         public Integer satellite_port;
         public String satellite_encryption_type;
+        /**
+         * Defines if this netinterface should be used for the satellite connection
+         */
         public Boolean is_active;
         /**
          * unique object id

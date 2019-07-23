@@ -23,6 +23,7 @@ info:
 
     * 1.0.7
       - Added ext_meta_stor_pool to DrbdVolume
+      - Added is_active field to the NetInterface type
     * 1.0.6
       - Added /v1/resource-definitions/{rscName}/resources/{nodeName}/volumes/{vlmnr} PUT
     * 1.0.5
@@ -41,7 +42,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: "1.0.6"
+  version: "1.0.7"
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -2629,6 +2630,7 @@ components:
             - Plain
             - SSL
         is_active:
+          description: Defines if this netinterface should be used for the satellite connection
           type: boolean
         uuid:
           type: string
