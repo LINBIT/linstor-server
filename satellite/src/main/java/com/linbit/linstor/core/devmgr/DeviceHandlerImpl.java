@@ -793,7 +793,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             super(
                 String.format("Layer '%s' aborted by failed resource '%s'",
-                    "Layer '%s' failed to process resource '%s'. Skipping layers above %s",
                     rscLayerObjectRef.getLayerKind().name(),
                     rscLayerObjectRef.getSuffixedResourceName()
                 )
