@@ -146,6 +146,16 @@ public final class Satellite
 
         try
         {
+            try
+            {
+                // make sure /var/lib/linstor exists
+                Files.createDirectories(Paths.get("/var/lib/linstor"));
+            }
+            catch (IOException ioExc)
+            {
+                errorReporter.reportError(ioExc);
+            }
+
             skipHostnameCheck = satelliteCmdlArguments.isSkipHostnameCheck();
 
             DrbdVersion vsnCheck = new DrbdVersion(timerEventSvc, errorReporter);
