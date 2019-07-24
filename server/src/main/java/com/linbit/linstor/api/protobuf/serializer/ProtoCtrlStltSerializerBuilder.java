@@ -11,6 +11,7 @@ import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
@@ -48,6 +49,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
+import com.linbit.linstor.proto.javainternal.s2c.MsgRscFailedOuterClass.MsgRscFailed;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Base64;
@@ -492,6 +494,28 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         serializerCtx
                     )
                 )
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            handleAccessDeniedException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder notifyResourceFailed(Resource resource, ApiCallRc apiCallRc)
+    {
+        try
+        {
+            MsgRscFailed.newBuilder()
+                .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, resource))
+                .addAllResponses(ProtoCommonSerializerBuilder.serializeApiCallRc(apiCallRc))
                 .build()
                 .writeDelimitedTo(baos);
         }

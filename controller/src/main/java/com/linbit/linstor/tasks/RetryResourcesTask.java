@@ -60,22 +60,43 @@ public class RetryResourcesTask implements Task
         errorReporter = errorReporterRef;
     }
 
-    public void add(Resource rsc)
+    public boolean add(Resource rsc)
     {
+        boolean added = false;
         synchronized (syncObj)
         {
             if (!failedResources.containsKey(rsc))
             {
+                added = true;
                 failedResources.put(rsc, new Pair<>(0, System.currentTimeMillis()));
             }
         }
+        if (added)
+        {
+            errorReporter.logWarning(
+                "RetryTask: Failed resource '%s' of node '%s' added for retry.",
+                rsc.getDefinition().getName().displayValue,
+                rsc.getAssignedNode().getName().displayValue
+            );
+        }
+        return added;
     }
 
     public void remove(Resource rsc)
     {
+        Object removed = null;
         synchronized (syncObj)
         {
-            failedResources.remove(rsc);
+            removed = failedResources.remove(rsc);
+        }
+
+        if (removed != null)
+        {
+            errorReporter.logInfo(
+                "RetryTask: Failed resource '%s' of node '%s' removed from retry.",
+                rsc.getDefinition().getName().displayValue,
+                rsc.getAssignedNode().getName().displayValue
+            );
         }
     }
 
@@ -97,6 +118,12 @@ public class RetryResourcesTask implements Task
                     if (!rsc.getAssignedNode().isDeleted())
                     {
                         Peer peer = rsc.getAssignedNode().getPeer(sysCtx);
+
+                        errorReporter.logDebug(
+                            "RetryTask: Contact satellite '%s' to retry resource '%s'.",
+                            rsc.getAssignedNode().getName().displayValue,
+                            rsc.getDefinition().getName().displayValue
+                        );
                         // only update the one satellite, not every involved satellites
                         peer.sendMessage(
                             serializer
@@ -110,7 +137,7 @@ public class RetryResourcesTask implements Task
                     }
                     else
                     {
-                        failedResources.remove(rsc);
+                        remove(rsc);
                     }
                 }
                 catch (AccessDeniedException accDeniedExc)

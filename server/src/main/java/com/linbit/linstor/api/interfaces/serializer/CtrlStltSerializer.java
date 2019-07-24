@@ -9,6 +9,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 
 public interface CtrlStltSerializer extends CommonSerializer
@@ -75,6 +76,11 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder notifyResourceApplied(
             Resource resource,
             Map<StorPool, SpaceInfo> freeSpaceMap
+        );
+
+        CtrlStltSerializerBuilder notifyResourceFailed(
+            Resource resource,
+            ApiCallRc apiCallRc
         );
 
         CtrlStltSerializerBuilder requestControllerUpdate();

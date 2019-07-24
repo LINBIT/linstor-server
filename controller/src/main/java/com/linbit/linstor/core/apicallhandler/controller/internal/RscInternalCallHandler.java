@@ -16,12 +16,14 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -55,6 +57,7 @@ public class RscInternalCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final Provider<Peer> peer;
+    private final CtrlApiDataLoader apiDataLoader;
 
     private final NodeRepository nodeRepository;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
@@ -78,7 +81,8 @@ public class RscInternalCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         CtrlRscLayerDataMerger layerRscDataMergerRef,
-        RetryResourcesTask retryResourceTaskRef
+        RetryResourcesTask retryResourceTaskRef,
+        CtrlApiDataLoader ctrlApiDataLoader
     )
     {
         errorReporter = errorReporterRef;
@@ -94,6 +98,7 @@ public class RscInternalCallHandler
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         layerRscDataMerger = layerRscDataMergerRef;
         retryResourceTask = retryResourceTaskRef;
+        apiDataLoader = ctrlApiDataLoader;
     }
 
     public void handleResourceRequest(
@@ -261,6 +266,19 @@ public class RscInternalCallHandler
         catch (InvalidNameException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
+        }
+    }
+
+    public void handleResourceFailed(String nodeName, String rscName, ApiCallRc apiCallRc)
+    {
+        try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.readLock()))
+        {
+            Resource rsc = apiDataLoader.loadRsc(
+                nodeName,
+                rscName,
+                true
+            );
+            retryResourceTask.add(rsc);
         }
     }
 }

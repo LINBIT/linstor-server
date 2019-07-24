@@ -79,5 +79,7 @@ public interface DeviceLayer
         void notifySnapshotDeleted(Snapshot snapshot);
 
         void notifyFreeSpacesChanged(Map<StorPool, SpaceInfo> spaceInfoMapRef);
+
+        void notifyResourceFailed(Resource rsc, ApiCallRc apiCallRc);
     }
 }

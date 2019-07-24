@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+import "common/ApiCallResponse.proto";
+import "common/Rsc.proto";
+
+
+// checkstyle will not find this { :D
+message MsgRscFailed {
+
+    // the failed resource
+    common.Rsc rsc = 1;
+
+    // errors
+    repeated common.ApiCallResponse responses = 2;
+}

@@ -1292,6 +1292,21 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
+    @Override
+    public void notifyResourceFailed(Resource rsc, ApiCallRc apiCallRc)
+    {
+        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+        if (ctrlPeer != null)
+        {
+            ctrlPeer.sendMessage(
+                interComSerializer
+                    .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_FAILED)
+                    .notifyResourceFailed(rsc, apiCallRc)
+                    .build()
+            );
+        }
+    }
+
     static <K> Map<K, UUID> extractUuids(Map<K, UpdateNotification> map)
     {
         return map.entrySet().stream()

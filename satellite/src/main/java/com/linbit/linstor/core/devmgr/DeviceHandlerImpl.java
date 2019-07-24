@@ -411,6 +411,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                     .addErrorId(errorId)
                     .build()
                 );
+
+                notificationListener.get().notifyResourceFailed(rsc, apiCallRc);
             }
             notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
         }

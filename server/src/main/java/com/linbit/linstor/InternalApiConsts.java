@@ -21,6 +21,7 @@ public class InternalApiConsts
 
     public static final String API_NOTIFY_VLM_DRBD_RESIZED = "NotifyDrbdVlmResized";
     public static final String API_NOTIFY_RSC_APPLIED    = "NotifyRscApplied";
+    public static final String API_NOTIFY_RSC_FAILED     = "NotifyRscFailed";
     public static final String API_REQUEST_PRIMARY_RSC   = "RequestPrimaryRsc";
     public static final String API_PRIMARY_RSC           = "PrimaryRsc";
 
