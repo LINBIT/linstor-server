@@ -14,6 +14,7 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.types.LsIpAddress;
@@ -103,8 +104,10 @@ public class NvmeUtils
                 "NVMe: creating subsystem on target: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
             );
 
+            ResourceDefinition rscDfn = nvmeRscData.getResource().getDefinition();
             final PriorityProps nvmePrioProps = new PriorityProps(
-                nvmeRscData.getResource().getDefinition().getProps(accCtx),
+                rscDfn.getProps(accCtx),
+                rscDfn.getResourceGroup().getProps(accCtx),
                 stltProps
             );
 
@@ -291,8 +294,10 @@ public class NvmeUtils
                 "NVMe: connecting initiator to: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
             );
 
+            ResourceDefinition rscDfn = nvmeRscData.getResource().getDefinition();
             final PriorityProps nvmePrioProps = new PriorityProps(
-                nvmeRscData.getResource().getDefinition().getProps(accCtx),
+                rscDfn.getProps(accCtx),
+                rscDfn.getResourceGroup().getProps(accCtx),
                 stltProps
             );
 
@@ -308,7 +313,7 @@ public class NvmeUtils
             }
 
             String ipAddr = getIpAddr(// TODO: check on controller
-                nvmeRscData.getResource().getDefinition().streamResource(accCtx).filter(
+                rscDfn.streamResource(accCtx).filter(
                     rsc -> !rsc.equals(nvmeRscData.getResource())
                 ).findFirst().orElseThrow(() -> new StorageException("Target resource not found!")),
                 accCtx

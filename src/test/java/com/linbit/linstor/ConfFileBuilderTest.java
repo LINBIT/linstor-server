@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NetInterface;
@@ -15,6 +16,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -63,7 +65,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -330,6 +331,7 @@ public class ConfFileBuilderTest
     {
         Resource resource = Mockito.mock(Resource.class);
         ResourceDefinition resourceDefinition = Mockito.mock(ResourceDefinition.class);
+        ResourceGroup rscGrp = Mockito.mock(ResourceGroup.class);
         StateFlags<Resource.RscFlags> rscStateFlags = Mockito.mock(ResourceStateFlags.class);
         StateFlags<ResourceConnection.RscConnFlags> rscConnStateFlags = Mockito.mock(ResourceConnStateFlags.class);
         Node assignedNode = Mockito.mock(Node.class);
@@ -347,6 +349,7 @@ public class ConfFileBuilderTest
         Props rscProps = Mockito.mock(Props.class);
         Props nodeProps = Mockito.mock(Props.class);
         Props rscDfnProps = Mockito.mock(Props.class);
+        Props rscGrpProps = Mockito.mock(Props.class);
         Optional<Props> drbdprops = Optional.empty();
 
         when(storPool.getProps(accessContext)).thenReturn(storPoolProps);
@@ -398,6 +401,10 @@ public class ConfFileBuilderTest
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
         when(resourceDefinition.getProps(accessContext)).thenReturn(rscDfnProps);
         when(rscDfnProps.getNamespace(any(String.class))).thenReturn(Optional.empty());
+
+        when(resourceDefinition.getResourceGroup()).thenReturn(rscGrp);
+        when(rscGrp.getName()).thenReturn(new ResourceGroupName("testGroup"));
+        when(rscGrp.getProps(accessContext)).thenReturn(rscGrpProps);
 
         when(volumeDefinition.getProps(accessContext)).thenReturn(vlmDfnProps);
         when(vlmDfnProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS)).thenReturn(drbdprops);

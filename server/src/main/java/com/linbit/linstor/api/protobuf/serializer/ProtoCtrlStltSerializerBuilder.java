@@ -890,6 +890,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setRscName(rscDfn.getName().displayValue)
                 .setRscDfnUuid(rscDfn.getUuid().toString())
                 .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
+                .setRscGrp(serializeResourceGroup(serializerCtx, rscDfn.getResourceGroup()))
                 .putAllRscDfnProps(rscDfn.getProps(serializerCtx).map())
                 .setSnapshotUuid(snapshot.getUuid().toString())
                 .setSnapshotName(snapshotDfn.getName().displayValue)

@@ -1,19 +1,25 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.VolumeGroupDataSatelliteFactory;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfigData;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.ResourceGroupDataSatelliteFactory;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -23,6 +29,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Map;
+import java.util.TreeMap;
 
 @Singleton
 class StltRscGrpApiCallHelper
@@ -33,6 +40,7 @@ class StltRscGrpApiCallHelper
     private final ControllerPeerConnector controllerPeerConnector;
     private final CoreModule.ResourceGroupMap rscGrpMap;
     private final ResourceGroupDataSatelliteFactory resourceGroupDataFactory;
+    private final VolumeGroupDataSatelliteFactory volumeGroupDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
@@ -43,6 +51,7 @@ class StltRscGrpApiCallHelper
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.ResourceGroupMap rscGrpMapRef,
         ResourceGroupDataSatelliteFactory resourceGroupDataFactoryRef,
+        VolumeGroupDataSatelliteFactory volumeGroupDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -52,6 +61,7 @@ class StltRscGrpApiCallHelper
         controllerPeerConnector = controllerPeerConnectorRef;
         rscGrpMap = rscGrpMapRef;
         resourceGroupDataFactory = resourceGroupDataFactoryRef;
+        volumeGroupDataFactory = volumeGroupDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
 
@@ -61,10 +71,11 @@ class StltRscGrpApiCallHelper
         ResourceGroupName rscGrpName = new ResourceGroupName(rscGrpApiRef.getName());
         AutoSelectFilterApi autoPlaceConfigPojo = rscGrpApiRef.getAutoSelectFilter();
 
-        ResourceGroup resourceGroup = rscGrpMap.get(rscGrpName);
-        if (resourceGroup == null)
+        ResourceGroupData rscGrp = (ResourceGroupData) rscGrpMap.get(rscGrpName);
+        if (rscGrp == null)
         {
-            resourceGroup = resourceGroupDataFactory.getInstanceSatellite(
+            rscGrp = resourceGroupDataFactory.getInstanceSatellite(
+                rscGrpApiRef.getUuid(),
                 rscGrpName,
                 rscGrpApiRef.getDescription(),
                 autoPlaceConfigPojo.getLayerStackList(),
@@ -77,23 +88,58 @@ class StltRscGrpApiCallHelper
                 autoPlaceConfigPojo.getProviderList(),
                 autoPlaceConfigPojo.getDisklessOnRemaining()
             );
-            resourceGroup.getRscDfnGrpProps(apiCtx).map().putAll(rscGrpApiRef.getRcsDfnProps());
-            rscGrpMap.put(rscGrpName, resourceGroup);
+            rscGrp.getProps(apiCtx).map().putAll(rscGrpApiRef.getProps());
+            rscGrpMap.put(rscGrpName, rscGrp);
         }
         else
         {
-            ResourceGroupData rscGrpData = (ResourceGroupData) resourceGroup;
-            Map<String, String> targetProps = rscGrpData.getRscDfnGrpProps(apiCtx).map();
+            Map<String, String> targetProps = rscGrp.getProps(apiCtx).map();
             targetProps.clear();
-            targetProps.putAll(rscGrpApiRef.getRcsDfnProps());
+            targetProps.putAll(rscGrpApiRef.getProps());
 
-            rscGrpData.setDescription(apiCtx, rscGrpApiRef.getDescription());
+            rscGrp.setDescription(apiCtx, rscGrpApiRef.getDescription());
 
-            AutoSelectorConfigData autoPlaceConfig = (AutoSelectorConfigData) rscGrpData.getAutoPlaceConfig();
+            AutoSelectorConfigData autoPlaceConfig = (AutoSelectorConfigData) rscGrp.getAutoPlaceConfig();
 
             autoPlaceConfig.applyChanges(autoPlaceConfigPojo);
         }
 
-        return resourceGroup;
+        Map<VolumeNumber, VolumeGroup> vlmGrpsToDelete = new TreeMap<>();
+        // add all current volume group and delete them again if they are still in the vlmGrpApiList
+        for (VolumeGroup vlmGrp : rscGrp.getVolumeGroups(apiCtx))
+        {
+            vlmGrpsToDelete.put(vlmGrp.getVolumeNumber(), vlmGrp);
+        }
+
+        try
+        {
+            for (VolumeGroup.VlmGrpApi vlmGrpApi : rscGrpApiRef.getVlmGrpList())
+            {
+                VolumeNumber vlmNr = new VolumeNumber(vlmGrpApi.getVolumeNr());
+                VolumeGroup vlmGrp = vlmGrpsToDelete.remove(vlmNr);
+                if (vlmGrp == null)
+                {
+                    vlmGrp = volumeGroupDataFactory.getInstanceSatellite(
+                        vlmGrpApi.getUUID(),
+                        rscGrp,
+                        vlmNr
+                    );
+                }
+                Props vlmGrpProps = vlmGrp.getProps(apiCtx);
+                vlmGrpProps.clear();
+                vlmGrpProps.map().putAll(vlmGrpApi.getProps());
+            }
+
+            for (VolumeNumber vlmNr : vlmGrpsToDelete.keySet())
+            {
+                rscGrp.deleteVolumeGroup(apiCtx, vlmNr);
+            }
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return rscGrp;
     }
 }

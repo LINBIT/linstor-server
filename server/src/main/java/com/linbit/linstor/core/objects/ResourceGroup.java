@@ -42,7 +42,7 @@ public interface ResourceGroup extends TransactionObject, DbgInstanceUuid,
 
     boolean hasResourceDefinitions(AccessContext accCtxRef) throws AccessDeniedException;
 
-    Props getRscDfnGrpProps(AccessContext accCtxRef)
+    Props getProps(AccessContext accCtxRef)
         throws AccessDeniedException;
 
     AutoSelectorConfig getAutoPlaceConfig();
@@ -67,7 +67,7 @@ public interface ResourceGroup extends TransactionObject, DbgInstanceUuid,
         @Nullable UUID getUuid();
         String getName();
         String getDescription();
-        Map<String, String> getRcsDfnProps();
+        Map<String, String> getProps();
         @Nullable AutoSelectFilterApi getAutoSelectFilter();
         List<VlmGrpApi> getVlmGrpList();
     }

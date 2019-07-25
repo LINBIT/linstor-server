@@ -174,8 +174,8 @@ public class CtrlRscGrpApiCallHandler
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.RESOURCE_DEFINITION,
-                rscGrpPojoRef.getRcsDfnProps(),
-                rscGrp.getRscDfnGrpProps(peerAccCtx.get()),
+                rscGrpPojoRef.getProps(),
+                rscGrp.getProps(peerAccCtx.get()),
                 ApiConsts.FAIL_ACC_DENIED_RSC_GRP
             );
 
@@ -290,7 +290,7 @@ public class CtrlRscGrpApiCallHandler
 
             if (!overrideProps.isEmpty() || !deletePropKeysRef.isEmpty() || !deleteNamespacesRef.isEmpty())
             {
-                Props rscDfnGrpProps = rscGrpData.getRscDfnGrpProps(peerCtx);
+                Props rscDfnGrpProps = rscGrpData.getProps(peerCtx);
                 ctrlPropsHelper.fillProperties(
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
@@ -678,7 +678,7 @@ public class CtrlRscGrpApiCallHandler
                     null,
                     null,
                     null,
-                    rscGrp.getRscDfnGrpProps(peerCtx).map(),
+                    rscGrp.getProps(peerCtx).map(),
                     vlmDfnCrtList,
                     layerStackStr,
                     null,

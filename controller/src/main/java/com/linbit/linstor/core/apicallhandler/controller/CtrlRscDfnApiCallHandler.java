@@ -476,6 +476,9 @@ public class CtrlRscDfnApiCallHandler
         ResourceDefinitionData rscDfn;
         try
         {
+            if (rscGrpNameStr == null) {
+                rscGrpNameStr = InternalApiConsts.DEFAULT_RSC_GRP_NAME;
+            }
 
             ResourceGroupData rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStr, false);
             if (rscGrp == null && InternalApiConsts.DEFAULT_RSC_GRP_NAME.equalsIgnoreCase(rscGrpNameStr))

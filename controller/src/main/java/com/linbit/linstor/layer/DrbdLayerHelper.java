@@ -24,6 +24,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
@@ -327,6 +328,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
             vlmRef.getVolumeDefinition().getProps(apiCtx),
             vlmRef.getResource().getProps(apiCtx),
             vlmRef.getResourceDefinition().getProps(apiCtx),
+            vlmRef.getResourceDefinition().getResourceGroup().getProps(apiCtx),
             vlmRef.getResource().getAssignedNode().getProps(apiCtx)
         ).getProp(
             ApiConsts.KEY_STOR_POOL_DRBD_META_NAME
@@ -351,6 +353,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
         Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
         Props rscProps = rsc.getProps(apiCtx);
         Props rscDfnProps = rscDfn.getProps(apiCtx);
+        Props rscGrpProps = rscDfn.getResourceGroup().getProps(apiCtx);
         Props nodeProps = rsc.getAssignedNode().getProps(apiCtx);
 
         while (iterateVolumeDfn.hasNext())
@@ -359,6 +362,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
                 iterateVolumeDfn.next().getProps(apiCtx),
                 rscProps,
                 rscDfnProps,
+                rscGrpProps,
                 nodeProps
             ).getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
             if (isExternalMetaDataPool(metaPool))
@@ -418,10 +422,12 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
             VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
             Resource rsc = vlmRef.getResource();
             Node node = rsc.getAssignedNode();
+            ResourceGroup rscGrp = vlmDfn.getResourceDefinition().getResourceGroup();
             PriorityProps prioProps = new PriorityProps(
                 vlmDfn.getProps(accCtx),
                 rsc.getProps(accCtx),
                 vlmDfn.getResourceDefinition().getProps(accCtx),
+                rscGrp.getProps(accCtx),
                 node.getProps(accCtx)
             );
 
@@ -488,6 +494,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
             {
                 String peerSlotsNewResourceProp = new PriorityProps(
                     rscDfn.getProps(apiCtx),
+                    rscDfn.getResourceGroup().getProps(apiCtx),
                     stltConf
                 ).getProp(ApiConsts.KEY_PEER_SLOTS_NEW_RESOURCE);
                 peerSlots = peerSlotsNewResourceProp == null ?

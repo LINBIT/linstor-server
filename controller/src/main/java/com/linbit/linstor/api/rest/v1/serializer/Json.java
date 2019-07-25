@@ -689,14 +689,17 @@ public class Json
         {
             rscGrp.description = rscGrpApi.getDescription();
         }
-        rscGrp.props = rscGrpApi.getRcsDfnProps();
+        rscGrp.props = rscGrpApi.getProps();
         rscGrp.uuid = rscGrpApi.getUuid().toString();
 
         AutoSelectFilterApi autoSelectApi = rscGrpApi.getAutoSelectFilter();
         if (autoSelectApi != null)
         {
             AutoSelectFilter auto_select_filter = new AutoSelectFilter();
-            auto_select_filter.place_count = autoSelectApi.getReplicaCount();
+            if (autoSelectApi.getReplicaCount() != null)
+            {
+                auto_select_filter.place_count = autoSelectApi.getReplicaCount();
+            }
             auto_select_filter.storage_pool = autoSelectApi.getStorPoolNameStr();
             auto_select_filter.not_place_with_rsc = autoSelectApi.getDoNotPlaceWithRscList();
             auto_select_filter.not_place_with_rsc_regex = autoSelectApi.getDoNotPlaceWithRscRegex();

@@ -96,10 +96,11 @@ public class CtrlStorPoolResolveHelper
             Props rscProps = ctrlPropsHelper.getProps(accCtx, rsc);
             Props vlmDfnProps = ctrlPropsHelper.getProps(accCtx, vlmDfn);
             Props rscDfnProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition());
+            Props rscGrpProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition().getResourceGroup());
             Props nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getAssignedNode());
 
             PriorityProps vlmPrioProps = new PriorityProps(
-                rscProps, vlmDfnProps, rscDfnProps, nodeProps
+                rscProps, vlmDfnProps, rscDfnProps, rscGrpProps, nodeProps
             );
 
             String storPoolNameStr = vlmPrioProps.getProp(KEY_STOR_POOL_NAME);

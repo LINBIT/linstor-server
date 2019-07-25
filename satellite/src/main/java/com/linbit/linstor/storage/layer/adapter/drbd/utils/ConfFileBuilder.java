@@ -1,9 +1,10 @@
 package com.linbit.linstor.storage.layer.adapter.drbd.utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,8 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.PriorityProps.MultiResult;
+import com.linbit.linstor.PriorityProps.ValueWithDescirption;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -30,6 +33,7 @@ import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.Resource.RscFlags;
@@ -122,6 +126,9 @@ public class ConfFileBuilder
         {
             throw new ImplementationError("No resource definition found for " + localRsc + "!");
         }
+        final Props rscDfnProps = rscDfn.getProps(accCtx);
+        final ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        final Props rscGrpProps = rscGrp.getProps(accCtx);
 
         appendLine(header());
         appendLine("");
@@ -131,31 +138,35 @@ public class ConfFileBuilder
             // include linstor common
             appendLine("template-file \"linstor_common.conf\";");
 
-            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS).isPresent())
+            PriorityProps prioProps = new PriorityProps()
+                .addProps(rscDfnProps, "Resource definition (" + rscDfn.getName() + ")")
+                .addProps(rscGrpProps, "Resource group (" + rscGrp.getName() + ")");
+
+            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS))
             {
                 appendLine("");
                 appendLine("handlers");
                 try (Section optionsSection = new Section())
                 {
-                    appendDrbdOptions(
+                    appendConflictingDrbdOptions(
                         LinStorObject.RESOURCE_DEFINITION,
-                        rscDfn.getProps(accCtx),
                         ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
+                        prioProps,
                         true
                     );
                 }
             }
 
-            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS).isPresent())
+            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS))
             {
                 appendLine("");
                 appendLine("options");
                 try (Section optionsSection = new Section())
                 {
-                    appendDrbdOptions(
+                    appendConflictingDrbdOptions(
                         LinStorObject.CONTROLLER,
-                        rscDfn.getProps(accCtx),
-                        ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS
+                        ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS,
+                        prioProps
                     );
                 }
             }
@@ -169,23 +180,23 @@ public class ConfFileBuilder
                 // TODO: make configurable
                 appendLine("shared-secret     \"%s\";", rscDfnData.getSecret());
 
-                appendDrbdOptions(
+                appendConflictingDrbdOptions(
                     LinStorObject.CONTROLLER,
-                    rscDfn.getProps(accCtx),
-                    ApiConsts.NAMESPC_DRBD_NET_OPTIONS
+                    ApiConsts.NAMESPC_DRBD_NET_OPTIONS,
+                    prioProps
                 );
             }
 
-            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
+            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS))
             {
                 appendLine("");
                 appendLine("disk");
                 try (Section ignore = new Section())
                 {
-                    appendDrbdOptions(
+                    appendConflictingDrbdOptions(
                         LinStorObject.CONTROLLER,
-                        rscDfn.getProps(accCtx),
-                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
+                        prioProps
                     );
                 }
             }
@@ -276,28 +287,46 @@ public class ConfFileBuilder
                                 {
                                     appendConflictingDrbdOptions(
                                         LinStorObject.CONTROLLER,
-                                        "resource-definition",
-                                        rscDfn.getProps(accCtx),
-                                        rscConnProps,
-                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
+                                        new PriorityProps()
+                                            .addProps(
+                                                rscConnProps,
+                                                String.format(
+                                                    "Resource connection(%s <-> %s)",
+                                                    rscConn.getSourceResource(accCtx),
+                                                    rscConn.getTargetResource(accCtx)
+                                                )
+                                            )
+                                            .addProps(
+                                                rscDfnProps,
+                                                String.format(
+                                                    "Resource definition (%s)",
+                                                    rscDfn.getName()
+                                                )
+                                            )
+                                            .addProps(
+                                                rscGrpProps,
+                                                String.format(
+                                                    "Resource group (%s)",
+                                                    rscGrp.getName()
+                                                )
+                                            )
                                     );
                                 }
                             }
                         }
                         else
                         {
-                            if (rscDfn.getProps(accCtx)
-                                    .getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent()
-                            )
+                            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS))
                             {
                                 appendLine("");
                                 appendLine("disk");
                                 try (Section ignore = new Section())
                                 {
-                                    appendDrbdOptions(
-                                            LinStorObject.CONTROLLER,
-                                            rscDfn.getProps(accCtx),
-                                            ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
+                                    appendConflictingDrbdOptions(
+                                        LinStorObject.CONTROLLER,
+                                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
+                                        prioProps
                                     );
                                 }
                             }
@@ -346,8 +375,8 @@ public class ConfFileBuilder
                                                 secondNode.getName().value.equalsIgnoreCase(secondNodeName)))
                                         {
                                             throw new ImplementationError(
-                                                    "Configured node names " + firstNodeName + " and " +
-                                                    secondNodeName + " do not match the actual node names."
+                                                "Configured node names " + firstNodeName + " and " +
+                                                secondNodeName + " do not match the actual node names."
                                             );
                                         }
 
@@ -359,17 +388,17 @@ public class ConfFileBuilder
                                         if (firstNic == null)
                                         {
                                             throw new StorageException("Network interface '" + nicName +
-                                                    "' of node '" + firstNode + "' does not exist!");
+                                                "' of node '" + firstNode + "' does not exist!");
                                         }
 
                                         nicName = nodes.get().getProp(secondNodeName);
                                         NetInterface secondNic = secondNode.getNetInterface(
-                                                accCtx, new NetInterfaceName(nicName));
+                                            accCtx, new NetInterfaceName(nicName));
 
                                         if (secondNic == null)
                                         {
                                             throw new StorageException("Network interface '" + nicName +
-                                                    "' of node '" + secondNode + "' does not exist!");
+                                                "' of node '" + secondNode + "' does not exist!");
                                         }
 
                                         pathsList.add(new Pair<>(firstNic, secondNic));
@@ -377,18 +406,18 @@ public class ConfFileBuilder
                                     catch (InvalidKeyException exc)
                                     {
                                         throw new ImplementationError(
-                                                "No network interface configured!", exc);
+                                            "No network interface configured!", exc);
                                     }
                                     catch (InvalidNameException exc)
                                     {
                                         throw new StorageException(
-                                                "Name format of for network interface is not valid!", exc);
+                                            "Name format of for network interface is not valid!", exc);
                                     }
                                 }
                                 else
                                 {
                                     throw new ImplementationError(
-                                            "When configuring a path it must contain exactly two nodes!");
+                                        "When configuring a path it must contain exactly two nodes!");
                                 }
                             }
 
@@ -417,27 +446,27 @@ public class ConfFileBuilder
                 }
             }
 
-            Optional<String> compressionTypeProp = rscDfn.getProps(accCtx)
-                .getNamespace(ApiConsts.NAMESPC_DRBD_PROXY)
-                .map(Props::map)
-                .map(map -> map.get(ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE));
+            String compressionTypeProp = prioProps.getProp(
+                ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE,
+                ApiConsts.NAMESPC_DRBD_PROXY
+            );
 
-            if (rscDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS).isPresent() ||
-                compressionTypeProp.isPresent())
+            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS) ||
+                compressionTypeProp != null)
             {
                 appendLine("");
                 appendLine("proxy");
                 try (Section ignore = new Section())
                 {
-                    appendDrbdOptions(
+                    appendConflictingDrbdOptions(
                         LinStorObject.DRBD_PROXY,
-                        rscDfn.getProps(accCtx),
-                        ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS
+                        ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS,
+                        prioProps
                     );
 
-                    if (compressionTypeProp.isPresent())
+                    if (compressionTypeProp != null)
                     {
-                        appendCompressionPlugin(rscDfn, compressionTypeProp.get());
+                        appendCompressionPlugin(rscDfn, compressionTypeProp);
                     }
                 }
             }
@@ -565,9 +594,11 @@ public class ConfFileBuilder
             List<String> compressionPluginTerms = new ArrayList<>();
             compressionPluginTerms.add(compressionType);
 
-            Map<String, String> drbdProps = rscDfn.getProps(accCtx)
-                .getNamespace(namespace)
-                .map(Props::map).orElse(new HashMap<>());
+            Map<String, String> drbdProps = new PriorityProps(
+                    rscDfn.getProps(accCtx),
+                    rscDfn.getResourceGroup().getProps(accCtx)
+                )
+                .renderRelativeMap(namespace);
 
             for (Map.Entry<String, String> entry : drbdProps.entrySet())
             {
@@ -611,62 +642,63 @@ public class ConfFileBuilder
 
     private void appendConflictingDrbdOptions(
         final LinStorObject lsObj,
-        final String parentName,
-        final Props propsParent,
-        final Props props,
-        final String namespace
+        final String namespace,
+        final PriorityProps prioProps
     )
     {
-        Map<String, String> mapParent = propsParent.getNamespace(namespace)
-            .map(Props::map).orElse(new HashMap<>());
+        appendConflictingDrbdOptions(lsObj, namespace, prioProps, false);
+    }
 
-        Map<String, String> mapProps = props.getNamespace(namespace)
-            .map(Props::map).orElse(new HashMap<>());
+    private void appendConflictingDrbdOptions(
+        final LinStorObject lsObj,
+        final String namespace,
+        final PriorityProps prioProps,
+        final boolean quoteValue
+    )
+    {
+        Map<String, MultiResult> map = prioProps.renderConflictingMap(namespace, true);
 
-        Set<String> writtenProps = new TreeSet<>();
-
-        for (Map.Entry<String, String> entry : mapParent.entrySet())
+        StringBuilder confLine = new StringBuilder();
+        for (Entry<String, MultiResult> entry : map.entrySet())
         {
+            confLine.setLength(0);
+
+            appendIndent(confLine);
+
             String key = entry.getKey();
-            String value = entry.getValue();
-            final String configKey = key.substring(namespace.length() + 1);
+
+            MultiResult multiResult = entry.getValue();
+            String value = multiResult.first.value;
+            confLine.append(
+                String.format(
+                    quoteValue ? "%s \"%s\";" : "%s %s;",
+                    key,
+                    value
+                )
+            );
+
             if (checkValidDrbdOption(lsObj, key, value))
             {
-                final String absKey = Props.PATH_SEPARATOR + key; // key needs to be absolute
-                if (mapProps.containsKey(absKey))
-                {
-                    appendCommentLine("%s %s; # set on %s",
-                        configKey,
-                        value,
-                        parentName
-                    );
-                    appendLine("%s %s;",
-                        configKey,
-                        mapProps.get(absKey)
-                    );
-                }
-                else
-                {
-                    appendLine("%s %s;",
-                        configKey,
-                        value
-                    );
-                }
-                writtenProps.add(key);
-            }
-        }
+                append(confLine.toString());
 
-        for (Map.Entry<String, String> entry : mapProps.entrySet())
-        {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            final String configKey = key.substring(namespace.length() + 1);
-            if (!writtenProps.contains(key) && checkValidDrbdOption(lsObj, key, value))
-            {
-                appendLine("%s %s;",
-                    configKey,
-                    value
-                );
+                if (!multiResult.conflictingList.isEmpty())
+                {
+                    int commentPos = confLine.length() + 1;
+                    confLine.setLength(0);
+
+                    char[] spacesChar = new char[commentPos];
+                    Arrays.fill(spacesChar, ' ');
+                    String spaces = new String(spacesChar);
+
+                    for (ValueWithDescirption valueWithDescirption : multiResult.conflictingList)
+                    {
+                        append("%s# overrides value '%s' from %s",
+                            spaces,
+                            valueWithDescirption.value,
+                            valueWithDescirption.propsDescription
+                        );
+                    }
+                }
             }
         }
     }
@@ -684,22 +716,23 @@ public class ConfFileBuilder
         final LinStorObject lsObj,
         final Props props,
         final String namespace,
-        boolean quote
+        final boolean quote
     )
     {
         Map<String, String> drbdProps = props.getNamespace(namespace)
-            .map(Props::map).orElse(new HashMap<>());
+            .map(Props::map).orElse(Collections.emptyMap());
+        int substrFrom = namespace.length() + 1;
 
+        String sFormat = quote ? "%s \"%s\";" : "%s %s;";
         for (Map.Entry<String, String> entry : drbdProps.entrySet())
         {
-            String key = entry.getKey();
+            String keyWithNamespace = entry.getKey();
             String value = entry.getValue();
-            if (checkValidDrbdOption(lsObj, key, value))
+            if (checkValidDrbdOption(lsObj, keyWithNamespace, value))
             {
-                String sFormat = quote ? "%s \"%s\";" : "%s %s;";
                 appendLine(
                     sFormat,
-                    key.substring(namespace.length() + 1),
+                    keyWithNamespace.substring(substrFrom),
                     value
                 );
             }
@@ -871,9 +904,14 @@ public class ConfFileBuilder
 
     private void appendIndent()
     {
+        appendIndent(stringBuilder);
+    }
+
+    private void appendIndent(StringBuilder sbRef)
+    {
         for (int idx = 0; idx < indentDepth; idx++)
         {
-            stringBuilder.append("    ");
+            sbRef.append("    ");
         }
     }
 

@@ -241,7 +241,7 @@ public class SQLUtils
         try
         {
             list = OBJ_MAPPER.readValue(
-                resultSet.getString(columnName),
+                resultSet.getBytes(columnName),
                 List.class
             );
         }

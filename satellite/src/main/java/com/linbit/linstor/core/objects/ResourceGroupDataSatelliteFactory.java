@@ -75,6 +75,7 @@ public class ResourceGroupDataSatelliteFactory
     }
 
     public ResourceGroupData getInstanceSatellite(
+        UUID uuid,
         ResourceGroupName rscGrpName,
         @Nullable String description,
         @Nullable List<DeviceLayerKind> layerStackRef,
@@ -94,7 +95,7 @@ public class ResourceGroupDataSatelliteFactory
         if (rscGrp == null)
         {
             rscGrp = new ResourceGroupData(
-                UUID.randomUUID(),
+                uuid,
                 objectProtectionFactory.getInstance(
                     sysCtx,
                     ObjectProtection.buildPath(rscGrpName),

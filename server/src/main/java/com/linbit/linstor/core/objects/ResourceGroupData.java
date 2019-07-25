@@ -200,7 +200,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public Props getRscDfnGrpProps(AccessContext accCtxRef)
+    public Props getProps(AccessContext accCtxRef)
         throws AccessDeniedException
     {
         checkDeleted();

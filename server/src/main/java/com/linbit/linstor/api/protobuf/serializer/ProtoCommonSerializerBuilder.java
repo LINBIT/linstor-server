@@ -34,6 +34,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnApi;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
@@ -591,12 +592,18 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return builder.build();
     }
 
+    public static RscGrp serializeResourceGroup(AccessContext accCtx, ResourceGroup rscGrp)
+        throws AccessDeniedException
+    {
+        return serializeResourceGroup(rscGrp.getApiData(accCtx));
+    }
+
     public static RscGrp serializeResourceGroup(RscGrpApi rscGrpApi)
     {
         RscGrp.Builder builder = RscGrp.newBuilder()
             .setUuid(rscGrpApi.getUuid().toString())
             .setName(rscGrpApi.getName())
-            .putAllRscDfnProps(rscGrpApi.getRcsDfnProps())
+            .putAllRscDfnProps(rscGrpApi.getProps())
             .addAllVlmGrp(serializeVolumeGroups(rscGrpApi.getVlmGrpList()));
         if (rscGrpApi.getDescription() != null)
         {
@@ -612,10 +619,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     public static AutoSelectFilter serializeAutoSelectFilter(AutoSelectFilterApi autoSelectFilter)
     {
         AutoSelectFilter.Builder builder = AutoSelectFilter.newBuilder()
-            .setReplicaCount(autoSelectFilter.getReplicaCount())
             .addAllDoNotPlaceWithRsc(autoSelectFilter.getDoNotPlaceWithRscList())
             .addAllReplicasOnDifferent(autoSelectFilter.getReplicasOnDifferentList())
             .addAllReplicasOnSame(autoSelectFilter.getReplicasOnSameList());
+        if (autoSelectFilter.getReplicaCount() != null)
+        {
+            builder.setReplicaCount(autoSelectFilter.getReplicaCount());
+        }
         if (autoSelectFilter.getDoNotPlaceWithRscRegex() != null)
         {
             builder.setDoNotPlaceWithRscRegex(autoSelectFilter.getDoNotPlaceWithRscRegex());

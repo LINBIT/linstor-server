@@ -130,6 +130,7 @@ public class SysFsHandler
         priorityProps.addProps(vlm.getVolumeDefinition().getProps(apiCtx));
         priorityProps.addProps(rsc.getProps(apiCtx));
         priorityProps.addProps(vlm.getResourceDefinition().getProps(apiCtx));
+        priorityProps.addProps(vlm.getResourceDefinition().getResourceGroup().getProps(apiCtx));
 
         for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlm, apiCtx))
         {

@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -134,10 +135,34 @@ public class CtrlPropsHelper
         return props;
     }
 
+    public Props getProps(ResourceGroup rscGrp)
+    {
+        return getProps(peerAccCtx.get(), rscGrp);
+    }
+
+    public Props getProps(AccessContext accCtx, ResourceGroup rscGrp)
+    {
+        Props props;
+        try
+        {
+            props = rscGrp.getProps(accCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access properties for resource group '" + rscGrp.getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+            );
+        }
+        return props;
+    }
+
     public Props getProps(VolumeDefinition vlmDfn)
     {
         return getProps(peerAccCtx.get(), vlmDfn);
     }
+
     public Props getProps(AccessContext accCtx, VolumeDefinition vlmDfn)
     {
         Props props;

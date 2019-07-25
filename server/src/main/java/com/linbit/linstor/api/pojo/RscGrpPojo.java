@@ -62,7 +62,7 @@ public class RscGrpPojo implements RscGrpApi
     }
 
     @Override
-    public Map<String, String> getRcsDfnProps()
+    public Map<String, String> getProps()
     {
         return rscDfnPropsMap;
     }

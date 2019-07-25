@@ -136,6 +136,7 @@ public class DatabaseLoader implements DatabaseDriver
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
+    private final CoreModule.ResourceGroupMap rscGrpMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
@@ -169,6 +170,7 @@ public class DatabaseLoader implements DatabaseDriver
         Provider<CtrlLayerDataHelper> ctrlLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CoreModule.ResourceGroupMap rscGrpMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
         CoreModule.KeyValueStoreMap keyValueStoreMapRef
@@ -200,6 +202,7 @@ public class DatabaseLoader implements DatabaseDriver
         ctrlLayerDataHelper = ctrlLayerDataHelperRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
+        rscGrpMap = rscGrpMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         freeSpaceMgrMap = freeSpaceMgrMapRef;
         keyValueStoreMap = keyValueStoreMapRef;
@@ -472,6 +475,7 @@ public class DatabaseLoader implements DatabaseDriver
 
             nodesMap.putAll(tmpNodesMap);
             rscDfnMap.putAll(tmpRscDfnMap);
+            rscGrpMap.putAll(tmpRscGroups);
             storPoolDfnMap.putAll(tmpStorPoolDfnMap);
             freeSpaceMgrMap.putAll(tmpFreeSpaceMgrMap);
         }

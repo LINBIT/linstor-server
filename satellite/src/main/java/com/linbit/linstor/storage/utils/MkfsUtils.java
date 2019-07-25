@@ -153,7 +153,8 @@ public class MkfsUtils
                 PriorityProps prioProps = new PriorityProps(
                     rsc.getProps(wrkCtx),
                     vlm.getVolumeDefinition().getProps(wrkCtx),
-                    vlm.getResourceDefinition().getProps(wrkCtx)
+                    vlm.getResourceDefinition().getProps(wrkCtx),
+                    vlm.getResourceDefinition().getResourceGroup().getProps(wrkCtx)
                 );
 
                 final String fsType = prioProps.getProp(ApiConsts.KEY_FS_TYPE, ApiConsts.NAMESPC_FILESYSTEM);

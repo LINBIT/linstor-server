@@ -98,6 +98,7 @@ public class ResourceDefinitionDataSatelliteTest
             SYS_CTX,
             resDfnUuid,
             resourceGroupDataFactory.getInstanceSatellite(
+                UUID.randomUUID(),
                 new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
                 "",
                 null,
@@ -135,6 +136,7 @@ public class ResourceDefinitionDataSatelliteTest
             SYS_CTX,
             resDfnUuid,
             resourceGroupDataFactory.getInstanceSatellite(
+                UUID.randomUUID(),
                 new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
                 "",
                 null,
