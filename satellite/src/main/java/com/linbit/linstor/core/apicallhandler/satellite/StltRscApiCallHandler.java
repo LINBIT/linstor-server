@@ -90,6 +90,7 @@ class StltRscApiCallHandler
     private final DeviceManager deviceManager;
     private final ControllerPeerConnector controllerPeerConnector;
     private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceGroupMap rscGrpMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
@@ -115,6 +116,7 @@ class StltRscApiCallHandler
         DeviceManager deviceManagerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceGroupMap rscGrpMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
         ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactoryRef,
@@ -139,6 +141,7 @@ class StltRscApiCallHandler
         deviceManager = deviceManagerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         nodesMap = nodesMapRef;
+        rscGrpMap = rscGrpMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
@@ -175,7 +178,13 @@ class StltRscApiCallHandler
             ResourceDefinition removedRscDfn = rscDfnMap.remove(rscName); // just to be sure
             if (removedRscDfn != null)
             {
+                ResourceGroup rscGrp = removedRscDfn.getResourceGroup();
                 removedRscDfn.delete(apiCtx);
+                if (!rscGrp.hasResourceDefinitions(apiCtx))
+                {
+                    rscGrpMap.remove(rscGrp.getName());
+                    rscGrp.delete(apiCtx);
+                }
                 transMgrProvider.get().commit();
             }
 

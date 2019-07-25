@@ -25,12 +25,14 @@ import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -98,6 +100,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final ErrorReporter errLog;
 
     private final CoreModule.NodesMap nodesMap;
+    private final CoreModule.ResourceGroupMap rscGrpMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
@@ -185,6 +188,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         @DeviceManagerContext AccessContext wrkCtxRef,
         ErrorReporter errorReporterRef,
         CoreModule.NodesMap nodesMapRef,
+        CoreModule.ResourceGroupMap rscGrpMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
@@ -209,6 +213,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         wrkCtx = wrkCtxRef;
         errLog = errorReporterRef;
         nodesMap = nodesMapRef;
+        rscGrpMap = rscGrpMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         reconfigurationLock = reconfigurationLockRef;
@@ -1026,11 +1031,19 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                                 }
                             }
                         }
+
+                        ResourceGroup rscGrp = curRscDfn.getResourceGroup();
                         // Since the local node no longer has the resource, it also does not need
                         // to know about the resource definition any longer, therefore
                         // delete the resource definition as well
                         curRscDfn.delete(wrkCtx); // just to be sure
                         rscDfnMap.remove(curRscName);
+                        if (!rscGrp.hasResourceDefinitions(wrkCtx))
+                        {
+                            ResourceGroupName rscGrpName = rscGrp.getName();
+                            rscGrp.delete(wrkCtx);
+                            rscGrpMap.remove(rscGrpName);
+                        }
                     }
                 }
 

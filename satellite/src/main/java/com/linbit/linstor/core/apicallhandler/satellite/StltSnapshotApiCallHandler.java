@@ -51,6 +51,7 @@ class StltSnapshotApiCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final DeviceManager deviceManager;
+    private final CoreModule.ResourceGroupMap rscGrpMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
     private final ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
@@ -66,6 +67,7 @@ class StltSnapshotApiCallHandler
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         DeviceManager deviceManagerRef,
+        CoreModule.ResourceGroupMap rscGrpMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactoryRef,
@@ -80,6 +82,7 @@ class StltSnapshotApiCallHandler
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         deviceManager = deviceManagerRef;
+        rscGrpMap = rscGrpMapRef;
         rscDfnMap = rscDfnMapRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
@@ -289,7 +292,13 @@ class StltSnapshotApiCallHandler
                     ResourceDefinition removedRscDfn = rscDfnMap.remove(rscName);
                     if (removedRscDfn != null)
                     {
+                        ResourceGroup rscGrp = removedRscDfn.getResourceGroup();
                         removedRscDfn.delete(apiCtx);
+                        if (!rscGrp.hasResourceDefinitions(apiCtx))
+                        {
+                            rscGrpMap.remove(rscGrp.getName());
+                            rscGrp.delete(apiCtx);
+                        }
                     }
                 }
 
