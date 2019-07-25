@@ -191,6 +191,7 @@ public class ReconnectorTask implements Task
                                     {
                                         errorReporter.reportError(exc);
                                     }
+                                    transMgr.returnConnection();
                                 }
                             }
                         }
