@@ -228,13 +228,25 @@ paths:
         - developers
       summary: modify a node
       operationId: nodeModify
-      description: |
+      description: |+
         Sets or modifies properties
 
         Possible properties are:
+        - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Preferred network interface to use
+
         - `StorPoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Linstor storage pool name to use.
+
+        - `StorPoolNameDrbdMeta` - regex[`^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
+        - `DrbdMetaType` - enum
+            * external
+            * internal
 
         - `StorDriver/SwordfishComposedNodeName` - regex[`.*`]
         - `StorDriver/SwordfishStorSvc` - regex[`.*`]
@@ -243,6 +255,14 @@ paths:
         - `StorDriver/SwordfishUrl` - regex[`.*`]
         - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
         - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
+        - `sys/fs/blkio_throttle_read` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
+
+        - `sys/fs/blkio_throttle_write` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
       responses:
         '200':
           description: node modified
@@ -470,7 +490,7 @@ paths:
         - developers
       summary: modify a storage pool
       operationId: nodeStoragePoolModify
-      description: |
+      description: |+
         Sets or modifies properties
 
         Possible properties are:
@@ -505,6 +525,14 @@ paths:
             * lz4
 
         - `StorDriver/WaitTimeoutAfterCreate` - regex[`[0-9]+`]
+        - `sys/fs/blkio_throttle_read` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
+
+        - `sys/fs/blkio_throttle_write` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
       responses:
         '200':
           description: storage pool modified
@@ -605,6 +633,14 @@ paths:
 
             Linstor storage pool name to use.
 
+        - `StorPoolNameDrbdMeta` - regex[`^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
+        - `DrbdMetaType` - enum
+            * external
+            * internal
+
         - `PeerSlotsNewResource` - range[`1-31`]
 
             DRBD peer slots to allocate for newly created resources (default 7), the number of peer slots cannot be changed once the resource is created, so allow sufficient slots to increase redundancy in the future
@@ -630,6 +666,27 @@ paths:
             * tcp
 
         - `NVMe/enabled` - range[`1-65535`]
+        - `StorDriver/LvcreateType` - enum
+            * linear
+            * striped
+            * mirror
+            * raid0
+            * raid1
+            * raid4
+            * raid5
+            * raid6
+            * raid10
+            * lzma
+            * lz4
+
+        - `sys/fs/blkio_throttle_read` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
+
+        - `sys/fs/blkio_throttle_write` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -871,6 +928,14 @@ paths:
 
             Linstor storage pool name to use.
 
+        - `StorPoolNameDrbdMeta` - regex[`^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
+        - `DrbdMetaType` - enum
+            * external
+            * internal
+
         - `OverrideVlmId` - regex[`.*`]
 
             Overwrites the generated '<resource-name>_<5 digit volume number>' volume name for migration purposes
@@ -904,6 +969,14 @@ paths:
             * lz4
 
         - `DrbdCurrentGi` - regex[`[a-fA-F0-9]{16}`]
+        - `sys/fs/blkio_throttle_read` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
+
+        - `sys/fs/blkio_throttle_write` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -1074,6 +1147,14 @@ paths:
 
             Linstor storage pool name to use.
 
+        - `StorPoolNameDrbdMeta` - regex[`^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name to use.
+
+        - `DrbdMetaType` - enum
+            * external
+            * internal
+
         - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Preferred network interface to use
@@ -1096,6 +1177,14 @@ paths:
         - `NVMe/PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Preferred network interface to use
+
+        - `sys/fs/blkio_throttle_read` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
+
+        - `sys/fs/blkio_throttle_write` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
 
       responses:
         '200':
@@ -1767,6 +1856,14 @@ paths:
             Preferred network interface to use
 
         - `StorDriver/WaitTimeoutAfterCreate` - regex[`[0-9]+`]
+        - `sys/fs/blkio_throttle_read` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
+
+        - `sys/fs/blkio_throttle_write` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -2630,7 +2727,8 @@ components:
             - Plain
             - SSL
         is_active:
-          description: Defines if this netinterface should be used for the satellite connection
+          description: Defines if this netinterface should be used for the satellite
+            connection
           type: boolean
         uuid:
           type: string
