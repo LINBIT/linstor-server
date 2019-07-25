@@ -1,3 +1,76 @@
+linstor-server (0.9.13-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * taskscheduleservice: catch exception in running task
+  * retryresourcestask: check if resource is deleted
+  * database/mariadb: add compatibility with mariadb
+  * allow node names to be matched with a search domain property
+  * ctrlauthenticator: fix typo
+  * ctrlapidataload: fix accessdenied on loadnode
+  * InvalidKeyException: extend from LinStorRuntimeException
+  * rest-api-docu: fix missing volume_number in volumes PUT
+  * CmldArguments: ConfigurationDir is now returned as Path
+  * grizzly-http: add exception mapper for ApiRcException
+  * apicallrcimpl: shortcut to create a ApiCallRc with 1 entry
+  * rest-api: add HTTPS server and new TOML config file
+  * apicallrcimpl: add more shortcut functions for quit ApiCallRc creation
+  * security/ldap: Add LDAP authentication support
+  * linstorconfig: migrate database.cfg into linstor.toml config file
+  * add linstor.toml example file
+  * rest-api: raise API version to 1.0.7 and is_active to changelog
+  * satellite: always create directory /var/lib/linstor
+  * retrytask: Satellite now notifies the controller about failed rscs
+  * devicehandlerimpl: fix abortlayerprocessing exception
+  * rest-api-docu: update property documentation
+  * reconnectorTask: fix task using up all db connections
+
+  [ Robert Altnoeder ]
+  * Replaced String.equals("") with .isEmpty()
+
+  [ Beorn Facchini ]
+  * Enable mutual SSL authentication for controller and satellite
+  * Read SSL keystore and truststore from resolved path
+
+  [ Roland Kammerer ]
+  * debian: fix dependency for postinstall
+
+  [ Gabor Hernadi ]
+  * Eclipse: Workaround
+  * SysFs: correctly removing throttle setting
+  * GenericDbDriver: Added check for missing ';'
+  * Luks: shred luks headers on backing device when deleting
+  * DrbdLayer: added support for external metadata
+  * StorageLayer: Intorduced AbsStorageVlmData
+  * Drbd: Fixed NPE when using external metadata
+  * Drbd: ExtMetaStorPool is now persisted to DB
+  * Drbd: Add toggle disk support for external metadata
+  * Migration: Fixed migration of storage pool movement
+  * Snapshot: fixed bug preventing snapshot-restore
+  * Drbd: ctrl reports error when ext-meta-stor-pool does not exist
+  * LayerData: removed duplicated reporting of errors
+  * Fixed unit tests
+  * Minor typo fixes
+  * FileProvider, FileThinProvider: first version
+  * NotifyStorPoolApplied
+  * ListVlm: Fixed reporting of thick-allocated-sizes
+  * FileProvider: Added snapshot support
+  * FileProvider: Added resize support
+  * FileProvider: Minor bugfix when deleting a FileVolume
+  * AbsStorageProvider: Added check for size of created volumes
+  * FileProvider: Added fail-fast for snapshot create
+  * FileProvider: minor changes in loop_device_mapper
+  * Small cleanups and a typo-fix
+  * Nvme: VlmData are now set to exists
+
+  [ Rainer Laschober ]
+  * Add new conn status for no stlt conn on node
+  * Make addr parameter of 'n i m'-cmd optional
+  * Prevent node creation without stlt conn
+  * Allow node to set active stlt conn on netIf crt/mod
+  * Add/Fix automatic reconnect functionality, fix lock guards
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 25 Jul 2019 08:15:57 +0200
+
 linstor-server (0.9.12-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]

@@ -1,5 +1,5 @@
 Name: linstor
-Version: 0.9.12
+Version: 0.9.13
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -131,6 +131,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Thu Jul 25 2019 Rene Peinthor <rene.peinthor@linbit.com> 0.9.13-1
+- New upstream release. File provider, Toml config, REST-API 1.0.7, Bug fixes.
+
 * Tue Jun 25 2019 Rene Peinthor <rene.peinthor@linbit.com> 0.9.12-1
 - New upstream release. REST-API 1.0.6, Bug fixes.
 
