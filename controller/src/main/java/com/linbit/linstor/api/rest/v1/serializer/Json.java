@@ -217,6 +217,7 @@ public class Json
                 }
             }
             rscDfn.layer_data.add(rscDfnLayerData);
+            rscDfn.resource_group = apiToResourceGroup(rscDfnApi.getResourceGroup());
         }
         return rscDfn;
     }

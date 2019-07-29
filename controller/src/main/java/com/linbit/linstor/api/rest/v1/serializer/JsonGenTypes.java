@@ -192,6 +192,7 @@ public class JsonGenTypes
          * unique object id
          */
         public String uuid;
+        public ResourceGroup resource_group;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
