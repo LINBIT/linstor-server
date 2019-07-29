@@ -13,6 +13,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -208,6 +209,22 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
     }
 
     @Override
+    public Props getVolumeGroupProps(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        VolumeGroup vlmGrp = vlmMap.get(vlmNrRef);
+        Props vlmGrpProps = vlmGrp.getProps(accCtx);
+
+        if (vlmGrpProps == null)
+        {
+            vlmGrpProps = ReadOnlyProps.emptyRoProps();
+        }
+        return vlmGrpProps;
+    }
+
+    @Override
     public AutoSelectorConfig getAutoPlaceConfig()
     {
         checkDeleted();
@@ -247,6 +264,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
         vlmMap.put(vlmGrpDataRef.getVolumeNumber(), vlmGrpDataRef);
     }
 
+    @Override
     public void deleteVolumeGroup(AccessContext accCtx, VolumeNumber vlmNrRef)
         throws AccessDeniedException
     {

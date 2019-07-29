@@ -874,20 +874,31 @@ public class ConfFileBuilder
             }
 
             final VolumeDefinition vlmDfn = vlmData.getVolume().getVolumeDefinition();
-            appendLine("volume %s", vlmDfn.getVolumeNumber().value);
+            VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+            appendLine("volume %s", vlmNr.value);
             try (Section volumeSection = new Section())
             {
                 appendLine("disk        %s;", disk);
 
-                if (vlmDfn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent())
+                ResourceGroup rscGrp = vlmDfn.getResourceDefinition().getResourceGroup();
+                PriorityProps vlmPrioProps = new PriorityProps()
+                    .addProps(
+                        vlmDfn.getProps(accCtx),
+                        "Volume Definition (" + vlmDfn.getResourceDefinition().getName() + "/" + vlmNr.value + ")"
+                    )
+                    .addProps(
+                        rscGrp.getVolumeGroupProps(accCtx, vlmNr),
+                        "Volume Group(" + rscGrp.getName() + "/" + vlmNr.value + ")"
+                    );
+                if (vlmPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS))
                 {
                     appendLine("disk");
                     try (Section ignore = new Section())
                     {
-                        appendDrbdOptions(
+                        appendConflictingDrbdOptions(
                             LinStorObject.CONTROLLER,
-                            vlmDfn.getProps(accCtx),
-                            ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
+                            ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
+                            vlmPrioProps
                         );
                     }
                 }

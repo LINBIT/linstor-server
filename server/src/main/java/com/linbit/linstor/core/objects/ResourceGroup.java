@@ -8,6 +8,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ProtectedObject;
@@ -51,6 +52,21 @@ public interface ResourceGroup extends TransactionObject, DbgInstanceUuid,
         throws AccessDeniedException;
 
     Stream<VolumeGroup> streamVolumeGroups(AccessContext accCtxRef)
+        throws AccessDeniedException;
+
+    /**
+     * Calls {@link #getVolumeGroup(AccessContext, VolumeNumber).getProps(AccessContext)} but instead of
+     * a possible {@link NullPointerException} (in case the {@link VolumeGroup} does not exist) this method
+     * returns an empty {@link ReadOnlyProps} instance.
+     *
+     * @param accCtxRef
+     * @param vlmNrRef
+     * @throws AccessDeniedException
+     */
+    Props getVolumeGroupProps(AccessContext accCtxRef, VolumeNumber vlmNrRef)
+        throws AccessDeniedException;
+
+    void deleteVolumeGroup(AccessContext accCtxRef, VolumeNumber vlmNrRef)
         throws AccessDeniedException;
 
     Collection<ResourceDefinition> getRscDfns(AccessContext accCtxRef)

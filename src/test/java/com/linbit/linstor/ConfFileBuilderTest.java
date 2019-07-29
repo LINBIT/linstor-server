@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -332,6 +333,7 @@ public class ConfFileBuilderTest
         Resource resource = Mockito.mock(Resource.class);
         ResourceDefinition resourceDefinition = Mockito.mock(ResourceDefinition.class);
         ResourceGroup rscGrp = Mockito.mock(ResourceGroup.class);
+        VolumeGroup vlmGrp = Mockito.mock(VolumeGroup.class);
         StateFlags<Resource.RscFlags> rscStateFlags = Mockito.mock(ResourceStateFlags.class);
         StateFlags<ResourceConnection.RscConnFlags> rscConnStateFlags = Mockito.mock(ResourceConnStateFlags.class);
         Node assignedNode = Mockito.mock(Node.class);
@@ -350,6 +352,7 @@ public class ConfFileBuilderTest
         Props nodeProps = Mockito.mock(Props.class);
         Props rscDfnProps = Mockito.mock(Props.class);
         Props rscGrpProps = Mockito.mock(Props.class);
+        Props vlmGrpProps = Mockito.mock(Props.class);
         Optional<Props> drbdprops = Optional.empty();
 
         when(storPool.getProps(accessContext)).thenReturn(storPoolProps);
@@ -405,6 +408,9 @@ public class ConfFileBuilderTest
         when(resourceDefinition.getResourceGroup()).thenReturn(rscGrp);
         when(rscGrp.getName()).thenReturn(new ResourceGroupName("testGroup"));
         when(rscGrp.getProps(accessContext)).thenReturn(rscGrpProps);
+        when(rscGrp.getVolumeGroup(accessContext, new VolumeNumber(0))).thenReturn(vlmGrp);
+        when(vlmGrp.getProps(accessContext)).thenReturn(vlmGrpProps);
+        when(rscGrp.getVolumeGroupProps(accessContext, new VolumeNumber(0))).thenReturn(vlmGrpProps);
 
         when(volumeDefinition.getProps(accessContext)).thenReturn(vlmDfnProps);
         when(vlmDfnProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS)).thenReturn(drbdprops);

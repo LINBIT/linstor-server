@@ -8,9 +8,12 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -35,6 +38,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
@@ -220,11 +224,15 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         try
         {
             Volume vlm = vlmDataRef.getVolume();
+            ResourceDefinition rscDfn = vlm.getResourceDefinition();
+            ResourceGroup rscGrp = rscDfn.getResourceGroup();
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
             PriorityProps prioProps = new PriorityProps(
                 vlm.getProps(storDriverAccCtx),
-                vlm.getVolumeDefinition().getProps(storDriverAccCtx),
-                vlm.getResourceDefinition().getProps(storDriverAccCtx),
-                vlm.getResourceDefinition().getResourceGroup().getProps(storDriverAccCtx),
+                vlmDfn.getProps(storDriverAccCtx),
+                rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
+                rscDfn.getProps(storDriverAccCtx),
+                rscGrp.getProps(storDriverAccCtx),
                 vlmDataRef.getStorPool().getProps(storDriverAccCtx)
             );
             type = prioProps.getProp(

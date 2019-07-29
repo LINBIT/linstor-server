@@ -6,7 +6,10 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -150,18 +153,22 @@ public class MkfsUtils
             rsc.getLayerData(wrkCtx).disableCheckFileSystem();
             for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
             {
+                VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+                ResourceDefinition rscDfn = vlm.getResourceDefinition();
+                ResourceGroup rscGrp = rscDfn.getResourceGroup();
                 PriorityProps prioProps = new PriorityProps(
                     rsc.getProps(wrkCtx),
-                    vlm.getVolumeDefinition().getProps(wrkCtx),
-                    vlm.getResourceDefinition().getProps(wrkCtx),
-                    vlm.getResourceDefinition().getResourceGroup().getProps(wrkCtx)
+                    vlmDfn.getProps(wrkCtx),
+                    rscGrp.getVolumeGroupProps(wrkCtx, vlmDfn.getVolumeNumber()),
+                    rscDfn.getProps(wrkCtx),
+                    rscGrp.getProps(wrkCtx)
                 );
 
                 final String fsType = prioProps.getProp(ApiConsts.KEY_FS_TYPE, ApiConsts.NAMESPC_FILESYSTEM);
                 if (fsType != null)
                 {
                     VlmProviderObject vlmProviderObject = rsc.getLayerData(wrkCtx).getVlmProviderObject(
-                        vlm.getVolumeDefinition().getVolumeNumber()
+                        vlmDfn.getVolumeNumber()
                     );
                     final String devicePath = vlmProviderObject.getDevicePath();
                     Optional<String> optFsType = MkfsUtils.hasFileSystem(

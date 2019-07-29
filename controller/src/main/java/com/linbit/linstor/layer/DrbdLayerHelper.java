@@ -324,12 +324,17 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
 
     private String getExtMetaDataStorPoolName(Volume vlmRef) throws InvalidKeyException, AccessDeniedException
     {
+        VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
+        ResourceDefinition rscDfn = vlmRef.getResourceDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        Resource rsc = vlmRef.getResource();
         return new PriorityProps(
-            vlmRef.getVolumeDefinition().getProps(apiCtx),
-            vlmRef.getResource().getProps(apiCtx),
-            vlmRef.getResourceDefinition().getProps(apiCtx),
-            vlmRef.getResourceDefinition().getResourceGroup().getProps(apiCtx),
-            vlmRef.getResource().getAssignedNode().getProps(apiCtx)
+            vlmDfn.getProps(apiCtx),
+            rscGrp.getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()),
+            rsc.getProps(apiCtx),
+            rscDfn.getProps(apiCtx),
+            rscGrp.getProps(apiCtx),
+            rsc.getAssignedNode().getProps(apiCtx)
         ).getProp(
             ApiConsts.KEY_STOR_POOL_DRBD_META_NAME
         );
@@ -425,6 +430,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
             ResourceGroup rscGrp = vlmDfn.getResourceDefinition().getResourceGroup();
             PriorityProps prioProps = new PriorityProps(
                 vlmDfn.getProps(accCtx),
+                rscGrp.getVolumeGroupProps(accCtx, vlmDfn.getVolumeNumber()),
                 rsc.getProps(accCtx),
                 vlmDfn.getResourceDefinition().getProps(accCtx),
                 rscGrp.getProps(accCtx),

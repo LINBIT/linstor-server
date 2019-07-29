@@ -1,9 +1,20 @@
 package com.linbit.linstor.core;
 
-import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -11,14 +22,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
-import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -125,12 +128,16 @@ public class SysFsHandler
     {
         Volume vlm = vlmDataRef.getVolume();
         Resource rsc = vlm.getResource();
+        ResourceDefinition rscDfn = vlm.getResourceDefinition();
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
         PriorityProps priorityProps = new PriorityProps();
         priorityProps.addProps(vlm.getProps(apiCtx));
-        priorityProps.addProps(vlm.getVolumeDefinition().getProps(apiCtx));
+        priorityProps.addProps(vlmDfn.getProps(apiCtx));
+        priorityProps.addProps(rscGrp.getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()));
         priorityProps.addProps(rsc.getProps(apiCtx));
-        priorityProps.addProps(vlm.getResourceDefinition().getProps(apiCtx));
-        priorityProps.addProps(vlm.getResourceDefinition().getResourceGroup().getProps(apiCtx));
+        priorityProps.addProps(rscDfn.getProps(apiCtx));
+        priorityProps.addProps(rscGrp.getProps(apiCtx));
 
         for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlm, apiCtx))
         {
