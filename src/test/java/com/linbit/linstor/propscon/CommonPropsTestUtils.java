@@ -16,6 +16,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessDeniedException;
 
 public class CommonPropsTestUtils
@@ -121,7 +122,7 @@ public class CommonPropsTestUtils
         final String secondPrefix,
         final int secondAmount
     )
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException
     {
         root.setProp("/", "");
         for (int firstIdx = 0; firstIdx < firstAmount; firstIdx++)

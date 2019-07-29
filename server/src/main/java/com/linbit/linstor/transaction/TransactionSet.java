@@ -2,11 +2,10 @@ package com.linbit.linstor.transaction;
 
 import com.linbit.CollectionDatabaseDriver;
 import com.linbit.NoOpCollectionDatabaseDriver;
-import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -125,9 +124,9 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
         {
             dbDriver.insert(parent, element, backingSet);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new LinStorSqlRuntimeException("An SQL exception occurred while adding an element", exc);
+            throw new LinStorDBRuntimeException("A database exception occurred while adding an element", exc);
         }
         return ret;
     }
@@ -143,9 +142,9 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
             {
                 dbDriver.remove(parent, (VALUE) obj, backingSet);
             }
-            catch (SQLException exc)
+            catch (DatabaseException exc)
             {
-                throw new LinStorSqlRuntimeException("An SQL exception occurred while deleting an element", exc);
+                throw new LinStorDBRuntimeException("A database exception occurred while deleting an element", exc);
             }
         }
         return ret;

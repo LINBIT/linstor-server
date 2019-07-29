@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -239,7 +240,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
             freeCapacity.set(freeCapacityRef);
             totalCapacity.set(totalCapacityRef);
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
             throw new ImplementationError("Updating free space should not throw an sql exception", sqlExc);
         }

@@ -4,6 +4,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -20,17 +21,16 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-import javax.inject.Provider;
 
-import java.sql.SQLException;
+import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
+
+import javax.inject.Provider;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
-import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
 public class StorPoolData extends BaseTransactionObject implements StorPool
 {
@@ -71,7 +71,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         Provider<TransactionMgr> transMgrProviderRef,
         Map<String, VlmProviderObject> volumeMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
         ErrorCheck.ctorNotNull(StorPoolData.class, FreeSpaceTracker.class, freeSpaceTrackerRef);
@@ -189,7 +189,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {
@@ -228,7 +228,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     public void setSupportsSnapshot(AccessContext accCtx, boolean supportsSnapshotsRef)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);

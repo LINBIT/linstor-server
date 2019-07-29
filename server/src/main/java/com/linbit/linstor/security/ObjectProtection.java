@@ -8,19 +8,18 @@ import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
-import java.sql.SQLException;
+import javax.inject.Provider;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.inject.Provider;
 
 /**
  * Security protection for linstor object
@@ -76,7 +75,7 @@ public final class ObjectProtection extends BaseTransactionObject
         TransactionObjectFactory transObjFactoryRef,
         ObjectProtectionDatabaseDriver dbDriver
     )
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         ObjectProtection objProt = null;
 
@@ -117,7 +116,7 @@ public final class ObjectProtection extends BaseTransactionObject
      * @param driver The DatabaseDriver. Can be null for temporary objects
      * @param transObjFactoryRef
      * @param transMgrProvider
-     * @throws SQLException
+     * @throws DatabaseException
      */
     ObjectProtection(
         AccessContext accCtx,
@@ -199,7 +198,7 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     public void resetCreator(AccessContext context)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         PrivilegeSet privs = context.getEffectivePrivs();
         privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
@@ -212,7 +211,7 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     public void setOwner(AccessContext context, Role newOwner)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         PrivilegeSet privs = context.getEffectivePrivs();
         privs.requirePrivileges(Privilege.PRIV_OBJ_OWNER);
@@ -230,7 +229,7 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     public void setSecurityType(AccessContext context, SecurityType newSecType)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         SecurityLevel globalSecLevel = SecurityLevel.get();
         switch (globalSecLevel)
@@ -253,7 +252,7 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     public void addAclEntry(AccessContext context, Role entryRole, AccessType grantedAccess)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         objectType.get().requireAccess(context, AccessType.CONTROL);
         if (context.subjectRole != objectOwner.get())
@@ -286,19 +285,19 @@ public final class ObjectProtection extends BaseTransactionObject
         addAclEntryImpl(entryRole, grantedAccess, true);
     }
 
-    /* package */ void restoreAclEntry(Role entryRole, AccessType grantedAccess) throws SQLException
+    /* package */ void restoreAclEntry(Role entryRole, AccessType grantedAccess) throws DatabaseException
     {
         addAclEntryImpl(entryRole, grantedAccess, false);
     }
 
-    private void addAclEntryImpl(Role entryRole, AccessType grantedAccess, boolean persist) throws SQLException
+    private void addAclEntryImpl(Role entryRole, AccessType grantedAccess, boolean persist) throws DatabaseException
     {
         AccessControlEntry oldValue = objectAcl.addEntry(entryRole, grantedAccess);
         setAcl(entryRole, grantedAccess, oldValue, persist);
     }
 
     public void delAclEntry(AccessContext context, Role entryRole)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         objectType.get().requireAccess(context, AccessType.CONTROL);
         if (context.subjectRole != objectOwner.get())
@@ -366,9 +365,9 @@ public final class ObjectProtection extends BaseTransactionObject
      * needs {@link AccessType#CONTROL}.
      * @param accCtx
      * @throws AccessDeniedException
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         requireAccess(accCtx, AccessType.CONTROL);
         activateTransMgr();
@@ -386,7 +385,7 @@ public final class ObjectProtection extends BaseTransactionObject
         AccessControlEntry oldEntry,
         boolean persist
     )
-        throws SQLException
+        throws DatabaseException
     {
         if (persist)
         {
@@ -409,7 +408,7 @@ public final class ObjectProtection extends BaseTransactionObject
         }
     }
 
-    private void delAcl(Role entryRole, AccessControlEntry oldEntry) throws SQLException
+    private void delAcl(Role entryRole, AccessControlEntry oldEntry) throws DatabaseException
     {
         ensureObjProtIsPersisted();
 
@@ -422,7 +421,7 @@ public final class ObjectProtection extends BaseTransactionObject
         }
     }
 
-    private void ensureObjProtIsPersisted() throws SQLException
+    private void ensureObjProtIsPersisted() throws DatabaseException
     {
         if (!persisted)
         {

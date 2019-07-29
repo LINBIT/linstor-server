@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
 import com.linbit.linstor.NodeConnectionData;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**
  * Database driver for {@link NodeConnectionData}.
@@ -15,17 +15,17 @@ public interface NodeConnectionDataDatabaseDriver
      *
      * @param nodeConDfnData
      *  The data to be stored (including the primary key)
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(NodeConnectionData nodeConDfnData) throws SQLException;
+    void create(NodeConnectionData nodeConDfnData) throws DatabaseException;
 
     /**
      * Removes the given {@link NodeConnectionData} from the database
      *
      * @param nodeConDfnData
      *  The data identifying the database entry to delete
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(NodeConnectionData nodeConDfnData) throws SQLException;
+    void delete(NodeConnectionData nodeConDfnData) throws DatabaseException;
 
 }

@@ -9,10 +9,12 @@ import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbUtils;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
@@ -25,6 +27,7 @@ import org.flywaydb.core.Flyway;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.constraints.NotNull;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -150,6 +153,12 @@ public class DbConnectionPool implements ControllerDatabase
             connections.add(dbConn);
             dbConn.setAutoCommit(false);
             dbConn.setSchema(DATABASE_SCHEMA_NAME);
+        }
+
+        if (dbConn == null)
+        {
+            System.err.println("Error: Unable to get Database connection.");
+            System.exit(InternalApiConsts.EXIT_CODE_IMPL_ERROR);
         }
         return dbConn;
     }
@@ -320,7 +329,7 @@ public class DbConnectionPool implements ControllerDatabase
         }
         catch (SQLException exc)
         {
-            throw new LinStorSqlRuntimeException("Failed to set transaction isolation", exc);
+            throw new LinStorDBRuntimeException("Failed to set transaction isolation", exc);
         }
     }
 }

@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -18,7 +19,8 @@ import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-import java.sql.SQLException;
+
+import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,8 +31,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.inject.Provider;
 
 /**
  * Representation of a resource
@@ -89,7 +89,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Map<Resource.Key, ResourceConnection> rscConnMapRef,
         Map<VolumeNumber, Volume> vlmMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
         dbDriver = dbDriverRef;
@@ -250,7 +250,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     synchronized void removeVolume(AccessContext accCtx, Volume vol)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -310,7 +310,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     @Override
     public void setLayerData(AccessContext accCtx, RscLayerObject layerData)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -319,14 +319,14 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         getStateFlags().enableFlags(accCtx, RscFlags.DELETE);
     }
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

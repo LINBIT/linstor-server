@@ -1,19 +1,18 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-
-import java.sql.SQLException;
 
 public interface NvmeLayerDatabaseDriver
 {
     ResourceLayerIdDatabaseDriver getIdDriver();
 
     // NvmeRscData methods
-    void create(NvmeRscData drbdRscData) throws SQLException;
-    void delete(NvmeRscData drbdRscData) throws SQLException;
+    void create(NvmeRscData drbdRscData) throws DatabaseException;
+    void delete(NvmeRscData drbdRscData) throws DatabaseException;
 
     // NvmeVlmData methods
-    void persist(NvmeVlmData drbdVlmData) throws SQLException;
-    void delete(NvmeVlmData drbdVlmData) throws SQLException;
+    void persist(NvmeVlmData drbdVlmData) throws DatabaseException;
+    void delete(NvmeVlmData drbdVlmData) throws DatabaseException;
 }

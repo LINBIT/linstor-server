@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -8,7 +9,6 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -60,10 +60,10 @@ public interface Snapshot extends TransactionObject, DbgInstanceUuid, Comparable
     StateFlags<SnapshotFlags> getFlags();
 
     void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     boolean getSuspendResource(AccessContext accCtx)
         throws AccessDeniedException;

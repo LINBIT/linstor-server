@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.LengthPadding;
 import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.crypto.SymmetricKeyCipher.CipherStrength;
 import com.linbit.linstor.InternalApiConsts;
@@ -24,6 +25,7 @@ import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -42,7 +44,6 @@ import javax.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,7 +57,6 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 
 import com.google.inject.Provider;
-import com.linbit.crypto.LengthPadding;
 
 @Singleton
 public class CtrlConfApiCallHandler
@@ -308,7 +308,7 @@ public class CtrlConfApiCallHandler
                 rc = ApiConsts.FAIL_INVLD_PROP;
             }
             else
-            if (exc instanceof SQLException)
+            if (exc instanceof DatabaseException)
             {
                 errorMsg = ResponseUtils.getSqlMsg(
                     "Persisting controller config prop with key '" + key + "' in namespace '" + namespace +
@@ -410,7 +410,7 @@ public class CtrlConfApiCallHandler
                 rc = ApiConsts.FAIL_INVLD_PROP;
             }
             else
-            if (exc instanceof SQLException)
+            if (exc instanceof DatabaseException)
             {
                 errorMsg = ResponseUtils.getSqlMsg(
                     "Deleting controller config prop with key '" + key + "' in namespace '" + namespace +
@@ -646,7 +646,7 @@ public class CtrlConfApiCallHandler
                 peerProvider.get()
             );
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             ResponseUtils.reportStatic(
                 exc,
@@ -676,7 +676,7 @@ public class CtrlConfApiCallHandler
     }
 
     private void setPassphraseImpl(String newPassphrase, byte[] masterKey)
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException, LinStorException
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException, LinStorException
     {
         Props ctrlConf = systemConfRepository.getCtrlConfForChange(peerAccCtx.get());
 
@@ -800,7 +800,7 @@ public class CtrlConfApiCallHandler
         String value,
         ApiCallRcImpl apiCallRc
     )
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException
     {
         Matcher matcher = NumberPoolModule.RANGE_PATTERN.matcher(value);
         if (matcher.find())
@@ -881,7 +881,7 @@ public class CtrlConfApiCallHandler
         String value,
         ApiCallRcImpl apiCallRc
     )
-        throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
+        throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
         Matcher matcher = NumberPoolModule.RANGE_PATTERN.matcher(value);
         if (matcher.find())

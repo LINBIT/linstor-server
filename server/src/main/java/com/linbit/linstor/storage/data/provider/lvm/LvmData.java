@@ -4,6 +4,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -14,9 +15,9 @@ import com.linbit.linstor.storage.interfaces.layers.storage.LvmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import javax.annotation.Nullable;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class LvmData extends AbsStorageVlmData implements LvmProviderObject
@@ -72,7 +73,7 @@ public class LvmData extends AbsStorageVlmData implements LvmProviderObject
     }
 
     @Override
-    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws SQLException, AccessDeniedException
+    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws DatabaseException, AccessDeniedException
     {
         super.setStorPool(accCtxRef, storPoolRef);
         volumeGroup = null; // force LvmProvider to repeat the lookup using the new storage pool

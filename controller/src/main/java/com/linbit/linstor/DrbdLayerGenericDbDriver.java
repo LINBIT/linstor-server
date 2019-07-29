@@ -9,6 +9,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
@@ -264,9 +265,9 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * Loads the layer data for the given {@link ResourceDefinition}s if available.
      *
      * @param rscDfnMap
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    public void loadLayerData(Map<ResourceName, ResourceDefinition> rscDfnMap) throws SQLException
+    public void loadLayerData(Map<ResourceName, ResourceDefinition> rscDfnMap) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RSC_DFN_AND_VLM_DFN))
         {
@@ -278,7 +279,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                     ResourceDefinition rscDfn = rscDfnMap.get(rscName);
                     if (rscDfn == null)
                     {
-                        throw new LinStorSqlRuntimeException(
+                        throw new LinStorDBRuntimeException(
                             "Loaded drbd resource definition data for non existent resource definition '" +
                                 rscName + "'"
                         );
@@ -328,7 +329,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                         VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(dbCtx, new VolumeNumber(vlmNr));
                         if (vlmDfn == null)
                         {
-                            throw new LinStorSqlRuntimeException(
+                            throw new LinStorDBRuntimeException(
                                 "Loaded drbd volume definition data for non existent volume definition '" +
                                     rscName + "', vlmNr: " + vlmNr
                             );
@@ -354,6 +355,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -364,19 +369,29 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         }
     }
 
-    private ResourceName getResourceName(ResultSet resultSet, String columnName) throws SQLException
+    private ResourceName getResourceName(ResultSet resultSet, String columnName) throws DatabaseException
     {
         ResourceName rscName;
+
         try
         {
-            rscName = new ResourceName(resultSet.getString(columnName));
+            final String rscNameStr = resultSet.getString(columnName);
+            try
+            {
+                rscName = new ResourceName(rscNameStr);
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new LinStorDBRuntimeException(
+                    "Failed to restore stored resourceName [" + rscNameStr + "]"
+                );
+            }
         }
-        catch (InvalidNameException exc)
+        catch (SQLException sqlExc)
         {
-            throw new LinStorSqlRuntimeException(
-                "Failed to restore stored resourceName [" + resultSet.getString(columnName) + "]"
-            );
+            throw new DatabaseException(sqlExc);
         }
+
         return rscName;
     }
 
@@ -389,7 +404,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * @return a {@link Pair}, where the first object is the actual DrbdRscData and the second object
      * is the first objects backing list of the children-resource layer data. This list is expected to be filled
      * upon further loading, without triggering transaction (and possibly database-) updates.
-     * @throws SQLException
+     * @throws DatabaseException
      * @throws AccessDeniedException
      */
     public Pair<DrbdRscData, Set<RscLayerObject>> load(
@@ -399,7 +414,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         RscLayerObject parentRef,
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> storPoolMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         Pair<DrbdRscData, Set<RscLayerObject>> ret;
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_RSC_BY_ID))
@@ -422,7 +437,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                     }
                     catch (ValueOutOfRangeException exc)
                     {
-                        throw new LinStorSqlRuntimeException(
+                        throw new LinStorDBRuntimeException(
                             "Failed to restore stored nodeId [" + resultSet.getInt(NODE_ID) + "]"
                         );
                     }
@@ -473,6 +488,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return ret;
     }
 
@@ -481,7 +500,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         Map<VolumeNumber, DrbdVlmData> vlmMap,
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> storPoolMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         Resource rsc = rscData.getResource();
         NodeName currentNodeName = rsc.getAssignedNode().getName();
@@ -543,23 +562,27 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             }
             catch (ValueOutOfRangeException exc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                     "Failed to restore stored volume number " + vlmNrInt +
                         " for resource layer id: " + rscData.getRscLayerId()
                 );
             }
             catch (InvalidNameException exc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                     "Failed to restore stored storage pool name '" + exc.invalidName +
                         "' for resource layer id " + rscData.getRscLayerId() + " vlmNr: " + vlmNrInt
                 );
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void create(DrbdRscData drbdRscDataRef) throws SQLException
+    public void create(DrbdRscData drbdRscDataRef) throws DatabaseException
     {
         @SuppressWarnings("resource") // will be done in DbConnectionPool#returnConnection
         Connection connection = getConnection();
@@ -577,6 +600,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdRscData created %s", getId(drbdRscDataRef));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -584,7 +611,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     }
 
     @Override
-    public void persist(DrbdRscDfnData drbdRscDfnDataRef) throws SQLException
+    public void persist(DrbdRscDfnData drbdRscDfnDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating DrbdRscDfnData %s", getId(drbdRscDfnDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_RSC_DFN))
@@ -601,10 +628,14 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdRscDfnData created %s", getId(drbdRscDfnDataRef));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void persist(DrbdVlmData drbdVlmDataRef) throws SQLException
+    public void persist(DrbdVlmData drbdVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating DrbdVlmData %s", getId(drbdVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
@@ -626,10 +657,14 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdVlmData created %s", getId(drbdVlmDataRef));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void persist(DrbdVlmDfnData drbdVlmDfnDataRef) throws SQLException
+    public void persist(DrbdVlmDfnData drbdVlmDfnDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating DrbdVlmDfnData %s", getId(drbdVlmDfnDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM_DFN))
@@ -642,10 +677,14 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdVlmDfnData created %s", getId(drbdVlmDfnDataRef));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void delete(DrbdRscData drbdRscDataRef) throws SQLException
+    public void delete(DrbdRscData drbdRscDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting DrbdRscDataRef %s", getId(drbdRscDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_RSC))
@@ -655,10 +694,14 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdRscDataRef deleted %s", getId(drbdRscDataRef));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void delete(DrbdRscDfnData drbdRscDfnDataRef) throws SQLException
+    public void delete(DrbdRscDfnData drbdRscDfnDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting DrbdRscDfnData %s", getId(drbdRscDfnDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_RSC_DFN))
@@ -669,17 +712,21 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdRscDfnData deleted %s", getId(drbdRscDfnDataRef));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void delete(DrbdVlmData drbdVlmDataRef) throws SQLException
+    public void delete(DrbdVlmData drbdVlmDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if DrbdVlmData will get a database table in future.
     }
 
     @Override
-    public void delete(DrbdVlmDfnData drbdVlmDfnDataRef) throws SQLException
+    public void delete(DrbdVlmDfnData drbdVlmDfnDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting DrbdVlmDfnData %s", getId(drbdVlmDfnDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM_DFN))
@@ -690,6 +737,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
 
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdVlmDfnData deleted %s", getId(drbdVlmDfnDataRef));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -769,7 +820,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     {
         @Override
         public void persist(DrbdRscData drbdRscData, long flags)
-            throws SQLException
+            throws DatabaseException
         {
             try
             {
@@ -799,6 +850,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                     stmt.setLong(2, drbdRscData.getRscLayerId());
                     stmt.executeUpdate();
                 }
+                catch (SQLException sqlExc)
+                {
+                    throw new DatabaseException(sqlExc);
+                }
                 errorReporter.logTrace(
                     "DrbdRscData's flags updated from [%s] to [%s] %s",
                     fromFlags,
@@ -816,7 +871,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     private class VlmExtStorPoolDriver implements SingleColumnDatabaseDriver<DrbdVlmData, StorPool>
     {
         @Override
-        public void update(DrbdVlmData drbdVlmData, StorPool storPool) throws SQLException
+        public void update(DrbdVlmData drbdVlmData, StorPool storPool) throws DatabaseException
         {
             String fromStr = null;
             String toStr = null;
@@ -852,6 +907,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
 
                 stmt.executeUpdate();
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             errorReporter.logTrace(
                 "DrbdVlmData's external storage pool updated from [%s] to [%s] %s",
                 fromStr,
@@ -865,7 +924,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     {
         @Override
         public void update(DrbdRscDfnData drbdRscDfnData, String secretRef)
-            throws SQLException
+            throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating DrbdRscDfnData's secret from [%s] to [%s] %s",
@@ -880,6 +939,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                 stmt.setString(3, drbdRscDfnData.getRscNameSuffix());
                 stmt.executeUpdate();
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             errorReporter.logTrace(
                 "DrbdRscDfnData's secret updated from [%s] to [%s] %s",
                 drbdRscDfnData.getSecret(),
@@ -893,7 +956,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     {
         @Override
         public void update(DrbdRscDfnData drbdRscDfnData, TcpPortNumber port)
-            throws SQLException
+            throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating DrbdRscDfnData's port from [%d] to [%d] %s",
@@ -908,6 +971,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                 stmt.setString(3, drbdRscDfnData.getRscNameSuffix());
                 stmt.executeUpdate();
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             errorReporter.logTrace(
                 "DrbdRscDfnData's port updated from [%d] to [%d] %s",
                 drbdRscDfnData.getTcpPort().value,
@@ -921,7 +988,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     {
         @Override
         public void update(DrbdRscDfnData drbdRscDfnData, TransportType transportType)
-            throws SQLException
+            throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating DrbdRscDfnData's transport type from [%s] to [%s] %s",
@@ -936,6 +1003,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                 stmt.setString(3, drbdRscDfnData.getRscNameSuffix());
                 stmt.executeUpdate();
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             errorReporter.logTrace(
                 "DrbdRscDfnData's transport type updated from [%d] to [%d] %s",
                 drbdRscDfnData.getTransportType().name(),
@@ -949,7 +1020,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     {
         @Override
         public void update(DrbdRscDfnData drbdRscDfnData, Short peerSlots)
-            throws SQLException
+            throws DatabaseException
         {
             short oldPeerSlots = drbdRscDfnData.getPeerSlots();
             errorReporter.logTrace(
@@ -964,6 +1035,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
                 stmt.setString(2, drbdRscDfnData.getResourceDefinition().getName().value);
                 stmt.setString(3, drbdRscDfnData.getRscNameSuffix());
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace(
                 "DrbdRscDfnData's peer slots updated from [%d] to [%d] %s",

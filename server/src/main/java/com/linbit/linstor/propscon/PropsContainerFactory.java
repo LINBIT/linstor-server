@@ -1,14 +1,13 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 
 public class PropsContainerFactory
 {
@@ -25,7 +24,7 @@ public class PropsContainerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public PropsContainer getInstance(String instanceName) throws SQLException
+    public PropsContainer getInstance(String instanceName) throws DatabaseException
     {
         PropsContainer container = create(instanceName);
 

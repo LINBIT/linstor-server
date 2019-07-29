@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -13,7 +14,6 @@ import com.linbit.linstor.security.ObjectProtection;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 
 /**
  * Holds the singleton system props protection instance, allowing it to be initialized from the database
@@ -62,7 +62,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
 
     @Override
     public String setCtrlProp(AccessContext accCtx, String key, String value, String namespace)
-        throws InvalidValueException, AccessDeniedException, SQLException, InvalidKeyException
+        throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
     {
         checkProtSet();
         objectProtection.requireAccess(accCtx, AccessType.CHANGE);
@@ -71,7 +71,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
 
     @Override
     public String setStltProp(AccessContext accCtx, String key, String value)
-        throws AccessDeniedException, InvalidValueException, InvalidKeyException, SQLException
+        throws AccessDeniedException, InvalidValueException, InvalidKeyException, DatabaseException
     {
         checkProtSet();
         objectProtection.requireAccess(accCtx, AccessType.CHANGE);
@@ -80,7 +80,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
 
     @Override
     public String removeCtrlProp(AccessContext accCtx, String key, String namespace)
-        throws AccessDeniedException, InvalidKeyException, SQLException
+        throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
         checkProtSet();
         objectProtection.requireAccess(accCtx, AccessType.CHANGE);
@@ -89,7 +89,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
 
     @Override
     public String removeStltProp(AccessContext accCtx, String key, String namespace)
-        throws AccessDeniedException, InvalidKeyException, SQLException
+        throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
         checkProtSet();
         objectProtection.requireAccess(accCtx, AccessType.CHANGE);

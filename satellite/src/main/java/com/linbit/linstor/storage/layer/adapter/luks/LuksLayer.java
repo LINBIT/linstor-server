@@ -2,12 +2,13 @@ package com.linbit.linstor.storage.layer.adapter.luks;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.Volume.VlmFlags;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -26,8 +27,6 @@ import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +71,7 @@ public class LuksLayer implements DeviceLayer
 
     @Override
     public void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op
     }
@@ -100,7 +99,7 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
+    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, DatabaseException
     {
         LuksVlmData luksData = (LuksVlmData) vlmData;
 
@@ -124,7 +123,7 @@ public class LuksLayer implements DeviceLayer
 
     @Override
     public void process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
-        throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         LuksRscData luksRscData = (LuksRscData) rscData;
         boolean deleteRsc = luksRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE);

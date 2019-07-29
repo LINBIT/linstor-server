@@ -13,8 +13,10 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiTransactionException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -109,9 +111,9 @@ class CtrlRscConnectionHelper
                     " already exists."
             ), dataAlreadyExistsExc);
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
         return rscConn;
     }

@@ -1,14 +1,9 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -16,6 +11,11 @@ import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.TransactionObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  *
@@ -33,7 +33,7 @@ public interface ResourceConnection extends DbgInstanceUuid, TransactionObject
 
     Props getProps(AccessContext accCtx) throws AccessDeniedException;
 
-    void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException;
 
     RscConnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
@@ -42,10 +42,10 @@ public interface ResourceConnection extends DbgInstanceUuid, TransactionObject
     TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException;
 
     TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ValueInUseException;
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ValueInUseException;
 
     void autoAllocatePort(AccessContext accCtx)
-        throws AccessDeniedException, SQLException, ExhaustedPoolException;
+        throws AccessDeniedException, DatabaseException, ExhaustedPoolException;
 
     @SuppressWarnings("checkstyle:magicnumber")
     enum RscConnFlags implements Flags

@@ -1,12 +1,12 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiTransactionException;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 
 @Singleton
 public class CtrlTransactionHelper
@@ -25,9 +25,9 @@ public class CtrlTransactionHelper
         {
             transMgrProvider.get().commit();
         }
-        catch (SQLException sqlExc)
+        catch (TransactionException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiTransactionException(sqlExc);
         }
     }
 
@@ -37,9 +37,9 @@ public class CtrlTransactionHelper
         {
             transMgrProvider.get().rollback();
         }
-        catch (SQLException sqlExc)
+        catch (TransactionException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiTransactionException(sqlExc);
         }
     }
 }

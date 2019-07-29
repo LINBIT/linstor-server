@@ -16,31 +16,32 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
-import reactor.core.publisher.Flux;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscConnectionApiCallHandler.getResourceConnectionDescriptionInline;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscConnectionApiCallHandler.getResourceConnectionDescriptionInline;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlDrbdProxyEnableApiCallHandler
@@ -188,9 +189,9 @@ public class CtrlDrbdProxyEnableApiCallHandler
         {
             throw new ImplementationError("Invalid hardcoded resource-connection properties", exc);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new ApiSQLException(exc);
+            throw new ApiDatabaseException(exc);
         }
     }
 
@@ -208,9 +209,9 @@ public class CtrlDrbdProxyEnableApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new ApiSQLException(exc);
+            throw new ApiDatabaseException(exc);
         }
     }
 
@@ -235,9 +236,9 @@ public class CtrlDrbdProxyEnableApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new ApiSQLException(exc);
+            throw new ApiDatabaseException(exc);
         }
     }
 
@@ -262,9 +263,9 @@ public class CtrlDrbdProxyEnableApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new ApiSQLException(exc);
+            throw new ApiDatabaseException(exc);
         }
     }
 

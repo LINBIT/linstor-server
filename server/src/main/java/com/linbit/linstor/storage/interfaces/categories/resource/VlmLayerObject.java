@@ -1,11 +1,10 @@
 package com.linbit.linstor.storage.interfaces.categories.resource;
 
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-
-import java.sql.SQLException;
 
 public interface VlmLayerObject extends VlmProviderObject
 {
@@ -46,7 +45,7 @@ public interface VlmLayerObject extends VlmProviderObject
     }
 
     @Override
-    default void setStorPool(AccessContext accCtx, StorPool storPoolRef) throws SQLException, AccessDeniedException
+    default void setStorPool(AccessContext accCtx, StorPool storPoolRef) throws DatabaseException, AccessDeniedException
     {
         // no-op, see getStorPool()
     }

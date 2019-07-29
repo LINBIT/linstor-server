@@ -2,10 +2,10 @@ package com.linbit.linstor.storage.layer.provider;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -30,8 +31,6 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -124,7 +123,7 @@ public class StorageLayer implements DeviceLayer
 
     @Override
     public void prepare(Set<RscLayerObject> rscObjList, Set<Snapshot> snapshots)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         Map<DeviceProvider, Pair<List<VlmProviderObject>, List<SnapshotVolume>>> groupedData;
         groupedData = new HashMap<>();
@@ -178,14 +177,14 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmObj) throws AccessDeniedException, SQLException
+    public void updateGrossSize(VlmProviderObject vlmObj) throws AccessDeniedException, DatabaseException
     {
         getDevProviderByVlmObj(vlmObj).updateGrossSize(vlmObj);
     }
 
     @Override
     public void process(RscLayerObject rscLayerData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
-        throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         Map<DeviceProvider, List<VlmProviderObject>> groupedVolumes =
             rscLayerData == null ? // == null when processing unprocessed snapshots

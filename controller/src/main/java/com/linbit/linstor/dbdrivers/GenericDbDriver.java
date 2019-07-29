@@ -9,7 +9,7 @@ import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.KeyValueStoreName;
-import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.LuksLayerGenericDbDriver;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
@@ -215,7 +215,7 @@ public class GenericDbDriver implements DatabaseDriver
      * This method should only be called with an locked reconfiguration write lock
      */
     @Override
-    public void loadAll() throws SQLException
+    public void loadAll() throws DatabaseException
     {
         try
         {
@@ -490,7 +490,7 @@ public class GenericDbDriver implements DatabaseDriver
         Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> tmpSnapshotMapRef,
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
     )
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         storageLayerDriver.fetchForLoadAll(tmpStorPoolMapRef);
 
@@ -519,7 +519,7 @@ public class GenericDbDriver implements DatabaseDriver
         Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
     )
-        throws SQLException, AccessDeniedException, ImplementationError
+        throws DatabaseException, AccessDeniedException, ImplementationError
     {
         // load RscLayerObjects and VlmLayerObjects
         List<RscLayerInfoData> rscLayerInfoList = rscLayerObjDriver.loadAllResourceIds();
@@ -761,7 +761,7 @@ public class GenericDbDriver implements DatabaseDriver
             }
             catch (IOException exc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                     "Exception occurred while serializing to json array: " + obj.toString(),
                     exc
                 );
@@ -786,7 +786,7 @@ public class GenericDbDriver implements DatabaseDriver
         }
         catch (IOException | SQLException exc)
         {
-            throw new LinStorSqlRuntimeException(
+            throw new LinStorDBRuntimeException(
                 "Exception occurred while deserializing from json array",
                 exc
             );

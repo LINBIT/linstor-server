@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -17,7 +18,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -29,10 +29,10 @@ public interface DeviceLayer
     String getName();
 
     void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     void updateGrossSize(VlmProviderObject vlmData)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     /**
      * @param rsc The resource to process
@@ -48,7 +48,7 @@ public interface DeviceLayer
      * @throws ResourceException
      * @throws VolumeException
      * @throws AccessDeniedException
-     * @throws SQLException
+     * @throws DatabaseException
      */
     void process(
         RscLayerObject rscLayerData,
@@ -56,7 +56,7 @@ public interface DeviceLayer
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,
-            SQLException;
+            DatabaseException;
 
     void clearCache() throws StorageException;
 

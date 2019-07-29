@@ -9,6 +9,7 @@ import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -26,8 +27,8 @@ import com.linbit.linstor.storage.layer.provider.utils.StorageConfigReader;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.FileCommands;
 import com.linbit.linstor.storage.utils.FileUtils;
-import com.linbit.linstor.storage.utils.LosetupCommands;
 import com.linbit.linstor.storage.utils.FileUtils.FileInfo;
+import com.linbit.linstor.storage.utils.LosetupCommands;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -40,7 +41,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -117,7 +117,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 
     @Override
     protected void updateStates(List<FileData> fileDataList, Collection<SnapshotVolume> snapshots)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         for (FileData fileData : fileDataList)
         {
@@ -175,7 +175,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
      * Might be overridden (extended) by future *Providers
      */
     protected void updateInfo(FileData fileData, FileInfo info)
-        throws SQLException, StorageException
+        throws DatabaseException, StorageException
     {
         fileData.setIdentifier(asLvIdentifier(fileData));
         if (info == null)
@@ -207,14 +207,14 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
      */
     @SuppressWarnings("unused")
     protected void updateSnapshotStates(Collection<SnapshotVolume> snapshots)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         // no-op
     }
 
     @Override
     protected void createLvImpl(FileData fileData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         Path backingFile = fileData.getStorageDirectory().resolve(fileData.getIdentifier());
         FileCommands.createFat(
@@ -226,7 +226,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     }
 
     protected void createLoopDevice(FileData fileData, Path backingFile)
-        throws StorageException, SQLException
+        throws StorageException, DatabaseException
     {
         String loDev = new String(
             LosetupCommands.attach(
@@ -257,7 +257,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 
     @Override
     protected void deleteLvImpl(FileData fileData, String oldId)
-        throws StorageException, SQLException
+        throws StorageException, DatabaseException
     {
         String devicePath = fileData.getDevicePath();
 
@@ -283,7 +283,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
                     );
                     fileData.setExists(false);
                 }
-                catch (SQLException exc)
+                catch (DatabaseException exc)
                 {
                     throw new ImplementationError(exc);
                 }
@@ -298,7 +298,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 
     @Override
     protected void createSnapshot(FileData fileData, SnapshotVolume snapVlmRef)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         Path storageDirectory = fileData.getStorageDirectory();
         FileCommands.createSnapshot(
@@ -315,7 +315,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 
     @Override
     protected void restoreSnapshot(String sourceLvIdRef, String sourceSnapNameRef, FileData fileData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         // sourceLvIdRef is something like "rsc_00000.img"
         // sourceSnapNameRef is something like "snap"
@@ -340,7 +340,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 
     @Override
     protected void deleteSnapshot(String rscNameSuffixRef, SnapshotVolume snapVlmRef)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         FileCommands.delete(
             getStorageDirectory(snapVlmRef.getStorPool(storDriverAccCtx)),
@@ -355,14 +355,14 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
 
     @Override
     protected boolean snapshotExists(SnapshotVolume snapVlmRef)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         return Files.exists(asFullQualifiedPath("", snapVlmRef));
     }
 
     @Override
     protected void rollbackImpl(FileData fileData, String rollbackTargetSnapshotNameRef)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         Path storageDirectory = fileData.getStorageDirectory();
         Path snapPath = getSnapVlmPath(
@@ -435,7 +435,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         List<FileData> fileDataList,
         List<SnapshotVolume> snapVlms
     )
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         // It is possible that the backing file still exists for a logical volume, but the loop-device does not
         Map<String, FileData> backingFileToFileDataMap = new HashMap<>();
@@ -595,7 +595,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
                     }
                 }
             }
-            catch (SQLException| InvalidKeyException exc)
+            catch (DatabaseException| InvalidKeyException exc)
             {
                 throw new ImplementationError(exc);
             }
@@ -642,19 +642,19 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     }
 
     @Override
-    protected void setDevicePath(FileData vlmData, String devPath) throws SQLException
+    protected void setDevicePath(FileData vlmData, String devPath) throws DatabaseException
     {
         // ignored - devicePath is set when creating or when looking for fileData objects
     }
 
     @Override
-    protected void setAllocatedSize(FileData vlmData, long size) throws SQLException
+    protected void setAllocatedSize(FileData vlmData, long size) throws DatabaseException
     {
         vlmData.setAllocatedSize(size);
     }
 
     @Override
-    protected void setUsableSize(FileData vlmData, long size) throws SQLException
+    protected void setUsableSize(FileData vlmData, long size) throws DatabaseException
     {
         vlmData.setUsableSize(size);
     }
@@ -666,7 +666,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     }
 
     @Override
-    protected String getStorageName(FileData vlmDataRef) throws SQLException
+    protected String getStorageName(FileData vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getStorageDirectory().toString();
     }

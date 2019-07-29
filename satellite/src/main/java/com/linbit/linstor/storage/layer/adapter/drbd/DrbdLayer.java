@@ -12,9 +12,9 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeNumber;
@@ -26,6 +26,7 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.drbdstate.DrbdResource;
@@ -64,7 +65,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -135,7 +135,7 @@ public class DrbdLayer implements DeviceLayer
 
     @Override
     public void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op
     }
@@ -169,7 +169,7 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
+    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, DatabaseException
     {
         try
         {
@@ -227,7 +227,7 @@ public class DrbdLayer implements DeviceLayer
         Collection<Snapshot> snapshots,
         ApiCallRcImpl apiCallRc
     )
-        throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         DrbdRscData drbdRscData = (DrbdRscData) rscLayerData;
 
@@ -287,7 +287,7 @@ public class DrbdLayer implements DeviceLayer
         Collection<Snapshot> snapshots,
         ApiCallRcImpl apiCallRc
     )
-        throws AccessDeniedException, StorageException, ResourceException, VolumeException, SQLException
+        throws AccessDeniedException, StorageException, ResourceException, VolumeException, DatabaseException
     {
         if (
             !drbdRscData.getResource().isDiskless(workerCtx) ||
@@ -321,7 +321,7 @@ public class DrbdLayer implements DeviceLayer
      * @param drbdRsc
      * @param rscNameSuffix
      * @throws StorageException
-     * @throws SQLException
+     * @throws DatabaseException
      * @throws AccessDeniedException
      */
     private void deleteDrbd(DrbdRscData drbdRscData) throws StorageException
@@ -368,7 +368,7 @@ public class DrbdLayer implements DeviceLayer
      * @param apiCallRc
      * @param childAlreadyProcessed
      * @param rscNameSuffix
-     * @throws SQLException
+     * @throws DatabaseException
      * @throws StorageException
      * @throws AccessDeniedException
      * @throws VolumeException
@@ -380,7 +380,7 @@ public class DrbdLayer implements DeviceLayer
         ApiCallRcImpl apiCallRc,
         boolean childAlreadyProcessed
     )
-        throws AccessDeniedException, StorageException, SQLException,
+        throws AccessDeniedException, StorageException, DatabaseException,
             ResourceException, VolumeException
     {
         updateRequiresAdjust(drbdRscData);

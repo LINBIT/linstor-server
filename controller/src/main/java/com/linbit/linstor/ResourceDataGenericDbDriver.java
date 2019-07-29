@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.Resource.InitMaps;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -18,13 +19,12 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.StringUtils;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -98,13 +98,13 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public void create(ResourceData res) throws SQLException
+    public void create(ResourceData res) throws DatabaseException
     {
         create(dbCtx, res);
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    private void create(AccessContext accCtx, ResourceData res) throws SQLException
+    private void create(AccessContext accCtx, ResourceData res) throws DatabaseException
     {
         errorReporter.logTrace("Creating Resource %s", getId(res));
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_INSERT))
@@ -115,6 +115,10 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             stmt.setLong(4, res.getStateFlags().getFlagsBits(accCtx));
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -123,7 +127,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     }
 
     public void ensureResExists(AccessContext accCtx, ResourceData res)
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Ensuring Resource exists %s", getId(res));
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT))
@@ -139,6 +143,10 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
 
@@ -146,7 +154,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         Map<NodeName, ? extends Node> nodesMap,
         Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
     )
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading all Resources");
         Map<ResourceData, Resource.InitMaps> loadedResources = new TreeMap<>();
@@ -185,6 +193,10 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("Loaded %d Resources", loadedResources.size());
         return loadedResources;
     }
@@ -194,30 +206,37 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         Node node,
         ResourceDefinition rscDfn
     )
-        throws SQLException
+        throws DatabaseException
     {
         Map<Resource.Key, ResourceConnection> rscConnMap = new TreeMap<>();
         Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
         ResourceInitMaps initMaps = new ResourceInitMaps(rscConnMap, vlmMap);
 
-        ResourceData rscData = new ResourceData(
-            UUID.fromString(resultSet.getString(RES_UUID)),
-            getObjectProection(node, rscDfn.getName()),
-            rscDfn,
-            node,
-            resultSet.getLong(RES_FLAGS),
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            rscConnMap,
-            vlmMap
-        );
+        ResourceData rscData;
+        try {
+            rscData = new ResourceData(
+                UUID.fromString(resultSet.getString(RES_UUID)),
+                getObjectProection(node, rscDfn.getName()),
+                rscDfn,
+                node,
+                resultSet.getLong(RES_FLAGS),
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                rscConnMap,
+                vlmMap
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return new Pair<ResourceData, InitMaps>(rscData, initMaps);
     }
 
     private ObjectProtection getObjectProection(Node node, ResourceName resName)
-        throws SQLException
+        throws DatabaseException
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(node.getName(), resName),
@@ -234,7 +253,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public void delete(ResourceData resource) throws SQLException
+    public void delete(ResourceData resource) throws DatabaseException
     {
         errorReporter.logTrace("Deleting Resource %s", getId(resource));
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_DELETE))
@@ -243,6 +262,10 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             stmt.setString(2, resource.getDefinition().getName().value);
 
             stmt.executeUpdate();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace("Resource deleted %s", getId(resource));
     }
@@ -278,7 +301,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void persist(ResourceData resource, long flags) throws SQLException
+        public void persist(ResourceData resource, long flags) throws DatabaseException
         {
             try
             {
@@ -316,6 +339,10 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
                         toFlags,
                         getId(resource)
                     );
+                }
+                catch (SQLException sqlExc)
+                {
+                    throw new DatabaseException(sqlExc);
                 }
             }
             catch (AccessDeniedException accDeniedExc)

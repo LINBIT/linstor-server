@@ -21,12 +21,13 @@ import com.linbit.linstor.core.SwordfishTargetProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -39,7 +40,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -388,9 +388,9 @@ public class CtrlNodeLostApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -414,9 +414,9 @@ public class CtrlNodeLostApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -430,9 +430,9 @@ public class CtrlNodeLostApiCallHandler
         {
             throw new ImplementationError(accDeniedExc);
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -446,9 +446,9 @@ public class CtrlNodeLostApiCallHandler
         {
             throw new ImplementationError(accDeniedExc);
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -462,9 +462,9 @@ public class CtrlNodeLostApiCallHandler
         {
             throw new ImplementationError(accDeniedExc);
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 

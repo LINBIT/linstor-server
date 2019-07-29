@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
@@ -16,12 +17,12 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.StringUtils;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -99,7 +100,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         Map<Pair<NodeName, ResourceName>, ? extends Resource> rscMap,
         Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition> vlmDfnMap
     )
-        throws SQLException
+        throws DatabaseException
     {
         Map<VolumeData, Volume.InitMaps> vlmMap = new TreeMap<>();
         errorReporter.logTrace("Loading all Volumes");
@@ -142,6 +143,10 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("Loaded %d Volumes", vlmMap.size());
         return vlmMap;
     }
@@ -151,21 +156,29 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         Resource rsc,
         VolumeDefinition vlmDfn
     )
-        throws SQLException
+        throws DatabaseException
     {
         Map<Volume.Key, VolumeConnection> vlmConnsMap = new TreeMap<>();
 
-        VolumeData vlm = new VolumeData(
-            java.util.UUID.fromString(resultSet.getString(VOL_UUID)),
-            rsc,
-            vlmDfn,
-            resultSet.getLong(VOL_FLAGS),
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            vlmConnsMap
-        );
+        VolumeData vlm;
+
+        try {
+            vlm = new VolumeData(
+                java.util.UUID.fromString(resultSet.getString(VOL_UUID)),
+                rsc,
+                vlmDfn,
+                resultSet.getLong(VOL_FLAGS),
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                vlmConnsMap
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
 
         return new Pair<>(
             vlm,
@@ -177,7 +190,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(VolumeData vol) throws SQLException
+    public void create(VolumeData vol) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
         {
@@ -192,6 +205,10 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
 
             errorReporter.logTrace("Volume created %s", getId(vol));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -200,7 +217,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(VolumeData volume) throws SQLException
+    public void delete(VolumeData volume) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE))
         {
@@ -212,6 +229,10 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             stmt.executeUpdate();
 
             errorReporter.logTrace("Volume deleted %s", getId(volume));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -245,7 +266,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void persist(VolumeData volume, long flags)
-            throws SQLException
+            throws DatabaseException
         {
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_FLAGS))
             {
@@ -283,6 +304,10 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
                     toFlags,
                     getId(volume)
                 );
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             catch (AccessDeniedException accessDeniedExc)
             {

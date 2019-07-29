@@ -4,6 +4,7 @@ import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -13,7 +14,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 @Singleton
 public class EmptySecurityDbDriver implements DbAccessor
@@ -27,67 +27,67 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
-    public ResultSet getSignInEntry(Connection dbConn, IdentityName idName) throws SQLException
+    public ResultSet getSignInEntry(Connection dbConn, IdentityName idName)
     {
         return null;
     }
 
     @Override
-    public ResultSet getIdRoleMapEntry(Connection dbConn, IdentityName idName, RoleName rlName) throws SQLException
+    public ResultSet getIdRoleMapEntry(Connection dbConn, IdentityName idName, RoleName rlName)
     {
         return null;
     }
 
     @Override
-    public ResultSet getDefaultRole(Connection dbConn, IdentityName idName) throws SQLException
+    public ResultSet getDefaultRole(Connection dbConn, IdentityName idName)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadIdentities(Connection dbConn) throws SQLException
+    public ResultSet loadIdentities(Connection dbConn)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadSecurityTypes(Connection dbConn) throws SQLException
+    public ResultSet loadSecurityTypes(Connection dbConn)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadRoles(Connection dbConn) throws SQLException
+    public ResultSet loadRoles(Connection dbConn)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadTeRules(Connection dbConn) throws SQLException
+    public ResultSet loadTeRules(Connection dbConn)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadSecurityLevel(Connection dbConn) throws SQLException
+    public ResultSet loadSecurityLevel(Connection dbConn)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadAuthRequired(Connection dbConn) throws SQLException
+    public ResultSet loadAuthRequired(Connection dbConn)
     {
         return null;
     }
 
     @Override
-    public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel) throws SQLException
+    public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel)
     {
         // no-op
     }
 
     @Override
-    public void setAuthRequired(Connection dbConn, boolean newPolicy) throws SQLException
+    public void setAuthRequired(Connection dbConn, boolean newPolicy)
     {
         // no-op
     }
@@ -104,7 +104,7 @@ public class EmptySecurityDbDriver implements DbAccessor
             TransactionObjectFactory transObjFactoryRef,
             LinStorScope initScope
         )
-            throws AccessDeniedException, SQLException
+            throws AccessDeniedException, DatabaseException
         {
             // Create a dummy singleton object protection instance which is used everywhere in the satellite
             objProt = new ObjectProtection(accCtx, "", this, transObjFactoryRef, transMgrProviderRef);
@@ -120,40 +120,40 @@ public class EmptySecurityDbDriver implements DbAccessor
         }
 
         @Override
-        public void insertOp(ObjectProtection objProtRef) throws SQLException
+        public void insertOp(ObjectProtection objProtRef) throws DatabaseException
         {
             // no-op
         }
 
         @Override
-        public void deleteOp(String objPath) throws SQLException
+        public void deleteOp(String objPath) throws DatabaseException
         {
             // no-op
         }
 
         @Override
         public void insertAcl(ObjectProtection objProtRef, Role role, AccessType grantedAccess)
-            throws SQLException
+            throws DatabaseException
         {
             // no-op
         }
 
         @Override
         public void updateAcl(ObjectProtection objProtRef, Role role, AccessType grantedAccess)
-            throws SQLException
+            throws DatabaseException
         {
             // no-op
         }
 
         @Override
-        public void deleteAcl(ObjectProtection objProtRef, Role role) throws SQLException
+        public void deleteAcl(ObjectProtection objProtRef, Role role) throws DatabaseException
         {
             // no-op
         }
 
         @Override
         public ObjectProtection loadObjectProtection(String objPath, boolean logWarnIfNotExists)
-            throws SQLException
+            throws DatabaseException
         {
             return objProt;
         }

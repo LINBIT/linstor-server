@@ -1,25 +1,24 @@
 package com.linbit.linstor.security;
 
-import java.sql.SQLException;
-
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 public interface ObjectProtectionDatabaseDriver
 {
-    void insertOp(ObjectProtection objProt) throws SQLException;
+    void insertOp(ObjectProtection objProt) throws DatabaseException;
 
-    void deleteOp(String objectPath) throws SQLException;
+    void deleteOp(String objectPath) throws DatabaseException;
 
     void insertAcl(ObjectProtection parent, Role role, AccessType grantedAccess)
-        throws SQLException;
+        throws DatabaseException;
 
     void updateAcl(ObjectProtection parent, Role role, AccessType grantedAccess)
-        throws SQLException;
+        throws DatabaseException;
 
-    void deleteAcl(ObjectProtection parent, Role role) throws SQLException;
+    void deleteAcl(ObjectProtection parent, Role role) throws DatabaseException;
 
     ObjectProtection loadObjectProtection(String objectPath, boolean logWarnIfNotExists)
-        throws SQLException;
+        throws DatabaseException;
 
     SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier();
 

@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -11,7 +12,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.Pair;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -36,7 +36,7 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
         throws AccessDeniedException;
 
     Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
@@ -49,16 +49,16 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid, Co
     Stream<Volume> streamVolumes(AccessContext accCtx)
         throws AccessDeniedException;
 
-    void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     boolean isDeleted();
 
     VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
-    void setCryptKey(AccessContext accCtx, String key) throws AccessDeniedException, SQLException;
+    void setCryptKey(AccessContext accCtx, String key) throws AccessDeniedException, DatabaseException;
 
     String getCryptKey(AccessContext accCtx) throws AccessDeniedException;
 

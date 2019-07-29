@@ -4,6 +4,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishTargetVlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -13,9 +14,8 @@ import com.linbit.linstor.storage.interfaces.layers.storage.SfTargetVlmProviderO
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import javax.inject.Provider;
 
-import java.sql.SQLException;
+import javax.inject.Provider;
 import java.util.Objects;
 
 public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProviderObject
@@ -63,7 +63,7 @@ public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProvid
     }
 
     @Override
-    public void setUsableSize(long netSizeRef) throws SQLException
+    public void setUsableSize(long netSizeRef) throws DatabaseException
     {
         // no-op
         // TODO: sure about this no-op?

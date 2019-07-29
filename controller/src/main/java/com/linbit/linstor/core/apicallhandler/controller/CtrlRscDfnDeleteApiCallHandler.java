@@ -16,24 +16,23 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
-
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -416,9 +415,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -438,9 +437,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         {
             throw new ImplementationError(accDeniedExc);
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -458,9 +457,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -474,9 +473,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         {
             throw new ImplementationError(accDeniedExc);
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 

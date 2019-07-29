@@ -1,9 +1,8 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.linstor.SnapshotDefinitionData;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-
-import java.sql.SQLException;
 
 /**
  * Database driver for {@link SnapshotDefinitionData}.
@@ -16,9 +15,9 @@ public interface SnapshotDefinitionDataDatabaseDriver
      * @param snapshotDefinition
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(SnapshotDefinitionData snapshotDefinition) throws SQLException;
+    void create(SnapshotDefinitionData snapshotDefinition) throws DatabaseException;
 
     /**
      * Removes the given {@link SnapshotDefinitionData} from the database
@@ -26,9 +25,9 @@ public interface SnapshotDefinitionDataDatabaseDriver
      * @param snapshotDefinition
      *  The data identifying the row to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(SnapshotDefinitionData snapshotDefinition) throws SQLException;
+    void delete(SnapshotDefinitionData snapshotDefinition) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted flags.

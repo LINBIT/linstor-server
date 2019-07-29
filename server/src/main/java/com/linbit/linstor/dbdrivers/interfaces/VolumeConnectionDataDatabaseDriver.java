@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
 import com.linbit.linstor.VolumeConnectionData;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**
  * Database driver for {@link com.linbit.linstor.VolumeConnectionData}.
@@ -16,9 +16,9 @@ public interface VolumeConnectionDataDatabaseDriver
      * @param conDfnData
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(VolumeConnectionData conDfnData) throws SQLException;
+    void create(VolumeConnectionData conDfnData) throws DatabaseException;
 
     /**
      * Removes the given {@link com.linbit.linstor.VolumeConnectionData} from the database
@@ -26,7 +26,7 @@ public interface VolumeConnectionDataDatabaseDriver
      * @param conDfnData
      *  The data identifying the database entry to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(VolumeConnectionData conDfnData) throws SQLException;
+    void delete(VolumeConnectionData conDfnData) throws DatabaseException;
 }

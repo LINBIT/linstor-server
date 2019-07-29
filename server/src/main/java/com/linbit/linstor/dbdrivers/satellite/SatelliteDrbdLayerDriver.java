@@ -4,6 +4,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -13,8 +14,6 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 
 import javax.inject.Inject;
-
-import java.sql.SQLException;
 
 public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
 {
@@ -28,13 +27,13 @@ public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
     }
 
     @Override
-    public void create(DrbdRscData drbdRscDataRef) throws SQLException
+    public void create(DrbdRscData drbdRscDataRef) throws DatabaseException
     {
         // no-op
     }
 
     @Override
-    public void delete(DrbdRscData drbdRscDataRef) throws SQLException
+    public void delete(DrbdRscData drbdRscDataRef) throws DatabaseException
     {
         // no-op
     }
@@ -88,37 +87,37 @@ public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
     }
 
     @Override
-    public void persist(DrbdRscDfnData drbdRscDfnDataRef) throws SQLException
+    public void persist(DrbdRscDfnData drbdRscDfnDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(DrbdRscDfnData drbdRscDfnDataRef) throws SQLException
+    public void delete(DrbdRscDfnData drbdRscDfnDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(DrbdVlmData drbdVlmDataRef) throws SQLException
+    public void persist(DrbdVlmData drbdVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(DrbdVlmData drbdVlmDataRef) throws SQLException
+    public void delete(DrbdVlmData drbdVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(DrbdVlmDfnData drbdVlmDfnDataRef) throws SQLException
+    public void persist(DrbdVlmDfnData drbdVlmDfnDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(DrbdVlmDfnData drbdVlmDfnDataRef) throws SQLException
+    public void delete(DrbdVlmDfnData drbdVlmDfnDataRef)
     {
         // no-op
     }

@@ -1,15 +1,15 @@
 package com.linbit.linstor;
 
-public class LinStorSqlRuntimeException extends LinStorRuntimeException
+public class LinStorDBRuntimeException extends LinStorRuntimeException
 {
     private static final long serialVersionUID = 3691179982631419907L;
 
-    public LinStorSqlRuntimeException(String message, Throwable cause)
+    public LinStorDBRuntimeException(String message, Throwable cause)
     {
         super(message, cause);
     }
 
-    public LinStorSqlRuntimeException(
+    public LinStorDBRuntimeException(
         String message, String descriptionText, String causeText, String correctionText, String detailsText,
         Throwable cause
     )
@@ -17,14 +17,14 @@ public class LinStorSqlRuntimeException extends LinStorRuntimeException
         super(message, descriptionText, causeText, correctionText, detailsText, cause);
     }
 
-    public LinStorSqlRuntimeException(
+    public LinStorDBRuntimeException(
         String message, String descriptionText, String causeText, String correctionText, String detailsText
     )
     {
         super(message, descriptionText, causeText, correctionText, detailsText);
     }
 
-    public LinStorSqlRuntimeException(String message)
+    public LinStorDBRuntimeException(String message)
     {
         super(message);
     }

@@ -27,13 +27,14 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -56,15 +57,14 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescription;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,10 +72,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.makeRscContext;
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescription;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Adds disks to a diskless resource or removes disks to make a resource diskless.
@@ -395,9 +394,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             vlmProviderObjectRef.setStorPool(apiCtx, storPool);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new ApiSQLException(exc);
+            throw new ApiDatabaseException(exc);
         }
         catch (AccessDeniedException exc)
         {
@@ -429,9 +428,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 )
             );
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new ApiSQLException(exc);
+            throw new ApiDatabaseException(exc);
         }
     }
 
@@ -751,9 +750,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -783,9 +782,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -847,9 +846,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -859,7 +858,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             rsc.getStateFlags().enableFlags(apiCtx, Resource.RscFlags.DISK_ADDING);
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -875,7 +874,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 Resource.RscFlags.DISK_REMOVING
             );
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -887,7 +886,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             rsc.getStateFlags().disableFlags(apiCtx, Resource.RscFlags.DISK_ADDING);
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -904,7 +903,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 Resource.RscFlags.DISK_ADD_REQUESTED
             );
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -920,7 +919,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 Resource.RscFlags.DISK_REMOVE_REQUESTED
             );
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }

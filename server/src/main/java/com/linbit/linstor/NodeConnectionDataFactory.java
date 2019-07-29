@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -8,10 +9,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.UUID;
 
 public class NodeConnectionDataFactory
@@ -40,7 +40,7 @@ public class NodeConnectionDataFactory
         Node node1,
         Node node2
     )
-        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
+        throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
         node1.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         node2.getObjProt().requireAccess(accCtx, AccessType.CHANGE);

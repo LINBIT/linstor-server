@@ -8,6 +8,7 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
 import com.linbit.locks.LockGuard;
@@ -152,11 +153,11 @@ public class ScopeRunner
                     {
                         transMgr.rollback();
                     }
-                    catch (SQLException sqlExc)
+                    catch (TransactionException transExc)
                     {
                         errorLog.reportError(
                             Level.ERROR,
-                            sqlExc,
+                            transExc,
                             accCtx,
                             peer,
                             "A database error occurred while trying to rollback '" + apiCallName + "'"

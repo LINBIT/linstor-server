@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -19,8 +20,8 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.StringUtils;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_STACK;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_DSP_NAME;
@@ -120,7 +121,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(ResourceDefinitionData resourceDefinition) throws SQLException
+    public void create(ResourceDefinitionData resourceDefinition) throws DatabaseException
     {
         errorReporter.logTrace("Creating ResourceDfinition %s", getId(resourceDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(RD_INSERT))
@@ -139,6 +140,10 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
 
             errorReporter.logTrace("ResourceDefinition created %s", getId(resourceDefinition));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -146,9 +151,9 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     }
 
     @Override
-    public boolean exists(ResourceName resourceName) throws SQLException
+    public boolean exists(ResourceName resourceName) throws DatabaseException
     {
-        boolean exists = false;
+        boolean exists;
         try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT))
         {
             stmt.setString(1, resourceName.value);
@@ -157,10 +162,14 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 exists = resultSet.next();
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return exists;
     }
 
-    public Map<ResourceDefinitionData, InitMaps> loadAll() throws SQLException
+    public Map<ResourceDefinitionData, InitMaps> loadAll() throws DatabaseException
     {
         errorReporter.logTrace("Loading all ResourceDefinitions");
         Map<ResourceDefinitionData, InitMaps> rscDfnMap = new TreeMap<>();
@@ -175,64 +184,75 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("Loaded %d ResourceDefinitions", rscDfnMap.size());
         return rscDfnMap;
     }
 
-    private Pair<ResourceDefinitionData, InitMaps> restoreRscDfn(ResultSet resultSet) throws SQLException
+    private Pair<ResourceDefinitionData, InitMaps> restoreRscDfn(ResultSet resultSet) throws DatabaseException
     {
         Pair<ResourceDefinitionData, InitMaps> retPair = new Pair<>();
         ResourceDefinitionData resDfn;
         ResourceName resourceName;
         try
         {
-            resourceName = new ResourceName(resultSet.getString(RD_DSP_NAME));
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "The display name of a stored ResourceDefinition in the table %s could not be restored. " +
-                        "(invalid display ResName=%s)",
-                    TBL_RES_DEF,
-                    resultSet.getString(RD_DSP_NAME)
-                ),
-                invalidNameExc
+            try
+            {
+                resourceName = new ResourceName(resultSet.getString(RD_DSP_NAME));
+            }
+            catch (InvalidNameException invalidNameExc)
+            {
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "The display name of a stored ResourceDefinition in the table %s could not be restored. " +
+                            "(invalid display ResName=%s)",
+                        TBL_RES_DEF,
+                        resultSet.getString(RD_DSP_NAME)
+                    ),
+                    invalidNameExc
+                );
+            }
+
+            ObjectProtection objProt = getObjectProtection(resourceName);
+
+            Map<VolumeNumber, VolumeDefinition> vlmDfnMap = new TreeMap<>();
+            Map<NodeName, Resource> rscMap = new TreeMap<>();
+            Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
+
+            resDfn = new ResourceDefinitionData(
+                java.util.UUID.fromString(resultSet.getString(RD_UUID)),
+                objProt,
+                resourceName,
+                resultSet.getBytes(RD_EXT_NAME),
+                resultSet.getLong(RD_FLAGS),
+                GenericDbDriver.asDevLayerKindList(GenericDbDriver.getAsStringList(resultSet, RD_LAYERS)),
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                vlmDfnMap,
+                rscMap,
+                snapshotDfnMap,
+                new TreeMap<>()
             );
+
+            retPair.objA = resDfn;
+            retPair.objB = new RscDfnInitMaps(vlmDfnMap, rscMap, snapshotDfnMap);
+
+            errorReporter.logTrace("ResourceDefinition instance created %s", getId(resDfn));
         }
-
-        ObjectProtection objProt = getObjectProtection(resourceName);
-
-        Map<VolumeNumber, VolumeDefinition> vlmDfnMap = new TreeMap<>();
-        Map<NodeName, Resource> rscMap = new TreeMap<>();
-        Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
-
-        resDfn = new ResourceDefinitionData(
-            java.util.UUID.fromString(resultSet.getString(RD_UUID)),
-            objProt,
-            resourceName,
-            resultSet.getBytes(RD_EXT_NAME),
-            resultSet.getLong(RD_FLAGS),
-            GenericDbDriver.asDevLayerKindList(GenericDbDriver.getAsStringList(resultSet, RD_LAYERS)),
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            vlmDfnMap,
-            rscMap,
-            snapshotDfnMap,
-            new TreeMap<>()
-        );
-
-        retPair.objA = resDfn;
-        retPair.objB = new RscDfnInitMaps(vlmDfnMap, rscMap, snapshotDfnMap);
-
-        errorReporter.logTrace("ResourceDefinition instance created %s", getId(resDfn));
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return retPair;
     }
 
     private ObjectProtection getObjectProtection(ResourceName resourceName)
-        throws SQLException, ImplementationError
+        throws DatabaseException, ImplementationError
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(resourceName),
@@ -249,13 +269,17 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     }
 
     @Override
-    public void delete(ResourceDefinitionData resourceDefinition) throws SQLException
+    public void delete(ResourceDefinitionData resourceDefinition) throws DatabaseException
     {
         errorReporter.logTrace("Deleting ResourceDefinition %s", getId(resourceDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(RD_DELETE))
         {
             stmt.setString(1, resourceDefinition.getName().value);
             stmt.executeUpdate();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace("ResourceDfinition deleted %s", getId(resourceDefinition));
     }
@@ -296,7 +320,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     {
         @Override
         public void persist(ResourceDefinitionData resourceDefinition, long flags)
-            throws SQLException
+            throws DatabaseException
         {
             try
             {
@@ -333,6 +357,10 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                     getId(resourceDefinition)
                 );
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             catch (AccessDeniedException accDeniedExc)
             {
                 GenericDbDriver.handleAccessDeniedException(accDeniedExc);
@@ -348,7 +376,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             DeviceLayerKind newElem,
             Collection<DeviceLayerKind> backingCollection
         )
-            throws SQLException
+            throws DatabaseException
         {
             update(rscDfn, backingCollection);
         }
@@ -359,13 +387,13 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             DeviceLayerKind newElem,
             Collection<DeviceLayerKind> backingCollection
         )
-            throws SQLException
+            throws DatabaseException
         {
             update(rscDfn, backingCollection);
         }
 
         public void update(ResourceDefinitionData rscDfn, Collection<DeviceLayerKind> backingCollection)
-            throws SQLException
+            throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating ResourceDefinition's layer stack to %s %s",
@@ -377,6 +405,10 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 GenericDbDriver.setJsonIfNotNull(stmt, 1, GenericDbDriver.asStrList(backingCollection));
                 stmt.setString(2, rscDfn.getName().value);
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace(
                 "ResourceDefinition's layer stack updated to %s %s",

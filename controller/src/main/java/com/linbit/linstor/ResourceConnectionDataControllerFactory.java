@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -15,8 +16,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.UUID;
 
 @Singleton
@@ -50,7 +49,7 @@ public class ResourceConnectionDataControllerFactory
         Resource targetResource,
         ResourceConnection.RscConnFlags[] initFlags
     )
-        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
+        throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
         sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);

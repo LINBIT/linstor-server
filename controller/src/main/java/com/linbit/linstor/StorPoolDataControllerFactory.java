@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IllegalStorageDriverException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -13,8 +14,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -46,7 +45,7 @@ public class StorPoolDataControllerFactory
         DeviceProviderKind deviceProviderKindRef,
         FreeSpaceTracker freeSpaceTrackerRef
     )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException, IllegalStorageDriverException
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, IllegalStorageDriverException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);

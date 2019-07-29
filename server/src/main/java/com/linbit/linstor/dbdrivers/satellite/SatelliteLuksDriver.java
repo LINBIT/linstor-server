@@ -5,9 +5,8 @@ import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
-import javax.inject.Inject;
 
-import java.sql.SQLException;
+import javax.inject.Inject;
 
 public class SatelliteLuksDriver implements LuksLayerDatabaseDriver
 {
@@ -27,25 +26,25 @@ public class SatelliteLuksDriver implements LuksLayerDatabaseDriver
     }
 
     @Override
-    public void persist(LuksRscData luksRscDataRef) throws SQLException
+    public void persist(LuksRscData luksRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(LuksRscData luksRscDataRef) throws SQLException
+    public void delete(LuksRscData luksRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(LuksVlmData luksVlmDataRef) throws SQLException
+    public void persist(LuksVlmData luksVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(LuksVlmData luksVlmDataRef) throws SQLException
+    public void delete(LuksVlmData luksVlmDataRef)
     {
         // no-op
     }

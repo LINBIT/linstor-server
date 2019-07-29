@@ -2,6 +2,7 @@ package com.linbit.linstor.storage.data.provider.swordfish;
 
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.layers.State;
@@ -13,8 +14,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -65,7 +64,7 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
         return vlmOdata.get();
     }
 
-    public void setVlmOdata(String vlmOdataRef) throws SQLException
+    public void setVlmOdata(String vlmOdataRef) throws DatabaseException
     {
         vlmOdata.set(vlmOdataRef);
     }
@@ -127,7 +126,7 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
     }
 
     @Override
-    public void delete() throws SQLException
+    public void delete() throws DatabaseException
     {
         dbDriver.delete(this);
     }

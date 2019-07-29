@@ -1,8 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
-
 import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
@@ -22,9 +21,9 @@ public interface ResourceDataDatabaseDriver
      * @param resource
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(ResourceData resource) throws SQLException;
+    void create(ResourceData resource) throws DatabaseException;
 
     /**
      * Removes the given {@link ResourceData} from the database.
@@ -32,9 +31,9 @@ public interface ResourceDataDatabaseDriver
      * @param resource
      *  The data identifying the row to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(ResourceData resource) throws SQLException;
+    void delete(ResourceData resource) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted flags.

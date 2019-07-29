@@ -56,6 +56,7 @@ import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.TestDbModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
@@ -715,7 +716,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     }
 
     protected FreeSpaceMgr getFreeSpaceMgr(StorPoolDefinition storPoolDfn, Node node)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         return freeSpaceMgrFactory.getInstance(
             SYS_CTX, new FreeSpaceMgrName(node.getName(), storPoolDfn.getName())

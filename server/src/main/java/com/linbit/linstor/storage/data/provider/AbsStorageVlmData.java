@@ -2,6 +2,7 @@ package com.linbit.linstor.storage.data.provider;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -17,8 +18,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -100,7 +99,7 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
         return sizeState.get();
     }
 
-    public void setSizeState(Size sizeStateRef) throws SQLException
+    public void setSizeState(Size sizeStateRef) throws DatabaseException
     {
         sizeState.set(sizeStateRef);
     }
@@ -123,7 +122,7 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
         return exists.get();
     }
 
-    public void setExists(boolean existsRef) throws SQLException
+    public void setExists(boolean existsRef) throws DatabaseException
     {
         exists.set(existsRef);
     }
@@ -134,7 +133,7 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
         return failed.get();
     }
 
-    public void setFailed(boolean failedRef) throws SQLException
+    public void setFailed(boolean failedRef) throws DatabaseException
     {
         failed.set(failedRef);
     }
@@ -145,7 +144,7 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
         return allocatedSize.get();
     }
 
-    public void setAllocatedSize(long allocatedSizeRef) throws SQLException
+    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
     {
         allocatedSize.set(allocatedSizeRef);
     }
@@ -157,7 +156,7 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
     }
 
     @Override
-    public void setUsableSize(long usableSizeRef) throws SQLException
+    public void setUsableSize(long usableSizeRef) throws DatabaseException
     {
         usableSize.set(usableSizeRef);
     }
@@ -168,7 +167,7 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
         return devicePath.get();
     }
 
-    public void setDevicePath(String devicePathRef) throws SQLException
+    public void setDevicePath(String devicePathRef) throws DatabaseException
     {
         devicePath.set(devicePathRef);
     }
@@ -192,7 +191,7 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
     }
 
     @Override
-    public void setStorPool(AccessContext accCtx, StorPool storPoolRef) throws SQLException, AccessDeniedException
+    public void setStorPool(AccessContext accCtx, StorPool storPoolRef) throws DatabaseException, AccessDeniedException
     {
         StorPool oldStorPool = storPool.get();
         if (oldStorPool != null)

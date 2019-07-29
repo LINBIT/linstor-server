@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.security.AccessContext;
@@ -15,8 +16,6 @@ import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -96,7 +95,7 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
     }
 
     @Override
-    public void delete() throws SQLException
+    public void delete() throws DatabaseException
     {
         minorPool.deallocate(minorNr.value);
         dbDriver.delete(this);

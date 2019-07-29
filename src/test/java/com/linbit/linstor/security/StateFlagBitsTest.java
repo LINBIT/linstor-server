@@ -1,24 +1,28 @@
 package com.linbit.linstor.security;
 
-import org.junit.Before;
-import org.junit.Test;
-import com.linbit.linstor.api.LinStorScope;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.testutils.SimpleIterator;
-import java.sql.SQLException;
-import java.util.Collections;
-import javax.inject.Provider;
 
 import static com.linbit.linstor.security.AccessType.CHANGE;
 import static com.linbit.linstor.security.AccessType.CONTROL;
 import static com.linbit.linstor.security.AccessType.USE;
 import static com.linbit.linstor.security.AccessType.VIEW;
 import static com.linbit.linstor.security.Privilege.PRIVILEGE_LIST;
+
+import javax.inject.Provider;
+import java.sql.SQLException;
+import java.util.Collections;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -42,7 +46,7 @@ public class StateFlagBitsTest
     private ObjectProtectionDatabaseDriver objProtDbDriver;
 
     @Before
-    public void setUp() throws InvalidNameException, AccessDeniedException, SQLException
+    public void setUp() throws InvalidNameException, AccessDeniedException, SQLException, DatabaseException
     {
         sysCtx = new AccessContext(
             new Identity(new IdentityName("SYSTEM")),
@@ -77,7 +81,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testEnableAllFlags() throws AccessDeniedException, SQLException
+    public void testEnableAllFlags() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -123,7 +127,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testDisableAllFlags() throws AccessDeniedException, SQLException
+    public void testDisableAllFlags() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -170,7 +174,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testEnableFlags() throws AccessDeniedException, SQLException
+    public void testEnableFlags() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -224,7 +228,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testDisableFlags() throws AccessDeniedException, SQLException
+    public void testDisableFlags() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -278,7 +282,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testEnableFlagsExcept() throws AccessDeniedException, SQLException
+    public void testEnableFlagsExcept() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -333,7 +337,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testDisableFlagsExcept() throws AccessDeniedException, SQLException
+    public void testDisableFlagsExcept() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -387,7 +391,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testIsSet() throws AccessDeniedException, SQLException
+    public void testIsSet() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -439,7 +443,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testIsUnset() throws AccessDeniedException, SQLException
+    public void testIsUnset() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -491,7 +495,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testIsSomeSet() throws AccessDeniedException, SQLException
+    public void testIsSomeSet() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -543,7 +547,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testIsSomeUnset() throws AccessDeniedException, SQLException
+    public void testIsSomeUnset() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -595,7 +599,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testgetBitFlags() throws AccessDeniedException, SQLException
+    public void testgetBitFlags() throws AccessDeniedException, DatabaseException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -640,7 +644,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testGetValidFlagsBits() throws AccessDeniedException, SQLException
+    public void testGetValidFlagsBits() throws AccessDeniedException, DatabaseException
     {
         AccessType[] grantedAccessTypes = new AccessType[]
         {
@@ -693,7 +697,7 @@ public class StateFlagBitsTest
     }
 
     private ObjectProtection createObjectProtection(AccessType... grantedAccess)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         AccessContext objCtx = new AccessContext(someOtherUserId, someOtherRole, someOtherUserSecDomain, privSysAll);
         ObjectProtection objProt = new ObjectProtection(
@@ -724,7 +728,7 @@ public class StateFlagBitsTest
     }
 
     private StateFlagBitsImpl createStateflags(ObjectProtection op, FlagImpl... flagsPreSet)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         StateFlagBitsImpl stateFlags = new StateFlagBitsImpl(op, FlagImpl.getValidMask());
         stateFlags.enableFlags(rootCtx, flagsPreSet);

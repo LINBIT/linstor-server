@@ -9,6 +9,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -92,7 +93,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         Map<String, Volume> vlmMapRef,
         Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
     )
-        throws MdException, SQLException
+        throws MdException, DatabaseException
     {
         super(transMgrProviderRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, ResourceDefinition.class, resDfnRef);
@@ -212,7 +213,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     @Override
     public Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
@@ -253,7 +254,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     @Override
-    public void setCryptKey(AccessContext accCtx, String key) throws AccessDeniedException, SQLException
+    public void setCryptKey(AccessContext accCtx, String key) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         if (!accCtx.subjectId.equals(Identity.SYSTEM_ID))
@@ -329,7 +330,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind, String rscNameSuffix)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
@@ -338,7 +339,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     @Override
     public void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
@@ -347,7 +348,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

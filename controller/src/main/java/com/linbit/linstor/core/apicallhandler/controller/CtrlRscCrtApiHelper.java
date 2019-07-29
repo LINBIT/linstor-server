@@ -29,12 +29,14 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiTransactionException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -310,9 +312,9 @@ public class CtrlRscCrtApiHelper
         {
             throw new ImplementationError("Invalid hardcoded thin-volume related properties", exc);
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 
@@ -454,9 +456,9 @@ public class CtrlRscCrtApiHelper
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {

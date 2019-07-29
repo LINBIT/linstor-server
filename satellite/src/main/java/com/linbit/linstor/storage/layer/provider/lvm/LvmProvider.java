@@ -11,6 +11,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -34,9 +35,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.File;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -107,7 +106,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
 
     @Override
     protected void updateStates(List<LvmData> vlmDataList, Collection<SnapshotVolume> snapshots)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
             extCmdFactory.create(),
@@ -164,7 +163,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
      * Expected to be overridden (extended) by LvmThinProvider
      */
     protected void updateInfo(LvmData vlmData, LvsInfo info)
-        throws SQLException, AccessDeniedException, StorageException
+        throws DatabaseException, AccessDeniedException, StorageException
     {
         vlmData.setIdentifier(asLvIdentifier(vlmData));
         if (info == null)
@@ -197,7 +196,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
      */
     @SuppressWarnings("unused")
     protected void updateSnapshotStates(Collection<SnapshotVolume> snapshots)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         // no-op
     }
@@ -254,7 +253,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
 
     @Override
     protected void deleteLvImpl(LvmData vlmData, String oldLvmId)
-        throws StorageException, SQLException
+        throws StorageException, DatabaseException
     {
         // just make sure to not colide with any other ongoing wipe-lv-name
         String newLvmId = String.format(FORMAT_LVM_ID_WIPE_IN_PROGRESS, UUID.randomUUID().toString());
@@ -291,7 +290,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                 {
                     errorReporter.reportError(exc);
                 }
-                catch (SQLException exc)
+                catch (DatabaseException exc)
                 {
                     throw new ImplementationError(exc);
                 }
@@ -440,19 +439,19 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     @Override
-    protected void setDevicePath(LvmData vlmData, String devPath) throws SQLException
+    protected void setDevicePath(LvmData vlmData, String devPath) throws DatabaseException
     {
         vlmData.setDevicePath(devPath);
     }
 
     @Override
-    protected void setAllocatedSize(LvmData vlmData, long size) throws SQLException
+    protected void setAllocatedSize(LvmData vlmData, long size) throws DatabaseException
     {
         vlmData.setAllocatedSize(size);
     }
 
     @Override
-    protected void setUsableSize(LvmData vlmData, long size) throws SQLException
+    protected void setUsableSize(LvmData vlmData, long size) throws DatabaseException
     {
         vlmData.setUsableSize(size);
     }
@@ -464,7 +463,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     @Override
-    protected String getStorageName(LvmData vlmDataRef) throws SQLException
+    protected String getStorageName(LvmData vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getVolumeGroup();
     }

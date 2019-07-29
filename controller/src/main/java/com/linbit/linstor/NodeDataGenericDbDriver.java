@@ -6,6 +6,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -19,13 +20,12 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.StringUtils;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -102,7 +102,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(NodeData node) throws SQLException
+    public void create(NodeData node) throws DatabaseException
     {
         errorReporter.logTrace("Creating Node %s", getId(node));
         try (PreparedStatement stmt = getConnection().prepareStatement(NODE_INSERT))
@@ -116,13 +116,17 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
 
             errorReporter.logTrace("Node created %s", getId(node));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
-    public Map<NodeData, Node.InitMaps> loadAll() throws SQLException
+    public Map<NodeData, Node.InitMaps> loadAll() throws DatabaseException
     {
         errorReporter.logTrace("Loading all Nodes");
         Map<NodeData, Node.InitMaps> loadedNodesMap = new TreeMap<>();
@@ -140,71 +144,79 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("Loaded %d Nodes", loadedNodesMap.size());
         return loadedNodesMap;
     }
 
     private Pair<NodeData, Node.InitMaps> restoreNode(ResultSet resultSet)
-        throws SQLException, ImplementationError
+        throws DatabaseException, ImplementationError
     {
         Pair<NodeData, Node.InitMaps> retPair = new Pair<>();
         NodeData node;
-        NodeName nodeName = null;
-        try
-        {
-            nodeName = new NodeName(resultSet.getString(NODE_DSP_NAME));
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "The display name of a stored Node could not be restored" +
-                        "(invalid display NodeName=%s)",
-                    resultSet.getString(NODE_DSP_NAME)
-                ),
-                invalidNameExc
+        NodeName nodeName;
+
+        try {
+            try {
+                nodeName = new NodeName(resultSet.getString(NODE_DSP_NAME));
+            } catch (InvalidNameException invalidNameExc) {
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "The display name of a stored Node could not be restored" +
+                            "(invalid display NodeName=%s)",
+                        resultSet.getString(NODE_DSP_NAME)
+                    ),
+                    invalidNameExc
+                );
+            }
+
+            ObjectProtection objProt = getObjectProtection(nodeName);
+
+            final Map<ResourceName, Resource> rscMap = new TreeMap<>();
+            final Map<SnapshotDefinition.Key, Snapshot> snapshotMap = new TreeMap<>();
+            final Map<NetInterfaceName, NetInterface> netIfMap = new TreeMap<>();
+            final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
+            final Map<NodeName, NodeConnection> nodeConnMap = new TreeMap<>();
+
+            node = new NodeData(
+                java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
+                objProt,
+                nodeName,
+                Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
+                resultSet.getLong(NODE_FLAGS),
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                rscMap,
+                snapshotMap,
+                netIfMap,
+                storPoolMap,
+                nodeConnMap
+            );
+
+            retPair.objA = node;
+            retPair.objB = new NodeInitMaps(
+                rscMap,
+                snapshotMap,
+                netIfMap,
+                storPoolMap,
+                nodeConnMap
             );
         }
-
-        ObjectProtection objProt = getObjectProtection(nodeName);
-
-        final Map<ResourceName, Resource> rscMap = new TreeMap<>();
-        final Map<SnapshotDefinition.Key, Snapshot> snapshotMap = new TreeMap<>();
-        final Map<NetInterfaceName, NetInterface> netIfMap = new TreeMap<>();
-        final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
-        final Map<NodeName, NodeConnection> nodeConnMap = new TreeMap<>();
-
-        node = new NodeData(
-            java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
-            objProt,
-            nodeName,
-            Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
-            resultSet.getLong(NODE_FLAGS),
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            rscMap,
-            snapshotMap,
-            netIfMap,
-            storPoolMap,
-            nodeConnMap
-        );
-
-        retPair.objA = node;
-        retPair.objB = new NodeInitMaps(
-            rscMap,
-            snapshotMap,
-            netIfMap,
-            storPoolMap,
-            nodeConnMap
-        );
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
 
         errorReporter.logTrace("Node loaded from DB %s", getId(node));
         return retPair;
     }
 
-    private ObjectProtection getObjectProtection(NodeName nodeName) throws SQLException
+    private ObjectProtection getObjectProtection(NodeName nodeName) throws DatabaseException
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(nodeName),
@@ -221,7 +233,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public void delete(NodeData node) throws SQLException
+    public void delete(NodeData node) throws DatabaseException
     {
         errorReporter.logTrace("Deleting node %s", getId(node));
         try (PreparedStatement stmt = getConnection().prepareStatement(NODE_DELETE))
@@ -229,6 +241,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             stmt.setString(1, node.getName().value);
 
             stmt.executeUpdate();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace("Node deleted %s", getId(node));
     }
@@ -268,7 +284,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private class NodeFlagPersistence implements StateFlagsPersistence<NodeData>
     {
         @Override
-        public void persist(NodeData node, long flags) throws SQLException
+        public void persist(NodeData node, long flags) throws DatabaseException
         {
             try
             {
@@ -299,6 +315,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
 
                     stmt.executeUpdate();
                 }
+                catch (SQLException sqlExc)
+                {
+                    throw new DatabaseException(sqlExc);
+                }
                 errorReporter.logTrace("Node's flags updated from [%s] to [%s] %s",
                     fromFlags,
                     toFlags,
@@ -315,7 +335,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private class NodeTypeDriver implements SingleColumnDatabaseDriver<NodeData, NodeType>
     {
         @Override
-        public void update(NodeData parent, NodeType element) throws SQLException
+        public void update(NodeData parent, NodeType element) throws DatabaseException
         {
             try
             {
@@ -336,6 +356,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
                     element.name(),
                     getId(parent)
                 );
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             catch (AccessDeniedException accDeniedExc)
             {

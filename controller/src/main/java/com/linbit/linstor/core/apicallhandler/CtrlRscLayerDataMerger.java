@@ -15,14 +15,15 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
-import com.linbit.linstor.api.pojo.LuksRscPojo;
-import com.linbit.linstor.api.pojo.NvmeRscPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
+import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -48,8 +49,6 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 
 @Singleton
 public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
@@ -81,7 +80,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         ResourceDefinition rscDfn,
         DrbdRscDfnPojo drbdRscDfnPojo
     )
-        throws IllegalArgumentException, SQLException, ValueOutOfRangeException, AccessDeniedException,
+        throws IllegalArgumentException, DatabaseException, ValueOutOfRangeException, AccessDeniedException,
             ExhaustedPoolException, ValueInUseException
     {
         // nothing to merge
@@ -97,28 +96,28 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         Resource rscRef, RscLayerDataApi rscDataPojoRef, RscLayerObject parentRef, DrbdRscPojo drbdRscPojoRef,
         DrbdRscDfnData drbdRscDfnDataRef
     )
-        throws SQLException, ValueOutOfRangeException, AccessDeniedException
+        throws DatabaseException, ValueOutOfRangeException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown drbd resource from satellite");
     }
 
     @Override
     protected void mergeDrbdRscData(RscLayerObject parentRef, DrbdRscPojo drbdRscPojoRef, DrbdRscData drbdRscDataRef)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         // nothing to merge
     }
 
     @Override
     protected void removeDrbdVlm(DrbdRscData drbdRscDataRef, VolumeNumber vlmNrRef)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         // ignored. A parent volume might have more volumes in one of its children than in an other one
     }
 
     @Override
     protected DrbdVlmDfnData mergeOrCreateDrbdVlmDfnData(VolumeDefinition vlmDfnRef, DrbdVlmDfnPojo drbdVlmDfnPojoRef)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
         // nothing to merge
@@ -133,7 +132,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         VolumeNumber vlmNrRef,
         DrbdVlmDfnData drbdVlmDfnDataRef
     )
-        throws AccessDeniedException, InvalidNameException, SQLException
+        throws AccessDeniedException, InvalidNameException, DatabaseException
     {
         DrbdVlmData drbdVlmData = rscDataRef.getVlmLayerObjects().get(vlmNrRef);
 
@@ -146,21 +145,21 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
 
     @Override
     protected LuksRscData createLuksRscData(Resource rscRef, RscLayerObject parentRef, LuksRscPojo luksRscPojoRef)
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown luks resource from satellite");
     }
 
     @Override
     protected void removeLuksVlm(LuksRscData luksRscDataRef, VolumeNumber vlmNrRef)
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         // ignored. A parent volume might have more volumes in one of its children than in an other one
     }
 
     @Override
     protected void createOrMergeLuksVlm(Volume vlmRef, LuksRscData luksRscDataRef, LuksVlmPojo vlmPojoRef)
-        throws SQLException
+        throws DatabaseException
     {
         LuksVlmData luksVlmData = luksRscDataRef.getVlmLayerObjects().get(
             vlmRef.getVolumeDefinition().getVolumeNumber()
@@ -177,20 +176,20 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
     protected StorageRscData createStorageRscData(
         Resource rscRef, RscLayerObject parentRef, StorageRscPojo storRscPojoRef
     )
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown storage resource from satellite");
     }
 
     @Override
     protected void removeStorageVlm(StorageRscData storRscDataRef, VolumeNumber vlmNrRef)
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         // ignored. A parent volume might have more volumes in one of its children than in an other one
     }
 
     @Override
-    protected void updateParent(RscLayerObject rscDataRef, RscLayerObject parentRef) throws SQLException
+    protected void updateParent(RscLayerObject rscDataRef, RscLayerObject parentRef) throws DatabaseException
     {
         // ignored
     }
@@ -202,26 +201,26 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         throw new ImplementationError("Received unknown diskless storage volume from satellite");
     }
 
     @Override
-    protected void mergeDisklessVlm(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws SQLException
+    protected void mergeDisklessVlm(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
     {
         ((DisklessData) vlmDataRef).setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override
     protected VlmProviderObject createLvmVlmData(Volume vlmRef, StorageRscData storRscDataRef, StorPool storPoolRef)
-        throws SQLException
+        throws DatabaseException
     {
         throw new ImplementationError("Received unknown lvm storage volume from satellite");
     }
 
     @Override
-    protected void mergeLvmVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws SQLException
+    protected void mergeLvmVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
     {
         LvmData lvmData = (LvmData) vlmDataRef;
         lvmData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
@@ -231,13 +230,13 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
 
     @Override
     protected LvmThinData createLvmThinVlmData(Volume vlmRef, StorageRscData storRscDataRef, StorPool storPoolRef)
-        throws SQLException
+        throws DatabaseException
     {
         throw new ImplementationError("Received unknown lvm thin storage volume from satellite");
     }
 
     @Override
-    protected void mergeLvmThinVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws SQLException
+    protected void mergeLvmThinVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
     {
         LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
         lvmThinData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
@@ -252,13 +251,13 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
     )
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown swordfish initiator storage volume from satellite");
     }
 
     @Override
-    protected void mergeSfInitVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws SQLException
+    protected void mergeSfInitVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
     {
         SfInitiatorData sfInitData = (SfInitiatorData) vlmDataRef;
         sfInitData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
@@ -273,13 +272,13 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         throw new ImplementationError("Received unknown swordfish target storage volume from satellite");
     }
 
     @Override
-    protected void mergeSfTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws SQLException
+    protected void mergeSfTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
     {
         SfTargetData sfTargetData = (SfTargetData) vlmDataRef;
         sfTargetData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
@@ -292,14 +291,14 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         VlmLayerDataApi vlmDataApi,
         StorPool StorPool
     )
-        throws SQLException
+        throws DatabaseException
     {
         throw new ImplementationError("Received unknown zfs storage volume from satellite");
     }
 
     @Override
     protected void mergeZfsData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef)
-        throws SQLException
+        throws DatabaseException
     {
         ZfsData zfsData = (ZfsData) vlmDataRef;
         zfsData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
@@ -314,14 +313,14 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         VlmLayerDataApi vlmDataApi,
         StorPool storPool
     )
-        throws SQLException
+        throws DatabaseException
     {
         throw new ImplementationError("Received unknown file storage volume from satellite");
     }
 
     @Override
     protected void mergeFileData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef)
-        throws SQLException
+        throws DatabaseException
     {
         FileData fileData = (FileData) vlmDataRef;
         fileData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
@@ -343,7 +342,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
 
     @Override
     protected NvmeRscData createNvmeRscData(Resource rscRef, RscLayerObject parentRef, NvmeRscPojo nvmeRscPojoRef)
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown nvme resource from satellite");
     }
@@ -356,7 +355,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
 
     @Override
     protected void removeNvmeVlm(NvmeRscData nvmeRscDataRef, VolumeNumber vlmNrRef)
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         // ignored. A parent volume might have more volumes in one of its children than in an other one
     }

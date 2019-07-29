@@ -4,8 +4,6 @@ import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 
-import java.sql.SQLException;
-
 import javax.inject.Inject;
 
 public class SatelliteStorPoolDfnDriver implements StorPoolDefinitionDataDatabaseDriver
@@ -31,7 +29,7 @@ public class SatelliteStorPoolDfnDriver implements StorPoolDefinitionDataDatabas
     }
 
     @Override
-    public StorPoolDefinitionData createDefaultDisklessStorPool() throws SQLException
+    public StorPoolDefinitionData createDefaultDisklessStorPool()
     {
         return null;
     }

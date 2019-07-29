@@ -1,10 +1,9 @@
 package com.linbit.linstor.security;
 
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 import javax.inject.Inject;
-
-import java.sql.SQLException;
 
 public class StltCoreObjProtInitializer
 {
@@ -24,7 +23,7 @@ public class StltCoreObjProtInitializer
         objectProtectionFactory = objectProtectionFactoryRef;
     }
 
-    public void initialize() throws AccessDeniedException, SQLException
+    public void initialize() throws AccessDeniedException, DatabaseException
     {
         ObjectProtection shutdownProt = objectProtectionFactory.getInstance(
             initCtx,

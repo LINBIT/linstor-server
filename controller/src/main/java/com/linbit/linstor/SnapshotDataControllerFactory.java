@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -11,7 +12,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -42,7 +42,7 @@ public class SnapshotDataControllerFactory
         Snapshot.SnapshotFlags[] initFlags,
         List<DeviceLayerKind> layerStack
     )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
 

@@ -48,12 +48,13 @@ import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentDataException;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.StltSecurityObjects;
-import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.StltLayerRscDataMerger;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -67,7 +68,6 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -75,12 +75,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Singleton
 class StltRscApiCallHandler
@@ -647,7 +646,7 @@ class StltRscApiCallHandler
         RscLayerDataApi rscLayerDataApi
     )
         throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException,
-            SQLException
+            DatabaseException
     {
         ResourceData rsc = resourceDataFactory.getInstanceSatellite(
             apiCtx,
@@ -683,7 +682,7 @@ class StltRscApiCallHandler
         boolean remoteRsc
     )
         throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException,
-            SQLException
+        DatabaseException
     {
         VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
@@ -701,7 +700,7 @@ class StltRscApiCallHandler
     }
 
     private void mergeVlm(Volume vlm, VlmApi vlmApi, boolean remoteRsc)
-        throws DivergentDataException, AccessDeniedException, SQLException, InvalidNameException
+        throws DivergentDataException, AccessDeniedException, DatabaseException, InvalidNameException
     {
         if (!remoteRsc)
         {
@@ -715,7 +714,7 @@ class StltRscApiCallHandler
     }
 
     private void restoreStorPools(Volume vlmRef, VlmApi vlmApiRef, boolean remoteRscRef)
-        throws AccessDeniedException, InvalidNameException, DivergentDataException, SQLException
+        throws AccessDeniedException, InvalidNameException, DivergentDataException, DatabaseException
     {
         VolumeNumber vlmNr = vlmRef.getVolumeDefinition().getVolumeNumber();
         Resource rsc = vlmRef.getResource();

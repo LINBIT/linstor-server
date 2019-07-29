@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
@@ -14,6 +12,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -33,8 +32,6 @@ import com.linbit.utils.Either;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +41,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import static java.util.stream.Collectors.toList;
 
 public class StltApiCallHandlerUtils
 {
@@ -200,7 +199,7 @@ public class StltApiCallHandlerUtils
                 }
             }
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             errorReporter.reportError(new ImplementationError(exc));
         }

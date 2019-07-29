@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
@@ -89,7 +90,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(Snapshot snapshot) throws SQLException
+    public void create(Snapshot snapshot) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(S_INSERT))
         {
@@ -112,6 +113,10 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             stmt.executeUpdate();
 
             errorReporter.logTrace("Snapshot created %s", getId(snapshot));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -160,7 +165,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         }
         catch (ValueOutOfRangeException valueOutOfRangeExc)
         {
-            throw new LinStorSqlRuntimeException(
+            throw new LinStorDBRuntimeException(
                 String.format(
                     "A NodeId of a stored Snapshot in the table %s could not be restored. " +
                         "(NodeName=%s, ResName=%s, SnapshotName=%s, invalid NodeId=%d)",
@@ -180,7 +185,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         Map<NodeName, ? extends Node> nodeMap,
         Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition> snapshotDfnMap
     )
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading all Snapshots");
         Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = new TreeMap<>();
@@ -217,12 +222,16 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return loadedSnapshots;
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(Snapshot snapshot) throws SQLException
+    public void delete(Snapshot snapshot) throws DatabaseException
     {
         errorReporter.logTrace("Deleting Snapshot %s", getId(snapshot));
         try (PreparedStatement stmt = getConnection().prepareStatement(S_DELETE))
@@ -232,6 +241,10 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             stmt.setString(3, snapshot.getSnapshotName().value);
             stmt.executeUpdate();
             errorReporter.logTrace("Snapshot deleted %s", getId(snapshot));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -273,7 +286,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void persist(Snapshot snapshot, long flags)
-            throws SQLException
+            throws DatabaseException
         {
             try (PreparedStatement stmt = getConnection().prepareStatement(S_UPDATE_FLAGS))
             {
@@ -309,6 +322,10 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                     toFlags,
                     getId(snapshot)
                 );
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             catch (AccessDeniedException accessDeniedExc)
             {

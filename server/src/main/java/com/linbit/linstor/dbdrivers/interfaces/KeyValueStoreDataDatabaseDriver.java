@@ -1,9 +1,8 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
-
 import com.linbit.linstor.KeyValueStoreData;
 import com.linbit.linstor.KeyValueStoreName;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**
  * Database driver for {@link KeyValueStoreData}.
@@ -18,9 +17,9 @@ public interface KeyValueStoreDataDatabaseDriver
      * @param kvs
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(KeyValueStoreData kvs) throws SQLException;
+    void create(KeyValueStoreData kvs) throws DatabaseException;
 
     /**
      * Removes the given {@link KeyValueStoreData} from the database
@@ -28,9 +27,9 @@ public interface KeyValueStoreDataDatabaseDriver
      * @param kvs
      *  The data identifying the row to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(KeyValueStoreData kvs) throws SQLException;
+    void delete(KeyValueStoreData kvs) throws DatabaseException;
 
     /**
      * Checks if the stored primary key already exists in the database.
@@ -40,8 +39,8 @@ public interface KeyValueStoreDataDatabaseDriver
      *
      * @return
      *  True if the data record exists. False otherwise.
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    boolean exists(KeyValueStoreName kvsName) throws SQLException;
+    boolean exists(KeyValueStoreName kvsName) throws DatabaseException;
 
 }

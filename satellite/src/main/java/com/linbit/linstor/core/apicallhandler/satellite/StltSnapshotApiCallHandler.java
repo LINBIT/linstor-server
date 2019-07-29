@@ -28,6 +28,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -37,7 +38,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -117,7 +117,7 @@ class StltSnapshotApiCallHandler
     }
 
     private ResourceDefinition mergeResourceDefinition(ResourceDefinition.RscDfnApi rscDfnApi)
-        throws InvalidNameException, DivergentUuidsException, AccessDeniedException, SQLException
+        throws InvalidNameException, DivergentUuidsException, AccessDeniedException, DatabaseException
     {
         ResourceName rscName = new ResourceName(rscDfnApi.getResourceName());
 
@@ -149,7 +149,7 @@ class StltSnapshotApiCallHandler
         ResourceDefinition rscDfn
     )
         throws AccessDeniedException, DivergentUuidsException, InvalidNameException, ValueOutOfRangeException,
-            SQLException
+            DatabaseException
     {
         SnapshotName snapshotName = new SnapshotName(snapshotDfnApi.getSnapshotName());
 
@@ -212,7 +212,7 @@ class StltSnapshotApiCallHandler
 
     private void mergeSnapshot(SnapshotPojo snapshotRaw, SnapshotDefinition snapshotDfn)
         throws DivergentUuidsException, AccessDeniedException, ValueOutOfRangeException, InvalidNameException,
-            SQLException
+            DatabaseException
     {
         NodeData localNode = controllerPeerConnector.getLocalNode();
         Snapshot snapshot = snapshotDfn.getSnapshot(apiCtx, localNode.getName());

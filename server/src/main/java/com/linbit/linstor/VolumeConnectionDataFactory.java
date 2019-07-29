@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -11,8 +12,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.UUID;
 
 public class VolumeConnectionDataFactory
@@ -41,7 +40,7 @@ public class VolumeConnectionDataFactory
         Volume sourceVolume,
         Volume targetVolume
     )
-        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
+        throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
         sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);

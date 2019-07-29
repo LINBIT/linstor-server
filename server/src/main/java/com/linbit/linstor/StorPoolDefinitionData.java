@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.pojo.StorPoolDfnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -17,7 +18,7 @@ import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
-import java.sql.SQLException;
+import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,8 +26,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
-
-import javax.inject.Provider;
 
 public class StorPoolDefinitionData extends BaseTransactionObject implements StorPoolDefinition
 {
@@ -52,7 +51,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         Provider<TransactionMgr> transMgrProviderRef,
         Map<NodeName, StorPool> storPoolsMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
 
@@ -152,7 +151,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

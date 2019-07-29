@@ -1,10 +1,10 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObject;
 
-import java.sql.SQLException;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -58,7 +58,7 @@ public interface SnapshotVolume extends TransactionObject, DbgInstanceUuid
     StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     SnapshotVlmApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 

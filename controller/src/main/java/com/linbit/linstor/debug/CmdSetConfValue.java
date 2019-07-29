@@ -3,7 +3,7 @@ package com.linbit.linstor.debug;
 import javax.inject.Inject;
 
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -124,7 +124,7 @@ public class CmdSetConfValue extends BaseDebugCmd
                 printMultiMissingParamError(debugErr, parameters, PRM_KEY, PRM_VALUE);
             }
         }
-        catch (LinStorSqlRuntimeException sqlExc)
+        catch (LinStorDBRuntimeException sqlExc)
         {
             printError(
                 debugErr,

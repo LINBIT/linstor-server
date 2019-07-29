@@ -124,7 +124,7 @@ public class ReadOnlyProps implements Props
 
     @Override
     public void loadAll()
-        throws SQLException, AccessDeniedException
+        throws AccessDeniedException
     {
         denyAccess();
     }

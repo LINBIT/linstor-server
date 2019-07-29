@@ -32,12 +32,14 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiTransactionException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -47,6 +49,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.transaction.TransactionException;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
@@ -500,9 +503,9 @@ public class CtrlRscDfnApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException dbExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(dbExc);
         }
         catch (LinStorDataAlreadyExistsException exc)
         {

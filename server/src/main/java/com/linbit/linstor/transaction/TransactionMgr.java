@@ -7,8 +7,8 @@ public interface TransactionMgr
 {
     void register(TransactionObject transObj);
 
-    void commit() throws SQLException;
-    void rollback() throws SQLException;
+    void commit() throws TransactionException;
+    void rollback() throws TransactionException;
 
     void clearTransactionObjects();
     boolean isDirty();

@@ -2,8 +2,8 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.KeyValueStore;
+import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -16,8 +16,9 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -27,7 +28,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -303,9 +303,9 @@ public class CtrlPropsHelper
                         throw new ImplementationError(exc);
                     }
                 }
-                catch (SQLException exc)
+                catch (DatabaseException exc)
                 {
-                    throw new ApiSQLException(exc);
+                    throw new ApiDatabaseException(exc);
                 }
             }
             else
@@ -335,7 +335,7 @@ public class CtrlPropsHelper
         Collection<String> deletePropKeys,
         Collection<String> deleteNamespaces
     )
-        throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
+        throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
         for (Map.Entry<String, String> entry : overrideProps.entrySet())
         {
@@ -349,7 +349,7 @@ public class CtrlPropsHelper
         Collection<String> deletePropKeys,
         Collection<String> deleteNamespaces
     )
-        throws AccessDeniedException, InvalidKeyException, SQLException
+        throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
         for (String key : deletePropKeys)
         {

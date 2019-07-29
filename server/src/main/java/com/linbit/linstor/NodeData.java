@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -24,9 +25,9 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+import reactor.core.publisher.FluxSink;
 
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,8 +38,6 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
-
-import reactor.core.publisher.FluxSink;
 
 import static java.util.stream.Collectors.toList;
 
@@ -105,7 +104,7 @@ public class NodeData extends BaseTransactionObject implements Node
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
-        throws SQLException
+        throws DatabaseException
     {
         this(
             uuidRef,
@@ -142,7 +141,7 @@ public class NodeData extends BaseTransactionObject implements Node
         Map<StorPoolName, StorPool> storPoolMapRef,
         Map<NodeName, NodeConnection> nodeConnMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProvider);
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
@@ -404,7 +403,7 @@ public class NodeData extends BaseTransactionObject implements Node
         netInterfaceMap.put(niRef.getName(), niRef);
     }
 
-    void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException, SQLException
+    void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -501,7 +500,7 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     public NodeType setNodeType(AccessContext accCtx, NodeType newType)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -560,7 +559,7 @@ public class NodeData extends BaseTransactionObject implements Node
 
     @Override
     public void setActiveStltConn(AccessContext accCtx, NetInterface satelliteConnectionRef)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
@@ -579,7 +578,7 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     void removeActiveSatelliteconnection(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         activeStltConn.set(null);
@@ -594,7 +593,7 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
@@ -603,7 +602,7 @@ public class NodeData extends BaseTransactionObject implements Node
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

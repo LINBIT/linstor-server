@@ -3,6 +3,7 @@ package com.linbit.linstor.storage;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -18,7 +19,6 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.annotation.Nullable;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +86,7 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     }
 
     @Override
-    public void setParent(RscLayerObject parentRscLayerObjectRef) throws SQLException
+    public void setParent(RscLayerObject parentRscLayerObjectRef) throws DatabaseException
     {
         parent.set(parentRscLayerObjectRef);
     }
@@ -117,7 +117,7 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
 
     @Override
     public void remove(AccessContext accCtx, VolumeNumber vlmNrRef)
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         for (RscLayerObject rscLayerObject : children)
         {
@@ -131,12 +131,12 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
         deleteVlmFromDatabase(vlm);
     }
 
-    protected abstract void deleteVlmFromDatabase(VLM_TYPE vlm) throws SQLException;
+    protected abstract void deleteVlmFromDatabase(VLM_TYPE vlm) throws DatabaseException;
 
-    protected abstract void deleteRscFromDatabase() throws SQLException;
+    protected abstract void deleteRscFromDatabase() throws DatabaseException;
 
     @Override
-    public void delete() throws SQLException
+    public void delete() throws DatabaseException
     {
         for (RscLayerObject rscLayerObject : children)
         {

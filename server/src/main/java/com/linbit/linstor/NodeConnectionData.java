@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -13,11 +14,9 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
-import java.sql.SQLException;
+import javax.inject.Provider;
 import java.util.Arrays;
 import java.util.UUID;
-
-import javax.inject.Provider;
 
 /**
  * Defines a connection between two LinStor nodes
@@ -50,7 +49,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
 
@@ -150,7 +149,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
     }
 
     @Override
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

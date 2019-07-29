@@ -8,6 +8,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -29,9 +30,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -158,7 +157,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     protected void createLvImpl(ZfsData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.create(
             extCmdFactory.create(),
@@ -190,7 +189,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     protected void resizeLvImpl(ZfsData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.resize(
             extCmdFactory.create(),
@@ -202,7 +201,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     protected void deleteLvImpl(ZfsData vlmData, String lvId)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.delete(
             extCmdFactory.create(),
@@ -214,7 +213,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     public boolean snapshotExists(SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         // FIXME: RAID: rscNameSuffix
 
@@ -243,7 +242,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     protected void createSnapshot(ZfsData vlmData, SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.createSnapshot(
             extCmdFactory.create(),
@@ -255,7 +254,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     protected void restoreSnapshot(String sourceLvId, String sourceSnapName, ZfsData targetVlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.restoreSnapshot(
             extCmdFactory.create(),
@@ -269,7 +268,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     protected void deleteSnapshot(String rscNameSuffix, SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.delete(
             extCmdFactory.create(),
@@ -280,7 +279,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     protected void rollbackImpl(ZfsData vlmData, String rollbackTargetSnapshotName)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.rollback(
             extCmdFactory.create(),
@@ -382,7 +381,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
 
     @Override
     protected void updateStates(List<ZfsData> vlmDataList, Collection<SnapshotVolume> snapVlms)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         Set<StorPool> storPools = new TreeSet<>();
         /*
@@ -438,7 +437,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
         }
     }
 
-    private void updateInfo(ZfsData vlmData, ZfsInfo zfsInfo) throws SQLException
+    private void updateInfo(ZfsData vlmData, ZfsInfo zfsInfo) throws DatabaseException
     {
         vlmData.setExists(true);
         vlmData.setZPool(zfsInfo.poolName);
@@ -449,25 +448,25 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     }
 
     @Override
-    protected void setDevicePath(ZfsData vlmDataRef, String devicePathRef) throws SQLException
+    protected void setDevicePath(ZfsData vlmDataRef, String devicePathRef) throws DatabaseException
     {
         vlmDataRef.setDevicePath(devicePathRef);
     }
 
     @Override
-    protected void setAllocatedSize(ZfsData vlmDataRef, long sizeRef) throws SQLException
+    protected void setAllocatedSize(ZfsData vlmDataRef, long sizeRef) throws DatabaseException
     {
         vlmDataRef.setAllocatedSize(sizeRef);
     }
 
     @Override
-    protected void setUsableSize(ZfsData vlmDataRef, long sizeRef) throws SQLException
+    protected void setUsableSize(ZfsData vlmDataRef, long sizeRef) throws DatabaseException
     {
         vlmDataRef.setUsableSize(sizeRef);
     }
 
     @Override
-    protected void setExpectedUsableSize(ZfsData vlmData, long size) throws SQLException
+    protected void setExpectedUsableSize(ZfsData vlmData, long size) throws DatabaseException
     {
         vlmData.setExepectedSize(
             roundUpToExtentSize(size)
@@ -475,7 +474,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
     }
 
     @Override
-    protected String getStorageName(ZfsData vlmDataRef) throws SQLException
+    protected String getStorageName(ZfsData vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getZPool();
     }

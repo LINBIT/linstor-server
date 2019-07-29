@@ -37,6 +37,7 @@ import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateNotification;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -1105,9 +1106,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 nodeMapWrLock.unlock();
             }
         }
-        catch (SQLException ignored)
+        catch (DatabaseException ignored)
         {
-            // Satellite; does not throw SQLExceptions, because the database update methods
+            // Satellite; does not throw DatabaseExceptions, because the database update methods
             // are no-ops -> ignored
         }
         finally

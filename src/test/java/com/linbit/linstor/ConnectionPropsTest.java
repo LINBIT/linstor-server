@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -132,7 +133,7 @@ public class ConnectionPropsTest extends GenericDbBase
 
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     @Test
-    public void test() throws InvalidKeyException, AccessDeniedException, InvalidValueException, SQLException
+    public void test() throws InvalidKeyException, AccessDeniedException, InvalidValueException, DatabaseException
     {
         String testKey = "testKey";
         String testValue1 = "testValue1";

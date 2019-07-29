@@ -1,19 +1,19 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObject;
+
+import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -69,7 +69,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         throws AccessDeniedException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     boolean isSnapshotSupported(AccessContext accCtxRef) throws AccessDeniedException;
 

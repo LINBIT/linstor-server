@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -7,8 +8,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ProtectedObject;
-
-import java.sql.SQLException;
 
 /**
  * Provides access to system-wide props with automatic security checks.
@@ -21,16 +20,16 @@ public interface SystemConfRepository extends ProtectedObject
         throws AccessDeniedException;
 
     String setCtrlProp(AccessContext accCtx, String key, String value, String namespace)
-        throws InvalidValueException, AccessDeniedException, SQLException, InvalidKeyException;
+        throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException;
 
     String setStltProp(AccessContext accCtx, String key, String value)
-        throws AccessDeniedException, InvalidValueException, InvalidKeyException, SQLException;
+        throws AccessDeniedException, InvalidValueException, InvalidKeyException, DatabaseException;
 
     String removeCtrlProp(AccessContext accCtx, String key, String namespace)
-        throws AccessDeniedException, InvalidKeyException, SQLException;
+        throws AccessDeniedException, InvalidKeyException, DatabaseException;
 
     String removeStltProp(AccessContext accCtx, String key, String namespace)
-        throws AccessDeniedException, InvalidKeyException, SQLException;
+        throws AccessDeniedException, InvalidKeyException, DatabaseException;
 
     Props getCtrlConfForView(AccessContext accCtx)
         throws AccessDeniedException;

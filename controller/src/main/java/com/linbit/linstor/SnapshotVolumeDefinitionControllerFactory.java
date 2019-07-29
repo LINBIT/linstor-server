@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -12,7 +13,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -44,7 +44,7 @@ public class SnapshotVolumeDefinitionControllerFactory
         long volSize,
         SnapshotVolumeDefinition.SnapshotVlmDfnFlags[] initFlags
     )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException, MdException
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, MdException
     {
         snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
 

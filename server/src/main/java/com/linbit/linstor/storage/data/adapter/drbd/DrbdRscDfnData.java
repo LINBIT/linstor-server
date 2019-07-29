@@ -5,14 +5,15 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -21,8 +22,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -131,7 +130,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     }
 
     public void setPort(Integer portRef)
-        throws ExhaustedPoolException, SQLException, ValueOutOfRangeException, ValueInUseException
+        throws ExhaustedPoolException, DatabaseException, ValueOutOfRangeException, ValueInUseException
     {
         tcpPortPool.deallocate(port.get().value);
         int actualPort = portRef == null ? tcpPortPool.autoAllocate() : portRef;
@@ -139,7 +138,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         tcpPortPool.allocate(actualPort);
     }
 
-    public void setPort(TcpPortNumber portRef) throws SQLException, ValueInUseException
+    public void setPort(TcpPortNumber portRef) throws DatabaseException, ValueInUseException
     {
         tcpPortPool.deallocate(port.get().value);
         port.set(portRef);
@@ -152,7 +151,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         return transportType.get();
     }
 
-    public void setTransportType(TransportType typeRef) throws SQLException
+    public void setTransportType(TransportType typeRef) throws DatabaseException
     {
         transportType.set(typeRef);
     }
@@ -163,7 +162,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         return secret.get();
     }
 
-    public void setSecret(String secretRef) throws SQLException
+    public void setSecret(String secretRef) throws DatabaseException
     {
         secret.set(secretRef);
     }
@@ -179,7 +178,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         return peerSlots.get();
     }
 
-    public void setPeerSlots(short peerSlotsRef) throws SQLException
+    public void setPeerSlots(short peerSlotsRef) throws DatabaseException
     {
         peerSlots.set(peerSlotsRef);
     }
@@ -197,7 +196,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     }
 
     @Override
-    public void setDown(boolean downRef) throws SQLException
+    public void setDown(boolean downRef) throws DatabaseException
     {
         down.set(downRef);
     }
@@ -220,7 +219,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     }
 
     @Override
-    public void delete() throws SQLException
+    public void delete() throws DatabaseException
     {
         Collection<DrbdVlmDfnData> drbdVlmDfns = new ArrayList<>(drbdVlmDfnMap.values());
         for (DrbdVlmDfnData drbdVlmDfn : drbdVlmDfns)

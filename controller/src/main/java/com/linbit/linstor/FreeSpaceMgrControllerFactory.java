@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -11,8 +12,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.Map;
 
 public class FreeSpaceMgrControllerFactory
@@ -40,7 +39,7 @@ public class FreeSpaceMgrControllerFactory
     }
 
     public FreeSpaceMgr getInstance(AccessContext accCtx, FreeSpaceMgrName fsmName)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         FreeSpaceMgr ret = freeSpaceMgrMap.get(fsmName);
         if (ret == null)

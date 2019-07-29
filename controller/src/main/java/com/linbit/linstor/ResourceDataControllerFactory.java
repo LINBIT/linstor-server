@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
@@ -14,10 +15,9 @@ import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
@@ -58,7 +58,7 @@ public class ResourceDataControllerFactory
         Resource.RscFlags[] initFlags,
         List<DeviceLayerKind> layerStackRef
     )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         ResourceData rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());

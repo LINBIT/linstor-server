@@ -13,6 +13,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -33,8 +34,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.HashSet;
 
 @Singleton
@@ -101,7 +100,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
         String rscNameSuffixRef,
         RscLayerObject parentObjectRef
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         return layerDataFactory.createStorageRscData(
@@ -131,7 +130,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
         Volume vlm,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
     {
         StorPool storPool = layerDataHelperProvider.get().getStorPool(vlm, rscData, payload);
@@ -203,7 +202,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
 
     @Override
     protected void mergeVlmData(VlmProviderObject vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
-        throws InvalidKeyException, InvalidNameException, SQLException, ValueOutOfRangeException,
+        throws InvalidKeyException, InvalidNameException, DatabaseException, ValueOutOfRangeException,
             ExhaustedPoolException, ValueInUseException, LinStorException
     {
         // if storage pool changed (i.e. because of a toggle disk) we need to update that
@@ -243,7 +242,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
         VolumeDefinition vlmDfn,
         String rscNameSuffix
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         VlmDfnLayerObject vlmDfnData = vlmDfn.getLayerData(
             apiCtx,
@@ -270,7 +269,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     }
 
     @Override
-    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, SQLException
+    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, DatabaseException
     {
         // changing storage pools allows other DeviceProviders than before. Therefore we simply delete
         // all storage volumes as they will be re-created soon

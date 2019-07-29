@@ -5,12 +5,12 @@ import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
@@ -21,14 +21,14 @@ public interface DeviceProvider
     void clearCache() throws StorageException;
 
     void prepare(List<VlmProviderObject> vlmDataList, List<SnapshotVolume> snapVlms)
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     void process(
         List<VlmProviderObject> vlmDataList,
         List<SnapshotVolume> list,
         ApiCallRcImpl apiCallRc
     )
-        throws AccessDeniedException, SQLException, StorageException;
+        throws AccessDeniedException, DatabaseException, StorageException;
 
     /**
      * @return the capacity of the used storage pool.
@@ -58,8 +58,8 @@ public interface DeviceProvider
     Collection<StorPool> getChangedStorPools();
 
     void updateGrossSize(VlmProviderObject vlmObj)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void updateAllocatedSize(VlmProviderObject vlmObj)
-        throws AccessDeniedException, SQLException, StorageException;
+        throws AccessDeniedException, DatabaseException, StorageException;
 }

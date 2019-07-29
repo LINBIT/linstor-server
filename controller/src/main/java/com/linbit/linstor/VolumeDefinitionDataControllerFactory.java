@@ -5,6 +5,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
@@ -15,10 +16,9 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -57,7 +57,7 @@ public class VolumeDefinitionDataControllerFactory
         Long vlmSize,
         VolumeDefinition.VlmDfnFlags[] initFlags
     )
-        throws SQLException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
+        throws DatabaseException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
 

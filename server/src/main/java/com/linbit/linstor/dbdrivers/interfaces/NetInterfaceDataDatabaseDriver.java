@@ -1,11 +1,11 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**
  * Database driver for {@link NetInterfaceData}.
@@ -19,18 +19,18 @@ public interface NetInterfaceDataDatabaseDriver
      *
      * @param netInterfaceData
      *  The data to be stored (including the primary key)
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(NetInterfaceData netInterfaceData) throws SQLException;
+    void create(NetInterfaceData netInterfaceData) throws DatabaseException;
 
     /**
      * Removes the given {@link NetInterfaceData} from the database
      *
      * @param netInterfaceData
      *  The data identifying the database entry to delete
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(NetInterfaceData netInterfaceData) throws SQLException;
+    void delete(NetInterfaceData netInterfaceData) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted ipAddress.

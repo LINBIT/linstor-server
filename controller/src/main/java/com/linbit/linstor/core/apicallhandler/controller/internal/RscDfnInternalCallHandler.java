@@ -13,6 +13,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -25,7 +26,6 @@ import com.linbit.locks.LockGuard;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -121,7 +121,7 @@ public class RscDfnInternalCallHandler
         catch (InvalidKeyException | InvalidValueException | AccessDeniedException ignored)
         {
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
             String errorMessage = String.format(
                 "A database error occurred while trying to rollback the deletion of " +

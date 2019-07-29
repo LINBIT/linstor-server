@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -26,7 +27,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Pair;
 
-import java.sql.SQLException;
+import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,8 +41,6 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.inject.Provider;
 
 /**
  *
@@ -103,7 +102,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,
         Map<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerDataMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
 
@@ -371,7 +370,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         getFlags().enableFlags(accCtx, RscDfnFlags.DELETE);
     }
@@ -379,7 +378,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     @SuppressWarnings("unchecked")
     @Override
     public <T extends RscDfnLayerObject> T setLayerData(AccessContext accCtx, T rscDfnLayerData)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -434,7 +433,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         DeviceLayerKind kind,
         String rscNameSuffixRef
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -466,7 +465,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

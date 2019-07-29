@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
@@ -87,7 +88,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     public List<VolumeConnectionData> loadAll(
         Map<Triple<NodeName, ResourceName, VolumeNumber>, ? extends Volume> vlmMap
     )
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading all VolumeConnections");
         List<VolumeConnectionData> vlmConns = new ArrayList<>();
@@ -111,6 +112,10 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (InvalidNameException exc)
         {
             throw new ImplementationError(
@@ -133,22 +138,29 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         Volume sourceVolume,
         Volume targetVolume
     )
-        throws SQLException
+        throws DatabaseException
     {
-        return new VolumeConnectionData(
-            java.util.UUID.fromString(resultSet.getString(UUID)),
-            sourceVolume,
-            targetVolume,
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider
-        );
+        try
+        {
+            return new VolumeConnectionData(
+                java.util.UUID.fromString(resultSet.getString(UUID)),
+                sourceVolume,
+                targetVolume,
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(VolumeConnectionData conDfnData) throws SQLException
+    public void create(VolumeConnectionData conDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating VolumeConnection %s", getId(conDfnData));
 
@@ -167,6 +179,10 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
 
             errorReporter.logTrace("VolumeConnection created %s", getId(conDfnData));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accDeniedExc);
@@ -175,7 +191,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(VolumeConnectionData conDfnData) throws SQLException
+    public void delete(VolumeConnectionData conDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting VolumeConnection %s", getId(conDfnData));
 
@@ -192,6 +208,10 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
             stmt.executeUpdate();
 
             errorReporter.logTrace("VolumeConnection deleted %s", getId(conDfnData));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         catch (AccessDeniedException accDeniedExc)
         {

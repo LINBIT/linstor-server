@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -12,7 +13,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.RemoveAfterDevMgrRework;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -66,10 +66,10 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     boolean isDeleted();
 
@@ -86,7 +86,7 @@ public interface Resource extends TransactionObject, DbgInstanceUuid, Comparable
         throws AccessDeniedException;
 
     void setLayerData(AccessContext accCtx, RscLayerObject layerData)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     /**
      * Returns the identification key without checking if "this" is already deleted

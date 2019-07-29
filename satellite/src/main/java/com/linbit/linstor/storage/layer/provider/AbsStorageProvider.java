@@ -11,8 +11,8 @@ import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
+import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.SnapshotVolumeDefinition;
 import com.linbit.linstor.StorPool;
@@ -23,6 +23,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -45,7 +46,6 @@ import javax.inject.Provider;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -139,7 +139,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     @SuppressWarnings("unchecked")
     @Override
     public void prepare(List<VlmProviderObject> rawVlmDataList, List<SnapshotVolume> snapVlms)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         clearCache(false);
 
@@ -152,7 +152,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void updateVolumeAndSnapshotStates(List<SnapshotVolume> snapVlms, List<LAYER_DATA> vlmDataList)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         infoListCache.putAll(getInfoListImpl(vlmDataList, snapVlms));
 
@@ -166,7 +166,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         List<SnapshotVolume> snapshotVlms,
         ApiCallRcImpl apiCallRc
     )
-        throws AccessDeniedException, SQLException, StorageException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         if (!prepared)
         {
@@ -315,7 +315,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void createVolumes(List<LAYER_DATA> vlmsToCreate, ApiCallRcImpl apiCallRc)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         for (LAYER_DATA vlmData : vlmsToCreate)
         {
@@ -409,7 +409,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void resizeVolumes(List<LAYER_DATA> vlmsToResize, ApiCallRcImpl apiCallRc)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         for (LAYER_DATA vlmData : vlmsToResize)
         {
@@ -424,7 +424,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void deleteVolumes(List<LAYER_DATA> vlmsToDelete, ApiCallRcImpl apiCallRc)
-        throws AccessDeniedException, StorageException, SQLException
+        throws AccessDeniedException, StorageException, DatabaseException
     {
         for (LAYER_DATA vlmData : vlmsToDelete)
         {
@@ -448,7 +448,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void deleteSnapshots(String rscNameSuffix, List<SnapshotVolume> snapVlms, ApiCallRcImpl apiCallRc)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         for (SnapshotVolume snapVlm : snapVlms)
         {
@@ -471,7 +471,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         List<SnapshotVolume> snapVlms,
         ApiCallRcImpl apiCallRc
     )
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         for (SnapshotVolume snapVlm : snapVlms)
         {
@@ -502,7 +502,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void handleRollbacks(List<LAYER_DATA> vlmsToCheckForRollback, ApiCallRcImpl apiCallRc)
-        throws AccessDeniedException, StorageException, SQLException
+        throws AccessDeniedException, StorageException, DatabaseException
     {
         for (LAYER_DATA vlmData : vlmsToCheckForRollback)
         {
@@ -766,7 +766,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     @SuppressWarnings("unchecked")
     @Override
-    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
+    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, DatabaseException
     {
         // usable size was just updated (set) by the layer above us. copy that, so we can
         // update it again with the actual usable size when we are finished
@@ -775,7 +775,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     @Override
     public void updateAllocatedSize(VlmProviderObject vlmDataRef)
-        throws AccessDeniedException, SQLException, StorageException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         LAYER_DATA vlmData = (LAYER_DATA) vlmDataRef;
         setAllocatedSize(vlmData, getAllocatedSize(vlmData));
@@ -794,35 +794,35 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     @SuppressWarnings("unused")
     protected void createSnapshot(LAYER_DATA vlmData, SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
     @SuppressWarnings("unused")
     protected void restoreSnapshot(String sourceLvId, String sourceSnapName, LAYER_DATA vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
     @SuppressWarnings("unused")
     protected void deleteSnapshot(String rscNameSuffix, SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
     @SuppressWarnings("unused")
     protected boolean snapshotExists(SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
     @SuppressWarnings("unused")
     protected void rollbackImpl(LAYER_DATA vlmData, String rollbackTargetSnapshotName)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
@@ -835,19 +835,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         List<LAYER_DATA> vlmDataList,
         List<SnapshotVolume> snapVlmsRef
     )
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     protected abstract void updateStates(List<LAYER_DATA> vlmDataList, Collection<SnapshotVolume> snapVlms)
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     protected abstract void createLvImpl(LAYER_DATA vlmData)
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     protected abstract void resizeLvImpl(LAYER_DATA vlmData)
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     protected abstract void deleteLvImpl(LAYER_DATA vlmData, String lvId)
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     protected String asLvIdentifier(LAYER_DATA vlmData)
     {
@@ -887,13 +887,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     protected abstract String getDevicePath(String storageName, String lvId);
 
-    protected abstract String getStorageName(LAYER_DATA vlmData) throws SQLException;
+    protected abstract String getStorageName(LAYER_DATA vlmData) throws DatabaseException;
 
-    protected abstract void setDevicePath(LAYER_DATA vlmData, String devicePath) throws SQLException;
+    protected abstract void setDevicePath(LAYER_DATA vlmData, String devicePath) throws DatabaseException;
 
-    protected abstract void setAllocatedSize(LAYER_DATA vlmData, long size) throws SQLException;
+    protected abstract void setAllocatedSize(LAYER_DATA vlmData, long size) throws DatabaseException;
 
-    protected abstract void setUsableSize(LAYER_DATA vlmData, long size) throws SQLException;
+    protected abstract void setUsableSize(LAYER_DATA vlmData, long size) throws DatabaseException;
 
-    protected abstract void setExpectedUsableSize(LAYER_DATA vlmData, long size) throws SQLException;
+    protected abstract void setExpectedUsableSize(LAYER_DATA vlmData, long size) throws DatabaseException;
 }

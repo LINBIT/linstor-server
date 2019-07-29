@@ -1,10 +1,9 @@
 package com.linbit.linstor.stateflags;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObject;
-
-import java.sql.SQLException;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -12,25 +11,25 @@ import java.sql.SQLException;
 public interface StateFlags<T extends Flags> extends TransactionObject
 {
     void enableAllFlags(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void disableAllFlags(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void enableFlags(AccessContext accCtx, T... flags)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void disableFlags(AccessContext accCtx, T... flags)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void enableFlagsExcept(AccessContext accCtx, T... flags)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void resetFlagsTo(AccessContext accCtx, T... flags)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void disableFlagsExcept(AccessContext accCtx, T... flags)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     boolean isSet(AccessContext accCtx, T... flags)
         throws AccessDeniedException;

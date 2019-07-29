@@ -1,5 +1,6 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -8,7 +9,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -61,13 +61,13 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void persist(String instanceName, String key, String value) throws SQLException
+    public void persist(String instanceName, String key, String value) throws DatabaseException
     {
         persistImpl(instanceName, key, value);
     }
 
     @Override
-    public void persist(String instanceName, Map<String, String> props) throws SQLException
+    public void persist(String instanceName, Map<String, String> props) throws DatabaseException
     {
         for (Entry<String, String> entry : props.entrySet())
         {
@@ -76,7 +76,7 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    private void persistImpl(String instanceName, String key, String value) throws SQLException
+    private void persistImpl(String instanceName, String key, String value) throws DatabaseException
     {
         errorReporter.logTrace("Storing property %s", getId(instanceName, key, value));
         try (
@@ -108,11 +108,15 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("Property stored %s", getId(instanceName, key, value));
     }
 
     @Override
-    public void remove(String instanceName, String key) throws SQLException
+    public void remove(String instanceName, String key) throws DatabaseException
     {
         errorReporter.logTrace("Removing property %s", getId(instanceName, key));
 
@@ -123,12 +127,16 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
 
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
 
         errorReporter.logTrace("Property removed %s", getId(instanceName, key));
     }
 
     @Override
-    public void remove(String instanceName, Set<String> keys) throws SQLException
+    public void remove(String instanceName, Set<String> keys) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(REMOVE_ENTRY))
         {
@@ -143,10 +151,14 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
                 errorReporter.logTrace("Property removed %s", getId(instanceName, key));
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void removeAll(String instanceName) throws SQLException
+    public void removeAll(String instanceName) throws DatabaseException
     {
         errorReporter.logTrace("Removing all properties by instance %s", getId(instanceName));
 
@@ -159,6 +171,10 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
             stmt.setString(1, instanceName.toUpperCase());
             rowsUpdated = stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace(
             "Removed all (%d) properties by instance %s",
             rowsUpdated,
@@ -167,7 +183,7 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public Map<String, String> loadAll(String instanceName) throws SQLException
+    public Map<String, String> loadAll(String instanceName) throws DatabaseException
     {
         errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
         Map<String, String> ret = new TreeMap<>();
@@ -186,6 +202,10 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
                     ret.put(key, value);
                 }
             }
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace(
             "Loaded all (%d) properties for instance %s",

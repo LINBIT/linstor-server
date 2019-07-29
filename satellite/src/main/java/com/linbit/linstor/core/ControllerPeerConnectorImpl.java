@@ -15,6 +15,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -147,7 +148,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
                 transMgrProvider.get().commit();
             }
-            catch (ImplementationError | SQLException | InvalidNameException exc)
+            catch (ImplementationError | TransactionException | InvalidNameException exc)
             {
                 errorReporter.reportError(exc);
             }

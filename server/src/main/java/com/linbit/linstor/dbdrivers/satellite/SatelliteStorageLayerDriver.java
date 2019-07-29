@@ -10,8 +10,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import java.sql.SQLException;
-
 @Singleton
 public class SatelliteStorageLayerDriver implements StorageLayerDatabaseDriver
 {
@@ -24,25 +22,25 @@ public class SatelliteStorageLayerDriver implements StorageLayerDatabaseDriver
     }
 
     @Override
-    public void persist(StorageRscData storageRscDataRef) throws SQLException
+    public void persist(StorageRscData storageRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(StorageRscData storgeRscDataRef) throws SQLException
+    public void delete(StorageRscData storgeRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(VlmProviderObject vlmDataRef) throws SQLException
+    public void persist(VlmProviderObject vlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(VlmProviderObject vlmDataRef) throws SQLException
+    public void delete(VlmProviderObject vlmDataRef)
     {
         // no-op
     }

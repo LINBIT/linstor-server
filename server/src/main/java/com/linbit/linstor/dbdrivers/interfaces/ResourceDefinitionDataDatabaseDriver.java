@@ -1,10 +1,9 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
-
 import com.linbit.CollectionDatabaseDriver;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
@@ -21,9 +20,9 @@ public interface ResourceDefinitionDataDatabaseDriver
      * @param resourceDefinition
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(ResourceDefinitionData resourceDefinition) throws SQLException;
+    void create(ResourceDefinitionData resourceDefinition) throws DatabaseException;
 
     /**
      * Removes the given {@link ResourceDefinitionData} from the database
@@ -31,9 +30,9 @@ public interface ResourceDefinitionDataDatabaseDriver
      * @param resourceDefinition
      *  The data identifying the row to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(ResourceDefinitionData resourceDefinition) throws SQLException;
+    void delete(ResourceDefinitionData resourceDefinition) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted flags
@@ -48,9 +47,9 @@ public interface ResourceDefinitionDataDatabaseDriver
      *
      * @return
      *  True if the data record exists. False otherwise.
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    boolean exists(ResourceName resourceName) throws SQLException;
+    boolean exists(ResourceName resourceName) throws DatabaseException;
 
     /**
      * A special sub-driver to update the layer stack

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.google.inject.Provider;
 import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.KeyValueStoreData;
 import com.linbit.linstor.KeyValueStoreDataControllerFactory;
@@ -14,9 +15,10 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -24,19 +26,15 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.google.inject.Provider;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
 public class CtrlKvsApiCallHandler
@@ -108,9 +106,9 @@ public class CtrlKvsApiCallHandler
                 dataAlreadyExistsExc
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
 
         return kvs;
@@ -179,7 +177,7 @@ public class CtrlKvsApiCallHandler
                 ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_MOD | ApiConsts.MODIFIED
             );
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             apiCallRc.addEntry(
                 ResponseUtils.getSqlMsg("Persisting properties in instancename '" + kvsNameStr + "'"),
@@ -258,7 +256,7 @@ public class CtrlKvsApiCallHandler
                 );
             }
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             apiCallRc.addEntry(
                     ResponseUtils.getSqlMsg("Persisting properties in instancename '" + kvsNameStr + "'"),

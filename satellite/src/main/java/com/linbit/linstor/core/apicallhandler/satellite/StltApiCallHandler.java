@@ -56,6 +56,7 @@ import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.satellite.StltStorPoolApiCallHandler.ChangedData;
 import com.linbit.linstor.core.apicallhandler.satellite.authentication.AuthenticationResult;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
@@ -261,7 +262,7 @@ public class StltApiCallHandler
 
             authResult = deviceLayerChecker.getSupportedLayerAndProvider(nodeName);
         }
-        catch (AccessDeniedException | InvalidKeyException | InvalidValueException | SQLException exc)
+        catch (AccessDeniedException | InvalidKeyException | InvalidValueException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -507,7 +508,7 @@ public class StltApiCallHandler
 
             deviceManager.controllerUpdateApplied(slctRsc);
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             // TODO: kill connection?
             errorReporter.reportError(exc);

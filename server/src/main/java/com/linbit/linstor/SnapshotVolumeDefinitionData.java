@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -18,7 +19,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
@@ -63,7 +63,7 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
         Provider<TransactionMgr> transMgrProviderRef,
         Map<NodeName, SnapshotVolume> snapshotVlmMapRef
     )
-        throws MdException, SQLException
+        throws MdException, DatabaseException
     {
         super(transMgrProviderRef);
         VolumeDefinitionData.checkVolumeSize(volSize);
@@ -156,7 +156,7 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
 
     @Override
     public Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
@@ -180,7 +180,7 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
 
     @Override
     public void delete(AccessContext accCtx)
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         if (!deleted.get())
         {

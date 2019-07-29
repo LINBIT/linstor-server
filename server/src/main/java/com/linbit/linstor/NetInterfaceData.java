@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -11,12 +12,10 @@ import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
-import java.sql.SQLException;
+import javax.inject.Provider;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
-
-import javax.inject.Provider;
 
 /**
  * Implementation of a network interface
@@ -124,7 +123,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
     @Override
     public LsIpAddress setAddress(AccessContext accCtx, LsIpAddress newAddress)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
@@ -143,7 +142,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
     @Override
     public boolean setStltConn(AccessContext accCtx, TcpPortNumber port, EncryptionType encrType)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
@@ -175,7 +174,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

@@ -1,15 +1,11 @@
 package com.linbit.linstor;
 
-import javax.inject.Provider;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.UUID;
-
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.pojo.RscConnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.Props;
@@ -24,6 +20,10 @@ import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+
+import javax.inject.Provider;
+import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * Defines a connection between two LinStor resources
@@ -66,7 +66,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         Provider<TransactionMgr> transMgrProviderRef,
         long initFlags
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
         tcpPortPool = tcpPortPoolRef;
@@ -209,7 +209,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
     @Override
     public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber portNr)
-        throws SQLException, ValueInUseException
+        throws DatabaseException, ValueInUseException
     {
         if (tcpPortPool != null)
         {
@@ -228,7 +228,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
     @Override
     public void autoAllocatePort(AccessContext accCtx)
-        throws SQLException, ExhaustedPoolException
+        throws DatabaseException, ExhaustedPoolException
     {
         TcpPortNumber tcpPortNumber = port.get();
         if (tcpPortNumber != null)
@@ -250,7 +250,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

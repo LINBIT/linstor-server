@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -15,7 +16,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -46,7 +46,7 @@ public class SnapshotDefinitionDataControllerFactory
         SnapshotName snapshotName,
         SnapshotDefinition.SnapshotDfnFlags[] initFlags
     )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 

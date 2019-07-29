@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -12,8 +13,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.UUID;
 
 @Singleton
@@ -48,7 +47,7 @@ public class KeyValueStoreDataControllerFactory
         AccessContext accCtx,
         KeyValueStoreName kvsName
     )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         KeyValueStoreData kvs = kvsRepository.get(accCtx, kvsName);
 

@@ -4,12 +4,13 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.KeyValueStoreName;
-import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.AbsTransactionObject;
@@ -17,7 +18,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.StringUtils;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -231,12 +231,12 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @return The old value or null if no entry was present
      * @throws InvalidKeyException if the key contains a path separator
      * @throws InvalidValueException if the value of an entry of {@param entryMap} is null
-     * @throws SQLException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
+     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
      *                      a database operation
      */
     @Override
     public String setProp(String key, String value, String namespace)
-            throws InvalidKeyException, InvalidValueException, SQLException
+            throws InvalidKeyException, InvalidValueException, DatabaseException
     {
         if (value == null)
         {
@@ -266,7 +266,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @return True if any property has been modified by this method, false otherwise
      */
     public boolean setAllProps(Map<? extends String, ? extends String> entryMap, String namespace)
-            throws InvalidKeyException, InvalidValueException, SQLException
+            throws InvalidKeyException, InvalidValueException, DatabaseException
     {
         boolean modified = false;
         for (Map.Entry<? extends String, ? extends String> entry : entryMap.entrySet())
@@ -296,11 +296,11 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *
      * @param namespace Acts as a prefix for {@param keys}
      * @return The old value or null if no entry was present
-     * @throws SQLException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
+     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
      *                      a database operation
      */
     @Override
-    public String removeProp(String key, String namespace) throws SQLException
+    public String removeProp(String key, String namespace) throws DatabaseException
     {
         String value = null;
         try
@@ -333,10 +333,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @param selection Set of properties to be deleted
      * @param namespace Acts as a prefix for all keys of the map
      * @return True if any property has been modified by this method, false otherwise
-     * @throws SQLException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
+     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
      *                      a database operation
      */
-    public boolean removeAllProps(Set<String> selection, String namespace) throws SQLException
+    public boolean removeAllProps(Set<String> selection, String namespace) throws DatabaseException
     {
         boolean changed = false;
         for (String key : selection)
@@ -354,10 +354,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *
      * @param namespace Acts as a prefix for all keys of the map
      * @return True if any property has been modified by this method, false otherwise
-     * @throws SQLException
+     * @throws DatabaseException
      */
     @Override
-    public boolean removeNamespace(String namespace) throws SQLException
+    public boolean removeNamespace(String namespace) throws DatabaseException
     {
         boolean changed = false;
         Optional<PropsContainer> currCon = findNamespace(namespace);
@@ -374,10 +374,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @param selection Set of properties to be deleted
      * @param namespace Acts as a prefix for all keys of the map
      * @return True if any property has been modified by this method, false otherwise
-     * @throws SQLException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
+     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
      *                      a database operation
      */
-    public boolean retainAllProps(Set<String> selection, String namespace) throws SQLException
+    public boolean retainAllProps(Set<String> selection, String namespace) throws DatabaseException
     {
         boolean changed = false;
         Set<String> removeSet = new TreeSet<>();
@@ -396,7 +396,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
 
     @Override
     public void loadAll()
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         try
         {
@@ -422,7 +422,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         }
         catch (InvalidKeyException invalidKeyExc)
         {
-            throw new LinStorSqlRuntimeException(
+            throw new LinStorDBRuntimeException(
                     "PropsContainer could not be loaded because a key in the database has an invalid value.",
                     invalidKeyExc
             );
@@ -430,7 +430,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @Override
-    public void delete() throws SQLException
+    public void delete() throws DatabaseException
     {
         clear();
     }
@@ -439,7 +439,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * Removes all properties from this instance.
      */
     @Override
-    public void clear() throws SQLException
+    public void clear() throws DatabaseException
     {
         containerMap.clear();
         propMap.clear();
@@ -477,7 +477,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     @Override
     public String setProp(String key, String value)
-            throws InvalidKeyException, InvalidValueException, SQLException
+            throws InvalidKeyException, InvalidValueException, DatabaseException
     {
         return setProp(key, value, null);
     }
@@ -489,7 +489,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     @Override
     public String removeProp(String key)
-            throws InvalidKeyException, SQLException
+            throws InvalidKeyException, DatabaseException
     {
         return removeProp(key, null);
     }
@@ -699,7 +699,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @return PropsContainer that constitutes the specified namespace
      * @throws InvalidKeyException If the namespace path is invalid
      */
-    protected PropsContainer ensureNamespaceExists(String namespace) throws InvalidKeyException, SQLException
+    protected PropsContainer ensureNamespaceExists(String namespace) throws InvalidKeyException, DatabaseException
     {
         PropsContainer con = this;
         try
@@ -755,8 +755,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
         return pathComponents;
     }
 
-    @SuppressWarnings("unused") // for the throw of SQLException - which is needed by SerialPropsContainer
-    private PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException, SQLException
+    @SuppressWarnings("unused") // for the throw of DatabaseException - which is needed by SerialPropsContainer
+    private PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException, DatabaseException
     {
         return new PropsContainer(key, con, dbDriver, transMgrProvider);
     }
@@ -913,7 +913,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
                     targetContainer.modifySize(1);
                 }
             }
-            catch (InvalidKeyException | SQLException exc)
+            catch (InvalidKeyException | DatabaseException exc)
             {
                 // cannot happen
                 throw new ImplementationError(
@@ -925,7 +925,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         root.cachedPropMap.clear();
     }
 
-    private void dbPersist(String key, String value, String oldValue) throws SQLException
+    private void dbPersist(String key, String value, String oldValue) throws DatabaseException
     {
         rootContainer.activateTransMgr();
         cache(key, oldValue);
@@ -935,7 +935,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 dbDriver.persist(rootContainer.instanceName, key, value);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
                 rollback();
                 throw sqlExc;
@@ -943,7 +943,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         }
     }
 
-    private void dbRemove(String key, String oldValue) throws SQLException
+    private void dbRemove(String key, String oldValue) throws DatabaseException
     {
         rootContainer.activateTransMgr();
         cache(key, oldValue);
@@ -953,7 +953,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 dbDriver.remove(rootContainer.instanceName, key);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
                 rollback();
                 throw sqlExc;
@@ -961,7 +961,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         }
     }
 
-    private void dbRemoveAll() throws SQLException
+    private void dbRemoveAll() throws DatabaseException
     {
         rootContainer.activateTransMgr();
         Set<Entry<String, String>> entrySet = rootContainer.entrySet();
@@ -976,10 +976,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 dbDriver.removeAll(rootContainer.instanceName);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException dbExc)
             {
                 rollback();
-                throw sqlExc;
+                throw dbExc;
             }
         }
     }
@@ -1093,9 +1093,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 throw new IllegalArgumentException("Map values to insert violate validity constraints", invData);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to add or update entries in the properties container " + instanceName,
                         sqlExc
                 );
@@ -1133,9 +1133,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 unknownType = true;
                 unknownTypeCause = castExc;
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to remove entries from the properties container " + instanceName,
                         sqlExc
                 );
@@ -1171,9 +1171,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
                         "Value for map operation violates validity contraints",
                         valueExc);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to add or update entries in the properties container " + instanceName,
                         sqlExc
                 );
@@ -1187,11 +1187,11 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 container.clear();
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException dbExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to clear the properties container " + instanceName,
-                        sqlExc
+                        dbExc
                 );
             }
         }
@@ -1261,12 +1261,12 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 container.clear();
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException dbExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to clear the properties container " +
                                 instanceName,
-                        sqlExc
+                        dbExc
                 );
             }
         }
@@ -1357,9 +1357,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 throw new IllegalArgumentException("Value for map operation violates validity constraints", valueExc);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to add or update entries in the properties container " +
                                 instanceName,
                         sqlExc
@@ -1385,9 +1385,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 throw new IllegalArgumentException("Key for map operation violates validity constraints", keyExc);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to remove entries from the properties container " +
                                 instanceName,
                         sqlExc
@@ -1433,9 +1433,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 {
                     throw new IllegalArgumentException("Value for set operation violates validity constraints", valExc);
                 }
-                catch (SQLException sqlExc)
+                catch (DatabaseException sqlExc)
                 {
-                    throw new LinStorSqlRuntimeException(
+                    throw new LinStorDBRuntimeException(
                             "Failed to add or update entries in the properties container " +
                                     instanceName,
                             sqlExc
@@ -1460,9 +1460,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
                     null
                 );
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to remove entries from the properties container " +
                                 instanceName,
                         sqlExc
@@ -1489,9 +1489,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 changed = container.removeAllProps(selection, null);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to remove entries from the properties container " +
                                 instanceName,
                         sqlExc
@@ -1580,9 +1580,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
                         valueExc
                 );
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to add or update entries in the properties container " +
                                 instanceName,
                         sqlExc
@@ -1629,9 +1629,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 throw new IllegalArgumentException(exc);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to add or update entries in the properties container " +
                                 instanceName,
                         sqlExc
@@ -1655,9 +1655,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
                     null
                 );
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to remove entries from the properties container " +
                                 instanceName,
                         sqlExc
@@ -1685,9 +1685,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 changed = container.removeAllProps(selection, null);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to remove entries from the properties container " +
                                 instanceName,
                         sqlExc
@@ -1816,9 +1816,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 changed = container.removeAllProps(selection, null);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to remove entries from the properties container " +
                                 instanceName,
                         sqlExc
@@ -1845,9 +1845,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 changed = container.retainAllProps(selection, null);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to remove entries from the properties container " +
                                 instanceName,
                         sqlExc
@@ -1863,16 +1863,16 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 container.clear();
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException dbExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "SQL exception",
                         "Failed to clear the properties container " +
                                 instanceName,
-                        sqlExc.getLocalizedMessage(),
+                        dbExc.getLocalizedMessage(),
                         null,
                         null,
-                        sqlExc
+                        dbExc
                 );
             }
         }
@@ -2148,9 +2148,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
                         valueExc
                 );
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException sqlExc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                         "Failed to add or update entries in the properties container " +
                                 container.instanceName,
                         sqlExc

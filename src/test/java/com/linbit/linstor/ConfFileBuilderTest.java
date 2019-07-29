@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteDrbdLayerDriver;
@@ -137,7 +138,7 @@ public class ConfFileBuilderTest
     }
 
     private void setProps(String[] nodeNames, String... nicNames)
-        throws SQLException, InvalidValueException, InvalidKeyException
+        throws DatabaseException, InvalidValueException, InvalidKeyException
     {
         assertThat(nodeNames.length == 2).isTrue();
         assertThat(nicNames.length == 4).isTrue();
@@ -253,7 +254,7 @@ public class ConfFileBuilderTest
 
     @Test(expected = StorageException.class)
     public void testInvalidName()
-            throws SQLException, InvalidKeyException, InvalidValueException, AccessDeniedException, StorageException
+            throws DatabaseException, InvalidKeyException, InvalidValueException, AccessDeniedException, StorageException
     {
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,

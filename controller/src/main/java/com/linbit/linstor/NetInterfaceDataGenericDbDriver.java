@@ -7,6 +7,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
@@ -106,7 +107,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         netIfStltConnEncrTypeDriver = new StltConnEncrTypeDriver();
     }
 
-    public List<NetInterfaceData> loadAll(Map<NodeName, ? extends Node> tmpNodesMap) throws SQLException
+    public List<NetInterfaceData> loadAll(Map<NodeName, ? extends Node> tmpNodesMap) throws DatabaseException
     {
         errorReporter.logTrace("Loading all NetworkInterfaces");
         List<NetInterfaceData> netIfs = new ArrayList<>();
@@ -129,6 +130,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                 );
             }
             resultSet.close();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace("Loaded %d NetworkInterfaces", netIfs.size());
         return netIfs;
@@ -170,7 +175,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(NetInterfaceData netInterfaceData) throws SQLException
+    public void create(NetInterfaceData netInterfaceData) throws DatabaseException
     {
         errorReporter.logTrace("Creating NetInterface %s", getId(netInterfaceData));
         try (PreparedStatement stmt = getConnection().prepareStatement(NNI_INSERT_WITH_STLT_CONN))
@@ -195,6 +200,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             }
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accDeniedExc);
@@ -202,7 +211,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         errorReporter.logTrace("NetInterface created %s", getId(netInterfaceData));
     }
 
-    public void ensureEntryExists(NetInterfaceData netIfData) throws SQLException
+    public void ensureEntryExists(NetInterfaceData netIfData) throws DatabaseException
     {
         errorReporter.logTrace("Ensuring NetInterface exists %s", getId(netIfData));
         try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
@@ -217,11 +226,15 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         // no traceLog
     }
 
     @Override
-    public void delete(NetInterfaceData netInterfaceData) throws SQLException
+    public void delete(NetInterfaceData netInterfaceData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting NetInterface %s", getId(netInterfaceData));
         try (PreparedStatement stmt = getConnection().prepareStatement(NNI_DELETE))
@@ -230,6 +243,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             stmt.setString(2, netInterfaceData.getName().value);
 
             stmt.executeUpdate();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace("NetInterface deleted %s", getId(netInterfaceData));
     }
@@ -271,88 +288,92 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         NetInterfaceName netName,
         ResultSet resultSet
     )
-        throws SQLException
+        throws DatabaseException
     {
-        UUID uuid = UUID.fromString(resultSet.getString(NET_UUID));
-        LsIpAddress addr;
-        TcpPortNumber stltPort = null;
-        EncryptionType stltEncrType = null;
-
-        Integer tmpPort = null;
-        String tmpEncrType = null;
         try
         {
-            addr = new LsIpAddress(resultSet.getString(INET_ADDRESS));
-            tmpPort = resultSet.getInt(STLT_CONN_PORT);
-            if (resultSet.wasNull())
-            {
-                tmpPort = null;
-            }
-            tmpEncrType = resultSet.getString(STLT_CONN_ENCR_TYPE);
-            if (resultSet.wasNull())
-            {
-                tmpEncrType = null;
-            }
+            UUID uuid = UUID.fromString(resultSet.getString(NET_UUID));
+            LsIpAddress addr;
+            TcpPortNumber stltPort = null;
+            EncryptionType stltEncrType = null;
 
-            if (tmpPort != null && tmpEncrType != null)
+            Integer tmpPort = null;
+            String tmpEncrType = null;
+            try
             {
-                stltPort = new TcpPortNumber(tmpPort);
-                stltEncrType = EncryptionType.valueOfIgnoreCase(tmpEncrType);
-            }
-        }
-        catch (InvalidIpAddressException invalidIpAddressExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "The ip address of a stored NetInterface could not be restored " +
-                        "(NodeName=%s, NetInterfaceName=%s, invalid address=%s)",
-                    node.getName().displayValue,
-                    netName.displayValue,
-                    resultSet.getString(INET_ADDRESS)
-                ),
-                invalidIpAddressExc
-            );
-        }
-        catch (ValueOutOfRangeException valOutOfRangeExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "The satellite port of a stored NetInterface could not be restored " +
-                        "(NodeName=%s, NetInterfaceName=%s, invalid satellite port=%d)",
-                    node.getName().displayValue,
-                    netName.displayValue,
-                    tmpPort
-                ),
-                valOutOfRangeExc
-            );
-        }
-        catch (IllegalArgumentException illegalArgExc)
-        {
-            // exc from EncryptionType.valueOfIgnoreCase(...)
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "The satellite encryption type of a stored NetInterface could not be restored " +
-                        "(NodeName=%s, NetInterfaceName=%s, invalid satellite encryption type=%s)",
-                    node.getName().displayValue,
-                    netName.displayValue,
-                    tmpEncrType
-                ),
-                illegalArgExc
-            );
-        }
-        NetInterfaceData ret = new NetInterfaceData(
-            uuid,
-            netName,
-            node,
-            addr,
-            stltPort,
-            stltEncrType,
-            this,
-            transObjFactory,
-            transMgrProvider
-        );
+                addr = new LsIpAddress(resultSet.getString(INET_ADDRESS));
+                tmpPort = resultSet.getInt(STLT_CONN_PORT);
+                if (resultSet.wasNull())
+                {
+                    tmpPort = null;
+                }
+                tmpEncrType = resultSet.getString(STLT_CONN_ENCR_TYPE);
+                if (resultSet.wasNull())
+                {
+                    tmpEncrType = null;
+                }
 
-        return ret;
+                if (tmpPort != null && tmpEncrType != null)
+                {
+                    stltPort = new TcpPortNumber(tmpPort);
+                    stltEncrType = EncryptionType.valueOfIgnoreCase(tmpEncrType);
+                }
+            } catch (InvalidIpAddressException invalidIpAddressExc)
+            {
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "The ip address of a stored NetInterface could not be restored " +
+                            "(NodeName=%s, NetInterfaceName=%s, invalid address=%s)",
+                        node.getName().displayValue,
+                        netName.displayValue,
+                        resultSet.getString(INET_ADDRESS)
+                    ),
+                    invalidIpAddressExc
+                );
+            } catch (ValueOutOfRangeException valOutOfRangeExc)
+            {
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "The satellite port of a stored NetInterface could not be restored " +
+                            "(NodeName=%s, NetInterfaceName=%s, invalid satellite port=%d)",
+                        node.getName().displayValue,
+                        netName.displayValue,
+                        tmpPort
+                    ),
+                    valOutOfRangeExc
+                );
+            } catch (IllegalArgumentException illegalArgExc)
+            {
+                // exc from EncryptionType.valueOfIgnoreCase(...)
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "The satellite encryption type of a stored NetInterface could not be restored " +
+                            "(NodeName=%s, NetInterfaceName=%s, invalid satellite encryption type=%s)",
+                        node.getName().displayValue,
+                        netName.displayValue,
+                        tmpEncrType
+                    ),
+                    illegalArgExc
+                );
+            }
+            NetInterfaceData ret = new NetInterfaceData(
+                uuid,
+                netName,
+                node,
+                addr,
+                stltPort,
+                stltEncrType,
+                this,
+                transObjFactory,
+                transMgrProvider
+            );
+
+            return ret;
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     private Connection getConnection()
@@ -378,7 +399,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void update(NetInterfaceData parent, LsIpAddress inetAddress)
-            throws SQLException
+            throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating NetInterface's address from [%s] to [%s] %s",
@@ -394,6 +415,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
 
                 stmt.executeUpdate();
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             errorReporter.logTrace(
                 "NetInterface's address updated from [%s] to [%s] %s",
                 getAddress(parent).getAddress(),
@@ -408,7 +433,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void update(NetInterfaceData parent, TcpPortNumber port)
-            throws SQLException
+            throws DatabaseException
         {
             Integer portNumber = null;
             if (getStltPort(parent) != null)
@@ -429,6 +454,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                 stmt.setString(3, parent.getName().value);
 
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace(
                 "NetInterface's satellite connection port updated from [%d] to [%d] %s",
@@ -458,7 +487,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void update(NetInterfaceData parent, EncryptionType encrType)
-            throws SQLException
+            throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating NetInterface's satellite connections encryption type from [%s] to [%s] %s",
@@ -473,6 +502,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                 stmt.setString(3, parent.getName().value);
 
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace(
                 "NetInterface's satellite connections encryption type updated from [%s] to [%s] %s",

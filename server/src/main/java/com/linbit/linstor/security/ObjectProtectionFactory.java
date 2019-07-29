@@ -3,6 +3,7 @@ package com.linbit.linstor.security;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -45,7 +46,7 @@ public class ObjectProtectionFactory
         String objPath,
         boolean createIfNotExists
     )
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         return ObjectProtection.getInstance(
             accCtx,

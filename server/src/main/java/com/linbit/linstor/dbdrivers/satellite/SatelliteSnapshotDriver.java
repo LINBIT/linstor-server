@@ -5,7 +5,6 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
-import java.sql.SQLException;
 
 public class SatelliteSnapshotDriver implements SnapshotDataDatabaseDriver
 {
@@ -25,14 +24,12 @@ public class SatelliteSnapshotDriver implements SnapshotDataDatabaseDriver
 
     @Override
     public void create(Snapshot snapshot)
-        throws SQLException
     {
         // no-op
     }
 
     @Override
     public void delete(Snapshot snapshot)
-        throws SQLException
     {
         // no-op
     }

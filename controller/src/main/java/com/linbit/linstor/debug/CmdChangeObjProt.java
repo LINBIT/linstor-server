@@ -19,6 +19,7 @@ import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -32,6 +33,7 @@ import com.linbit.linstor.security.RoleName;
 import com.linbit.linstor.security.SecTypeName;
 import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.security.ShutdownProtHolder;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
 import java.io.PrintStream;
@@ -697,7 +699,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
                     {
                         transMgr.rollback();
                     }
-                    catch (SQLException ignored)
+                    catch (TransactionException ignored)
                     {
                         // An SQL exception may have been the cause for a failed COMMIT,
                         // but the SQL connection must still be returned to the connection pool,

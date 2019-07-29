@@ -6,6 +6,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -24,9 +25,9 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.NODE_NAME;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.NODE_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.PROVIDER_KIND;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.STOR_POOL_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_STORAGE_VOLUMES;
@@ -35,7 +36,6 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -118,7 +118,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
     }
 
     public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef)
-        throws SQLException
+        throws DatabaseException
     {
         loadStorVlmsIntoCache(tmpStorPoolMapRef);
         // will be extended later with loadStorSnapVlmsIntoCache(tmpStorPoolMapRef);
@@ -127,7 +127,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
     private void loadStorVlmsIntoCache(
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         cachedStorVlmInfoByRscLayerId = new HashMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_STOR_VLMS))
@@ -159,7 +159,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
             }
             catch (InvalidNameException exc)
             {
-                throw new LinStorSqlRuntimeException(
+                throw new LinStorDBRuntimeException(
                     String.format(
                         "Failed to restore stored name '%s' of (layered) resource id: %d",
                         exc.invalidName,
@@ -167,6 +167,10 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
                     )
                 );
             }
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -176,7 +180,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         cachedStorVlmInfoByRscLayerId = null;
     }
 
-    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws SQLException
+    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws DatabaseException
     {
         sfDbDriver.loadLayerData(tmpRscDfnMapRef);
     }
@@ -187,7 +191,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         String rscSuffixRef,
         RscLayerObject parentRef
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         Map<VolumeNumber, VlmProviderObject> vlmMap = new TreeMap<>();
         StorageRscData storageRscData = new StorageRscData(
@@ -224,7 +228,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
                 }
                 catch (ValueOutOfRangeException exc)
                 {
-                    throw new LinStorSqlRuntimeException(
+                    throw new LinStorDBRuntimeException(
                         String.format(
                             "Failed to restore stored volume number %d for (layered) resource id: %d",
                             vlmInfo.vlmNr,
@@ -246,7 +250,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         StorageRscData rscDataRef,
         StorVlmInfoData vlmInfo
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         VlmProviderObject vlmProviderObj;
         switch (vlmInfo.kind)
@@ -320,21 +324,21 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
     }
 
     @Override
-    public void persist(StorageRscData storageRscDataRef) throws SQLException
+    public void persist(StorageRscData storageRscDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if StorageRscData will get a database table in future.
     }
 
     @Override
-    public void delete(StorageRscData storgeRscDataRef) throws SQLException
+    public void delete(StorageRscData storgeRscDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if StorageRscData will get a database table in future.
     }
 
     @Override
-    public void persist(VlmProviderObject vlmDataRef) throws SQLException
+    public void persist(VlmProviderObject vlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating StorageVolume %s", getId(vlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
@@ -348,10 +352,14 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("StorageVolume created %s", getId(vlmDataRef));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void delete(VlmProviderObject vlmDataRef) throws SQLException
+    public void delete(VlmProviderObject vlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting StorageVolume %s", getId(vlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
@@ -361,6 +369,10 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
 
             stmt.executeUpdate();
             errorReporter.logTrace("StorageVolume deleted %s", getId(vlmDataRef));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -386,7 +398,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void update(VlmProviderObject parent, StorPool storPool) throws SQLException
+        public void update(VlmProviderObject parent, StorPool storPool) throws DatabaseException
         {
             errorReporter.logTrace("Updating VlmProviderObject's StorPool from [%s] to [%s] %s",
                 parent.getStorPool().getName().displayValue,
@@ -400,6 +412,10 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
                 stmt.setInt(3, parent.getVlmNr().value);
 
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace("VlmProviderObject's StorPool updated from [%s] to [%s] %s",
                 parent.getStorPool().getName().displayValue,

@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -8,7 +9,6 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.TransactionObject;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -65,10 +65,10 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
     StateFlags<SnapshotDfnFlags> getFlags();
 
     void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     boolean isDeleted();
 
@@ -80,7 +80,7 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
         throws AccessDeniedException;
 
     void setInCreation(AccessContext accCtx, boolean inCreationRef)
-        throws SQLException, AccessDeniedException;
+        throws DatabaseException, AccessDeniedException;
 
     SnapshotDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 

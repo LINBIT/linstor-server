@@ -6,6 +6,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.LayerObject;
@@ -14,8 +15,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.ExceptionThrowingSupplier;
 
 import javax.annotation.Nullable;
-
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -70,7 +69,7 @@ public interface VlmProviderObject extends LayerObject
         return ret;
     }
 
-    void setUsableSize(long netSizeRef) throws SQLException;
+    void setUsableSize(long netSizeRef) throws DatabaseException;
 
     long getUsableSize();
 
@@ -88,7 +87,7 @@ public interface VlmProviderObject extends LayerObject
 
     StorPool getStorPool();
 
-    void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws SQLException, AccessDeniedException;
+    void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws DatabaseException, AccessDeniedException;
 
     default String getVolumeKey()
     {

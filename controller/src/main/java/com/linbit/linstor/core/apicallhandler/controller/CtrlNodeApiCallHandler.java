@@ -34,12 +34,14 @@ import com.linbit.linstor.core.SwordfishTargetProcessManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.core.apicallhandler.response.ApiTransactionException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -316,9 +318,9 @@ public class CtrlNodeApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new ApiSQLException(exc);
+            throw new ApiDatabaseException(exc);
         }
     }
 
@@ -520,9 +522,9 @@ public class CtrlNodeApiCallHandler
                 dataAlreadyExistsExc
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
         return node;
     }
@@ -578,9 +580,9 @@ public class CtrlNodeApiCallHandler
                 dataAlreadyExistsExc
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
         return netIf;
     }
@@ -626,9 +628,9 @@ public class CtrlNodeApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException sqlExc)
         {
-            throw new ApiSQLException(sqlExc);
+            throw new ApiDatabaseException(sqlExc);
         }
     }
 

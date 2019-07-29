@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.GenericDbBase;
 
 import java.sql.PreparedStatement;
@@ -121,7 +122,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             dbDriver.create(niData);
             fail("driver persisted same object twice - exception expected");
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             // expected
         }

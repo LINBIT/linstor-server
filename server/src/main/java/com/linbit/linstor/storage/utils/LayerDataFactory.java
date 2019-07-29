@@ -10,6 +10,7 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
@@ -45,7 +46,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.TreeMap;
@@ -106,7 +106,7 @@ public class LayerDataFactory
         @Nullable Long alStripeSize,
         long initFlags
     )
-        throws SQLException
+        throws DatabaseException
     {
         DrbdRscData drbdRscData = new DrbdRscData(
             rscLayerId,
@@ -140,7 +140,7 @@ public class LayerDataFactory
         TransportType transportType,
         String secret
     )
-        throws SQLException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
+        throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         DrbdRscDfnData drbdRscDfnData = new DrbdRscDfnData(
             rscDfn,
@@ -168,7 +168,7 @@ public class LayerDataFactory
         Integer minorNrInt,
         DrbdRscDfnData drbdRscDfnData
     )
-        throws SQLException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
+        throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
             vlmDfn,
@@ -189,7 +189,7 @@ public class LayerDataFactory
         DrbdRscData rscData,
         DrbdVlmDfnData vlmDfnData
     )
-        throws SQLException
+        throws DatabaseException
     {
         DrbdVlmData drbdVlmData = new DrbdVlmData(
             vlm,
@@ -210,7 +210,7 @@ public class LayerDataFactory
         StorageRscData rscData,
         StorPool storPoolRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         DisklessData disklessData = new DisklessData(
             vlm,
@@ -231,7 +231,7 @@ public class LayerDataFactory
         String rscNameSuffix,
         RscLayerObject parentData
     )
-        throws SQLException
+        throws DatabaseException
     {
         LuksRscData luksRscData = new LuksRscData(
             rscLayerId,
@@ -254,7 +254,7 @@ public class LayerDataFactory
         LuksRscData rscData,
         byte[] password
     )
-        throws SQLException
+        throws DatabaseException
     {
         LuksVlmData luksVlmData = new LuksVlmData(
             vlm,
@@ -274,7 +274,7 @@ public class LayerDataFactory
         Resource rsc,
         String rscNameSuffix
     )
-        throws SQLException
+        throws DatabaseException
     {
         StorageRscData storageRscData = new StorageRscData(
             rscLayerId,
@@ -297,7 +297,7 @@ public class LayerDataFactory
         String rscNameSuffix,
         RscLayerObject parentData
     )
-        throws SQLException
+        throws DatabaseException
     {
         NvmeRscData nvmeRscData = new NvmeRscData(
             rscLayerId,
@@ -330,7 +330,7 @@ public class LayerDataFactory
         StorageRscData rscData,
         StorPool storPoolRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         LvmData lvmData = new LvmData(
             vlm,
@@ -349,7 +349,7 @@ public class LayerDataFactory
         StorageRscData rscData,
         StorPool storPoolRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         LvmThinData lvmThinData = new LvmThinData(
             vlm,
@@ -369,7 +369,7 @@ public class LayerDataFactory
         SfVlmDfnData sfVlmDfnData,
         StorPool storPoolRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         SfInitiatorData sfInitiatorData = new SfInitiatorData(
             storRscDataRef,
@@ -391,7 +391,7 @@ public class LayerDataFactory
         SfVlmDfnData sfVlmDfnData,
         StorPool storPoolRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         SfTargetData sfTargetData = new SfTargetData(
             vlm,
@@ -412,7 +412,7 @@ public class LayerDataFactory
         String vlmOdata,
         String suffixedResourceName
     )
-        throws SQLException
+        throws DatabaseException
     {
         SfVlmDfnData sfVlmDfnData = new SfVlmDfnData(
             volumeDefinitionRef,
@@ -433,7 +433,7 @@ public class LayerDataFactory
         DeviceProviderKind kind,
         StorPool storPoolRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         ZfsData zfsData = new ZfsData(
             vlm,
@@ -449,7 +449,7 @@ public class LayerDataFactory
     }
 
     public FileData createFileData(Volume vlm, StorageRscData rscData, DeviceProviderKind kind, StorPool storPool)
-        throws SQLException
+        throws DatabaseException
     {
         FileData fileData = new FileData(
             vlm,

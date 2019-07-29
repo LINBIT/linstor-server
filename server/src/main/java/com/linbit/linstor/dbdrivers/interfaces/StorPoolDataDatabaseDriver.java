@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers.interfaces;
 import java.sql.SQLException;
 
 import com.linbit.linstor.StorPoolData;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 /**
@@ -18,9 +19,9 @@ public interface StorPoolDataDatabaseDriver
      * @param storPool
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(StorPoolData storPool) throws SQLException;
+    void create(StorPoolData storPool) throws DatabaseException;
 
     /**
      * Removes the given {@link com.linbit.linstor.StorPoolData} from the database.
@@ -28,9 +29,9 @@ public interface StorPoolDataDatabaseDriver
      * @param storPool
      *  The data identifying the row to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(StorPoolData storPool) throws SQLException;
+    void delete(StorPoolData storPool) throws DatabaseException;
 
     /**
      * Checks if the stored primary key already exists in the database.
@@ -40,8 +41,8 @@ public interface StorPoolDataDatabaseDriver
      * @param storPool
      *  The data identifying the row to exist
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
     void ensureEntryExists(StorPoolData storPool)
-        throws SQLException;
+        throws DatabaseException;
 }

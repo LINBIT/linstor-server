@@ -8,7 +8,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
-import java.sql.SQLException;
 
 public class SatelliteSnapshotVlmDriver implements SnapshotVolumeDataDatabaseDriver
 {
@@ -24,14 +23,12 @@ public class SatelliteSnapshotVlmDriver implements SnapshotVolumeDataDatabaseDri
 
     @Override
     public void create(SnapshotVolume snapshot)
-        throws SQLException
     {
         // no-op
     }
 
     @Override
     public void delete(SnapshotVolume snapshot)
-        throws SQLException
     {
         // no-op
     }

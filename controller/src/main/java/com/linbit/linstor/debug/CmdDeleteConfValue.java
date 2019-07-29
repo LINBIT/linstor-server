@@ -1,7 +1,7 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.SystemConfRepository;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -123,7 +123,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
                 printMissingParamError(debugErr, PRM_KEY);
             }
         }
-        catch (LinStorSqlRuntimeException sqlExc)
+        catch (LinStorDBRuntimeException sqlExc)
         {
             printError(
                 debugErr,

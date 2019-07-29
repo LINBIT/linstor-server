@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -11,7 +12,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -93,7 +93,7 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

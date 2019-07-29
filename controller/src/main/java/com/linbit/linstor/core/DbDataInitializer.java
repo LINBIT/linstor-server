@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import com.google.inject.Key;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.NodeRepository;
@@ -10,6 +11,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -17,14 +19,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.sql.SQLException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-
-import com.google.inject.Key;
 
 public class DbDataInitializer
 {
@@ -101,7 +103,7 @@ public class DbDataInitializer
             transMgr.commit();
             initScope.exit();
         }
-        catch (SQLException exc)
+        catch (SQLException | DatabaseException exc)
         {
             throw new InitializationException(
                 "Initial load from the database failed",
@@ -117,7 +119,7 @@ public class DbDataInitializer
                 {
                     transMgr.rollback();
                 }
-                catch (SQLException exc)
+                catch (TransactionException exc)
                 {
                     throw new InitializationException(
                         "Rollback after initial load from the database failed",
@@ -130,14 +132,14 @@ public class DbDataInitializer
     }
 
     private void loadCoreConf()
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         ctrlConf.loadAll();
         stltConf.loadAll();
     }
 
     private void loadCoreObjects()
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         errorReporter.logInfo("Core objects load from database is in progress");
 
@@ -151,7 +153,7 @@ public class DbDataInitializer
     }
 
     private void initializeDisklessStorPoolDfn()
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         StorPoolDefinitionData disklessStorPoolDfn = storPoolDfnDbDriver.createDefaultDisklessStorPool();
         storPoolDefinitionRepository.put(initCtx, disklessStorPoolDfn.getName(), disklessStorPoolDfn);

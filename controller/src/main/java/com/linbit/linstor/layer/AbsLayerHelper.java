@@ -12,6 +12,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.CtrlLayerDataHelper.LayerResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -26,8 +27,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -79,7 +78,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         RSC_DFN rscDfnData = rscDfn.getLayerData(apiCtx, kind, rscNameSuffix);
@@ -112,7 +111,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         VLM_DFN vlmDfnData = vlmDfn.getLayerData(apiCtx, kind, rscNameSuffix);
@@ -156,7 +155,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         String rscNameSuffixRef,
         RscLayerObject parentObjectRef
     )
-        throws SQLException, ExhaustedPoolException, ValueOutOfRangeException,
+        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
             ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
     {
         RSC rscData = null;
@@ -299,14 +298,14 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         String rscNameSuffixRef,
         RscLayerObject parentObjectRef
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException;
 
     protected abstract void mergeRscData(
         RSC rscDataRef,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
 
     protected abstract RSC_DFN createRscDfnData(
@@ -314,11 +313,11 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException;
 
     protected abstract void mergeRscDfnData(RSC_DFN rscDfn, LayerPayload payload)
-        throws SQLException, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException;
+        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException;
 
     protected abstract boolean needsChildVlm(RscLayerObject childRscDataRef, Volume vlmRef)
         throws AccessDeniedException, InvalidKeyException;
@@ -328,7 +327,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         String rscNameSuffixRef,
         LayerPayload payloadRef
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException;
 
     protected abstract void mergeVlmDfnData(
@@ -341,7 +340,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         Volume vlm,
         LayerPayload payloadRef
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException;
 
     protected abstract void mergeVlmData(
@@ -349,9 +348,9 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         Volume vlm,
         LayerPayload payloadRef
     )
-        throws AccessDeniedException, InvalidKeyException, InvalidNameException, SQLException,
+        throws AccessDeniedException, InvalidKeyException, InvalidNameException, DatabaseException,
         ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException, LinStorException;
 
     protected abstract void resetStoragePools(RscLayerObject rscDataRef)
-        throws AccessDeniedException, SQLException, InvalidKeyException;
+        throws AccessDeniedException, DatabaseException, InvalidKeyException;
 }

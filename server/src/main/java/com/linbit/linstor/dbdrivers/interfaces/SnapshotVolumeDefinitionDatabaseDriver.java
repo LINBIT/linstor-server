@@ -2,9 +2,8 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-
-import java.sql.SQLException;
 
 /**
  * Database driver for {@link SnapshotVolumeDefinition}.
@@ -17,9 +16,9 @@ public interface SnapshotVolumeDefinitionDatabaseDriver
      * @param snapshotVlmDfn
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(SnapshotVolumeDefinition snapshotVlmDfn) throws SQLException;
+    void create(SnapshotVolumeDefinition snapshotVlmDfn) throws DatabaseException;
 
     /**
      * Removes the given {@link SnapshotVolumeDefinition} from the database
@@ -27,9 +26,9 @@ public interface SnapshotVolumeDefinitionDatabaseDriver
      * @param snapshotVlmDfn
      *  The data identifying the row to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(SnapshotVolumeDefinition snapshotVlmDfn) throws SQLException;
+    void delete(SnapshotVolumeDefinition snapshotVlmDfn) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted volumeSize.

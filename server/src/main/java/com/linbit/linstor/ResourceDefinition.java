@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -13,7 +14,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.Pair;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -97,10 +97,10 @@ public interface ResourceDefinition
         throws AccessDeniedException;
 
     void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     /**
      * Checks if any resource in the definition is currently used (mounted).
@@ -117,7 +117,7 @@ public interface ResourceDefinition
         throws AccessDeniedException;
 
     <T extends RscDfnLayerObject> T setLayerData(AccessContext accCtx, T layerData)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     /**
      * Returns a map of <ResourceNameSuffix, RscDfnLayerObject> where the RscDfnLayerObject has

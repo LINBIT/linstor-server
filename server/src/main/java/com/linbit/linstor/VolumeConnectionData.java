@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -51,7 +52,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProviderRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
 
@@ -179,7 +180,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
     }
 
     @Override
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

@@ -1,11 +1,14 @@
 package com.linbit.linstor.storage.layer.provider.swordfish;
 
+import com.fasterxml.jackson.jr.ob.impl.CollectionBuilder;
+import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -21,37 +24,19 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.utils.HttpHeader;
+import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
-import com.linbit.linstor.storage.utils.RestClient.RestOp;
-
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOCATED_BYTES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY_BYTES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY_SOURCES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_GUARANTEED_BYTES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ODATA_ID;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_PROVIDING_POOLS;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_BASE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_MONITOR;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_POOLS;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_SERVICES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_TASKS;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_TASK_SERVICE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
 
-import com.fasterxml.jackson.jr.ob.impl.CollectionBuilder;
-import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.*;
 
 @Singleton
 public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
@@ -86,7 +71,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
 
     @Override
     protected void createImpl(SfTargetData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         try
         {
@@ -122,7 +107,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
 
     @Override
     protected void deleteImpl(SfTargetData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         try
         {
@@ -172,7 +157,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     }
 
     private void createSfVlm(SfTargetData vlmData)
-        throws AccessDeniedException, StorageException, IOException, SQLException,
+        throws AccessDeniedException, StorageException, IOException, DatabaseException,
         InterruptedException, InvalidKeyException
     {
         VolumeDefinition vlmDfn = vlmData.getVlmDfnLayerObject().getVolumeDefinition();
@@ -363,7 +348,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     }
 
     @Override
-    protected void setUsableSize(SfTargetData vlmData, long size) throws SQLException
+    protected void setUsableSize(SfTargetData vlmData, long size) throws DatabaseException
     {
         // we don't have usable size... but we need allocated size
         vlmData.setAllocatedSize(size);
@@ -371,7 +356,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
 
     @Override
     public void updateAllocatedSize(VlmProviderObject vlmObjRef)
-        throws AccessDeniedException, SQLException, StorageException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         SfTargetData vlmData = (SfTargetData) vlmObjRef;
         vlmData.setAllocatedSize(

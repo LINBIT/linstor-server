@@ -5,6 +5,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -18,8 +19,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -68,13 +67,13 @@ public class LuksRscData extends AbsRscData<LuksVlmData> implements LuksRscObjec
     }
 
     @Override
-    protected void deleteVlmFromDatabase(LuksVlmData vlmRef) throws SQLException
+    protected void deleteVlmFromDatabase(LuksVlmData vlmRef) throws DatabaseException
     {
         luksDbDriver.delete(vlmRef);
     }
 
     @Override
-    protected void deleteRscFromDatabase() throws SQLException
+    protected void deleteRscFromDatabase() throws DatabaseException
     {
         luksDbDriver.delete(this);
     }

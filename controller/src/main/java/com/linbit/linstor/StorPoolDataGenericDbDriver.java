@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -104,7 +105,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(StorPoolData storPoolData) throws SQLException
+    public void create(StorPoolData storPoolData) throws DatabaseException
     {
         errorReporter.logTrace("Creating StorPool %s", getId(storPoolData));
         try (PreparedStatement stmt = getConnection().prepareStatement(SP_INSERT))
@@ -118,11 +119,15 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
             stmt.setString(6, fsmName.displayValue);
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("StorPool created %s", getId(storPoolData));
     }
 
     public Map<FreeSpaceMgrName, FreeSpaceMgr> loadAllFreeSpaceMgrs()
-        throws SQLException
+        throws DatabaseException
     {
         Map<FreeSpaceMgrName, FreeSpaceMgr> ret = new HashMap<>();
         errorReporter.logTrace("Loading all free space managers");
@@ -148,7 +153,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
                     }
                     catch (InvalidNameException invalidNameExc)
                     {
-                        throw new LinStorSqlRuntimeException(
+                        throw new LinStorDBRuntimeException(
                             "The stored free space manager name '" + resultSet.getString(SP_FSM_DSP_NAME) + "' " +
                                 "could not be restored",
                             invalidNameExc
@@ -156,6 +161,10 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
                     }
                 }
             }
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         return ret;
     }
@@ -165,7 +174,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         Map<StorPoolName, ? extends StorPoolDefinition> storPoolDfnMap,
         Map<FreeSpaceMgrName, FreeSpaceMgr> freeSpaceMgrMap
     )
-        throws SQLException
+        throws DatabaseException
     {
         Map<StorPoolData, StorPool.InitMaps> storPools = new TreeMap<>();
         errorReporter.logTrace("Loading all Storage Pool");
@@ -202,6 +211,10 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("Loaded %d Storage Pools", storPools.size());
         return storPools;
     }
@@ -212,26 +225,33 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         StorPoolDefinition storPoolDfn,
         FreeSpaceMgr freeSpaceMgr
     )
-        throws SQLException
+        throws DatabaseException
     {
-        Map<String, VlmProviderObject> vlmMap = new TreeMap<>();
-        StorPoolData storPool = new StorPoolData(
-            java.util.UUID.fromString(resultSet.getString(SP_UUID)),
-            node,
-            storPoolDfn,
-            LinstorParsingUtils.asProviderKind(resultSet.getString(SP_DRIVER)),
-            freeSpaceMgr,
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            vlmMap
-        );
-        return new Pair<>(storPool, new StorPoolInitMaps(vlmMap));
+        try
+        {
+            Map<String, VlmProviderObject> vlmMap = new TreeMap<>();
+            StorPoolData storPool = new StorPoolData(
+                java.util.UUID.fromString(resultSet.getString(SP_UUID)),
+                node,
+                storPoolDfn,
+                LinstorParsingUtils.asProviderKind(resultSet.getString(SP_DRIVER)),
+                freeSpaceMgr,
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                vlmMap
+            );
+            return new Pair<>(storPool, new StorPoolInitMaps(vlmMap));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void delete(StorPoolData storPool) throws SQLException
+    public void delete(StorPoolData storPool) throws DatabaseException
     {
         errorReporter.logTrace("Deleting StorPool %s", getId(storPool));
         try (PreparedStatement stmt = getConnection().prepareStatement(SP_DELETE))
@@ -245,6 +265,10 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("StorPool deleted %s", getId(storPool));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accDeniedExc);
@@ -252,7 +276,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     }
 
     @Override
-    public void ensureEntryExists(StorPoolData storPoolData) throws SQLException
+    public void ensureEntryExists(StorPoolData storPoolData) throws DatabaseException
     {
         errorReporter.logTrace("Ensuring StorPool exists %s", getId(storPoolData));
         Node node = storPoolData.getNode();
@@ -275,6 +299,10 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
                     errorReporter.logTrace("StorPool existed, nothing to do %s", getId(storPoolData));
                 }
             }
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -300,7 +328,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         return "(NodeName=" + nodeName + " PoolName=" + poolName + ")";
     }
 
-    private ObjectProtection getObjectProtection(FreeSpaceMgrName fsmName) throws SQLException
+    private ObjectProtection getObjectProtection(FreeSpaceMgrName fsmName) throws DatabaseException
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(fsmName),

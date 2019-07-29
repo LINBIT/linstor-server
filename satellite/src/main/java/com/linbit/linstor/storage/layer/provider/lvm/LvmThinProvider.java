@@ -6,6 +6,7 @@ import com.linbit.linstor.SnapshotVolume;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -25,9 +26,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -64,7 +63,7 @@ public class LvmThinProvider extends LvmProvider
 
     @Override
     protected void updateInfo(LvmData vlmDataRef, LvsInfo infoRef)
-        throws AccessDeniedException, SQLException, StorageException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         super.updateInfo(vlmDataRef, infoRef);
         LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
@@ -129,7 +128,7 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void deleteLvImpl(LvmData lvmVlmData, String oldLvmId) throws StorageException, SQLException
+    protected void deleteLvImpl(LvmData lvmVlmData, String oldLvmId) throws StorageException, DatabaseException
     {
         LvmCommands.delete(
             extCmdFactory.create(),
@@ -141,7 +140,7 @@ public class LvmThinProvider extends LvmProvider
 
     @Override
     protected boolean snapshotExists(SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         // FIXME: RAID: rscNameSuffix
 
@@ -170,7 +169,7 @@ public class LvmThinProvider extends LvmProvider
 
     @Override
     protected void createSnapshot(LvmData lvmVlmData, SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         LvmThinData vlmData = (LvmThinData) lvmVlmData;
         String rscNameSuffix = vlmData.getRscLayerObject().getResourceNameSuffix();
@@ -192,7 +191,7 @@ public class LvmThinProvider extends LvmProvider
 
     @Override
     protected void deleteSnapshot(String rscNameSuffix, SnapshotVolume snapVlm)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         LvmCommands.delete(
             extCmdFactory.create(),
@@ -203,7 +202,7 @@ public class LvmThinProvider extends LvmProvider
 
     @Override
     protected void restoreSnapshot(String sourceLvId, String sourceSnapName, LvmData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         String storageName = vlmData.getVolumeGroup();
         String targetId = asLvIdentifier(vlmData);
@@ -222,7 +221,7 @@ public class LvmThinProvider extends LvmProvider
 
     @Override
     protected void rollbackImpl(LvmData lvmVlmData, String rollbackTargetSnapshotName)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         LvmThinData vlmData = (LvmThinData) lvmVlmData;
 

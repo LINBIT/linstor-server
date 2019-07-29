@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.AbsRscData;
@@ -74,7 +75,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
         parentDriver = new ParentDriver();
     }
 
-    public List<RscLayerInfoData> loadAllResourceIds() throws SQLException
+    public List<RscLayerInfoData> loadAllResourceIds() throws DatabaseException
     {
         List<RscLayerInfoData> ret = new ArrayList<>();
 
@@ -102,6 +103,10 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (InvalidNameException exc)
         {
             throw new ImplementationError("Unrestorable name loaded from the database", exc);
@@ -111,7 +116,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void persist(RscLayerObject rscData) throws SQLException
+    public void persist(RscLayerObject rscData) throws DatabaseException
     {
         errorReporter.logTrace("Creating LayerResourceId %s", getId(rscData));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
@@ -133,11 +138,15 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
             stmt.executeUpdate();
             errorReporter.logTrace("LayerResourceId created %s", getId(rscData));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(RscLayerObject rscData) throws SQLException
+    public void delete(RscLayerObject rscData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting LayerResourceId %s", getId(rscData));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE))
@@ -148,6 +157,10 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
 
             stmt.executeUpdate();
             errorReporter.logTrace("LayerResourceId deleting %s", getId(rscData));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -252,7 +265,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void update(AbsRscData<VlmProviderObject> rscData, RscLayerObject newParentData) throws SQLException
+        public void update(AbsRscData<VlmProviderObject> rscData, RscLayerObject newParentData) throws DatabaseException
         {
             RscLayerObject oldParentData = rscData.getParent();
             errorReporter.logTrace(
@@ -278,6 +291,10 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
                 stmt.setInt(4, rscData.getRscLayerId());
 
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace(
                 "%s's parent resource id updated from [%d] to [%d] %s",

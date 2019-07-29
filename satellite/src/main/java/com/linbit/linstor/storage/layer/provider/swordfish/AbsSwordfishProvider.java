@@ -10,6 +10,7 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -32,18 +33,18 @@ import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
 
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DATA;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
 import javax.inject.Provider;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DATA;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
 
 
 // TODO: create custom SwordFish communication objects and use a JSON serializer / deserializer
@@ -126,14 +127,14 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, SQLException
+    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, DatabaseException
     {
         // usable size was just updated (set) by the layer above us. nothing to do here
     }
 
     @Override
     public void prepare(List<VlmProviderObject> vlmDataList, List<SnapshotVolume> snapVlms)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op
     }
@@ -151,7 +152,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
         List<SnapshotVolume> ignoredSnapshotlist,
         ApiCallRcImpl apiCallRc
     )
-        throws AccessDeniedException, SQLException, StorageException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) rawVlmDataList;
 
@@ -256,7 +257,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     }
 
     private void create(List<LAYER_DATA> vlmDataList, ApiCallRcImpl apiCallRc)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         for (LAYER_DATA vlmData : vlmDataList)
         {
@@ -267,7 +268,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     }
 
     private void delete(List<LAYER_DATA> deleteList, ApiCallRcImpl apiCallRc)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         for (LAYER_DATA vlmData : deleteList)
         {
@@ -492,10 +493,10 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     }
 
     protected abstract void createImpl(LAYER_DATA vlmData)
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     protected abstract void deleteImpl(LAYER_DATA vlmData)
-        throws StorageException, AccessDeniedException, SQLException;
+        throws StorageException, AccessDeniedException, DatabaseException;
 
     @Override
     public abstract long getPoolCapacity(StorPool storPool)
@@ -505,7 +506,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     public abstract long getPoolFreeSpace(StorPool storPool)
         throws StorageException, AccessDeniedException;
 
-    protected abstract void setUsableSize(LAYER_DATA vlmData, long size) throws SQLException;
+    protected abstract void setUsableSize(LAYER_DATA vlmData, long size) throws DatabaseException;
 
     protected static class SfRscException extends StorageException
     {

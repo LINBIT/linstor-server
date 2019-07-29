@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
@@ -84,7 +85,7 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(SnapshotVolume snapshotVolume) throws SQLException
+    public void create(SnapshotVolume snapshotVolume) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(SV_INSERT))
         {
@@ -102,6 +103,10 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
 
             errorReporter.logTrace("SnapshotVolume created %s", getId(snapshotVolume));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -114,18 +119,25 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
         SnapshotVolumeDefinition snapshotVolumeDefinition,
         StorPool storPool
         )
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Restoring SnapshotVolume %s", getId(snapshot, snapshotVolumeDefinition));
         SnapshotVolume snapshotVolume;
 
-        snapshotVolume = new SnapshotVolumeData(
-            java.util.UUID.fromString(resultSet.getString(SV_UUID)),
-            snapshot,
-            snapshotVolumeDefinition,
-            storPool,
-            this, transObjFactory, transMgrProvider
-        );
+        try
+        {
+            snapshotVolume = new SnapshotVolumeData(
+                java.util.UUID.fromString(resultSet.getString(SV_UUID)),
+                snapshot,
+                snapshotVolumeDefinition,
+                storPool,
+                this, transObjFactory, transMgrProvider
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
 
         errorReporter.logTrace("SnapshotVolume %s created during restore", getId(snapshotVolume));
 
@@ -138,7 +150,7 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
         Map<Triple<ResourceName, SnapshotName, VolumeNumber>, ? extends SnapshotVolumeDefinition> snapshotVlmDfnMap,
         Map<Pair<NodeName, StorPoolName>, ? extends StorPool> storPoolMap
     )
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading all SnapshotVolumes");
         List<SnapshotVolume> ret = new ArrayList<>();
@@ -190,12 +202,16 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return ret;
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(SnapshotVolume snapshotVolume) throws SQLException
+    public void delete(SnapshotVolume snapshotVolume) throws DatabaseException
     {
         errorReporter.logTrace("Deleting SnapshotVolume %s", getId(snapshotVolume));
         try (PreparedStatement stmt = getConnection().prepareStatement(SV_DELETE))
@@ -209,6 +225,10 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
             stmt.setInt(4, snapshotVolume.getVolumeNumber().value);
             stmt.executeUpdate();
             errorReporter.logTrace("SnapshotVolume deleted %s", getId(snapshotVolume));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 

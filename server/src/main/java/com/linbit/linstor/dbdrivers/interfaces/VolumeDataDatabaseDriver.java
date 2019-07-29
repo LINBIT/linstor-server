@@ -1,8 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
-
 import com.linbit.linstor.VolumeData;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
@@ -18,9 +17,9 @@ public interface VolumeDataDatabaseDriver
      * @param volume
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(VolumeData volume) throws SQLException;
+    void create(VolumeData volume) throws DatabaseException;
 
     /**
      * Removes the given {@link com.linbit.linstor.VolumeData} from the database
@@ -28,9 +27,9 @@ public interface VolumeDataDatabaseDriver
      * @param volume
      *  The data identifying the row to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(VolumeData volume) throws SQLException;
+    void delete(VolumeData volume) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted flags

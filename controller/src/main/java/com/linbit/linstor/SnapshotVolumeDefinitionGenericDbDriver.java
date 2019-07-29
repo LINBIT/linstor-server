@@ -7,6 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
@@ -102,7 +103,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(SnapshotVolumeDefinition snapshotVolumeDefinition) throws SQLException
+    public void create(SnapshotVolumeDefinition snapshotVolumeDefinition) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(SVD_INSERT))
         {
@@ -119,6 +120,10 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
 
             errorReporter.logTrace("SnapshotVolumeDefinition created %s", getId(snapshotVolumeDefinition));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -131,14 +136,15 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         SnapshotDefinition snapshotDefinition,
         VolumeNumber volumeNumber
     )
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Restoring SnapshotVolumeDefinition %s", getId(snapshotDefinition, volumeNumber));
         Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> retPair;
 
-        long volSize = resultSet.getLong(SVD_SIZE);
+        long volSize = -1;
         try
         {
+            volSize = resultSet.getLong(SVD_SIZE);
             Map<NodeName, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
             SnapshotVolumeDefinition snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
@@ -159,9 +165,13 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             errorReporter.logTrace(
                 "SnapshotVolumeDefinition %s created during restore", getId(snapshotVolumeDefinition));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (MdException mdExc)
         {
-            throw new LinStorSqlRuntimeException(
+            throw new LinStorDBRuntimeException(
                 String.format(
                     "A VolumeSize of a stored SnapshotVolumeDefinition in table %s could not be restored. " +
                         "(ResourceName=%s, SnapshotName=%s, VolumeNumber=%d, invalid VolumeSize=%d)",
@@ -182,7 +192,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     public Map<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> loadAll(
         Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition> snapshotDfnMap
     )
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading all SnapshotVolumeDefinitions");
         Map<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> loadedSnapshotVlmDfns = new TreeMap<>();
@@ -229,12 +239,16 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return loadedSnapshotVlmDfns;
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(SnapshotVolumeDefinition snapshotVolumeDefinition) throws SQLException
+    public void delete(SnapshotVolumeDefinition snapshotVolumeDefinition) throws DatabaseException
     {
         errorReporter.logTrace("Deleting SnapshotVolumeDefinition %s", getId(snapshotVolumeDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(SVD_DELETE))
@@ -244,6 +258,10 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             stmt.setInt(3, snapshotVolumeDefinition.getVolumeNumber().value);
             stmt.executeUpdate();
             errorReporter.logTrace("SnapshotVolumeDefinition deleted %s", getId(snapshotVolumeDefinition));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -291,7 +309,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void update(SnapshotVolumeDefinition snapshotVolumeDefinition, Long size)
-            throws SQLException
+            throws DatabaseException
         {
             try (PreparedStatement stmt = getConnection().prepareStatement(SVD_UPDATE_SIZE))
             {
@@ -315,6 +333,10 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                     getId(snapshotVolumeDefinition)
                 );
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             catch (AccessDeniedException accessDeniedExc)
             {
                 GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -327,7 +349,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void persist(SnapshotVolumeDefinition snapshotVolumeDefinition, long flags)
-            throws SQLException
+            throws DatabaseException
         {
             try (PreparedStatement stmt = getConnection().prepareStatement(SVD_UPDATE_FLAGS))
             {
@@ -363,6 +385,10 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                     toFlags,
                     getId(snapshotVolumeDefinition)
                 );
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             catch (AccessDeniedException accessDeniedExc)
             {

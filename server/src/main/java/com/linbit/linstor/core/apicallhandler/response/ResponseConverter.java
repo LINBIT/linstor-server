@@ -133,9 +133,9 @@ public class ResponseConverter
                 .build()
             );
         }
-        else if (exc instanceof ApiSQLException)
+        else if (exc instanceof ApiTransactionException)
         {
-            ApiSQLException sqlExc = (ApiSQLException) exc;
+            ApiTransactionException sqlExc = (ApiTransactionException) exc;
             apiCallRc.addEntry(ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.FAIL_SQL,

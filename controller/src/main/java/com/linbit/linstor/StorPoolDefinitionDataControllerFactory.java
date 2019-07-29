@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -11,7 +12,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -46,7 +46,7 @@ public class StorPoolDefinitionDataControllerFactory
         AccessContext accCtx,
         StorPoolName storPoolName
     )
-        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
+        throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
         StorPoolDefinitionData storPoolDfn = null;
 

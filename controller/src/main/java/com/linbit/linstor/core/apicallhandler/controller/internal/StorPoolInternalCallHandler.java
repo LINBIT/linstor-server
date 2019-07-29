@@ -23,6 +23,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -254,7 +255,7 @@ public class StorPoolInternalCallHandler
             storPool = (StorPoolData) currentPeer.getNode().getStorPool(apiCtx, new StorPoolName(storPoolNameRef));
             storPool.setSupportsSnapshot(apiCtx, supportsSnapshotsRef);
         }
-        catch (AccessDeniedException | InvalidNameException | SQLException exc)
+        catch (AccessDeniedException | InvalidNameException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }

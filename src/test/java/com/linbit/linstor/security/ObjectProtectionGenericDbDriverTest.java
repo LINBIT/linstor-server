@@ -1,6 +1,8 @@
 package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,7 +44,7 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
     }
 
     @Test
-    public void testCreateSimpleObjProt() throws SQLException, AccessDeniedException
+    public void testCreateSimpleObjProt() throws DatabaseException, SQLException, AccessDeniedException
     {
         @SuppressWarnings("resource")
         final Connection con = getConnection();
@@ -69,7 +71,7 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
         stmt.close();
     }
 
-    @Test (expected = SQLException.class)
+    @Test (expected = DatabaseException.class)
     public void testCreateUnknownIdObjProt() throws Exception
     {
         final String objPath = "testPath";
@@ -84,7 +86,7 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
         fail("Creating an ObjectProtection with an unknown identity should have failed");
     }
 
-    @Test (expected = SQLException.class)
+    @Test (expected = DatabaseException.class)
     public void testCreateUnknownRoleObjProt() throws Exception
     {
         final String objPath = "testPath";
@@ -99,7 +101,7 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
         fail("Creating an ObjectProtection with an unknown role should have failed");
     }
 
-    @Test (expected = SQLException.class)
+    @Test (expected = DatabaseException.class)
     public void testCreateUnknownSecTypeObjProt() throws Exception
     {
         final String objPath = "testPath";
@@ -116,7 +118,7 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
 
     @SuppressWarnings({"checkstyle:magicnumber"})
     @Test
-    public void testLoadSimpleObjProt() throws SQLException, AccessDeniedException
+    public void testLoadSimpleObjProt() throws DatabaseException, SQLException, AccessDeniedException
     {
         Connection con = getNewConnection();
         PreparedStatement stmt = con.prepareStatement(OP_INSERT);
@@ -140,7 +142,7 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Test
-    public void testAddAcl() throws SQLException, AccessDeniedException, InvalidNameException
+    public void testAddAcl() throws DatabaseException, SQLException, AccessDeniedException, InvalidNameException
     {
         @SuppressWarnings("resource")
         Connection con = getConnection();

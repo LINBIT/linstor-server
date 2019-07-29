@@ -1,10 +1,10 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObject;
 
-import java.sql.SQLException;
 import java.util.UUID;
 
 /**
@@ -36,19 +36,19 @@ public interface NetInterface extends TransactionObject, DbgInstanceUuid
         throws AccessDeniedException;
 
     LsIpAddress setAddress(AccessContext accCtx, LsIpAddress newAddress)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     boolean isUsableAsStltConn(AccessContext accCtx) throws AccessDeniedException;
 
     boolean setStltConn(AccessContext accCtx, TcpPortNumber port, EncryptionType encrType)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     TcpPortNumber getStltConnPort(AccessContext accCtx) throws AccessDeniedException;
 
     EncryptionType getStltConnEncryptionType(AccessContext accCtx) throws AccessDeniedException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 

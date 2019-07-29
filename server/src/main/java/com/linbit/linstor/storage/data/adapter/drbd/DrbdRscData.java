@@ -6,6 +6,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -16,11 +17,10 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +127,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     }
 
     @Override
-    public void setParent(@Nonnull RscLayerObject parentObj) throws SQLException
+    public void setParent(@Nonnull RscLayerObject parentObj) throws DatabaseException
     {
         parent.set(parentObj);
     }
@@ -193,20 +193,20 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     }
 
     @Override
-    public void delete() throws SQLException
+    public void delete() throws DatabaseException
     {
         super.delete();
         drbdRscDfnData.getDrbdRscDataList().remove(this);
     }
 
     @Override
-    protected void deleteVlmFromDatabase(DrbdVlmData drbdVlmData) throws SQLException
+    protected void deleteVlmFromDatabase(DrbdVlmData drbdVlmData) throws DatabaseException
     {
         drbdDbDriver.delete(drbdVlmData);
     }
 
     @Override
-    protected void deleteRscFromDatabase() throws SQLException
+    protected void deleteRscFromDatabase() throws DatabaseException
     {
         drbdDbDriver.delete(this);
     }

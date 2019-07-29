@@ -5,6 +5,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -17,8 +18,6 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -66,13 +65,13 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
     }
 
     @Override
-    protected void deleteVlmFromDatabase(VlmProviderObject vlmRef) throws SQLException
+    protected void deleteVlmFromDatabase(VlmProviderObject vlmRef) throws DatabaseException
     {
         storageDbDriver.delete(vlmRef);
     }
 
     @Override
-    protected void deleteRscFromDatabase() throws SQLException
+    protected void deleteRscFromDatabase() throws DatabaseException
     {
         storageDbDriver.delete(this);
     }

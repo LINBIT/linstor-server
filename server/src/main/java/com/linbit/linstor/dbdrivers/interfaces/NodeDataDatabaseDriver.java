@@ -1,11 +1,10 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
-
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.NodeData;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.NodeData;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
@@ -20,18 +19,18 @@ public interface NodeDataDatabaseDriver
      *
      * @param nodeData
      *  The data to be stored (including the primary key)
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(NodeData nodeData) throws SQLException;
+    void create(NodeData nodeData) throws DatabaseException;
 
     /**
      * Removes the given {@link NodeData} from the database
      *
      * @param node
      *  The data identifying the database entry to delete
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(NodeData node) throws SQLException;
+    void delete(NodeData node) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted {@link NodeFlag}s. The data record

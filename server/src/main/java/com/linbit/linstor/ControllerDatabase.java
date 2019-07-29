@@ -1,10 +1,10 @@
 package com.linbit.linstor;
 
-import java.sql.SQLException;
-import java.util.Properties;
 import com.linbit.SystemService;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * Database access for the linstor Controller module
@@ -20,7 +20,7 @@ public interface ControllerDatabase extends SystemService
     void setMaxOpenPreparedStatements(int maxOpen);
 
     void initializeDataSource(String dbConnectionUrl)
-        throws SQLException;
+        throws DatabaseException;
 
     Connection getConnection() throws SQLException;
 

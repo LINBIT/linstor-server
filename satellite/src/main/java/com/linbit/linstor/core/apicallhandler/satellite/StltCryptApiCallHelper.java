@@ -18,6 +18,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import java.sql.SQLException;
@@ -106,7 +107,7 @@ public class StltCryptApiCallHelper
                 }
             }
         }
-        catch (LinStorException | SQLException exc)
+        catch (LinStorException | TransactionException exc)
         {
             throw new ImplementationError(exc);
         }

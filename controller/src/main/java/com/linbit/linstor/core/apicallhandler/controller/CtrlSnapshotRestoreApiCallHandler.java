@@ -28,6 +28,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.netcom.Peer;
@@ -38,13 +39,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
-
-import static com.linbit.utils.StringUtils.firstLetterCaps;
+import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,7 +54,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import reactor.core.publisher.Flux;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 @Singleton
 public class CtrlSnapshotRestoreApiCallHandler
@@ -231,7 +230,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     }
 
     private Resource restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinitionData toRscDfn, Node node)
-        throws AccessDeniedException, InvalidKeyException, InvalidValueException, SQLException
+        throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
 

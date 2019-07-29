@@ -21,6 +21,7 @@ import com.linbit.linstor.security.CtrlAuthentication;
 import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SignInException;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
@@ -272,7 +273,7 @@ public class RequestHelper
                     {
                         transMgr.rollback();
                     }
-                    catch (SQLException sqlExc)
+                    catch (TransactionException sqlExc)
                     {
                         errorReporter.reportError(
                             Level.ERROR,

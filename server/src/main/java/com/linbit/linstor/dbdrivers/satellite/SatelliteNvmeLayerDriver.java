@@ -8,8 +8,6 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 
 import javax.inject.Inject;
 
-import java.sql.SQLException;
-
 public class SatelliteNvmeLayerDriver implements NvmeLayerDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
@@ -28,25 +26,25 @@ public class SatelliteNvmeLayerDriver implements NvmeLayerDatabaseDriver
     }
 
     @Override
-    public void create(NvmeRscData nvmeRscDataRef) throws SQLException
+    public void create(NvmeRscData nvmeRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(NvmeRscData nvmeRscDataRef) throws SQLException
+    public void delete(NvmeRscData nvmeRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(NvmeVlmData nvmeVlmDataRef) throws SQLException
+    public void persist(NvmeVlmData nvmeVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(NvmeVlmData nvmeVlmDataRef) throws SQLException
+    public void delete(NvmeVlmData nvmeVlmDataRef)
     {
         // no-op
     }

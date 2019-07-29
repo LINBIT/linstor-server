@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.linstor.SnapshotVolume;
-import java.sql.SQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**
  * Database driver for {@link SnapshotVolume}.
@@ -14,9 +14,9 @@ public interface SnapshotVolumeDataDatabaseDriver
      * @param snapshotVolume
      *  The data to be stored (including the primary key)
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void create(SnapshotVolume snapshotVolume) throws SQLException;
+    void create(SnapshotVolume snapshotVolume) throws DatabaseException;
 
     /**
      * Removes the given {@link SnapshotVolume} from the database
@@ -24,7 +24,7 @@ public interface SnapshotVolumeDataDatabaseDriver
      * @param snapshotVolume
      *  The data identifying the row to delete
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void delete(SnapshotVolume snapshotVolume) throws SQLException;
+    void delete(SnapshotVolume snapshotVolume) throws DatabaseException;
 }

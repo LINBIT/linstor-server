@@ -7,14 +7,14 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.Snapshot;
+import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.Resource.RscFlags;
-import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -23,6 +23,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.SysFsHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
@@ -35,8 +36,8 @@ import com.linbit.linstor.storage.LayerFactory;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
@@ -47,8 +48,6 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -214,7 +213,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             {
                 updateGrossSizeForChildren(rsc);
             }
-            catch (AccessDeniedException | SQLException exc)
+            catch (AccessDeniedException | DatabaseException exc)
             {
                 throw new ImplementationError(exc);
             }
@@ -337,7 +336,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
             }
-            catch (AccessDeniedException | SQLException exc)
+            catch (AccessDeniedException | DatabaseException exc)
             {
                 throw new ImplementationError(exc);
             }
@@ -460,7 +459,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     apiCallRc
                 );
             }
-            catch (AccessDeniedException | SQLException exc)
+            catch (AccessDeniedException | DatabaseException exc)
             {
                 throw new ImplementationError(exc);
             }
@@ -611,7 +610,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 );
             }
         }
-        catch (AccessDeniedException | SQLException exc)
+        catch (AccessDeniedException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -665,7 +664,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         Collection<Snapshot> snapshots,
         ApiCallRcImpl apiCallRc
     )
-        throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         DeviceLayer nextLayer = layerFactory.getDeviceLayer(rscLayerData.getLayerKind());
 
@@ -689,7 +688,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         );
     }
 
-    public void updateGrossSizeForChildren(Resource rsc) throws AccessDeniedException, SQLException
+    public void updateGrossSizeForChildren(Resource rsc) throws AccessDeniedException, DatabaseException
     {
         for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
         {

@@ -1,6 +1,8 @@
 package com.linbit.linstor.transaction;
 
-public class TransactionException extends RuntimeException
+import com.linbit.linstor.LinStorRuntimeException;
+
+public class TransactionException extends LinStorRuntimeException
 {
     public TransactionException(String message, Throwable cause)
     {

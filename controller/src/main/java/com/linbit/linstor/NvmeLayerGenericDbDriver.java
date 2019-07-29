@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -16,9 +17,7 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -59,7 +58,7 @@ public class NvmeLayerGenericDbDriver implements NvmeLayerDatabaseDriver
      * @return a {@link Pair}, where the first object is the actual NvmeRscData and the second object
      * is the first objects backing list of the children-resource layer data. This list is expected to be filled
      * upon further loading, without triggering transaction (and possibly database-) updates.
-     * @throws SQLException
+     * @throws DatabaseException
      * @throws AccessDeniedException
      */
     public Pair<NvmeRscData, Set<RscLayerObject>> load(
@@ -93,28 +92,28 @@ public class NvmeLayerGenericDbDriver implements NvmeLayerDatabaseDriver
     }
 
     @Override
-    public void create(NvmeRscData nvmeRscDataRef) throws SQLException
+    public void create(NvmeRscData nvmeRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeRscData will get a database table in future.
     }
 
     @Override
-    public void persist(NvmeVlmData nvmeVlmDataRef) throws SQLException
+    public void persist(NvmeVlmData nvmeVlmDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeVlmData will get a database table in future.
     }
 
     @Override
-    public void delete(NvmeRscData nvmeRscDataRef) throws SQLException
+    public void delete(NvmeRscData nvmeRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeRscData will get a database table in future.
     }
 
     @Override
-    public void delete(NvmeVlmData nvmeVlmDataRef) throws SQLException
+    public void delete(NvmeVlmData nvmeVlmDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeVlmData will get a database table in future.

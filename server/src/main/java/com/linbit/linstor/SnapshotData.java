@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -15,7 +16,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -193,7 +193,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
     @Override
     public void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
         getFlags().enableFlags(accCtx, SnapshotFlags.DELETE);
@@ -201,7 +201,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {
@@ -249,7 +249,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         {
             suspendResource.set(suspendResourceRef);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -272,7 +272,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         {
             takeSnapshot.set(takeSnapshotRef);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }

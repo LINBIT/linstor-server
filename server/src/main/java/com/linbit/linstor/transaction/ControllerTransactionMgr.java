@@ -26,9 +26,16 @@ public class ControllerTransactionMgr implements TransactionMgr
     }
 
     @Override
-    public void commit() throws SQLException
+    public void commit() throws TransactionException
     {
-        dbCon.commit();
+        try
+        {
+            dbCon.commit();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new TransactionException("Database commit failed.", sqlExc);
+        }
 
         transactionObjectCollection.commitAll();
 
@@ -37,11 +44,18 @@ public class ControllerTransactionMgr implements TransactionMgr
 
 
     @Override
-    public void rollback() throws SQLException
+    public void rollback() throws TransactionException
     {
         transactionObjectCollection.rollbackAll();
 
-        dbCon.rollback();
+        try
+        {
+            dbCon.rollback();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new TransactionException("Database rollback failed.", sqlExc);
+        }
 
         clearTransactionObjects();
     }

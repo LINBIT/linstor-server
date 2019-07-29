@@ -1,6 +1,6 @@
 package com.linbit.linstor.stateflags;
 
-import java.sql.SQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**
  * Updates the state flags of a linstor core object in the database
@@ -10,5 +10,5 @@ import java.sql.SQLException;
  */
 public interface StateFlagsPersistence<PK>
 {
-    void persist(PK primaryKey, long flags) throws SQLException;
+    void persist(PK primaryKey, long flags) throws DatabaseException;
 }

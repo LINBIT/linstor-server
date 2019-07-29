@@ -11,6 +11,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -123,7 +124,7 @@ public class DbCoreObjProtInitializer
                 {
                     transMgr.rollback();
                 }
-                catch (SQLException sqlExc)
+                catch (TransactionException sqlExc)
                 {
                     throw new InitializationException(
                         "Rollback after object protection loading failed",

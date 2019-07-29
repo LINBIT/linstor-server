@@ -1,19 +1,18 @@
 package com.linbit.linstor.stateflags;
 
-import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.inject.Provider;
-
 import com.linbit.ErrorCheck;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.AbsTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
+
+import javax.inject.Provider;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * State flags for linstor core objects
@@ -76,7 +75,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
 
     @Override
     public void enableAllFlags(final AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         requireAccess(accCtx, AccessType.CHANGE);
 
@@ -85,7 +84,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
 
     @Override
     public void disableAllFlags(final AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         requireAccess(accCtx, AccessType.CHANGE);
 
@@ -95,7 +94,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     @SuppressWarnings("unchecked")
     @Override
     public void enableFlags(final AccessContext accCtx, final FLAG... flags)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         requireAccess(accCtx, AccessType.CHANGE);
 
@@ -105,7 +104,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
 
     @SuppressWarnings("unchecked")
     @Override
-    public void resetFlagsTo(AccessContext accCtx, FLAG... flags) throws AccessDeniedException, SQLException
+    public void resetFlagsTo(AccessContext accCtx, FLAG... flags) throws AccessDeniedException, DatabaseException
     {
         requireAccess(accCtx, AccessType.CHANGE);
 
@@ -116,7 +115,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     @SuppressWarnings("unchecked")
     @Override
     public void disableFlags(final AccessContext accCtx, final FLAG... flags)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         requireAccess(accCtx, AccessType.CHANGE);
 
@@ -127,7 +126,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     @SuppressWarnings("unchecked")
     @Override
     public void enableFlagsExcept(final AccessContext accCtx, final FLAG... flags)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         requireAccess(accCtx, AccessType.CHANGE);
 
@@ -138,7 +137,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
     @SuppressWarnings("unchecked")
     @Override
     public void disableFlagsExcept(final AccessContext accCtx, final FLAG... flags)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         requireAccess(accCtx, AccessType.CHANGE);
 
@@ -245,7 +244,7 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
         return bitMask;
     }
 
-    private void setFlags(final long bits) throws SQLException
+    private void setFlags(final long bits) throws DatabaseException
     {
         activateTransMgr();
         persistence.persist(pk, bits);

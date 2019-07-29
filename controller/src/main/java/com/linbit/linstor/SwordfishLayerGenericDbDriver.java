@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
@@ -92,7 +93,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         vlmDfnOdataDriver = new VlmDfnOdataDriver();
     }
 
-    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws SQLException
+    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws DatabaseException
     {
         sfVlmDfnInfoCache = new HashMap<>();
 
@@ -120,14 +121,14 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
                     }
                     catch (InvalidNameException exc)
                     {
-                        throw new LinStorSqlRuntimeException(
+                        throw new LinStorDBRuntimeException(
                             "Failed to restore stored resourceName [" + rscNameStr + "]"
                         );
                     }
                     ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rscName);
                     if (rscDfn == null)
                     {
-                        throw new LinStorSqlRuntimeException(
+                        throw new LinStorDBRuntimeException(
                             "Loaded swordfish volume definition data for non existent resource definition '" +
                                 rscNameStr + "'"
                         );
@@ -144,6 +145,10 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
                     sfVlmDfnInfoCache.put(key, sfVlmDfnData);
                 }
             }
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -221,14 +226,14 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             case FILE:
             case FILE_THIN:
             default:
-                throw new LinStorSqlRuntimeException("Invalid DeviceProviderKind: '" + kindRef + "'");
+                throw new LinStorDBRuntimeException("Invalid DeviceProviderKind: '" + kindRef + "'");
         }
         return vlmData;
     }
 
 
     @Override
-    public void persist(SfVlmDfnData vlmDfnData) throws SQLException
+    public void persist(SfVlmDfnData vlmDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating SfVlmDfnData %s", getId(vlmDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM_DFN))
@@ -248,10 +253,14 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             stmt.executeUpdate();
             errorReporter.logTrace("SfVlmDfnData created %s", getId(vlmDfnData));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void delete(SfVlmDfnData vlmDfnData) throws SQLException
+    public void delete(SfVlmDfnData vlmDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting SfVlmDfnData %s", getId(vlmDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM_DFN))
@@ -263,31 +272,35 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
             stmt.executeUpdate();
             errorReporter.logTrace("SfVlmDfnData deleted %s", getId(vlmDfnData));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void persist(SfInitiatorData sfInitiatorDataRef) throws SQLException
+    public void persist(SfInitiatorData sfInitiatorDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if SfInitiatorData will get a database table in future.
     }
 
     @Override
-    public void delete(SfInitiatorData sfInitiatorDataRef) throws SQLException
+    public void delete(SfInitiatorData sfInitiatorDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if SfInitiatorData will get a database table in future.
     }
 
     @Override
-    public void persist(SfTargetData sfTargetDataRef) throws SQLException
+    public void persist(SfTargetData sfTargetDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if SfTargetData will get a database table in future.
     }
 
     @Override
-    public void delete(SfTargetData sfTargetDataRef) throws SQLException
+    public void delete(SfTargetData sfTargetDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if SfTargetData will get a database table in future.
@@ -316,7 +329,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void update(SfVlmDfnData vlmDfnData, String oData)
-            throws SQLException
+            throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating SfVlmDfnData's oData from [%s] to [%s] %s",
@@ -331,6 +344,10 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
                 stmt.setString(3, vlmDfnData.getRscNameSuffix());
                 stmt.setInt(4, vlmDfnData.getVolumeDefinition().getVolumeNumber().value);
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace(
                 "SfVlmDfnData's oData updated from [%d] to [%d] %s",

@@ -5,13 +5,12 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.LayerObject;
 
 import javax.annotation.Nullable;
-
-import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +25,7 @@ public interface RscLayerObject extends LayerObject
 
     @Nullable RscLayerObject getParent();
 
-    void setParent(RscLayerObject parentRscLayerObject) throws SQLException;
+    void setParent(RscLayerObject parentRscLayerObject) throws DatabaseException;
 
     Set<RscLayerObject> getChildren();
 
@@ -104,9 +103,9 @@ public interface RscLayerObject extends LayerObject
 
     RscLayerDataApi asPojo(AccessContext accCtx) throws AccessDeniedException;
 
-    void delete() throws SQLException;
+    void delete() throws DatabaseException;
 
-    void remove(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException, SQLException;
+    void remove(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException, DatabaseException;
 
     boolean checkFileSystem();
 

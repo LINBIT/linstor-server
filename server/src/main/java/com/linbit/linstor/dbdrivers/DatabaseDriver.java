@@ -2,7 +2,6 @@ package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ServiceName;
 import com.linbit.linstor.ResourceDefinition;
-import java.sql.SQLException;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -21,7 +20,7 @@ public interface DatabaseDriver
      *
      * @param transMgr
      *
-     * @throws SQLException
+     * @throws DatabaseException
      */
-    void loadAll() throws SQLException;
+    void loadAll() throws DatabaseException;
 }

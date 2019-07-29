@@ -3,6 +3,7 @@ package com.linbit.linstor.transaction;
 import com.linbit.ImplementationError;
 import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 import java.sql.SQLException;
 import java.util.Objects;
@@ -37,7 +38,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
         }
     }
 
-    public ELEMENT set(ELEMENT obj) throws SQLException
+    public ELEMENT set(ELEMENT obj) throws DatabaseException
     {
         if (!Objects.equals(obj, cachedObject))
         {

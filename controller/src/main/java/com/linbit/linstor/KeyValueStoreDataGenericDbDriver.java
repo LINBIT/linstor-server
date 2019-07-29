@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.KeyValueStore.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -18,7 +19,6 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -79,7 +79,7 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(KeyValueStoreData kvs) throws SQLException
+    public void create(KeyValueStoreData kvs) throws DatabaseException
     {
         errorReporter.logTrace("Creating KeyValueStore %s", getId(kvs));
         try (PreparedStatement stmt = getConnection().prepareStatement(KVS_INSERT))
@@ -91,10 +91,14 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
 
             errorReporter.logTrace("KeyValueStore created %s", getId(kvs));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public boolean exists(KeyValueStoreName kvsName) throws SQLException
+    public boolean exists(KeyValueStoreName kvsName) throws DatabaseException
     {
         boolean exists = false;
         try (PreparedStatement stmt = getConnection().prepareStatement(KVS_SELECT))
@@ -105,10 +109,14 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
                 exists = resultSet.next();
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return exists;
     }
 
-    public Map<KeyValueStoreData, InitMaps> loadAll() throws SQLException
+    public Map<KeyValueStoreData, InitMaps> loadAll() throws DatabaseException
     {
         errorReporter.logTrace("Loading all KeyValueStores");
         Map<KeyValueStoreData, InitMaps> kvsMap = new TreeMap<>();
@@ -123,53 +131,61 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("Loaded %d KeyValueStores", kvsMap.size());
         return kvsMap;
     }
 
-    private Pair<KeyValueStoreData, InitMaps> restoreKvs(ResultSet resultSet) throws SQLException
+    private Pair<KeyValueStoreData, InitMaps> restoreKvs(ResultSet resultSet) throws DatabaseException
     {
         Pair<KeyValueStoreData, InitMaps> retPair = new Pair<>();
         KeyValueStoreData kvs;
         KeyValueStoreName kvsName;
-        try
-        {
-            kvsName = new KeyValueStoreName(resultSet.getString(KVS_DSP_NAME));
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new LinStorSqlRuntimeException(
-                String.format(
-                    "The display name of a stored KeyValueStore in the table %s could not be restored. " +
-                        "(invalid display KvsName=%s)",
-                    TBL_KVS,
-                    resultSet.getString(KVS_DSP_NAME)
-                ),
-                invalidNameExc
+
+        try {
+            try {
+                kvsName = new KeyValueStoreName(resultSet.getString(KVS_DSP_NAME));
+            } catch (InvalidNameException invalidNameExc) {
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "The display name of a stored KeyValueStore in the table %s could not be restored. " +
+                            "(invalid display KvsName=%s)",
+                        TBL_KVS,
+                        resultSet.getString(KVS_DSP_NAME)
+                    ),
+                    invalidNameExc
+                );
+            }
+
+            ObjectProtection objProt = getObjectProtection(kvsName);
+
+            kvs = new KeyValueStoreData(
+                java.util.UUID.fromString(resultSet.getString(KVS_UUID)),
+                objProt,
+                kvsName,
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
+
+            retPair.objA = kvs;
+            retPair.objB = new KvsInitMaps();
+
+            errorReporter.logTrace("KeyValueStore instance created %s", getId(kvs));
         }
-
-        ObjectProtection objProt = getObjectProtection(kvsName);
-
-        kvs = new KeyValueStoreData(
-            java.util.UUID.fromString(resultSet.getString(KVS_UUID)),
-            objProt,
-            kvsName,
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider
-        );
-
-        retPair.objA = kvs;
-        retPair.objB = new KvsInitMaps();
-
-        errorReporter.logTrace("KeyValueStore instance created %s", getId(kvs));
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         return retPair;
     }
 
     private ObjectProtection getObjectProtection(KeyValueStoreName kvsName)
-        throws SQLException, ImplementationError
+        throws DatabaseException, ImplementationError
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(kvsName),
@@ -186,13 +202,17 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
     }
 
     @Override
-    public void delete(KeyValueStoreData kvs) throws SQLException
+    public void delete(KeyValueStoreData kvs) throws DatabaseException
     {
         errorReporter.logTrace("Deleting KeyValueStore %s", getId(kvs));
         try (PreparedStatement stmt = getConnection().prepareStatement(KVS_DELETE))
         {
             stmt.setString(1, kvs.getName().value);
             stmt.executeUpdate();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace("KeyValueStore deleted %s", getId(kvs));
     }

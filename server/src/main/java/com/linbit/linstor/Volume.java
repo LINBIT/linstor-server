@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -10,7 +11,7 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.Pair;
-import java.sql.SQLException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     String getDevicePath(AccessContext accCtx) throws AccessDeniedException;
 
-    void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException;
 
     void setDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
 
@@ -71,7 +72,7 @@ public interface Volume extends TransactionObject, DbgInstanceUuid, Comparable<V
 
     boolean isDeleted();
 
-    void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException;
 
     /**
      * Returns the identification key without checking if "this" is already deleted

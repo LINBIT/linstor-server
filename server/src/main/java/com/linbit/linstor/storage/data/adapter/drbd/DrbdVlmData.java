@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.data.adapter.drbd;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.layers.State;
@@ -15,8 +16,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -246,7 +245,7 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         return externalMetaDataStorPool.get();
     }
 
-    public void setExternalMetaDataStorPool(StorPool extMetaStorPool) throws SQLException
+    public void setExternalMetaDataStorPool(StorPool extMetaStorPool) throws DatabaseException
     {
         externalMetaDataStorPool.set(extMetaStorPool);
     }

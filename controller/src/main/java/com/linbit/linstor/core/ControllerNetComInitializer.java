@@ -13,6 +13,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.MessageProcessor;
@@ -27,6 +28,7 @@ import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import org.slf4j.event.Level;
@@ -291,6 +293,15 @@ public final class ControllerNetComInitializer
                             "An SQL exception was thrown while trying to persist the default plain connector"
                         );
                     }
+                    catch (DatabaseException dbExc)
+                    {
+                        errorLogRef.reportError(
+                            dbExc,
+                            sysCtx,
+                            null,
+                            "A database exception was thrown while trying to persist the default plain connector"
+                        );
+                    }
                     finally
                     {
                         if (transMgr != null)
@@ -299,13 +310,13 @@ public final class ControllerNetComInitializer
                             {
                                 transMgr.rollback();
                             }
-                            catch (SQLException sqlExc2)
+                            catch (TransactionException sqlExc2)
                             {
                                 errorLogRef.reportError(
                                     sqlExc2,
                                     sysCtx,
                                     null,
-                                    "An SQL exception was thrown while trying to rollback a transaction"
+                                    "A database exception was thrown while trying to rollback a transaction"
                                 );
                             }
                             transMgr.returnConnection();
@@ -432,6 +443,15 @@ public final class ControllerNetComInitializer
                                     "An SQL exception was thrown while trying to persist the default ssl connector"
                                 );
                             }
+                            catch (DatabaseException dbExc)
+                            {
+                                errorLogRef.reportError(
+                                    dbExc,
+                                    sysCtx,
+                                    null,
+                                    "A database exception was thrown while trying to persist the default ssl connector"
+                                );
+                            }
                             finally
                             {
                                 if (transMgr != null)
@@ -440,13 +460,13 @@ public final class ControllerNetComInitializer
                                     {
                                         transMgr.rollback();
                                     }
-                                    catch (SQLException sqlExc2)
+                                    catch (TransactionException sqlExc2)
                                     {
                                         errorLogRef.reportError(
                                             sqlExc2,
                                             sysCtx,
                                             null,
-                                            "An SQL exception was thrown while trying to rollback a transaction"
+                                            "A database exception was thrown while trying to rollback a transaction"
                                         );
                                     }
                                     transMgr.returnConnection();

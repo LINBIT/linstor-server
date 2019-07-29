@@ -7,19 +7,20 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -31,9 +32,9 @@ import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -142,7 +143,7 @@ public class CtrlLayerDataHelper
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws SQLException, ValueOutOfRangeException,
+        throws DatabaseException, ValueOutOfRangeException,
             ExhaustedPoolException, ValueInUseException
     {
         List<DeviceLayerKind> layerStack;
@@ -191,7 +192,7 @@ public class CtrlLayerDataHelper
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws SQLException, ValueOutOfRangeException,
+        throws DatabaseException, ValueOutOfRangeException,
             ExhaustedPoolException, ValueInUseException
     {
         try
@@ -297,12 +298,12 @@ public class CtrlLayerDataHelper
                 exc
             );
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_SQL,
-                    "An sql exception occurred while creating layer data"
+                    "A database exception occurred while creating layer data"
                 ),
                 exc
             );
@@ -340,13 +341,13 @@ public class CtrlLayerDataHelper
         {
             throw new ImplementationError(exc);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             errorReporter.reportError(exc);
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_SQL,
-                    "An sql exception occurred while creating layer data"
+                    "A database exception occurred while creating layer data"
                 ),
                 exc
             );

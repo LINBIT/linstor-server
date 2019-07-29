@@ -9,6 +9,7 @@ import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -23,20 +24,19 @@ import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
-import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
-import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
 
 /**
  * Class for managing NVMe Target and Initiator
@@ -74,7 +74,7 @@ public class NvmeLayer implements DeviceLayer
 
     @Override
     public void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op
     }
@@ -91,7 +91,7 @@ public class NvmeLayer implements DeviceLayer
      */
     @Override
     public void process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
-        throws StorageException, ResourceException, VolumeException, AccessDeniedException, SQLException
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         NvmeRscData nvmeRscData = (NvmeRscData) rscData;
 
@@ -227,7 +227,7 @@ public class NvmeLayer implements DeviceLayer
 
     @Override
     public void updateGrossSize(VlmProviderObject vlmData)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         NvmeVlmData nvmeVlmData = (NvmeVlmData) vlmData;
 

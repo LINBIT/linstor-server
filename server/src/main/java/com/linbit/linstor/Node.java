@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -11,7 +12,7 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObject;
-import java.sql.SQLException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -111,7 +112,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         throws AccessDeniedException;
 
     void setActiveStltConn(AccessContext accCtx, NetInterface netIf)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     /**
      * @return true iff this is the initial connection attempt
@@ -119,10 +120,10 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
     boolean connectionEstablished();
 
     void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     boolean isDeleted();
 

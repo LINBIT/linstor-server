@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -21,7 +22,8 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.utils.Pair;
-import java.sql.SQLException;
+
+import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,8 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
-
-import javax.inject.Provider;
 
 /**
  *
@@ -86,7 +86,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Provider<TransactionMgr> transMgrProviderRef,
         Map<Volume.Key, VolumeConnection> vlmConnsMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
 
@@ -259,7 +259,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         {
             devicePath.set(path);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -267,7 +267,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     @Override
     public void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.USE);
@@ -293,7 +293,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         {
             usableSize.set(size);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             throw new ImplementationError("Driverless TransactionSimpleObject threw sql exc", exc);
         }
@@ -325,7 +325,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         {
             allocatedSize.set(size);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
             throw new ImplementationError("Driverless TransactionSimpleObject threw sql exc", exc);
         }
@@ -356,7 +356,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

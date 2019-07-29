@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.pojo.KeyValueStorePojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -17,8 +18,6 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.annotation.Nonnull;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -41,7 +40,7 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProvider);
         uuid = uuidRef;
@@ -103,7 +102,7 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
     }
 
     @Override
-    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {

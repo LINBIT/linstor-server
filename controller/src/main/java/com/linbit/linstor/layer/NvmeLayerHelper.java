@@ -9,6 +9,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -27,8 +28,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 
 @Singleton
 class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLayerObject, VlmDfnLayerObject>
@@ -94,7 +93,7 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
         String rscNameSuffixRef,
         RscLayerObject parentObjectRef
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         return layerDataFactory.createNvmeRscData(
@@ -120,7 +119,7 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
 
     @Override
     protected NvmeVlmData createVlmLayerData(NvmeRscData nvmeRscData, Volume vlm, LayerPayload payload)
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException
     {
         return layerDataFactory.createNvmeVlmData(vlm, nvmeRscData);
@@ -134,7 +133,7 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
     }
 
     @Override
-    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, SQLException
+    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, DatabaseException
     {
         // nothing to do
     }

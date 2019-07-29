@@ -6,6 +6,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -19,7 +20,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +88,7 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
     }
 
     @Override
-    public void setParent(@Nonnull RscLayerObject parentObj) throws SQLException
+    public void setParent(@Nonnull RscLayerObject parentObj) throws DatabaseException
     {
         parent.set(parentObj);
     }
@@ -99,19 +99,19 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
     }
 
     @Override
-    public void delete() throws SQLException
+    public void delete() throws DatabaseException
     {
         super.delete();
     }
 
     @Override
-    protected void deleteVlmFromDatabase(NvmeVlmData drbdVlmData) throws SQLException
+    protected void deleteVlmFromDatabase(NvmeVlmData drbdVlmData) throws DatabaseException
     {
         // no-op
     }
 
     @Override
-    protected void deleteRscFromDatabase() throws SQLException
+    protected void deleteRscFromDatabase() throws DatabaseException
     {
         // no-op
     }

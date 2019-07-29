@@ -1,12 +1,12 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.transaction.TransactionObject;
 
-import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -37,7 +37,7 @@ public interface StorPoolDefinition
         throws AccessDeniedException;
 
     void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 
     StorPoolDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 

@@ -13,11 +13,11 @@ import com.linbit.linstor.NodeIdAlloc;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -25,6 +25,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -42,16 +43,14 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFl
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
 public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDfnData, DrbdVlmDfnData>
 {
@@ -85,7 +84,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         DrbdRscDfnPayload drbdRscDfnPayload = payload.drbdRscDfn;
@@ -123,7 +122,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
 
     @Override
     protected void mergeRscDfnData(DrbdRscDfnData drbdRscDfnData, LayerPayload payload)
-        throws SQLException, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException
+        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException
     {
         DrbdRscDfnPayload drbdRscDfnPayload = payload.drbdRscDfn;
 
@@ -152,7 +151,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         DrbdRscDfnData drbdRscDfnData = ensureResourceDefinitionExists(
@@ -183,7 +182,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
         String rscNameSuffixRef,
         RscLayerObject parentObjectRef
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         ResourceDefinition rscDfn = rscRef.getDefinition();
@@ -213,7 +212,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
 
     @Override
     protected void mergeRscData(DrbdRscData drbdRscData, LayerPayload payloadRef)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         drbdRscData.getFlags().resetFlagsTo(
             apiCtx,
@@ -247,7 +246,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
         Volume vlm,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException, InvalidKeyException
     {
         DrbdVlmDfnData drbdVlmDfnData = ensureVolumeDefinitionExists(
@@ -399,7 +398,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
 
     @Override
     protected void resetStoragePools(RscLayerObject rscDataRef)
-        throws AccessDeniedException, SQLException, InvalidKeyException
+        throws AccessDeniedException, DatabaseException, InvalidKeyException
     {
         DrbdRscData drbdRscData = (DrbdRscData) rscDataRef;
         for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())

@@ -18,6 +18,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
@@ -112,7 +113,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     }
 
     public List<ResourceConnectionData> loadAll(Map<Pair<NodeName, ResourceName>, ? extends Resource> tmpRscMap)
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading all ResourceConnections");
         List<ResourceConnectionData> rscConnections = new ArrayList<>();
@@ -154,6 +155,10 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("Loaded %d ResourceConnections", rscConnections.size());
 
         return rscConnections;
@@ -166,28 +171,33 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         long flags,
         TcpPortNumber port
     )
-        throws SQLException
+        throws DatabaseException
     {
-        ResourceConnectionData resConData = new ResourceConnectionData(
-            java.util.UUID.fromString(resultSet.getString(UUID)),
-            sourceResource,
-            targetResource,
-            port,
-            tcpPortPool,
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            flags
-        );
-        errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(resConData));
-
-        return resConData;
+        try {
+            ResourceConnectionData resConData = new ResourceConnectionData(
+                java.util.UUID.fromString(resultSet.getString(UUID)),
+                sourceResource,
+                targetResource,
+                port,
+                tcpPortPool,
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider,
+                flags
+            );
+            errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(resConData));
+            return resConData;
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(ResourceConnectionData conDfnData) throws SQLException
+    public void create(ResourceConnectionData conDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating ResourceConnection %s", getId(conDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
@@ -217,6 +227,10 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
 
             errorReporter.logTrace("ResourceConnection created s", getId(conDfnData));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -225,7 +239,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(ResourceConnectionData conDfnData) throws SQLException
+    public void delete(ResourceConnectionData conDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting ResourceConnection %s", getId(conDfnData));
         try
@@ -241,6 +255,10 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                 stmt.setString(3, resName.value);
 
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace("ResourceConnection deleted %s", getId(conDfnData));
         }
@@ -294,7 +312,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void persist(ResourceConnectionData rscCon, long flags) throws SQLException
+        public void persist(ResourceConnectionData rscCon, long flags) throws DatabaseException
         {
             try
             {
@@ -334,6 +352,10 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                         getId(rscCon)
                     );
                 }
+                catch (SQLException sqlExc)
+                {
+                    throw new DatabaseException(sqlExc);
+                }
             }
             catch (AccessDeniedException accDeniedExc)
             {
@@ -347,7 +369,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
         public void update(ResourceConnectionData rscCon, TcpPortNumber port)
-            throws SQLException
+            throws DatabaseException
         {
             try
             {
@@ -374,6 +396,10 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                     stmt.setString(4, rscCon.getSourceResource(dbCtx).getDefinition().getName().value);
 
                     stmt.executeUpdate();
+                }
+                catch (SQLException sqlExc)
+                {
+                    throw new DatabaseException(sqlExc);
                 }
 
                 errorReporter.logTrace("Resource connection's port updated from [%d] to [%d] %s",

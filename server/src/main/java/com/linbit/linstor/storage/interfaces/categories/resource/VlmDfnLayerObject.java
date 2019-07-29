@@ -2,6 +2,7 @@ package com.linbit.linstor.storage.interfaces.categories.resource;
 
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.LayerObject;
 
@@ -16,7 +17,7 @@ public interface VlmDfnLayerObject extends LayerObject
 
     VolumeDefinition getVolumeDefinition();
 
-    void delete() throws SQLException;
+    void delete() throws DatabaseException;
 
     VlmDfnLayerDataApi getApiData(AccessContext accCtxRef);
 }

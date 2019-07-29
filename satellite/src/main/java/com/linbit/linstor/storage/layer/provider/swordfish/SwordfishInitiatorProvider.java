@@ -1,13 +1,15 @@
 package com.linbit.linstor.storage.layer.provider.swordfish;
 
+import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
-import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -25,46 +27,21 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.HttpHeader;
+import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
-import com.linbit.linstor.storage.utils.RestClient.RestOp;
-
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOWABLE_VALUES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CONNECTED_ENTITIES;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DURABLE_NAME;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DURABLE_NAME_FORMAT;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ENDPOINTS;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ENTITY_ROLE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_IDENTIFIERS;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_INTEL_RACK_SCALE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_LINKS;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ODATA_ID;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_OEM;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_PARAMETERS;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_RESOURCE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_VALUE_NQN;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_VALUE_TARGET;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.PATTERN_NQN;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ACTIONS;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ATTACH_RESOURCE_ACTION_INFO;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_BASE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_COMPOSED_NODE_ATTACH_RESOURCE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_COMPOSED_NODE_DETACH_RESOURCE;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_NODES;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.*;
 
 @Singleton
 public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiatorData>
@@ -104,7 +81,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
 
     @Override
     protected void createImpl(SfInitiatorData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         try
         {
@@ -142,7 +119,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
 
     @Override
     protected void deleteImpl(SfInitiatorData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         try
         {
@@ -186,7 +163,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     }
 
     private boolean isSfVolumeAttached(SfInitiatorData vlmData)
-        throws StorageException, AccessDeniedException, SQLException
+        throws StorageException, AccessDeniedException, DatabaseException
     {
         return getSfVolumeEndpointDurableNameNqn(vlmData) != null;
     }
@@ -249,7 +226,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     @SuppressWarnings("unchecked")
     private void waitUntilSfVlmIsAttachable(SfInitiatorData vlmData)
         throws InterruptedException, IOException, StorageException, AccessDeniedException,
-        InvalidKeyException, SQLException
+        InvalidKeyException, DatabaseException
     {
         String attachInfoAction = SF_BASE + SF_NODES + "/" + getComposedNodeId() + SF_ACTIONS +
             SF_ATTACH_RESOURCE_ACTION_INFO;
@@ -549,14 +526,14 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     }
 
     @Override
-    protected void setUsableSize(SfInitiatorData vlmData, long size) throws SQLException
+    protected void setUsableSize(SfInitiatorData vlmData, long size) throws DatabaseException
     {
         vlmData.setUsableSize(size);
     }
 
     @Override
     public void updateAllocatedSize(VlmProviderObject vlmDataRef)
-        throws AccessDeniedException, SQLException, StorageException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         SfInitiatorData vlmData = (SfInitiatorData) vlmDataRef;
         vlmData.setAllocatedSize(StltProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create()));

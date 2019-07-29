@@ -8,7 +8,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
-import java.sql.SQLException;
 
 public class SatelliteSnapshotDfnDriver implements SnapshotDefinitionDataDatabaseDriver
 {
@@ -31,14 +30,12 @@ public class SatelliteSnapshotDfnDriver implements SnapshotDefinitionDataDatabas
 
     @Override
     public void create(SnapshotDefinitionData snapshotDefinition)
-        throws SQLException
     {
         // no-op
     }
 
     @Override
     public void delete(SnapshotDefinitionData snapshotDefinition)
-        throws SQLException
     {
         // no-op
     }

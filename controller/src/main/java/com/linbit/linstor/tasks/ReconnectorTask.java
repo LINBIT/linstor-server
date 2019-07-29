@@ -5,28 +5,29 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.SatelliteConnector;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
-import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
-import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 
 @Singleton
 public class ReconnectorTask implements Task
@@ -170,7 +171,7 @@ public class ReconnectorTask implements Task
                                 transMgr.commit();
                                 peerSet.add(peer.getConnector().reconnect(peer));
                             }
-                            catch (AccessDeniedException | SQLException exc)
+                            catch (AccessDeniedException | DatabaseException exc)
                             {
                                 errorReporter.logError(exc.getMessage());
                             }
@@ -187,7 +188,7 @@ public class ReconnectorTask implements Task
                                     {
                                         transMgr.rollback();
                                     }
-                                    catch (SQLException exc)
+                                    catch (TransactionException exc)
                                     {
                                         errorReporter.reportError(exc);
                                     }

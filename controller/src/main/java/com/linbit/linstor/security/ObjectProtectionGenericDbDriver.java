@@ -1,13 +1,10 @@
 package com.linbit.linstor.security;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.LinStorSqlRuntimeException;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -16,6 +13,10 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 @Singleton
 public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabaseDriver
@@ -119,7 +120,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void insertOp(ObjectProtection objProt) throws SQLException
+    public void insertOp(ObjectProtection objProt) throws DatabaseException
     {
         errorReporter.logTrace("Creating ObjectProtection %s", getObjProtId(objProt.getObjectProtectionPath()));
         try (PreparedStatement stmt = getConnection().prepareStatement(OP_INSERT))
@@ -131,11 +132,15 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
 
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("ObjectProtection created %s", getObjProtId(objProt.getObjectProtectionPath()));
     }
 
     @Override
-    public void deleteOp(String objectPath) throws SQLException
+    public void deleteOp(String objectPath) throws DatabaseException
     {
         errorReporter.logTrace("Deleting ObjectProtection %s", getObjProtId(objectPath));
         try (PreparedStatement stmt = getConnection().prepareStatement(OP_DELETE))
@@ -144,11 +149,19 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
 
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         try (PreparedStatement stmt = getConnection().prepareStatement(ACL_DELETE_ALL))
         {
             stmt.setString(1, objectPath);
 
             stmt.executeUpdate();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
 
         errorReporter.logTrace("ObjectProtection deleted %s", getObjProtId(objectPath));
@@ -157,7 +170,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertAcl(ObjectProtection parent, Role role, AccessType grantedAccess)
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Creating AccessControl entry %s", getAclTraceId(parent, role, grantedAccess));
         try (PreparedStatement stmt = getConnection().prepareStatement(ACL_INSERT))
@@ -168,13 +181,17 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
 
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("AccessControl entry created %s", getAclDebugId(parent, role, grantedAccess));
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
     public void updateAcl(ObjectProtection parent, Role role, AccessType grantedAccess)
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace(
             "Updating AccessControl entry from %s to %s %s",
@@ -190,6 +207,10 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
 
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace(
             "AccessControl entry updated from %s to %s %s",
             parent.getAcl().getEntry(role),
@@ -199,7 +220,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
     }
 
     @Override
-    public void deleteAcl(ObjectProtection parent, Role role) throws SQLException
+    public void deleteAcl(ObjectProtection parent, Role role) throws DatabaseException
     {
         errorReporter.logTrace("Deleting AccessControl entry %s", getAclTraceId(parent, role));
         try (PreparedStatement stmt = getConnection().prepareStatement(ACL_DELETE))
@@ -209,13 +230,17 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
 
             stmt.executeUpdate();
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         errorReporter.logTrace("AccessControl entry deleted %s", getAclDebugId(parent, role));
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
     public ObjectProtection loadObjectProtection(String objPath, boolean logWarnIfNotExists)
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading ObjectProtection %s", getObjProtId(objPath));
         ObjectProtection objProt = null;
@@ -261,7 +286,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
                             name = "SecTypeName";
                             invalidValue = opResultSet.getString(3);
                         }
-                        throw new LinStorSqlRuntimeException(
+                        throw new LinStorDBRuntimeException(
                             String.format(
                                 "A stored %s in the table %s could not be restored." +
                                     "(ObjectPath=%s, invalid %s=%s)",
@@ -276,6 +301,10 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
                     }
                 }
             }
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         if (objProt != null)
         {
@@ -299,7 +328,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
                 }
                 catch (InvalidNameException invalidNameExc)
                 {
-                    throw new LinStorSqlRuntimeException(
+                    throw new LinStorDBRuntimeException(
                         String.format(
                             "A stored RoleName in the table %s could not be restored." +
                                 "(ObjectPath=%s, invalid RoleName=%s)",
@@ -310,6 +339,10 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
                         invalidNameExc
                     );
                 }
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace("AccessControl entries restored %s", getObjProtId(objPath));
 
@@ -398,7 +431,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
     private class IdentityGenericDbDriver implements SingleColumnDatabaseDriver<ObjectProtection, Identity>
     {
         @Override
-        public void update(ObjectProtection parent, Identity creator) throws SQLException
+        public void update(ObjectProtection parent, Identity creator) throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating ObjectProtection's Creator from %s to %s. %s",
@@ -413,6 +446,10 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
 
                 stmt.executeUpdate();
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             errorReporter.logTrace(
                 "ObjectProtection's Creator updated from %s to %s. %s",
                 parent.getCreator().name.displayValue,
@@ -425,7 +462,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
     private class RoleGenericDbDriver implements SingleColumnDatabaseDriver<ObjectProtection, Role>
     {
         @Override
-        public void update(ObjectProtection parent, Role owner) throws SQLException
+        public void update(ObjectProtection parent, Role owner) throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating ObjectProtection's Owner from %s to %s. %s",
@@ -440,6 +477,10 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
 
                 stmt.executeUpdate();
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
             errorReporter.logTrace(
                 "ObjectProtection's Creator updated from %s to %s. %s",
                 parent.getCreator().name.displayValue,
@@ -452,7 +493,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
     private class SecurityTypeGenericDbDriver implements SingleColumnDatabaseDriver<ObjectProtection, SecurityType>
     {
         @Override
-        public void update(ObjectProtection parent, SecurityType secType) throws SQLException
+        public void update(ObjectProtection parent, SecurityType secType) throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating ObjectProtection's SecurityType from %s to %s. %s",
@@ -466,6 +507,10 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
                 stmt.setString(2, parent.getObjectProtectionPath());
 
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace(
                 "ObjectProtection's SecurityType updated from %s to %s. %s",

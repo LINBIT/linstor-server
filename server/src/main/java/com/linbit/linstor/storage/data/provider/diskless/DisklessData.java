@@ -4,6 +4,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -13,10 +14,9 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import javax.annotation.Nullable;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 
 public class DisklessData extends AbsStorageVlmData
 {
@@ -29,7 +29,7 @@ public class DisklessData extends AbsStorageVlmData
         TransactionObjectFactory transObjFactory,
         Provider<TransactionMgr> transMgrProvider
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(
             vlmRef,

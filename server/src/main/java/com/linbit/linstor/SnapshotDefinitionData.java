@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
@@ -19,7 +20,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,7 +71,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMapRef,
         Map<NodeName, Snapshot> snapshotMapRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         super(transMgrProviderRef);
         objId = objIdRef;
@@ -229,7 +229,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
     @Override
     public void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         getFlags().enableFlags(accCtx, SnapshotDfnFlags.DELETE);
@@ -237,7 +237,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
     @Override
     public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {
@@ -293,7 +293,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
 
     @Override
     public void setInCreation(AccessContext accCtx, boolean inCreationRef)
-        throws SQLException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);

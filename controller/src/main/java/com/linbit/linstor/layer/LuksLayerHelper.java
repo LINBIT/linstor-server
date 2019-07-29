@@ -16,6 +16,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -29,12 +30,11 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 
 @Singleton
 class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLayerObject, VlmDfnLayerObject>
@@ -109,7 +109,7 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
         String rscNameSuffixRef,
         RscLayerObject parentObjectRef
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
         return layerDataFactory.createLuksRscData(
@@ -139,7 +139,7 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
         Volume vlm,
         LayerPayload payload
     )
-        throws AccessDeniedException, SQLException, ValueOutOfRangeException, ExhaustedPoolException,
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException
     {
         byte[] masterKey = secObjs.getCryptKey();
@@ -176,7 +176,7 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
     }
 
     @Override
-    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, SQLException
+    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, DatabaseException
     {
         // nothing to do
     }

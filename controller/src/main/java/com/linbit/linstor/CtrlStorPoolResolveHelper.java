@@ -7,8 +7,9 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.ApiSQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -25,8 +26,6 @@ import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.sql.SQLException;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -152,9 +151,9 @@ public class CtrlStorPoolResolveHelper
         {
             throw new ImplementationError(exc);
         }
-        catch (SQLException exc)
+        catch (DatabaseException exc)
         {
-            throw new ApiSQLException(exc);
+            throw new ApiDatabaseException(exc);
         }
 
         return new ApiCallRcWith<>(responses, storPool);

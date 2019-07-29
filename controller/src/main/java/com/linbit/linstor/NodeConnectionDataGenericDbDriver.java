@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -77,7 +78,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     }
 
     public List<NodeConnectionData> loadAll(Map<NodeName, ? extends Node> tmpNodesMap)
-        throws SQLException
+        throws DatabaseException
     {
         errorReporter.logTrace("Loading all NodeConnections");
         List<NodeConnectionData> nodeConnections = new ArrayList<>();
@@ -109,6 +110,10 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
 
         return nodeConnections;
     }
@@ -118,22 +123,28 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         Node sourceNode,
         Node targetNode
     )
-        throws SQLException
+        throws DatabaseException
     {
-        return new NodeConnectionData(
-            java.util.UUID.fromString(resultSet.getString(UUID)),
-            sourceNode,
-            targetNode,
-            this,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider
-        );
+        try {
+            return new NodeConnectionData(
+                java.util.UUID.fromString(resultSet.getString(UUID)),
+                sourceNode,
+                targetNode,
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(NodeConnectionData nodeConDfnData) throws SQLException
+    public void create(NodeConnectionData nodeConDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating NodeConnection %s", getId(nodeConDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
@@ -149,6 +160,10 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
 
             errorReporter.logTrace("NodeConnection created s", getId(nodeConDfnData));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
         catch (AccessDeniedException accessDeniedExc)
         {
             GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
@@ -156,7 +171,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     }
 
     @Override
-    public void delete(NodeConnectionData nodeConDfnData) throws SQLException
+    public void delete(NodeConnectionData nodeConDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting NodeConnection %s", getId(nodeConDfnData));
         try
@@ -172,6 +187,10 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
                 stmt.executeUpdate();
             }
             errorReporter.logTrace("NodeConnection deleted %s", getId(nodeConDfnData));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
         catch (AccessDeniedException accDeniedExc)
         {

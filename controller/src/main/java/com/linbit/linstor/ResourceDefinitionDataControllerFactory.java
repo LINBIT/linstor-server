@@ -5,6 +5,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
@@ -22,7 +23,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -69,7 +69,7 @@ public class ResourceDefinitionDataControllerFactory
         List<DeviceLayerKind> layerStack,
         Short peerSlotsRef
     )
-        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException,
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
         ResourceDefinitionData rscDfn = resourceDefinitionRepository.get(accCtx, rscName);

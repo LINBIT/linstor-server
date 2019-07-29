@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -25,7 +26,6 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -106,7 +106,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
         String rscSuffixRef,
         RscLayerObject parentRef
     )
-        throws SQLException
+        throws DatabaseException
     {
         Pair<DrbdRscData, Set<RscLayerObject>> ret;
         Set<RscLayerObject> childrenRscDataList = new HashSet<>();
@@ -138,7 +138,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
                     }
                     catch (ValueOutOfRangeException exc)
                     {
-                        throw new LinStorSqlRuntimeException(
+                        throw new LinStorDBRuntimeException(
                             "Failed to restore stored volume number " + resultSet.getInt(2)
                         );
                     }
@@ -156,12 +156,16 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
                 }
             }
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
 
         return new Pair<>(rscData, childrenRscDataList);
     }
 
     @Override
-    public void persist(LuksRscData luksRscDataRef) throws SQLException
+    public void persist(LuksRscData luksRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if LuksRscData will get a database table in future.
@@ -169,7 +173,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Override
-    public void persist(LuksVlmData luksVlmDataRef) throws SQLException
+    public void persist(LuksVlmData luksVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating LuksVlmData %s", getId(luksVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
@@ -181,17 +185,21 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
             stmt.executeUpdate();
             errorReporter.logTrace("LuksVlmData created %s", getId(luksVlmDataRef));
         }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
-    public void delete(LuksRscData luksRscDataRef) throws SQLException
+    public void delete(LuksRscData luksRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if LuksRscData will get a database table in future.
     }
 
     @Override
-    public void delete(LuksVlmData luksVlmDataRef) throws SQLException
+    public void delete(LuksVlmData luksVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting LuksVlmData %s", getId(luksVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
@@ -201,6 +209,10 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
 
             stmt.executeUpdate();
             errorReporter.logTrace("LuksVlmData deleted %s", getId(luksVlmDataRef));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
         }
     }
 
@@ -233,7 +245,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
         @SuppressWarnings("checkstyle:magicnumber")
         @Override
         public void update(LuksVlmData luksVlmDataRef, byte[] encryptedPassword)
-            throws SQLException
+            throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating LuksVlmData's encrypted password %s",
@@ -246,6 +258,10 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
                 stmt.setInt(3, luksVlmDataRef.getVlmNr().value);
 
                 stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
             }
             errorReporter.logTrace(
                 "LuksVlmData's secret updated %s",
