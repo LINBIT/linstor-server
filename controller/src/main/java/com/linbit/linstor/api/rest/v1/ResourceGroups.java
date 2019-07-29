@@ -227,7 +227,8 @@ public class ResourceGroups
                 rscName,
                 rscGrpSpwn.rsc_name,
                 rscGrpSpwn.vlm_sizes,
-                rscGrpSpwn.partial
+                rscGrpSpwn.partial,
+                rscGrpSpwn.definitions_only
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_SPAWN_RSC_DFN, request));
 

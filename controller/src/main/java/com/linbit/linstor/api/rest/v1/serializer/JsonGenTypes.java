@@ -528,6 +528,11 @@ public class JsonGenTypes
          * has no effect.
          */
         public boolean partial = false;
+        /**
+         * If true, the spawn command will only create the resource-definition with the volume-definitions
+         * but will not perform an auto-place, even if it is configured.
+         */
+        public boolean definitions_only = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

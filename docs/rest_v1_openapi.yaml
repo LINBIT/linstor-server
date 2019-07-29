@@ -3793,6 +3793,12 @@ components:
             
             If the count of vlm_sizes matches the number of volume-groups, this "partial" parameter 
             has no effect.  
+        definitions_only:
+          type: boolean
+          default: false
+          description: |
+            If true, the spawn command will only create the resource-definition with the volume-definitions
+            but will not perform an auto-place, even if it is configured.
     VolumeGroup:
       type: object
       properties:

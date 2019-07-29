@@ -569,7 +569,8 @@ public class CtrlRscGrpApiCallHandler
         String rscGrpNameRef,
         String rscDfnNameRef,
         List<Long> vlmSizesRef,
-        boolean partialRef
+        boolean partialRef,
+        boolean definitionsOnlyRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -596,6 +597,7 @@ public class CtrlRscGrpApiCallHandler
                     rscDfnNameRef,
                     vlmSizesRef,
                     partialRef,
+                    definitionsOnlyRef,
                     context
                 )
             )
@@ -607,6 +609,7 @@ public class CtrlRscGrpApiCallHandler
         String rscDfnNameRef,
         List<Long> vlmSizesRef,
         boolean partialRef,
+        boolean definitionsOnlyRef,
         ResponseContext contextRef
     )
     {
@@ -686,7 +689,7 @@ public class CtrlRscGrpApiCallHandler
                 )
             );
 
-            if (autoPlaceConfig != null)
+            if (autoPlaceConfig != null && !definitionsOnlyRef)
             {
                 AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterPojo(
                     autoPlaceConfig.getReplicaCount(peerCtx),
