@@ -7,10 +7,12 @@
 
 [http]
   enabled = true
+  listen_addr = "::"
   port = 3370
 
 [https]
   enabled = true
+  listen_addr = "::"
   port = 3371
 
   # keystore containing the https server certificate
