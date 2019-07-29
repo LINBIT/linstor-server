@@ -133,6 +133,7 @@ public class ApplyRsc implements ApiCall
                     rscDfnLayerDataApi = null;
                     break;
                 case UNKNOWN_LAYER: // fall-through
+                case UNRECOGNIZED: // fall-through
                 default:
                     throw new ImplementationError(
                         "Unknown resource definition layer (proto) kind: " + rscDfnData.getLayerType()

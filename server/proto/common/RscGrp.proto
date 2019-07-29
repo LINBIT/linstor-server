@@ -2,9 +2,7 @@ syntax = "proto2";
 
 package com.linbit.linstor.proto.common;
 
-import "common/AutoSelectFilter.proto";
 import "common/VlmGrp.proto";
-import "common/LayerType.proto";
 
 // Content of a resource group. Used in both, request and response messages
 message RscGrp
@@ -16,6 +14,4 @@ message RscGrp
 
     map<string, string> rsc_dfn_props = 4;
     repeated common.VlmGrp vlm_grp = 5;
-
-    optional AutoSelectFilter select_filter = 6;
 }

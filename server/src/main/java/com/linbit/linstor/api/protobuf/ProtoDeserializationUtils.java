@@ -8,14 +8,11 @@ import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
-import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
-import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
 import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
-import com.linbit.linstor.proto.common.AutoSelectFilterOuterClass.AutoSelectFilter;
 import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -89,19 +86,6 @@ public class ProtoDeserializationUtils
         return providerKindList;
     }
 
-    public static List<DeviceProviderKind> parseDeviceProviderKindWrapper(
-        List<ProviderTypeWrapper> providerTypeWrapperList
-    )
-    {
-        List<DeviceProviderKind> providerKindList = new ArrayList<>();
-        for (ProviderTypeWrapper providerTypeWrapper : providerTypeWrapperList)
-        {
-            providerKindList.add(parseDeviceProviderKind(providerTypeWrapper.getType()));
-        }
-        return providerKindList;
-    }
-
-
     public static DeviceProviderKind parseDeviceProviderKind(ProviderType providerKindRef)
     {
         DeviceProviderKind kind = null;
@@ -137,6 +121,7 @@ public class ProtoDeserializationUtils
                     kind = DeviceProviderKind.FILE_THIN;
                     break;
                 case UNKNOWN_PROVIDER: // fall-through
+                case UNRECOGNIZED: // fall-through
                 default:
                     throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);
             }
@@ -150,16 +135,6 @@ public class ProtoDeserializationUtils
         for (LayerType layerType : layerTypeList)
         {
             devLayerKindList.add(parseDeviceLayerKind(layerType));
-        }
-        return devLayerKindList;
-    }
-
-    public static List<DeviceLayerKind> parseDeviceLayerKindWrapper(List<LayerTypeWrapper> layerTypeWrapperList)
-    {
-        List<DeviceLayerKind> devLayerKindList = new ArrayList<>();
-        for (LayerTypeWrapper layerTypeWrapper : layerTypeWrapperList)
-        {
-            devLayerKindList.add(parseDeviceLayerKind(layerTypeWrapper.getType()));
         }
         return devLayerKindList;
     }
@@ -182,6 +157,7 @@ public class ProtoDeserializationUtils
                 kind = DeviceLayerKind.NVME;
                 break;
             case UNKNOWN_LAYER: // fall-trough
+            case UNRECOGNIZED: // fall-through
             default:
                 throw new ImplementationError("Unknown (proto) LayerType: " + layerTypeRef);
         }
@@ -229,7 +205,8 @@ public class ProtoDeserializationUtils
             rscGrpProto.getDescription(),
             rscGrpProto.getRscDfnPropsMap(),
             parseVlmGrpList(rscGrpProto.getVlmGrpList()),
-            parseAutoSelectFilter(rscGrpProto.getSelectFilter())
+            // satellite does not need the autoSelectFilter anyways
+            new AutoSelectFilterPojo(null, null, null, null, null, null, null, null, null)
         );
     }
 
@@ -249,21 +226,6 @@ public class ProtoDeserializationUtils
             UUID.fromString(vlmGrpProto.getUuid()),
             vlmGrpProto.getVlmNr(),
             vlmGrpProto.getVlmDfnPropsMap()
-        );
-    }
-
-    public static AutoSelectFilterPojo parseAutoSelectFilter(AutoSelectFilter selectFilter)
-    {
-        return new AutoSelectFilterPojo(
-            selectFilter.getReplicaCount(),
-            selectFilter.getStoragePool(),
-            selectFilter.getDoNotPlaceWithRscList(),
-            selectFilter.getDoNotPlaceWithRscRegex(),
-            selectFilter.getReplicasOnSameList(),
-            selectFilter.getReplicasOnDifferentList(),
-            ProtoDeserializationUtils.parseDeviceLayerKindList(selectFilter.getLayerStackList()),
-            ProtoDeserializationUtils.parseDeviceProviderKind(selectFilter.getProvidersList()),
-            selectFilter.getDisklessOnRemaining()
         );
     }
 }

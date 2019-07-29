@@ -168,9 +168,8 @@ public class ProtoLayerUtils
                 }
             }
             break;
-            case UNKNOWN_LAYER:
-                ret = null;
-                break;
+            case UNKNOWN_LAYER: // fall-through
+            case UNRECOGNIZED: // fall-through
             default:
                 throw new ImplementationError(
                     "Unexpected layer type in proto message: " +
@@ -218,6 +217,7 @@ public class ProtoLayerUtils
                 str = "NVME";
                 break;
             case UNKNOWN_LAYER: // fall-through
+            case UNRECOGNIZED: // fall-through
             default:
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
@@ -259,6 +259,7 @@ public class ProtoLayerUtils
                     rscDfnLayerDataApi = null; // TODO: not sure yet
                     break;
                 case UNKNOWN_LAYER: // fall-through
+                case UNRECOGNIZED: // fall-through
                 default:
                     throw new ImplementationError(
                         "Unknown resource definition layer (proto) kind: " + rscDfnLayerData.getLayerType()
@@ -308,6 +309,7 @@ public class ProtoLayerUtils
                     vlmDfnLayerDataApi = null; // TODO: not sure yet
                     break;
                 case UNKNOWN_LAYER: // fall-through
+                case UNRECOGNIZED: // fall-through
                 default:
                     throw new ImplementationError(
                         "Unknown volume definition layer (proto) kind: " + vlmDfnLayerData.getLayerType()
@@ -499,6 +501,7 @@ public class ProtoLayerUtils
                 vlmDfnApi = null;
                 break;
             case UNKNOWN_PROVIDER: // fall-through
+            case UNRECOGNIZED: // fall-through
             default:
                 throw new ImplementationError(
                     "Unexpected provider: " + storageVlmDfnRef.getProviderKind()

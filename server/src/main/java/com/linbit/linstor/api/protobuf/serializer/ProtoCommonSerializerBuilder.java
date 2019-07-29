@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
@@ -52,7 +51,6 @@ import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
 import com.linbit.linstor.proto.common.FilterOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
-import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksRsc;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
@@ -61,7 +59,6 @@ import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeRsc;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
-import com.linbit.linstor.proto.common.ProviderTypeWrapperOuterClass.ProviderTypeWrapper;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
 import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
@@ -91,7 +88,6 @@ import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 import com.linbit.linstor.proto.common.VlmOuterClass;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
-import com.linbit.linstor.proto.common.AutoSelectFilterOuterClass.AutoSelectFilter;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
@@ -275,8 +271,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setVersionMinor(stltVersionRef[1])
                 .setVersionPatch(stltVersionRef[2])
                 .addAllResponses(serializeApiCallRc(responses))
-                .addAllSupportedLayer(asProtoLayerTypeWrapperList(supportedDeviceLayerRef))
-                .addAllSupportedProvider(asProtoProviderTypeWrapperList(supportedDeviceProviderRef))
+                .addAllSupportedLayer(asProtoLayerTypeList(supportedDeviceLayerRef))
+                .addAllSupportedProvider(asProtoProviderTypeList(supportedDeviceProviderRef))
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -297,24 +293,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return layerTypes;
     }
 
-    private static List<LayerTypeWrapper> asProtoLayerTypeWrapperList(List<DeviceLayerKind> devLayerKindList)
-    {
-        List<LayerTypeWrapper> layerTypes = new ArrayList<>();
-        for (DeviceLayerKind devLayerKind : devLayerKindList)
-        {
-            layerTypes.add(asLayerTypeWrapper(devLayerKind));
-        }
-        return layerTypes;
-    }
-
-    private static List<ProviderTypeWrapper> asProtoProviderTypeWrapperList(
+    private static List<ProviderType> asProtoProviderTypeList(
         List<DeviceProviderKind> devProviderKindList
     )
     {
-        List<ProviderTypeWrapper> providerTypes = new ArrayList<>();
+        List<ProviderType> providerTypes = new ArrayList<>();
         for (DeviceProviderKind devProviderKind : devProviderKindList)
         {
-            providerTypes.add(asProviderTypeWrapper(devProviderKind));
+            providerTypes.add(asProviderType(devProviderKind));
         }
         return providerTypes;
     }
@@ -609,31 +595,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         {
             builder.setDescription(rscGrpApi.getDescription());
         }
-        if (rscGrpApi.getAutoSelectFilter() != null)
-        {
-            builder.setSelectFilter(serializeAutoSelectFilter(rscGrpApi.getAutoSelectFilter()));
-        }
-        return builder.build();
-    }
-
-    public static AutoSelectFilter serializeAutoSelectFilter(AutoSelectFilterApi autoSelectFilter)
-    {
-        AutoSelectFilter.Builder builder = AutoSelectFilter.newBuilder()
-            .addAllDoNotPlaceWithRsc(autoSelectFilter.getDoNotPlaceWithRscList())
-            .addAllReplicasOnDifferent(autoSelectFilter.getReplicasOnDifferentList())
-            .addAllReplicasOnSame(autoSelectFilter.getReplicasOnSameList());
-        if (autoSelectFilter.getReplicaCount() != null)
-        {
-            builder.setReplicaCount(autoSelectFilter.getReplicaCount());
-        }
-        if (autoSelectFilter.getDoNotPlaceWithRscRegex() != null)
-        {
-            builder.setDoNotPlaceWithRscRegex(autoSelectFilter.getDoNotPlaceWithRscRegex());
-        }
-        if (autoSelectFilter.getStorPoolNameStr() != null)
-        {
-            builder.setStoragePool(autoSelectFilter.getStorPoolNameStr());
-        }
         return builder.build();
     }
 
@@ -867,11 +828,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .build();
     }
 
-    private static ProviderTypeWrapper asProviderTypeWrapper(DeviceProviderKind deviceProviderKindRef)
-    {
-        return ProviderTypeWrapper.newBuilder().setType(asProviderType(deviceProviderKindRef)).build();
-    }
-
     private static ProviderType asProviderType(DeviceProviderKind deviceProviderKindRef) throws ImplementationError
     {
         ProviderType type;
@@ -1045,11 +1001,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         }
 
         return list;
-    }
-
-    private static LayerTypeWrapper asLayerTypeWrapper(final DeviceLayerKind kind)
-    {
-        return LayerTypeWrapper.newBuilder().setType(asLayerType(kind)).build();
     }
 
     private static LayerType asLayerType(final DeviceLayerKind kind)
