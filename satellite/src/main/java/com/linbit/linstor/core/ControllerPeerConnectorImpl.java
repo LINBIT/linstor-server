@@ -22,7 +22,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.SQLException;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 

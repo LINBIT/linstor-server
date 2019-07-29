@@ -1,7 +1,5 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import java.sql.SQLException;
-
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.TransactionMgr;

@@ -15,7 +15,6 @@ import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
-import java.sql.SQLException;
 
 public class DbCoreObjProtInitializer
 {

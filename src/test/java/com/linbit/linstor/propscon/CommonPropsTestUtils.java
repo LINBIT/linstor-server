@@ -1,6 +1,8 @@
 package com.linbit.linstor.propscon;
 
-import java.sql.SQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.security.AccessDeniedException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,9 +17,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.security.AccessDeniedException;
 
 public class CommonPropsTestUtils
 {

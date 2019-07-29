@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler;
 
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
@@ -12,16 +10,18 @@ import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
 import com.linbit.locks.LockGuard;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.sql.SQLException;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
 
 @Singleton
 public class ScopeRunner

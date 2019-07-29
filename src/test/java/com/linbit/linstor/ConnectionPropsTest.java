@@ -11,12 +11,11 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;

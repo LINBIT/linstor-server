@@ -35,8 +35,6 @@ import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPool
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;

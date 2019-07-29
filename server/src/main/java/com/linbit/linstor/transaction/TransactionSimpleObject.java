@@ -5,10 +5,8 @@ import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
-import java.sql.SQLException;
-import java.util.Objects;
-
 import javax.inject.Provider;
+import java.util.Objects;
 
 public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObject
 {

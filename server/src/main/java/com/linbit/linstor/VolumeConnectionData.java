@@ -15,11 +15,9 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
-import java.sql.SQLException;
+import javax.inject.Provider;
 import java.util.Arrays;
 import java.util.UUID;
-
-import javax.inject.Provider;
 
 /**
  * Defines a connection between two LinStor volumes

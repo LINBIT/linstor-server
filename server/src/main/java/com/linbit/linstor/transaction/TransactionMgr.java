@@ -1,7 +1,6 @@
 package com.linbit.linstor.transaction;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 
 public interface TransactionMgr
 {

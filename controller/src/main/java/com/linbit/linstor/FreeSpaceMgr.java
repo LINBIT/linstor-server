@@ -14,8 +14,6 @@ import com.linbit.linstor.transaction.TransactionSet;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
-
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;

@@ -9,9 +9,9 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.StltSecurityObjects;
-import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
@@ -21,15 +21,13 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 
-import java.sql.SQLException;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
 
 @Singleton
 public class StltCryptApiCallHelper

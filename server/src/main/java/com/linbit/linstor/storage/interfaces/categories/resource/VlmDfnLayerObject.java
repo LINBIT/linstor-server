@@ -6,8 +6,6 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.LayerObject;
 
-import java.sql.SQLException;
-
 /**
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
