@@ -56,6 +56,7 @@ import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.TestDbModule;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -239,7 +240,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new ControllerCoreModule(),
             new SharedDbConnectionPoolModule(),
             new TestDbModule(),
-            new ControllerTransactionMgrModule(),
+            new ControllerTransactionMgrModule(DatabaseDriverInfo.DatabaseType.SQL),
             new TestApiModule(),
             new ControllerSecurityModule(),
             new ApiCallHandlerModule(),

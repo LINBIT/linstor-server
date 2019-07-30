@@ -25,6 +25,7 @@ import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
+import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -433,6 +434,30 @@ public final class Controller
         return linstorConfig;
     }
 
+    private static DatabaseDriverInfo.DatabaseType checkDatabaseConfig(
+        ErrorReporter errorReporter,
+        LinstorConfigToml linstorConfig
+    )
+    {
+        DatabaseDriverInfo.DatabaseType dbType;
+        if (linstorConfig.getDB().getConnectionUrl().startsWith("jdbc"))
+        {
+            dbType = DatabaseDriverInfo.DatabaseType.SQL;
+        }
+        else if (linstorConfig.getDB().getConnectionUrl().startsWith("etcd"))
+        {
+            dbType = DatabaseDriverInfo.DatabaseType.ECTD;
+        }
+        else
+        {
+            errorReporter.logError("Database uri not supported: " + linstorConfig.getDB().getConnectionUrl());
+            System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
+            throw new RuntimeException("Can't touch this");
+        }
+
+        return dbType;
+    }
+
     public static void main(String[] args)
     {
         ControllerCmdlArguments cArgs = ControllerArgumentParser.parseCommandLine(args);
@@ -454,6 +479,9 @@ public final class Controller
         );
 
         LinstorConfigToml linstorConfig = parseControllerConfig(errorLog, cArgs);
+
+        // check database type
+        DatabaseDriverInfo.DatabaseType dbType = checkDatabaseConfig(errorLog, linstorConfig);
 
         boolean dbgCnsEnabled = false;
         Controller instance = null;
@@ -534,7 +562,7 @@ public final class Controller
                 new EventModule(eventSerializers, eventHandlers),
                 new DebugModule(),
                 new ControllerDebugModule(),
-                new ControllerTransactionMgrModule()
+                new ControllerTransactionMgrModule(dbType)
             );
             errorLog.logInfo(String.format(
                     "Dependency injection finished: %dms",
