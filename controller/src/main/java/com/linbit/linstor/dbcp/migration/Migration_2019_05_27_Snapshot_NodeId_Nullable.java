@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 
@@ -25,7 +25,7 @@ public class Migration_2019_05_27_Snapshot_NodeId_Nullable extends LinstorMigrat
         // I could not figure out how to check if this update
         // was already applied...
 
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             MigrationUtils.dropColumnConstraintNotNull(
                 MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData()),

@@ -9,7 +9,7 @@ import com.linbit.linstor.VolumeDefinition.InitMaps;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -128,7 +128,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -350,7 +350,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }
@@ -389,7 +389,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }

@@ -1,8 +1,8 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.GenericDbUtils;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 
@@ -26,7 +26,7 @@ public class Migration_2018_03_27_14_01_Init extends LinstorMigration
             {
                 GenericDbUtils.executeStatement(connection, databaseInfo.isolationStatement());
             }
-            GenericDbDriver.runSql(connection, databaseInfo.prepareInit(sql));
+            SQLUtils.runSql(connection, databaseInfo.prepareInit(sql));
         }
     }
 }

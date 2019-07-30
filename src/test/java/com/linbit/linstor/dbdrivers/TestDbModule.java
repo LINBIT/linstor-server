@@ -60,7 +60,7 @@ public class TestDbModule extends AbstractModule
 
         bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 
-        bind(DatabaseDriver.class).to(GenericDbDriver.class);
+        bind(DatabaseDriver.class).to(DatabaseLoader.class);
 
         bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
         bind(NodeDataDatabaseDriver.class).to(NodeDataGenericDbDriver.class);

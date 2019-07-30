@@ -1,7 +1,8 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo.DbProduct;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
+
 import java.sql.Connection;
 
 @SuppressWarnings("checkstyle:typename")
@@ -29,7 +30,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
 
         if (!MigrationUtils.columnExists(connection, TBL_LSV, NODE_NAME))
         {
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.addColumn(
                     dbProduct,
@@ -41,7 +42,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
                 )
             );
 
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.addColumn(
                     dbProduct,
@@ -53,7 +54,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
                 )
             );
 
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 "UPDATE LAYER_STORAGE_VOLUMES LSV SET NODE_NAME=" +
                 "(" +
@@ -64,7 +65,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
                     "  V.VLM_NR = LSV.VLM_NR" +
                 ");"
             );
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 "UPDATE LAYER_STORAGE_VOLUMES LSV SET STOR_POOL_NAME=" +
                 "(" +
@@ -76,7 +77,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
                 ");"
             );
 
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.addColumnConstraintNotNull(
                     dbProduct,
@@ -85,7 +86,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
                     LSV_NODE_NAME_TYPE
                 )
             );
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.addColumnConstraintNotNull(
                     dbProduct,
@@ -94,7 +95,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
                     LSV_STOR_POOL_NAME_TYPE
                 )
             );
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 "ALTER TABLE " + TBL_LSV + " ADD CONSTRAINT FK_LSV_SP " +
                 "FOREIGN KEY (" + NODE_NAME + ", " + STOR_POOL_NAME + ") REFERENCES NODE_STOR_POOL(" +
@@ -102,11 +103,11 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
             );
 
 
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.dropColumnConstraintForeignKey(dbProduct, "VOLUMES", "FK_V_STOR_POOL_DFNS")
             );
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.dropColumn(dbProduct, "VOLUMES", "STOR_POOL_NAME")
             );

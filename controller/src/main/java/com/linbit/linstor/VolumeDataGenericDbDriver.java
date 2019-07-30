@@ -6,7 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -211,7 +211,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -311,7 +311,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }

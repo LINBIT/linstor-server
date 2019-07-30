@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
+
 import java.sql.Connection;
 
 @SuppressWarnings("checkstyle:typename")
@@ -20,7 +21,7 @@ public class Migration_2019_07_09_DrbdVlm_ExtMetaStorPool extends LinstorMigrati
     {
         if (!MigrationUtils.tableExists(connection, "LAYER_DRBD_VOLUMES"))
         {
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.loadResource(
                     "2019_07_09_add-layer-drbd-volumes.sql"

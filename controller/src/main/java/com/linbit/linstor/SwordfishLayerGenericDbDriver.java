@@ -6,7 +6,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -152,7 +152,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
         catch (ValueOutOfRangeException exc)
         {

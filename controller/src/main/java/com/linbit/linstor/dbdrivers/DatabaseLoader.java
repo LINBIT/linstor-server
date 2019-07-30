@@ -9,7 +9,6 @@ import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.KeyValueStore;
 import com.linbit.linstor.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.KeyValueStoreName;
-import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.LuksLayerGenericDbDriver;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataGenericDbDriver;
@@ -69,13 +68,7 @@ import com.linbit.utils.Triple;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -84,30 +77,25 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 @Singleton
-public class GenericDbDriver implements DatabaseDriver
+public class DatabaseLoader implements DatabaseDriver
 {
     public static final ServiceName DFLT_SERVICE_INSTANCE_NAME;
-    private static final ObjectMapper OBJ_MAPPER;
 
     static
     {
         try
         {
             DFLT_SERVICE_INSTANCE_NAME = new ServiceName("GernericDatabaseService");
-            OBJ_MAPPER = new ObjectMapper();
         }
         catch (InvalidNameException nameExc)
         {
@@ -150,7 +138,7 @@ public class GenericDbDriver implements DatabaseDriver
 
 
     @Inject
-    public GenericDbDriver(
+    public DatabaseLoader(
         @SystemContext AccessContext privCtx,
         NodeDataGenericDbDriver nodeDriverRef,
         NetInterfaceDataGenericDbDriver netIfDriverRef,
@@ -662,60 +650,6 @@ public class GenericDbDriver implements DatabaseDriver
         );
     }
 
-    public static void runSql(final Connection con, final String script)
-        throws SQLException
-    {
-        StringBuilder cmdBuilder = new StringBuilder();
-        Scanner scanner = new Scanner(script);
-        while (scanner.hasNextLine())
-        {
-            String trimmedLine = scanner.nextLine().trim();
-            if (!trimmedLine.startsWith("--"))
-            {
-                cmdBuilder.append("\n").append(trimmedLine);
-                if (trimmedLine.endsWith(";"))
-                {
-                    cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
-                    String cmd = cmdBuilder.toString();
-                    cmdBuilder.setLength(0);
-                    GenericDbUtils.executeStatement(con, cmd);
-                }
-            }
-        }
-        scanner.close();
-        String nonTerminatedStatement = cmdBuilder.toString();
-        if (!nonTerminatedStatement.trim().isEmpty())
-        {
-            GenericDbUtils.executeStatement(con, nonTerminatedStatement);
-        }
-    }
-
-    public static void runSql(Connection con, BufferedReader br)
-        throws IOException, SQLException
-    {
-        StringBuilder cmdBuilder = new StringBuilder();
-        for (String line = br.readLine(); line != null; line = br.readLine())
-        {
-            String trimmedLine = line.trim();
-            if (!trimmedLine.startsWith("--"))
-            {
-                cmdBuilder.append("\n").append(trimmedLine);
-                if (trimmedLine.endsWith(";"))
-                {
-                    cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
-                    String cmd = cmdBuilder.toString();
-                    cmdBuilder.setLength(0);
-                    GenericDbUtils.executeStatement(con, cmd);
-                }
-            }
-        }
-        String nonTerminatedStatement = cmdBuilder.toString();
-        if (!nonTerminatedStatement.trim().isEmpty())
-        {
-            GenericDbUtils.executeStatement(con, nonTerminatedStatement);
-        }
-    }
-
     private static <T> BinaryOperator<T> throwingMerger()
     {
         return (key, value) ->
@@ -725,73 +659,6 @@ public class GenericDbDriver implements DatabaseDriver
                 null
             );
         };
-    }
-
-    public static void setStringIfNotNull(PreparedStatement stmt, int idx, String str) throws SQLException
-    {
-        if (str != null)
-        {
-            stmt.setString(idx, str);
-        }
-        else
-        {
-            stmt.setNull(idx, Types.VARCHAR);
-        }
-    }
-
-    public static void setIntIfNotNull(PreparedStatement stmt, int idx, Integer val) throws SQLException
-    {
-        if (val != null)
-        {
-            stmt.setInt(idx, val);
-        }
-        else
-        {
-            stmt.setNull(idx, Types.INTEGER);
-        }
-    }
-
-    public static void setJsonIfNotNull(PreparedStatement stmt, int idx, Object obj) throws SQLException
-    {
-        if (obj != null)
-        {
-            try
-            {
-                stmt.setString(idx, OBJ_MAPPER.writeValueAsString(obj));
-            }
-            catch (IOException exc)
-            {
-                throw new LinStorDBRuntimeException(
-                    "Exception occurred while serializing to json array: " + obj.toString(),
-                    exc
-                );
-            }
-        }
-        else
-        {
-            stmt.setNull(idx, Types.VARCHAR);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static List<String> getAsStringList(ResultSet resultSet, String columnName)
-    {
-        List<String> list;
-        try
-        {
-            list = OBJ_MAPPER.readValue(
-                resultSet.getString(columnName),
-                List.class
-            );
-        }
-        catch (IOException | SQLException exc)
-        {
-            throw new LinStorDBRuntimeException(
-                "Exception occurred while deserializing from json array",
-                exc
-            );
-        }
-        return list;
     }
 
 }

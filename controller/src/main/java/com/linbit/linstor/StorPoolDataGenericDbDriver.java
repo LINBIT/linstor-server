@@ -5,7 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -271,7 +271,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
     }
 
@@ -306,7 +306,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
     }
 

@@ -1,8 +1,9 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
+
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -58,7 +59,7 @@ public class Migration_2018_12_13_SnapshotNodeId extends LinstorMigration
     {
         if (!MigrationUtils.columnExists(connection, TBL_SNAPSHOT, S_NODE_ID))
         {
-            GenericDbDriver.runSql(connection,
+            SQLUtils.runSql(connection,
                 "ALTER TABLE " + TBL_SNAPSHOT  + " ADD COLUMN " + S_NODE_ID + " INTEGER NOT NULL DEFAULT 0;");
 
             setNodeIds(connection);

@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 import java.util.Map;
@@ -29,7 +29,7 @@ public class Migration_2019_03_14_ProviderType extends LinstorMigration
 
         for (Entry<String, String> entry : update.entrySet())
         {
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 String.format(
                     "UPDATE NODE_STOR_POOL SET DRIVER_NAME = '%s' WHERE DRIVER_NAME = '%s';",

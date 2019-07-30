@@ -3,8 +3,8 @@ package com.linbit.linstor.core;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
 import com.linbit.linstor.dbdrivers.GenericDbUtils;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CMDLINE_ERROR;
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR;
@@ -206,7 +206,7 @@ public class LinstorConfig
                 con.setAutoCommit(false);
                 try
                 {
-                    GenericDbDriver.runSql(con, new BufferedReader(input));
+                    SQLUtils.runSql(con, new BufferedReader(input));
                     con.commit();
                 }
                 catch (IOException ioExc)

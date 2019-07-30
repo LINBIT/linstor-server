@@ -5,7 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -115,7 +115,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -302,7 +302,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }

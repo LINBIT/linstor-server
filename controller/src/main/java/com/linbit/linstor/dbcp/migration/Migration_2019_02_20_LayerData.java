@@ -2,7 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -113,7 +113,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
     {
         if (!MigrationUtils.tableExists(connection, TBL_LAYER_RESOURCE_IDS))
         {
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.loadResource(
                     "2019_02_20_add-layer-data.sql"
@@ -344,7 +344,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
 
             for (String sql : sqlStatements)
             {
-                GenericDbDriver.runSql(connection, sql);
+                SQLUtils.runSql(connection, sql);
             }
         }
     }

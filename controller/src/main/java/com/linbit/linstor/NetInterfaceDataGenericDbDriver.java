@@ -8,7 +8,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -206,7 +206,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
         errorReporter.logTrace("NetInterface created %s", getId(netInterfaceData));
     }
@@ -278,7 +278,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
         return ip;
     }
@@ -476,7 +476,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
             }
             return port;
         }
@@ -527,7 +527,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             }
             catch (AccessDeniedException accDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
             }
             return type;
         }

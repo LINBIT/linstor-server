@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 
@@ -17,7 +17,7 @@ public class Migration_2018_05_30_13_55_AddSnapshots extends LinstorMigration
         if (!MigrationUtils.tableExists(connection, "SNAPSHOTS"))
         {
             String sql = MigrationUtils.loadResource("2018_05_30_15_55_add-snapshots.sql");
-            GenericDbDriver.runSql(connection, sql);
+            SQLUtils.runSql(connection, sql);
         }
     }
 }

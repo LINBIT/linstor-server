@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -166,7 +166,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -194,7 +194,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
     }
 
@@ -218,7 +218,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
         return id;
     }

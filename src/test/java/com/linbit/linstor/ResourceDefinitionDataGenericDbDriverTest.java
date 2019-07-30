@@ -5,7 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
@@ -152,7 +152,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
-        assertThat(GenericDbDriver.getAsStringList(resultSet, LAYER_STACK))
+        assertThat(SQLUtils.getAsStringList(resultSet, LAYER_STACK))
             .containsExactly(DeviceLayerKind.DRBD.name(), DeviceLayerKind.STORAGE.name());
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 

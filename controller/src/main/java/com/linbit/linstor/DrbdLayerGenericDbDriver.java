@@ -10,7 +10,7 @@ import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -361,7 +361,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
         catch (ValueOutOfRangeException | ExhaustedPoolException | ValueInUseException exc)
         {
@@ -606,7 +606,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -863,7 +863,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
             }
             catch (AccessDeniedException accDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
             }
         }
     }

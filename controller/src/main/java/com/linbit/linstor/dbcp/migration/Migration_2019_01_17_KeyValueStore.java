@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
+
 import java.sql.Connection;
 
 @SuppressWarnings("checkstyle:typename")
@@ -23,14 +24,14 @@ public class Migration_2019_01_17_KeyValueStore extends LinstorMigration
         if (!MigrationUtils.tableExists(connection, "KEY_VALUE_STORE"))
         {
             // unify instance name prefixes
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 "UPDATE " + TBL_PROPS_CONTAINERS +
                 " SET " + S_PROPS_INSTANCE + " = '" + NEW_INSTANCE_NAME +
                 "' WHERE " + S_PROPS_INSTANCE + " = '" + OLD_INSTANCE_NAME + "';"
             );
 
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.loadResource(
                     "2019_01_21_add-kvs.sql"

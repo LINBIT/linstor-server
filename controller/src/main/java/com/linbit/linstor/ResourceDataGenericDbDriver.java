@@ -6,7 +6,7 @@ import com.linbit.linstor.Resource.InitMaps;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -121,7 +121,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
         errorReporter.logTrace("Resource created %s", getId(res));
     }
@@ -347,7 +347,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
             }
             catch (AccessDeniedException accDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
             }
         }
     }

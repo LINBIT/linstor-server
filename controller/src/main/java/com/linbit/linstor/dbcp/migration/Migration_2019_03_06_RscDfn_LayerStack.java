@@ -1,7 +1,8 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -51,7 +52,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
 
             for (String sql : sqlStatements)
             {
-                GenericDbDriver.runSql(connection, sql);
+                SQLUtils.runSql(connection, sql);
             }
 
             ObjectMapper objectMapper = new ObjectMapper();
@@ -177,7 +178,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
 
             for (String sql : sqlStatements)
             {
-                GenericDbDriver.runSql(connection, sql);
+                SQLUtils.runSql(connection, sql);
             }
 
         }

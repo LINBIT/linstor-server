@@ -7,7 +7,8 @@ import com.linbit.linstor.ResourceDefinition.InitMaps;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -130,10 +131,10 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             stmt.setString(2, resourceDefinition.getName().value);
             stmt.setString(3, resourceDefinition.getName().displayValue);
             stmt.setLong(4, resourceDefinition.getFlags().getFlagsBits(dbCtx));
-            GenericDbDriver.setJsonIfNotNull(
+            SQLUtils.setJsonIfNotNull(
                 stmt,
                 5,
-                GenericDbDriver.asStrList(resourceDefinition.getLayerStack(dbCtx))
+                DatabaseLoader.asStrList(resourceDefinition.getLayerStack(dbCtx))
             );
             stmt.setBytes(6, resourceDefinition.getExternalName());
             stmt.executeUpdate();
@@ -146,7 +147,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -228,7 +229,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                 resourceName,
                 resultSet.getBytes(RD_EXT_NAME),
                 resultSet.getLong(RD_FLAGS),
-                GenericDbDriver.asDevLayerKindList(GenericDbDriver.getAsStringList(resultSet, RD_LAYERS)),
+                DatabaseLoader.asDevLayerKindList(SQLUtils.getAsStringList(resultSet, RD_LAYERS)),
                 this,
                 propsContainerFactory,
                 transObjFactory,
@@ -363,7 +364,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             }
             catch (AccessDeniedException accDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
             }
         }
     }
@@ -402,7 +403,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             );
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_LAYER_STACK))
             {
-                GenericDbDriver.setJsonIfNotNull(stmt, 1, GenericDbDriver.asStrList(backingCollection));
+                SQLUtils.setJsonIfNotNull(stmt, 1, DatabaseLoader.asStrList(backingCollection));
                 stmt.setString(2, rscDfn.getName().value);
                 stmt.executeUpdate();
             }

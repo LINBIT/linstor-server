@@ -6,7 +6,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Snapshot.SnapshotFlags;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -109,7 +110,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
                 stmt.setInt(5, snapshot.getNodeId().value);
             }
             stmt.setLong(6, snapshot.getFlags().getFlagsBits(dbCtx));
-            GenericDbDriver.setJsonIfNotNull(stmt, 7, snapshot.getLayerStack(dbCtx));
+            SQLUtils.setJsonIfNotNull(stmt, 7, snapshot.getLayerStack(dbCtx));
             stmt.executeUpdate();
 
             errorReporter.logTrace("Snapshot created %s", getId(snapshot));
@@ -120,7 +121,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -145,8 +146,8 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             resultSet.getLong(S_FLAGS),
             this, transObjFactory, transMgrProvider,
             snapshotVlmMap,
-            GenericDbDriver.asDevLayerKindList(
-                GenericDbDriver.getAsStringList(resultSet, S_LAYER_STACK)
+            DatabaseLoader.asDevLayerKindList(
+                SQLUtils.getAsStringList(resultSet, S_LAYER_STACK)
             )
         );
 
@@ -329,7 +330,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }

@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -99,61 +99,61 @@ public class Migration_2019_03_15_FixConstraints extends LinstorMigration
             )
         );
 
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE VOLUME_DEFINITIONS ADD CONSTRAINT FK_VD_RSC_DFN " +
             "FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) " +
             "ON DELETE CASCADE;"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE RESOURCES ADD CONSTRAINT FK_R_RSC_DFNS " +
             "FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) " +
             "ON DELETE CASCADE;"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE SNAPSHOT_VOLUMES ADD CONSTRAINT FK_SV_SNAPSHOTS " +
             "FOREIGN KEY (NODE_NAME, RESOURCE_NAME, SNAPSHOT_NAME) REFERENCES " +
             "SNAPSHOTS(NODE_NAME, RESOURCE_NAME, SNAPSHOT_NAME)"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE VOLUMES ADD CONSTRAINT FK_V_VLM_DFNS " +
             "FOREIGN KEY (RESOURCE_NAME, VLM_NR) REFERENCES VOLUME_DEFINITIONS(RESOURCE_NAME, VLM_NR) " +
             "ON DELETE CASCADE;"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE LAYER_DRBD_VOLUME_DEFINITIONS ADD CONSTRAINT FK_LDRD_VD " +
             "FOREIGN KEY (RESOURCE_NAME, VLM_NR) REFERENCES VOLUME_DEFINITIONS(RESOURCE_NAME, VLM_NR) " +
             "ON DELETE CASCADE;"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE LAYER_SWORDFISH_VOLUME_DEFINITIONS ADD CONSTRAINT FK_LSFVD_VD " +
             "FOREIGN KEY (RESOURCE_NAME, VLM_NR) REFERENCES VOLUME_DEFINITIONS(RESOURCE_NAME, VLM_NR) " +
             "ON DELETE CASCADE;"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE RESOURCE_CONNECTIONS ADD CONSTRAINT FK_RC_RSCS_SRC " +
             "FOREIGN KEY (NODE_NAME_SRC, RESOURCE_NAME) REFERENCES RESOURCES(NODE_NAME, RESOURCE_NAME) " +
             "ON DELETE CASCADE;"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE RESOURCE_CONNECTIONS ADD CONSTRAINT FK_RC_RSCS_DST " +
             "FOREIGN KEY (NODE_NAME_DST, RESOURCE_NAME) REFERENCES RESOURCES(NODE_NAME, RESOURCE_NAME) " +
             "ON DELETE CASCADE;"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE LAYER_RESOURCE_IDS ADD CONSTRAINT FK_LRI_RESOURCES " +
             "FOREIGN KEY (NODE_NAME, RESOURCE_NAME) REFERENCES RESOURCES(NODE_NAME, RESOURCE_NAME) " +
             "ON DELETE CASCADE;"
         );
-        GenericDbDriver.runSql(
+        SQLUtils.runSql(
             connection,
             "ALTER TABLE VOLUMES ADD CONSTRAINT FK_V_RSCS " +
             "FOREIGN KEY (NODE_NAME, RESOURCE_NAME) REFERENCES RESOURCES(NODE_NAME, RESOURCE_NAME) " +
@@ -167,7 +167,7 @@ public class Migration_2019_03_15_FixConstraints extends LinstorMigration
         boolean committed = false;
         try
         {
-            GenericDbDriver.runSql(conn, statement);
+            SQLUtils.runSql(conn, statement);
             conn.commit();
             committed = true;
         }

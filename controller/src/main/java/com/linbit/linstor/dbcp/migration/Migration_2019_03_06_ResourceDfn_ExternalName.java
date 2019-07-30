@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 
@@ -17,7 +17,7 @@ public class Migration_2019_03_06_ResourceDfn_ExternalName extends LinstorMigrat
     {
         if (!MigrationUtils.columnExists(connection, "RESOURCE_DEFINITIONS", "RESOURCE_EXTERNAL_NAME"))
         {
-            GenericDbDriver.runSql(
+            SQLUtils.runSql(
                 connection,
                 MigrationUtils.addColumn(
                     MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData()),

@@ -19,7 +19,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -233,7 +233,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accessDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -264,7 +264,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
     }
 
@@ -286,7 +286,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
         return id;
     }
@@ -359,7 +359,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             }
             catch (AccessDeniedException accDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
             }
         }
     }
@@ -410,7 +410,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
             }
             catch (AccessDeniedException accDeniedExc)
             {
-                GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
             }
         }
     }

@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -36,7 +36,7 @@ public class Migration_2018_10_19_ResourceConn_Port extends LinstorMigration
             stmt.executeUpdate(crtTmpTblStmt);
             stmt.close();
             String sql = MigrationUtils.loadResource("2018_10_19_resource_connection_port.sql");
-            GenericDbDriver.runSql(connection, sql);
+            SQLUtils.runSql(connection, sql);
         }
     }
 }

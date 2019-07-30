@@ -5,7 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbDriver;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -185,7 +185,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
     }
 
@@ -215,7 +215,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedExc);
+            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
     }
 
@@ -240,7 +240,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         }
         catch (AccessDeniedException accDeniedException)
         {
-            GenericDbDriver.handleAccessDeniedException(accDeniedException);
+            DatabaseLoader.handleAccessDeniedException(accDeniedException);
         }
         return id;
     }
