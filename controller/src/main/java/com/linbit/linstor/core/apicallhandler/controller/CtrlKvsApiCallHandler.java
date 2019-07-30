@@ -18,7 +18,7 @@ import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStoreData;
 import com.linbit.linstor.core.objects.KeyValueStoreDataControllerFactory;
-import com.linbit.linstor.core.objects.KeyValueStoreRepository;
+import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;

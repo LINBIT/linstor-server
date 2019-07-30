@@ -22,7 +22,7 @@ import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.SystemConfRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;

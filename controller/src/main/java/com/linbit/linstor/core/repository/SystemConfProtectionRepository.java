@@ -1,4 +1,4 @@
-package com.linbit.linstor.core.objects;
+package com.linbit.linstor.core.repository;
 
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DatabaseException;

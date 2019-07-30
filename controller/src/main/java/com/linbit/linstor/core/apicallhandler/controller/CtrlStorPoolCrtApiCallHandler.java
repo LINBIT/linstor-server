@@ -17,7 +17,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.StorPoolData;
-import com.linbit.linstor.core.objects.StorPoolDefinitionRepository;
+import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;

@@ -1,7 +1,8 @@
-package com.linbit.linstor.core.objects;
+package com.linbit.linstor.core.repository;
 
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;

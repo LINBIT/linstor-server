@@ -1,4 +1,4 @@
-package com.linbit.linstor.core.objects;
+package com.linbit.linstor.core.repository;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;

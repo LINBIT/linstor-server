@@ -5,7 +5,7 @@ import javax.inject.Inject;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.objects.SystemConfRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;

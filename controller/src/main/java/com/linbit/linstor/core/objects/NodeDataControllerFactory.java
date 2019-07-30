@@ -10,6 +10,8 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Node.NodeFlag;
 import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.repository.NodeRepository;
+import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;

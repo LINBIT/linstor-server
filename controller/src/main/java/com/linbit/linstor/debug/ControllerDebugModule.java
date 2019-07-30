@@ -5,9 +5,9 @@ import com.google.inject.Provides;
 import com.google.inject.multibindings.Multibinder;
 
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.objects.NodeRepository;
-import com.linbit.linstor.core.objects.ResourceDefinitionRepository;
-import com.linbit.linstor.core.objects.StorPoolDefinitionRepository;
+import com.linbit.linstor.core.repository.NodeRepository;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Named;

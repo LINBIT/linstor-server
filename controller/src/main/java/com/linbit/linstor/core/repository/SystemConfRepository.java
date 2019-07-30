@@ -1,4 +1,4 @@
-package com.linbit.linstor.core.objects;
+package com.linbit.linstor.core.repository;
 
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;

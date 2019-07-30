@@ -1,17 +1,17 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.core.objects.FreeSpaceMgrProtectionRepository;
-import com.linbit.linstor.core.objects.FreeSpaceMgrRepository;
-import com.linbit.linstor.core.objects.KeyValueStoreProtectionRepository;
-import com.linbit.linstor.core.objects.KeyValueStoreRepository;
-import com.linbit.linstor.core.objects.NodeProtectionRepository;
-import com.linbit.linstor.core.objects.NodeRepository;
-import com.linbit.linstor.core.objects.ResourceDefinitionProtectionRepository;
-import com.linbit.linstor.core.objects.ResourceDefinitionRepository;
-import com.linbit.linstor.core.objects.StorPoolDefinitionProtectionRepository;
-import com.linbit.linstor.core.objects.StorPoolDefinitionRepository;
-import com.linbit.linstor.core.objects.SystemConfProtectionRepository;
-import com.linbit.linstor.core.objects.SystemConfRepository;
+import com.linbit.linstor.core.repository.FreeSpaceMgrProtectionRepository;
+import com.linbit.linstor.core.repository.FreeSpaceMgrRepository;
+import com.linbit.linstor.core.repository.KeyValueStoreProtectionRepository;
+import com.linbit.linstor.core.repository.KeyValueStoreRepository;
+import com.linbit.linstor.core.repository.NodeProtectionRepository;
+import com.linbit.linstor.core.repository.NodeRepository;
+import com.linbit.linstor.core.repository.ResourceDefinitionProtectionRepository;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.core.repository.StorPoolDefinitionProtectionRepository;
+import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
+import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 
 import com.google.inject.AbstractModule;
 
