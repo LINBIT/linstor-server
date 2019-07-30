@@ -15,7 +15,6 @@ public class ControllerTransactionMgr implements TransactionMgr
     {
         controllerDatabase = controllerDatabaseRef;
         dbCon = controllerDatabaseRef.getConnection();
-        dbCon.setAutoCommit(false);
         transactionObjectCollection = new TransactionObjectCollection();
     }
 
