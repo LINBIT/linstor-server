@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -12,7 +11,6 @@ import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
@@ -27,12 +25,11 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
-import org.slf4j.event.Level;
-
+import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -45,11 +42,12 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.slf4j.event.Level;
 
 public final class ControllerNetComInitializer
 {
@@ -74,13 +72,13 @@ public final class ControllerNetComInitializer
     private final AccessContext sysCtx;
     private final AccessContext publicCtx;
     private final Props ctrlConf;
-    private final DbConnectionPool dbConnPool;
     private final MessageProcessor msgProc;
     private final ConnectionObserver ctrlConnTracker;
     private final NetComContainer netComContainer;
     private final Map<ServiceName, SystemService> systemServicesMap;
     private final LinStorScope initScope;
     private final ControllerCmdlArguments controllerCmdlArguments;
+    private final TransactionMgrGenerator transactionMgrGenerator;
 
     @Inject
     public ControllerNetComInitializer(
@@ -89,13 +87,13 @@ public final class ControllerNetComInitializer
         @SystemContext AccessContext sysCtxRef,
         @PublicContext AccessContext publicCtxRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
-        DbConnectionPool dbConnPoolRef,
         CommonMessageProcessor msgProcRef,
         CtrlConnTracker ctrlConnTrackerRef,
         NetComContainer netComContainerRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         LinStorScope initScopeRef,
-        ControllerCmdlArguments controllerCmdlArgumentsRef
+        ControllerCmdlArguments controllerCmdlArgumentsRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef
     )
     {
         errorReporter = errorReporterRef;
@@ -103,13 +101,13 @@ public final class ControllerNetComInitializer
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
         ctrlConf = ctrlConfRef;
-        dbConnPool = dbConnPoolRef;
         msgProc = msgProcRef;
         ctrlConnTracker = ctrlConnTrackerRef;
         netComContainer = netComContainerRef;
         systemServicesMap = systemServicesMapRef;
         initScope = initScopeRef;
         controllerCmdlArguments = controllerCmdlArgumentsRef;
+        transactionMgrGenerator = transactionMgrGeneratorRef;
     }
 
     public boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef)
@@ -275,7 +273,7 @@ public final class ControllerNetComInitializer
                     TransactionMgr transMgr = null;
                     try
                     {
-                        transMgr = new ControllerTransactionMgr(dbConnPool);
+                        transMgr = transactionMgrGenerator.startTransaction();
                         initScope.enter();
                         initScope.seed(TransactionMgr.class, transMgr);
 
@@ -283,15 +281,6 @@ public final class ControllerNetComInitializer
 
                         transMgr.commit();
                         initScope.exit();
-                    }
-                    catch (SQLException sqlExc)
-                    {
-                        errorLogRef.reportError(
-                            sqlExc,
-                            sysCtx,
-                            null,
-                            "An SQL exception was thrown while trying to persist the default plain connector"
-                        );
                     }
                     catch (DatabaseException dbExc)
                     {
@@ -425,7 +414,7 @@ public final class ControllerNetComInitializer
                             TransactionMgr transMgr = null;
                             try
                             {
-                                transMgr = new ControllerTransactionMgr(dbConnPool);
+                                transMgr = transactionMgrGenerator.startTransaction();
                                 initScope.enter();
                                 initScope.seed(TransactionMgr.class, transMgr);
 
@@ -433,15 +422,6 @@ public final class ControllerNetComInitializer
 
                                 transMgr.commit();
                                 initScope.exit();
-                            }
-                            catch (SQLException sqlExc)
-                            {
-                                errorLogRef.reportError(
-                                    sqlExc,
-                                    sysCtx,
-                                    null,
-                                    "An SQL exception was thrown while trying to persist the default ssl connector"
-                                );
                             }
                             catch (DatabaseException dbExc)
                             {

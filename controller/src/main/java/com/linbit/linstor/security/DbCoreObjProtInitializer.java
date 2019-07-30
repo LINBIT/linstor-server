@@ -9,17 +9,15 @@ import com.linbit.linstor.StorPoolDefinitionProtectionRepository;
 import com.linbit.linstor.SystemConfProtectionRepository;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
-import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
 import javax.inject.Inject;
 
 public class DbCoreObjProtInitializer
 {
     private final AccessContext initCtx;
-    private final DbConnectionPool dbConnPool;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final LinStorScope initScope;
     private final NodeProtectionRepository nodesProtectionRepository;
@@ -29,11 +27,11 @@ public class DbCoreObjProtInitializer
     private final SystemConfProtectionRepository systemConfProtectionRepository;
     private final KeyValueStoreProtectionRepository keyValueStoreProtectionRepository;
     private final ShutdownProtHolder shutdownProtHolder;
+    private final TransactionMgrGenerator transactionMgrGenerator;
 
     @Inject
     public DbCoreObjProtInitializer(
         @SystemContext AccessContext initCtxRef,
-        DbConnectionPool dbConnPoolRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         LinStorScope initScopeRef,
         NodeProtectionRepository nodesProtectionRepositoryRef,
@@ -42,11 +40,11 @@ public class DbCoreObjProtInitializer
         FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepositoryRef,
         SystemConfProtectionRepository systemConfProtectionRepositoryRef,
         KeyValueStoreProtectionRepository keyValueStoreProtectionRepositoryRef,
-        ShutdownProtHolder shutdownProtHolderRef
+        ShutdownProtHolder shutdownProtHolderRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef
     )
     {
         initCtx = initCtxRef;
-        dbConnPool = dbConnPoolRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         initScope = initScopeRef;
         nodesProtectionRepository = nodesProtectionRepositoryRef;
@@ -56,6 +54,7 @@ public class DbCoreObjProtInitializer
         systemConfProtectionRepository = systemConfProtectionRepositoryRef;
         keyValueStoreProtectionRepository = keyValueStoreProtectionRepositoryRef;
         shutdownProtHolder = shutdownProtHolderRef;
+        transactionMgrGenerator = transactionMgrGeneratorRef;
     }
 
     public void initialize()
@@ -64,7 +63,7 @@ public class DbCoreObjProtInitializer
         TransactionMgr transMgr = null;
         try
         {
-            transMgr = new ControllerTransactionMgr(dbConnPool);
+            transMgr = transactionMgrGenerator.startTransaction();
             initScope.enter();
             initScope.seed(TransactionMgr.class, transMgr);
 

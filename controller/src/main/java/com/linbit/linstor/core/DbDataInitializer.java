@@ -1,7 +1,5 @@
 package com.linbit.linstor.core;
 
-import com.google.inject.Key;
-import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.ResourceDefinitionRepository;
@@ -18,22 +16,22 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.sql.SQLException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import com.google.inject.Key;
 
 public class DbDataInitializer
 {
     private final ErrorReporter errorReporter;
     private final AccessContext initCtx;
     private final LinStorScope initScope;
-    private final ControllerDatabase dbConnPool;
     private final Props ctrlConf;
     private final Props stltConf;
     private final NodeRepository nodeRepository;
@@ -42,13 +40,13 @@ public class DbDataInitializer
     private final ReadWriteLock reconfigurationLock;
     private final DatabaseDriver databaseDriver;
     private final StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriver;
+    private final TransactionMgrGenerator transactionMgrGenerator;
 
     @Inject
     public DbDataInitializer(
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext initCtxRef,
         LinStorScope initScopeRef,
-        ControllerDatabase dbConnPoolRef,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         NodeRepository nodeRepositoryRef,
@@ -56,13 +54,13 @@ public class DbDataInitializer
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         DatabaseDriver databaseDriverRef,
-        StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriverRef
+        StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriverRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef
     )
     {
         errorReporter = errorReporterRef;
         initCtx = initCtxRef;
         initScope = initScopeRef;
-        dbConnPool = dbConnPoolRef;
         ctrlConf = ctrlConfRef;
         stltConf = stltConfRef;
         nodeRepository = nodeRepositoryRef;
@@ -71,6 +69,7 @@ public class DbDataInitializer
         reconfigurationLock = reconfigurationLockRef;
         databaseDriver = databaseDriverRef;
         storPoolDfnDbDriver = storPoolDfnDbDriverRef;
+        transactionMgrGenerator = transactionMgrGeneratorRef;
     }
 
     public void initialize()
@@ -80,7 +79,7 @@ public class DbDataInitializer
         Lock recfgWriteLock = reconfigurationLock.writeLock();
         try
         {
-            transMgr = new ControllerTransactionMgr(dbConnPool);
+            transMgr = transactionMgrGenerator.startTransaction();
             initScope.enter();
             initScope.seed(TransactionMgr.class, transMgr);
 
@@ -103,7 +102,7 @@ public class DbDataInitializer
             transMgr.commit();
             initScope.exit();
         }
-        catch (SQLException | DatabaseException exc)
+        catch (DatabaseException exc)
         {
             throw new InitializationException(
                 "Initial load from the database failed",
