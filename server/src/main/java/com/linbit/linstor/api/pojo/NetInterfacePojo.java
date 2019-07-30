@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.core.objects.NetInterface;
+
 import java.util.UUID;
 
 /**

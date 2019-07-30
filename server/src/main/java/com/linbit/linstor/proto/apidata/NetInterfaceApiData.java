@@ -1,6 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import java.util.ArrayList;
 import java.util.List;

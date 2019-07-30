@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
+
 import java.util.Map;
 import java.util.UUID;
 

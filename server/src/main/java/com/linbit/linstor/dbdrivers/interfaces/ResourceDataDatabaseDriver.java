@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 

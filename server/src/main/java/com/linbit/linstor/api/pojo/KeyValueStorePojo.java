@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.KeyValueStore;
+import com.linbit.linstor.core.objects.KeyValueStore;
 
 import java.util.Map;
 

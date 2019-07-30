@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.rest.v1;
 
-import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -12,6 +10,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandl
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.Node;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;

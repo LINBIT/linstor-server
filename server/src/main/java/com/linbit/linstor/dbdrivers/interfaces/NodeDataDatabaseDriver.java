@@ -1,9 +1,9 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.Node.NodeFlag;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.NodeData;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node.NodeFlag;
+import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 

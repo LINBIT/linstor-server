@@ -1,8 +1,8 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.SnapshotDefinition;
-import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 
 import java.util.List;
 import java.util.UUID;

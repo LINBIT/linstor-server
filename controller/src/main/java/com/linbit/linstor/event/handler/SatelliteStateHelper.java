@@ -1,10 +1,10 @@
 package com.linbit.linstor.event.handler;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;

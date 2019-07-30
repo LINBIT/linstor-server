@@ -4,19 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotDefinition;
-import com.linbit.linstor.SnapshotVolumeDefinition;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -32,6 +21,17 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
+import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -665,7 +665,7 @@ public class Json
         return maxVolumeSizes;
     }
 
-    public static JsonGenTypes.KeyValueStore apiToKeyValueStore(com.linbit.linstor.KeyValueStore.KvsApi kvsApi)
+    public static JsonGenTypes.KeyValueStore apiToKeyValueStore(com.linbit.linstor.core.objects.KeyValueStore.KvsApi kvsApi)
     {
         JsonGenTypes.KeyValueStore keyValueStore = new JsonGenTypes.KeyValueStore();
         keyValueStore.name = kvsApi.getName();

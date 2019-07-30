@@ -1,8 +1,8 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.CollectionDatabaseDriver;
-import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;

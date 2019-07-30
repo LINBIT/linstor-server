@@ -2,6 +2,12 @@ package com.linbit.linstor;
 
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.NodeConnectionData;
+import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import org.junit.Before;
@@ -57,7 +63,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodeDst = nodeDataFactory.create(SYS_CTX, targetName, null, null);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
-        nodeCon = new NodeConnectionData(
+        nodeCon = TestFactory.createNodeConnectionData(
             uuid, nodeSrc, nodeDst, driver, propsContainerFactory, transObjFactory, transMgrProvider
         );
     }

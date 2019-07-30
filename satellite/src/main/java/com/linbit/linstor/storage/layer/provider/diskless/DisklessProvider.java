@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage.layer.provider.diskless;
 
-import com.linbit.linstor.SnapshotVolume;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;

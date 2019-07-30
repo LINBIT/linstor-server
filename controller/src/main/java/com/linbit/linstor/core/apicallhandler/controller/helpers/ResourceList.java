@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.satellitestate.SatelliteState;
 
 import java.util.ArrayList;

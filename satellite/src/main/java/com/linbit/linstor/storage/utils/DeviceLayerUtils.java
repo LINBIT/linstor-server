@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.Volume;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;

@@ -2,9 +2,9 @@ package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;

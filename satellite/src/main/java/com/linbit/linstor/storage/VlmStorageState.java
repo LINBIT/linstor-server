@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.linstor.Volume;
+import com.linbit.linstor.core.objects.Volume;
+
 import java.util.BitSet;
 
 /**

@@ -1,9 +1,9 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.core.objects.ResourceConnection;
+
 import java.util.Map;
 import java.util.UUID;
-
-import com.linbit.linstor.ResourceConnection;
 
 public class RscConnPojo implements ResourceConnection.RscConnApi
 {

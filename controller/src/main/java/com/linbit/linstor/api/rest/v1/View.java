@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.rest.v1;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -9,6 +7,8 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.StorPool;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;

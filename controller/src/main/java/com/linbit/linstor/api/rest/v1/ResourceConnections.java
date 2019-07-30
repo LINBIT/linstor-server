@@ -1,11 +1,11 @@
 package com.linbit.linstor.api.rest.v1;
 
-import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.objects.ResourceConnection;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;

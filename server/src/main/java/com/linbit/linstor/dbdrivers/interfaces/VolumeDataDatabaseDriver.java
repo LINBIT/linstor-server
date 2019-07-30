@@ -1,18 +1,18 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.VolumeData;
+import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
- * Database driver for {@link com.linbit.linstor.VolumeData}.
+ * Database driver for {@link com.linbit.linstor.core.objects.VolumeData}.
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public interface VolumeDataDatabaseDriver
 {
     /**
-     * Persists the given {@link com.linbit.linstor.VolumeData} into the database.
+     * Persists the given {@link com.linbit.linstor.core.objects.VolumeData} into the database.
      *
      * @param volume
      *  The data to be stored (including the primary key)
@@ -22,7 +22,7 @@ public interface VolumeDataDatabaseDriver
     void create(VolumeData volume) throws DatabaseException;
 
     /**
-     * Removes the given {@link com.linbit.linstor.VolumeData} from the database
+     * Removes the given {@link com.linbit.linstor.core.objects.VolumeData} from the database
      *
      * @param volume
      *  The data identifying the row to delete

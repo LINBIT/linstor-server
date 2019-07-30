@@ -1,8 +1,8 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.utils.Pair;
 
 import java.util.List;

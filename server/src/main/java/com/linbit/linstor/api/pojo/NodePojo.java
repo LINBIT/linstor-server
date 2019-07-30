@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.Node.NodeApi;
+import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.core.objects.Node.NodeApi;
 import com.linbit.linstor.netcom.Peer;
 
 import javax.annotation.Nullable;

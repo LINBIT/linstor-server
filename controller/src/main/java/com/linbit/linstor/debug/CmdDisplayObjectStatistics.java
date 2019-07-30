@@ -8,9 +8,9 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import com.linbit.linstor.Node;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Identity;

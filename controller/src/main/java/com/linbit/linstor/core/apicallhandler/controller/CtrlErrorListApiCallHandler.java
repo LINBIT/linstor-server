@@ -1,14 +1,14 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.NodeRepository;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeRepository;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;

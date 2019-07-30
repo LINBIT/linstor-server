@@ -1,8 +1,14 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.VolumeDefinition.InitMaps;
-import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.VolumeDefinition.InitMaps;
+import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
@@ -64,7 +70,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         volNr = new VolumeNumber(13);
         minor = 42;
         volSize = 5_000_000;
-        volDfn = new VolumeDefinitionData(
+        volDfn = TestFactory.VolumeDefinitionData(
             uuid,
             resDfn,
             volNr,

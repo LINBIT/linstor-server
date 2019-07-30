@@ -1,8 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.security.AccessDeniedException;
 import reactor.core.publisher.Flux;
 

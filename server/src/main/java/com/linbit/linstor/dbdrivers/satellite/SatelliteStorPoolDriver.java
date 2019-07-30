@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import javax.inject.Inject;

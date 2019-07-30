@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 

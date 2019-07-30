@@ -1,8 +1,8 @@
 package com.linbit.linstor.core.devmgr;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.Snapshot;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.security.AccessDeniedException;

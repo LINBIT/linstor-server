@@ -5,12 +5,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.linbit.linstor.Node;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.StorPool;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {

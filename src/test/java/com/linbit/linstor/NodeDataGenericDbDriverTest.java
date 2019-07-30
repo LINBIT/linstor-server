@@ -1,16 +1,40 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.NetInterface.EncryptionType;
-import com.linbit.linstor.Node.InitMaps;
-import com.linbit.linstor.Node.NodeFlag;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.Resource.RscFlags;
-import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.Volume.VlmFlags;
-import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.NetInterfaceData;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.NodeConnectionData;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.NodeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceConnectionData;
+import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeConnection;
+import com.linbit.linstor.core.objects.VolumeConnectionData;
+import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
+import com.linbit.linstor.core.objects.Node.InitMaps;
+import com.linbit.linstor.core.objects.Node.NodeFlag;
+import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.Resource.RscFlags;
+import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
@@ -95,7 +119,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         );
         initialFlags = NodeFlag.QIGNORE.flagValue;
         initialType = NodeType.AUXILIARY;
-        node = new NodeData(
+        node = TestFactory.createNodeData(
             uuid,
             objProt,
             nodeName,

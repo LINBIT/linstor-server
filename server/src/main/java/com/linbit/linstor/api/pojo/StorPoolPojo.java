@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.Map;

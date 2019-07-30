@@ -1,9 +1,9 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.utils.Pair;

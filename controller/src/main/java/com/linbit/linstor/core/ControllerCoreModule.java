@@ -3,8 +3,9 @@ package com.linbit.linstor.core;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
-import com.linbit.linstor.FreeSpaceMgr;
+
 import com.linbit.linstor.FreeSpaceMgrName;
+import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.transaction.TransactionMap;

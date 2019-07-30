@@ -1,10 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller.internal;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceDefinitionDataControllerFactory;
-import com.linbit.linstor.ResourceDefinitionRepository;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -13,6 +9,10 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;

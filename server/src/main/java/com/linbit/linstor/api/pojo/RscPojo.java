@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 
 public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
 {

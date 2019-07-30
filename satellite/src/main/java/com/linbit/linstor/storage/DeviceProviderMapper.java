@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.StorPool;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.layer.provider.diskless.DisklessProvider;

@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.objects.Resource;
+
 import java.util.List;
 import org.junit.Test;
 

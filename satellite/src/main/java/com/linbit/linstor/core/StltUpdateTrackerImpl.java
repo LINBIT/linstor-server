@@ -8,12 +8,13 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.SnapshotName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Scheduler;

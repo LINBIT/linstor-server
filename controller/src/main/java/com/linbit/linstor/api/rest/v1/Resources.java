@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.rest.v1;
 
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -10,6 +9,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandle
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.objects.Resource;
+
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;

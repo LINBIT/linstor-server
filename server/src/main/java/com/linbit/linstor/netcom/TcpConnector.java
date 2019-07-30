@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import com.linbit.SystemService;
-import com.linbit.linstor.Node;
+import com.linbit.linstor.core.objects.Node;
 
 /**
  * Server for TCP/IP connections to various other servers and clients

@@ -2,11 +2,11 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorRuntimeException;
-import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.CoreModule.NodesMap;
+import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;

@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 
 import java.util.UUID;
 

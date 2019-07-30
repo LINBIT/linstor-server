@@ -1,9 +1,18 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.ResourceDefinition.TransportType;
-import com.linbit.linstor.Volume.InitMaps;
-import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.Volume.InitMaps;
+import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -133,7 +142,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersist() throws Exception
     {
-        VolumeData vol = new VolumeData(
+        VolumeData vol = TestFactory.createVolumeData(
             uuid,
             res,
             volDfn,
@@ -202,7 +211,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadAll() throws Exception
     {
-        VolumeData vol = new VolumeData(
+        VolumeData vol = TestFactory.createVolumeData(
             uuid,
             res,
             volDfn,
@@ -232,7 +241,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        VolumeData vol = new VolumeData(
+        VolumeData vol = TestFactory.createVolumeData(
             uuid,
             res,
             volDfn,
@@ -270,7 +279,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testDelete() throws Exception
     {
-        VolumeData vol = new VolumeData(
+        VolumeData vol = TestFactory.createVolumeData(
             uuid,
             res,
             volDfn,
@@ -306,7 +315,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPropsConPersist() throws Exception
     {
-        VolumeData vol = new VolumeData(
+        VolumeData vol = TestFactory.createVolumeData(
             uuid,
             res,
             volDfn,
@@ -333,7 +342,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testFlagsUpdate() throws Exception
     {
-        VolumeData vol = new VolumeData(
+        VolumeData vol = TestFactory.createVolumeData(
             uuid,
             res,
             volDfn,
@@ -385,7 +394,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        VolumeData vol = new VolumeData(
+        VolumeData vol = TestFactory.createVolumeData(
             uuid,
             res,
             volDfn,

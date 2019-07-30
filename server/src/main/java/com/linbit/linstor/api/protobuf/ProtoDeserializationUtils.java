@@ -1,10 +1,10 @@
 package com.linbit.linstor.api.protobuf;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LayerTypeWrapperOuterClass.LayerTypeWrapper;

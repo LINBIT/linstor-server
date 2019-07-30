@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.SnapshotDefinitionData;
+import com.linbit.linstor.core.objects.SnapshotDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 

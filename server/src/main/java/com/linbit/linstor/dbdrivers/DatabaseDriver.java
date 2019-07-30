@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ServiceName;
-import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -14,8 +14,8 @@ public interface DatabaseDriver
     ServiceName getDefaultServiceInstanceName();
 
     /**
-     * Fetches all {@link com.linbit.linstor.Node}s, {@link ResourceDefinition}s and
-     * {@link com.linbit.linstor.StorPoolDefinition}s from
+     * Fetches all {@link com.linbit.linstor.core.objects.Node}s, {@link ResourceDefinition}s and
+     * {@link com.linbit.linstor.core.objects.StorPoolDefinition}s from
      * the database.
      *
      * @param transMgr

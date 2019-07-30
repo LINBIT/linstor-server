@@ -1,15 +1,15 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.linstor.KeyValueStore;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.SnapshotDefinition;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.objects.KeyValueStore;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;

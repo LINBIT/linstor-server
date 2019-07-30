@@ -1,9 +1,9 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.utils.Pair;

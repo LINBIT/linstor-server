@@ -2,9 +2,9 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterface.EncryptionType;
-import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.core.objects.NetInterfaceData;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**

@@ -1,16 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeConnection;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.Snapshot;
-import com.linbit.linstor.SnapshotDefinition;
-import com.linbit.linstor.SnapshotVolume;
-import com.linbit.linstor.SnapshotVolumeDefinition;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -18,6 +7,17 @@ import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSeria
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;

@@ -1,10 +1,10 @@
 package com.linbit.linstor.storage.layer.provider;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.SnapshotVolume;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;

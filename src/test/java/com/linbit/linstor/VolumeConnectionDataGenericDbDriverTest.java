@@ -2,8 +2,20 @@ package com.linbit.linstor;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeConnection;
+import com.linbit.linstor.core.objects.VolumeConnectionData;
+import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -149,7 +161,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersist() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(
+        VolumeConnectionData volCon = TestFactory.createVolumeConnectionData(
             uuid,
             volSrc,
             volDst,
@@ -176,7 +188,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadAll() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(
+        VolumeConnectionData volCon = TestFactory.createVolumeConnectionData(
             uuid,
             volSrc,
             volDst,
@@ -219,7 +231,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(
+        VolumeConnectionData volCon = TestFactory.createVolumeConnectionData(
             uuid,
             volSrc,
             volDst,
@@ -262,7 +274,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testDelete() throws Exception
     {
-        VolumeConnectionData volCon = new VolumeConnectionData(
+        VolumeConnectionData volCon = TestFactory.createVolumeConnectionData(
             uuid,
             volSrc,
             volDst,

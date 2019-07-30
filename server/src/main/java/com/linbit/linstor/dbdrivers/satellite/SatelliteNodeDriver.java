@@ -1,9 +1,9 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeData;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import javax.inject.Inject;

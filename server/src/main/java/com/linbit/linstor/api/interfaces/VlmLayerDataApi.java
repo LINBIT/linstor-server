@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.interfaces;
 
-import com.linbit.linstor.StorPool;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 

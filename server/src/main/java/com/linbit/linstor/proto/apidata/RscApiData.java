@@ -1,9 +1,9 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.proto.common.RscOuterClass;
 
 import java.util.List;

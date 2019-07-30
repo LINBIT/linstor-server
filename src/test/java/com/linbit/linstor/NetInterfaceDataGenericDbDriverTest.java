@@ -1,8 +1,13 @@
 package com.linbit.linstor;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.objects.NetInterfaceData;
+import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.GenericDbBase;
 
@@ -78,7 +83,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         niUuid = java.util.UUID.randomUUID();
 
         // not persisted
-        niData = new NetInterfaceData(
+        niData = TestFactory.createNetInterfaceData(
             niUuid,
             niName,
             node,

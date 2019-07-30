@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.interfaces.categories.resource;
 
-import com.linbit.linstor.StorPool;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;

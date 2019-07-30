@@ -1,8 +1,8 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;

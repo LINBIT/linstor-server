@@ -1,6 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
 
 import java.util.Map;

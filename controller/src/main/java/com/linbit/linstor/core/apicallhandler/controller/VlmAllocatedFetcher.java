@@ -3,8 +3,9 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.objects.Volume;
+
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 

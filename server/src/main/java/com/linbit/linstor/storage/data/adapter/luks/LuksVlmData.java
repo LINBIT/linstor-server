@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.data.adapter.luks;
 
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;

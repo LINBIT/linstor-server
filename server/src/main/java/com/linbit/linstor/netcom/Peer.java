@@ -2,8 +2,8 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.api.protobuf.common.Ping;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;

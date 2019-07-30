@@ -1,7 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -11,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 

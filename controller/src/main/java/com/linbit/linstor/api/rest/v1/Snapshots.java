@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.rest.v1;
 
-import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -8,6 +7,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;

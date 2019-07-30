@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;

@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+
 import java.util.UUID;
 
 public class SnapshotVlmPojo implements SnapshotVolume.SnapshotVlmApi

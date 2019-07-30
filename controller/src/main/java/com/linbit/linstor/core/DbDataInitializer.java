@@ -1,13 +1,13 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.InitializationException;
-import com.linbit.linstor.NodeRepository;
-import com.linbit.linstor.ResourceDefinitionRepository;
-import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolDefinitionRepository;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.objects.NodeRepository;
+import com.linbit.linstor.core.objects.ResourceDefinitionRepository;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;

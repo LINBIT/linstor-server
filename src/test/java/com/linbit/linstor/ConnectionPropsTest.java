@@ -1,7 +1,17 @@
 package com.linbit.linstor;
 
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.NodeConnectionData;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.ResourceConnectionData;
+import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.VolumeConnectionData;
+import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;

@@ -1,6 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 
 import java.util.Map;

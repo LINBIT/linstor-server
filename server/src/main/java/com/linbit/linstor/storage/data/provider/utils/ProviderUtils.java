@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage.data.provider.utils;
 
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;

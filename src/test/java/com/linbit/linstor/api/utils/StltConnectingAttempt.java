@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.utils;
 
-import com.linbit.linstor.Node;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.TcpConnector;
 
 import java.net.InetSocketAddress;

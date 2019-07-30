@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.data.provider.swordfish;
 
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;

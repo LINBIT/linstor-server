@@ -3,7 +3,15 @@ package com.linbit.linstor;
 import javax.inject.Inject;
 
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceConnectionData;
+import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -96,7 +104,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc = resourceDataFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
         resDst = resourceDataFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
 
-        resCon = new ResourceConnectionData(
+        resCon = TestFactory.createResourceConnectionData(
             uuid,
             resSrc,
             resDst,

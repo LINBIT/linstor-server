@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
+import com.linbit.linstor.core.objects.StorPoolDefinition.StorPoolDfnApi;
 
 import java.util.List;
 

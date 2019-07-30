@@ -1,11 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.google.inject.Provider;
-import com.linbit.linstor.KeyValueStore;
-import com.linbit.linstor.KeyValueStoreData;
-import com.linbit.linstor.KeyValueStoreDataControllerFactory;
+
 import com.linbit.linstor.KeyValueStoreName;
-import com.linbit.linstor.KeyValueStoreRepository;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -18,6 +15,10 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.core.objects.KeyValueStore;
+import com.linbit.linstor.core.objects.KeyValueStoreData;
+import com.linbit.linstor.core.objects.KeyValueStoreDataControllerFactory;
+import com.linbit.linstor.core.objects.KeyValueStoreRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;

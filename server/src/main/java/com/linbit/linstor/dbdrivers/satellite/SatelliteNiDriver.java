@@ -2,10 +2,10 @@ package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.NetInterface.EncryptionType;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.objects.NetInterfaceData;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import javax.inject.Inject;

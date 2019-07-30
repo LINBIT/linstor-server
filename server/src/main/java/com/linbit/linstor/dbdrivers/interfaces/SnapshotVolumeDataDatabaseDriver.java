@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**

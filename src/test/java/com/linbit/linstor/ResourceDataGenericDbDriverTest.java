@@ -3,9 +3,14 @@ package com.linbit.linstor;
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.Resource.InitMaps;
-import com.linbit.linstor.Resource.RscFlags;
-import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.Resource.InitMaps;
+import com.linbit.linstor.core.objects.Resource.RscFlags;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlagsBits;
@@ -90,7 +95,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersist() throws Exception
     {
-        ResourceData res = new ResourceData(
+        ResourceData res = TestFactory.createResourceData(
             resUuid,
             objProt,
             resDfn,
@@ -154,7 +159,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         ResourceData loadedRes = (ResourceData) node.getResource(SYS_CTX, resDfn.getName());
         assertNull(loadedRes);
 
-        ResourceData res = new ResourceData(
+        ResourceData res = TestFactory.createResourceData(
             resUuid,
             objProt,
             resDfn,
@@ -185,7 +190,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadAll() throws Exception
     {
-        ResourceData res = new ResourceData(
+        ResourceData res = TestFactory.createResourceData(
             resUuid,
             objProt,
             resDfn,
@@ -239,7 +244,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testDelete() throws Exception
     {
-        ResourceData res = new ResourceData(
+        ResourceData res = TestFactory.createResourceData(
             resUuid,
             objProt,
             resDfn,
@@ -269,7 +274,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testStateFlagPersistence() throws Exception
     {
-        ResourceData res = new ResourceData(
+        ResourceData res = TestFactory.createResourceData(
             resUuid,
             objProt,
             resDfn,
@@ -309,7 +314,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceData res = new ResourceData(
+        ResourceData res = TestFactory.createResourceData(
             resUuid,
             objProt,
             resDfn,
@@ -345,7 +350,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        ResourceData res = new ResourceData(
+        ResourceData res = TestFactory.createResourceData(
             resUuid,
             objProt,
             resDfn,

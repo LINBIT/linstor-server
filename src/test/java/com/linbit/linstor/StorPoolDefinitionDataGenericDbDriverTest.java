@@ -2,8 +2,11 @@ package com.linbit.linstor;
 
 import javax.inject.Inject;
 
-import com.linbit.linstor.StorPoolDefinition.InitMaps;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.StorPoolDefinition.InitMaps;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import org.junit.Before;
@@ -50,7 +53,7 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
         uuid = randomUUID();
         spName = new StorPoolName("TestStorPool");
         objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPathSPD(spName), true);
-        spdd = new StorPoolDefinitionData(
+        spdd = TestFactory.createStorPoolDefinitionData(
             uuid,
             objProt,
             spName,

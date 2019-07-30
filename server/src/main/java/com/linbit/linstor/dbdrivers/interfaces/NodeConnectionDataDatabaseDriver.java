@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.NodeConnectionData;
+import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**
@@ -11,7 +11,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 public interface NodeConnectionDataDatabaseDriver
 {
     /**
-     * Persists the given {@link com.linbit.linstor.NodeConnectionData} into the database.
+     * Persists the given {@link com.linbit.linstor.core.objects.NodeConnectionData} into the database.
      *
      * @param nodeConDfnData
      *  The data to be stored (including the primary key)

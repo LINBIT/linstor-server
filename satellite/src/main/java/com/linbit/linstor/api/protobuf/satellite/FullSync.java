@@ -1,7 +1,6 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.pojo.NodePojo;
@@ -15,6 +14,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;

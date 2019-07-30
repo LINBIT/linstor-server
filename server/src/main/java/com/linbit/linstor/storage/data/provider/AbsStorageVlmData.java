@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.data.provider;
 
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;

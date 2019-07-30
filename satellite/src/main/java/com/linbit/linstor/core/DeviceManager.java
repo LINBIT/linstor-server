@@ -1,12 +1,12 @@
 package com.linbit.linstor.core;
 
-import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 

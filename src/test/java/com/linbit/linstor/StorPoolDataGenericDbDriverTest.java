@@ -2,9 +2,19 @@ package com.linbit.linstor;
 
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.StorPool.InitMaps;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.objects.FreeSpaceMgr;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPoolDataGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -76,7 +86,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersist() throws Exception
     {
-        StorPoolData storPool = new StorPoolData(
+        StorPoolData storPool = TestFactory.createStorPoolData(
             uuid,
             node,
             spdd,
@@ -134,7 +144,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadAll() throws Exception
     {
-        StorPoolData storPool = new StorPoolData(
+        StorPoolData storPool = TestFactory.createStorPoolData(
             uuid,
             node,
             spdd,
@@ -207,7 +217,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
 
         assertNull(loadedStorPool);
 
-        StorPoolData storPool = new StorPoolData(
+        StorPoolData storPool = TestFactory.createStorPoolData(
             uuid,
             node,
             spdd,
@@ -264,7 +274,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testEnsureExist() throws Exception
     {
-        StorPoolData storPool = new StorPoolData(
+        StorPoolData storPool = TestFactory.createStorPoolData(
             uuid,
             node,
             spdd,
@@ -301,7 +311,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        StorPoolData storPool = new StorPoolData(
+        StorPoolData storPool = TestFactory.createStorPoolData(
             uuid,
             node,
             spdd,

@@ -1,9 +1,9 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.SnapshotDefinition;
-import com.linbit.linstor.SnapshotDefinition.SnapshotDfnApi;
-import com.linbit.linstor.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnApi;
 
 import java.util.List;
 import java.util.Map;
