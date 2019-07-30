@@ -184,7 +184,7 @@ public class CtrlRscGrpApiCallHandler
                 rscGrpPojoRef.getVlmGrpList()
             );
 
-            resourceGroupRepository.put(apiCtx, rscGrp.getName(), rscGrp);
+            resourceGroupRepository.put(apiCtx, rscGrp);
 
             ctrlTransactionHelper.commit();
 

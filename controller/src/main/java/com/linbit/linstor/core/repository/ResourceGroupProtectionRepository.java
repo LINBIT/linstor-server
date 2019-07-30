@@ -64,12 +64,12 @@ public class ResourceGroupProtectionRepository implements ResourceGroupRepositor
     }
 
     @Override
-    public void put(AccessContext accCtx, ResourceGroupName rscGrpName, ResourceGroupData rscGrp)
+    public void put(AccessContext accCtx, ResourceGroupData rscGrp)
         throws AccessDeniedException
     {
         checkProtSet();
         rscGrpMapObjProt.requireAccess(accCtx, AccessType.CHANGE);
-        rscGrpMap.put(rscGrpName, rscGrp);
+        rscGrpMap.put(rscGrp.getName(), rscGrp);
     }
 
     @Override

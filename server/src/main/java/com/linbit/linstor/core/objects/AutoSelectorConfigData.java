@@ -221,46 +221,52 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
 
     public void applyChanges(AutoSelectFilterApi autoPlaceConfigRef) throws DatabaseException
     {
-        if (autoPlaceConfigRef.getReplicaCount() != null)
+        if (autoPlaceConfigRef != null)
         {
-            replicaCount.set(autoPlaceConfigRef.getReplicaCount());
-        }
-        String pojoStorPool = autoPlaceConfigRef.getStorPoolNameStr();
-        if (pojoStorPool != null)
-        {
-            if (pojoStorPool.equals(""))
+            if (autoPlaceConfigRef.getReplicaCount() != null)
             {
-                storPoolName.set(null);
+                replicaCount.set(autoPlaceConfigRef.getReplicaCount());
             }
-            else
+            String pojoStorPool = autoPlaceConfigRef.getStorPoolNameStr();
+            if (pojoStorPool != null)
             {
-                storPoolName.set(pojoStorPool);
+                if (pojoStorPool.equals(""))
+                {
+                    storPoolName.set(null);
+                }
+                else
+                {
+                    storPoolName.set(pojoStorPool);
+                }
             }
-        }
-        if (!autoPlaceConfigRef.getDoNotPlaceWithRscList().isEmpty())
-        {
-            doNotPlaceWithRscList.clear();
-            doNotPlaceWithRscList.addAll(autoPlaceConfigRef.getDoNotPlaceWithRscList());
-        }
-        if (autoPlaceConfigRef.getDoNotPlaceWithRscRegex() != null)
-        {
-            doNotPlaceWithRscRegex.set(autoPlaceConfigRef.getDoNotPlaceWithRscRegex());
-        }
-        if (autoPlaceConfigRef.getLayerStackList() != null &&
-            !autoPlaceConfigRef.getLayerStackList().equals(layerStack))
-        {
-            layerStack.clear();
-            layerStack.addAll(autoPlaceConfigRef.getLayerStackList());
-        }
-        if (!autoPlaceConfigRef.getReplicasOnSameList().isEmpty())
-        {
-            replicasOnSameList.clear();
-            replicasOnSameList.addAll(autoPlaceConfigRef.getReplicasOnSameList());
-        }
-        if (!autoPlaceConfigRef.getReplicasOnDifferentList().isEmpty())
-        {
-            replicasOnDifferentList.clear();
-            replicasOnDifferentList.addAll(autoPlaceConfigRef.getReplicasOnDifferentList());
+            List<String> doNotPlaceWithRscListRef = autoPlaceConfigRef.getDoNotPlaceWithRscList();
+            if (doNotPlaceWithRscListRef != null && !doNotPlaceWithRscListRef.isEmpty())
+            {
+                doNotPlaceWithRscList.clear();
+                doNotPlaceWithRscList.addAll(doNotPlaceWithRscListRef);
+            }
+            if (autoPlaceConfigRef.getDoNotPlaceWithRscRegex() != null)
+            {
+                doNotPlaceWithRscRegex.set(autoPlaceConfigRef.getDoNotPlaceWithRscRegex());
+            }
+            if (autoPlaceConfigRef.getLayerStackList() != null &&
+                !autoPlaceConfigRef.getLayerStackList().equals(layerStack))
+            {
+                layerStack.clear();
+                layerStack.addAll(autoPlaceConfigRef.getLayerStackList());
+            }
+            List<String> replicasOnSameListRef = autoPlaceConfigRef.getReplicasOnSameList();
+            if (replicasOnSameListRef != null && !replicasOnSameListRef.isEmpty())
+            {
+                replicasOnSameList.clear();
+                replicasOnSameList.addAll(replicasOnSameListRef);
+            }
+            List<String> replicasOnDifferentListRef = autoPlaceConfigRef.getReplicasOnDifferentList();
+            if (replicasOnDifferentListRef != null && !replicasOnDifferentListRef.isEmpty())
+            {
+                replicasOnDifferentList.clear();
+                replicasOnDifferentList.addAll(replicasOnDifferentListRef);
+            }
         }
     }
 }

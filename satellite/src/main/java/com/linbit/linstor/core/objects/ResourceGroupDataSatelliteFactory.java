@@ -1,19 +1,9 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
-import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.AutoSelectorConfigData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
-import com.linbit.linstor.core.objects.VolumeGroup;
-import com.linbit.linstor.core.objects.VolumeGroupData;
-import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
@@ -34,11 +24,8 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Singleton
 public class ResourceGroupDataSatelliteFactory
@@ -103,14 +90,14 @@ public class ResourceGroupDataSatelliteFactory
                 ),
                 rscGrpName,
                 description,
-                new ArrayList<>(layerStackRef),
+                copy(layerStackRef),
                 autoPlaceReplicaCountRef,
                 autoPlaceStorPoolNameRef,
-                new ArrayList<>(autoPlaceDoNotPlaceWithRscListRef),
+                copy(autoPlaceDoNotPlaceWithRscListRef),
                 autoPlaceDoNotPlaceWithRscRegexRef,
-                new ArrayList<>(autoPlaceReplicasOnSameListRef),
-                new ArrayList<>(autoPlaceReplicasOnDifferentListRef),
-                new ArrayList<>(autoPlaceAllowedProviderListRef),
+                copy(autoPlaceReplicasOnSameListRef),
+                copy(autoPlaceReplicasOnDifferentListRef),
+                copy(autoPlaceAllowedProviderListRef),
                 autoPlaceDisklessOnRemainingRef,
                 new TreeMap<>(),
                 new TreeMap<>(),
@@ -124,111 +111,8 @@ public class ResourceGroupDataSatelliteFactory
         return rscGrp;
     }
 
-    public ResourceGroupData merge(RscGrpApi rscGrpApiRef)
-        throws AccessDeniedException, DatabaseException
+    private <T> ArrayList<T> copy(List<T> list)
     {
-        ResourceGroupName rscGrpName;
-        ResourceGroupData rscGrp;
-        try
-        {
-            rscGrpName = new ResourceGroupName(rscGrpApiRef.getName());
-
-            rscGrp = (ResourceGroupData) rscGrpMap.get(rscGrpName);
-
-            if (rscGrp == null)
-            {
-                AutoSelectFilterApi autoSelectFilter = rscGrpApiRef.getAutoSelectFilter();
-
-                TreeMap<VolumeNumber, VolumeGroup> vlmGrpMap = new TreeMap<>();
-                rscGrp = new ResourceGroupData(
-                    UUID.randomUUID(),
-                    objectProtectionFactory.getInstance(
-                        sysCtx,
-                        ObjectProtection.buildPath(rscGrpName),
-                        true
-                    ),
-                    rscGrpName,
-                    rscGrpApiRef.getDescription(),
-                    autoSelectFilter.getLayerStackList(),
-                    autoSelectFilter.getReplicaCount(),
-                    autoSelectFilter.getStorPoolNameStr(),
-                    autoSelectFilter.getDoNotPlaceWithRscList(),
-                    autoSelectFilter.getDoNotPlaceWithRscRegex(),
-                    autoSelectFilter.getReplicasOnSameList(),
-                    autoSelectFilter.getReplicasOnDifferentList(),
-                    autoSelectFilter.getProviderList(),
-                    autoSelectFilter.getDisklessOnRemaining(),
-                    vlmGrpMap,
-                    new TreeMap<>(),
-                    rscGrpDriver,
-                    propsContainerFactory,
-                    transObjFactory,
-                    transMgrProvider
-                );
-
-                for (VlmGrpApi vlmGrpApi : rscGrpApiRef.getVlmGrpList())
-                {
-                    VolumeNumber vlmNr = new VolumeNumber(vlmGrpApi.getVolumeNr());
-                    VolumeGroupData vlmGrp = new VolumeGroupData(
-                        vlmGrpApi.getUUID(),
-                        rscGrp,
-                        vlmNr,
-                        vlmGrpDriver,
-                        propsContainerFactory,
-                        transObjFactory,
-                        transMgrProvider
-                    );
-                    vlmGrpMap.put(vlmNr, vlmGrp);
-                }
-            }
-            else
-            {
-                if (!rscGrp.getDescription(sysCtx).equals(rscGrpApiRef.getDescription()))
-                {
-                    rscGrp.setDescription(sysCtx, rscGrpApiRef.getDescription());
-                }
-                AutoSelectorConfigData autoPlaceConfig = (AutoSelectorConfigData) rscGrp.getAutoPlaceConfig();
-
-                autoPlaceConfig.applyChanges(rscGrpApiRef.getAutoSelectFilter());
-
-                TreeSet<VolumeNumber> vlmGrpsToDelete = new TreeSet<>(
-                    rscGrp.streamVolumeGroups(sysCtx)
-                        .map(VolumeGroup::getVolumeNumber)
-                        .collect(Collectors.toSet())
-                );
-                for (VlmGrpApi vlmGrpApi : rscGrpApiRef.getVlmGrpList())
-                {
-                    VolumeNumber vlmNr = new VolumeNumber(vlmGrpApi.getVolumeNr());
-                    vlmGrpsToDelete.remove(vlmNr);
-                    VolumeGroupData vlmGrp = (VolumeGroupData) rscGrp.getVolumeGroup(sysCtx, vlmNr);
-
-                    if (vlmGrp == null)
-                    {
-                        vlmGrp = new VolumeGroupData(
-                            vlmGrpApi.getUUID(),
-                            rscGrp,
-                            vlmNr,
-                            vlmGrpDriver,
-                            propsContainerFactory,
-                            transObjFactory,
-                            transMgrProvider
-                        );
-                        rscGrp.putVolumeGroup(sysCtx, vlmGrp);
-                    }
-                    Map<String, String> vlmGrpPropsMap = vlmGrp.getProps(sysCtx).map();
-                    vlmGrpPropsMap.clear();
-                    vlmGrpPropsMap.putAll(vlmGrpApi.getProps());
-                }
-                for (VolumeNumber vlmNr : vlmGrpsToDelete)
-                {
-                    rscGrp.deleteVolumeGroup(sysCtx, vlmNr);
-                }
-            }
-        }
-        catch (InvalidNameException | ValueOutOfRangeException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return rscGrp;
+        return list == null ? new ArrayList<>() : new ArrayList<>(list);
     }
 }

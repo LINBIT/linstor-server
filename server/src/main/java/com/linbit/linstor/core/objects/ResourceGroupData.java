@@ -215,11 +215,15 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         VolumeGroup vlmGrp = vlmMap.get(vlmNrRef);
-        Props vlmGrpProps = vlmGrp.getProps(accCtx);
 
-        if (vlmGrpProps == null)
+        Props vlmGrpProps;
+        if (vlmGrp == null)
         {
             vlmGrpProps = ReadOnlyProps.emptyRoProps();
+        }
+        else
+        {
+            vlmGrpProps = vlmGrp.getProps(accCtx);
         }
         return vlmGrpProps;
     }

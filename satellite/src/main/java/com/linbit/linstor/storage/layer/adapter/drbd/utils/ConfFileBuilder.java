@@ -657,6 +657,7 @@ public class ConfFileBuilder
     )
     {
         Map<String, MultiResult> map = prioProps.renderConflictingMap(namespace, true);
+        int substrFrom = namespace.length() + 1;
 
         StringBuilder confLine = new StringBuilder();
         for (Entry<String, MultiResult> entry : map.entrySet())
@@ -665,20 +666,20 @@ public class ConfFileBuilder
 
             appendIndent(confLine);
 
-            String key = entry.getKey();
+            String keyWithNamespace = entry.getKey();
 
             MultiResult multiResult = entry.getValue();
             String value = multiResult.first.value;
-            confLine.append(
-                String.format(
-                    quoteValue ? "%s \"%s\";" : "%s %s;",
-                    key,
-                    value
-                )
-            );
 
-            if (checkValidDrbdOption(lsObj, key, value))
+            if (checkValidDrbdOption(lsObj, keyWithNamespace, value))
             {
+                confLine.append(
+                    String.format(
+                        quoteValue ? "%s \"%s\";" : "%s %s;",
+                        keyWithNamespace.substring(substrFrom),
+                        value
+                    )
+                );
                 append(confLine.toString());
 
                 if (!multiResult.conflictingList.isEmpty())
@@ -692,12 +693,16 @@ public class ConfFileBuilder
 
                     for (ValueWithDescirption valueWithDescirption : multiResult.conflictingList)
                     {
-                        append("%s# overrides value '%s' from %s",
+                        append("%s# overrides value '%s' from %s%n",
                             spaces,
                             valueWithDescirption.value,
                             valueWithDescirption.propsDescription
                         );
                     }
+                }
+                else
+                {
+                    append("%n");
                 }
             }
         }

@@ -21,7 +21,7 @@ public interface ResourceGroupRepository
     ResourceGroupData get(AccessContext accCtx, ResourceGroupName nameRef)
         throws AccessDeniedException;
 
-    void put(AccessContext accCtx, ResourceGroupName rscGrpName, ResourceGroupData rscGrpData)
+    void put(AccessContext accCtx, ResourceGroupData rscGrpData)
         throws AccessDeniedException;
 
     void remove(AccessContext accCtx, ResourceGroupName rscGrpName)

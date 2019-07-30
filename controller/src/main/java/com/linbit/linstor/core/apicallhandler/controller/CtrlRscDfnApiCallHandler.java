@@ -42,6 +42,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
@@ -77,8 +78,9 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ResourceGroupDataControllerFactory resourceGroupeDataFactory;
+    private final ResourceGroupDataControllerFactory resourceGroupDataFactory;
     private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
+    private final ResourceGroupRepository resourceGroupRepository;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
@@ -97,6 +99,7 @@ public class CtrlRscDfnApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceGroupDataControllerFactory resourceGroupDataFactoryRef,
         ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
+        ResourceGroupRepository resourceGroupRepositoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -112,8 +115,9 @@ public class CtrlRscDfnApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        resourceGroupeDataFactory = resourceGroupDataFactoryRef;
+        resourceGroupDataFactory = resourceGroupDataFactoryRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        resourceGroupRepository = resourceGroupRepositoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
@@ -483,7 +487,7 @@ public class CtrlRscDfnApiCallHandler
             ResourceGroupData rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStr, false);
             if (rscGrp == null && InternalApiConsts.DEFAULT_RSC_GRP_NAME.equalsIgnoreCase(rscGrpNameStr))
             {
-                rscGrp = resourceGroupeDataFactory.create(
+                rscGrp = resourceGroupDataFactory.create(
                     peerAccCtx.get(),
                     new ResourceGroupName(rscGrpNameStr),
                     "Default resource group",
@@ -497,6 +501,7 @@ public class CtrlRscDfnApiCallHandler
                     null,
                     null
                 );
+                resourceGroupRepository.put(apiCtx, rscGrp);
             }
 
             rscDfn = resourceDefinitionDataFactory.create(

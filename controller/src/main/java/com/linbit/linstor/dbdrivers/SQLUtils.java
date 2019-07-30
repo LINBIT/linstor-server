@@ -20,27 +20,6 @@ public class SQLUtils
 {
     private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
-    @SuppressWarnings("unchecked")
-    public static List<String> getAsStringList(ResultSet resultSet, String columnName)
-    {
-        List<String> list;
-        try
-        {
-            list = OBJ_MAPPER.readValue(
-                resultSet.getString(columnName),
-                List.class
-            );
-        }
-        catch (IOException | SQLException exc)
-        {
-            throw new LinStorDBRuntimeException(
-                "Exception occurred while deserializing from json array",
-                exc
-            );
-        }
-        return list;
-    }
-
     public static void setIntIfNotNull(PreparedStatement stmt, int idx, Integer val) throws SQLException
     {
         if (val != null)
@@ -127,7 +106,7 @@ public class SQLUtils
     )
     {
         List<T> ret = new ArrayList<>();
-        List<String> listStr = getAsStringList(resultSet, columnName);
+        List<String> listStr = getAsStringListFromVarchar(resultSet, columnName);
 
         for (String strElement : listStr)
         {
@@ -219,10 +198,20 @@ public class SQLUtils
         List<String> list;
         try
         {
-            list = OBJ_MAPPER.readValue(
-                resultSet.getString(columnName),
-                List.class
-            );
+            String string = resultSet.getString(columnName);
+            if (string == null || string.isEmpty())
+            {
+                list = new ArrayList<>();
+            }
+            else
+            {
+                list = new ArrayList<>(
+                    OBJ_MAPPER.readValue(
+                        string,
+                        List.class
+                    )
+                );
+            }
         }
         catch (IOException | SQLException exc)
         {
@@ -240,10 +229,20 @@ public class SQLUtils
         List<String> list;
         try
         {
-            list = OBJ_MAPPER.readValue(
-                resultSet.getBytes(columnName),
-                List.class
-            );
+            byte[] bytes = resultSet.getBytes(columnName);
+            if (bytes == null || bytes.length < 2) // if json, the column should at least contain "[]"
+            {
+                list = new ArrayList<>();
+            }
+            else
+            {
+                list = new ArrayList<>(
+                    OBJ_MAPPER.readValue(
+                        bytes,
+                        List.class
+                    )
+                );
+            }
         }
         catch (IOException | SQLException exc)
         {
