@@ -2,6 +2,12 @@ package com.linbit.linstor.dbdrivers;
 
 public interface DatabaseDriverInfo
 {
+    enum DatabaseType
+    {
+        SQL,
+        ECTD;
+    }
+
     static DatabaseDriverInfo createDriverInfo(final String dbType)
     {
         DatabaseDriverInfo dbdriver = null;
