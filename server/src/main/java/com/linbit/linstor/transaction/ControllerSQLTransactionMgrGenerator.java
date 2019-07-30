@@ -7,12 +7,12 @@ import javax.inject.Singleton;
 import java.sql.SQLException;
 
 @Singleton
-public class ControllerTransactionMgrGenerator implements TransactionMgrGenerator
+public class ControllerSQLTransactionMgrGenerator implements TransactionMgrGenerator
 {
     private final ControllerDatabase controllerDatabase;
 
     @Inject
-    public ControllerTransactionMgrGenerator(ControllerDatabase controllerDatabaseRef)
+    public ControllerSQLTransactionMgrGenerator(ControllerDatabase controllerDatabaseRef)
     {
         controllerDatabase = controllerDatabaseRef;
     }

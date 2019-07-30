@@ -7,6 +7,6 @@ public class ControllerTransactionMgrModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(TransactionMgrGenerator.class).to(ControllerTransactionMgrGenerator.class);
+        bind(TransactionMgrGenerator.class).to(ControllerSQLTransactionMgrGenerator.class);
     }
 }
