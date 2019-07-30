@@ -1,8 +1,8 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.ControllerCoreModule;
+import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;

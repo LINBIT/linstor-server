@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.security.AccessContext;

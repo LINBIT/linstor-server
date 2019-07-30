@@ -2,8 +2,8 @@ package com.linbit.linstor.drbdstate;
 
 import com.linbit.Checks;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.utils.MathUtils;
 
 import java.util.Map;

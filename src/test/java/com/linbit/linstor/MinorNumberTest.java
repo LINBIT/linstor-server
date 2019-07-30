@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.core.types.MinorNumber;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

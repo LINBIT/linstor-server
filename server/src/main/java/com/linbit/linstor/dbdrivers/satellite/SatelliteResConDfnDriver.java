@@ -1,8 +1,8 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 

@@ -1,11 +1,11 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.DbgInstanceUuid;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotName;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;

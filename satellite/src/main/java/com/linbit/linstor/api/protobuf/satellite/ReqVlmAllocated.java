@@ -2,8 +2,6 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
@@ -11,6 +9,8 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.proto.common.FilterOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.MsgIntVlmAllocated;

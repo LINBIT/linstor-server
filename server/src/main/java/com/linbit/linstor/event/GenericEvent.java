@@ -2,10 +2,10 @@ package com.linbit.linstor.event;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotName;
-import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;

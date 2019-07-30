@@ -1,16 +1,16 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.drbd.md.MdException;
-import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotName;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.types.LsIpAddress;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.propscon.PropsContainerFactory;

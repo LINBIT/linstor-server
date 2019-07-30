@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.security.AccessContext;

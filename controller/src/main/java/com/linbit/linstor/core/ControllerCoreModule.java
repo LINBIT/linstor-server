@@ -4,7 +4,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
 
-import com.linbit.linstor.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;

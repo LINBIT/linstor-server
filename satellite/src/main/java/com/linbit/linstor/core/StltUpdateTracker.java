@@ -1,10 +1,11 @@
 package com.linbit.linstor.core;
 
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotName;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.StorPoolName;
+
 import reactor.core.publisher.Flux;
 
 import java.util.UUID;

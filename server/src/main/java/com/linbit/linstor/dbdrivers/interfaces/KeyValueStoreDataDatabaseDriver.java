@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.KeyValueStoreName;
+import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.objects.KeyValueStoreData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 

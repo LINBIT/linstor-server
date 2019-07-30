@@ -1,10 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
@@ -12,6 +8,9 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
 import com.linbit.linstor.core.objects.Node;
@@ -23,6 +22,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Node.NodeFlag;
 import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;

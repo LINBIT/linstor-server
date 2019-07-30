@@ -2,9 +2,9 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.objects.KeyValueStoreData;
 import com.linbit.linstor.core.objects.KeyValueStore.InitMaps;
 import com.linbit.linstor.dbdrivers.DatabaseException;

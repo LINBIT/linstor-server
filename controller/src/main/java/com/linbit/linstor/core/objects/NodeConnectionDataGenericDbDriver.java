@@ -2,8 +2,8 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;

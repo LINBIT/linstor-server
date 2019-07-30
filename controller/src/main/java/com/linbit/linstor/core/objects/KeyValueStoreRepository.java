@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStoreData;
 import com.linbit.linstor.security.AccessContext;

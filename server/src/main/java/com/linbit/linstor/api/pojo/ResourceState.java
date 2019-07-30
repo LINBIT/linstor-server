@@ -1,9 +1,9 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.core.identifier.VolumeNumber;
+
 import java.util.Collection;
 import java.util.Map;
-
-import com.linbit.linstor.VolumeNumber;
 
 public class ResourceState
 {

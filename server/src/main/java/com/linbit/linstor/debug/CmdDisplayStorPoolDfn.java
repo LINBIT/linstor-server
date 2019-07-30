@@ -1,8 +1,8 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.security.AccessContext;

@@ -2,8 +2,8 @@ package com.linbit.linstor.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.Triple;

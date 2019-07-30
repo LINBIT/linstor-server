@@ -1,6 +1,6 @@
 package com.linbit.linstor.drbdstate;
 
-import com.linbit.linstor.MinorNumber;
+import com.linbit.linstor.core.types.MinorNumber;
 
 /**
  * Observes the state of a DRBD resource

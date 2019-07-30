@@ -1,9 +1,9 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.DbgInstanceUuid;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -29,7 +29,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
     UUID getUuid();
 
     /**
-     * Returns the {@link com.linbit.linstor.StorPoolName}. This call is the same as
+     * Returns the {@link com.linbit.linstor.core.identifier.StorPoolName}. This call is the same as
      * <code>getDefinition(accCtx).getName()</code> but does not require special access.
      */
     StorPoolName getName();

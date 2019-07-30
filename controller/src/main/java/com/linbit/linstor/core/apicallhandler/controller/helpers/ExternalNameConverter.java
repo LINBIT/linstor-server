@@ -2,8 +2,8 @@ package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.ResourceName;
 
 import java.util.UUID;
 

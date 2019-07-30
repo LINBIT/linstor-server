@@ -2,8 +2,8 @@ package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.CollectionDatabaseDriver;
 import com.linbit.NoOpCollectionDatabaseDriver;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;

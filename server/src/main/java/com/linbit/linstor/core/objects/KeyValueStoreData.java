@@ -1,8 +1,8 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.api.pojo.KeyValueStorePojo;
+import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;

@@ -1,5 +1,9 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.ResourceConnectionData;

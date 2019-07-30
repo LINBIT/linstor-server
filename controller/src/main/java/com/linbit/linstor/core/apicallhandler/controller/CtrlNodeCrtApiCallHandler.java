@@ -1,9 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -18,11 +15,14 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerOffline;
 import com.linbit.linstor.security.AccessContext;

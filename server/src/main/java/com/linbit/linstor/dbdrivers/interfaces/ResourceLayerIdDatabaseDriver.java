@@ -1,8 +1,8 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;

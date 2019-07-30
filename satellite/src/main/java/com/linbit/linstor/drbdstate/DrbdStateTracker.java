@@ -1,8 +1,8 @@
 package com.linbit.linstor.drbdstate;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.core.DrbdStateChange;
+import com.linbit.linstor.core.types.MinorNumber;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

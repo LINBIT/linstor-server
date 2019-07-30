@@ -3,11 +3,11 @@ package com.linbit.linstor.api.protobuf.satellite;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 import reactor.core.publisher.Flux;
 

@@ -1,10 +1,10 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.DbgInstanceUuid;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;

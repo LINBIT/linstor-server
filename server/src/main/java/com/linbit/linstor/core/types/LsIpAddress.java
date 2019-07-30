@@ -1,4 +1,4 @@
-package com.linbit.linstor;
+package com.linbit.linstor.core.types;
 
 import com.linbit.InvalidIpAddressException;
 

@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.NumberAlloc;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 
 /**
  * Allocator for unoccupied DRBD volume numbers

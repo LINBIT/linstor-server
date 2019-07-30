@@ -2,12 +2,16 @@ package com.linbit.linstor;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
+import com.linbit.linstor.core.types.LsIpAddress;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.GenericDbBase;
 

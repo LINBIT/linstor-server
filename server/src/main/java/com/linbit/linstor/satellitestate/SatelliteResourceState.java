@@ -1,6 +1,6 @@
 package com.linbit.linstor.satellitestate;
 
-import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 
 import java.util.HashMap;
 import java.util.Map;

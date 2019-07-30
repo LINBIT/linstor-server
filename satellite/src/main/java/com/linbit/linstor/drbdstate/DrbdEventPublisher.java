@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
-import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;

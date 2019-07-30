@@ -1,9 +1,9 @@
 package com.linbit.linstor.drbdstate;
 
+import com.linbit.linstor.core.identifier.VolumeNumber;
+
 import java.util.Map;
 import java.util.TreeMap;
-
-import com.linbit.linstor.VolumeNumber;
 
 /**
  * Tracks the state of a kernel DRBD peer connection

@@ -2,10 +2,10 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
+import com.linbit.linstor.core.types.LsIpAddress;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;

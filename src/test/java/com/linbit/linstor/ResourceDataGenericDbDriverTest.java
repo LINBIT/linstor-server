@@ -3,6 +3,8 @@ package com.linbit.linstor;
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;

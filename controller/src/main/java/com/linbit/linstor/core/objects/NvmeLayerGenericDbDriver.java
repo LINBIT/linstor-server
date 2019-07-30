@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;

@@ -1,18 +1,18 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SnapshotName;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.KeyValueStoreName;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.KeyValueStoreData;
 import com.linbit.linstor.core.objects.KeyValueStoreRepository;
 import com.linbit.linstor.core.objects.Node;

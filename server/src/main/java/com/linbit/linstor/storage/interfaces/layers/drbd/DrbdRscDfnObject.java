@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.interfaces.layers.drbd;
 
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 

@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
-import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
@@ -11,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.controller.exceptions.IllegalStora
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.objects.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeData;

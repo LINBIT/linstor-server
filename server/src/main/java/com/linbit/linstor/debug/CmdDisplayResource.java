@@ -1,9 +1,9 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;

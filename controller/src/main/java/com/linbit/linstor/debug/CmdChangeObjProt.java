@@ -2,12 +2,12 @@ package com.linbit.linstor.debug;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.KeyValueStoreName;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.KeyValueStoreName;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStoreData;
 import com.linbit.linstor.core.objects.KeyValueStoreRepository;

@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.interfaces.layers.drbd;
 
-import com.linbit.linstor.NodeId;
+import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;

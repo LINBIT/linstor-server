@@ -1,12 +1,13 @@
 package com.linbit.linstor.event;
 
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.VolumeNumber;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import reactor.core.Disposable;
+
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 
 import java.util.UUID;
 

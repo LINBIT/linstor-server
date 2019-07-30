@@ -1,10 +1,10 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.types.LsIpAddress;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;

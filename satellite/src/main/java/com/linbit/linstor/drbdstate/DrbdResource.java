@@ -2,9 +2,9 @@ package com.linbit.linstor.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 
 import java.util.Arrays;

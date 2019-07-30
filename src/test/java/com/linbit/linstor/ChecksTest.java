@@ -5,6 +5,7 @@ import com.linbit.Checks;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.core.types.LsIpAddress;
 
 import org.junit.After;
 import org.junit.Before;

@@ -1,6 +1,6 @@
 package com.linbit.linstor.core;
 
-import com.linbit.linstor.NodeName;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.netcom.Peer;
 

@@ -1,10 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;

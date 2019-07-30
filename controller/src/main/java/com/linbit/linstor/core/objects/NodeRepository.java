@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;

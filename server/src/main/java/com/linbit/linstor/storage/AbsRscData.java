@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;

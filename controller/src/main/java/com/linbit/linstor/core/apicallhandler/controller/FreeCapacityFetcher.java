@@ -1,8 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.StorPool;
 
 import reactor.core.publisher.Mono;

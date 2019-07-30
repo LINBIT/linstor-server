@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.core.types.TcpPortNumber;
+
 import org.junit.Test;
 
 import static org.junit.Assert.fail;

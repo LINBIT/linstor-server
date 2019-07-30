@@ -2,7 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.NodeName;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;

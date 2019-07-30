@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import org.junit.Test;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 
 import static org.junit.Assert.fail;
 

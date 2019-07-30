@@ -4,10 +4,10 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
 import com.linbit.Checks;
-import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.types.MinorNumber;
+import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 

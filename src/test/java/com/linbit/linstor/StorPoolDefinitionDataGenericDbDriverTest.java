@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import javax.inject.Inject;
 
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;

@@ -2,10 +2,10 @@ package com.linbit.linstor.storage.layer.provider.zfs;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;

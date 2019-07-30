@@ -1,6 +1,6 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.NodeName;
+import com.linbit.linstor.core.identifier.NodeName;
 
 import java.util.Comparator;
 

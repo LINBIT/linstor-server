@@ -4,7 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;

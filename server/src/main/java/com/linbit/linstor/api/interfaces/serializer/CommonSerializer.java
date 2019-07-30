@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;

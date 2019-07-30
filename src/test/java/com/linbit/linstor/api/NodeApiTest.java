@@ -12,13 +12,13 @@ import java.util.TreeSet;
 
 import com.google.inject.Key;
 
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.DoNotSeedDefaultPeer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.core.objects.Node.NodeType;

@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.data.provider.utils;
 
-import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;

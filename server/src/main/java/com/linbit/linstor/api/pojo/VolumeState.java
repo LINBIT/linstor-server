@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.types.MinorNumber;
 
 public class VolumeState
 {

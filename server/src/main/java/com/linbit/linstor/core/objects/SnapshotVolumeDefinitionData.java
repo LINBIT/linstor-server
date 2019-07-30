@@ -2,9 +2,9 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.Props;

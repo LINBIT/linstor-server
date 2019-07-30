@@ -1,8 +1,8 @@
 package com.linbit.linstor.utils.layer;
 
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;

@@ -2,12 +2,12 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.FreeSpaceMgrName;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
