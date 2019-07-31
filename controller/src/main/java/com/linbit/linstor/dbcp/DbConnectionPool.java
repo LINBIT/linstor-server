@@ -14,8 +14,8 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GenericDbUtils;
+import com.linbit.linstor.dbdrivers.SQLUtils;
+
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -27,7 +27,6 @@ import org.flywaydb.core.Flyway;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.validation.constraints.NotNull;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -324,7 +323,7 @@ public class DbConnectionPool implements ControllerDatabase
             try (Connection connection = dataSource.getConnection())
             {
                 DatabaseDriverInfo databaseInfo = DatabaseDriverInfo.createDriverInfo(dbType);
-                GenericDbUtils.executeStatement(connection, databaseInfo.isolationStatement());
+                SQLUtils.executeStatement(connection, databaseInfo.isolationStatement());
             }
         }
         catch (SQLException exc)

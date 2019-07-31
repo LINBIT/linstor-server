@@ -3,7 +3,6 @@ package com.linbit.linstor.core;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.GenericDbUtils;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CMDLINE_ERROR;
@@ -136,7 +135,7 @@ public class LinstorConfig
                 con.setSchema(DATABASE_SCHEMA_NAME);
                 final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
                     "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'";
-                GenericDbUtils.executeStatement(con, String.format(stmt, controllerPort));
+                SQLUtils.executeStatement(con, String.format(stmt, controllerPort));
                 con.commit();
                 System.out.println("Controller plain port set to " + controllerPort);
             }
@@ -169,7 +168,7 @@ public class LinstorConfig
                 con.setSchema(DATABASE_SCHEMA_NAME);
                 final String stmt = "UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
                     "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'";
-                GenericDbUtils.executeStatement(con, String.format(stmt, listenAddress));
+                SQLUtils.executeStatement(con, String.format(stmt, listenAddress));
                 con.commit();
 
                 System.out.println("Controller plain listen address set to " + listenAddress);

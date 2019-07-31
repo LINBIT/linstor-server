@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.GenericDbUtils;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
@@ -24,7 +23,7 @@ public class Migration_2018_03_27_14_01_Init extends LinstorMigration
             String isolationStatement = databaseInfo.isolationStatement();
             if (isolationStatement.length() >= 1)
             {
-                GenericDbUtils.executeStatement(connection, databaseInfo.isolationStatement());
+                SQLUtils.executeStatement(connection, databaseInfo.isolationStatement());
             }
             SQLUtils.runSql(connection, databaseInfo.prepareInit(sql));
         }

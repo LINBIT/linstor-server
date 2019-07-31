@@ -20,6 +20,22 @@ public class SQLUtils
 {
     private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
+    public static int executeStatement(final Connection con, final String statement)
+        throws SQLException
+    {
+        int ret = 0;
+        try (PreparedStatement stmt = con.prepareStatement(statement))
+        {
+            ret = stmt.executeUpdate();
+        }
+        catch (SQLException throwable)
+        {
+            System.err.println("Error: " + statement);
+            throw throwable;
+        }
+        return ret;
+    }
+
     public static void setIntIfNotNull(PreparedStatement stmt, int idx, Integer val) throws SQLException
     {
         if (val != null)
@@ -59,14 +75,14 @@ public class SQLUtils
                     cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
                     String cmd = cmdBuilder.toString();
                     cmdBuilder.setLength(0);
-                    GenericDbUtils.executeStatement(con, cmd);
+                    executeStatement(con, cmd);
                 }
             }
         }
         String nonTerminatedStatement = cmdBuilder.toString();
         if (!nonTerminatedStatement.trim().isEmpty())
         {
-            GenericDbUtils.executeStatement(con, nonTerminatedStatement);
+            executeStatement(con, nonTerminatedStatement);
         }
     }
 
@@ -86,7 +102,7 @@ public class SQLUtils
                     cmdBuilder.setLength(cmdBuilder.length() - 1); // cut the ;
                     String cmd = cmdBuilder.toString();
                     cmdBuilder.setLength(0);
-                    GenericDbUtils.executeStatement(con, cmd);
+                    executeStatement(con, cmd);
                 }
             }
         }
@@ -94,7 +110,7 @@ public class SQLUtils
         String nonTerminatedStatement = cmdBuilder.toString();
         if (!nonTerminatedStatement.trim().isEmpty())
         {
-            GenericDbUtils.executeStatement(con, nonTerminatedStatement);
+            executeStatement(con, nonTerminatedStatement);
         }
     }
 

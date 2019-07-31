@@ -5,7 +5,7 @@ import com.linbit.linstor.core.ControllerCmdlArguments;
 import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.MigrationUtils;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.GenericDbUtils;
+import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
@@ -126,14 +126,14 @@ public class DbConnectionPoolInitializer
 
                 if (args.getInMemoryDbPort() > 0)
                 {
-                    GenericDbUtils.executeStatement(con,
+                    SQLUtils.executeStatement(con,
                         String.format("UPDATE PROPS_CONTAINERS SET PROP_VALUE='%d' " +
                                 "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/port'",
                             args.getInMemoryDbPort()));
                 }
                 if (args.getInMemoryDbAddress() != null)
                 {
-                    GenericDbUtils.executeStatement(con,
+                    SQLUtils.executeStatement(con,
                         String.format("UPDATE PROPS_CONTAINERS SET PROP_VALUE='%s' " +
                                 "WHERE PROPS_INSTANCE='/CTRLCFG' AND PROP_KEY='netcom/PlainConnector/bindaddress'",
                             args.getInMemoryDbAddress()));
