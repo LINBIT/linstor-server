@@ -19,7 +19,10 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.VlmApiData;
 import com.linbit.linstor.proto.common.RscOuterClass;
+import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
+import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass.Rsc;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -196,6 +199,17 @@ public class RscApiTest extends ApiTestBase
                             .addAllRscFlags(flags)
                             .putAllProps(rscPropsMap)
                             .addAllVlms(VlmApiData.toVlmProtoList(vlmApiDataList))
+                            .setLayerObject(
+                                RscLayerData.newBuilder()
+                                    .setId(0)
+                                    .setRscNameSuffix("")
+                                    .setLayerType(LayerType.STORAGE)
+                                    .setStorage(
+                                        StorageRsc.newBuilder()
+                                            .build()
+                                    )
+                                    .build()
+                            )
                             .build()
                     )
                 )

@@ -110,6 +110,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     {
         seedDefaultPeerRule.setDefaultPeerAccessContext(BOB_ACC_CTX);
         super.setUp();
+        dfltRscGrp = createDefaultResourceGroup(BOB_ACC_CTX);
         createRscDfn(TEST_RSC_NAME, TEST_TCP_PORT_NR);
         MINOR_GEN.set(MINOR_NR_MIN);
 
@@ -119,7 +120,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         commitAndCleanUp(true);
 
-        dfltRscGrp = createDefaultResourceGroup(BOB_ACC_CTX);
     }
 
     @After
@@ -925,7 +925,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         throws Exception
     {
         ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.create(
-            ApiTestBase.BOB_ACC_CTX,
+            BOB_ACC_CTX,
             new ResourceName(rscNameStr),
             null,
             tcpPort,

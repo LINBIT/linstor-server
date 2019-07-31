@@ -27,7 +27,6 @@ import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -42,6 +41,8 @@ import com.linbit.linstor.core.objects.ResourceConnectionDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroupDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDataControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataControllerFactory;
@@ -62,6 +63,7 @@ import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.TestDbModule;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -70,7 +72,6 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.ControllerTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -96,7 +97,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -189,11 +189,14 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected VolumeDataControllerFactory volumeDataFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     @Inject protected ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
+    @Inject protected ResourceGroupDataControllerFactory resourceGroupDataFactory;
     @Inject protected NetInterfaceDataFactory netInterfaceDataFactory;
 
     @Inject protected LinStorScope testScope;
     @Inject protected TransactionObjectFactory transObjFactory;
     @Inject protected Provider<TransactionMgr> transMgrProvider;
+
+    @Inject protected ResourceGroupDataDatabaseDriver rscGrpDbDriver;
 
     @BeforeClass
     public static void setUpBeforeClass()
@@ -721,32 +724,15 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         return securityTestUtils.createObjectProtection(accCtx, objPath);
     }
 
-    protected ResourceGroupData createDefaultResourceGroup(AccessContext initCtx) throws InvalidNameException
+    protected ResourceGroupData createDefaultResourceGroup(AccessContext initCtx)
+        throws InvalidNameException, AccessDeniedException, DatabaseException
     {
-        return new ResourceGroupData(
-            java.util.UUID.randomUUID(),
-            createTestObjectProtection(
-                initCtx,
-                ObjectProtection.buildPath(new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME))
-            ),
-            new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
-            "",
-            Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            rscDfnMap,
-            null,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider
-        );
+        ResourceGroupData rscGrp = ((ResourceGroupDataGenericDbDriver) rscGrpDbDriver).loadAll().keySet().stream()
+            .filter(grp -> grp.getName().displayValue.equals(InternalApiConsts.DEFAULT_RSC_GRP_NAME))
+            .findFirst()
+            .get();
+        rscGrp.getObjProt().addAclEntry(SYS_CTX, initCtx.subjectRole, AccessType.CONTROL);
+        return rscGrp;
     }
 
     protected FreeSpaceMgr getFreeSpaceMgr(StorPoolDefinition storPoolDfn, Node node)
