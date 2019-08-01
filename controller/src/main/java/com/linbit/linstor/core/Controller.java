@@ -423,12 +423,17 @@ public final class Controller
             try
             {
                 linstorConfig = new Toml().read(linstorConfigPath.toFile()).to(LinstorConfigToml.class);
+                errorReporter.logInfo("Linstor configuration file loaded from '%s'.", linstorConfigPath);
             }
             catch (RuntimeException tomlExc)
             {
                 errorReporter.logError("Error parsing '%s': %s", linstorConfigPath.toString(), tomlExc.getMessage());
                 System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
             }
+        }
+        else
+        {
+            errorReporter.logInfo("Linstor configuration file not found, using defaults.");
         }
 
         return linstorConfig;
