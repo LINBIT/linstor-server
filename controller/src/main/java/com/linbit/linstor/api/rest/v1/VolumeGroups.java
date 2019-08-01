@@ -10,6 +10,7 @@ import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -24,6 +25,7 @@ import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 
@@ -128,5 +130,23 @@ public class VolumeGroups
 
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
+    }
+
+    @DELETE
+    @Path("{volume_number}")
+    public Response deleteVolumeGroup(
+        @Context Request request,
+        @PathParam("rscName") String rscName,
+        @PathParam("volume_number") int volumeNumber
+    )
+    {
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_DEL_VLM_GRP, request),
+            () -> ApiCallRcConverter.toResponse(
+                ctrlApiCallHandler.deleteVolumeGroup(rscName, volumeNumber),
+                Response.Status.OK
+            ),
+            true
+        );
     }
 }

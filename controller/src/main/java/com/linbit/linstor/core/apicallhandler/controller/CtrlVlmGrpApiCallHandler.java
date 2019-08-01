@@ -17,6 +17,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -46,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
 @Singleton
 public class CtrlVlmGrpApiCallHandler
@@ -261,7 +263,19 @@ public class CtrlVlmGrpApiCallHandler
         try
         {
             VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameRef, vlmNrRef, true);
+            final UUID vlmGrpUUID = vlmGrp.getUuid();
+            int vlmNr = vlmGrp.getVolumeNumber().value;
             vlmGrp.delete(peerAccCtx.get());
+
+            ctrlTransactionHelper.commit();
+
+            responseConverter.addWithOp(
+                responses,
+                context,
+                ApiSuccessUtils.defaultDeletedEntry(
+                    vlmGrpUUID, getVlmGrpDescriptionInline(rscGrpNameRef, vlmNr)
+                )
+            );
         }
         catch (AccessDeniedException accDeniedExc)
         {
