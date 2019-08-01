@@ -225,8 +225,8 @@ public class ResourceGroups
             );
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.spawn(
                 rscName,
-                rscGrpSpwn.rsc_name,
-                rscGrpSpwn.vlm_sizes,
+                rscGrpSpwn.resource_definition_name,
+                rscGrpSpwn.volume_sizes,
                 rscGrpSpwn.partial,
                 rscGrpSpwn.definitions_only
             )

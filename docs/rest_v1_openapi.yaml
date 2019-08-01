@@ -2076,8 +2076,8 @@ paths:
             schema:
               $ref: '#/components/schemas/ResourceGroupSpawn'
             example:
-              rsc_name: res1
-              vlm_sizes: 
+              resource_definition_name: res1
+              volume_sizes:
                 - 1048576
                 - 20971520
   /v1/resource-groups/{resource-group}/volume-groups:
@@ -3770,10 +3770,10 @@ components:
     ResourceGroupSpawn:
       type: object
       properties:
-        rsc_name:
+        resource_definition_name:
           type: string
           description: name of the resulting resource-definition
-        vlm_sizes:
+        volume_sizes:
           type: array
           items:
             type: integer

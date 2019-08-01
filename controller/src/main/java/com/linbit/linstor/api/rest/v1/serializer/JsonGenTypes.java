@@ -510,11 +510,11 @@ public class JsonGenTypes
         /**
          * name of the resulting resource-definition
          */
-        public String rsc_name;
+        public String resource_definition_name;
         /**
          * sizes (in kib) of the resulting volume-definitions
          */
-        public List<Long> vlm_sizes = Collections.emptyList();
+        public List<Long> volume_sizes = Collections.emptyList();
         /**
          * If false, the length of the vlm_sizes has to match the number of volume-groups or an
          * error is returned.
