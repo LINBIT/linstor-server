@@ -283,13 +283,12 @@ public final class Controller
         String restBindAddress;
         String restBindAddresSecure;
         Path keyStorePath = null;
-        String keyStorePassword = "";
+        String keyStorePassword;
         try
         {
             if (cArgs.getRESTBindAddress() != null)
             {
                 restBindAddress = cArgs.getRESTBindAddress();
-                restBindAddresSecure = cArgs.getRESTBindAddressSecure();
             }
             else
             {
@@ -307,7 +306,14 @@ public final class Controller
                         linstorConfig.getHTTP().getPort()
                     );
                 }
+            }
 
+            if (cArgs.getRESTBindAddressSecure() != null)
+            {
+                restBindAddresSecure = cArgs.getRESTBindAddressSecure();
+            }
+            else
+            {
                 final String envRESTBindAddressSecure = System.getenv(ENV_REST_BIND_ADDRESS_SECURE);
                 if (envRESTBindAddressSecure != null)
                 {
@@ -320,19 +326,19 @@ public final class Controller
                         linstorConfig.getHTTPS().getPort()
                     );
                 }
-
-                final String keyStorePathProp = linstorConfig.getHTTPS().getKeystore();
-                if (keyStorePathProp != null)
-                {
-                    keyStorePath = Paths.get(keyStorePathProp);
-                    if (!keyStorePath.isAbsolute())
-                    {
-                        keyStorePath = cArgs.getConfigurationDirectory().resolve(keyStorePath);
-                    }
-                }
-
-                keyStorePassword = linstorConfig.getHTTPS().getKeystorePassword();
             }
+
+            final String keyStorePathProp = linstorConfig.getHTTPS().getKeystore();
+            if (keyStorePathProp != null)
+            {
+                keyStorePath = Paths.get(keyStorePathProp);
+                if (!keyStorePath.isAbsolute())
+                {
+                    keyStorePath = cArgs.getConfigurationDirectory().resolve(keyStorePath);
+                }
+            }
+
+            keyStorePassword = linstorConfig.getHTTPS().getKeystorePassword();
 
             if (restEnabled)
             {
