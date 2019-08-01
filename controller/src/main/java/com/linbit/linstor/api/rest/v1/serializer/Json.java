@@ -34,6 +34,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -714,5 +715,16 @@ public class Json
             rscGrp.select_filter = auto_select_filter;
         }
         return rscGrp;
+    }
+
+    public static JsonGenTypes.VolumeGroup apiToVolumeGroup(
+        VolumeGroup.VlmGrpApi vlmGrpApi
+    )
+    {
+        JsonGenTypes.VolumeGroup vlmGrp = new JsonGenTypes.VolumeGroup();
+        vlmGrp.volume_number = vlmGrpApi.getVolumeNr();
+        vlmGrp.props = vlmGrpApi.getProps();
+        vlmGrp.uuid = vlmGrpApi.getUUID().toString();
+        return vlmGrp;
     }
 }

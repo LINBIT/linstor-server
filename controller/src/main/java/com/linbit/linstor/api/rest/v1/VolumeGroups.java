@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
@@ -22,6 +23,7 @@ import javax.ws.rs.core.Response;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 
@@ -77,12 +79,15 @@ public class VolumeGroups
             }
             vlmGrpList = vlmGrpList.subList(offset, limit + offset);
 
-            return requestHelper.queryRequestResponse(
+            final List<JsonGenTypes.VolumeGroup> vlmGrps = vlmGrpList.stream().map(Json::apiToVolumeGroup)
+                .collect(Collectors.toList());
+
+            return RequestHelper.queryRequestResponse(
                 objectMapper,
                 ApiConsts.FAIL_NOT_FOUND_VLM_GRP,
                 "Volume Group",
                 vlmNr == null ? null : vlmNr.toString(),
-                vlmGrpList
+                vlmGrps
             );
         }, false);
     }
