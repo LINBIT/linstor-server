@@ -902,14 +902,15 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 {
                     targetContainer = root.ensureNamespaceExists(key.substring(0, idx));
                 }
+                String relativeKey = key.substring(idx + 1);
                 String oldValue;
                 if (value == null)
                 {
-                    oldValue = targetContainer.propMap.remove(key);
+                    oldValue = targetContainer.propMap.remove(relativeKey);
                 }
                 else
                 {
-                    oldValue = targetContainer.propMap.put(key, value);
+                    oldValue = targetContainer.propMap.put(relativeKey, value);
                 }
                 if (oldValue == null)
                 {
