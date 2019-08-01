@@ -59,7 +59,7 @@ public class VolumeGroups
     @Path("{vlmNr}")
     public Response listVolumeGroup(
         @Context Request request,
-        @PathParam("rscGrp") String rscName,
+        @PathParam("rscName") String rscName,
         @PathParam("vlmNr") Integer vlmNr,
         @DefaultValue("0") @QueryParam("limit") int limitRef,
         @DefaultValue("0") @QueryParam("offset") int offset
@@ -71,7 +71,7 @@ public class VolumeGroups
 
             List<VlmGrpApi> vlmGrpList =  ctrlApiCallHandler.listVolumeGroups(rscName, vlmNr);
             int limit = vlmGrpList.size();
-            if (limitRef == 0)
+            if (limitRef != 0)
             {
                 limit = limitRef;
             }

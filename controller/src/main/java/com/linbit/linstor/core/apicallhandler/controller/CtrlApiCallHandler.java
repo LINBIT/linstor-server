@@ -1253,12 +1253,12 @@ public class CtrlApiCallHandler
 
     public List<VlmGrpApi> listVolumeGroups(String rscNameRef, Integer vlmNrRef)
     {
-        List<VlmGrpApi> listResourceGroups;
+        List<VlmGrpApi> listVolumeGroups;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_GRP_MAP))
         {
-            listResourceGroups = vlmGrpApiCallHandler.listVolumeGroups(rscNameRef, vlmNrRef);
+            listVolumeGroups = vlmGrpApiCallHandler.listVolumeGroups(rscNameRef, vlmNrRef);
         }
-        return listResourceGroups;
+        return listVolumeGroups;
     }
 
     public ApiCallRc modifyVolumeGroup(

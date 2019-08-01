@@ -56,6 +56,8 @@ import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeGroupData;
+import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver.RscLayerInfoData;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
@@ -140,6 +142,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
+    private VolumeGroupDataGenericDbDriver vlmGrpDriver;
 
 
     @Inject
@@ -152,6 +155,7 @@ public class DatabaseLoader implements DatabaseDriver
         ResourceDefinitionDataGenericDbDriver resesourceDefinitionDriverRef,
         ResourceDataGenericDbDriver resourceDriverRef,
         ResourceConnectionDataGenericDbDriver rscConnDriverRef,
+        VolumeGroupDataGenericDbDriver vlmGrpDriverRef,
         VolumeDefinitionDataGenericDbDriver vlmDfnDriverRef,
         VolumeDataGenericDbDriver volumeDriverRef,
         VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
@@ -184,6 +188,7 @@ public class DatabaseLoader implements DatabaseDriver
         rscDfnDriver = resesourceDefinitionDriverRef;
         rscDriver = resourceDriverRef;
         rscConnDriver = rscConnDriverRef;
+        vlmGrpDriver = vlmGrpDriverRef;
         vlmDfnDriver = vlmDfnDriverRef;
         vlmDriver = volumeDriverRef;
         vlmConnDriver = vlmConnDriverRef;
@@ -219,9 +224,20 @@ public class DatabaseLoader implements DatabaseDriver
             // load the resource groups
             Map<ResourceGroup, ResourceGroup.InitMaps> loadedRscGroupsMap =
                 Collections.unmodifiableMap(rscGrpDriver.loadAll());
+
             // temporary map to restore rscDfn <-> rscGroup relations
             Map<ResourceGroupName, ResourceGroup> tmpRscGroups =
                 mapByName(loadedRscGroupsMap, ResourceGroup::getName);
+
+            List<VolumeGroupData> vlmGrpList =
+                Collections.unmodifiableList(vlmGrpDriver.loadAll(tmpRscGroups));
+            for (VolumeGroupData vlmGrp : vlmGrpList)
+            {
+                loadedRscGroupsMap.get(vlmGrp.getResourceGroup()).getVlmGrpMap().put(
+                    vlmGrp.getVolumeNumber(),
+                    vlmGrp
+                );
+            }
 
             // load the main objects (nodes, rscDfns, storPoolDfns)
             Map<Node, Node.InitMaps> loadedNodesMap =
