@@ -523,6 +523,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
                 errorReporter.logTrace(
                     "Updating ResourceGroup's storage pool name from [%s] to [%s] %s",
                     rscGrp.getAutoPlaceConfig().getStorPoolNameStr(dbCtx),
+                    storPoolName,
                     getId(rscGrp)
                 );
                 try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_AP_STOR_POOL_NAME))
