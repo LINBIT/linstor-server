@@ -227,9 +227,19 @@ public class CtrlVlmGrpApiCallHandler
                 LinStorObject.VOLUME_DEFINITION,
                 overridePropsRef,
                 props,
-                ApiConsts.FAIL_ACC_DENIED_RSC
+                ApiConsts.FAIL_ACC_DENIED_VLM_GRP
             );
             ctrlPropsHelper.remove(props, deletePropKeysRef, deleteNamespacesRef);
+
+            ctrlTransactionHelper.commit();
+
+            responseConverter.addWithOp(
+                responses,
+                context,
+                ApiSuccessUtils.defaultModifiedEntry(
+                    vlmGrp.getUuid(), getVlmGrpDescriptionInline(rscGrpNameRef, vlmGrp.getVolumeNumber().value)
+                )
+            );
         }
         catch (AccessDeniedException accDeniedExc)
         {

@@ -14,6 +14,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -21,8 +22,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -131,6 +133,38 @@ public class VolumeGroups
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
     }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("{volume_number}")
+    public Response modifyVolumeGroup(
+        @Context Request request,
+        @PathParam("rscName") String rscName,
+        @PathParam("volume_number") int volumeNumber,
+        String jsonData
+    ) throws IOException
+    {
+        JsonGenTypes.VolumeGroupModify modifyData = objectMapper.readValue(
+            jsonData,
+            JsonGenTypes.VolumeGroupModify.class
+        );
+
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_MOD_VLM_GRP, request),
+            () -> ApiCallRcConverter.toResponse(
+                ctrlApiCallHandler.modifyVolumeGroup(
+                    rscName,
+                    volumeNumber,
+                    modifyData.override_props,
+                    new HashSet<>(modifyData.delete_props),
+                    new HashSet<>(modifyData.delete_namespaces)
+                ),
+                Response.Status.OK
+            ),
+            true
+        );
+    }
+
 
     @DELETE
     @Path("{volume_number}")
