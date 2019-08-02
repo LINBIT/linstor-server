@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.7";
+    public static final String REST_API_VERSION = "1.0.8";
 
     /**
      * Common api reply structure
@@ -497,7 +497,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceGroupModify
     {
-        public String description = "";
+        public String description;
         public Map<String, String> override_props = Collections.emptyMap();
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
@@ -565,7 +565,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AutoSelectFilter
     {
-        public int place_count = 2;
+        public Integer place_count;
         public String storage_pool;
         public List<String> not_place_with_rsc = Collections.emptyList();
         public String not_place_with_rsc_regex;

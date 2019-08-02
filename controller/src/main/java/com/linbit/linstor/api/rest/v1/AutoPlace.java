@@ -55,6 +55,11 @@ public class AutoPlace
             JsonGenTypes.AutoPlaceRequest autoPlaceRequest = objectMapper
                 .readValue(jsonData, JsonGenTypes.AutoPlaceRequest.class);
 
+            if (autoPlaceRequest.select_filter.place_count == null)
+            {
+                autoPlaceRequest.select_filter.place_count = 2;
+            }
+
             Flux<ApiCallRc> flux = ctrlRscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
                 new Json.AutoSelectFilterData(autoPlaceRequest.select_filter),

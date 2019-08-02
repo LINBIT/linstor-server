@@ -21,6 +21,11 @@ info:
 
     Changelog:
 
+    * 1.0.8
+      - Added /v1/resource-groups
+      - Added /v1/resource-groups/{rscgrp}/volume-groups
+      - Moved AutoSelectFilter::place_count default indirectly to create resource implementation
+      - Added diskless_on_remaining to AutoSelectFilter
     * 1.0.7
       - Added ext_meta_stor_pool to DrbdVolume
       - Added is_active field to the NetInterface type
@@ -42,7 +47,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: "1.0.7"
+  version: "1.0.8"
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -1456,6 +1461,7 @@ paths:
       operationId: resourceAutoplace
       description: |
         Auto place the resource on the specified place_count redundency.
+        If place_count isn't given 2 is the default.
 
       responses:
         '201':
@@ -3754,7 +3760,6 @@ components:
       properties:
         description:
           type: string
-          default: ''
         override_props:
           $ref: '#/components/schemas/Properties'
         delete_props:
@@ -3783,16 +3788,16 @@ components:
           type: boolean
           default: false
           description: |
-            If false, the length of the vlm_sizes has to match the number of volume-groups or an 
+            If false, the length of the vlm_sizes has to match the number of volume-groups or an
             error is returned.
-            
+
             If true and there are more vlm_sizes than volume-groups, the additional volume-definitions
             will simply have no pre-set properties (i.e. "empty" volume-definitions)
             If true and there are less vlm_sizes than volume-groups, the additional volume-groups
             won't be used.
-            
-            If the count of vlm_sizes matches the number of volume-groups, this "partial" parameter 
-            has no effect.  
+
+            If the count of vlm_sizes matches the number of volume-groups, this "partial" parameter
+            has no effect.
         definitions_only:
           type: boolean
           default: false
@@ -3839,6 +3844,7 @@ components:
           items:
             $ref: '#/components/schemas/LayerType'
     AutoSelectFilter:
+      # do not add defaults
       type: object
       required:
         - place_count
@@ -3846,7 +3852,6 @@ components:
         place_count:
           type: integer
           format: int32
-          default: 2
         storage_pool:
           type: string
         not_place_with_rsc:
