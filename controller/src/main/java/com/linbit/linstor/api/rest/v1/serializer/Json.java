@@ -711,6 +711,7 @@ public class Json
                 .map(Json::getLayerTypeString).collect(Collectors.toList());
             auto_select_filter.provider_list = autoSelectApi.getProviderList().stream()
                 .map(Json::deviceProviderKindAsString).collect(Collectors.toList());
+            auto_select_filter.diskless_on_remaining = autoSelectApi.getDisklessOnRemaining();
 
             rscGrp.select_filter = auto_select_filter;
         }

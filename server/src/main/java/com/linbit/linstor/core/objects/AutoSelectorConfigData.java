@@ -239,6 +239,11 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
                     storPoolName.set(pojoStorPool);
                 }
             }
+            Boolean disklessOnRemainingRef = autoPlaceConfigRef.getDisklessOnRemaining();
+            if (disklessOnRemainingRef != null)
+            {
+                disklessOnRemaining.set(disklessOnRemainingRef);
+            }
             List<String> doNotPlaceWithRscListRef = autoPlaceConfigRef.getDoNotPlaceWithRscList();
             if (doNotPlaceWithRscListRef != null && !doNotPlaceWithRscListRef.isEmpty())
             {
