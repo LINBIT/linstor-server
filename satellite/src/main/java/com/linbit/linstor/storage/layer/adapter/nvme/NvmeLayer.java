@@ -28,8 +28,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -104,11 +102,6 @@ public class NvmeLayer implements DeviceLayer
             if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
             {
                 nvmeUtils.disconnect(nvmeRscData);
-                nvmeRscData.setExists(false);
-                for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
-                {
-                    nvmeVlmData.setExists(false);
-                }
             }
             // connect
             else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
@@ -117,11 +110,6 @@ public class NvmeLayer implements DeviceLayer
                 if (!nvmeUtils.setDevicePaths(nvmeRscData, true))
                 {
                     throw new StorageException("Failed to set NVMe device path!");
-                }
-                nvmeRscData.setExists(true);
-                for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
-                {
-                    nvmeVlmData.setExists(true);
                 }
             }
             else
@@ -144,11 +132,6 @@ public class NvmeLayer implements DeviceLayer
                 {
                     nvmeUtils.deleteTargetRsc(nvmeRscData, sysCtx);
                     resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
-                    nvmeRscData.setExists(false);
-                    for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
-                    {
-                        nvmeVlmData.setExists(false);
-                    }
                 }
                 else
                 {
@@ -177,12 +160,9 @@ public class NvmeLayer implements DeviceLayer
                         List<NvmeVlmData> newVolumes = new ArrayList<>();
                         for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
                         {
-                            final Path namespacePath = Paths.get(
-                                subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().getValue() + 1)
-                            );
                             if (nvmeVlmData.getVolume().getFlags().isSet(sysCtx, VlmFlags.DELETE))
                             {
-                                nvmeUtils.deleteNamespace(namespacePath, extCmd);
+                                nvmeUtils.deleteNamespace(nvmeVlmData, subsystemDirectory);
                             }
                             else
                             {
@@ -194,10 +174,7 @@ public class NvmeLayer implements DeviceLayer
 
                         for (NvmeVlmData nvmeVlmData : newVolumes)
                         {
-                            final Path namespacePath = Paths.get(
-                                subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().getValue() + 1)
-                            );
-                            nvmeUtils.createNamespace(namespacePath, nvmeVlmData.getBackingDevice().getBytes());
+                            nvmeUtils.createNamespace(nvmeVlmData, subsystemDirectory);
                         }
                     }
                     catch (IOException | ChildProcessTimeoutException exc)
@@ -219,7 +196,6 @@ public class NvmeLayer implements DeviceLayer
                 {
                     resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                     nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
-                    nvmeRscData.setExists(true);
                 }
             }
         }
