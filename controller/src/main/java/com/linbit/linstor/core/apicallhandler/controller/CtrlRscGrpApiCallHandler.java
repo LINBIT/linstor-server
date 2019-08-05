@@ -705,7 +705,7 @@ public class CtrlRscGrpApiCallHandler
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
                     rscDfnNameRef,
                     autoSelectFilterPojo,
-                    false,
+                    autoPlaceConfig.getDisklessOnRemaining(peerCtx),
                     contextRef,
                     layerStackStr
                 );
