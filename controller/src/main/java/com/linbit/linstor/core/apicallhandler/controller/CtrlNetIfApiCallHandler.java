@@ -98,7 +98,7 @@ class CtrlNetIfApiCallHandler
         String address,
         Integer stltPort,
         String stltEncrType,
-        boolean setActive
+        Boolean setActive
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -125,14 +125,14 @@ class CtrlNetIfApiCallHandler
             NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
             NetInterfaceData netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
 
-            if (node.getActiveStltConn(peerAccCtx.get()) == null || setActive)
+            if (node.getActiveStltConn(peerAccCtx.get()) == null || Boolean.TRUE.equals(setActive))
             {
                 if (stltPort != null && stltEncrType != null)
                 {
                     node.setActiveStltConn(apiCtx, netIf);
                     satelliteConnector.startConnecting(node, apiCtx);
                 }
-                else if (setActive)
+                else if (Boolean.TRUE.equals(setActive))
                 {
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
@@ -172,7 +172,7 @@ class CtrlNetIfApiCallHandler
         String addressStr,
         Integer stltPort,
         String stltEncrType,
-        boolean setActive
+        Boolean setActive
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -192,7 +192,7 @@ class CtrlNetIfApiCallHandler
 
             // reconnect necessary if ip or port changes on the active stlt conn
             boolean needsReconnect =
-                !isModifyingActiveStltConn && setActive ||
+                !isModifyingActiveStltConn && Boolean.TRUE.equals(setActive) ||
                 isModifyingActiveStltConn && (addressStr != null || stltPort != null && stltEncrType != null);
 
             if (needsReconnect && NodeType.SWORDFISH_TARGET.equals(nodeType))
@@ -226,7 +226,7 @@ class CtrlNetIfApiCallHandler
                     sfTargetPortPool.allocate(stltPort);
                     needsStartProc = true;
                 }
-                needsReconnect = setStltConn(netIf, stltPort, stltEncrType) || setActive;
+                needsReconnect = setStltConn(netIf, stltPort, stltEncrType) || Boolean.TRUE.equals(setActive);
 
                 if (needsStartProc)
                 {
@@ -234,7 +234,7 @@ class CtrlNetIfApiCallHandler
                 }
             }
 
-            if (setActive)
+            if (Boolean.TRUE.equals(setActive))
             {
                 if (netIf.isUsableAsStltConn(peerAccCtx.get()))
                 {

@@ -965,7 +965,7 @@ public class CtrlApiCallHandler
         String address,
         Integer stltPort,
         String stltEncrType,
-        boolean setActive
+        Boolean setActive
     )
     {
         ApiCallRc apiCallRc;
@@ -995,7 +995,7 @@ public class CtrlApiCallHandler
         String address,
         Integer stltPort,
         String stltEncrType,
-        boolean setActive
+        Boolean setActive
     )
     {
         ApiCallRc apiCallRc;
