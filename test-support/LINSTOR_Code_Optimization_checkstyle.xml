@@ -19,7 +19,11 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         <property name="fileNamePattern" value="^Msg.*OuterClass\.java$"/>
     </module>
 
+    <module name="SuppressWarningsFilter"/>
+
     <module name="TreeWalker">
+        <module name="SuppressWarningsHolder" />
+
         <module name="MultipleStringLiterals">
             <property name="severity" value="warning"/>
         </module>
