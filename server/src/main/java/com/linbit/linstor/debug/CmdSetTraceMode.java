@@ -8,6 +8,8 @@ import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.slf4j.event.Level;
+
 public class CmdSetTraceMode extends BaseDebugCmd
 {
     private static final String PRM_MODE_NAME   = "MODE";
@@ -62,13 +64,13 @@ public class CmdSetTraceMode extends BaseDebugCmd
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
             if (prmMode.equalsIgnoreCase(PRM_ENABLED))
             {
-                errorReporter.setTraceEnabled(privCtx, true);
+                errorReporter.setLogLevel(privCtx, Level.TRACE);
                 debugOut.println("New TRACE level logging mode: ENABLED");
             }
             else
             if (prmMode.equalsIgnoreCase(PRM_DISABLED))
             {
-                errorReporter.setTraceEnabled(privCtx, false);
+                errorReporter.setLogLevel(privCtx, Level.DEBUG);
                 debugOut.println("New TRACE level logging mode: DISABLED");
             }
             else

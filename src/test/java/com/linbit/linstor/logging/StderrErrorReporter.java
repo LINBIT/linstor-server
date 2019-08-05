@@ -20,14 +20,21 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
     }
 
     @Override
-    public boolean isTraceEnabled()
+    public boolean hasAtLeastLogLevel(Level leveRef)
     {
         return true;
     }
 
     @Override
-    public void setTraceEnabled(AccessContext accCtx, boolean flag) throws AccessDeniedException
+    public Level getCurrentLogLevel()
     {
+        return Level.TRACE;
+    }
+
+    @Override
+    public boolean setLogLevel(AccessContext accCtx, Level levelRef) throws AccessDeniedException
+    {
+        return false;
     }
 
     @Override

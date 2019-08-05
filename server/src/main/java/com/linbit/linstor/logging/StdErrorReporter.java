@@ -1,6 +1,7 @@
 package com.linbit.linstor.logging;
 
 import com.linbit.AutoIndent;
+import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.LinStor;
@@ -52,7 +53,13 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     private final AtomicLong errorNr;
     private final Path baseLogDirectory;
 
-    public StdErrorReporter(String moduleName, Path logDirectory, boolean printStackTraces, String nodeName)
+    public StdErrorReporter(
+        String moduleName,
+        Path logDirectory,
+        boolean printStackTraces,
+        String nodeName,
+        String logLevelRef
+    )
     {
         super(moduleName, printStackTraces, nodeName);
         this.baseLogDirectory = logDirectory;
@@ -69,6 +76,18 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             logDir.mkdirs();
         }
 
+        if (logLevelRef != null)
+        {
+            try
+            {
+                setLogLevelImpl(Level.valueOf(logLevelRef));
+            }
+            catch (IllegalArgumentException exc)
+            {
+                logError("Invalid log level '%s'", logLevelRef);
+            }
+        }
+
         logInfo("Log directory set to: '" + logDir + "'");
     }
 
@@ -79,39 +98,99 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public boolean isTraceEnabled()
+    public boolean hasAtLeastLogLevel(Level levelRef)
     {
-        // FIXME: Trace mode is currently only implemented with a Logback backend
-        boolean traceMode = true;
-        org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(
-            ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME
-        );
-        if (crtLogger instanceof ch.qos.logback.classic.Logger)
+        boolean hasRequiredLevel = true;
+        org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        switch(levelRef)
         {
-            ch.qos.logback.classic.Logger crtLogbackLogger = (ch.qos.logback.classic.Logger) crtLogger;
-            traceMode = crtLogbackLogger.getLevel() == ch.qos.logback.classic.Level.TRACE;
+            case DEBUG:
+                hasRequiredLevel = crtLogger.isDebugEnabled();
+                break;
+            case ERROR:
+                hasRequiredLevel = crtLogger.isErrorEnabled();
+                break;
+            case INFO:
+                hasRequiredLevel = crtLogger.isInfoEnabled();
+                break;
+            case TRACE:
+                hasRequiredLevel = crtLogger.isTraceEnabled();
+                break;
+            case WARN:
+                hasRequiredLevel = crtLogger.isWarnEnabled();
+                break;
+            default:
+                throw new ImplementationError("Unknown logging level: " + levelRef);
         }
-        return traceMode;
+        return hasRequiredLevel;
     }
 
     @Override
-    public void setTraceEnabled(AccessContext accCtx, boolean traceMode)
+    public Level getCurrentLogLevel()
+    {
+        Level level = null; // no logging, aka OFF
+        org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        if (crtLogger.isTraceEnabled())
+        {
+            level = Level.TRACE;
+        }
+        else
+        if (crtLogger.isDebugEnabled())
+        {
+            level = Level.DEBUG;
+        }
+        else
+        if (crtLogger.isInfoEnabled())
+        {
+            level = Level.INFO;
+        }
+        else
+        if (crtLogger.isWarnEnabled())
+        {
+            level = Level.WARN;
+        }
+        else
+        if (crtLogger.isErrorEnabled())
+        {
+            level = Level.ERROR;
+        }
+        return level;
+    }
+
+    @Override
+    public boolean setLogLevel(AccessContext accCtx, Level level)
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+        return setLogLevelImpl(level);
+    }
 
+    private boolean setLogLevelImpl(Level level)
+    {
         // FIXME: Setting the trace mode only works with Logback as a backend,
         // but e.g. with SLF4J's SimpleLogger, this method has no effect
         org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(
-            ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME
+            Logger.ROOT_LOGGER_NAME
         );
+        boolean success = false;
         if (crtLogger instanceof ch.qos.logback.classic.Logger)
         {
             ch.qos.logback.classic.Logger crtLogbackLogger = (ch.qos.logback.classic.Logger) crtLogger;
-            crtLogbackLogger.setLevel(
-                traceMode ? ch.qos.logback.classic.Level.TRACE : ch.qos.logback.classic.Level.DEBUG
-            );
+
+            ch.qos.logback.classic.Level logBackLevel = ch.qos.logback.classic.Level.toLevel(level.toString());
+            crtLogbackLogger.setLevel(logBackLevel);
+            success = true;
+
+            if (mainLogger instanceof ch.qos.logback.classic.Logger)
+            {
+                ((ch.qos.logback.classic.Logger) mainLogger).setLevel(logBackLevel);
+            }
+            else
+            {
+                logError("MainLogger (linstor) is not a logback logger but the ROOT logger is!");
+            }
         }
+        return success;
     }
 
     @Override
@@ -554,6 +633,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         return basicFileAttributes;
     }
 
+    @Override
     public void archiveLogDirectory()
     {
         try (Stream<Path> files = Files.list(getLogDirectory()))

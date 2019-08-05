@@ -316,15 +316,22 @@ public class WorkerPoolTest
         }
 
         @Override
-        public void setTraceEnabled(AccessContext accCtx, boolean flag) throws AccessDeniedException
+        public boolean setLogLevel(AccessContext accCtx, Level level) throws AccessDeniedException
         {
             // Tracing on/off not implemented, no-op
+            return false;
         }
 
         @Override
-        public boolean isTraceEnabled()
+        public boolean hasAtLeastLogLevel(Level leveRef)
         {
             return true;
+        }
+
+        @Override
+        public Level getCurrentLogLevel()
+        {
+            return Level.TRACE;
         }
 
         @Override

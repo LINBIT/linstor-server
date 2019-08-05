@@ -119,10 +119,21 @@ public class LinstorConfigToml
         }
     }
 
+    public static class Logging
+    {
+        private String level = "info";
+
+        public String getLevel()
+        {
+            return level;
+        }
+    }
+
     private HTTP http = new HTTP();
     private HTTPS https = new HTTPS();
     private LDAP ldap = new LDAP();
     private DB db = new DB();
+    private Logging logging = new Logging();
 
     public HTTP getHTTP()
     {
@@ -142,5 +153,10 @@ public class LinstorConfigToml
     public DB getDB()
     {
         return db;
+    }
+
+    public Logging getLogging()
+    {
+        return logging;
     }
 }

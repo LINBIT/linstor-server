@@ -12,12 +12,15 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
     private String bindAddress;
     private String overrideNodeName;
 
+    private String logLevel;
+
     public SatelliteCmdlArguments()
     {
         keepResPattern = null;
         skipHostnameCheck = false;
         plainPortOverride = null;
         overrideNodeName = null;
+        logLevel = null;
     }
 
     public Pattern getKeepResPattern()
@@ -78,5 +81,15 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
     public void setOverrideNodeName(String overrideNodeNameRef)
     {
         overrideNodeName = overrideNodeNameRef;
+    }
+
+    public String getLogLevel()
+    {
+        return logLevel;
+    }
+
+    public void setLogLevel(String logLevelRef)
+    {
+        logLevel = logLevelRef;
     }
 }

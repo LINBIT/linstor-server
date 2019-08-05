@@ -19,20 +19,26 @@ public interface ErrorReporter
     // TODO: javadoc
 
     /**
-     * Indicates whether logging and reporting at the TRACE log level is enabled or not
-     *
-     * @return true if TRACE logging is enabled, false otherwise
+     * Indicates if at least the given LogLevel is enabled.
+     * ERROR < WARN < INFO < DEBUG < TRACE
      */
-    boolean isTraceEnabled();
+    boolean hasAtLeastLogLevel(Level leve);
 
     /**
-     * Enables or disables logging and reporting at the TRACE log level
+     * Returns the current log level;
+     * @return
+     */
+    Level getCurrentLogLevel();
+
+    /**
+     * Sets the log level, if the backing logging frameworks supports that.
      *
      * @param accCtx The access context of the subject performing the change
      * @param flag {@code true} to enable tracing, {@code false} to disable tracing
+     * @return true if setting the log level was successful. False otherwise.
      * @throws AccessDeniedException if the access context is not authorized to perform the change
      */
-    void setTraceEnabled(AccessContext accCtx, boolean flag)
+    boolean setLogLevel(AccessContext accCtx, Level level)
         throws AccessDeniedException;
 
     void logTrace(String format, Object... args);

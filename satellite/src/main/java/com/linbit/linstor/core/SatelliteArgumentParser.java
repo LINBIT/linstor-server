@@ -2,8 +2,6 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.InternalApiConsts;
 import java.io.File;
-import java.nio.file.Path;
-
 import picocli.CommandLine;
 
 class SatelliteArgumentParser
@@ -23,6 +21,10 @@ class SatelliteArgumentParser
 
     @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
     private String logDirectory = "./logs";
+
+    @CommandLine.Option(names = {"--log-level"},
+        description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
+    private String logLevel = null;
 
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
     private boolean versionInfoRequested;
@@ -115,6 +117,8 @@ class SatelliteArgumentParser
         {
             cArgs.setOverrideNodeName(linArgParser.nodeName);
         }
+
+        cArgs.setLogLevel(linArgParser.logLevel);
 
         return cArgs;
     }

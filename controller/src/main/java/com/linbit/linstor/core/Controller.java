@@ -208,6 +208,22 @@ public final class Controller
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
+            // logLevel from cArgs overrides logLevel from toml
+            if (linstorConfig.getLogging() != null && cArgs.getLogLevel() == null)
+            {
+                try
+                {
+                    errorReporter.setLogLevel(
+                        initCtx,
+                        Level.valueOf(linstorConfig.getLogging().getLevel().toUpperCase())
+                    );
+                }
+                catch (IllegalArgumentException exc)
+                {
+                    errorReporter.logError("Invalid Log level '" + linstorConfig.getLogging().getLevel() + "'");
+                }
+            }
+
             taskScheduleService.addTask(pingTask);
             taskScheduleService.addTask(reconnectorTask);
             taskScheduleService.addTask(retryResourcesTask);
@@ -486,7 +502,8 @@ public final class Controller
             LinStor.CONTROLLER_MODULE,
             Paths.get(cArgs.getLogDirectory()),
             cArgs.isPrintStacktraces(),
-            LinStor.getHostName()
+            LinStor.getHostName(),
+            cArgs.getLogLevel()
         );
 
         LinstorConfigToml linstorConfig = parseControllerConfig(errorLog, cArgs);

@@ -28,6 +28,10 @@ class ControllerArgumentParser
     @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
     private String logDirectory = "./logs";
 
+    @CommandLine.Option(names = {"--log-level"},
+        description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
+    private String logLevel = null;
+
     @CommandLine.Option(
         names = {"--rest-bind"},
         description = "Bind address for the REST HTTP server. e.g. 0.0.0.0:3370"
@@ -121,6 +125,11 @@ class ControllerArgumentParser
 
         cArgs.setPrintStacktraces(linArgParser.printStackTrace);
         cArgs.setStartDebugConsole(linArgParser.debugConsole);
+
+        if (linArgParser.logLevel != null)
+        {
+            cArgs.setLogLevel(linArgParser.logLevel);
+        }
 
         return cArgs;
     }

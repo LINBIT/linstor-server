@@ -6,6 +6,8 @@ import com.linbit.linstor.security.AccessContext;
 import java.io.PrintStream;
 import java.util.Map;
 
+import org.slf4j.event.Level;
+
 public class CmdDisplayTraceMode extends BaseDebugCmd
 {
     private final ErrorReporter errorReporter;
@@ -36,7 +38,7 @@ public class CmdDisplayTraceMode extends BaseDebugCmd
     )
         throws Exception
     {
-        String modeText = errorReporter.isTraceEnabled() ? "ENABLED" : "DISABLED";
+        String modeText = errorReporter.hasAtLeastLogLevel(Level.TRACE) ? "ENABLED" : "DISABLED";
         debugOut.println("Current TRACE mode: " + modeText);
     }
 }

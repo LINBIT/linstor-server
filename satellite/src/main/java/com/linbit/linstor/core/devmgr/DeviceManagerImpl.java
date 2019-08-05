@@ -48,7 +48,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
@@ -277,20 +276,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             svcThr.setName(devMgrInstName.displayValue);
             svcThr.start();
         }
-        // BEGIN DEBUG - turn on trace logging
-        try
-        {
-            AccessContext privCtx = wrkCtx.clone();
-            privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-            errLog.setTraceEnabled(privCtx, true);
-        }
-        catch (AccessDeniedException accExc)
-        {
-            errLog.logWarning(
-                "Enabling TRACE logging failed (not authorized) -- worker context not authorized"
-            );
-        }
-        // END DEBUG
     }
 
     @Override

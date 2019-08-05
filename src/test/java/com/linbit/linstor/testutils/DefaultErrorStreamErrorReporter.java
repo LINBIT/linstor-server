@@ -119,13 +119,20 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     }
 
     @Override
-    public void setTraceEnabled(AccessContext accCtx, boolean flag) throws AccessDeniedException
+    public boolean setLogLevel(AccessContext accCtx, Level levelRef) throws AccessDeniedException
     {
         // Tracing on/off not implemented, no-op
+        return false;
     }
 
     @Override
-    public boolean isTraceEnabled()
+    public Level getCurrentLogLevel()
+    {
+        return Level.TRACE;
+    }
+
+    @Override
+    public boolean hasAtLeastLogLevel(Level leveRef)
     {
         return true;
     }

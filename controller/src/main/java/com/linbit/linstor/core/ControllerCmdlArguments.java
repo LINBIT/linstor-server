@@ -7,6 +7,7 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
     private String inMemoryDbAddress;
     private String restBindAddress;
     private String restBindAddressSecure;
+    private String logLevel;
 
     public ControllerCmdlArguments()
     {
@@ -14,6 +15,7 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
         inMemoryDbAddress = null;
         inMemoryDbPort = 0;
         restBindAddress = null;
+        logLevel = null;
     }
 
     public void setInMemoryDbType(final String inMemoryDbTypeRef)
@@ -63,5 +65,15 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
     public void setRESTBindAddressSecure(String restBindAddressRef)
     {
         restBindAddressSecure = restBindAddressRef;
+    }
+
+    public String getLogLevel()
+    {
+        return logLevel;
+    }
+
+    public void setLogLevel(String logLevelRef)
+    {
+        logLevel = logLevelRef;
     }
 }

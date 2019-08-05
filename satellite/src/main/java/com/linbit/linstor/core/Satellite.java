@@ -359,7 +359,8 @@ public final class Satellite
             LinStor.SATELLITE_MODULE,
             Paths.get(cArgs.getLogDirectory()),
             cArgs.isPrintStacktraces(),
-            cArgs.getOverrideNodeName() != null ? cArgs.getOverrideNodeName() : LinStor.getHostName()
+            cArgs.getOverrideNodeName() != null ? cArgs.getOverrideNodeName() : LinStor.getHostName(),
+            cArgs.getLogLevel()
         );
 
         try

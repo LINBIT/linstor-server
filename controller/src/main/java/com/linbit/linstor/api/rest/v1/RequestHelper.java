@@ -57,14 +57,14 @@ public class RequestHelper
 
     @Inject
     public RequestHelper(
-            ErrorReporter errorReporterRef,
-            LinStorScope apiCallScopeRef,
-            @SystemContext AccessContext sysContextRef,
-            @PublicContext AccessContext accessContextRef,
-            TransactionMgrGenerator transactionMgrGeneratorRef,
-            CtrlAuthentication authenticationRef,
-            LinstorConfigToml linstorConfigRef
-        )
+        ErrorReporter errorReporterRef,
+        LinStorScope apiCallScopeRef,
+        @SystemContext AccessContext sysContextRef,
+        @PublicContext AccessContext accessContextRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef,
+        CtrlAuthentication authenticationRef,
+        LinstorConfigToml linstorConfigRef
+    )
     {
         errorReporter = errorReporterRef;
         apiCallScope = apiCallScopeRef;
