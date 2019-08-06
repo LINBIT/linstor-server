@@ -3336,8 +3336,9 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
-        resource_group:
-          $ref: '#/components/schemas/ResourceGroup'
+        resource_group_name:
+          type: string
+          description: name of the linked resource group, if there is a link
     ResourceDefinitionCreate:
       type: object
       required:
