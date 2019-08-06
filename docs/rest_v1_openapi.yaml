@@ -47,7 +47,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: "1.0.8"
+  version: 1.0.8
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -1845,7 +1845,7 @@ paths:
             example:
               resource_group:
                 name: rscgrp1
-  /v1/resource-groups/{resource-group}:
+  /v1/resource-groups/{resource_group}:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
     put:
@@ -2055,7 +2055,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
-  /v1/resource-groups/{resource-group}/spawn:
+  /v1/resource-groups/{resource_group}/spawn:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
     post:
@@ -2086,7 +2086,7 @@ paths:
               volume_sizes:
                 - 1048576
                 - 20971520
-  /v1/resource-groups/{resource-group}/volume-groups:
+  /v1/resource-groups/{resource_group}/volume-groups:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
     get:
@@ -2136,7 +2136,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/VolumeGroup'
-  /v1/resource-groups/{resource-group}/volume-groups/{volume_number}:
+  /v1/resource-groups/{resource_group}/volume-groups/{volume_number}:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
       - $ref: '#/components/parameters/VolumeNumber'
@@ -2999,7 +2999,7 @@ components:
       schema:
         type: string
     ResourceGroupName:
-      name: resource_group_name
+      name: resource_group
       in: path
       required: true
       description: resource group to use
@@ -3741,9 +3741,9 @@ components:
       type: object
       properties:
         name:
-          type: string 
+          type: string
           default: ''
-          example: rscgrp1 
+          example: rscgrp1
         description:
           type: string
           default: ''
