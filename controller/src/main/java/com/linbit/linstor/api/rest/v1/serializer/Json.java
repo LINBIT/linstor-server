@@ -218,8 +218,8 @@ public class Json
                 }
             }
             rscDfn.layer_data.add(rscDfnLayerData);
-            rscDfn.resource_group_name = rscDfnApi.getResourceGroup().getName();
         }
+        rscDfn.resource_group_name = rscDfnApi.getResourceGroup().getName();
         return rscDfn;
     }
 
