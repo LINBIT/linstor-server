@@ -63,7 +63,7 @@ def resolve_type_str(schema_lookup: OrderedDict, field_obj: OrderedDict):
         elif type_str == "object" and "properties" not in field_obj:  # Properties special case
             t = "Map<String, String>"
         elif type_str == "object":
-            t = "object" # needed for recursive call, will NOT go to java
+            t = "object"  # needed for recursive call, will NOT go to java
     elif "$ref" in field_obj:
         assert field_obj["$ref"].startswith('#/components/schemas')
         schema_name = field_obj["$ref"][len('#/components/schemas/'):]
@@ -102,7 +102,7 @@ def value_to_string(val):
 
 
 def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: OrderedDict):
-    if schema["type"] == "object" and "properties" in schema:
+    if "allOf" in schema or (schema["type"] == "object" and "properties" in schema):
         indent = "    "
     else:
         indent = "//    "
@@ -110,6 +110,9 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
     out = gen_description_javadoc(schema, indent, 1)
     out += indent + "@JsonInclude(JsonInclude.Include.NON_EMPTY)\n"
     out += indent + "public static class " + schema_type + "\n"
+    if "allOf" in schema:
+        out += indent * 2 + "extends " + schema["allOf"][0]["$ref"][len('#/components/schemas/'):] + "\n"
+        schema = schema["allOf"][1]
     out += indent + "{\n"
     if "properties" in schema:
         for fieldname in schema["properties"]:
