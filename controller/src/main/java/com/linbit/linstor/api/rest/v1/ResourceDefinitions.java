@@ -126,7 +126,8 @@ public class ResourceDefinitions
                 rscDfnCreate.resource_definition.props,
                 new ArrayList<>(), // do not allow volume definition creations
                 layerDataList.stream().map(rscDfnData -> rscDfnData.type).collect(Collectors.toList()),
-                rscDfnCreate.drbd_peer_slots == null ? null : rscDfnCreate.drbd_peer_slots.shortValue()
+                rscDfnCreate.drbd_peer_slots == null ? null : rscDfnCreate.drbd_peer_slots.shortValue(),
+                rscDfnCreate.resource_definition.resource_group_name
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);

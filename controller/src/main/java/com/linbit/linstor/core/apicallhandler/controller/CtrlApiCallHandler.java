@@ -182,6 +182,7 @@ public class CtrlApiCallHandler
 
     /**
      * Creates new resource definition
+     * @param rscGrpNameRef
      * @param shortRef
      */
     public ApiCallRc createResourceDefinition(
@@ -193,7 +194,8 @@ public class CtrlApiCallHandler
         Map<String, String> propsRef,
         List<VlmDfnWtihCreationPayload> vlmDescrMapRef,
         List<String> layerStackRef,
-        Short peerSlotsRef
+        Short peerSlotsRef,
+        String rscGrpNameRef
     )
     {
         ApiCallRc apiCallRc;
@@ -220,7 +222,7 @@ public class CtrlApiCallHandler
                 vlmDescrMapRef,
                 layerStackRef,
                 peerSlotsRef,
-                null
+                rscGrpNameRef
             );
         }
         return apiCallRc;
