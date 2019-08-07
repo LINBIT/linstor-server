@@ -689,7 +689,7 @@ public class CtrlRscGrpApiCallHandler
                 )
             );
 
-            if (autoPlaceConfig != null && !definitionsOnlyRef)
+            if (autoPlaceConfig != null && autoPlaceConfig.getReplicaCount(peerCtx) != null && !definitionsOnlyRef)
             {
                 AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterPojo(
                     autoPlaceConfig.getReplicaCount(peerCtx),
@@ -712,7 +712,29 @@ public class CtrlRscGrpApiCallHandler
             }
             else
             {
-                deployedResources = Flux.empty();
+                String reason = "";
+                if (autoPlaceConfig == null || autoPlaceConfig.getReplicaCount(peerCtx) == null)
+                {
+                    reason = "No autoplace configuration in the given resource group (at least place-count required)";
+                }
+                if (definitionsOnlyRef)
+                {
+                    if (autoPlaceConfig == null || autoPlaceConfig.getReplicaCount(peerCtx) == null)
+                    {
+                        reason += " and ";
+                    }
+                    reason += "--definitions-only was set";
+                }
+                deployedResources = Flux.<ApiCallRc>just(
+                    new ApiCallRcImpl(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.INFO_NO_RSC_SPAWNED,
+                            "Resource definition " + rscDfnNameRef + " and " + vlmDfnCrtList.size() +
+                                " created but no resources deployed",
+                                reason
+                        )
+                    )
+                );
             }
 
         }
