@@ -362,13 +362,13 @@ public class Json
         return resourceLayer;
     }
 
-    public static JsonGenTypes.Resource apiToResource(
+    public static JsonGenTypes.ResourceWithVolumes apiToResourceWithVolumes(
         Resource.RscApi rscApi,
         Map<NodeName, SatelliteState> satelliteStates,
         boolean withVolumes
     )
     {
-        JsonGenTypes.Resource rsc = new JsonGenTypes.Resource();
+        JsonGenTypes.ResourceWithVolumes rsc = new JsonGenTypes.ResourceWithVolumes();
         rsc.name = rscApi.getName();
         rsc.node_name = rscApi.getNodeName();
         rsc.flags = FlagsHelper.toStringList(Resource.RscFlags.class, rscApi.getFlags());
@@ -429,6 +429,14 @@ public class Json
         {
         }
         return rsc;
+    }
+
+    public static JsonGenTypes.Resource apiToResource(
+        Resource.RscApi rscApi,
+        Map<NodeName, SatelliteState> satelliteStates
+    )
+    {
+        return apiToResourceWithVolumes(rscApi, satelliteStates, false);
     }
 
     public static Resource.RscApi resourceToApi(JsonGenTypes.Resource resource)

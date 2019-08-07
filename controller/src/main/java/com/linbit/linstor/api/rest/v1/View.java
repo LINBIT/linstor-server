@@ -111,7 +111,7 @@ public class View
                 }
 
                 final List<JsonGenTypes.Resource> rscs = rscApiStream
-                    .map(rscApi -> Json.apiToResource(rscApi, resourceList.getSatelliteStates(), true))
+                    .map(rscApi -> Json.apiToResourceWithVolumes(rscApi, resourceList.getSatelliteStates(), true))
                     .collect(Collectors.toList());
 
                 try

@@ -105,7 +105,7 @@ public class Resources
             }
 
             final List<JsonGenTypes.Resource> rscs = rscApiStream
-                .map(rscApi -> Json.apiToResource(rscApi, resourceList.getSatelliteStates(), false))
+                .map(rscApi -> Json.apiToResource(rscApi, resourceList.getSatelliteStates()))
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(

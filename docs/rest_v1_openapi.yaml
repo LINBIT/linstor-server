@@ -26,6 +26,8 @@ info:
       - Added /v1/resource-groups/{rscgrp}/volume-groups
       - Moved AutoSelectFilter::place_count default indirectly to create resource implementation
       - Added diskless_on_remaining to AutoSelectFilter
+      - Changed /v1/view/resources return type to ResourceWithVolumes
+        ResourceWithVolumes is now a child type of Resource (removed volumes from Resource)
     * 1.0.7
       - Added ext_meta_stor_pool to DrbdVolume
       - Added is_active field to the NetInterface type
@@ -34,10 +36,10 @@ info:
     * 1.0.5
       - Added `reports` field to StoragePool object
     * 1.0.4
-      - Added /v1/views/storage-pools overview path
+      - Added /v1/view/storage-pools overview path
       - Added uuid fields for objects
     * 1.0.3
-      - Added /v1/views/resources overview path
+      - Added /v1/view/resources overview path
       - documentation schema extraction
     * 1.0.2
       - Added /v1/storage-pool-definitions object path
@@ -2947,7 +2949,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Resource'
+                  $ref: '#/components/schemas/ResourceWithVolumes'
         '500':
           $ref: '#/components/responses/OperationFailed'
 
@@ -3549,14 +3551,19 @@ components:
           $ref: '#/components/schemas/ResourceLayer'
         state:
           $ref: '#/components/schemas/ResourceState'
-        volumes:
-          type: array
-          items:
-            $ref: '#/components/schemas/Volume'
         uuid:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+    ResourceWithVolumes:
+      allOf:
+        - $ref: '#/components/schemas/Resource'
+        - type: object
+          properties:
+            volumes:
+              type: array
+              items:
+                $ref: '#/components/schemas/Volume'
     ResourceCreate:
       type: object
       properties:

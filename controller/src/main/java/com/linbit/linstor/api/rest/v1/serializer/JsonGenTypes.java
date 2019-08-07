@@ -339,11 +339,17 @@ public class JsonGenTypes
         public List<String> flags = Collections.emptyList();
         public ResourceLayer layer_object;
         public ResourceState state;
-        public List<Volume> volumes = Collections.emptyList();
         /**
          * unique object id
          */
         public String uuid;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceWithVolumes
+        extends Resource
+    {
+        public List<Volume> volumes = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
