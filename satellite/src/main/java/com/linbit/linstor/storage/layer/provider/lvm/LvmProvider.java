@@ -286,6 +286,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             newLvmId
         );
 
+        vlmData.setExists(false);
+
         wipeHandler.asyncWipe(
             devicePath,
             ignored ->
@@ -297,15 +299,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                         volumeGroup,
                         newLvmId
                     );
-                    vlmData.setExists(false);
                 }
                 catch (StorageException exc)
                 {
                     errorReporter.reportError(exc);
-                }
-                catch (DatabaseException exc)
-                {
-                    throw new ImplementationError(exc);
                 }
             }
         );
