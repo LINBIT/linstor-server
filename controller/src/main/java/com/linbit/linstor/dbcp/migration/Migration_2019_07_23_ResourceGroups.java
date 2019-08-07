@@ -40,7 +40,7 @@ public class Migration_2019_07_23_ResourceGroups extends LinstorMigration
                     "RESOURCE_GROUP_NAME",
                     "VARCHAR(255)",
                     false,
-                    InternalApiConsts.DEFAULT_RSC_GRP_NAME
+                    InternalApiConsts.DEFAULT_RSC_GRP_NAME.toUpperCase()
                 )
             );
         }
