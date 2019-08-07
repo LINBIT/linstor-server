@@ -16,16 +16,16 @@ import com.linbit.timer.Action;
 public class ChildProcessHandler
 {
     // Default: Wait up to 45 seconds for a child process to exit
-    public static final long DEFAULT_WAIT_TIMEOUT = 45000;
+    public static long dfltWaitTimeout = 45000;
 
     // Default: Wait up to 15 seconds for a child process to exit
     //          after receiving a signal
-    public static final long DEFAULT_TERM_TIMEOUT = 15000;
+    public static long dfltTermTimeout = 15000;
 
     // Default: Wait up to 5 seconds for a child process to exit
     //          after the operating system has been ordered to enforce
     //          termination of the process
-    public static final long DEFAULT_KILL_TIMEOUT =  5000;
+    public static long dfltKillTimeout =  5000;
 
     public enum TimeoutType
     {
@@ -34,9 +34,9 @@ public class ChildProcessHandler
         KILL
     }
 
-    private long waitTimeout = DEFAULT_WAIT_TIMEOUT;
-    private long termTimeout = DEFAULT_TERM_TIMEOUT;
-    private long killTimeout = DEFAULT_KILL_TIMEOUT;
+    private long waitTimeout = dfltWaitTimeout;
+    private long termTimeout = dfltTermTimeout;
+    private long killTimeout = dfltKillTimeout;
 
     private boolean autoTerm = true;
     private boolean autoKill = true;

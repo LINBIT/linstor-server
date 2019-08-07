@@ -5,6 +5,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.LengthPadding;
 import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.crypto.SymmetricKeyCipher.CipherStrength;
+import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -20,6 +21,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.SystemConfRepository;
@@ -251,6 +253,32 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.KEY_SEARCH_DOMAIN:
                             systemConfRepository.setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                             break;
+                        case ApiConsts.KEY_EXT_CMD_WAIT_TO:
+                            try
+                            {
+                                long timeout = Long.parseLong(value);
+                                if (timeout < 0)
+                                {
+                                    throw new ApiRcException(
+                                        ApiCallRcImpl.simpleEntry(
+                                            ApiConsts.FAIL_INVLD_PROP,
+                                            "The " + ApiConsts.KEY_EXT_CMD_WAIT_TO + " must not be negative"
+                                        )
+                                    );
+
+                                }
+                                ChildProcessHandler.dfltWaitTimeout = timeout;
+                            }
+                            catch (NumberFormatException exc)
+                            {
+                                throw new ApiRcException(
+                                    ApiCallRcImpl.simpleEntry(
+                                        ApiConsts.FAIL_INVLD_PROP,
+                                        "The " + ApiConsts.KEY_EXT_CMD_WAIT_TO + " has to have a numeric value"
+                                    ),
+                                    exc
+                                );
+                            }
                         default:
                             systemConfRepository.setStltProp(peerAccCtx.get(), fullKey, normalized);
                             break;

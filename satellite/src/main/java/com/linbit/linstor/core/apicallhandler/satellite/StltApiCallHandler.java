@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.satellite;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.DrbdVersion;
+import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.LinStorException;
@@ -492,6 +493,12 @@ public class StltApiCallHandler
 
             // local nodename need to be set for swordfish driver
             stltConf.setProp(LinStor.KEY_NODE_NAME, controllerPeerConnector.getLocalNodeName().displayValue);
+
+            String extCmdWaitToStr = stltConf.getProp(ApiConsts.KEY_EXT_CMD_WAIT_TO);
+            if (extCmdWaitToStr != null)
+            {
+                ChildProcessHandler.dfltWaitTimeout = Long.parseLong(extCmdWaitToStr);
+            }
 
             transMgrProvider.get().commit();
 
