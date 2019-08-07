@@ -270,6 +270,8 @@ public class DeviceHandlerImpl implements DeviceHandler
     )
         throws ImplementationError
     {
+        List<Resource> sysFsUpdateList = new ArrayList<>();
+
         for (Resource rsc : resourceList)
         {
             ResourceName rscName = rsc.getDefinition().getName();
@@ -335,6 +337,10 @@ public class DeviceHandlerImpl implements DeviceHandler
 
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
+                if (rsc.getStateFlags().isUnset(wrkCtx, RscFlags.DELETE))
+                {
+                    sysFsUpdateList.add(rsc);
+                }
             }
             catch (AccessDeniedException | DatabaseException exc)
             {
@@ -415,7 +421,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
         }
-        sysFsHandler.updateSysFsSettings(resourceList);
+        sysFsHandler.updateSysFsSettings(sysFsUpdateList);
     }
 
     private void ensureAllVlmDataDeleted(RscLayerObject rscLayerObjectRef, VolumeNumber volumeNumberRef)
