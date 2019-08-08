@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
 import com.linbit.linstor.dbdrivers.SQLUtils;
@@ -23,14 +24,13 @@ public class Migration_2019_07_23_ResourceGroups extends LinstorMigration
     {
         if (!MigrationUtils.tableExists(connection, "RESOURCE_GROUPS"))
         {
+            final DbProduct dbProduct = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
+            String createTables = MigrationUtils.loadResource("2019_07_23_add-rsc-grp.sql");
+            createTables = MigrationUtils.getDialectType(dbProduct, createTables);
             SQLUtils.runSql(
                 connection,
-                MigrationUtils.loadResource(
-                    "2019_07_23_add-rsc-grp.sql"
-                )
+                createTables
             );
-
-            DbProduct dbProduct = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
 
             SQLUtils.runSql(
                 connection,
