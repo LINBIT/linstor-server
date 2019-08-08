@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration scan="true" scanPeriod="60 seconds">
+<configuration scan="false" scanPeriod="60 seconds">
 <!-- 
     Values for scanPeriod can be specified in units of milliseconds, seconds, minutes or hours 
     https://logback.qos.ch/manual/configuration.html
