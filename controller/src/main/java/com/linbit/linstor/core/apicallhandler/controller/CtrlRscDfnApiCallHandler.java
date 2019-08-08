@@ -485,23 +485,33 @@ public class CtrlRscDfnApiCallHandler
             }
 
             ResourceGroupData rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStr, false);
-            if (rscGrp == null && InternalApiConsts.DEFAULT_RSC_GRP_NAME.equalsIgnoreCase(rscGrpNameStr))
+            if (rscGrp == null)
             {
-                rscGrp = resourceGroupDataFactory.create(
-                    peerAccCtx.get(),
-                    new ResourceGroupName(rscGrpNameStr),
-                    "Default resource group",
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                );
-                resourceGroupRepository.put(apiCtx, rscGrp);
+                if (InternalApiConsts.DEFAULT_RSC_GRP_NAME.equalsIgnoreCase(rscGrpNameStr))
+                {
+                    rscGrp = resourceGroupDataFactory.create(
+                        peerAccCtx.get(),
+                        new ResourceGroupName(rscGrpNameStr),
+                        "Default resource group",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                    );
+                    resourceGroupRepository.put(apiCtx, rscGrp);
+                }
+                else
+                {
+                    throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_NOT_FOUND_RSC_GRP,
+                        String.format("Resource group '%s' could not be found.", rscGrpNameStr
+                    )));
+                }
             }
 
             rscDfn = resourceDefinitionDataFactory.create(
