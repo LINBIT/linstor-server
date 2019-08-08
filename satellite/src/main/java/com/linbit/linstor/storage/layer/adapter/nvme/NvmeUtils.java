@@ -309,7 +309,8 @@ public class NvmeUtils
                 accCtx
             ).getAddress();
 
-            List<String> subsystemNames = discover(transportType, ipAddr, port);
+            String nodeName = nvmeRscData.getResource().getAssignedNode().getName().getDisplayName();
+            List<String> subsystemNames = discover(transportType, ipAddr, port, nodeName);
             if (!subsystemNames.contains(subsystemName))
             {
                 throw new StorageException("Failed to discover subsystem name \'" + subsystemName + "\'!");
@@ -318,14 +319,11 @@ public class NvmeUtils
             OutputData output = extCmdFactory.create().exec(
                 "nvme",
                 "connect",
-                "-t",
-                transportType,
-                "-n",
-                subsystemName,
-                "-a",
-                ipAddr,
-                "-s",
-                port
+                "--transport=" + transportType,
+                "--nqn=" + subsystemName,
+                "--traddr=" + ipAddr,
+                "--transport=" + port,
+                "--hostnqn=" + nodeName
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to connect to NVMe target!");
         }
@@ -353,8 +351,9 @@ public class NvmeUtils
             );
 
             OutputData output = extCmdFactory.create().exec(
-                "nvme", "disconnect", "-n",
-                NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+                "nvme",
+                "disconnect",
+                "--nqn=" + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to disconnect from NVMe target!");
 
@@ -489,8 +488,7 @@ public class NvmeUtils
     /**
      * Creates a new directory for the given file path, sets the appropriate backing device and enables the namespace
      *
-     * @param namespacePath Path to the new namespace
-     * @param backingDevice byte[] containing the device path
+     * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
      */
     public void createNamespace(NvmeVlmData nvmeVlmData, String subsystemDirectory)
         throws IOException
@@ -513,7 +511,7 @@ public class NvmeUtils
     /**
      * Disables the namespace at the given file path and deletes the directory
      *
-     * @param nvmeVlmDataRef nvmeVlm object containing information for path to the new namespace
+     * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
      * @param subsystemDirectory
      */
     public void deleteNamespace(NvmeVlmData nvmeVlmData, String subsystemDirectory)
@@ -589,7 +587,7 @@ public class NvmeUtils
      * @param port          String, default: 4420
      * @return              List<String> of discovered subsystem names
      */
-    private List<String> discover(String transportType, String ipAddr, String port)
+    private List<String> discover(String transportType, String ipAddr, String port, String nodeName)
         throws StorageException
     {
         List<String> subsystemNames = new ArrayList<>();
@@ -601,12 +599,10 @@ public class NvmeUtils
             OutputData output = extCmdFactory.create().exec(
                 "nvme",
                 "discover",
-                "-t",
-                transportType,
-                "-a",
-                ipAddr,
-                "-s",
-                port
+                "--transport=" + transportType,
+                "--traddr=" + ipAddr,
+                "--trsvcid=" + port,
+                "--hostnqn=" + nodeName
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to discover NVMe subsystems!");
 
