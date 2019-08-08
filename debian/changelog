@@ -1,3 +1,65 @@
+linstor-server (1.0.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * db: introduce new DatabaseException to prepare support for etcd
+  * linstor.toml-example: add [http] listen_addr
+  * cleanup SQLException imports
+  * transactionmgr: autocommit is already set from getConnection()
+  * databaseDriverInfo: Add DatabaseType enum
+  * Use TransactionMgrGenerator instead of direct new
+  * Rename ControllerTransactionMgrGen... to ControllerSQLTransactionMgrGen..
+  * Detect database type from connection url
+  * rest-api: correctly convert volume group list return
+  * rest-api: add volume group delete method
+  * rest-api: rename resource-group/spawn arguments
+  * controller: log if linstor config was parsed
+  * docker.controller: rest-bind setting is now default
+  * controller: fix incorrect rest-port commandline initalization
+  * rest-api: raise API version to 1.0.8, changelog, place_count default
+  * rest-api: Add volume-group PUT and fix missing transaction commit
+  * RscGrpDbDriver: fix broken logTrace
+  * AutoSelectFilter: correclty set and get disklessonremaining
+  * CtrlRscGrpApiCallHandler: fix NPE on DisklessOnRemaining
+  * rest-api-docu: fix openapi errors
+  * rest-api: only report the resource-group-name from resource-definition
+  * rest-api: resource-definition always set resource group name
+  * migration/resource_group: set upper case default resource group name
+  * rest-gen: support simple allOf types
+  * rest-api: create an extended ResourceWithVolumes type for /view/resources
+  * satellite/resource_groups: fix missing resource def->resource group link
+  * satellite/devicehandler: fix trying update sysfs setting on deleted or [...]
+  * lvmprovider: prefix wipe in progress lv's with old name
+  * lvmprovider: set exists before starting the async wipe
+  * ctrlrscdfnhandler: throw proper error if resource group doesn't exist
+
+  [ Gabor Hernadi ]
+  * GeneridDbDriver: Renamed to DatabaseLoader
+  * Moved core objects to dedicated package
+  * Moved *Name and other types in dedicated packages
+  * Controller: Moved repository classes do dedicated package
+  * RscGrp: Added core classes
+  * Cleanup and renaming
+  * RscGrp: Linked RscGrp with RscDfn
+  * RscGrp: Stlt now removes unused RscGrps
+  * RscGrp: Added rscGrp-props wherever rscDfn-props was used
+  * VlmGrp: Added vlmGrp to prioProps after vlmDfn
+  * Api: Added RscGrp to RscDfn json object
+  * RscGrp,spawn: added definitions_only flag
+  * Proto: Removed unused proto files
+  * RscGrp: Bugfixes
+  * GenericDbUtils: Merged into SQLUtils
+  * Fixed unit tests
+  * VlmGrp: Fixed loading and listing bug
+  * PropsContainer: Fixed rollback in namespaces
+  * NvmeLayer: Fixed issues with setExists
+  * RscGrp: Spawn now considers disklessOnRemaining
+  * Logging: added LogLevel as argument and in toml
+  * ExtCmd: made wait timeout configurable
+  * Added info msg when no resources were spawned
+  * RscDfn: create now respects rsc_group_name
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 08 Aug 2019 10:25:43 +0200
+
 linstor-server (0.9.13-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
