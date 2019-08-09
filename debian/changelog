@@ -1,3 +1,10 @@
+linstor-server (1.0.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * migration: fix resourcegroups in postgresql
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 09 Aug 2019 08:48:03 +0200
+
 linstor-server (1.0.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
