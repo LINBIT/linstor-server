@@ -1,10 +1,8 @@
 package com.linbit.linstor.security;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -45,7 +43,7 @@ public enum SecurityLevel
      * @param ctrlDb Reference to the controller database connection pool
      * @param secDb Reference to the security database accessor
      * @throws AccessDeniedException Thrown if the specified access context is not authorized
-     * @throws SQLException if a database error occurs
+     * @throws DatabaseException if a database error occurs
      */
     public static void set(
         AccessContext accCtx,
@@ -53,22 +51,13 @@ public enum SecurityLevel
         ControllerDatabase ctrlDb,
         DbAccessor secDb
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
 
         if (ctrlDb != null && secDb != null)
         {
-            Connection dbConn = null;
-            try
-            {
-                dbConn = ctrlDb.getConnection();
-                secDb.setSecurityLevel(dbConn, newLevel);
-            }
-            finally
-            {
-                ctrlDb.returnConnection(dbConn);
-            }
+            secDb.setSecurityLevel(ctrlDb, newLevel);
         }
 
         GLOBAL_SEC_LEVEL_REF.set(newLevel);
@@ -81,60 +70,33 @@ public enum SecurityLevel
      *
      * @param ctrlDb Reference to the controller database connection pool
      * @param secDb Reference to the security database accessor
-     * @throws SQLException if a database error occurs
+     * @throws DatabaseException if a database error occurs
      */
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws SQLException
+        throws DatabaseException
     {
-        Connection dbConn = null;
-        try
+        String secLvlValue = secDb.loadSecurityLevel(ctrlDb);
+        if (secLvlValue != null)
         {
-            dbConn = ctrlDb.getConnection();
-            if (dbConn == null)
+            if (NO_SECURITY.name().equals(secLvlValue))
             {
-                throw new SQLException(
-                    "The controller database connection pool failed to provide a database connection"
-                );
+                GLOBAL_SEC_LEVEL_REF.set(NO_SECURITY);
             }
-
-            ResultSet rslt = secDb.loadSecurityLevel(dbConn);
-            if (rslt.next())
+            else
+            if (RBAC.name().equals(secLvlValue))
             {
-                String secLvlKey = rslt.getString(1);
-                String secLvlValue = rslt.getString(2);
-
-                if (!secLvlKey.equals(SecurityDbConsts.KEY_SEC_LEVEL))
-                {
-                    throw new ImplementationError(
-                        "Security level database query returned incorrect key '" + secLvlKey + "'\n" +
-                        "instead of expected key '" + SecurityDbConsts.KEY_SEC_LEVEL + "'",
-                        null
-                    );
-                }
-
-                if (NO_SECURITY.name().equals(secLvlValue))
-                {
-                    GLOBAL_SEC_LEVEL_REF.set(NO_SECURITY);
-                }
-                else
-                if (RBAC.name().equals(secLvlValue))
-                {
-                    GLOBAL_SEC_LEVEL_REF.set(RBAC);
-                }
-                else
-                if (MAC.name().equals(secLvlValue))
-                {
-                    GLOBAL_SEC_LEVEL_REF.set(MAC);
-                }
-                else
-                {
-                    // TODO: A warning should be logged when an unknown value is encountered
-                }
+                GLOBAL_SEC_LEVEL_REF.set(RBAC);
             }
-        }
-        finally
-        {
-            ctrlDb.returnConnection(dbConn);
+            else
+            if (MAC.name().equals(secLvlValue))
+            {
+                GLOBAL_SEC_LEVEL_REF.set(MAC);
+            }
+            else
+            {
+                // TODO: A warning should be logged when an unknown value is encountered
+                System.err.println(String.format("Unknown security level '%s' set.", secLvlValue));
+            }
         }
     }
 }

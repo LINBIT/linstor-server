@@ -2,8 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
-
-import java.sql.SQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 /**
  * Initializes security objects.
@@ -11,7 +10,7 @@ import java.sql.SQLException;
 public final class Initializer
 {
     public static void load(AccessContext accCtx, ControllerDatabase ctrlDb, DbAccessor driver)
-        throws SQLException, AccessDeniedException, InvalidNameException
+        throws DatabaseException, AccessDeniedException, InvalidNameException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
 

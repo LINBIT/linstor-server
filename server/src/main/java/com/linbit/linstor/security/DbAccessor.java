@@ -1,8 +1,12 @@
 package com.linbit.linstor.security;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.security.data.IdentityRoleEntry;
+import com.linbit.linstor.security.data.SignInEntry;
+import com.linbit.linstor.security.data.TypeEnforcementRule;
+
+import java.util.List;
 
 /**
  * Database interface for security objects persistence
@@ -11,28 +15,35 @@ import java.sql.SQLException;
  */
 public interface DbAccessor
 {
-    ResultSet getSignInEntry(Connection dbConn, IdentityName idName)
-        throws SQLException;
-    ResultSet getIdRoleMapEntry(Connection dbConn, IdentityName idName, RoleName rlName)
-        throws SQLException;
-    ResultSet getDefaultRole(Connection dbConn, IdentityName idName)
-        throws SQLException;
+    SignInEntry getSignInEntry(ControllerDatabase ctrlDb, IdentityName idName)
+        throws DatabaseException;
+    IdentityRoleEntry getIdRoleMapEntry(ControllerDatabase ctrlDb, IdentityName idName, RoleName rlName)
+        throws DatabaseException;
+    IdentityRoleEntry getDefaultRole(ControllerDatabase ctrlDb, IdentityName idName)
+        throws DatabaseException;
 
-    ResultSet loadIdentities(Connection dbConn)
-        throws SQLException;
-    ResultSet loadSecurityTypes(Connection dbConn)
-        throws SQLException;
-    ResultSet loadRoles(Connection dbConn)
-        throws SQLException;
-    ResultSet loadTeRules(Connection dbConn)
-        throws SQLException;
+    List<String> loadIdentities(ControllerDatabase ctrlDb)
+        throws DatabaseException;
 
-    ResultSet loadSecurityLevel(Connection dbConn)
-        throws SQLException;
-    ResultSet loadAuthRequired(Connection dbConn)
-        throws SQLException;
-    void setSecurityLevel(Connection dbConn, SecurityLevel newLevel)
-        throws SQLException;
-    void setAuthRequired(Connection dbConn, boolean newPolicy)
-        throws SQLException;
+    /**
+     * Loads all security types and return them in a string list.
+     * @param ctrlDb Controller database object from where to load the data.
+     * @return List of security type strings
+     * @throws DatabaseException
+     */
+    List<String> loadSecurityTypes(ControllerDatabase ctrlDb)
+        throws DatabaseException;
+    List<String> loadRoles(ControllerDatabase ctrlDb)
+        throws DatabaseException;
+    List<TypeEnforcementRule> loadTeRules(ControllerDatabase ctrlDb)
+        throws DatabaseException;
+
+    String loadSecurityLevel(ControllerDatabase ctrlDb)
+        throws DatabaseException;
+    boolean loadAuthRequired(ControllerDatabase ctrlDb)
+        throws DatabaseException;
+    void setSecurityLevel(ControllerDatabase ctrlDb, SecurityLevel newLevel)
+        throws DatabaseException;
+    void setAuthRequired(ControllerDatabase ctrlDb, boolean newPolicy)
+        throws DatabaseException;
 }

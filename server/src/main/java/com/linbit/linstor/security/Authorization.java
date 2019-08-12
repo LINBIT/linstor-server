@@ -2,18 +2,10 @@ package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.security.data.IdentityRoleEntry;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-/**
- * Active role selection
- *
- * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
- */
-public final class Authorization
+public class Authorization
 {
     private ControllerDatabase ctrlDb;
     private DbAccessor dbDriver;
@@ -34,32 +26,22 @@ public final class Authorization
     public AccessContext assumeRole(AccessContext accCtx, Role reqRole)
         throws AccessDeniedException, FailedAuthorizationException
     {
-        Connection dbConn = null;
         AccessContext reqCtx = null;
         try
         {
-            dbConn = ctrlDb.getConnection();
-            if (dbConn == null)
-            {
-                throw new SQLException(
-                    "The controller database connection pool failed to provide a database connection"
-                );
-            }
             // Query the identity entry
-            ResultSet idRoleEntry = dbDriver.getIdRoleMapEntry(dbConn, accCtx.subjectId.name, reqRole.name);
-            if (idRoleEntry.next())
+            IdentityRoleEntry idRoleEntry = dbDriver.getIdRoleMapEntry(ctrlDb, accCtx.subjectId.name, reqRole.name);
+            if (idRoleEntry != null)
             {
-                String idName = idRoleEntry.getString(DbConstants.IDENTITY_NAME);
-                String roleName = idRoleEntry.getString(DbConstants.ROLE_NAME);
                 // Double-check the entry
-                if (accCtx.subjectId.name.value.equalsIgnoreCase(idName) &&
-                    reqRole.name.value.equalsIgnoreCase(roleName))
+                if (accCtx.subjectId.name.value.equalsIgnoreCase(idRoleEntry.getIdentiyName()) &&
+                    reqRole.name.value.equalsIgnoreCase(idRoleEntry.getRoleName()))
                 {
                     reqCtx = new AccessContext(accCtx.subjectId, reqRole, accCtx.subjectDomain, accCtx.privLimit);
                 }
             }
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException dbExc)
         {
             throw new FailedAuthorizationException(
                 "Role change failed: Database error: The SQL query for the security database record failed",
@@ -69,15 +51,11 @@ public final class Authorization
                 "The database query for the security database record failed",
                 // Correction
                 "Contact a system administrator if the problem persists.\n" +
-                "Review the error logged by the database to determine the cause of the problem.",
+                    "Review the error logged by the database to determine the cause of the problem.",
                 // No error details
                 null,
-                sqlExc
+                dbExc
             );
-        }
-        finally
-        {
-            ctrlDb.returnConnection(dbConn);
         }
 
         if (reqCtx == null)
@@ -86,7 +64,7 @@ public final class Authorization
                 "The Identity '" + accCtx.subjectId + "' is not authorized to assume the role '" + reqRole + "'.",
                 "The request to assume the role '" + reqRole.name + "' was denied.",
                 "The requesting identity '" + accCtx.subjectId + "' is not authorized to assume " +
-                "the requested role.",
+                    "the requested role.",
                 "Authorization to use the role must be granted by an administrator.",
                 null
             );

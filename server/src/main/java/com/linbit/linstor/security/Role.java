@@ -3,11 +3,9 @@ package com.linbit.linstor.security;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -134,16 +132,8 @@ public final class Role implements Comparable<Role>
     }
 
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws SQLException, InvalidNameException
+        throws DatabaseException, InvalidNameException
     {
-        Connection dbConn = ctrlDb.getConnection();
-        if (dbConn == null)
-        {
-            throw new SQLException(
-                "The controller database connection pool failed to provide a database connection"
-            );
-        }
-
         Lock writeLock = GLOBAL_ROLE_MAP_LOCK.writeLock();
 
         try
@@ -154,10 +144,9 @@ public final class Role implements Comparable<Role>
             GLOBAL_ROLE_MAP.put(SYSTEM_ROLE.name, SYSTEM_ROLE);
             GLOBAL_ROLE_MAP.put(PUBLIC_ROLE.name, PUBLIC_ROLE);
 
-            ResultSet loadData = secDb.loadRoles(dbConn);
-            while (loadData.next())
+            List<String> loadData = secDb.loadRoles(ctrlDb);
+            for (String name : loadData)
             {
-                String name = loadData.getString(DbConstants.ROLE_DSP_NAME);
                 RoleName rlName = new RoleName(name);
                 if (!rlName.equals(SYSTEM_ROLE.name) &&
                     !rlName.equals(PUBLIC_ROLE.name))
@@ -170,7 +159,6 @@ public final class Role implements Comparable<Role>
         finally
         {
             writeLock.unlock();
-            ctrlDb.returnConnection(dbConn);
         }
     }
 

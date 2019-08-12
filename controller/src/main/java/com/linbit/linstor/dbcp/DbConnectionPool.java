@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp;
 
+import com.linbit.linstor.ControllerSQLDatabase;
 import com.linbit.linstor.DatabaseInfo;
 import com.google.common.collect.ImmutableMap;
 import com.linbit.ErrorCheck;
@@ -42,14 +43,14 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAM
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 @Singleton
-public class DbConnectionPool implements ControllerDatabase
+public class DbConnectionPool implements ControllerSQLDatabase
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "SQL database connection pool service";
     private static final String SCHEMA_HISTORY_TABLE_NAME = "FLYWAY_SCHEMA_HISTORY";
 
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;
-    private int dbMaxOpen = ControllerDatabase.DEFAULT_MAX_OPEN_STMT;
+    private int dbMaxOpen = ControllerSQLDatabase.DEFAULT_MAX_OPEN_STMT;
 
     public static final int DEFAULT_MIN_IDLE_CONNECTIONS =  10;
     public static final int DEFAULT_MAX_IDLE_CONNECTIONS = 100;

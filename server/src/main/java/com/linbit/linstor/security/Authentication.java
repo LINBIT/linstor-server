@@ -1,13 +1,10 @@
 package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 import java.security.MessageDigest;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,70 +47,27 @@ public final class Authentication
         ControllerDatabase ctrlDb,
         DbAccessor secDb
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
 
         if (ctrlDb != null && secDb != null)
         {
-            Connection dbConn = null;
-            try
-            {
-                dbConn = ctrlDb.getConnection();
-                secDb.setAuthRequired(dbConn, newPolicy);
-            }
-            finally
-            {
-                ctrlDb.returnConnection(dbConn);
-            }
+            secDb.setAuthRequired(ctrlDb, newPolicy);
         }
 
         GLOBAL_AUTH_REQUIRED.set(newPolicy);
     }
 
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws SQLException
+        throws DatabaseException
     {
-        Connection dbConn = null;
         GLOBAL_AUTH_REQUIRED.set(true);
-        try
+
+        boolean authRequired = secDb.loadAuthRequired(ctrlDb);
+        if (!authRequired)
         {
-            dbConn = ctrlDb.getConnection();
-            if (dbConn == null)
-            {
-                throw new SQLException(
-                    "The controller database connection pool failed to provide a database connection"
-                );
-            }
-
-            ResultSet rslt = secDb.loadAuthRequired(dbConn);
-            if (rslt.next())
-            {
-                String authPlcKey = rslt.getString(1);
-                String authPlcVal = rslt.getString(2);
-
-                if (!authPlcKey.equals(SecurityDbConsts.KEY_AUTH_REQ))
-                {
-                    throw new ImplementationError(
-                        "Security level database query returned incorrect key '" + authPlcKey + "'\n" +
-                        "instead of expected key '" + SecurityDbConsts.KEY_AUTH_REQ + "'",
-                        null
-                    );
-                }
-
-                if (Boolean.toString(false).equalsIgnoreCase(authPlcVal))
-                {
-                    GLOBAL_AUTH_REQUIRED.set(false);
-                }
-                else
-                {
-                    // TODO: A warning should be logged when an unknown value is encountered
-                }
-            }
-        }
-        finally
-        {
-            ctrlDb.returnConnection(dbConn);
+            GLOBAL_AUTH_REQUIRED.set(false);
         }
     }
 

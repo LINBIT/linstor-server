@@ -3,12 +3,11 @@ package com.linbit.linstor.security;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.security.data.TypeEnforcementRule;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -154,16 +153,8 @@ public final class SecurityType implements Comparable<SecurityType>
     }
 
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws SQLException, InvalidNameException
+        throws DatabaseException, InvalidNameException
     {
-        Connection dbConn = ctrlDb.getConnection();
-        if (dbConn == null)
-        {
-            throw new SQLException(
-                "The controller database connection pool failed to provide a database connection"
-            );
-        }
-
         Lock writeLock = GLOBAL_TYPE_MAP_LOCK.writeLock();
 
         try
@@ -176,10 +167,9 @@ public final class SecurityType implements Comparable<SecurityType>
 
             // Load all security types
             {
-                ResultSet loadData = secDb.loadSecurityTypes(dbConn);
-                while (loadData.next())
+                List<String> loadData = secDb.loadSecurityTypes(ctrlDb);
+                for (String dspName : loadData)
                 {
-                    String dspName = loadData.getString(DbConstants.TYPE_DSP_NAME);
                     SecTypeName typeName = new SecTypeName(dspName);
                     if (!typeName.equals(SYSTEM_TYPE.name) &&
                         !typeName.equals(PUBLIC_TYPE.name))
@@ -192,16 +182,12 @@ public final class SecurityType implements Comparable<SecurityType>
 
             // Load type enforcement rules
             {
-                ResultSet loadData = secDb.loadTeRules(dbConn);
-                while (loadData.next())
+                List<TypeEnforcementRule> loadData = secDb.loadTeRules(ctrlDb);
+                for (TypeEnforcementRule ter : loadData)
                 {
-                    String domainNameStr = loadData.getString(DbConstants.DOMAIN_NAME);
-                    String typeNameStr = loadData.getString(DbConstants.TYPE_NAME);
-                    String accTypeStr = loadData.getString(DbConstants.ACCESS_TYPE);
-
-                    SecurityType secDomain = get(new SecTypeName(domainNameStr));
-                    SecurityType secType = get(new SecTypeName(typeNameStr));
-                    AccessType accType = AccessType.get(accTypeStr);
+                    SecurityType secDomain = get(new SecTypeName(ter.getDomainName()));
+                    SecurityType secType = get(new SecTypeName(ter.getTypeName()));
+                    AccessType accType = AccessType.get(ter.getAccessType());
 
                     secType.rules.put(secDomain.name, accType);
                 }
@@ -210,7 +196,6 @@ public final class SecurityType implements Comparable<SecurityType>
         finally
         {
             writeLock.unlock();
-            ctrlDb.returnConnection(dbConn);
         }
     }
 

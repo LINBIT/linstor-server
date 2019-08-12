@@ -72,7 +72,7 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.ControllerSQLTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -200,7 +200,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @BeforeClass
     public static void setUpBeforeClass()
-        throws SQLException, InvalidNameException
+        throws DatabaseException, SQLException, InvalidNameException
     {
         if (dbConnPool == null)
         {
@@ -211,7 +211,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
             dbConnPool.migrate(dbConnectionPoolLoader.getDbType());
 
-            DbPersistence initializationSecureDbDriver = new DbPersistence();
+            DbSQLPersistence initializationSecureDbDriver = new DbSQLPersistence();
 
             SecurityLevel.load(dbConnPool, initializationSecureDbDriver);
             Identity.load(dbConnPool, initializationSecureDbDriver);
@@ -267,7 +267,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     protected void enterScope() throws Exception
     {
-        TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
+        TransactionMgr transMgr = new ControllerSQLTransactionMgr(dbConnPool);
         testScope.enter();
         testScope.seed(TransactionMgr.class, transMgr);
         if (seedDefaultPeerRule.shouldSeedDefaultPeer())

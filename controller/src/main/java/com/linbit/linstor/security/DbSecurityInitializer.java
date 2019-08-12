@@ -4,10 +4,10 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
-import java.sql.SQLException;
 
 public class DbSecurityInitializer
 {
@@ -40,7 +40,7 @@ public class DbSecurityInitializer
         {
             Initializer.load(initCtx, controllerDatabase, dbAccessor);
         }
-        catch (SQLException | InvalidNameException | AccessDeniedException exc)
+        catch (DatabaseException | InvalidNameException | AccessDeniedException exc)
         {
             throw new InitializationException("Failed to load security objects", exc);
         }

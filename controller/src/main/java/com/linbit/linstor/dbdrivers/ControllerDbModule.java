@@ -53,46 +53,61 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsConGenericDbDriver;
 import com.linbit.linstor.security.DbAccessor;
-import com.linbit.linstor.security.DbPersistence;
+import com.linbit.linstor.security.DbSQLPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.security.ObjectProtectionGenericDbDriver;
 
 public class ControllerDbModule extends AbstractModule
 {
+    private final DatabaseDriverInfo.DatabaseType dbType;
+
+    public ControllerDbModule(DatabaseDriverInfo.DatabaseType dbTypeRef)
+    {
+        dbType = dbTypeRef;
+    }
+
     @Override
     protected void configure()
     {
-        bind(DbAccessor.class).to(DbPersistence.class);
-
-        bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
-
         bind(DatabaseDriver.class).to(DatabaseLoader.class);
 
-        bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
-        bind(NodeDataDatabaseDriver.class).to(NodeDataGenericDbDriver.class);
-        bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDataGenericDbDriver.class);
-        bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDataGenericDbDriver.class);
-        bind(ResourceDataDatabaseDriver.class).to(ResourceDataGenericDbDriver.class);
-        bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataGenericDbDriver.class);
-        bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDataGenericDbDriver.class);
-        bind(VolumeDataDatabaseDriver.class).to(VolumeDataGenericDbDriver.class);
-        bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataGenericDbDriver.class);
-        bind(StorPoolDataDatabaseDriver.class).to(StorPoolDataGenericDbDriver.class);
-        bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDataGenericDbDriver.class);
-        bind(NodeConnectionDataDatabaseDriver.class).to(NodeConnectionDataGenericDbDriver.class);
-        bind(ResourceConnectionDataDatabaseDriver.class).to(ResourceConnectionDataGenericDbDriver.class);
-        bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDataGenericDbDriver.class);
-        bind(SnapshotDefinitionDataDatabaseDriver.class).to(SnapshotDefinitionDataGenericDbDriver.class);
-        bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionGenericDbDriver.class);
-        bind(SnapshotDataDatabaseDriver.class).to(SnapshotDataGenericDbDriver.class);
-        bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDataGenericDbDriver.class);
-        bind(KeyValueStoreDataDatabaseDriver.class).to(KeyValueStoreDataGenericDbDriver.class);
+        switch (dbType)
+        {
+            case SQL:
+                bind(DbAccessor.class).to(DbSQLPersistence.class);
 
-        bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
-        bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
-        bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
-        bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
-        bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
-        bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
+                bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
+
+                bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
+                bind(NodeDataDatabaseDriver.class).to(NodeDataGenericDbDriver.class);
+                bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDataGenericDbDriver.class);
+                bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDataGenericDbDriver.class);
+                bind(ResourceDataDatabaseDriver.class).to(ResourceDataGenericDbDriver.class);
+                bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataGenericDbDriver.class);
+                bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDataGenericDbDriver.class);
+                bind(VolumeDataDatabaseDriver.class).to(VolumeDataGenericDbDriver.class);
+                bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataGenericDbDriver.class);
+                bind(StorPoolDataDatabaseDriver.class).to(StorPoolDataGenericDbDriver.class);
+                bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDataGenericDbDriver.class);
+                bind(NodeConnectionDataDatabaseDriver.class).to(NodeConnectionDataGenericDbDriver.class);
+                bind(ResourceConnectionDataDatabaseDriver.class).to(ResourceConnectionDataGenericDbDriver.class);
+                bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDataGenericDbDriver.class);
+                bind(SnapshotDefinitionDataDatabaseDriver.class).to(SnapshotDefinitionDataGenericDbDriver.class);
+                bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionGenericDbDriver.class);
+                bind(SnapshotDataDatabaseDriver.class).to(SnapshotDataGenericDbDriver.class);
+                bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDataGenericDbDriver.class);
+                bind(KeyValueStoreDataDatabaseDriver.class).to(KeyValueStoreDataGenericDbDriver.class);
+
+                bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
+                bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
+                bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
+                bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
+                bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
+                bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
+                break;
+            case ECTD:
+                default:
+                throw new RuntimeException("ECTD database driver not implemented.");
+        }
     }
 }

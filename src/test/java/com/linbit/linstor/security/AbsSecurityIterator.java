@@ -1,7 +1,7 @@
 package com.linbit.linstor.security;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.testutils.AbsIterator;
-import java.sql.SQLException;
 
 public abstract class AbsSecurityIterator<T> extends AbsIterator<T>
 {
@@ -74,7 +74,7 @@ public abstract class AbsSecurityIterator<T> extends AbsIterator<T>
             {
                 throw new RuntimeException("rootCtx cannot change securityLevel...", exc);
             }
-            catch (SQLException exc)
+            catch (DatabaseException exc)
             {
                 throw new RuntimeException(
                     "Database error while changing the securityLevel, although no database is being used",

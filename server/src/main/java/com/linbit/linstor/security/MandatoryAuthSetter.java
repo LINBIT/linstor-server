@@ -1,10 +1,10 @@
 
 package com.linbit.linstor.security;
 
-import java.sql.SQLException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
 public interface MandatoryAuthSetter
 {
     void setAuthRequired(AccessContext accCtx, boolean newPolicy)
-        throws AccessDeniedException, SQLException;
+        throws AccessDeniedException, DatabaseException;
 }

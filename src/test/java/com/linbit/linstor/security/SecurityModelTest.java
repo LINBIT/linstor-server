@@ -1,12 +1,12 @@
 package com.linbit.linstor.security;
 
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
-import java.sql.SQLException;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -661,7 +661,7 @@ public class SecurityModelTest
         fail("SecurityLevel change by unauthorized role succeeded");
     }
 
-    protected void setSecurityLevel(SecurityLevel level) throws AccessDeniedException, SQLException
+    protected void setSecurityLevel(SecurityLevel level) throws AccessDeniedException, DatabaseException
     {
         SecurityLevel.set(sysCtx, level, null, null);
     }

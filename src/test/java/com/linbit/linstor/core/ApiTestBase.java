@@ -31,7 +31,7 @@ import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
-import com.linbit.linstor.transaction.ControllerTransactionMgr;
+import com.linbit.linstor.transaction.ControllerSQLTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import org.junit.Assert;
 import org.junit.Before;
@@ -81,7 +81,7 @@ public abstract class ApiTestBase extends GenericDbBase
 
         testScope.enter();
 
-        TransactionMgr transMgr = new ControllerTransactionMgr(dbConnPool);
+        TransactionMgr transMgr = new ControllerSQLTransactionMgr(dbConnPool);
         testScope.seed(TransactionMgr.class, transMgr);
 
         ctrlConf.setConnection(transMgr);

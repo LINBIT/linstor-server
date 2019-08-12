@@ -2,9 +2,13 @@ package com.linbit.linstor.security;
 
 import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.security.data.IdentityRoleEntry;
+import com.linbit.linstor.security.data.SignInEntry;
+import com.linbit.linstor.security.data.TypeEnforcementRule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -14,12 +18,13 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.List;
 
 @Singleton
 public class EmptySecurityDbDriver implements DbAccessor
 {
     public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER =
-        new NoOpObjectDatabaseDriver<Object, Object>();
+        new NoOpObjectDatabaseDriver<>();
 
     @Inject
     public EmptySecurityDbDriver()
@@ -27,67 +32,67 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
-    public ResultSet getSignInEntry(Connection dbConn, IdentityName idName)
+    public SignInEntry getSignInEntry(ControllerDatabase ctrlDb, IdentityName idName)
     {
         return null;
     }
 
     @Override
-    public ResultSet getIdRoleMapEntry(Connection dbConn, IdentityName idName, RoleName rlName)
+    public IdentityRoleEntry getIdRoleMapEntry(ControllerDatabase ctrlDb, IdentityName idName, RoleName rlName)
     {
         return null;
     }
 
     @Override
-    public ResultSet getDefaultRole(Connection dbConn, IdentityName idName)
+    public IdentityRoleEntry getDefaultRole(ControllerDatabase ctrlDb, IdentityName idName)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadIdentities(Connection dbConn)
+    public List<String> loadIdentities(ControllerDatabase ctrlDb)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadSecurityTypes(Connection dbConn)
+    public List<String> loadSecurityTypes(ControllerDatabase ctrlDb)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadRoles(Connection dbConn)
+    public List<String> loadRoles(ControllerDatabase ctrlDb)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadTeRules(Connection dbConn)
+    public List<TypeEnforcementRule> loadTeRules(ControllerDatabase ctrlDb)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadSecurityLevel(Connection dbConn)
+    public String loadSecurityLevel(ControllerDatabase ctrlDb)
     {
         return null;
     }
 
     @Override
-    public ResultSet loadAuthRequired(Connection dbConn)
+    public boolean loadAuthRequired(ControllerDatabase ctrlDb)
     {
-        return null;
+        return true;
     }
 
     @Override
-    public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel)
+    public void setSecurityLevel(ControllerDatabase ctrlDb, SecurityLevel newLevel)
     {
         // no-op
     }
 
     @Override
-    public void setAuthRequired(Connection dbConn, boolean newPolicy)
+    public void setAuthRequired(ControllerDatabase ctrlDb, boolean newPolicy)
     {
         // no-op
     }

@@ -14,18 +14,11 @@ import java.sql.SQLException;
 public interface ControllerDatabase extends SystemService
 {
     int DEFAULT_TIMEOUT = 60000;
-    int DEFAULT_MAX_OPEN_STMT = 100;
 
     void setTimeout(int timeout);
-    void setMaxOpenPreparedStatements(int maxOpen);
 
     void initializeDataSource(String dbConnectionUrl)
         throws DatabaseException;
-
-    Connection getConnection() throws SQLException;
-
-    // Must be able to handle dbConn == null as a valid input
-    void returnConnection(Connection dbConn);
 
     void migrate(String dbType);
 

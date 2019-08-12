@@ -2,6 +2,7 @@ package com.linbit.linstor.debug;
 
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -115,16 +116,16 @@ public class CmdSetAuthPolicy extends BaseDebugCmd
             {
                 printLsException(debugErr, accExc);
             }
-            catch (SQLException sqlExc)
+            catch (DatabaseException dbExc)
             {
                 String detailsText = "Review the database error to determine the cause of the problem.";
-                String sqlErrorMsg = sqlExc.getMessage();
+                String sqlErrorMsg = dbExc.getMessage();
                 if (sqlErrorMsg != null)
                 {
                     detailsText += "\nThe error description provided by the database subsystem is:\n" +
-                    sqlExc.getMessage();
+                    dbExc.getMessage();
                 }
-                String reportId = errorReporter.reportError(Level.ERROR, sqlExc);
+                String reportId = errorReporter.reportError(Level.ERROR, dbExc);
                 if (reportId != null)
                 {
                     detailsText += "\nAn error report was filed under report ID " + reportId + ".";
@@ -137,7 +138,7 @@ public class CmdSetAuthPolicy extends BaseDebugCmd
                         "A database error was encountered while attempting to change the authentication policy",
                         detailsText,
                         null,
-                        sqlExc
+                        dbExc
                     )
                 );
             }

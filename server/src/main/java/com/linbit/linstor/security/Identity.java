@@ -3,11 +3,9 @@ package com.linbit.linstor.security;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -130,16 +128,8 @@ public final class Identity implements Comparable<Identity>
     }
 
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws SQLException, InvalidNameException
+        throws DatabaseException, InvalidNameException
     {
-        Connection dbConn = ctrlDb.getConnection();
-        if (dbConn == null)
-        {
-            throw new SQLException(
-                "The controller database connection pool failed to provide a database connection"
-            );
-        }
-
         Lock writeLock = GLOBAL_IDENTITY_MAP_LOCK.writeLock();
 
         try
@@ -150,10 +140,9 @@ public final class Identity implements Comparable<Identity>
             GLOBAL_IDENTITY_MAP.put(SYSTEM_ID.name, SYSTEM_ID);
             GLOBAL_IDENTITY_MAP.put(PUBLIC_ID.name, PUBLIC_ID);
 
-            ResultSet loadData = secDb.loadIdentities(dbConn);
-            while (loadData.next())
+            List<String> loadData = secDb.loadIdentities(ctrlDb);
+            for (String name : loadData)
             {
-                String name = loadData.getString(DbConstants.IDENTITY_DSP_NAME);
                 IdentityName idName = new IdentityName(name);
                 if (!idName.equals(SYSTEM_ID.name) &&
                     !idName.equals(PUBLIC_ID.name))
@@ -166,7 +155,6 @@ public final class Identity implements Comparable<Identity>
         finally
         {
             writeLock.unlock();
-            ctrlDb.returnConnection(dbConn);
         }
     }
 

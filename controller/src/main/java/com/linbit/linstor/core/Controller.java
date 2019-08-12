@@ -580,7 +580,7 @@ public final class Controller
                 new CoreModule(),
                 new ControllerCoreModule(),
                 new ControllerSatelliteCommunicationModule(),
-                new ControllerDbModule(),
+                new ControllerDbModule(dbType),
                 new DbConnectionPoolModule(),
                 new NetComModule(),
                 new NumberPoolModule(),

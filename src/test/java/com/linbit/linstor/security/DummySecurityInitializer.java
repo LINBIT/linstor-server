@@ -1,8 +1,7 @@
 package com.linbit.linstor.security;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-
-import java.sql.SQLException;
 
 public class DummySecurityInitializer
 {
@@ -53,7 +52,7 @@ public class DummySecurityInitializer
     }
 
     public static void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, DatabaseException
     {
         SecurityLevel.set(accCtx, newLevel, null, null);
     }

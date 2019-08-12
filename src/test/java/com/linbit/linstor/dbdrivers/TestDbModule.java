@@ -47,7 +47,7 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsConGenericDbDriver;
 import com.linbit.linstor.security.DbAccessor;
-import com.linbit.linstor.security.DbPersistence;
+import com.linbit.linstor.security.DbSQLPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.security.ObjectProtectionGenericDbDriver;
 
@@ -58,7 +58,7 @@ public class TestDbModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(DbAccessor.class).to(DbPersistence.class);
+        bind(DbAccessor.class).to(DbSQLPersistence.class);
 
         bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 

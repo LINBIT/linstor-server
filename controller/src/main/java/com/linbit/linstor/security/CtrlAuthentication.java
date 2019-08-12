@@ -5,9 +5,9 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.LinstorConfigToml;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.utils.Base64;
+import com.linbit.linstor.security.data.SignInEntry;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -18,9 +18,6 @@ import javax.naming.directory.SearchControls;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Hashtable;
 
 import org.slf4j.event.Level;
@@ -46,9 +43,9 @@ public class CtrlAuthentication
     )
         throws AccessDeniedException, NoSuchAlgorithmException
     {
-        ErrorCheck.ctorNotNull(Authentication.class, AccessContext.class, initCtx);
-        ErrorCheck.ctorNotNull(Authentication.class, ControllerDatabase.class, ctrlDbRef);
-        ErrorCheck.ctorNotNull(Authentication.class, DbAccessor.class, dbDriverRef);
+        ErrorCheck.ctorNotNull(CtrlAuthentication.class, AccessContext.class, initCtx);
+        ErrorCheck.ctorNotNull(CtrlAuthentication.class, ControllerDatabase.class, ctrlDbRef);
+        ErrorCheck.ctorNotNull(CtrlAuthentication.class, DbAccessor.class, dbDriverRef);
 
         initCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
         hashAlgo = MessageDigest.getInstance(Authentication.HASH_ALGORITHM);
@@ -64,45 +61,29 @@ public class CtrlAuthentication
     private AccessContext signInLinstor(IdentityName idName, byte[] password)
         throws SignInException, InvalidNameException
     {
-        Connection dbConn = null;
         AccessContext signInCtx = null;
         try
         {
-            dbConn = ctrlDb.getConnection();
-            if (dbConn == null)
-            {
-                throw new SQLException(
-                    "The controller database connection pool failed to provide a database connection"
-                );
-            }
             // Query the identity entry
-            ResultSet signInEntry = dbDriver.getSignInEntry(dbConn, idName);
+            SignInEntry signInEntry = dbDriver.getSignInEntry(ctrlDb, idName);
 
             // Position cursor on the first row
-            if (signInEntry.next())
+            if (signInEntry != null)
             {
-                final String storedIdStr = signInEntry.getString(DbConstants.IDENTITY_NAME);
-                final String storedDfltRoleStr = signInEntry.getString(DbConstants.ROLE_NAME);
-                final String storedDfltTypeStr = signInEntry.getString(DbConstants.DOMAIN_NAME);
-                final Long storedDfltRolePrivs;
-                {
-                    long tmp = signInEntry.getLong(DbConstants.ROLE_PRIVILEGES);
-                    storedDfltRolePrivs = signInEntry.wasNull() ? null : tmp;
-                }
+                final String storedIdStr = signInEntry.getIdentityName();
+                final String storedDfltRoleStr = signInEntry.getRoleName();
+                final String storedDfltTypeStr = signInEntry.getDomainName();
+                final Long storedDfltRolePrivs = signInEntry.getRolePrivileges();
 
                 byte[] storedSalt;
                 byte[] storedHash;
                 try
                 {
-                    String saltBase64 = signInEntry.getString(DbConstants.PASS_SALT);
-                    String hashBase64 = signInEntry.getString(DbConstants.PASS_HASH);
-
-                    storedSalt = Base64.decode(saltBase64.trim());
-                    storedHash = Base64.decode(hashBase64.trim());
+                    storedSalt = signInEntry.getSalt();
+                    storedHash = signInEntry.getHash();
                 }
                 catch (IllegalArgumentException exc)
                 {
-                    signInEntry.close();
                     throw new SignInException("Invalid password salt or hash value in database", exc);
                 }
                 if (storedIdStr == null)
@@ -343,12 +324,12 @@ public class CtrlAuthentication
                 signInFailed();
             }
         }
-        catch (SQLException sqlExc)
+        catch (DatabaseException dbExc)
         {
             String reportId = errorLog.reportError(
                 Level.ERROR,
                 new SignInException(
-                    "Sign-in failed: Database error: The SQL query for the security database record failed",
+                    "Sign-in failed: Database error: The database query for the security database record failed",
                     // Description
                     "Sign-in failed due to a database error",
                     // Cause
@@ -356,14 +337,10 @@ public class CtrlAuthentication
                     null,
                     // No error details
                     null,
-                    sqlExc
+                    dbExc
                 )
             );
             dbFailed(reportId);
-        }
-        finally
-        {
-            ctrlDb.returnConnection(dbConn);
         }
         return signInCtx;
     }
