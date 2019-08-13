@@ -473,7 +473,7 @@ public final class Controller
         }
         else if (linstorConfig.getDB().getConnectionUrl().startsWith("etcd"))
         {
-            dbType = DatabaseDriverInfo.DatabaseType.ECTD;
+            dbType = DatabaseDriverInfo.DatabaseType.ETCD;
         }
         else
         {

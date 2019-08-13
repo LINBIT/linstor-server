@@ -105,9 +105,9 @@ public class ControllerDbModule extends AbstractModule
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
                 break;
-            case ECTD:
+            case ETCD:
                 default:
-                throw new RuntimeException("ECTD database driver not implemented.");
+                throw new RuntimeException("ETCD database driver not implemented.");
         }
     }
 }

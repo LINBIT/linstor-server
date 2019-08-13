@@ -5,7 +5,7 @@ public interface DatabaseDriverInfo
     enum DatabaseType
     {
         SQL,
-        ECTD;
+        ETCD;
     }
 
     static DatabaseDriverInfo createDriverInfo(final String dbType)

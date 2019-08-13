@@ -21,8 +21,8 @@ public class ControllerTransactionMgrModule extends AbstractModule
             case SQL:
                 bind(TransactionMgrGenerator.class).to(ControllerSQLTransactionMgrGenerator.class);
                 break;
-            case ECTD:
-                throw new RuntimeException("ECTD TransactionMgr not implemented.");
+            case ETCD:
+                throw new RuntimeException("ETCD TransactionMgr not implemented.");
             default:
         }
     }
