@@ -62,6 +62,8 @@ import java.util.stream.Stream;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.moandjiezana.toml.Toml;
+import org.slf4j.event.Level;
 
 /**
  * linstor satellite prototype
@@ -70,6 +72,8 @@ import com.google.inject.Injector;
  */
 public final class Satellite
 {
+    private static final String SATELLITE_CONFIG = "linstor_satellite.toml";
+
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
 
@@ -102,6 +106,8 @@ public final class Satellite
 
     private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
 
+    private final SatelliteConfigToml satelliteConfig;
+
     @Inject
     public Satellite(
         ErrorReporter errorReporterRef,
@@ -117,7 +123,8 @@ public final class Satellite
         DrbdEventService drbdEventSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
         SatelliteCmdlArguments satelliteCmdlArgumentsRef,
-        StltCoreObjProtInitializer stltCoreObjProtInitializerRef
+        StltCoreObjProtInitializer stltCoreObjProtInitializerRef,
+        SatelliteConfigToml satelliteConfigRef
     )
     {
         errorReporter = errorReporterRef;
@@ -134,6 +141,7 @@ public final class Satellite
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         satelliteCmdlArguments = satelliteCmdlArgumentsRef;
         stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
+        satelliteConfig = satelliteConfigRef;
     }
 
     public void start()
@@ -144,6 +152,22 @@ public final class Satellite
 
         try
         {
+            // logLevel from cArgs overrides logLevel from toml
+            if (satelliteConfig.getLogging() != null && satelliteCmdlArguments.getLogLevel() == null)
+            {
+                try
+                {
+                    errorReporter.setLogLevel(
+                        sysCtx,
+                        Level.valueOf(satelliteConfig.getLogging().getLevel().toUpperCase())
+                    );
+                }
+                catch (IllegalArgumentException exc)
+                {
+                    errorReporter.logError("Invalid Log level '" + satelliteConfig.getLogging().getLevel() + "'");
+                }
+            }
+
             try
             {
                 // make sure /var/lib/linstor exists
@@ -333,6 +357,31 @@ public final class Satellite
         }
     }
 
+    private static SatelliteConfigToml parseSatelliteConfig(ErrorReporter errorReporter, SatelliteCmdlArguments cArgs)
+    {
+        SatelliteConfigToml linstorConfig = new SatelliteConfigToml();
+        Path linstorConfigPath = cArgs.getConfigurationDirectory().resolve(SATELLITE_CONFIG).normalize();
+        if (Files.exists(linstorConfigPath))
+        {
+            try
+            {
+                linstorConfig = new Toml().read(linstorConfigPath.toFile()).to(SatelliteConfigToml.class);
+                errorReporter.logInfo("Linstor satellite configuration file loaded from '%s'.", linstorConfigPath);
+            }
+            catch (RuntimeException tomlExc)
+            {
+                errorReporter.logError("Error parsing '%s': %s", linstorConfigPath.toString(), tomlExc.getMessage());
+                System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
+            }
+        }
+        else
+        {
+            errorReporter.logInfo("Linstor satellite configuration file not found, using defaults.");
+        }
+
+        return linstorConfig;
+    }
+
     public static void main(String[] args)
     {
         SatelliteCmdlArguments cArgs = SatelliteArgumentParser.parseCommandLine(args);
@@ -353,6 +402,8 @@ public final class Satellite
             cArgs.getOverrideNodeName() != null ? cArgs.getOverrideNodeName() : LinStor.getHostName(),
             cArgs.getLogLevel()
         );
+
+        SatelliteConfigToml stltConfig = parseSatelliteConfig(errorLog, cArgs);
 
         try
         {
@@ -400,7 +451,7 @@ public final class Satellite
                 new LoggingModule(errorLog),
                 new SecurityModule(),
                 new SatelliteSecurityModule(),
-                new SatelliteArgumentsModule(cArgs),
+                new SatelliteArgumentsModule(cArgs, stltConfig),
                 new CoreTimerModule(),
                 new SatelliteLinstorModule(),
                 new LinStorModule(),

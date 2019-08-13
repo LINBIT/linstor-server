@@ -60,6 +60,9 @@ subprojects {
             compile 'org.apache.httpcomponents:httpclient:4.5.7'
             compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.9'
             compile 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
+
+            // toml parsing library
+            compile group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
         }
     }
 }
@@ -260,9 +263,6 @@ project(':controller') {
             compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.6.2'
             compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.4'
             runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
-
-            // toml parsing library
-            compile group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
 
 //            runtime 'org.mariadb.jdbc:mariadb-java-client:2.2.6'
 //            runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'

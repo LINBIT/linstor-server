@@ -35,9 +35,9 @@ import java.util.Properties;
 
 public final class SatelliteNetComInitializer
 {
-    private static final String NET_COM_DEFAULT_TYPE = "plain";
-    private static final String NET_COM_DEFAULT_ADDR = "::0";
-    private static final int NET_COM_DEFAULT_PORT = 3366;
+    public static final String NET_COM_DEFAULT_TYPE = "plain";
+    public static final String NET_COM_DEFAULT_ADDR = "::0";
+    public static final int NET_COM_DEFAULT_PORT = 3366;
 
     // TCP Service configuration file
     private static final String NET_COM_CONF_FILE = "satellite_netcom.cfg";
@@ -61,6 +61,7 @@ public final class SatelliteNetComInitializer
     private final MessageProcessor msgProc;
     private final StltConnTracker stltConnTracker;
     private final Map<ServiceName, SystemService> systemServicesMap;
+    private final SatelliteConfigToml stltConfig;
 
     @Inject
     public SatelliteNetComInitializer(
@@ -69,7 +70,8 @@ public final class SatelliteNetComInitializer
         @PublicContext AccessContext publicCtxRef,
         CommonMessageProcessor msgProcRef,
         StltConnTracker stltConnTrackerRef,
-        Map<ServiceName, SystemService> systemServicesMapRef
+        Map<ServiceName, SystemService> systemServicesMapRef,
+        SatelliteConfigToml stltConfigRef
     )
     {
         errorReporter = errorReporterRef;
@@ -78,6 +80,7 @@ public final class SatelliteNetComInitializer
         msgProc = msgProcRef;
         stltConnTracker = stltConnTrackerRef;
         systemServicesMap = systemServicesMapRef;
+        stltConfig = stltConfigRef;
     }
 
     public boolean initMainNetComService(
@@ -110,20 +113,20 @@ public final class SatelliteNetComInitializer
             {
                 bindAddressStr = netComProps.getProperty(
                     NET_COM_CONF_BIND_ADDR_KEY,
-                    NET_COM_DEFAULT_ADDR
+                    stltConfig.getNETCOM().getBindAddress()
                 );
             }
             InetAddress addr = InetAddress.getByName(bindAddressStr);
             String portProp = netComProps.getProperty(
                 NET_COM_CONF_PORT_KEY,
-                Integer.toString(NET_COM_DEFAULT_PORT)
+                stltConfig.getNETCOM().getPort().toString()
             );
             int port = Integer.parseInt(portProp);
             SocketAddress bindAddress = new InetSocketAddress(addr, port);
 
             TcpConnector netComSvc = null;
 
-            String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, NET_COM_DEFAULT_TYPE);
+            String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, stltConfig.getNETCOM().getType());
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_PLAIN))
             {
                 if (ovrdPlainPort != null)
@@ -144,12 +147,30 @@ public final class SatelliteNetComInitializer
             else
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_SSL))
             {
-                String sslProtocol = netComProps.getProperty(NET_COM_CONF_SSL_PROTOCOL_KEY);
-                String keyStoreFile = netComProps.getProperty(NET_COM_CONF_SSL_SERVER_CERT_KEY);
-                String trustStoreFile = netComProps.getProperty(NET_COM_CONF_SSL_TRUST_CERT_KEY);
-                char[] keyPasswd = netComProps.getProperty(NET_COM_CONF_SSL_KEY_PASS_KEY).toCharArray();
-                char[] keyStorePasswd = netComProps.getProperty(NET_COM_CONF_SSL_KEYSTORE_PASS_KEY).toCharArray();
-                char[] trustStorePasswd = netComProps.getProperty(NET_COM_CONF_SSL_TRUST_PASS_KEY).toCharArray();
+                String sslProtocol = netComProps.getProperty(
+                    NET_COM_CONF_SSL_PROTOCOL_KEY,
+                    stltConfig.getNETCOM().getSslProtocol()
+                );
+                String keyStoreFile = netComProps.getProperty(
+                    NET_COM_CONF_SSL_SERVER_CERT_KEY,
+                    stltConfig.getNETCOM().getServerCertificate()
+                );
+                String trustStoreFile = netComProps.getProperty(
+                    NET_COM_CONF_SSL_TRUST_CERT_KEY,
+                    stltConfig.getNETCOM().getTrustedCertificates()
+                );
+                char[] keyPasswd = netComProps.getProperty(
+                    NET_COM_CONF_SSL_KEY_PASS_KEY,
+                    stltConfig.getNETCOM().getKeyPassword()
+                ).toCharArray();
+                char[] keyStorePasswd = netComProps.getProperty(
+                    NET_COM_CONF_SSL_KEYSTORE_PASS_KEY,
+                    stltConfig.getNETCOM().getKeystorePassword()
+                ).toCharArray();
+                char[] trustStorePasswd = netComProps.getProperty(
+                    NET_COM_CONF_SSL_TRUST_PASS_KEY,
+                    stltConfig.getNETCOM().getTrustStorePassword()
+                ).toCharArray();
 
                 try
                 {
