@@ -2,6 +2,8 @@ package com.linbit.linstor.dbdrivers;
 
 import com.google.inject.AbstractModule;
 
+import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
+import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDataGenericDbDriver;
@@ -74,6 +76,7 @@ public class ControllerDbModule extends AbstractModule
         switch (dbType)
         {
             case SQL:
+                bind(DbInitializer.class).to(DbConnectionPoolInitializer.class);
                 bind(DbAccessor.class).to(DbSQLPersistence.class);
 
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);

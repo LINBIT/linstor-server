@@ -23,8 +23,8 @@ import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
+import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.debug.ControllerDebugModule;
@@ -114,7 +114,7 @@ public final class Controller
     // Database connection pool service
     private final ControllerDatabase controllerDb;
 
-    private final DbConnectionPoolInitializer dbConnectionPoolInitializer;
+    private final DbInitializer dbInitializer;
     private final DbSecurityInitializer dbSecurityInitializer;
     private final DbCoreObjProtInitializer dbCoreObjProtInitializer;
     private final DbDataInitializer dbDataInitializer;
@@ -151,7 +151,7 @@ public final class Controller
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         ControllerDatabase controllerDatabaseRef,
-        DbConnectionPoolInitializer dbConnectionPoolInitializerRef,
+        DbInitializer dbConnectionPoolInitializerRef,
         DbSecurityInitializer dbSecurityInitializerRef,
         DbCoreObjProtInitializer dbCoreObjProtInitializerRef,
         DbDataInitializer dbDataInitializerRef,
@@ -177,7 +177,7 @@ public final class Controller
         reconfigurationLock = reconfigurationLockRef;
         systemServicesMap = systemServicesMapRef;
         controllerDb = controllerDatabaseRef;
-        dbConnectionPoolInitializer = dbConnectionPoolInitializerRef;
+        dbInitializer = dbConnectionPoolInitializerRef;
         dbSecurityInitializer = dbSecurityInitializerRef;
         dbCoreObjProtInitializer = dbCoreObjProtInitializerRef;
         dbDataInitializer = dbDataInitializerRef;
@@ -234,7 +234,7 @@ public final class Controller
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
-            dbConnectionPoolInitializer.initialize();
+            dbInitializer.initialize();
 
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).

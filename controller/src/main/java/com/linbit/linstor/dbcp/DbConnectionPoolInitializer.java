@@ -15,7 +15,7 @@ import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class DbConnectionPoolInitializer
+public class DbConnectionPoolInitializer implements DbInitializer
 {
     private static final String DERBY_CONNECTION_TEST_SQL =
         "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
