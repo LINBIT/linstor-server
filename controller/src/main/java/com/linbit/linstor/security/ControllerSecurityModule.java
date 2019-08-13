@@ -6,7 +6,6 @@ import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinstorConfigToml;
-import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Singleton;
@@ -24,7 +23,7 @@ public class ControllerSecurityModule extends AbstractModule
 
     @Provides
     public SecurityLevelSetter securityLevelSetter(
-        final DbConnectionPool dbConnectionPool,
+        final ControllerDatabase dbConnectionPool,
         final DbAccessor securityDbDriver
     )
     {
@@ -34,7 +33,7 @@ public class ControllerSecurityModule extends AbstractModule
 
     @Provides
     public MandatoryAuthSetter mandatoryAuthSetter(
-        final DbConnectionPool dbConnectionPool,
+        final ControllerDatabase dbConnectionPool,
         final DbAccessor securityDbDriver
     )
     {

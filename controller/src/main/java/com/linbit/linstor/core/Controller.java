@@ -6,6 +6,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.drbd.md.MetaDataModule;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerLinstorModule;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
@@ -111,7 +112,7 @@ public final class Controller
     private final Map<ServiceName, SystemService> systemServicesMap;
 
     // Database connection pool service
-    private final DbConnectionPool dbConnPool;
+    private final ControllerDatabase controllerDb;
 
     private final DbConnectionPoolInitializer dbConnectionPoolInitializer;
     private final DbSecurityInitializer dbSecurityInitializer;
@@ -149,7 +150,7 @@ public final class Controller
         CoreTimer timerEventSvcRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
-        DbConnectionPool dbConnPoolRef,
+        ControllerDatabase controllerDatabaseRef,
         DbConnectionPoolInitializer dbConnectionPoolInitializerRef,
         DbSecurityInitializer dbSecurityInitializerRef,
         DbCoreObjProtInitializer dbCoreObjProtInitializerRef,
@@ -175,7 +176,7 @@ public final class Controller
         timerEventSvc = timerEventSvcRef;
         reconfigurationLock = reconfigurationLockRef;
         systemServicesMap = systemServicesMapRef;
-        dbConnPool = dbConnPoolRef;
+        controllerDb = controllerDatabaseRef;
         dbConnectionPoolInitializer = dbConnectionPoolInitializerRef;
         dbSecurityInitializer = dbSecurityInitializerRef;
         dbCoreObjProtInitializer = dbCoreObjProtInitializerRef;
@@ -229,7 +230,7 @@ public final class Controller
             taskScheduleService.addTask(retryResourcesTask);
             taskScheduleService.addTask(logArchiveTask);
 
-            systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
+            systemServicesMap.put(controllerDb.getInstanceName(), controllerDb);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 

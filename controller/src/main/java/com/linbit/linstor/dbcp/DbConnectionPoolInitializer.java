@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp;
 
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.ControllerCmdlArguments;
 import com.linbit.linstor.core.LinstorConfigToml;
@@ -28,14 +29,14 @@ public class DbConnectionPoolInitializer
     public DbConnectionPoolInitializer(
         ErrorReporter errorLogRef,
         ControllerCmdlArguments argsRef,
-        DbConnectionPool dbConnPoolRef,
+        ControllerDatabase dbConnPoolRef,
         LinstorConfigToml linstorConfigRef
     )
     {
 
         errorLog = errorLogRef;
         args = argsRef;
-        dbConnPool = dbConnPoolRef;
+        dbConnPool = (DbConnectionPool) dbConnPoolRef;
         linstorConfig = linstorConfigRef;
     }
 
