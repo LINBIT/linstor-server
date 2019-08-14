@@ -1,9 +1,8 @@
 package com.linbit.linstor.dbcp;
 
-import com.linbit.linstor.DatabaseInfo;
-import com.linbit.linstor.DatabaseInfoImpl;
-import com.google.inject.AbstractModule;
 import com.linbit.linstor.ControllerDatabase;
+
+import com.google.inject.AbstractModule;
 
 public class DbConnectionPoolModule extends AbstractModule
 {
@@ -11,6 +10,5 @@ public class DbConnectionPoolModule extends AbstractModule
     protected void configure()
     {
         bind(ControllerDatabase.class).to(DbConnectionPool.class);
-        bind(DatabaseInfo.class).to(DatabaseInfoImpl.class);
     }
 }

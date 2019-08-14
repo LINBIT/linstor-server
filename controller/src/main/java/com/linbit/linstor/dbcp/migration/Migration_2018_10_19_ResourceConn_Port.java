@@ -14,16 +14,15 @@ import java.sql.Statement;
 public class Migration_2018_10_19_ResourceConn_Port extends LinstorMigration
 {
     @Override
-    public void migrate(Connection connection)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
         if (!MigrationUtils.columnExists(connection, "RESOURCE_CONNECTIONS", "TCP_PORT"))
         {
             String crtTmpTblStmt;
-            DatabaseInfo.DbProduct database = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
-            if (database == DatabaseInfo.DbProduct.DB2 ||
-                database == DatabaseInfo.DbProduct.DB2_I ||
-                database == DatabaseInfo.DbProduct.DB2_Z)
+            if (dbProduct == DatabaseInfo.DbProduct.DB2 ||
+                dbProduct == DatabaseInfo.DbProduct.DB2_I ||
+                dbProduct == DatabaseInfo.DbProduct.DB2_Z)
             {
                 crtTmpTblStmt = "CREATE TABLE RESOURCE_CONNECTIONS_TMP AS (SELECT * FROM RESOURCE_CONNECTIONS) " +
                     "WITH DATA";

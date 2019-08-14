@@ -108,7 +108,7 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
     private final Set<Pair<String, Integer>> sfVlmDfns = new HashSet<>();
 
     @Override
-    public void migrate(Connection connection)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
         if (!MigrationUtils.tableExists(connection, TBL_LAYER_RESOURCE_IDS))
@@ -331,16 +331,14 @@ public class Migration_2019_02_20_LayerData extends LinstorMigration
             }
 
             // now that the data are copied, we can remove the old columns
-            DatabaseInfo.DbProduct database = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
-
             List<String> sqlStatements = new ArrayList<>();
-            sqlStatements.add(MigrationUtils.dropColumn(database, "RESOURCE_DEFINITIONS", "TCP_PORT"));
-            sqlStatements.add(MigrationUtils.dropColumn(database, "RESOURCE_DEFINITIONS", "SECRET"));
-            sqlStatements.add(MigrationUtils.dropColumn(database, "RESOURCE_DEFINITIONS", "TRANSPORT_TYPE"));
+            sqlStatements.add(MigrationUtils.dropColumn(dbProduct, "RESOURCE_DEFINITIONS", "TCP_PORT"));
+            sqlStatements.add(MigrationUtils.dropColumn(dbProduct, "RESOURCE_DEFINITIONS", "SECRET"));
+            sqlStatements.add(MigrationUtils.dropColumn(dbProduct, "RESOURCE_DEFINITIONS", "TRANSPORT_TYPE"));
 
-            sqlStatements.add(MigrationUtils.dropColumn(database, "RESOURCES", "NODE_ID"));
+            sqlStatements.add(MigrationUtils.dropColumn(dbProduct, "RESOURCES", "NODE_ID"));
 
-            sqlStatements.add(MigrationUtils.dropColumn(database, "VOLUME_DEFINITIONS", "VLM_MINOR_NR"));
+            sqlStatements.add(MigrationUtils.dropColumn(dbProduct, "VOLUME_DEFINITIONS", "VLM_MINOR_NR"));
 
             for (String sql : sqlStatements)
             {

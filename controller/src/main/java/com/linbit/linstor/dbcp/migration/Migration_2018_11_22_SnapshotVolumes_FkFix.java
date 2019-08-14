@@ -24,27 +24,26 @@ import java.sql.Statement;
 public class Migration_2018_11_22_SnapshotVolumes_FkFix extends LinstorMigration
 {
     @Override
-    public void migrate(Connection dbConn)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
         String sqlCmd;
-        DatabaseInfo.DbProduct database = MigrationUtils.getDatabaseInfo().getDbProduct(dbConn.getMetaData());
-        if (database == DB2_I)
+        if (dbProduct == DB2_I)
         {
             sqlCmd = "ALTER TABLE SNAPSHOT_VOLUMES ALTER COLUMN STOR_POOL_NAME SET DATA TYPE VARCHAR(48) NOT NULL";
         }
         else
-        if (database == MARIADB || database == ASE)
+        if (dbProduct == MARIADB || dbProduct == ASE)
         {
             sqlCmd = "ALTER TABLE SNAPSHOT_VOLUMES MODIFY STOR_POOL_NAME VARCHAR(48)";
         }
         else
-        if (database == ORACLE_RDBMS || database == INFORMIX)
+        if (dbProduct == ORACLE_RDBMS || dbProduct == INFORMIX)
         {
             sqlCmd = "ALTER TABLE SNAPSHOT_VOLUMES MODIFY (STOR_POOL_NAME VARCHAR(48))";
         }
         else
-        if (database == MSFT_SQLSERVER)
+        if (dbProduct == MSFT_SQLSERVER)
         {
             sqlCmd = "ALTER TABLE SNAPSHOT_VOLUMES ALTER COLUMN STOR_POOL_NAME VARCHAR(48) NOT NULL";
         }
@@ -53,7 +52,7 @@ public class Migration_2018_11_22_SnapshotVolumes_FkFix extends LinstorMigration
             // H2, Derby, DB2, DB2 on System z, PostgreSQL
             sqlCmd = "ALTER TABLE SNAPSHOT_VOLUMES ALTER COLUMN STOR_POOL_NAME SET DATA TYPE VARCHAR(48)";
         }
-        Statement stmt = dbConn.createStatement();
+        Statement stmt = connection.createStatement();
         stmt.executeUpdate(sqlCmd);
         stmt.close();
     }

@@ -24,10 +24,8 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
     private static final String LSV_STOR_POOL_NAME_TYPE = "VARCHAR(48)";
 
     @Override
-    protected void migrate(Connection connection) throws Exception
+    protected void migrate(Connection connection, DbProduct dbProduct) throws Exception
     {
-        DbProduct dbProduct = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
-
         if (!MigrationUtils.columnExists(connection, TBL_LSV, NODE_NAME))
         {
             SQLUtils.runSql(

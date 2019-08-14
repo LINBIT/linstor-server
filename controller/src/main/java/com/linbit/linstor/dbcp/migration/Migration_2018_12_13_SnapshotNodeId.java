@@ -3,6 +3,7 @@ package com.linbit.linstor.dbcp.migration;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
@@ -54,7 +55,7 @@ public class Migration_2018_12_13_SnapshotNodeId extends LinstorMigration
     private static final long SD_FLAG_FAILED_DEPLOYMENT = 2L;
 
     @Override
-    public void migrate(Connection connection)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
         if (!MigrationUtils.columnExists(connection, TBL_SNAPSHOT, S_NODE_ID))

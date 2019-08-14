@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.DatabaseInfo;
+
 import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.migration.Context;
 import org.flywaydb.core.api.migration.JavaMigration;
@@ -57,7 +59,11 @@ public abstract class LinstorMigration implements JavaMigration
         throws Exception
     {
         dbType = context.getConfiguration().getPlaceholders().get(PLACEHOLDER_KEY_DB_TYPE);
-        migrate(context.getConnection());
+        DatabaseInfo.DbProduct dbProduct = DatabaseInfo.getDbProduct(
+            context.getConnection().getMetaData().getDatabaseProductName(),
+            context.getConnection().getMetaData().getDatabaseProductVersion()
+        );
+        migrate(context.getConnection(), dbProduct);
     }
 
     protected String getDbType()
@@ -66,6 +72,6 @@ public abstract class LinstorMigration implements JavaMigration
         return dbType;
     }
 
-    protected abstract void migrate(Connection connection)
+    protected abstract void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception;
 }

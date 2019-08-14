@@ -19,8 +19,6 @@ public class MigrationUtils
     public static final String META_COL_TABLE_NAME = "TABLE_NAME";
     public static final String META_COL_COLUMN_NAME = "COLUMN_NAME";
 
-    private static DatabaseInfo dbInfo = null;
-
     public static String loadResource(String resourceName)
         throws IOException
     {
@@ -70,19 +68,6 @@ public class MigrationUtils
         }
 
         return exists;
-    }
-
-    public static void setDatabaseInfo(DatabaseInfo dbInfoRef)
-    {
-        if (dbInfo == null)
-        {
-            dbInfo = dbInfoRef;
-        }
-    }
-
-    public static DatabaseInfo getDatabaseInfo()
-    {
-        return dbInfo;
     }
 
     public static String dropColumn(DatabaseInfo.DbProduct database, String table, String column)

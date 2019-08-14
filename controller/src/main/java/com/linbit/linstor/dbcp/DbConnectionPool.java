@@ -67,7 +67,6 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
     private ThreadLocal<List<Connection>> threadLocalConnections;
 
-    private final DatabaseInfo dbInfo;
     private final LinstorConfigToml linstorConfig;
 
     static
@@ -84,13 +83,11 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
     @Inject
     public DbConnectionPool(
-        final DatabaseInfo dbInfoRef,
         LinstorConfigToml linstorConfigRef
     )
     {
         serviceNameInstance = SERVICE_NAME;
         threadLocalConnections = new ThreadLocal<>();
-        dbInfo = dbInfoRef;
         linstorConfig = linstorConfigRef;
     }
 
@@ -200,12 +197,6 @@ public class DbConnectionPool implements ControllerSQLDatabase
             .load();
 
         flyway.migrate();
-    }
-
-    @Override
-    public DatabaseInfo getDatabaseInfo()
-    {
-        return dbInfo;
     }
 
     @Override

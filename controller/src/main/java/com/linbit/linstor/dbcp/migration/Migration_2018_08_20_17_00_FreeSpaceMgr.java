@@ -83,9 +83,8 @@ public class Migration_2018_08_20_17_00_FreeSpaceMgr extends LinstorMigration
     }
 
     @Override
-    public void migrate(Connection connection) throws Exception
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
-        DatabaseInfo.DbProduct database = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
         if (!MigrationUtils.columnExists(connection, TBL_STOR_POOL, NEW_SP_FREE_SPACE_MGR_NAME))
         {
             Statement stmt = connection.createStatement();
@@ -108,8 +107,8 @@ public class Migration_2018_08_20_17_00_FreeSpaceMgr extends LinstorMigration
                     NEW_SP_FREE_SPACE_MGR_NAME + " = UPPER(" + NEW_SP_FREE_SPACE_MGR_DSP_NAME + "))"
             );
 
-            updateFreeSpaceDefaultName(database, stmt);
-            updateFreeSpaceObjectProtection(database, stmt);
+            updateFreeSpaceDefaultName(dbProduct, stmt);
+            updateFreeSpaceObjectProtection(dbProduct, stmt);
 
             stmt.close();
         }
@@ -123,8 +122,8 @@ public class Migration_2018_08_20_17_00_FreeSpaceMgr extends LinstorMigration
             result.close();
             if (systemNames > 0)
             {
-                updateFreeSpaceDefaultName(database, stmt);
-                updateFreeSpaceObjectProtection(database, stmt);
+                updateFreeSpaceDefaultName(dbProduct, stmt);
+                updateFreeSpaceObjectProtection(dbProduct, stmt);
             }
 
             stmt.close();

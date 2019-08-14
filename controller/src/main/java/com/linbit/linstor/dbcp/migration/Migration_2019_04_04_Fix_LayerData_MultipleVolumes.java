@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.utils.Base64;
 
 import java.sql.Connection;
@@ -55,11 +56,11 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
                "VLM_NR = ?;";
 
     @Override
-    protected void migrate(Connection connectionRef) throws Exception
+    protected void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
         Map<Tripple<String, String, String>, Integer> layerIds = new HashMap<>();
 
-        try (PreparedStatement stmt = connectionRef.prepareStatement(SELECT_ALL_LAYER_RESOURCE_IDS))
+        try (PreparedStatement stmt = connection.prepareStatement(SELECT_ALL_LAYER_RESOURCE_IDS))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
@@ -79,22 +80,22 @@ public class Migration_2019_04_04_Fix_LayerData_MultipleVolumes extends LinstorM
                     else
                     {
                         int duplicateId = id;
-                        update(connectionRef, UPDATE_DUP_LUKS_VOLUME, origId, duplicateId);
-                        update(connectionRef, UPDATE_DUP_STORAGE_VOLUME, origId, duplicateId);
-                        delete(connectionRef, DELETE_DUP_DRBD_RESOURCE, duplicateId);
-                        delete(connectionRef, DELETE_DUP_LAYER_RESOURCE_ID, duplicateId);
+                        update(connection, UPDATE_DUP_LUKS_VOLUME, origId, duplicateId);
+                        update(connection, UPDATE_DUP_STORAGE_VOLUME, origId, duplicateId);
+                        delete(connection, DELETE_DUP_DRBD_RESOURCE, duplicateId);
+                        delete(connection, DELETE_DUP_LAYER_RESOURCE_ID, duplicateId);
                     }
                 }
             }
         }
 
-        try (PreparedStatement selectLuksVlms = connectionRef.prepareStatement(SELECT_ALL_LUKS_VLMS))
+        try (PreparedStatement selectLuksVlms = connection.prepareStatement(SELECT_ALL_LUKS_VLMS))
         {
             try (ResultSet resultSet = selectLuksVlms.executeQuery())
             {
-                try (PreparedStatement updateStmt = connectionRef.prepareStatement(UPDATE_LUKS_BASE64_DECODE))
+                try (PreparedStatement updateStmt = connection.prepareStatement(UPDATE_LUKS_BASE64_DECODE))
                 {
-                    try (PreparedStatement selectKey = connectionRef.prepareStatement(SELECT_SINGLE_PROP))
+                    try (PreparedStatement selectKey = connection.prepareStatement(SELECT_SINGLE_PROP))
                     {
                         while (resultSet.next())
                         {

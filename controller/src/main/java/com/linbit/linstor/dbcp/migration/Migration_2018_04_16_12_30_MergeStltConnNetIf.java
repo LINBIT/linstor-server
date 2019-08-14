@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.api.ApiConsts;
 
 import java.sql.Connection;
@@ -33,7 +34,7 @@ public class Migration_2018_04_16_12_30_MergeStltConnNetIf extends LinstorMigrat
     private static final String NEW_NI_STLT_CONN_ENCR_TYPE = "STLT_CONN_ENCR_TYPE";
 
     @Override
-    public void migrate(Connection connection)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
         if (MigrationUtils.tableExists(connection, OLD_TBL_SC))

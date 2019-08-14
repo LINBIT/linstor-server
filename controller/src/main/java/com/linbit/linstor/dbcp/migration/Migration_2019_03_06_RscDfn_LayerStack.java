@@ -18,20 +18,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
 {
      @Override
-    public void migrate(Connection connection)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
         if (!MigrationUtils.columnExists(connection, "RESOURCE_DEFINITION", "LAYER_STACK"))
         {
-            DatabaseInfo.DbProduct database = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
-
             List<String> sqlStatements = new ArrayList<>();
 
             // we first have to let the DB insert null values, afterwards we use update-statements to
             // set the "dynamic default" values and after that we add the NOT NULL constraint
             sqlStatements.add(
                 MigrationUtils.addColumn(
-                    database,
+                    dbProduct,
                     "RESOURCE_DEFINITIONS",
                     "LAYER_STACK",
                     "VARCHAR(1024)",
@@ -41,7 +39,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
             );
             sqlStatements.add(
                 MigrationUtils.addColumn(
-                    database,
+                    dbProduct,
                     "SNAPSHOTS",
                     "LAYER_STACK",
                     "VARCHAR(1024)",
@@ -161,7 +159,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
             sqlStatements.clear();
             sqlStatements.add(
                 MigrationUtils.addColumnConstraintNotNull(
-                    database,
+                    dbProduct,
                     "RESOURCE_DEFINITIONS",
                     "LAYER_STACK",
                     "VARCHAR(1024)"
@@ -169,7 +167,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
             );
             sqlStatements.add(
                 MigrationUtils.addColumnConstraintNotNull(
-                    database,
+                    dbProduct,
                     "SNAPSHOTS",
                     "LAYER_STACK",
                     "VARCHAR(1024)"

@@ -14,10 +14,9 @@ import java.sql.SQLException;
 public class Migration_2019_03_15_FixConstraints extends LinstorMigration
 {
     @Override
-    public void migrate(Connection connection)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
-        DatabaseInfo.DbProduct dbProduct = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
         attemptSql(
             connection,
             MigrationUtils.dropForeignKeyConstraint(

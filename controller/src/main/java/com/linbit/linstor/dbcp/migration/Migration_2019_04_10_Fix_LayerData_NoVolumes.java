@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.core.SecretGenerator;
 
 import java.sql.Connection;
@@ -61,14 +62,14 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
     private static final String LAYER_KIND_STORAGE = "STORAGE";
 
     @Override
-    protected void migrate(Connection connectionRef) throws Exception
+    protected void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
         Set<RscKey> rscKeysWithLayerData = new HashSet<>();
         int nextLayerResourceId = -1;
 
         int nextTcpPort;
 
-        try (PreparedStatement selectMaxTcp = connectionRef.prepareStatement(SELECT_HIGHEST_DRBD_TCP_PORT))
+        try (PreparedStatement selectMaxTcp = connection.prepareStatement(SELECT_HIGHEST_DRBD_TCP_PORT))
         {
             try (ResultSet maxTcpRs = selectMaxTcp.executeQuery())
             {
@@ -83,7 +84,7 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
             }
         }
 
-        try (PreparedStatement selectLayerIds = connectionRef.prepareStatement(SELECT_ALL_LAYER_RESOURCE_IDS))
+        try (PreparedStatement selectLayerIds = connection.prepareStatement(SELECT_ALL_LAYER_RESOURCE_IDS))
         {
             try (ResultSet layerIdsRs = selectLayerIds.executeQuery())
             {
@@ -107,7 +108,7 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
         Set<String> drbdRscDfns = new HashSet<>();
         Map<String, List<String>> drbdRscsPerDfn = new HashMap<>();
 
-        try (PreparedStatement selectRscs = connectionRef.prepareStatement(SELECT_ALL_RSCS))
+        try (PreparedStatement selectRscs = connection.prepareStatement(SELECT_ALL_RSCS))
         {
             try (ResultSet rscRs = selectRscs.executeQuery())
             {
@@ -133,19 +134,19 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
                         int drbdId = ++nextLayerResourceId;
                         int stoageId = ++nextLayerResourceId;
 
-                        insertLayerRscId(connectionRef, drbdId, key, LAYER_KIND_DRBD, null);
-                        insertLayerRscId(connectionRef, stoageId, key, LAYER_KIND_STORAGE, drbdId);
+                        insertLayerRscId(connection, drbdId, key, LAYER_KIND_DRBD, null);
+                        insertLayerRscId(connection, stoageId, key, LAYER_KIND_STORAGE, drbdId);
 
                         if (drbdRscDfns.add(key.rscName))
                         {
                             String peerSlotsStr = queryProp(
-                                connectionRef,
+                                connection,
                                 "/RESOURCEDEFINITIONS/" + key.rscName.toUpperCase(),
                                 "PeerSlotsNewResource"
                             );
 
                             insertDrbdRscDfn(
-                                connectionRef,
+                                connection,
                                 key,
                                 peerSlotsStr == null ? DEFAULT_DRBD_PEER_SLOTS : Integer.parseInt(peerSlotsStr),
                                 DEFAULT_DRBD_AL_STRIPES,
@@ -156,7 +157,7 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
                             );
                         }
                         String peerSlotsStr = queryProp(
-                            connectionRef,
+                            connection,
                             "/RESOURCES/" + key.nodeName.toUpperCase() + "/" + key.rscName.toUpperCase(),
                             "PeerSlotsNewResource"
                         );
@@ -170,7 +171,7 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
                         int nodeId = nodeNames.size();
 
                         insertDrbdRsc(
-                            connectionRef,
+                            connection,
                             drbdId,
                             peerSlotsStr == null ? DEFAULT_DRBD_PEER_SLOTS : Integer.parseInt(peerSlotsStr),
                             DEFAULT_DRBD_AL_STRIPES,

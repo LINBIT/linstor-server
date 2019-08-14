@@ -15,11 +15,10 @@ import static com.linbit.linstor.DatabaseInfo.DbProduct.MARIADB;
 public class Migration_2018_09_03_FreeSpaceMgr_ACL extends LinstorMigration
 {
     @Override
-    public void migrate(Connection connection) throws Exception
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
-        DatabaseInfo.DbProduct database = MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData());
         Statement stmt = connection.createStatement();
-        if (database == MYSQL || database == MARIADB)
+        if (dbProduct == MYSQL || dbProduct == MARIADB)
         {
             stmt.executeUpdate(
                 "INSERT INTO SEC_ACL_MAP SELECT CONCAT('/freespacemgrs/', sp.FREE_SPACE_MGR_NAME), acl_map.ROLE_NAME, " +

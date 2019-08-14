@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
@@ -18,7 +19,7 @@ public class Migration_2019_01_17_KeyValueStore extends LinstorMigration
     private static final String NEW_INSTANCE_NAME = "/CTRLCFG";
 
     @Override
-    public void migrate(Connection connection)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
         if (!MigrationUtils.tableExists(connection, "KEY_VALUE_STORE"))

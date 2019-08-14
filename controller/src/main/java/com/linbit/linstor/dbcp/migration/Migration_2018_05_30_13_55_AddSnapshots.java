@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
@@ -11,7 +12,7 @@ import java.sql.Connection;
 public class Migration_2018_05_30_13_55_AddSnapshots extends LinstorMigration
 {
     @Override
-    public void migrate(Connection connection)
+    public void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception
     {
         if (!MigrationUtils.tableExists(connection, "SNAPSHOTS"))

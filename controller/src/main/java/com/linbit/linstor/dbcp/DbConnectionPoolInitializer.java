@@ -50,7 +50,6 @@ public class DbConnectionPoolInitializer implements DbInitializer
 
         dbConnPool.initializeDataSource(connectionUrl);
 
-        MigrationUtils.setDatabaseInfo(dbConnPool.getDatabaseInfo());
         dbConnPool.migrate(dbType);
 
         testDbConnection();

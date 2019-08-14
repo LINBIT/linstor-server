@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration;
 
+import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
 import java.sql.Connection;
@@ -20,7 +21,7 @@ public class Migration_2019_05_27_Snapshot_NodeId_Nullable extends LinstorMigrat
     private static final String S_NODE_ID = "NODE_ID";
 
     @Override
-    protected void migrate(Connection connection) throws Exception
+    protected void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct) throws Exception
     {
         // I could not figure out how to check if this update
         // was already applied...
@@ -28,7 +29,7 @@ public class Migration_2019_05_27_Snapshot_NodeId_Nullable extends LinstorMigrat
         SQLUtils.runSql(
             connection,
             MigrationUtils.dropColumnConstraintNotNull(
-                MigrationUtils.getDatabaseInfo().getDbProduct(connection.getMetaData()),
+                dbProduct,
                 TBL_SNAPSHOT,
                 S_NODE_ID,
                 "INTEGER DEFAULT 0"
