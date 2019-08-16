@@ -100,8 +100,6 @@ public final class Satellite
 
     private final SatelliteCmdlArguments satelliteCmdlArguments;
 
-    private static boolean skipHostnameCheck;
-
     private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
 
     @Inject
@@ -155,8 +153,6 @@ public final class Satellite
             {
                 errorReporter.reportError(ioExc);
             }
-
-            skipHostnameCheck = satelliteCmdlArguments.isSkipHostnameCheck();
 
             DrbdVersion vsnCheck = new DrbdVersion(timerEventSvc, errorReporter);
             vsnCheck.checkVersion();
@@ -335,11 +331,6 @@ public final class Satellite
                 accExc
             );
         }
-    }
-
-    public static boolean checkHostname()
-    {
-        return !skipHostnameCheck;
     }
 
     public static void main(String[] args)
