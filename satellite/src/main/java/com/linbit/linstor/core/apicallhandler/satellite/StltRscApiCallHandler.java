@@ -322,6 +322,7 @@ class StltRscApiCallHandler
                         NodeFlag.restoreFlags(otherRscRaw.getNodeFlags())
                     );
                     checkUuid(remoteNode, otherRscRaw);
+                    remoteNode.getProps(apiCtx).map().putAll(otherRscRaw.getNodeProps());
 
                     // set node's netinterfaces
                     for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRscRaw.getNetInterfacefPojos())
