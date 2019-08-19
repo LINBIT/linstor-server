@@ -322,7 +322,7 @@ public class NvmeUtils
                 "--transport=" + transportType,
                 "--nqn=" + subsystemName,
                 "--traddr=" + ipAddr,
-                "--transport=" + port,
+                "--trsvcid=" + port,
                 "--hostnqn=" + nodeName
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to connect to NVMe target!");
