@@ -24,7 +24,7 @@ import reactor.core.publisher.Flux;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_AUTH_RESPONSE,
-    description = "Called by the satellite to indicate that controller authentication failed",
+    description = "Called by the satellite to indicate that controller authentication was handled",
     requiresAuth = false,
     transactional = true
 )
@@ -77,9 +77,11 @@ public class IntAuthResponse implements ApiCallReactive
         final Integer versionPatch;
         final List<DeviceLayerKind> supportedLayers;
         final List<DeviceProviderKind> supportedProviders;
+        final String nodeUname;
         if (success)
         {
             expectedFullSyncId = msgAuthResponse.getExpectedFullSyncId();
+            nodeUname = msgAuthResponse.getNodeUname();
             versionMajor = msgAuthResponse.getVersionMajor();
             versionMinor = msgAuthResponse.getVersionMinor();
             versionPatch = msgAuthResponse.getVersionPatch();
@@ -95,6 +97,7 @@ public class IntAuthResponse implements ApiCallReactive
         else
         {
             expectedFullSyncId = null;
+            nodeUname = null;
             versionMajor = null;
             versionMinor = null;
             versionPatch = null;
@@ -106,6 +109,7 @@ public class IntAuthResponse implements ApiCallReactive
             success,
             apiCallResponse,
             expectedFullSyncId,
+            nodeUname,
             versionMajor,
             versionMinor,
             versionPatch,

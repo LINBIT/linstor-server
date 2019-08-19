@@ -16,6 +16,7 @@ import java.util.TreeSet;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
@@ -205,7 +206,10 @@ public class ConfFileBuilder
             // Create local network configuration
             {
                 appendLine("");
-                appendLine("on %s", localRsc.getAssignedNode().getName().displayValue);
+                appendLine("on %s", localRsc.getAssignedNode().getProps(accCtx).getPropWithDefault(
+                    InternalApiConsts.NODE_UNAME,
+                    localRsc.getAssignedNode().getName().displayValue)
+                );
                 try (Section onSection = new Section())
                 {
                     Collection<DrbdVlmData> vlmDataList = localRscData.getVlmLayerObjects().values();
@@ -223,7 +227,11 @@ public class ConfFileBuilder
                 if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE))
                 {
                     appendLine("");
-                    appendLine("on %s", peerRsc.getAssignedNode().getName().displayValue);
+                    appendLine("on %s", peerRsc.getAssignedNode().getProps(accCtx)
+                        .getPropWithDefault(
+                            InternalApiConsts.NODE_UNAME,
+                            peerRsc.getAssignedNode().getName().displayValue)
+                    );
                     try (Section onSection = new Section())
                     {
                         Collection<DrbdVlmData> peerVlmDataList = peerRscData.getVlmLayerObjects().values();
@@ -494,7 +502,10 @@ public class ConfFileBuilder
             outsideAddress = String.format("ipv4 %s:%d", addrText, port);
         }
 
-        String hostName = netIf.getNode().getName().displayValue;
+        String hostName = netIf.getNode().getProps(accCtx).getPropWithDefault(
+            InternalApiConsts.NODE_UNAME,
+            netIf.getNode().getName().displayValue
+        );
 
         if (rscConn != null && rscConn.getStateFlags().isSet(accCtx, ResourceConnection.RscConnFlags.LOCAL_DRBD_PROXY))
         {

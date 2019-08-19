@@ -36,6 +36,7 @@ public interface CommonSerializer
         CommonSerializerBuilder authSuccess(
             long expectedFullSyncId,
             int[] stltVersion,
+            String nodeUname,
             List<DeviceLayerKind> supportedDeviceLayerRef,
             List<DeviceProviderKind> supportedDeviceProviderRef,
             ApiCallRc responses

@@ -6,9 +6,18 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Identity;
@@ -17,6 +26,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
+import com.linbit.locks.LockGuardFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -37,6 +47,10 @@ public class CtrlAuthResponseApiCallHandler
     private final CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandler;
     private final ReconnectorTask reconnectorTask;
     private final PingTask pingTask;
+    private final LockGuardFactory lockGuardFactory;
+    private final ScopeRunner scopeRunner;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final ResponseConverter responseConverter;
 
     @Inject
     public CtrlAuthResponseApiCallHandler(
@@ -45,7 +59,11 @@ public class CtrlAuthResponseApiCallHandler
         @SystemContext AccessContext sysCtxRef,
         CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandlerRef,
         ReconnectorTask reconnectorTaskRef,
-        PingTask pingTaskRef
+        PingTask pingTaskRef,
+        LockGuardFactory lockGuardFactoryRef,
+        ScopeRunner scopeRunnerRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        ResponseConverter responseConverterRef
     )
     {
         errorReporter = errorReporterRef;
@@ -54,6 +72,10 @@ public class CtrlAuthResponseApiCallHandler
         ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
         reconnectorTask = reconnectorTaskRef;
         pingTask = pingTaskRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        scopeRunner = scopeRunnerRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        responseConverter = responseConverterRef;
     }
 
     public Flux<ApiCallRc> authResponse(
@@ -61,6 +83,40 @@ public class CtrlAuthResponseApiCallHandler
         boolean success,
         ApiCallRcImpl apiCallResponse,
         Long expectedFullSyncId,
+        String nodeUname,
+        Integer versionMajor,
+        Integer versionMinor,
+        Integer versionPatch,
+        List<DeviceLayerKind> supportedLayers,
+        List<DeviceProviderKind> supportedProviders,
+        boolean waitForFullSyncAnswerRef
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "authResponse",
+            lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, LockGuardFactory.LockObj.NODES_MAP),
+            () -> authResponseInTransaction(
+                peer,
+                success,
+                apiCallResponse,
+                expectedFullSyncId,
+                nodeUname,
+                versionMajor,
+                versionMinor,
+                versionPatch,
+                supportedLayers,
+                supportedProviders,
+                waitForFullSyncAnswerRef
+            )
+        );
+    }
+
+    private Flux<ApiCallRc> authResponseInTransaction(
+        Peer peer,
+        boolean success,
+        ApiCallRcImpl apiCallResponse,
+        Long expectedFullSyncId,
+        String nodeUname,
         Integer versionMajor,
         Integer versionMinor,
         Integer versionPatch,
@@ -100,6 +156,10 @@ public class CtrlAuthResponseApiCallHandler
                     // Disable all privileges on the Satellite's access context permanently
                     newCtx.getLimitPrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
                     peer.setAccessContext(privCtx, newCtx);
+
+                    peer.getNode().getProps(sysCtx).setProp(InternalApiConsts.NODE_UNAME, nodeUname);
+
+                    ctrlTransactionHelper.commit();
                 }
                 catch (AccessDeniedException accExc)
                 {
@@ -112,6 +172,10 @@ public class CtrlAuthResponseApiCallHandler
                         )
                     );
                 }
+                catch (InvalidValueException | DatabaseException exc)
+                {
+                    errorReporter.reportError(exc);
+                }
                 errorReporter.logDebug("Satellite '" + peer.getNode().getName() + "' authenticated");
 
                 pingTask.add(peer);
@@ -121,6 +185,18 @@ public class CtrlAuthResponseApiCallHandler
                     expectedFullSyncId,
                     waitForFullSyncAnswerRef
                 );
+
+                if (!nodeUname.equalsIgnoreCase(peer.getNode().getName().displayValue))
+                {
+                    flux = flux.concatWith(Flux.just(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.INFO_NODE_NAME_MISMATCH,
+                            String.format("Linstor node name '%s' and hostname '%s' doesn't match.",
+                                peer.getNode().getName().displayValue,
+                                nodeUname)
+                        ))
+                    );
+                }
             }
             else
             {
@@ -145,16 +221,10 @@ public class CtrlAuthResponseApiCallHandler
         {
             peer.setAuthenticated(false);
 
+            peer.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
+
             for (RcEntry entry : apiCallResponse.getEntries())
             {
-                if (entry.getReturnCode() == InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH)
-                {
-                    peer.setConnectionStatus(Peer.ConnectionStatus.HOSTNAME_MISMATCH);
-                }
-                else
-                {
-                    peer.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
-                }
                 errorReporter.logError("Satellite authentication error: " + entry.getCause());
             }
 

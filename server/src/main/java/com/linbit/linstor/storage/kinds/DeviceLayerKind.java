@@ -4,7 +4,7 @@ public enum DeviceLayerKind
 {
     DRBD(
         false,
-        StartupVerification.UNAME, StartupVerification.DRBD9
+        StartupVerification.DRBD9
     ),
     //    DRBD_PROXY(
     //        false,

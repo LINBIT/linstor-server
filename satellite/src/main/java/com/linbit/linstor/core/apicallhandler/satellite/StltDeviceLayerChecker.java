@@ -68,9 +68,6 @@ public class StltDeviceLayerChecker
                 case LVM:
                     isCheckSatisfied = isLvmInstalled();
                     break;
-                case UNAME:
-                    isCheckSatisfied = unameEqualsTo(nodeName);
-                    break;
                 case ZFS:
                     isCheckSatisfied = isZfsInstalled();
                     break;
@@ -159,27 +156,6 @@ public class StltDeviceLayerChecker
     private boolean isLvmInstalled()
     {
         return commandExists("lvm", "version");
-    }
-
-    private boolean unameEqualsTo(String nodeNameRef)
-    {
-        boolean ret = false;
-        try
-        {
-            // parse only the hostname part, if domain empty use as full name
-            String hostname = nodeNameRef.contains(".") ?
-                nodeNameRef.substring(0, nodeNameRef.indexOf(".")) : nodeNameRef;
-            OutputData out = extCmdFactory.create().exec("uname", "-n");
-            String uname = new String(out.stdoutData).trim();
-
-            // check if hostname matches or hostname + "." + domain
-            ret = out.exitCode == 0 &&
-                (uname.equalsIgnoreCase(hostname) || uname.equalsIgnoreCase(nodeNameRef));
-        }
-        catch (ChildProcessTimeoutException | IOException ignored)
-        {
-        }
-        return ret;
     }
 
     private boolean isZfsInstalled()

@@ -26,4 +26,6 @@ message MsgIntAuthResponse
 
     repeated common.LayerType supported_layer = 7;
     repeated common.ProviderType supported_provider = 8;
+
+    string node_uname = 9;
 }

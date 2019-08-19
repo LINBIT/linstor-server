@@ -256,6 +256,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     public CommonSerializerBuilder authSuccess(
         long expectedFullSyncIdRef,
         int[] stltVersionRef,
+        String uname,
         List<DeviceLayerKind> supportedDeviceLayerRef,
         List<DeviceProviderKind> supportedDeviceProviderRef,
         ApiCallRc responses
@@ -273,6 +274,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .addAllResponses(serializeApiCallRc(responses))
                 .addAllSupportedLayer(asProtoLayerTypeList(supportedDeviceLayerRef))
                 .addAllSupportedProvider(asProtoProviderTypeList(supportedDeviceProviderRef))
+                .setNodeUname(uname)
                 .build()
                 .writeDelimitedTo(baos);
         }
