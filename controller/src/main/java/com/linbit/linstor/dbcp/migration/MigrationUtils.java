@@ -91,6 +91,7 @@ public class MigrationUtils
             case POSTGRESQL:
                 sql = String.format("ALTER TABLE %s DROP COLUMN %s;", table, column);
                 break;
+            case ETCD: // fall-though
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + database);
@@ -139,6 +140,7 @@ public class MigrationUtils
                 }
                 sql.append(";");
                 break;
+            case ETCD: // fall-though
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + database);
@@ -174,6 +176,7 @@ public class MigrationUtils
             case ORACLE_RDBMS:
                 type = typeRef.replaceAll("VARCHAR", "VARCHAR2");
                 break;
+            case ETCD: // fall-though
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + databaseRef);
@@ -218,6 +221,7 @@ public class MigrationUtils
                     replaceTypesByDialect(databaseRef, typeRef)
                 );
                 break;
+            case ETCD: // fall-though
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + databaseRef);
@@ -260,6 +264,7 @@ public class MigrationUtils
                     columnDefinition
                 );
                 break;
+            case ETCD: // fall-though
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + databaseRef);
@@ -300,6 +305,7 @@ public class MigrationUtils
                     fkName
                 );
                 break;
+            case ETCD: // fall-though
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + dbProduct);
@@ -332,6 +338,7 @@ public class MigrationUtils
             case POSTGRESQL:
                 sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s;", table, constraintName);
                 break;
+            case ETCD: // fall-though
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + dbProductRef);
@@ -362,6 +369,7 @@ public class MigrationUtils
             case POSTGRESQL:
                 sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s;", table, constraintName);
                 break;
+            case ETCD: // fall-though
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + dbProductRef);
