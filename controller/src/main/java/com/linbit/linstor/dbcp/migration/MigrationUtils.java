@@ -153,6 +153,7 @@ public class MigrationUtils
         switch (databaseRef)
         {
             case ASE:
+            case MSFT_SQLSERVER:
                 type = typeRef.replaceAll("BLOB", "BINARY");
                 break;
             case DB2:
@@ -166,9 +167,6 @@ public class MigrationUtils
                 break;
             case POSTGRESQL:
                 type = typeRef.replaceAll("BLOB", "BYTEA");
-                break;
-            case MSFT_SQLSERVER:
-                type = typeRef.replaceAll("BLOB", "BINARY");
                 break;
             case INFORMIX:
                 type = typeRef.replaceAll("VARCHAR", "LVARCHAR");
