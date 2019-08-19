@@ -25,7 +25,7 @@ public class Migration_2019_07_23_ResourceGroups extends LinstorMigration
         if (!MigrationUtils.tableExists(connection, "RESOURCE_GROUPS"))
         {
             String createTables = MigrationUtils.loadResource("2019_07_23_add-rsc-grp.sql");
-            createTables = MigrationUtils.getDialectType(dbProduct, createTables);
+            createTables = MigrationUtils.replaceTypesByDialect(dbProduct, createTables);
             SQLUtils.runSql(
                 connection,
                 createTables

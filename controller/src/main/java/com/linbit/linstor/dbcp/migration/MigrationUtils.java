@@ -110,7 +110,7 @@ public class MigrationUtils
     {
         StringBuilder sql = new StringBuilder();
 
-        String type = getDialectType(database, typeRef);
+        String type = replaceTypesByDialect(database, typeRef);
         database.name();
         switch (database)
         {
@@ -147,7 +147,7 @@ public class MigrationUtils
         return sql.toString();
     }
 
-    public static String getDialectType(DbProduct databaseRef, String typeRef)
+    public static String replaceTypesByDialect(DbProduct databaseRef, String typeRef)
     {
         String type;
         switch (databaseRef)
@@ -217,7 +217,7 @@ public class MigrationUtils
                     "ALTER TABLE %s MODIFY COLUMN %s %s NOT NULL;",
                     table,
                     column,
-                    getDialectType(databaseRef, typeRef)
+                    replaceTypesByDialect(databaseRef, typeRef)
                 );
                 break;
             case UNKNOWN:
