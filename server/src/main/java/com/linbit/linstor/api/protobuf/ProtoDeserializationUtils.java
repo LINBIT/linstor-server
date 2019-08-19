@@ -78,15 +78,27 @@ public class ProtoDeserializationUtils
 
     public static List<DeviceProviderKind> parseDeviceProviderKind(List<ProviderType> providerTypeList)
     {
+        return parseDeviceProviderKind(providerTypeList, true);
+    }
+
+    public static List<DeviceProviderKind> parseDeviceProviderKind(
+        List<ProviderType> providerTypeList,
+        boolean throwIfUnknown
+    )
+    {
         List<DeviceProviderKind> providerKindList = new ArrayList<>();
         for (ProviderType providerType : providerTypeList)
         {
-            providerKindList.add(parseDeviceProviderKind(providerType));
+            providerKindList.add(parseDeviceProviderKind(providerType, throwIfUnknown));
         }
         return providerKindList;
     }
 
     public static DeviceProviderKind parseDeviceProviderKind(ProviderType providerKindRef)
+    {
+        return parseDeviceProviderKind(providerKindRef, true);
+    }
+    public static DeviceProviderKind parseDeviceProviderKind(ProviderType providerKindRef, boolean throwIfUnknown)
     {
         DeviceProviderKind kind = null;
         if (providerKindRef != null)
@@ -123,7 +135,10 @@ public class ProtoDeserializationUtils
                 case UNKNOWN_PROVIDER: // fall-through
                 case UNRECOGNIZED: // fall-through
                 default:
-                    throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);
+                    if (throwIfUnknown)
+                    {
+                        throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);
+                    }
             }
         }
         return kind;
@@ -131,15 +146,25 @@ public class ProtoDeserializationUtils
 
     public static List<DeviceLayerKind> parseDeviceLayerKindList(List<LayerType> layerTypeList)
     {
+        return parseDeviceLayerKindList(layerTypeList, true);
+    }
+
+    public static List<DeviceLayerKind> parseDeviceLayerKindList(List<LayerType> layerTypeList, boolean throwIfUnknown)
+    {
         List<DeviceLayerKind> devLayerKindList = new ArrayList<>();
         for (LayerType layerType : layerTypeList)
         {
-            devLayerKindList.add(parseDeviceLayerKind(layerType));
+            devLayerKindList.add(parseDeviceLayerKind(layerType, throwIfUnknown));
         }
         return devLayerKindList;
     }
 
     public static DeviceLayerKind parseDeviceLayerKind(LayerType layerTypeRef)
+    {
+        return parseDeviceLayerKind(layerTypeRef, true);
+    }
+
+    public static DeviceLayerKind parseDeviceLayerKind(LayerType layerTypeRef, boolean throwIfUnknown)
     {
         DeviceLayerKind kind = null;
         switch (layerTypeRef)
@@ -156,10 +181,13 @@ public class ProtoDeserializationUtils
             case NVME:
                 kind = DeviceLayerKind.NVME;
                 break;
-            case UNKNOWN_LAYER: // fall-trough
+            case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
             default:
-                throw new ImplementationError("Unknown (proto) LayerType: " + layerTypeRef);
+                if (throwIfUnknown)
+                {
+                    throw new ImplementationError("Unknown (proto) LayerType: " + layerTypeRef);
+                }
         }
         return kind;
     }

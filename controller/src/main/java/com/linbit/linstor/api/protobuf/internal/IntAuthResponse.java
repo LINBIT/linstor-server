@@ -84,10 +84,12 @@ public class IntAuthResponse implements ApiCallReactive
             versionMinor = msgAuthResponse.getVersionMinor();
             versionPatch = msgAuthResponse.getVersionPatch();
             supportedLayers = ProtoDeserializationUtils.parseDeviceLayerKindList(
-                msgAuthResponse.getSupportedLayerList()
+                msgAuthResponse.getSupportedLayerList(),
+                false
             );
             supportedProviders = ProtoDeserializationUtils.parseDeviceProviderKind(
-                msgAuthResponse.getSupportedProviderList()
+                msgAuthResponse.getSupportedProviderList(),
+                false
             );
         }
         else
