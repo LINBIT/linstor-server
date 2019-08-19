@@ -131,4 +131,11 @@ public class StorPoolApiData implements StorPool.StorPoolApi
     {
         return storPool.getStorPoolDfnProps();
     }
+
+    @Override
+    public Boolean supportsSnapshots()
+    {
+        return storPool.getSnapshotSupported();
+    }
+
 }

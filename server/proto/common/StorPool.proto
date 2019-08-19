@@ -19,4 +19,5 @@ message StorPool
     map<string, string> stor_pool_dfn_props = 9;
     optional StorPoolFreeSpace free_space = 10;
     optional string free_space_mgr_name = 11;
+    optional bool snapshot_supported = 12;
 }

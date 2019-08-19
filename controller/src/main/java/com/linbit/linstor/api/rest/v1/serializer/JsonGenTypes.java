@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.8";
+    public static final String REST_API_VERSION = "1.0.9";
 
     /**
      * Common api reply structure
@@ -142,6 +142,10 @@ public class JsonGenTypes
          * Currently known report messages for this storage pool
          */
         public List<ApiCallRc> reports = Collections.emptyList();
+        /**
+         * true if the storage pool supports snapshots. false otherwise
+         */
+        public Boolean supports_snapshots;
     }
 
 //    @JsonInclude(JsonInclude.Include.NON_EMPTY)

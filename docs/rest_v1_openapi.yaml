@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.9
+      - Added supports_snapshots to StoragePool
     * 1.0.8
       - Added /v1/resource-groups
       - Added /v1/resource-groups/{rscgrp}/volume-groups
@@ -49,7 +51,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.8
+  version: 1.0.9
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -3269,6 +3271,9 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/ApiCallRc'
+        supports_snapshots:
+          type: boolean
+          description: true if the storage pool supports snapshots. false otherwise
     LayerType:
       type: string
       enum:

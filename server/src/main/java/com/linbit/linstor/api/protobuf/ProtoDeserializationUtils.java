@@ -189,7 +189,8 @@ public class ProtoDeserializationUtils
                     storPoolProto.getFreeSpace().getTotalCapacity() :
                     null
             ),
-            null
+            null,
+            storPoolProto.getSnapshotSupported()
         );
     }
 

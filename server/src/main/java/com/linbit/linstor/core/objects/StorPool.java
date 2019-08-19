@@ -114,6 +114,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid, Comparable
         Map<String, String> getStorPoolStaticTraits();
         Map<String, String> getStorPoolDfnProps();
         ApiCallRc getReports();
+        Boolean supportsSnapshots();
     }
 
     /**

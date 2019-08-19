@@ -74,13 +74,14 @@ public class ApplyStorPool implements ApiCall
             ProtoDeserializationUtils.parseDeviceProviderKind(protoStorPool.getProviderKind()),
             protoStorPool.getPropsMap(),
             protoStorPoolDfn.getPropsMap(),
-            Collections.<String, String>emptyMap(),
+            Collections.<String, String> emptyMap(),
             fullSyncId,
             updateId,
             protoStorPool.getFreeSpaceMgrName(),
             Optional.empty(), // free space
             Optional.empty(), // total space
-            null
+            null,
+            protoStorPool.getSnapshotSupported()
         );
     }
 

@@ -160,6 +160,7 @@ public class Json
         storPoolData.free_space_mgr_name = storPoolApi.getFreeSpaceManagerName();
         storPoolData.uuid = storPoolApi.getStorPoolUuid().toString();
         storPoolData.reports = apiCallRcToJson(storPoolApi.getReports());
+        storPoolData.supports_snapshots = storPoolApi.supportsSnapshots();
 
         return storPoolData;
     }

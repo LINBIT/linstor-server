@@ -319,7 +319,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             getFreeSpaceTracker().getName().displayValue,
             Optional.ofNullable(freeSpaceRef),
             Optional.ofNullable(totalSpaceRef),
-            getReports()
+            getReports(),
+            supportsSnapshots.get()
         );
     }
 }
