@@ -154,11 +154,12 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
             <property name="tokens" value="LITERAL_IF,LITERAL_TRY,LITERAL_CATCH"/>
             <property name="limitedTokens" value="LITERAL_RETURN"/>
             <property name="maximumNumber" value="0"/>
+            <property name="maximumDepth" value="1"/>
             <property name="severity" value="warning"/>
         </module>
 
         <module name="DescendantToken">
-            <property name="tokens" value="LITERAL_FOR,LITERAL_DO,LITERAL_WHILE,LITERAL_SWITCH,LITERAL_FINALLY"/>
+            <property name="tokens" value="LITERAL_FOR,LITERAL_DO,LITERAL_WHILE,LITERAL_FINALLY"/>
             <property name="limitedTokens" value="LITERAL_RETURN"/>
             <property name="maximumNumber" value="0"/>
             <property name="severity" value="error"/>
@@ -355,7 +356,8 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
 
         <module name="LeftCurly">
             <property name="option" value="nl"/>
-            <property name="ignoreEnums" value="false"/>
+            <property name="ignoreEnums" value="true"/>
+            <property name="tokens" value="LITERAL_TRY,LITERAL_CATCH,LITERAL_FINALLY,LITERAL_IF,LITERAL_ELSE,CLASS_DEF,INTERFACE_DEF,LITERAL_FOR,LITERAL_WHILE,LITERAL_DO,STATIC_INIT"/>
             <property name="severity" value="warning"/>
         </module>
 
