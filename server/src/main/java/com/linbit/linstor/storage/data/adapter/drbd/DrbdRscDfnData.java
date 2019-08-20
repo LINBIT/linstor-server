@@ -65,7 +65,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         DynamicNumberPool tcpPortPoolRef,
         DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
         throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {

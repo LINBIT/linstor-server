@@ -35,7 +35,7 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
         Map<VolumeNumber, VlmProviderObject> vlmProviderObjectsRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(

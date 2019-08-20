@@ -70,7 +70,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<String, VlmProviderObject> volumeMapRef
     )
         throws DatabaseException

@@ -37,7 +37,7 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
         DynamicNumberPool minorPoolRef,
         DrbdRscDfnData drbdRscDfnRef,
         DrbdLayerDatabaseDriver dbDriverRef,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
         throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {

@@ -48,7 +48,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         NodeConnectionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {

@@ -13,6 +13,7 @@ import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 
 import javax.inject.Inject;
 
@@ -69,7 +70,7 @@ public class DbCoreObjProtInitializer
         {
             transMgr = transactionMgrGenerator.startTransaction();
             initScope.enter();
-            initScope.seed(TransactionMgr.class, transMgr);
+            TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
             // initializing ObjectProtections for nodeMap, rscDfnMap, storPoolMap and freeSpaceMgrMap
             nodesProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(

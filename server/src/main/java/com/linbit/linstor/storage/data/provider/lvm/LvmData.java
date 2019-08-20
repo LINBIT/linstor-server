@@ -31,7 +31,7 @@ public class LvmData extends AbsStorageVlmData implements LvmProviderObject
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(
@@ -52,7 +52,7 @@ public class LvmData extends AbsStorageVlmData implements LvmProviderObject
         StorageLayerDatabaseDriver dbDriverRef,
         DeviceProviderKind kindRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(

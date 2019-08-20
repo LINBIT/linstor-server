@@ -54,7 +54,7 @@ public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
         byte[] encryptedPasswordRef,
         LuksLayerDatabaseDriver dbDriver,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);

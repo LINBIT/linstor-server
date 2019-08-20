@@ -125,7 +125,7 @@ public final class ObjectProtection extends BaseTransactionObject
         String objPathRef,
         ObjectProtectionDatabaseDriver driver,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);

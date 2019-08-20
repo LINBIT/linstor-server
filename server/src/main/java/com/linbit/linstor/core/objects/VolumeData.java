@@ -85,7 +85,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         VolumeDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<Volume.Key, VolumeConnection> vlmConnsMapRef
     )
         throws DatabaseException

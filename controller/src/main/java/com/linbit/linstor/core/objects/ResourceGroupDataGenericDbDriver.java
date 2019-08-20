@@ -22,7 +22,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
@@ -30,14 +30,14 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.ALLOWED_PROVIDER_LIST;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DESCRIPTION;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_STACK;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DISKLESS_ON_REMAINING;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.DO_NOT_PLACE_WITH_RSC_REGEX;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DO_NOT_PLACE_WITH_RSC_LIST;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.DO_NOT_PLACE_WITH_RSC_REGEX;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_STACK;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.POOL_NAME;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.REPLICA_COUNT;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.REPLICAS_ON_DIFFERENT;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.REPLICAS_ON_SAME;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.REPLICA_COUNT;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_GROUP_DSP_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_GROUP_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_RESOURCE_GROUPS;
@@ -46,7 +46,6 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -148,7 +147,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public ResourceGroupDataGenericDbDriver(
@@ -157,7 +156,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = accCtx;

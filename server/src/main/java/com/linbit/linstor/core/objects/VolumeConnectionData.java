@@ -50,7 +50,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         VolumeConnectionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {

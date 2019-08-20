@@ -37,7 +37,7 @@ public class LuksRscData extends AbsRscData<LuksVlmData> implements LuksRscObjec
         Map<VolumeNumber, LuksVlmData> vlmLayerObjectsRef,
         LuksLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(

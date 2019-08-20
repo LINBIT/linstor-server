@@ -80,7 +80,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
         ResourceGroupDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);

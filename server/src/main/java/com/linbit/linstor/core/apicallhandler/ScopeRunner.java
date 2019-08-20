@@ -9,6 +9,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
@@ -136,7 +137,7 @@ public class ScopeRunner
 
             if (transMgr != null)
             {
-                apiCallScope.seed(TransactionMgr.class, transMgr);
+                TransactionMgrUtil.seedTransactionMgr(apiCallScope, transMgr);
             }
 
             ret = callable.call();

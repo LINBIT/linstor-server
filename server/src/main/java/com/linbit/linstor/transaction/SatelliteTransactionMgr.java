@@ -1,7 +1,5 @@
 package com.linbit.linstor.transaction;
 
-import java.sql.Connection;
-
 public class SatelliteTransactionMgr implements TransactionMgr
 {
     private final TransactionObjectCollection transactionObjectCollection;
@@ -48,12 +46,6 @@ public class SatelliteTransactionMgr implements TransactionMgr
     public int sizeObjects()
     {
         return transactionObjectCollection.sizeObjects();
-    }
-
-    @Override
-    public Connection getConnection()
-    {
-        return null;
     }
 
     @Override

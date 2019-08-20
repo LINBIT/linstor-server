@@ -1,14 +1,5 @@
 package com.linbit.linstor.security;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import javax.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.Module;
-import com.google.inject.testing.fieldbinder.Bind;
-import com.google.inject.testing.fieldbinder.BoundFieldModule;
-import com.google.inject.util.Modules;
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
@@ -34,11 +25,13 @@ import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.objects.NodeConnectionDataFactory;
 import com.linbit.linstor.core.objects.NodeDataControllerFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.ResourceGroupDataControllerFactory;
@@ -46,12 +39,10 @@ import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDataControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.core.objects.VolumeConnectionDataFactory;
 import com.linbit.linstor.core.objects.VolumeDataControllerFactory;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataControllerFactory;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.core.repository.FreeSpaceMgrRepository;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
@@ -75,21 +66,12 @@ import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.ControllerSQLTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.DisableOnDebug;
-import org.junit.rules.TestName;
-import org.junit.rules.TestRule;
-import org.junit.rules.Timeout;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -101,6 +83,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.testing.fieldbinder.Bind;
+import com.google.inject.testing.fieldbinder.BoundFieldModule;
+import com.google.inject.util.Modules;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.DisableOnDebug;
+import org.junit.rules.TestName;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -194,7 +195,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @Inject protected LinStorScope testScope;
     @Inject protected TransactionObjectFactory transObjFactory;
-    @Inject protected Provider<TransactionMgr> transMgrProvider;
+    @Inject protected Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject protected ResourceGroupDataDatabaseDriver rscGrpDbDriver;
 
@@ -267,9 +268,10 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     protected void enterScope() throws Exception
     {
-        TransactionMgr transMgr = new ControllerSQLTransactionMgr(dbConnPool);
+        TransactionMgrSQL transMgr = new ControllerSQLTransactionMgr(dbConnPool);
         testScope.enter();
         testScope.seed(TransactionMgr.class, transMgr);
+        testScope.seed(TransactionMgrSQL.class, transMgr);
         if (seedDefaultPeerRule.shouldSeedDefaultPeer())
         {
             testScope.seed(
@@ -413,7 +415,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public void insertIdentity(TransactionMgr transMgr, IdentityName name) throws SQLException
+    public void insertIdentity(TransactionMgrSQL transMgr, IdentityName name) throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_IDENTITIES +
@@ -427,7 +429,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public void insertSecType(TransactionMgr transMgr, SecTypeName name) throws SQLException
+    public void insertSecType(TransactionMgrSQL transMgr, SecTypeName name) throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_TYPES +
@@ -441,7 +443,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public void insertRole(TransactionMgr transMgr, RoleName name, SecTypeName domain) throws SQLException
+    public void insertRole(TransactionMgrSQL transMgr, RoleName name, SecTypeName domain) throws SQLException
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_ROLES +
@@ -457,7 +459,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertObjProt(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         String objPath,
         AccessContext accCtx
     )
@@ -499,7 +501,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertNetInterface(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
         NetInterfaceName netName,
@@ -521,7 +523,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertNodeCon(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
         NodeName targetNodeName
@@ -538,7 +540,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertResCon(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
         NodeName targetNodeName,
@@ -557,7 +559,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertVolCon(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
         NodeName targetNodeName,
@@ -578,7 +580,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertResDfn(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         ResourceName resName,
         RscDfnFlags... flags
@@ -596,7 +598,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertRes(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
         ResourceName resName,
@@ -617,7 +619,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertVolDfn(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         ResourceName resName,
         VolumeNumber volId,
@@ -640,7 +642,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertVol(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
         ResourceName resName,
@@ -667,7 +669,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertStorPoolDfn(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         StorPoolName poolName
     )
@@ -683,7 +685,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @SuppressWarnings("checkstyle:magicnumber")
     public void insertStorPool(
-        TransactionMgr transMgr,
+        TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
         StorPoolName poolName,

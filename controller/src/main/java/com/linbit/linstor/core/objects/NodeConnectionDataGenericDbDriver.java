@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
@@ -13,14 +12,13 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -61,7 +59,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     private final ErrorReporter errorReporter;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public NodeConnectionDataGenericDbDriver(
@@ -69,7 +67,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = privCtx;

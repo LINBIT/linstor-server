@@ -51,7 +51,7 @@ public class AutoSelectorConfigData extends BaseTransactionObject implements Aut
         Boolean disklessOnRemainingRef,
         ResourceGroupDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transactionObjectFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
         super(transMgrProviderRef);

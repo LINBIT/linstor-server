@@ -40,7 +40,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         AccessContext privCtxRef,
         ObjectProtection objProtRef,
         FreeSpaceMgrName freeSpaceMgrNameRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         TransactionObjectFactory transObjFactory
     )
     {

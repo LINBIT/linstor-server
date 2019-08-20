@@ -107,7 +107,7 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
         throws DatabaseException
     {
@@ -139,7 +139,7 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider,
+        Provider<? extends TransactionMgr> transMgrProvider,
         Map<ResourceName, Resource> rscMapRef,
         Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
         Map<NetInterfaceName, NetInterface> netIfMapRef,

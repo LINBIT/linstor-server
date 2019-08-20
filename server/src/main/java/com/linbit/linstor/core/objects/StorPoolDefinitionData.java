@@ -51,7 +51,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         StorPoolDefinitionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<NodeName, StorPool> storPoolsMapRef
     )
         throws DatabaseException

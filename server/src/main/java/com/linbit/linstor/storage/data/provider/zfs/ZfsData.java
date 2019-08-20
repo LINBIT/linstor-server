@@ -39,7 +39,7 @@ public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
         super(

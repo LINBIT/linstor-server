@@ -55,7 +55,7 @@ public abstract class AbsStorageVlmData extends BaseTransactionObject
         StorageLayerDatabaseDriver dbDriverRef,
         DeviceProviderKind providerKindRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);

@@ -26,6 +26,7 @@ import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -83,7 +84,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public ResourceDataGenericDbDriver(
@@ -92,7 +93,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = accCtx;

@@ -26,6 +26,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -82,14 +83,14 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
 
     private final FlagDriver flagsDriver;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public SnapshotDataGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = accCtx;

@@ -8,10 +8,6 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
@@ -25,7 +21,7 @@ import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Triple;
 
@@ -38,7 +34,6 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -79,7 +74,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
     private final VlmDfnOdataDriver vlmDfnOdataDriver;
 
     private Map<Triple<String, String, Integer>, SfVlmDfnData> sfVlmDfnInfoCache;
@@ -89,7 +84,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriv
         @SystemContext AccessContext accCtxRef,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = accCtxRef;

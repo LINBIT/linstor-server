@@ -24,6 +24,7 @@ import com.linbit.linstor.security.SignInException;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 
 import javax.inject.Inject;
 import javax.ws.rs.container.AsyncResponse;
@@ -220,7 +221,7 @@ public class RequestHelper
 
             if (transMgr != null)
             {
-                apiCallScope.seed(TransactionMgr.class, transMgr);
+                TransactionMgrUtil.seedTransactionMgr(apiCallScope, transMgr);
             }
 
             ret = callable.call();

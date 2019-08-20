@@ -11,6 +11,8 @@ import com.linbit.linstor.security.data.SignInEntry;
 import com.linbit.linstor.security.data.TypeEnforcementRule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
@@ -116,7 +118,7 @@ public class EmptySecurityDbDriver implements DbAccessor
 
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
             initScope.enter();
-            initScope.seed(TransactionMgr.class, transMgr);
+            TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
             objProt.addAclEntry(accCtx, accCtx.getRole(), AccessType.CONTROL);
 

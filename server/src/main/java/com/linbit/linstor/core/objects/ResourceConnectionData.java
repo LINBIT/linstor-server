@@ -66,7 +66,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         ResourceConnectionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         long initFlags
     )
         throws DatabaseException

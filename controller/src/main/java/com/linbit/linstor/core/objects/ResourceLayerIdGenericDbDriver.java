@@ -13,6 +13,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_KIND;
@@ -62,14 +63,14 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
         " WHERE " + PK_FIELDS.replaceAll(",", " = ? AND") + " = ?";
 
     private final ErrorReporter errorReporter;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     private final SingleColumnDatabaseDriver<AbsRscData<VlmProviderObject>, RscLayerObject> parentDriver;
 
     @Inject
     public ResourceLayerIdGenericDbDriver(
         ErrorReporter errorReporterRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;

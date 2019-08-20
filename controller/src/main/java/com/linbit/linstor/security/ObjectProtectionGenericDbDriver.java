@@ -7,7 +7,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
@@ -99,14 +99,14 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
     private AccessContext dbCtx;
     private ErrorReporter errorReporter;
     private TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public ObjectProtectionGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = accCtx;

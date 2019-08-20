@@ -12,11 +12,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.types.NodeId;
@@ -39,27 +34,28 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
+
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.AL_STRIPES;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.AL_STRIPE_SIZE;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.FLAGS;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.NODE_ID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.NODE_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.PEER_SLOTS;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.POOL_NAME;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.SECRET;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME_SUFFIX;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.SECRET;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_RESOURCES;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_RESOURCE_DEFINITIONS;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_VOLUMES;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_VOLUME_DEFINITIONS;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TCP_PORT;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TRANSPORT_TYPE;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_RESOURCES;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_VOLUMES;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_RESOURCE_DEFINITIONS;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_DRBD_VOLUME_DEFINITIONS;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_MINOR_NR;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 
@@ -67,7 +63,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -173,7 +168,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         " SET " + FLAGS + " = ? " +
         " WHERE " + LAYER_RESOURCE_ID + " = ?";
     private static final String UPDATE_VLM_EXT_STOR_POOL =
-        " UPDATE " + TBL_LAYER_DRBD_VOLUMES+
+        " UPDATE " + TBL_LAYER_DRBD_VOLUMES +
         " SET " + NODE_NAME + " = ?, " +
                   POOL_NAME + " = ? " +
         " WHERE " + LAYER_RESOURCE_ID + " = ? AND " +
@@ -204,7 +199,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     private final ResourceLayerIdDatabaseDriver idDriver;
 
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     private final RscFlagsDriver rscStatePersistence;
     private final VlmExtStorPoolDriver vlmExtStorPoolDriver;
@@ -224,7 +219,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgrSQL> transMgrProviderRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef
     )

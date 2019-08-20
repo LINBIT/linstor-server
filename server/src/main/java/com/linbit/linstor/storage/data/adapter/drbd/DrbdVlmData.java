@@ -53,7 +53,7 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         StorPool extMetaDataStorPoolRef,
         DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);

@@ -7,6 +7,7 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -36,6 +37,9 @@ public class TestApiModule extends AbstractModule
             .in(ApiCallScoped.class);
         bind(TransactionMgr.class)
             .toProvider(LinStorScope.<TransactionMgr>seededKeyProvider())
+            .in(ApiCallScoped.class);
+        bind(TransactionMgrSQL.class)
+            .toProvider(LinStorScope.<TransactionMgrSQL>seededKeyProvider())
             .in(ApiCallScoped.class);
     }
 }

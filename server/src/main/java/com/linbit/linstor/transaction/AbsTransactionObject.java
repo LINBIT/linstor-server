@@ -19,7 +19,7 @@ public abstract class AbsTransactionObject implements TransactionObject
 {
     private static final boolean DEBUG_MODE = false;
 
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<? extends TransactionMgr> transMgrProvider;
 
     private TransactionMgr activeTransMgr = null;
     private boolean inCommit = false;
@@ -27,7 +27,7 @@ public abstract class AbsTransactionObject implements TransactionObject
 
     private StackTraceElement[] dbgActivationStackstrace;
 
-    public AbsTransactionObject(Provider<TransactionMgr> transMgrProviderRef)
+    public AbsTransactionObject(Provider<? extends TransactionMgr> transMgrProviderRef)
     {
         transMgrProvider = transMgrProviderRef;
     }

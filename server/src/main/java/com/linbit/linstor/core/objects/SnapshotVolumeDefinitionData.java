@@ -63,7 +63,7 @@ public class SnapshotVolumeDefinitionData extends BaseTransactionObject implemen
         SnapshotVolumeDefinitionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<NodeName, SnapshotVolume> snapshotVlmMapRef
     )
         throws MdException, DatabaseException

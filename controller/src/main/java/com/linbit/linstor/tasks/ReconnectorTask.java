@@ -14,8 +14,12 @@ import com.linbit.linstor.tasks.TaskScheduleService.Task;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
+
+import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -25,9 +29,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-
-import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
-import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 
 @Singleton
 public class ReconnectorTask implements Task
@@ -149,7 +150,7 @@ public class ReconnectorTask implements Task
                                 reconnScope.enter();
                                 hasEnteredScope = true;
                                 transMgr = transactionMgrGenerator.startTransaction();
-                                reconnScope.seed(TransactionMgr.class, transMgr);
+                                TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
 
                                 // look for another netIf configured as satellite connection and set it as active
                                 NetInterface currentActiveStltConn = node.getActiveStltConn(peer.getAccessContext());

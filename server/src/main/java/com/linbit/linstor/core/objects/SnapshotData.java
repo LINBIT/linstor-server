@@ -68,7 +68,7 @@ public class SnapshotData extends BaseTransactionObject implements Snapshot
         long initFlags,
         SnapshotDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, SnapshotVolume> snapshotVlmMapRef,
         List<DeviceLayerKind> layerStackRef
     )

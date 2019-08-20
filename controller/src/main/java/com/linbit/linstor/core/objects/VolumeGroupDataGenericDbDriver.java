@@ -12,19 +12,18 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_GROUP_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_VOLUME_GROUPS;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -62,7 +61,7 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
 
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public VolumeGroupDataGenericDbDriver(
@@ -70,7 +69,7 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = accCtx;

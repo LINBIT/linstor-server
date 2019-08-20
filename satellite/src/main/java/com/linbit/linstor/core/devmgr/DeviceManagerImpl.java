@@ -31,6 +31,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -38,7 +39,6 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -53,6 +53,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
 import com.linbit.utils.Either;
@@ -760,7 +761,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             NodeData localNode = controllerPeerConnector.getLocalNode();
 
             deviceMgrScope.enter();
-            deviceMgrScope.seed(TransactionMgr.class, transMgr);
+            TransactionMgrUtil.seedTransactionMgr(deviceMgrScope, transMgr);
             deviceMgrScope.seed(NotificationListener.class, this);
             deviceMgrScope.seed(
                 Key.get(Props.class, Names.named(DevMgrModule.LOCAL_NODE_PROPS)),

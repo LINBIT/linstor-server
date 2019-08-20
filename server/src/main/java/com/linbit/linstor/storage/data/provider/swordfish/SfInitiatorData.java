@@ -30,7 +30,7 @@ public class SfInitiatorData extends AbsStorageVlmData implements SfInitiatorVlm
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(

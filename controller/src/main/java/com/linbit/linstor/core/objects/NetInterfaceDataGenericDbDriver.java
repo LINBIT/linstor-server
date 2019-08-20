@@ -22,6 +22,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
@@ -94,14 +95,14 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public NetInterfaceDataGenericDbDriver(
         @SystemContext AccessContext ctx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = ctx;

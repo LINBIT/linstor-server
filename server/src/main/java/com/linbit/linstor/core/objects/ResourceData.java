@@ -87,7 +87,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         ResourceDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<Resource.Key, ResourceConnection> rscConnMapRef,
         Map<VolumeNumber, Volume> vlmMapRef
     )

@@ -1,6 +1,6 @@
 package com.linbit.linstor.transaction;
 
-import java.sql.Connection;
+import com.linbit.linstor.api.LinStorScope;
 
 public interface TransactionMgr
 {
@@ -13,9 +13,7 @@ public interface TransactionMgr
     boolean isDirty();
     int sizeObjects();
 
-    Connection getConnection();
-
-    void returnConnection();
+    default void returnConnection() { }
 
     static boolean isCalledFromTransactionMgr(String methodName)
     {

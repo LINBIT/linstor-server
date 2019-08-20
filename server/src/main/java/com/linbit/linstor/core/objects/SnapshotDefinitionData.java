@@ -71,7 +71,7 @@ public class SnapshotDefinitionData extends BaseTransactionObject implements Sna
         SnapshotDefinitionDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         PropsContainerFactory propsContainerFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMapRef,
         Map<NodeName, Snapshot> snapshotMapRef
     )

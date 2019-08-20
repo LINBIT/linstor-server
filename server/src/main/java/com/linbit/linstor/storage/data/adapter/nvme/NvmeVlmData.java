@@ -43,7 +43,7 @@ public class NvmeVlmData extends BaseTransactionObject implements NvmeVlmObject
         Volume vlmRef,
         NvmeRscData rscDataRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);

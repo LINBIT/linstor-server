@@ -33,6 +33,8 @@ import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.transaction.ControllerSQLTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mock;
@@ -81,8 +83,9 @@ public abstract class ApiTestBase extends GenericDbBase
 
         testScope.enter();
 
-        TransactionMgr transMgr = new ControllerSQLTransactionMgr(dbConnPool);
+        TransactionMgrSQL transMgr = new ControllerSQLTransactionMgr(dbConnPool);
         testScope.seed(TransactionMgr.class, transMgr);
+        testScope.seed(TransactionMgrSQL.class, transMgr);
 
         ctrlConf.setConnection(transMgr);
         ctrlConf.setProp(ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, "ignore");
@@ -102,7 +105,7 @@ public abstract class ApiTestBase extends GenericDbBase
         enterScope();
     }
 
-    private void create(TransactionMgr transMgr, AccessContext accCtx) throws Exception
+    private void create(TransactionMgrSQL transMgr, AccessContext accCtx) throws Exception
     {
         Identity.create(SYS_CTX, accCtx.subjectId.name);
         SecurityType.create(SYS_CTX, accCtx.subjectDomain.name);

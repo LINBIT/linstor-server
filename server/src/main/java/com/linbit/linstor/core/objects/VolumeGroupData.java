@@ -47,7 +47,7 @@ public class VolumeGroupData extends BaseTransactionObject implements VolumeGrou
         VolumeGroupDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {

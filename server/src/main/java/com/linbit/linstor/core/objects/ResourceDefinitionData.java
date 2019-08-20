@@ -103,7 +103,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceDefinitionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
         Map<NodeName, Resource> rscMapRef,
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,

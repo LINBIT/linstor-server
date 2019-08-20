@@ -89,7 +89,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         VolumeDefinitionDataDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<String, Volume> vlmMapRef,
         Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
     )

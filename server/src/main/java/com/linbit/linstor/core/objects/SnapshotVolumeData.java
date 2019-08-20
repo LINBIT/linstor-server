@@ -41,7 +41,7 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
         StorPool storPoolRef,
         SnapshotVolumeDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
         super(transMgrProviderRef);

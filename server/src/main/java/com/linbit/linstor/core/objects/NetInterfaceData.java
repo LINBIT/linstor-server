@@ -53,7 +53,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         EncryptionType stltConnEncrTypeRef,
         NetInterfaceDataDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
         super(transMgrProviderRef);

@@ -42,7 +42,7 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
         String rscNameSuffixRef,
         SwordfishLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);

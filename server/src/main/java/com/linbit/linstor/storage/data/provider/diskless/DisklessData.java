@@ -27,7 +27,7 @@ public class DisklessData extends AbsStorageVlmData
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
         throws DatabaseException
     {

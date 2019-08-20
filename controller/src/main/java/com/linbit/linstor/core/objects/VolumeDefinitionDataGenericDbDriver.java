@@ -9,10 +9,6 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinition.InitMaps;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -25,15 +21,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.StringUtils;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -91,7 +86,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     private final FlagDriver flagsDriver;
     private final SizeDriver sizeDriver;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public VolumeDefinitionDataGenericDbDriver(
@@ -99,7 +94,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = accCtx;

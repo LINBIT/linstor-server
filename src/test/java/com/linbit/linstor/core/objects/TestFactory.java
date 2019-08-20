@@ -44,7 +44,7 @@ public class TestFactory
         EncryptionType niStltConnEncrTypeRef,
         NetInterfaceDataGenericDbDriver dbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
         return new NetInterfaceData(
@@ -71,7 +71,7 @@ public class TestFactory
         NodeConnectionDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {
@@ -99,7 +99,7 @@ public class TestFactory
         NodeDataGenericDbDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {
@@ -129,7 +129,7 @@ public class TestFactory
         ResourceConnectionDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         long initFlags
     )
         throws DatabaseException
@@ -161,7 +161,7 @@ public class TestFactory
         ResourceDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<Resource.Key, ResourceConnection> rscConnMapRef,
         Map<VolumeNumber, Volume> vlmMapRef
     )
@@ -196,7 +196,7 @@ public class TestFactory
         ResourceDefinitionDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<VolumeNumber, VolumeDefinition> vlmDfnMapRef,
         Map<NodeName, Resource> rscMapRef,
         Map<SnapshotName, SnapshotDefinition> snapshotDfnMapRef,
@@ -237,7 +237,7 @@ public class TestFactory
         StorPoolDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<String, VlmProviderObject> volumeMapRef
     )
         throws DatabaseException
@@ -267,7 +267,7 @@ public class TestFactory
         StorPoolDefinitionDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<NodeName, StorPool> storPoolsMapRef
     )
         throws DatabaseException
@@ -295,7 +295,7 @@ public class TestFactory
         VolumeConnectionDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {
@@ -322,7 +322,7 @@ public class TestFactory
         VolumeDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<Volume.Key, VolumeConnection> vlmConnsMapRef
     )
         throws DatabaseException
@@ -354,7 +354,7 @@ public class TestFactory
         VolumeDefinitionDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
         Map<String, Volume> vlmMapRef,
         Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
     )

@@ -67,7 +67,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
         long initFlags,
         DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(

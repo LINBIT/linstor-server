@@ -8,7 +8,7 @@ public abstract class BaseTransactionObject extends AbsTransactionObject
 {
     protected List<TransactionObject> transObjs;
 
-    public BaseTransactionObject(Provider<TransactionMgr> transMgrProvider)
+    public BaseTransactionObject(Provider<? extends TransactionMgr> transMgrProvider)
     {
         super(transMgrProvider);
     }

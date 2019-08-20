@@ -2,10 +2,11 @@ package com.linbit.linstor.transaction;
 
 import com.linbit.linstor.ControllerSQLDatabase;
 
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class ControllerSQLTransactionMgr implements TransactionMgr
+public class ControllerSQLTransactionMgr implements TransactionMgrSQL
 {
     private final ControllerSQLDatabase controllerDatabase;
     private final Connection dbCon;

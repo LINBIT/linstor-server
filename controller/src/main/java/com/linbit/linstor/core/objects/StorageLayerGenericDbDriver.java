@@ -33,6 +33,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -96,7 +97,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
     private final ResourceLayerIdDatabaseDriver rscIdDriver;
     private final SwordfishLayerGenericDbDriver sfDbDriver;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     private final SingleColumnDatabaseDriver<VlmProviderObject, StorPool> storPoolDriver;
 
@@ -109,7 +110,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         ResourceLayerIdDatabaseDriver rscIdDriverRef,
         SwordfishLayerGenericDbDriver sfDbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;

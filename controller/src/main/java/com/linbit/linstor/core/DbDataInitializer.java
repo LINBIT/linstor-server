@@ -19,6 +19,7 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -81,7 +82,7 @@ public class DbDataInitializer
         {
             transMgr = transactionMgrGenerator.startTransaction();
             initScope.enter();
-            initScope.seed(TransactionMgr.class, transMgr);
+            TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
             // rebuilding layerData also runs an additional check to verify the used storage pools
             // which needs a peerContext.

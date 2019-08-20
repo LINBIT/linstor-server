@@ -28,6 +28,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -275,7 +276,7 @@ public final class ControllerNetComInitializer
                     {
                         transMgr = transactionMgrGenerator.startTransaction();
                         initScope.enter();
-                        initScope.seed(TransactionMgr.class, transMgr);
+                        TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
                         ctrlConf.setProp(PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, serviceName.displayValue);
 
@@ -416,7 +417,7 @@ public final class ControllerNetComInitializer
                             {
                                 transMgr = transactionMgrGenerator.startTransaction();
                                 initScope.enter();
-                                initScope.seed(TransactionMgr.class, transMgr);
+                                TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
                                 ctrlConf.setProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC, serviceName.displayValue);
 

@@ -10,6 +10,7 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 
 import java.util.List;
 
@@ -65,6 +66,9 @@ public class ApiModule extends AbstractModule
             .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(TransactionMgr.class)
+            .toProvider(LinStorScope.seededKeyProvider())
+            .in(ApiCallScoped.class);
+        bind(TransactionMgrSQL.class)
             .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
     }

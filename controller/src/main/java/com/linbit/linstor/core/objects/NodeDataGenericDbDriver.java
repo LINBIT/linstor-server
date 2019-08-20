@@ -9,14 +9,6 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.NetInterface;
-import com.linbit.linstor.core.objects.NodeConnection;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Node.InitMaps;
 import com.linbit.linstor.core.objects.Node.NodeFlag;
 import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -31,7 +23,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -89,7 +81,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private final PropsContainerFactory propsContainerFactory;
 
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public NodeDataGenericDbDriver(
@@ -98,7 +90,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = privCtx;

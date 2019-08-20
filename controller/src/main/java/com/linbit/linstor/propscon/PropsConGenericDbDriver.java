@@ -4,7 +4,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrSQL;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -48,12 +48,12 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
         "    WHERE " + COL_INSTANCE + " = ? ";
 
     private final ErrorReporter errorReporter;
-    private final Provider<TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
     public PropsConGenericDbDriver(
         ErrorReporter errorReporterRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;

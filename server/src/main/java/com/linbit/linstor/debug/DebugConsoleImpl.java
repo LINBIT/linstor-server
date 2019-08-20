@@ -7,6 +7,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.TransactionMgrUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -297,7 +298,8 @@ public class DebugConsoleImpl implements DebugConsole
 
                         try
                         {
-                            debugScope.seed(TransactionMgr.class, transactionMgrGenerator.startTransaction());
+                            TransactionMgr transMgr = transactionMgrGenerator.startTransaction();
+                            TransactionMgrUtil.seedTransactionMgr(debugScope, transMgr);
                         }
                         catch (Exception exc)
                         {

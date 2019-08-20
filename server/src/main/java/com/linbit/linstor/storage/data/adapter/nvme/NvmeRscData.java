@@ -39,7 +39,7 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
         String rscNameSuffixRef,
         NvmeLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(

@@ -51,7 +51,7 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
         ResourceLayerIdDatabaseDriver dbDriverRef,
         Map<VolumeNumber, VLM_TYPE> vlmProviderObjectsRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
         super(transMgrProviderRef);

@@ -40,7 +40,7 @@ public class KeyValueStoreData extends BaseTransactionObject implements KeyValue
         KeyValueStoreDataDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
         throws DatabaseException
     {

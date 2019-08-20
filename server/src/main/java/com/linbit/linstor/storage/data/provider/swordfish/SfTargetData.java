@@ -33,7 +33,7 @@ public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProvid
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider
     )
     {
         super(
