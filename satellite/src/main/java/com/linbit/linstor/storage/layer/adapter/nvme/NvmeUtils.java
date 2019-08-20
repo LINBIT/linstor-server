@@ -398,13 +398,13 @@ public class NvmeUtils
 
         try
         {
-            errorReporter.logDebug(
-                "NVMe: trying to set device paths for: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+            errorReporter.logDebug("NVMe: trying to set device paths for: " + subsystemName);
+
+            OutputData output = executeCmdAfterWaiting(
+                isWaiting,
+                "/bin/bash", "-c", "grep -H -r -w " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
             );
 
-            OutputData output = executeCmdAfterWaiting(isWaiting,
-                "/bin/bash", "-c", "grep -H -r " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
-            );
             if (output == null)
             {
                 success = false;
@@ -425,7 +425,7 @@ public class NvmeUtils
                 {
                     output = executeCmdAfterWaiting(isWaiting,
                         "/bin/bash", "-c",
-                        " grep -H -r " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
+                        " grep -H -r -w " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
                             nvmeFabricsVlmPath + "*n*/nsid");
                     /*
                      * device path might be
