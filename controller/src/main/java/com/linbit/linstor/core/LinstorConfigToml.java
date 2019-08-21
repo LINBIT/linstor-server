@@ -31,6 +31,8 @@ public class LinstorConfigToml
         private int port = Controller.DEFAULT_HTTPS_REST_PORT;
         private String keystore;
         private String keystore_password = "";
+        private String truststore;
+        private String truststore_password = "";
 
         public boolean isEnabled()
         {
@@ -55,6 +57,16 @@ public class LinstorConfigToml
         public String getKeystorePassword()
         {
             return keystore_password;
+        }
+
+        public String getTruststore()
+        {
+            return truststore;
+        }
+
+        public String getTruststorePassword()
+        {
+            return truststore_password;
         }
     }
 

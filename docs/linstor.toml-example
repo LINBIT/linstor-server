@@ -21,6 +21,10 @@
   # keystore password to unlock the server certificate
   keystore_password = "linstor"
 
+  # to only allow clients with the correct certificates
+  # truststore = "/path/to/valid/truststore.jks
+  # truststore_password = "password"
+
 [ldap]
   enabled = false
 
