@@ -351,6 +351,12 @@ public class NvmeUtils
                 "NVMe: disconnecting initiator from: " + NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
             );
 
+            // workaround to prevent hanging `nvme disconnect`
+            if (isAnyMounted(nvmeRscData))
+            {
+                throw new StorageException("Cannot disconnect mounted nvme-device.");
+            }
+
             OutputData output = extCmdFactory.create().exec(
                 "nvme",
                 "disconnect",
@@ -364,6 +370,29 @@ public class NvmeUtils
         {
             throw new StorageException("Failed to disconnect from NVMe target!", exc);
         }
+    }
+
+    private boolean isAnyMounted(NvmeRscData nvmeRscDataRef)
+        throws ChildProcessTimeoutException, IOException, StorageException
+    {
+        boolean mounted = false;
+        StringBuilder grepArg = new StringBuilder();
+        for (NvmeVlmData vlm : nvmeRscDataRef.getVlmLayerObjects().values())
+        {
+            grepArg.append(vlm.getDevicePath()).append("|");
+        }
+        if (grepArg.length() > 0)
+        {
+            grepArg.setLength(grepArg.length() - 1);
+            OutputData output = extCmdFactory.create().exec("/bin/bash", "-c", "mount | grep -Ew " + grepArg);
+            String outStr = new String(output.stdoutData);
+            mounted = !outStr.trim().isEmpty();
+        }
+        else
+        {
+            errorReporter.logTrace("grepArg empty, skipping mount-check");
+        }
+        return mounted;
     }
 
     /**
