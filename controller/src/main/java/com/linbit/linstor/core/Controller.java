@@ -300,6 +300,8 @@ public final class Controller
         String restBindAddresSecure;
         Path keyStorePath = null;
         String keyStorePassword;
+        Path trustStorePath = null;
+        String trustStorePassword;
         try
         {
             if (cArgs.getRESTBindAddress() != null)
@@ -345,6 +347,7 @@ public final class Controller
             }
 
             final String keyStorePathProp = linstorConfig.getHTTPS().getKeystore();
+            final String trustStorePathProp = linstorConfig.getHTTPS().getTruststore();
             if (keyStorePathProp != null)
             {
                 keyStorePath = Paths.get(keyStorePathProp);
@@ -353,8 +356,17 @@ public final class Controller
                     keyStorePath = cArgs.getConfigurationDirectory().resolve(keyStorePath);
                 }
             }
+            if (trustStorePathProp != null)
+            {
+                trustStorePath = Paths.get(trustStorePathProp);
+                if (!trustStorePath.isAbsolute())
+                {
+                    trustStorePath = cArgs.getConfigurationDirectory().resolve(trustStorePath);
+                }
+            }
 
             keyStorePassword = linstorConfig.getHTTPS().getKeystorePassword();
+            trustStorePassword = linstorConfig.getHTTPS().getTruststorePassword();
 
             if (restEnabled)
             {
@@ -365,7 +377,9 @@ public final class Controller
                     restBindAddress,
                     restBindAddresSecure,
                     keyStorePath,
-                    keyStorePassword
+                    keyStorePassword,
+                    trustStorePath,
+                    trustStorePassword
                 );
                 systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
             }

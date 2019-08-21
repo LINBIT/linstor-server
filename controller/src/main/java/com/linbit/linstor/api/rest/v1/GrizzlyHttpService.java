@@ -53,6 +53,8 @@ public class GrizzlyHttpService implements SystemService
     private String listenAddressSecure;
     private Path keyStoreFile;
     private String keyStorePassword;
+    private Path trustStoreFile;
+    private String trustStorePassword;
     private ResourceConfig v1ResourceConfig;
     private final DbConnectionPool dbConnectionPool;
     private final Map<ServiceName, SystemService> systemServiceMap;
@@ -70,7 +72,9 @@ public class GrizzlyHttpService implements SystemService
         String listenAddressRef,
         String listenAddressSecureRef,
         Path keyStoreFileRef,
-        String keyStorePasswordRef
+        String keyStorePasswordRef,
+        Path trustStoreFileRef,
+        String trustStorePasswordRef
     )
     {
         errorReporter = errorReporterRef;
@@ -79,6 +83,8 @@ public class GrizzlyHttpService implements SystemService
         listenAddressSecure = listenAddressSecureRef;
         keyStoreFile = keyStoreFileRef;
         keyStorePassword = keyStorePasswordRef;
+        trustStoreFile = trustStoreFileRef;
+        trustStorePassword = trustStorePasswordRef;
         v1ResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
         v1ResourceConfig.register(new CORSFilter());
         registerExceptionMappers(v1ResourceConfig);
@@ -277,13 +283,20 @@ public class GrizzlyHttpService implements SystemService
             sslCon.setKeyStoreFile(keyStoreFile.toString());
             sslCon.setKeyStorePass(keyStorePassword);
 
+            boolean hasClientAuth = trustStoreFile != null;
+            if (hasClientAuth)
+            {
+                sslCon.setTrustStoreFile(trustStoreFile.toString());
+                sslCon.setTrustStorePass(trustStorePassword);
+            }
+
             for (NetworkListener netListener : httpsServer.getListeners())
             {
                 netListener.setSecure(true);
                 SSLEngineConfigurator ssle = new SSLEngineConfigurator(sslCon);
-                ssle.setWantClientAuth(false);
+                ssle.setWantClientAuth(hasClientAuth);
                 ssle.setClientMode(false);
-                ssle.setNeedClientAuth(false);
+                ssle.setNeedClientAuth(hasClientAuth);
                 netListener.setSSLEngineConfig(ssle);
             }
 
