@@ -91,7 +91,11 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             PropsContainer.buildPath(storPoolDef.getName(), node.getName())
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-        supportsSnapshots = transObjFactory.createTransactionSimpleObject(this, false, null);
+        supportsSnapshots = transObjFactory.createTransactionSimpleObject(
+            this,
+            providerKindRef.isSnapshotSupported(),
+            null
+        );
 
         reports = new ApiCallRcImpl();
 
