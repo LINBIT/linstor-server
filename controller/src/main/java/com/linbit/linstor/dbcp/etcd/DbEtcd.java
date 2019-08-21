@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbcp.etcd;
 
+import static com.ibm.etcd.client.KeyUtils.bs;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -7,25 +9,19 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
+import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.ibm.etcd.api.KeyValue;
 import com.ibm.etcd.api.RangeResponse;
 import com.ibm.etcd.client.EtcdClient;
 import com.ibm.etcd.client.KvStoreClient;
 import com.ibm.etcd.client.kv.KvClient;
 
-import static com.ibm.etcd.client.KeyUtils.bs;
-
-
 public class DbEtcd implements ControllerETCDDatabase
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "ETCD database handler";
-    public static final String LINSTOR_PREFIX = "LINSTOR/";
 
     private AtomicBoolean atomicStarted = new AtomicBoolean(false);
 
@@ -75,7 +71,7 @@ public class DbEtcd implements ControllerETCDDatabase
     public void migrate(String dbType)
     {
         // do manual data migration and initial data
-        String dbhistoryVersionKey = LINSTOR_PREFIX + "DBHISTORY/version";
+        String dbhistoryVersionKey = EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version";
 
         RangeResponse dbVersResp = etcdClient.getKvClient().get(bs(dbhistoryVersionKey)).sync();
         int dbVersion = dbVersResp.getCount() > 0 ?
@@ -85,21 +81,6 @@ public class DbEtcd implements ControllerETCDDatabase
         {
             Migration_00_Init.migrate(etcdClient.getKvClient());
         }
-    }
-
-    public static Map<String, String> getTableRow(KvClient client, String key)
-    {
-        RangeResponse rspRow = client.get(bs(key)).asPrefix().sync();
-
-        HashMap<String, String> rowMap = new HashMap<>();
-        for (KeyValue keyValue : rspRow.getKvsList())
-        {
-            final String recKey = keyValue.getKey().toStringUtf8();
-            final String columnName = recKey.substring(recKey.lastIndexOf("/") + 1);
-            rowMap.put(columnName, keyValue.getValue().toStringUtf8());
-        }
-
-        return rowMap;
     }
 
     @Override

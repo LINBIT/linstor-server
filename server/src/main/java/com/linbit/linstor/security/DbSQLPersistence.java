@@ -1,24 +1,10 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerSQLDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.security.data.IdentityRoleEntry;
-import com.linbit.linstor.security.data.SignInEntry;
-import com.linbit.linstor.security.data.TypeEnforcementRule;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
+import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
+import com.linbit.linstor.security.pojo.SignInEntryPojo;
+import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.ACCESS_TYPE;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DOMAIN_NAME;
@@ -46,12 +32,23 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VIEW_SEC_ROLES_LOAD
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VIEW_SEC_TYPES_LOAD;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VIEW_SEC_TYPE_RULES_LOAD;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 @Singleton
-public class DbSQLPersistence implements DbAccessor
+public class DbSQLPersistence implements DbAccessor<ControllerSQLDatabase>
 {
     private static final String SLCT_SIGNIN_ENTRY =
         "SELECT " +
@@ -124,13 +121,16 @@ public class DbSQLPersistence implements DbAccessor
         void accept(T t) throws E;
     }
 
-    private void runWithConnection(ControllerDatabase ctrlDatabase, ThrowingConsumer<Connection, SQLException> consumer)
+    private void runWithConnection(
+        ControllerSQLDatabase ctrlDatabase,
+        ThrowingConsumer<Connection, SQLException> consumer
+    )
         throws DatabaseException
     {
         Connection dbConn = null;
         try
         {
-            dbConn = ((ControllerSQLDatabase) ctrlDatabase).getConnection();
+            dbConn = ctrlDatabase.getConnection();
 
             consumer.accept(dbConn);
         }
@@ -140,18 +140,19 @@ public class DbSQLPersistence implements DbAccessor
         }
         finally
         {
-            ((ControllerSQLDatabase) ctrlDatabase).returnConnection(dbConn);
+            ctrlDatabase.returnConnection(dbConn);
         }
     }
 
     @Override
-    public SignInEntry getSignInEntry(ControllerDatabase ctrlDatabase, IdentityName idName) throws DatabaseException
+    public SignInEntryPojo getSignInEntry(ControllerSQLDatabase ctrlDatabase, IdentityName idName)
+        throws DatabaseException
     {
-        SignInEntry signInEntry = null;
+        SignInEntryPojo signInEntry = null;
         Connection dbConn = null;
         try
         {
-            dbConn = ((ControllerSQLDatabase) ctrlDatabase).getConnection();
+            dbConn = ctrlDatabase.getConnection();
 
             try (ResultSet resultSet = dbQuery(
                     dbConn,
@@ -168,7 +169,7 @@ public class DbSQLPersistence implements DbAccessor
                         rolePrivileges = resultSet.wasNull() ? null : tmp;
                     }
 
-                    signInEntry = new SignInEntry(
+                    signInEntry = new SignInEntryPojo(
                         resultSet.getString(IDENTITY_NAME),
                         resultSet.getString(ROLE_NAME),
                         resultSet.getString(DOMAIN_NAME),
@@ -185,20 +186,24 @@ public class DbSQLPersistence implements DbAccessor
         }
         finally
         {
-            ((ControllerSQLDatabase) ctrlDatabase).returnConnection(dbConn);
+            ctrlDatabase.returnConnection(dbConn);
         }
         return signInEntry;
     }
 
     @Override
-    public IdentityRoleEntry getIdRoleMapEntry(ControllerDatabase ctrlDatabase, IdentityName idName, RoleName rlName)
+    public IdentityRoleEntryPojo getIdRoleMapEntry(
+        ControllerSQLDatabase ctrlDatabase,
+        IdentityName idName,
+        RoleName rlName
+    )
         throws DatabaseException
     {
-        IdentityRoleEntry identityRoleEntry = null;
+        IdentityRoleEntryPojo identityRoleEntry = null;
         Connection dbConn = null;
         try
         {
-            dbConn = ((ControllerSQLDatabase) ctrlDatabase).getConnection();
+            dbConn = ctrlDatabase.getConnection();
 
             try (ResultSet resultSet = dbQuery(
                     dbConn,
@@ -209,7 +214,7 @@ public class DbSQLPersistence implements DbAccessor
             {
                 if (resultSet.next())
                 {
-                    identityRoleEntry = new IdentityRoleEntry(
+                    identityRoleEntry = new IdentityRoleEntryPojo(
                         resultSet.getString(IDENTITY_NAME), resultSet.getString(ROLE_NAME)
                     );
                 }
@@ -221,20 +226,20 @@ public class DbSQLPersistence implements DbAccessor
         }
         finally
         {
-            ((ControllerSQLDatabase) ctrlDatabase).returnConnection(dbConn);
+            ctrlDatabase.returnConnection(dbConn);
         }
         return identityRoleEntry;
     }
 
     @Override
-    public IdentityRoleEntry getDefaultRole(ControllerDatabase ctrlDatabase, IdentityName idName)
+    public IdentityRoleEntryPojo getDefaultRole(ControllerSQLDatabase ctrlDatabase, IdentityName idName)
         throws DatabaseException
     {
-        IdentityRoleEntry identityRoleEntry = null;
+        IdentityRoleEntryPojo identityRoleEntry = null;
         Connection dbConn = null;
         try
         {
-            dbConn = ((ControllerSQLDatabase) ctrlDatabase).getConnection();
+            dbConn = ctrlDatabase.getConnection();
 
             try (ResultSet resultSet = dbQuery(
                 dbConn,
@@ -245,7 +250,7 @@ public class DbSQLPersistence implements DbAccessor
             {
                 if (resultSet.next())
                 {
-                    identityRoleEntry = new IdentityRoleEntry(
+                    identityRoleEntry = new IdentityRoleEntryPojo(
                         resultSet.getString(IDENTITY_NAME),
                         resultSet.getString(ROLE_NAME)
                     );
@@ -258,13 +263,13 @@ public class DbSQLPersistence implements DbAccessor
         }
         finally
         {
-            ((ControllerSQLDatabase) ctrlDatabase).returnConnection(dbConn);
+            ctrlDatabase.returnConnection(dbConn);
         }
         return identityRoleEntry;
     }
 
     @Override
-    public List<String> loadIdentities(ControllerDatabase ctrlDatabase) throws DatabaseException
+    public List<String> loadIdentities(ControllerSQLDatabase ctrlDatabase) throws DatabaseException
     {
         List<String> identities = new ArrayList<>();
 
@@ -287,7 +292,7 @@ public class DbSQLPersistence implements DbAccessor
     }
 
     @Override
-    public List<String> loadSecurityTypes(ControllerDatabase ctrlDatabase) throws DatabaseException
+    public List<String> loadSecurityTypes(ControllerSQLDatabase ctrlDatabase) throws DatabaseException
     {
         List<String> securityTypes = new ArrayList<>();
 
@@ -310,7 +315,7 @@ public class DbSQLPersistence implements DbAccessor
     }
 
     @Override
-    public List<String> loadRoles(ControllerDatabase ctrlDatabase) throws DatabaseException
+    public List<String> loadRoles(ControllerSQLDatabase ctrlDatabase) throws DatabaseException
     {
         List<String> roles = new ArrayList<>();
 
@@ -333,9 +338,9 @@ public class DbSQLPersistence implements DbAccessor
     }
 
     @Override
-    public List<TypeEnforcementRule> loadTeRules(ControllerDatabase ctrlDatabase) throws DatabaseException
+    public List<TypeEnforcementRulePojo> loadTeRules(ControllerSQLDatabase ctrlDatabase) throws DatabaseException
     {
-        List<TypeEnforcementRule> typeEnforcementRules = new ArrayList<>();
+        List<TypeEnforcementRulePojo> typeEnforcementRules = new ArrayList<>();
 
         runWithConnection(ctrlDatabase, (dbConn) ->
         {
@@ -347,7 +352,7 @@ public class DbSQLPersistence implements DbAccessor
             {
                 while (resultSet.next())
                 {
-                    typeEnforcementRules.add(new TypeEnforcementRule(
+                    typeEnforcementRules.add(new TypeEnforcementRulePojo(
                         resultSet.getString(DOMAIN_NAME),
                         resultSet.getString(TYPE_NAME),
                         resultSet.getString(ACCESS_TYPE)
@@ -360,13 +365,13 @@ public class DbSQLPersistence implements DbAccessor
     }
 
     @Override
-    public String loadSecurityLevel(ControllerDatabase ctrlDatabase) throws DatabaseException
+    public String loadSecurityLevel(ControllerSQLDatabase ctrlDatabase) throws DatabaseException
     {
         String securityLevel = null;
         Connection dbConn = null;
         try
         {
-            dbConn = ((ControllerSQLDatabase) ctrlDatabase).getConnection();
+            dbConn = ctrlDatabase.getConnection();
 
             try (ResultSet resultSet = dbQuery(dbConn, SLCT_SEC_LEVEL))
             {
@@ -382,19 +387,19 @@ public class DbSQLPersistence implements DbAccessor
         }
         finally
         {
-            ((ControllerSQLDatabase) ctrlDatabase).returnConnection(dbConn);
+            ctrlDatabase.returnConnection(dbConn);
         }
         return securityLevel;
     }
 
     @Override
-    public boolean loadAuthRequired(ControllerDatabase ctrlDatabase) throws DatabaseException
+    public boolean loadAuthRequired(ControllerSQLDatabase ctrlDatabase) throws DatabaseException
     {
         boolean authRequired = true;
         Connection dbConn = null;
         try
         {
-            dbConn = ((ControllerSQLDatabase) ctrlDatabase).getConnection();
+            dbConn = ctrlDatabase.getConnection();
 
             try (ResultSet resultSet = dbQuery(dbConn, SLCT_AUTH_REQ))
             {
@@ -410,13 +415,13 @@ public class DbSQLPersistence implements DbAccessor
         }
         finally
         {
-            ((ControllerSQLDatabase) ctrlDatabase).returnConnection(dbConn);
+            ctrlDatabase.returnConnection(dbConn);
         }
         return authRequired;
     }
 
     @Override
-    public void setSecurityLevel(ControllerDatabase ctrlDatabase, SecurityLevel newLevel) throws DatabaseException
+    public void setSecurityLevel(ControllerSQLDatabase ctrlDatabase, SecurityLevel newLevel) throws DatabaseException
     {
         runWithConnection(ctrlDatabase, (dbConn) ->
         {
@@ -446,7 +451,7 @@ public class DbSQLPersistence implements DbAccessor
     }
 
     @Override
-    public void setAuthRequired(ControllerDatabase ctrlDatabase, boolean newPolicy) throws DatabaseException
+    public void setAuthRequired(ControllerSQLDatabase ctrlDatabase, boolean newPolicy) throws DatabaseException
     {
         runWithConnection(ctrlDatabase, (dbConn) ->
         {

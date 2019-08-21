@@ -1,23 +1,31 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigurationDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class SecConfigurationEtcdDbDriver extends EtcdDbDriver implements SecConfigurationDatabaseDriver
+public class SecConfigurationEtcdDbDriver extends AbsDatabaseDriver<SecConfiguration, Void, Void>
+    implements SecConfigurationDatabaseDriver
 {
-    private static final GeneratedDatabaseTables.SecConfiguration TABLE = GeneratedDatabaseTables.SEC_CONFIGURATION;
+    private final Provider<TransactionMgrETCD> transMgrProvider;
 
     @Inject
     public SecConfigurationEtcdDbDriver(
+        DbEngine dbEngine,
         Provider<TransactionMgrETCD> transMgrProviderRef
     )
     {
-        super(TABLE, transMgrProviderRef);
+        super(GeneratedDatabaseTables.SEC_CONFIGURATION, dbEngine, null);
+        transMgrProvider = transMgrProviderRef;
     }
 
     private String id(SecConfiguration secConfiguration)
@@ -26,25 +34,17 @@ public class SecConfigurationEtcdDbDriver extends EtcdDbDriver implements SecCon
     }
 
     @Override
-    public void create(SecConfiguration secConfiguration) throws DatabaseException
+    protected Pair<SecConfiguration, Void> load(RawParameters raw)
+        throws DatabaseException, InvalidNameException
     {
-        transMgrProvider.get().getTransaction()
-            .put(putReq(
-                tblKey(id(secConfiguration), GeneratedDatabaseTables.SEC_CONFIGURATION.ENTRY_KEY),
-                secConfiguration.getDisplayValue().toUpperCase()))
-            .put(putReq(
-                tblKey(id(secConfiguration), GeneratedDatabaseTables.SEC_CONFIGURATION.ENTRY_DSP_KEY),
-                secConfiguration.getDisplayValue()
-            ))
-            .put(putReq(
-                tblKey(id(secConfiguration), GeneratedDatabaseTables.SEC_CONFIGURATION.ENTRY_VALUE),
-                secConfiguration.getValue()
-            ));
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
     }
 
     @Override
-    public void delete(SecConfiguration secConfiguration) throws DatabaseException
+    protected String getId(SecConfiguration dataRef)
     {
-
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
     }
 }

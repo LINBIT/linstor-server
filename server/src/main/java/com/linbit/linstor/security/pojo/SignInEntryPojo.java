@@ -1,8 +1,8 @@
-package com.linbit.linstor.security.data;
+package com.linbit.linstor.security.pojo;
 
 import com.linbit.utils.Base64;
 
-public class SignInEntry
+public class SignInEntryPojo
 {
     private final String identityName;
     private final String roleName;
@@ -11,7 +11,7 @@ public class SignInEntry
     private final String saltBase64;
     private final String hashBase64;
 
-    public SignInEntry(
+    public SignInEntryPojo(
         final String identityNameRef,
         final String roleNameRef,
         final String domainNameRef,

@@ -37,6 +37,7 @@ import com.linbit.linstor.core.objects.ResourceDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver.RscLayerInfoData;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -46,6 +47,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
@@ -58,8 +60,6 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver.RscLayerInfoData;
-import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -509,7 +509,7 @@ public class DatabaseLoader implements DatabaseDriver
                     {
                         // TODO: DatabaseException constructors should probably be extended to simplify
                         //       throwing exceptions with meaningful messages
-                        DatabaseException dbExc = new DatabaseException(null);
+                        DatabaseException dbExc = new DatabaseException((Throwable) null);
                         dbExc.setDescriptionText(
                             "Duplicate external name, resource definitions: " +
                             rscDfn.getName() + ", " + otherRscDfn.getName()

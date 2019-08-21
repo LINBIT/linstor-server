@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.security.data.TypeEnforcementRule;
+import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
 
 import java.util.Collections;
 import java.util.List;
@@ -182,8 +182,8 @@ public final class SecurityType implements Comparable<SecurityType>
 
             // Load type enforcement rules
             {
-                List<TypeEnforcementRule> loadData = secDb.loadTeRules(ctrlDb);
-                for (TypeEnforcementRule ter : loadData)
+                List<TypeEnforcementRulePojo> loadData = secDb.loadTeRules(ctrlDb);
+                for (TypeEnforcementRulePojo ter : loadData)
                 {
                     SecurityType secDomain = get(new SecTypeName(ter.getDomainName()));
                     SecurityType secType = get(new SecTypeName(ter.getTypeName()));

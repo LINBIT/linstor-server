@@ -1,5 +1,11 @@
 package com.linbit;
 
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -16,12 +22,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.event.Level;
-
-import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 
 public class WorkerPoolTest
 {

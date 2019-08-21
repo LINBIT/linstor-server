@@ -58,7 +58,7 @@ import com.linbit.linstor.security.DbSecurityInitializer;
 import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
-import com.linbit.linstor.security.data.SignInEntry;
+import com.linbit.linstor.security.pojo.SignInEntryPojo;
 import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -249,7 +249,7 @@ public final class Controller
             DbEtcdPersistence dbSec = new DbEtcdPersistence();
             try
             {
-                SignInEntry signInEntry = dbSec.getSignInEntry(dbEtcd, new IdentityName("SYSTEM"));
+                SignInEntryPojo signInEntry = dbSec.getSignInEntry(dbEtcd, new IdentityName("SYSTEM"));
                 System.err.println(
                     signInEntry.getIdentityName() + "::" +
                         signInEntry.getRolePrivileges() + "::" + signInEntry.getHash());

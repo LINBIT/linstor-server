@@ -1,11 +1,11 @@
-package com.linbit.linstor.security.data;
+package com.linbit.linstor.security.pojo;
 
-public class IdentityRoleEntry
+public class IdentityRoleEntryPojo
 {
     private final String identiyName;
     private final String roleName;
 
-    public IdentityRoleEntry(
+    public IdentityRoleEntryPojo(
         final String identiyNameRef,
         final String roleNameRef
     )

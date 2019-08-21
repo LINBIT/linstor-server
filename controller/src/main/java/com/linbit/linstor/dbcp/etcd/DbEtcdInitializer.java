@@ -7,6 +7,10 @@ import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.logging.ErrorReporter;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class DbEtcdInitializer implements DbInitializer
 {
     private final ErrorReporter errorLog;
@@ -14,6 +18,7 @@ public class DbEtcdInitializer implements DbInitializer
     private final DbEtcd dbEtcd;
     private final LinstorConfigToml linstorConfig;
 
+    @Inject
     public DbEtcdInitializer(
         ErrorReporter errorLogRef,
         ControllerCmdlArguments argsRef,

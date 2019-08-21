@@ -1,126 +1,254 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
-import com.linbit.linstor.core.objects.EtcdDbDriver;
-import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.security.data.IdentityRoleEntry;
-import com.linbit.linstor.security.data.SignInEntry;
-import com.linbit.linstor.security.data.TypeEnforcementRule;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecDfltRoles;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdRoleMap;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdentities;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecRoles;
+import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
+import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
+import com.linbit.linstor.security.pojo.SignInEntryPojo;
+import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
+import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.DOMAIN_NAME;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.IDENTITY_NAME;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.PASS_HASH;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.PASS_SALT;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.ROLE_NAME;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.ROLE_PRIVILEGES;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_IDENTITIES;
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_ROLES;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.ibm.etcd.api.KeyValue;
-import com.ibm.etcd.api.RangeResponse;
-
-import static com.ibm.etcd.client.KeyUtils.bs;
-
-public class DbEtcdPersistence implements DbAccessor
+@Singleton
+public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
 {
-    @Override
-    public SignInEntry getSignInEntry(ControllerDatabase ctrlDb, IdentityName idName) throws DatabaseException
+    @Inject
+    public DbEtcdPersistence()
     {
-        ControllerETCDDatabase etcdDb = (ControllerETCDDatabase) ctrlDb;
+    }
 
-        Map<String, String> identityRow = DbEtcd.getTableRow(
+    @Override
+    public SignInEntryPojo getSignInEntry(ControllerETCDDatabase etcdDb, IdentityName idName) throws DatabaseException
+    {
+        SignInEntryPojo signInEntry = null;
+
+        Map<String, String> identityRow = EtcdUtils.getTableRow(
             etcdDb.getKvClient(),
-            EtcdDbDriver.tblKey(GeneratedDatabaseTables.SEC_IDENTITIES, idName.value, "")
+            EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_IDENTITIES, idName.value, "")
         );
 
         if (identityRow.size() > 0)
         {
-            final String identityName = identityRow.get(IDENTITY_NAME);
-
-            Map<String, String> roleRow = DbEtcd.getTableRow(
+            Map<String, String> dfltRoleRow = EtcdUtils.getTableRow(
                 etcdDb.getKvClient(),
-                EtcdDbDriver.tblKey(GeneratedDatabaseTables.SEC_ROLES, idName.value, "")
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_DFLT_ROLES, idName.value, "")
             );
 
-            return new SignInEntry(
-                identityName,
-                identityName,
-                roleRow.get(DOMAIN_NAME),
-                Long.parseLong(roleRow.get(ROLE_PRIVILEGES)),
-                identityRow.get(PASS_SALT),
-                identityRow.get(PASS_HASH)
+            if (dfltRoleRow.isEmpty())
+            {
+                throw new DatabaseException(GeneratedDatabaseTables.SEC_DFLT_ROLES.getName() + " is empty");
+            }
+            Map<String, String> roleRow = EtcdUtils.getTableRow(
+                etcdDb.getKvClient(),
+                EtcdUtils.buildKey(
+                    GeneratedDatabaseTables.SEC_ROLES,
+                    dfltRoleRow.get(SecDfltRoles.ROLE_NAME.getName()),
+                    ""
+                )
+            );
+            if (roleRow.isEmpty())
+            {
+                throw new DatabaseException(GeneratedDatabaseTables.SEC_ROLES.getName() + " is empty");
+            }
+
+            Long rolePrivileges;
+            {
+                String rolePrivilegesStr = roleRow.get(SecRoles.ROLE_PRIVILEGES.getName());
+                rolePrivileges = rolePrivilegesStr == null ? null : Long.parseLong(rolePrivilegesStr);
+            }
+            signInEntry = new SignInEntryPojo(
+                identityRow.get(SecIdentities.IDENTITY_NAME.getName()),
+                dfltRoleRow.get(SecDfltRoles.ROLE_NAME.getName()),
+                roleRow.get(SecRoles.DOMAIN_NAME.getName()),
+                rolePrivileges,
+                identityRow.get(SecIdentities.PASS_SALT.getName()),
+                identityRow.get(SecIdentities.PASS_HASH.getName())
             );
         }
-        return null;
+        return signInEntry;
     }
 
     @Override
-    public IdentityRoleEntry getIdRoleMapEntry(
-        ControllerDatabase ctrlDb,
+    public IdentityRoleEntryPojo getIdRoleMapEntry(
+        ControllerETCDDatabase etcdDb,
         IdentityName idName,
         RoleName rlName
-    ) throws DatabaseException
+    )
+        throws DatabaseException
     {
-        return null;
+        IdentityRoleEntryPojo identityRoleEntry = null;
+        Map<String, String> idRoleMapRow = EtcdUtils.getTableRow(
+            etcdDb.getKvClient(),
+            EtcdUtils.buildKey(
+                GeneratedDatabaseTables.SEC_IDENTITIES,
+                StringUtils.join(EtcdUtils.PK_DELIMITER, idName.value, rlName.value),
+                ""
+            )
+        );
+
+        if (idRoleMapRow.size() > 0)
+        {
+            identityRoleEntry = new IdentityRoleEntryPojo(
+                idRoleMapRow.get(SecIdRoleMap.IDENTITY_NAME.getName()),
+                idRoleMapRow.get(SecIdRoleMap.ROLE_NAME.getName())
+            );
+        }
+
+        return identityRoleEntry;
     }
 
     @Override
-    public IdentityRoleEntry getDefaultRole(ControllerDatabase ctrlDb, IdentityName idName) throws DatabaseException
+    public IdentityRoleEntryPojo getDefaultRole(ControllerETCDDatabase etcdDb, IdentityName idName)
+        throws DatabaseException
     {
-        return null;
+        IdentityRoleEntryPojo identityRoleEntry = null;
+        Map<String, String> dfltRoleRow = EtcdUtils.getTableRow(
+            etcdDb.getKvClient(),
+            EtcdUtils.buildKey(
+                GeneratedDatabaseTables.SEC_IDENTITIES,
+                idName.value,
+                ""
+            )
+        );
+
+        if (dfltRoleRow.size() > 0)
+        {
+            identityRoleEntry = new IdentityRoleEntryPojo(
+                dfltRoleRow.get(SecDfltRoles.IDENTITY_NAME.getName()),
+                dfltRoleRow.get(SecDfltRoles.ROLE_NAME.getName())
+            );
+        }
+
+        return identityRoleEntry;
     }
 
     @Override
-    public List<String> loadIdentities(ControllerDatabase ctrlDb) throws DatabaseException
+    public List<String> loadIdentities(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return null;
+        return getPkList(
+            EtcdUtils.getTableRow(
+                etcdDb.getKvClient(),
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_IDENTITIES)
+            )
+        );
     }
 
     @Override
-    public List<String> loadSecurityTypes(ControllerDatabase ctrlDb) throws DatabaseException
+    public List<String> loadSecurityTypes(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return null;
+        return getPkList(
+            EtcdUtils.getTableRow(
+                etcdDb.getKvClient(),
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_TYPES)
+            )
+        );
     }
 
     @Override
-    public List<String> loadRoles(ControllerDatabase ctrlDb) throws DatabaseException
+    public List<String> loadRoles(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return null;
+        return getPkList(
+            EtcdUtils.getTableRow(
+                etcdDb.getKvClient(),
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_ROLES)
+            )
+        );
+    }
+
+    private List<String> getPkList(Map<String, String> tableRowRef)
+    {
+        List<String> ret = new ArrayList<>();
+        for (String key : tableRowRef.keySet())
+        {
+            // key is something like
+            // LINSTOR/$table/$composedPk/$column = $valueOfColumn
+            int postDelimIdx = key.lastIndexOf(EtcdUtils.PATH_DELIMITER);
+            int preDelimIdx = key.lastIndexOf(EtcdUtils.PATH_DELIMITER, postDelimIdx - 1);
+            ret.add(key.substring(preDelimIdx + 1, postDelimIdx));
+        }
+        return ret;
     }
 
     @Override
-    public List<TypeEnforcementRule> loadTeRules(ControllerDatabase ctrlDb) throws DatabaseException
+    public List<TypeEnforcementRulePojo> loadTeRules(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return null;
+        List<String> composedPkList = getPkList(
+            EtcdUtils.getTableRow(
+                etcdDb.getKvClient(),
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_TYPE_RULES)
+            )
+        );
+        List<TypeEnforcementRulePojo> ret = new ArrayList<>();
+        for (String composedPk : composedPkList)
+        {
+            String[] pk = composedPk.split(EtcdUtils.PK_DELIMITER);
+            ret.add(
+                new TypeEnforcementRulePojo(
+                    pk[0],
+                    pk[1],
+                    EtcdUtils.getFirstValue(
+                        etcdDb.getKvClient(),
+                        EtcdUtils.buildKey(
+                            GeneratedDatabaseTables.SEC_TYPE_RULES,
+                            pk
+                        )
+                    )
+                )
+            );
+        }
+        return ret;
     }
 
     @Override
-    public String loadSecurityLevel(ControllerDatabase ctrlDb) throws DatabaseException
+    public String loadSecurityLevel(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return null;
+        return EtcdUtils.getFirstValue(
+            etcdDb.getKvClient(),
+            EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_SEC_LEVEL)
+        );
     }
 
     @Override
-    public boolean loadAuthRequired(ControllerDatabase ctrlDb) throws DatabaseException
+    public boolean loadAuthRequired(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return false;
+        return Boolean.parseBoolean(
+            EtcdUtils.getFirstValue(
+                etcdDb.getKvClient(),
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_AUTH_REQ)
+            )
+        );
     }
 
     @Override
-    public void setSecurityLevel(ControllerDatabase ctrlDb, SecurityLevel newLevel) throws DatabaseException
+    public void setSecurityLevel(ControllerETCDDatabase etcdDb, SecurityLevel newLevel) throws DatabaseException
     {
-
+        etcdDb.getKvClient().batch().put(
+            EtcdUtils.putReq(
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_SEC_LEVEL),
+                newLevel.name()
+            )
+        ).sync();
     }
 
     @Override
-    public void setAuthRequired(ControllerDatabase ctrlDb, boolean newPolicy) throws DatabaseException
+    public void setAuthRequired(ControllerETCDDatabase etcdDb, boolean newPolicy) throws DatabaseException
     {
-
+        etcdDb.getKvClient().batch().put(
+            EtcdUtils.putReq(
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_AUTH_REQ),
+                Boolean.toString(newPolicy)
+            )
+        ).sync();
     }
 }

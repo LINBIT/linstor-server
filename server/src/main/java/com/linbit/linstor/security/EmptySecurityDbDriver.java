@@ -6,9 +6,9 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.security.data.IdentityRoleEntry;
-import com.linbit.linstor.security.data.SignInEntry;
-import com.linbit.linstor.security.data.TypeEnforcementRule;
+import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
+import com.linbit.linstor.security.pojo.SignInEntryPojo;
+import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
@@ -34,19 +34,19 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
-    public SignInEntry getSignInEntry(ControllerDatabase ctrlDb, IdentityName idName)
+    public SignInEntryPojo getSignInEntry(ControllerDatabase ctrlDb, IdentityName idName)
     {
         return null;
     }
 
     @Override
-    public IdentityRoleEntry getIdRoleMapEntry(ControllerDatabase ctrlDb, IdentityName idName, RoleName rlName)
+    public IdentityRoleEntryPojo getIdRoleMapEntry(ControllerDatabase ctrlDb, IdentityName idName, RoleName rlName)
     {
         return null;
     }
 
     @Override
-    public IdentityRoleEntry getDefaultRole(ControllerDatabase ctrlDb, IdentityName idName)
+    public IdentityRoleEntryPojo getDefaultRole(ControllerDatabase ctrlDb, IdentityName idName)
     {
         return null;
     }
@@ -70,7 +70,7 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
-    public List<TypeEnforcementRule> loadTeRules(ControllerDatabase ctrlDb)
+    public List<TypeEnforcementRulePojo> loadTeRules(ControllerDatabase ctrlDb)
     {
         return null;
     }

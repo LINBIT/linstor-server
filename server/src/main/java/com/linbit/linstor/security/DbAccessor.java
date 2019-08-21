@@ -2,9 +2,9 @@ package com.linbit.linstor.security;
 
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.security.data.IdentityRoleEntry;
-import com.linbit.linstor.security.data.SignInEntry;
-import com.linbit.linstor.security.data.TypeEnforcementRule;
+import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
+import com.linbit.linstor.security.pojo.SignInEntryPojo;
+import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
 
 import java.util.List;
 
@@ -13,16 +13,18 @@ import java.util.List;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface DbAccessor
+public interface DbAccessor<DB_TYPE extends ControllerDatabase>
 {
-    SignInEntry getSignInEntry(ControllerDatabase ctrlDb, IdentityName idName)
-        throws DatabaseException;
-    IdentityRoleEntry getIdRoleMapEntry(ControllerDatabase ctrlDb, IdentityName idName, RoleName rlName)
-        throws DatabaseException;
-    IdentityRoleEntry getDefaultRole(ControllerDatabase ctrlDb, IdentityName idName)
+    SignInEntryPojo getSignInEntry(DB_TYPE ctrlDb, IdentityName idName)
         throws DatabaseException;
 
-    List<String> loadIdentities(ControllerDatabase ctrlDb)
+    IdentityRoleEntryPojo getIdRoleMapEntry(DB_TYPE ctrlDb, IdentityName idName, RoleName rlName)
+        throws DatabaseException;
+
+    IdentityRoleEntryPojo getDefaultRole(DB_TYPE ctrlDb, IdentityName idName)
+        throws DatabaseException;
+
+    List<String> loadIdentities(DB_TYPE ctrlDb)
         throws DatabaseException;
 
     /**
@@ -31,19 +33,24 @@ public interface DbAccessor
      * @return List of security type strings
      * @throws DatabaseException
      */
-    List<String> loadSecurityTypes(ControllerDatabase ctrlDb)
-        throws DatabaseException;
-    List<String> loadRoles(ControllerDatabase ctrlDb)
-        throws DatabaseException;
-    List<TypeEnforcementRule> loadTeRules(ControllerDatabase ctrlDb)
+    List<String> loadSecurityTypes(DB_TYPE ctrlDb)
         throws DatabaseException;
 
-    String loadSecurityLevel(ControllerDatabase ctrlDb)
+    List<String> loadRoles(DB_TYPE ctrlDb)
         throws DatabaseException;
-    boolean loadAuthRequired(ControllerDatabase ctrlDb)
+
+    List<TypeEnforcementRulePojo> loadTeRules(DB_TYPE ctrlDb)
         throws DatabaseException;
-    void setSecurityLevel(ControllerDatabase ctrlDb, SecurityLevel newLevel)
+
+    String loadSecurityLevel(DB_TYPE ctrlDb)
         throws DatabaseException;
-    void setAuthRequired(ControllerDatabase ctrlDb, boolean newPolicy)
+
+    boolean loadAuthRequired(DB_TYPE ctrlDb)
+        throws DatabaseException;
+
+    void setSecurityLevel(DB_TYPE ctrlDb, SecurityLevel newLevel)
+        throws DatabaseException;
+
+    void setAuthRequired(DB_TYPE ctrlDb, boolean newPolicy)
         throws DatabaseException;
 }

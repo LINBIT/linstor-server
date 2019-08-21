@@ -3,7 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.security.data.IdentityRoleEntry;
+import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
 
 public class Authorization
 {
@@ -30,7 +30,7 @@ public class Authorization
         try
         {
             // Query the identity entry
-            IdentityRoleEntry idRoleEntry = dbDriver.getIdRoleMapEntry(ctrlDb, accCtx.subjectId.name, reqRole.name);
+            IdentityRoleEntryPojo idRoleEntry = dbDriver.getIdRoleMapEntry(ctrlDb, accCtx.subjectId.name, reqRole.name);
             if (idRoleEntry != null)
             {
                 // Double-check the entry

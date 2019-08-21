@@ -1,10 +1,21 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
-import com.ibm.etcd.api.TxnResponse;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecAccessTypes;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecAclMap;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecConfiguration;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecDfltRoles;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdRoleMap;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdentities;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecObjectProtection;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecRoles;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypeRules;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypes;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.StorPoolDefinitions;
+import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 
-import static com.linbit.linstor.dbcp.etcd.DbEtcd.LINSTOR_PREFIX;
-
+import com.ibm.etcd.api.TxnResponse;
 import com.ibm.etcd.client.kv.KvClient;
 
 @SuppressWarnings("checkstyle:typename")
@@ -21,12 +32,10 @@ public class Migration_00_Init extends EtcdMigration
     {
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_CONFIGURATION.ENTRY_DSP_KEY,
-                    entryKey),
+                tblKey(SecConfiguration.ENTRY_DSP_KEY, entryKey),
                 entryDspKey))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_CONFIGURATION.ENTRY_VALUE,
-                    entryKey),
+                tblKey(SecConfiguration.ENTRY_VALUE, entryKey),
                 entryValue));
     }
 
@@ -40,19 +49,19 @@ public class Migration_00_Init extends EtcdMigration
     {
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_IDENTITIES.IDENTITY_NAME, identityName),
+                tblKey(SecIdentities.IDENTITY_NAME, identityName),
                 identityName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_IDENTITIES.IDENTITY_DSP_NAME, identityName),
+                tblKey(SecIdentities.IDENTITY_DSP_NAME, identityName),
                 identityDspName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_IDENTITIES.ID_ENABLED, identityName),
+                tblKey(SecIdentities.ID_ENABLED, identityName),
                 Boolean.valueOf(idEnabled).toString().toUpperCase()
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_IDENTITIES.ID_LOCKED, identityName),
+                tblKey(SecIdentities.ID_LOCKED, identityName),
                 Boolean.valueOf(idLocked).toString().toUpperCase()
             ));
     }
@@ -66,15 +75,15 @@ public class Migration_00_Init extends EtcdMigration
     {
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_TYPES.TYPE_NAME, typeName),
+                tblKey(SecTypes.TYPE_NAME, typeName),
                 typeName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_TYPES.TYPE_DSP_NAME, typeName),
+                tblKey(SecTypes.TYPE_DSP_NAME, typeName),
                 typeDspName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_TYPES.TYPE_ENABLED, typeName),
+                tblKey(SecTypes.TYPE_ENABLED, typeName),
                 Boolean.valueOf(typeEnabled).toString().toUpperCase()
             )
         );
@@ -91,23 +100,23 @@ public class Migration_00_Init extends EtcdMigration
     {
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ROLES.ROLE_NAME, roleName),
+                tblKey(SecRoles.ROLE_NAME, roleName),
                 roleName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ROLES.ROLE_DSP_NAME, roleName),
+                tblKey(SecRoles.ROLE_DSP_NAME, roleName),
                 roleDspName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ROLES.DOMAIN_NAME, roleName),
+                tblKey(SecRoles.DOMAIN_NAME, roleName),
                 domainName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ROLES.ROLE_ENABLED, roleName),
+                tblKey(SecRoles.ROLE_ENABLED, roleName),
                 Boolean.valueOf(roleEnabled).toString().toUpperCase()
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ROLES.ROLE_PRIVILEGES, roleName),
+                tblKey(SecRoles.ROLE_PRIVILEGES, roleName),
                 Integer.valueOf(rolePrivileges).toString()
             ));
     }
@@ -121,11 +130,11 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = identityName + PRIMARY_KEY_DELI + roleName;
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ID_ROLE_MAP.IDENTITY_NAME, pk ),
+                tblKey(SecIdRoleMap.IDENTITY_NAME, pk ),
                 identityName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ID_ROLE_MAP.ROLE_NAME, pk),
+                tblKey(SecIdRoleMap.ROLE_NAME, pk),
                 roleName
             ));
     }
@@ -138,11 +147,11 @@ public class Migration_00_Init extends EtcdMigration
     {
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ACCESS_TYPES.ACCESS_TYPE_NAME, accessTypeName ),
+                tblKey(SecAccessTypes.ACCESS_TYPE_NAME, accessTypeName ),
                 accessTypeName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ACCESS_TYPES.ACCESS_TYPE_VALUE, accessTypeName),
+                tblKey(SecAccessTypes.ACCESS_TYPE_VALUE, accessTypeName),
                 Integer.valueOf(accessTypeValue).toString()
             ));
     }
@@ -157,15 +166,15 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = domainName + PRIMARY_KEY_DELI + typeName;
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_TYPE_RULES.DOMAIN_NAME, pk ),
+                tblKey(SecTypeRules.DOMAIN_NAME, pk ),
                 domainName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_TYPE_RULES.TYPE_NAME, pk),
+                tblKey(SecTypeRules.TYPE_NAME, pk),
                 typeName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_TYPE_RULES.ACCESS_TYPE, pk),
+                tblKey(SecTypeRules.ACCESS_TYPE, pk),
                 Integer.valueOf(accessType).toString()
             ));
     }
@@ -179,11 +188,11 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = identityName;
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_DFLT_ROLES.IDENTITY_NAME, pk ),
+                tblKey(SecDfltRoles.IDENTITY_NAME, pk ),
                 identityName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_DFLT_ROLES.ROLE_NAME, pk),
+                tblKey(SecDfltRoles.ROLE_NAME, pk),
                 roleName
             ));
     }
@@ -199,19 +208,19 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = objectPath;
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_OBJECT_PROTECTION.OBJECT_PATH, pk),
+                tblKey(SecObjectProtection.OBJECT_PATH, pk),
                 objectPath
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_OBJECT_PROTECTION.CREATOR_IDENTITY_NAME, pk),
+                tblKey(SecObjectProtection.CREATOR_IDENTITY_NAME, pk),
                 creatorIdentityName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_OBJECT_PROTECTION.OWNER_ROLE_NAME, pk),
+                tblKey(SecObjectProtection.OWNER_ROLE_NAME, pk),
                 ownerRoleName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_OBJECT_PROTECTION.SECURITY_TYPE_NAME, pk),
+                tblKey(SecObjectProtection.SECURITY_TYPE_NAME, pk),
                 securityTypeName
             ));
     }
@@ -226,15 +235,15 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = objectPath + PRIMARY_KEY_DELI + roleName;
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ACL_MAP.OBJECT_PATH, pk),
+                tblKey(SecAclMap.OBJECT_PATH, pk),
                 objectPath
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ACL_MAP.ROLE_NAME, pk),
+                tblKey(SecAclMap.ROLE_NAME, pk),
                 roleName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.SEC_ACL_MAP.ACCESS_TYPE, pk),
+                tblKey(SecAclMap.ACCESS_TYPE, pk),
                 Integer.valueOf(accessType).toString()
             ));
     }
@@ -249,15 +258,15 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = poolName;
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.STOR_POOL_DEFINITIONS.UUID, pk),
+                tblKey(StorPoolDefinitions.UUID, pk),
                 uuid
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.STOR_POOL_DEFINITIONS.POOL_NAME, pk),
+                tblKey(StorPoolDefinitions.POOL_NAME, pk),
                 poolName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.STOR_POOL_DEFINITIONS.POOL_DSP_NAME, pk),
+                tblKey(StorPoolDefinitions.POOL_DSP_NAME, pk),
                 poolDspName
             ));
     }
@@ -272,15 +281,15 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = resourceGroupName;
         return txn
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.RESOURCE_GROUPS.UUID, pk),
+                tblKey(ResourceGroups.UUID, pk),
                 uuid
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.RESOURCE_GROUPS.RESOURCE_GROUP_NAME, pk),
+                tblKey(ResourceGroups.RESOURCE_GROUP_NAME, pk),
                 resourceGroupName
             ))
             .put(putReq(
-                tblKey(GeneratedDatabaseTables.RESOURCE_GROUPS.RESOURCE_GROUP_DSP_NAME, pk),
+                tblKey(ResourceGroups.RESOURCE_GROUP_DSP_NAME, pk),
                 resourceGroupDspName
             ));
     }
@@ -295,7 +304,7 @@ public class Migration_00_Init extends EtcdMigration
         return txn
             .put(putReq(
                 GeneratedDatabaseTables.DATABASE_SCHEMA_NAME +
-                    "/" + GeneratedDatabaseTables.PROPS_CONTAINERS.name() + "/" + propsInstance + "/" + propKey,
+                    "/" + GeneratedDatabaseTables.PROPS_CONTAINERS.getName() + "/" + propsInstance + "/" + propKey,
                 propValue
             ));
     }
@@ -330,25 +339,25 @@ public class Migration_00_Init extends EtcdMigration
         secAccessTypes(txn, "VIEW", 1);
 
         secTypeRules(txn, "SYSTEM", "SYSTEM", 15);
-        secTypeRules(txn,"SYSTEM", "PUBLIC", 15);
-        secTypeRules(txn,"SYSTEM", "SHARED", 15);
-        secTypeRules(txn,"SYSTEM", "SYSADM", 15);
-        secTypeRules(txn,"SYSTEM", "USER", 15);
-        secTypeRules(txn,"PUBLIC", "SYSTEM", 3);
-        secTypeRules(txn,"PUBLIC", "PUBLIC", 15);
-        secTypeRules(txn,"PUBLIC", "SHARED", 7);
-        secTypeRules(txn,"PUBLIC", "SYSADM", 3);
-        secTypeRules(txn,"PUBLIC", "USER", 3);
-        secTypeRules(txn,"SYSADM", "SYSTEM", 15);
-        secTypeRules(txn,"SYSADM", "PUBLIC", 15);
-        secTypeRules(txn,"SYSADM", "SHARED", 15);
-        secTypeRules(txn,"SYSADM", "SYSADM", 15);
-        secTypeRules(txn,"SYSADM", "USER", 15);
-        secTypeRules(txn,"USER", "SYSTEM", 3);
-        secTypeRules(txn,"USER", "PUBLIC", 7);
-        secTypeRules(txn,"USER", "SHARED", 7);
-        secTypeRules(txn,"USER", "SYSADM", 3);
-        secTypeRules(txn,"USER", "USER", 15);
+        secTypeRules(txn, "SYSTEM", "PUBLIC", 15);
+        secTypeRules(txn, "SYSTEM", "SHARED", 15);
+        secTypeRules(txn, "SYSTEM", "SYSADM", 15);
+        secTypeRules(txn, "SYSTEM", "USER", 15);
+        secTypeRules(txn, "PUBLIC", "SYSTEM", 3);
+        secTypeRules(txn, "PUBLIC", "PUBLIC", 15);
+        secTypeRules(txn, "PUBLIC", "SHARED", 7);
+        secTypeRules(txn, "PUBLIC", "SYSADM", 3);
+        secTypeRules(txn, "PUBLIC", "USER", 3);
+        secTypeRules(txn, "SYSADM", "SYSTEM", 15);
+        secTypeRules(txn, "SYSADM", "PUBLIC", 15);
+        secTypeRules(txn, "SYSADM", "SHARED", 15);
+        secTypeRules(txn, "SYSADM", "SYSADM", 15);
+        secTypeRules(txn, "SYSADM", "USER", 15);
+        secTypeRules(txn, "USER", "SYSTEM", 3);
+        secTypeRules(txn, "USER", "PUBLIC", 7);
+        secTypeRules(txn, "USER", "SHARED", 7);
+        secTypeRules(txn, "USER", "SYSADM", 3);
+        secTypeRules(txn, "USER", "USER", 15);
 
         secDfltRoles(txn, "SYSTEM", "SYSTEM");
         secDfltRoles(txn, "PUBLIC", "PUBLIC");
@@ -419,7 +428,7 @@ public class Migration_00_Init extends EtcdMigration
         propsContainers(txn, "CTRLCFG", "defaultPlainConSvc", "PlainConnector");
         propsContainers(txn, "CTRLCFG", "defaultSslConSvc", "SslConnector");
 
-        String dbhistoryVersionKey = LINSTOR_PREFIX + "DBHISTORY/version";
+        String dbhistoryVersionKey = EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version";
         return txn
             .put(putReq(dbhistoryVersionKey, "1"))
             .sync();

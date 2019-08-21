@@ -1,12 +1,12 @@
-package com.linbit.linstor.security.data;
+package com.linbit.linstor.security.pojo;
 
-public class TypeEnforcementRule
+public class TypeEnforcementRulePojo
 {
     private final String domainName;
     private final String typeName;
     private final String accessType;
 
-    public TypeEnforcementRule(
+    public TypeEnforcementRulePojo(
         final String domainNameRef,
         final String typeNameRef,
         final String accessTypeRef

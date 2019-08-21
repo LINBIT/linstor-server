@@ -7,7 +7,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.security.data.SignInEntry;
+import com.linbit.linstor.security.pojo.SignInEntryPojo;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -65,7 +65,7 @@ public class CtrlAuthentication
         try
         {
             // Query the identity entry
-            SignInEntry signInEntry = dbDriver.getSignInEntry(ctrlDb, idName);
+            SignInEntryPojo signInEntry = dbDriver.getSignInEntry(ctrlDb, idName);
 
             // Position cursor on the first row
             if (signInEntry != null)

@@ -28,6 +28,7 @@ public final class DatabaseConstantsGenerator
 
     private final StringBuilder mainBuilder = new StringBuilder();
     private final StringBuilder tableInstanceBuilder = new StringBuilder();
+    private final StringBuilder tableStaticInitializerBuilder = new StringBuilder();
     private final Stack<StringBuilder> activeBuilder = new Stack<>();
     private final TreeSet<String> tableNames = new TreeSet<>();
     private final TreeSet<String> columnNames = new TreeSet<>();
@@ -79,7 +80,7 @@ public final class DatabaseConstantsGenerator
                 appendLine("/**");
                 appendLine(" * Returns the name of the current table");
                 appendLine(" */");
-                appendLine("String name();");
+                appendLine("String getName();");
             }
             appendEmptyLine();
             appendLine("private %s()", clazzName);
@@ -103,7 +104,7 @@ public final class DatabaseConstantsGenerator
                     final String tableName = tables.getString("TABLE_NAME");
                     if (!IGNORED_TABLES.contains(tableName))
                     {
-                        generateTable(con, tableName);
+                        generateTable(clazzName, con, tableName);
                         tableNames.add(tableName);
                     }
                     appendEmptyLine();
@@ -113,12 +114,23 @@ public final class DatabaseConstantsGenerator
             activeBuilder.peek().append(tableInstanceBuilder);
 
             appendEmptyLine();
+            appendLine("static");
+            try (IndentLevel staticBlock = new IndentLevel())
+            {
+                activeBuilder.peek().append(tableStaticInitializerBuilder);
+            }
+
+            appendEmptyLine();
             generateHolderClass(COLUMN_HOLDER_NAME, new String[][] {
                 {"int", "index"},
                 {"String", "name"},
                 {"int", "sqlType"},
                 {"boolean", "isPk"},
-                {"boolean", "isNullable"}}
+                {"boolean", "isNullable"}
+            },
+                new String[][] {
+                {INTERFACE_NAME, "table"}
+            }
             );
         }
     }
@@ -130,7 +142,7 @@ public final class DatabaseConstantsGenerator
         sb.append(appendAfter);
     }
 
-    private void generateTable(Connection con, String tableName) throws Exception
+    private void generateTable(String outerTableName, Connection con, String tableName) throws Exception
     {
         Set<String> primaryKeys = new TreeSet<>();
         try (ResultSet primaryKeyResultSet = con.getMetaData().getPrimaryKeys(null, DB_SCHEMA, tableName))
@@ -171,6 +183,10 @@ public final class DatabaseConstantsGenerator
                     ++index;
                     columnNames.add(colName);
                     currentColumnNames.add(colName);
+
+                    activeBuilder.push(tableStaticInitializerBuilder);
+                    appendLine("%s.%s.table = %s;", tableClassName, colName, tableName);
+                    activeBuilder.pop();
                 }
                 appendEmptyLine();
                 appendLine("public static final Column[] ALL = new Column[]");
@@ -191,7 +207,7 @@ public final class DatabaseConstantsGenerator
                 }
                 appendEmptyLine();
                 appendLine("@Override");
-                appendLine("public String name()");
+                appendLine("public String getName()");
                 try (IndentLevel valuesMethod = new IndentLevel())
                 {
                     appendLine("return \"%s\";", tableName);
@@ -206,9 +222,14 @@ public final class DatabaseConstantsGenerator
 
     private String toUpperCamelCase(String nameRef)
     {
-        char[] ret = nameRef.toLowerCase().toCharArray();
+        return camelCase(firstToUpper(nameRef.toLowerCase()).toCharArray());
+    }
+
+    private String firstToUpper(String nameRef)
+    {
+        char[] ret = nameRef.toCharArray();
         ret[0] = Character.toUpperCase(ret[0]);
-        return camelCase(ret);
+        return new String(ret);
     }
 
     private String toLowerCamelCase(String nameRef)
@@ -240,36 +261,77 @@ public final class DatabaseConstantsGenerator
         return sb.toString();
     }
 
-    private void generateHolderClass(String clazzName, String[][] fields) throws Exception
+    private void generateHolderClass(String clazzName, String[][] fields, String[][] fieldsWithSetter) throws Exception
     {
         appendLine("public static class %s", clazzName);
         try (IndentLevel clazzIndent = new IndentLevel())
         {
-            generateFieldsAndConstructor(clazzName, fields);
+            generateFieldsAndConstructor(clazzName, fields, fieldsWithSetter);
         }
     }
 
-    private void generateFieldsAndConstructor(String clazzName, String[][] fields)
+    private void generateFieldsAndConstructor(
+        String clazzName,
+        String[][] fieldInitByConstr,
+        String[][] fieldsWithPrivateSetter
+    )
     {
-        for (String[] field : fields)
+        for (String[] field : fieldInitByConstr)
         {
-            appendLine("public final %s %s;", field);
+            appendLine("private final %s %s;", field[0], field[1]);
+        }
+        for (String[] field : fieldsWithPrivateSetter)
+        {
+            appendLine("private %s %s;", field[0], field[1]);
         }
         appendEmptyLine();
         appendLine("public %s(", clazzName);
         try (IndentLevel paramIndent = new IndentLevel("", ")", false, true))
         {
-            for (String[] field : fields)
+            for (String[] field : fieldInitByConstr)
             {
-                appendLine("final %s %sRef,", field);
+                appendLine("final %s %sRef,", field[0], field[1]);
             }
             cutLastAndAppend(2, "\n");
         }
         try (IndentLevel tableConstructor = new IndentLevel())
         {
-            for (String[] field : fields)
+            for (String[] field : fieldInitByConstr)
             {
                 appendLine("%s = %sRef;", field[1], field[1]);
+            }
+        }
+
+        for (String[] field : fieldInitByConstr)
+        {
+            appendEmptyLine();
+            if (field[1].matches("is[A-Z0-9].*"))
+            {
+                appendLine("public %s %s()", field[0], field[1]);
+            }
+            else
+            {
+                appendLine("public %s get%s()", field[0], firstToUpper(field[1]));
+            }
+            try (IndentLevel getter = new IndentLevel())
+            {
+                appendLine("return %s;", field[1]);
+            }
+        }
+        for (String[] field : fieldsWithPrivateSetter)
+        {
+            appendEmptyLine();
+            if (field[1].matches("is[A-Z0-9].*"))
+            {
+                appendLine("public %s %s()", field[0], field[1]);
+            }
+            else
+            {
+                appendLine("public %s get%s()", field[0], firstToUpper(field[1]));
+            }
+            try (IndentLevel getter = new IndentLevel())
+            {
+                appendLine("return %s;", field[1]);
             }
         }
     }

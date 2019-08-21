@@ -63,6 +63,9 @@ subprojects {
 
             // toml parsing library
             compile group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
+
+            // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
+            compile group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.10'
         }
     }
 }
@@ -266,7 +269,6 @@ project(':controller') {
 
 //            runtime 'org.mariadb.jdbc:mariadb-java-client:2.2.6'
 //            runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
-            compile group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.10'
         }
     }
 

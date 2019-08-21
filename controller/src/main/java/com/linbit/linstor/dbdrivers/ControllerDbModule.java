@@ -1,11 +1,5 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.google.inject.AbstractModule;
-
-import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
-import com.linbit.linstor.dbcp.DbInitializer;
-import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
-import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
@@ -30,8 +24,12 @@ import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
+import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
+import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -59,7 +57,10 @@ import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.DbEtcdPersistence;
 import com.linbit.linstor.security.DbSQLPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionEtcdDriver;
 import com.linbit.linstor.security.ObjectProtectionGenericDbDriver;
+
+import com.google.inject.AbstractModule;
 
 public class ControllerDbModule extends AbstractModule
 {
@@ -113,6 +114,8 @@ public class ControllerDbModule extends AbstractModule
             case ETCD:
                 bind(DbInitializer.class).to(DbEtcdInitializer.class);
                 bind(DbAccessor.class).to(DbEtcdPersistence.class);
+
+                bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionEtcdDriver.class);
                 break;
                 default:
                 throw new RuntimeException("ETCD database driver not implemented.");
