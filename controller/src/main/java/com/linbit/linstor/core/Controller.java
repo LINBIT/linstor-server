@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
@@ -25,8 +26,10 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -50,9 +53,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.DbCoreObjProtInitializer;
+import com.linbit.linstor.security.DbEtcdPersistence;
 import com.linbit.linstor.security.DbSecurityInitializer;
+import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.security.data.SignInEntry;
 import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -235,6 +241,23 @@ public final class Controller
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
             dbInitializer.initialize();
+
+            DbEtcd dbEtcd = new DbEtcd();
+            dbEtcd.initializeDataSource("127.0.0.1:2379");
+            dbEtcd.migrate("etcd");
+
+            DbEtcdPersistence dbSec = new DbEtcdPersistence();
+            try
+            {
+                SignInEntry signInEntry = dbSec.getSignInEntry(dbEtcd, new IdentityName("SYSTEM"));
+                System.err.println(
+                    signInEntry.getIdentityName() + "::" +
+                        signInEntry.getRolePrivileges() + "::" + signInEntry.getHash());
+            }
+            catch (InvalidNameException | DatabaseException ignored)
+            {
+
+            }
 
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).

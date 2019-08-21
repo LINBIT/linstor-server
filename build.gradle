@@ -50,8 +50,8 @@ subprojects {
             compile group: 'com.google.inject', name: 'guice', version: '4.2.2'
             compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.2'
 
-            compile group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
-//            compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
+//            compile group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
+            compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
             compile 'info.picocli:picocli:3.9.5'
             compile group: 'io.projectreactor', name: 'reactor-core', version: '3.2.9.RELEASE'
@@ -266,6 +266,7 @@ project(':controller') {
 
 //            runtime 'org.mariadb.jdbc:mariadb-java-client:2.2.6'
 //            runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
+            compile group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.10'
         }
     }
 

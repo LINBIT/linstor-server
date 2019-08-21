@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule;
 
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDataGenericDbDriver;
@@ -55,6 +56,7 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsConGenericDbDriver;
 import com.linbit.linstor.security.DbAccessor;
+import com.linbit.linstor.security.DbEtcdPersistence;
 import com.linbit.linstor.security.DbSQLPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.security.ObjectProtectionGenericDbDriver;
@@ -109,6 +111,9 @@ public class ControllerDbModule extends AbstractModule
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
                 break;
             case ETCD:
+                bind(DbInitializer.class).to(DbEtcdInitializer.class);
+                bind(DbAccessor.class).to(DbEtcdPersistence.class);
+                break;
                 default:
                 throw new RuntimeException("ETCD database driver not implemented.");
         }
