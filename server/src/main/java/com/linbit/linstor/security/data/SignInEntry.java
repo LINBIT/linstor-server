@@ -50,7 +50,7 @@ public class SignInEntry
 
     public byte[] getSalt() throws IllegalArgumentException
     {
-        return Base64.decode(saltBase64.trim());
+        return saltBase64 != null ? Base64.decode(saltBase64.trim()) : null;
     }
 
     public String getSaltBase64()
@@ -65,6 +65,6 @@ public class SignInEntry
 
     public byte[] getHash() throws IllegalArgumentException
     {
-        return Base64.decode(hashBase64.trim());
+        return hashBase64 != null ? Base64.decode(hashBase64.trim()) : null;
     }
 }
