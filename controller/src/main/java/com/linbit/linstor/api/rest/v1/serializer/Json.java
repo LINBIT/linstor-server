@@ -95,6 +95,10 @@ public class Json
 
         nd.net_interfaces = netIfsList;
         nd.uuid = nodeApi.getUuid().toString();
+        nd.resource_layers = nodeApi.getDeviceLayerKindNames();
+        nd.storage_providers = nodeApi.getDeviceProviderKindNames();
+        nd.unsupported_layers = nodeApi.getUnsupportedLayersWithReasons();
+        nd.unsupported_providers = nodeApi.getUnsupportedProvidersWithReasons();
         return nd;
     }
 

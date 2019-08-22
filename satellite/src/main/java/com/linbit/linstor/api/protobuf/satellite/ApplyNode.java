@@ -63,7 +63,11 @@ public class ApplyNode implements ApiCall
             nodeMsg.getPropsMap(),
             Peer.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
             fullSyncId,
-            updateId
+            updateId,
+            null,
+            null,
+            null,
+            null
         );
     }
 

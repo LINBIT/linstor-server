@@ -16,4 +16,8 @@ public interface NodeApi
     long getFlags();
     List<NetInterfaceApi> getNetInterfaces();
     NetInterfaceApi getActiveStltConn();
+    List<String> getDeviceLayerKindNames();
+    List<String> getDeviceProviderKindNames();
+    Map<String, List<String>> getUnsupportedLayersWithReasons();
+    Map<String, List<String>> getUnsupportedProvidersWithReasons();
 }

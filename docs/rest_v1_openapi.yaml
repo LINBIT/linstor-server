@@ -21,6 +21,9 @@ info:
 
     Changelog:
 
+    * 1.0.11
+      - Extended Node with list of supported providers and layers as well as lists of reasons for
+        unsupported providers and layers
     * 1.0.10
       - Added `reports` array field to Volume object, contains ApiCallRcs for problems
       - Changed `ResourceDefinitions` can now include `VolumeDefinitions` in `volume_definitions` field
@@ -55,7 +58,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.10
+  version: 1.0.11
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -3248,6 +3251,26 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        storage_providers:
+          type: array
+          items:
+            type: string
+        resource_layers:
+          type: array
+          items:
+            type: string
+        unsupported_providers:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        unsupported_layers:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
     NodeModify:
       type: object
       properties:

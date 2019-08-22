@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
@@ -38,9 +36,9 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import javax.inject.Provider;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,6 +52,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.FluxSink;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  *
@@ -720,6 +720,7 @@ public class Node extends BaseTransactionObject
         }
 
         Peer tmpPeer = getPeer(accCtx);
+        ExtToolsManager extToolsManager = peer.getExtToolsManager();
 
         return new NodePojo(
             getUuid(),
@@ -732,7 +733,13 @@ public class Node extends BaseTransactionObject
             getProps(accCtx).map(),
             tmpPeer != null ? tmpPeer.getConnectionStatus() : Peer.ConnectionStatus.UNKNOWN,
             fullSyncId,
-            updateId
+            updateId,
+            extToolsManager.getSupportedLayers().stream()
+                .map(deviceLayerKind -> deviceLayerKind.name()).collect(toList()),
+            extToolsManager.getSupportedProviders().stream()
+                .map(deviceProviderKind -> deviceProviderKind.name()).collect(toList()),
+            extToolsManager.getUnsupportedLayersWithReasonsAsString(),
+            extToolsManager.getUnsupportedProvidersWithReasonsAsString()
         );
     }
 
