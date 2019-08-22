@@ -31,6 +31,7 @@ import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -167,7 +168,30 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         while (itVolumes.hasNext())
         {
             Volume vlm = itVolumes.next();
-            markDeleted(vlm);
+
+            try
+            {
+                if (vlm.getResource().getLayerData(peerAccCtx.get()).getLayerKind().equals(DeviceLayerKind.NVME))
+                {
+                    throw new ApiRcException(ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.MASK_VLM | ApiConsts.MASK_DEL | ApiConsts.FAIL_ACC_DENIED_VLM,
+                            String.format(
+                                "Linstor does not support the deletion of single NVMe-volumes!\n" + vlm
+                            )
+                        )
+                        .build()
+                    );
+                }
+                else
+                {
+                    markDeleted(vlm);
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
         }
 
         markDeleted(vlmDfn);
