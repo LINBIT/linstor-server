@@ -425,7 +425,7 @@ public class NvmeUtils
                 {
                     output = executeCmdAfterWaiting(isWaiting,
                         "/bin/bash", "-c",
-                        " grep -H -r -w " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
+                        "grep -H -r -w " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
                             nvmeFabricsVlmPath + "*n*/nsid");
                     /*
                      * device path might be
@@ -504,8 +504,8 @@ public class NvmeUtils
             errorReporter.logDebug("NVMe: exposing device: " + new String(backingDevice));
             Files.write(namespacePath.resolve("device_path"), backingDevice);
             Files.write(namespacePath.resolve("enable"), "1".getBytes());
+            nvmeVlmData.setExists(true);
         }
-        nvmeVlmData.setExists(true);
     }
 
     /**
@@ -532,8 +532,8 @@ public class NvmeUtils
                 StorageException::new,
                 "Failed to delete namespace directory!"
             );
+            nvmeVlmData.setExists(false);
         }
-        nvmeVlmData.setExists(false);
     }
 
 

@@ -96,7 +96,7 @@ public class NvmeLayer implements DeviceLayer
         // initiator
         if (nvmeRscData.isDiskless(sysCtx))
         {
-            nvmeRscData.setExists(nvmeUtils.setDevicePaths(nvmeRscData, nvmeRscData.exists()));
+            nvmeUtils.setDevicePaths(nvmeRscData, nvmeRscData.exists());
 
             // disconnect
             if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
@@ -184,11 +184,6 @@ public class NvmeLayer implements DeviceLayer
                     catch (AccessDeniedException exc)
                     {
                         throw new ImplementationError(exc);
-                    }
-                    nvmeRscData.setExists(true); // sanity check
-                    for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
-                    {
-                        nvmeVlmData.setExists(true);
                     }
                 }
                 // create
