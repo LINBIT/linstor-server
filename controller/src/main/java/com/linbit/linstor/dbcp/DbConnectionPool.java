@@ -8,6 +8,8 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerSQLDatabase;
+import com.linbit.linstor.DatabaseInfo;
+import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.core.LinstorConfigToml;
@@ -15,14 +17,22 @@ import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.SQLUtils;
+import com.linbit.utils.StringUtils;
 
+import static com.linbit.linstor.DatabaseInfo.DB2_MIN_VERSION;
+import static com.linbit.linstor.DatabaseInfo.DERBY_MIN_VERSION;
+import static com.linbit.linstor.DatabaseInfo.H2_MIN_VERSION;
+import static com.linbit.linstor.DatabaseInfo.INFORMIX_MIN_VERSION;
+import static com.linbit.linstor.DatabaseInfo.MARIADB_MIN_VERSION;
+import static com.linbit.linstor.DatabaseInfo.MYSQL_MIN_VERSION;
+import static com.linbit.linstor.DatabaseInfo.POSTGRES_MIN_VERSION;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +48,9 @@ import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
+import org.flywaydb.core.api.configuration.Configuration;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 
 /**
  * JDBC pool
@@ -185,9 +198,14 @@ public class DbConnectionPool implements ControllerSQLDatabase
     @Override
     public void migrate(String dbType)
     {
+        migrate(dbType, false);
+    }
+
+    public void migrate(String dbType, boolean withStartupVer)
+    {
         setTransactionIsolation(dbType);
 
-        Flyway flyway = Flyway.configure()
+        FluentConfiguration flywayConfig = Flyway.configure()
             .schemas(DATABASE_SCHEMA_NAME)
             .dataSource(dataSource)
             .table(SCHEMA_HISTORY_TABLE_NAME)
@@ -195,10 +213,106 @@ public class DbConnectionPool implements ControllerSQLDatabase
             .outOfOrder(true)
             // Pass the DB type to the migrations
             .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType))
-            .locations(LinstorMigration.class.getPackage().getName())
-            .load();
+            .locations(LinstorMigration.class.getPackage().getName());
 
-        flyway.migrate();
+        try
+        {
+            if (withStartupVer)
+            {
+                checkMinVersion();
+            }
+
+            flywayConfig.load().migrate();
+        }
+        catch (Exception exc)
+        {
+            throw new FlywayException("Migration failed!", exc);
+        }
+    }
+
+    private void checkMinVersion() throws SQLException, InitializationException
+    {
+        DatabaseMetaData databaseMetaData = new org.flywaydb.core.api.migration.Context()
+        {
+            @Override
+            public Configuration getConfiguration()
+            {
+                return null;
+            }
+
+            @Override
+            public Connection getConnection()
+            {
+                Connection ret;
+                try
+                {
+                    ret = dataSource.getConnection();
+                }
+                catch (SQLException sqlExc)
+                {
+                    throw new LinStorDBRuntimeException("Failed to set transaction isolation", sqlExc);
+                }
+                return ret;
+            }
+        }
+        .getConnection().getMetaData();
+
+        String dbProductName = databaseMetaData.getDatabaseProductName();
+        String dbProductVersion = databaseMetaData.getDatabaseProductVersion();
+
+        // check if minimum version requirements of certain databases are satisfied
+        int[] dbProductMinVersion = null;
+        switch (DatabaseInfo.getDbProduct(dbProductName, dbProductVersion))
+        {
+            case H2:
+                dbProductMinVersion = H2_MIN_VERSION;
+                break;
+            case DERBY:
+                dbProductMinVersion = DERBY_MIN_VERSION;
+                break;
+            case DB2:
+                dbProductMinVersion = DB2_MIN_VERSION;
+                break;
+            case POSTGRESQL:
+                dbProductMinVersion = POSTGRES_MIN_VERSION;
+                break;
+            case MYSQL:
+                dbProductMinVersion = MYSQL_MIN_VERSION;
+                break;
+            case MARIADB:
+                dbProductMinVersion = MARIADB_MIN_VERSION;
+                break;
+            case INFORMIX:
+                dbProductMinVersion = INFORMIX_MIN_VERSION;
+                break;
+            default:
+                // currently no other databases with minimum version requirement
+                break;
+        }
+
+        if (dbProductMinVersion != null)
+        {
+            String[] currVersionSplit = dbProductVersion.split("\\.");
+            int currVersionMajor = Integer.parseInt(currVersionSplit[0]);
+            int currVersionMinor = Integer.parseInt(currVersionSplit[1]);
+            int minVersionMajor = dbProductMinVersion[0];
+            int minVersionMinor = dbProductMinVersion[1];
+
+            if (currVersionMajor < minVersionMajor ||
+                currVersionMajor == minVersionMajor && currVersionMinor < minVersionMinor)
+            {
+                throw new InitializationException(
+                    StringUtils.join("",
+                        "Currently installed version (",
+                        currVersionMajor + "." + currVersionMinor,
+                        ") of database '", dbProductName,
+                        "' is older than the required minimum version (",
+                        minVersionMajor + "." + minVersionMinor, ")!"
+                    )
+                );
+            }
+            // else: everything is fine so we can proceed with the migration process
+        }
     }
 
     @Override

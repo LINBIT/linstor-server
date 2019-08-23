@@ -15,6 +15,7 @@ public class LinStorCmdlArguments
     private boolean printStacktraces;
     private String logDirectory;
     private String logLevel;
+    private boolean toggleDbStartupVerification;
 
     public LinStorCmdlArguments()
     {
@@ -22,6 +23,7 @@ public class LinStorCmdlArguments
         printStacktraces = false;
         logDirectory = getEnv(LS_LOG_DIRECTORY, Function.identity(), ".");
         logLevel = getEnv(LS_LOG_LEVEL, Function.identity());
+        toggleDbStartupVerification = false;
     }
 
     public void setConfigurationDirectory(final String workingDirectoryRef)
@@ -76,6 +78,16 @@ public class LinStorCmdlArguments
     public void setLogLevel(String logLevelRef)
     {
         logLevel = logLevelRef;
+    }
+
+    public void setToggleDbStartupVerification(boolean toggleDbStartupVerificationRef)
+    {
+        toggleDbStartupVerification = toggleDbStartupVerificationRef;
+    }
+
+    public boolean isToggleDbStartupVerification()
+    {
+        return toggleDbStartupVerification;
     }
 
     protected <T> T getEnv(String env, Function<String, T> func)

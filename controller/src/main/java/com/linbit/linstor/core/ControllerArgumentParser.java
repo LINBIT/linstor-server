@@ -50,6 +50,11 @@ class ControllerArgumentParser
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
 
+    @CommandLine.Option(
+        names = {"-s", "--db-startup-verification"},
+        description = "Toggle startup verification that checks the version of databases supported by Linstor")
+    private boolean toggleDbStartupVerification = true;
+
     static ControllerCmdlArguments parseCommandLine(String[] args)
     {
         ControllerArgumentParser linArgParser = new ControllerArgumentParser();
@@ -130,6 +135,8 @@ class ControllerArgumentParser
         {
             cArgs.setLogLevel(linArgParser.logLevel);
         }
+
+        cArgs.setToggleDbStartupVerification(linArgParser.toggleDbStartupVerification);
 
         return cArgs;
     }

@@ -33,7 +33,7 @@ public class DbEtcdInitializer implements DbInitializer
     }
 
     @Override
-    public void initialize() throws InitializationException
+    public void initialize(boolean withStartupVer) throws InitializationException
     {
         errorLog.logInfo("Initializing the etcd database");
 
