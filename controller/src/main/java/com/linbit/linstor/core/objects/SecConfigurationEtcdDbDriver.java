@@ -30,14 +30,14 @@ public class SecConfigurationEtcdDbDriver extends EtcdDbDriver implements SecCon
     {
         transMgrProvider.get().getTransaction()
             .put(putReq(
-                tblKey(id(secConfiguration), GeneratedDatabaseTables.SecConfiguration.ENTRY_KEY),
+                tblKey(id(secConfiguration), GeneratedDatabaseTables.SEC_CONFIGURATION.ENTRY_KEY),
                 secConfiguration.getDisplayValue().toUpperCase()))
             .put(putReq(
-                tblKey(id(secConfiguration), GeneratedDatabaseTables.SecConfiguration.ENTRY_DSP_KEY),
+                tblKey(id(secConfiguration), GeneratedDatabaseTables.SEC_CONFIGURATION.ENTRY_DSP_KEY),
                 secConfiguration.getDisplayValue()
             ))
             .put(putReq(
-                tblKey(id(secConfiguration), GeneratedDatabaseTables.SecConfiguration.ENTRY_VALUE),
+                tblKey(id(secConfiguration), GeneratedDatabaseTables.SEC_CONFIGURATION.ENTRY_VALUE),
                 secConfiguration.getValue()
             ));
     }

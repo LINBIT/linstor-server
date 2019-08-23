@@ -7,14 +7,12 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.ibm.etcd.api.KeyValue;
-import com.ibm.etcd.api.PutRequest;
 import com.ibm.etcd.api.RangeResponse;
 import com.ibm.etcd.client.EtcdClient;
 import com.ibm.etcd.client.KvStoreClient;
@@ -77,7 +75,7 @@ public class DbEtcd implements ControllerETCDDatabase
     public void migrate(String dbType)
     {
         // do manual data migration and initial data
-        String dbhistoryVersionKey = LINSTOR_PREFIX + "dbhistory/version";
+        String dbhistoryVersionKey = LINSTOR_PREFIX + "DBHISTORY/version";
 
         RangeResponse dbVersResp = etcdClient.getKvClient().get(bs(dbhistoryVersionKey)).sync();
         int dbVersion = dbVersResp.getCount() > 0 ?
