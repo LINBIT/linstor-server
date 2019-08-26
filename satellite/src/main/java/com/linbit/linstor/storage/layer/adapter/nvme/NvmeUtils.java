@@ -32,6 +32,7 @@ import static com.linbit.linstor.api.ApiConsts.KEY_PREF_NIC;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -504,8 +505,8 @@ public class NvmeUtils
             errorReporter.logDebug("NVMe: exposing device: " + new String(backingDevice));
             Files.write(namespacePath.resolve("device_path"), backingDevice);
             Files.write(namespacePath.resolve("enable"), "1".getBytes());
-            nvmeVlmData.setExists(true);
         }
+        nvmeVlmData.setExists(true);
     }
 
     /**
@@ -532,8 +533,8 @@ public class NvmeUtils
                 StorageException::new,
                 "Failed to delete namespace directory!"
             );
-            nvmeVlmData.setExists(false);
         }
+        nvmeVlmData.setExists(false);
     }
 
 
