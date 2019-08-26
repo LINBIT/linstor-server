@@ -71,11 +71,12 @@ public class SysFsHandler
         deviceMajorMinorMap = new HashMap<>();
     }
 
-    public void updateSysFsSettings(Collection<Resource> rscs)
+    public void updateSysFsSettings(Collection<Resource> updateList, Collection<Resource> deleteList)
     {
         try
         {
-            updateCgroupBlkioThrottleReadBpsDevice(rscs);
+            updateCgroupBlkioThrottleReadBpsDevice(updateList);
+            cleanupCache(deleteList);
         }
         catch (AccessDeniedException | StorageException | InvalidKeyException exc)
         {
@@ -83,10 +84,35 @@ public class SysFsHandler
         }
     }
 
-    private void updateCgroupBlkioThrottleReadBpsDevice(Collection<Resource> rscsRef)
+    private void cleanupCache(Collection<Resource> deleteListRef)
+        throws AccessDeniedException, InvalidKeyException, StorageException
+    {
+        for (Resource rsc : deleteListRef)
+        {
+            RscLayerObject rscLayerData = rsc.getLayerData(apiCtx);
+            execForAllVlmData(
+                rscLayerData,
+                true,
+                vlmData ->
+                {
+                    String majMin = getMajorMinor(vlmData);
+                    if (majMin != null)
+                    {
+                        // cleaning up throttle caches
+                        cgroupBlkioThrottleReadBpsDeviceMap.remove(majMin);
+                        cgroupBlkioThrottleWriteBpsDeviceMap.remove(majMin);
+
+                        deviceMajorMinorMap.remove(vlmData);
+                    }
+                }
+            );
+        }
+    }
+
+    private void updateCgroupBlkioThrottleReadBpsDevice(Collection<Resource> updateList)
         throws AccessDeniedException, StorageException, InvalidKeyException
     {
-        for (Resource rsc : rscsRef)
+        for (Resource rsc : updateList)
         {
             RscLayerObject rscLayerData = rsc.getLayerData(apiCtx);
             execForAllVlmData(
@@ -153,18 +179,31 @@ public class SysFsHandler
             ApiConsts.NAMESPC_SYS_FS
         );
         String knownThrottle = deviceThrottleMap.get(majMinRef);
+        if ((!vlmDataRef.exists() && majMinRef != null) || (expectedThrottle == null && knownThrottle != null))
+        {
+            deleteThrottle(sysFsPath, majMinRef, deviceThrottleMap);
+        }
+        else
         if (expectedThrottle != null &&
-            (knownThrottle == null || !knownThrottle.equals(expectedThrottle)))
+            (knownThrottle == null || !knownThrottle.equals(expectedThrottle))
+        )
         {
             setSysFs(sysFsPath, majMinRef + " " + expectedThrottle);
             deviceThrottleMap.put(majMinRef, expectedThrottle);
         }
         else
-        if (expectedThrottle == null && knownThrottle != null)
         {
-            setSysFs(sysFsPath, majMinRef + " 0");
-            deviceThrottleMap.remove(majMinRef);
+            errorReporter.logTrace(
+                "SysFs: '%s' for %s already has expected value of %s", sysFsPath, majMinRef, expectedThrottle
+            );
         }
+    }
+
+    private void deleteThrottle(String sysFsPath,  String majMinRef, Map<String, String> deviceThrottleMap)
+        throws StorageException
+    {
+        setSysFs(sysFsPath, majMinRef + " 0");
+        deviceThrottleMap.remove(majMinRef);
     }
 
     private String getMajorMinor(VlmProviderObject vlmDataRef) throws StorageException

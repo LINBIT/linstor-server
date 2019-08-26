@@ -16,13 +16,13 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot.SnapshotFlags;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.Snapshot.SnapshotFlags;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -43,6 +43,7 @@ import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
 
 import javax.inject.Provider;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -334,6 +335,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             {
                 createLvImpl(vlmData);
             }
+            vlmData.setExists(true);
 
             String storageName = getStorageName(vlmData);
             String lvId = asLvIdentifier(vlmData);

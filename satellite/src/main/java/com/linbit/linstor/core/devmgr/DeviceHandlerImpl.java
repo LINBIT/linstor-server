@@ -17,11 +17,11 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.Snapshot.SnapshotFlags;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
-import com.linbit.linstor.core.objects.Snapshot.SnapshotFlags;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -48,6 +48,7 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -271,6 +272,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         throws ImplementationError
     {
         List<Resource> sysFsUpdateList = new ArrayList<>();
+        List<Resource> sysFsDeleteList = new ArrayList<>();
 
         for (Resource rsc : resourceList)
         {
@@ -337,9 +339,14 @@ public class DeviceHandlerImpl implements DeviceHandler
 
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
+
                 if (rsc.getStateFlags().isUnset(wrkCtx, RscFlags.DELETE))
                 {
                     sysFsUpdateList.add(rsc);
+                }
+                else
+                {
+                    sysFsDeleteList.add(rsc);
                 }
             }
             catch (AccessDeniedException | DatabaseException exc)
@@ -421,7 +428,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
         }
-        sysFsHandler.updateSysFsSettings(sysFsUpdateList);
+        sysFsHandler.updateSysFsSettings(sysFsUpdateList, sysFsDeleteList);
     }
 
     private void ensureAllVlmDataDeleted(RscLayerObject rscLayerObjectRef, VolumeNumber volumeNumberRef)
