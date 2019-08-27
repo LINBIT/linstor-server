@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.CollectionDatabaseDriver;
-import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -39,17 +38,6 @@ public interface ResourceDefinitionDataDatabaseDriver
      */
     StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence();
 
-    /**
-     * Checks if the stored primary key already exists in the database.
-     *
-     * @param resourceName
-     *  The primary key specifying the database entry
-     *
-     * @return
-     *  True if the data record exists. False otherwise.
-     * @throws DatabaseException
-     */
-    boolean exists(ResourceName resourceName) throws DatabaseException;
 
     /**
      * A special sub-driver to update the layer stack

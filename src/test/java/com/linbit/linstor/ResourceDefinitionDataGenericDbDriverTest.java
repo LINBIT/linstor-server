@@ -1,17 +1,23 @@
 package com.linbit.linstor;
 
-import javax.inject.Inject;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.ResourceDefinition.InitMaps;
+import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.TestFactory;
-import com.linbit.linstor.core.objects.ResourceDefinition.InitMaps;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.propscon.Props;
@@ -21,8 +27,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import org.junit.Before;
-import org.junit.Test;
+import javax.inject.Inject;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -32,12 +38,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
 {
@@ -231,14 +233,6 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         resultSet.close();
         stmt.close();
-    }
-
-    @Test
-    public void testExists() throws Exception
-    {
-        assertFalse(driver.exists(resName));
-        driver.create(resDfn);
-        assertTrue(driver.exists(resName));
     }
 
     private ResourceDefinitionData findResourceDefinitionDatabyName(

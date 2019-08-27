@@ -6,6 +6,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements GenericDatabaseDriver<DATA>
@@ -183,6 +185,18 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
     protected DatabaseType getDbType()
     {
         return dbEngine.getType();
+    }
+
+    protected String toString(List<String> asStrListRef) throws LinStorDBRuntimeException
+    {
+        try
+        {
+            return OBJ_MAPPER.writeValueAsString(asStrListRef);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new LinStorDBRuntimeException("Failed to write json array");
+        }
     }
 
     protected abstract Pair<DATA, INIT_MAPS> load(

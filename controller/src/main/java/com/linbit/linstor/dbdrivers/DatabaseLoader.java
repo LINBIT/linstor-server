@@ -33,7 +33,7 @@ import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceDefinitionDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -117,7 +117,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final NodeDriver nodeDriver;
     private final NetInterfaceDataGenericDbDriver netIfDriver;
     private final NodeConnectionDataGenericDbDriver nodeConnDriver;
-    private final ResourceDefinitionDataGenericDbDriver rscDfnDriver;
+    private final ResourceDefinitionDriver rscDfnDriver;
     private final ResourceDataGenericDbDriver rscDriver;
     private final ResourceConnectionDataGenericDbDriver rscConnDriver;
     private final VolumeDefinitionDataGenericDbDriver vlmDfnDriver;
@@ -153,7 +153,7 @@ public class DatabaseLoader implements DatabaseDriver
         NodeDriver nodeDriverRef,
         NetInterfaceDataGenericDbDriver netIfDriverRef,
         NodeConnectionDataGenericDbDriver nodeConnDriverRef,
-        ResourceDefinitionDataGenericDbDriver resesourceDefinitionDriverRef,
+        ResourceDefinitionDriver resesourceDefinitionDriverRef,
         ResourceDataGenericDbDriver resourceDriverRef,
         ResourceConnectionDataGenericDbDriver rscConnDriverRef,
         VolumeGroupDataGenericDbDriver vlmGrpDriverRef,

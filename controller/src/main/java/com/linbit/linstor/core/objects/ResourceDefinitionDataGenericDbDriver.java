@@ -42,6 +42,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -160,25 +161,6 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         {
             DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
         }
-    }
-
-    @Override
-    public boolean exists(ResourceName resourceName) throws DatabaseException
-    {
-        boolean exists;
-        try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT))
-        {
-            stmt.setString(1, resourceName.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                exists = resultSet.next();
-            }
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new DatabaseException(sqlExc);
-        }
-        return exists;
     }
 
     public Map<ResourceDefinitionData, InitMaps> loadAll(Map<ResourceGroupName, ResourceGroup> rscGrpMapRef)
