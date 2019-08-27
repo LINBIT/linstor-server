@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
+import com.linbit.linstor.core.objects.SwordfishETCDDriver;
 import com.linbit.linstor.core.objects.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
@@ -116,6 +117,8 @@ public class ControllerDbModule extends AbstractModule
                 bind(DbAccessor.class).to(DbEtcdPersistence.class);
 
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionEtcdDriver.class);
+
+                bind(SwordfishLayerDatabaseDriver.class).to(SwordfishETCDDriver.class);
                 break;
             default:
                 throw new RuntimeException("ETCD database driver not implemented.");
