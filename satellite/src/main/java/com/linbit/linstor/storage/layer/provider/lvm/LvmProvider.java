@@ -46,7 +46,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 @Singleton
 public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
@@ -54,7 +53,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     private static final int TOLERANCE_FACTOR = 3;
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_LVM_ID = "%s%s_%05d";
-    private static final String FORMAT_LVM_ID_WIPE_IN_PROGRESS = "%s_%s_linstor_wiping_in_progress";
+    // snapshots look like FORMAT_RSC_TO_LVM_ID + "_%s". should not cause naming conflict
+    private static final String FORMAT_LVM_ID_WIPE_IN_PROGRESS = "%s-linstor_wiping_in_progress";
     private static final String FORMAT_DEV_PATH = "/dev/%s/%s";
 
     private static final String DFLT_LVCREATE_TYPE = "linear";
@@ -267,8 +267,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         // just make sure to not colide with any other ongoing wipe-lv-name
         String newLvmId = String.format(
             FORMAT_LVM_ID_WIPE_IN_PROGRESS,
-            asLvIdentifier(vlmData),
-            UUID.randomUUID().toString()
+            asLvIdentifier(vlmData)
         );
 
         String devicePath = vlmData.getDevicePath();

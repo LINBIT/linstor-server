@@ -1,9 +1,9 @@
 package com.linbit.linstor.storage;
 
+import com.linbit.linstor.api.ApiConsts;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import com.linbit.linstor.api.ApiConsts;
 
 /**
  *
