@@ -60,6 +60,7 @@ import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -132,7 +133,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final ResourceLayerIdGenericDbDriver rscLayerObjDriver;
     private final DrbdLayerGenericDbDriver drbdLayerDriver;
     private final LuksLayerGenericDbDriver luksLayerDriver;
-    private final StorageLayerGenericDbDriver storageLayerDriver;
+    private final StorageLayerDatabaseDriver storageLayerDriver;
     private final NvmeLayerGenericDbDriver nvmeLayerDriver;
     private final Provider<CtrlLayerDataHelper> ctrlLayerDataHelper;
 
@@ -143,8 +144,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
-    private VolumeGroupDataGenericDbDriver vlmGrpDriver;
-
+    private final VolumeGroupDataGenericDbDriver vlmGrpDriver;
 
     @Inject
     public DatabaseLoader(

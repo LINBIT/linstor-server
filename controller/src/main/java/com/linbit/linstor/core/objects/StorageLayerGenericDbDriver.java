@@ -12,10 +12,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
@@ -32,7 +28,6 @@ import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -48,6 +43,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -129,6 +125,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         return rscIdDriver;
     }
 
+    @Override
     public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef)
         throws DatabaseException
     {
@@ -158,13 +155,16 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
                     }
                     NodeName nodeName = new NodeName(resultSet.getString(NODE_NAME));
                     StorPoolName storPoolName = new StorPoolName(resultSet.getString(STOR_POOL_NAME));
+                    Pair<StorPool, InitMaps> storPoolWithInitMap = tmpStorPoolMapRef.get(
+                        new Pair<>(nodeName, storPoolName)
+                    );
                     infoList.add(
                         new StorVlmInfoData(
                             rscLayerId,
                             resultSet.getInt(VLM_NR),
                             LinstorParsingUtils.asProviderKind(resultSet.getString(PROVIDER_KIND)),
-                            tmpStorPoolMapRef.get(new Pair<>(nodeName, storPoolName)).objA,
-                            tmpStorPoolMapRef.get(new Pair<>(nodeName, storPoolName)).objB
+                            storPoolWithInitMap.objA,
+                            storPoolWithInitMap.objB
                         )
                     );
                 }
@@ -186,17 +186,20 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         }
     }
 
+    @Override
     public void clearLoadAllCache()
     {
         cachedStorVlmInfoByRscLayerId.clear();
         cachedStorVlmInfoByRscLayerId = null;
     }
 
+    @Override
     public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws DatabaseException
     {
         sfDbDriver.loadLayerData(tmpRscDfnMapRef);
     }
 
+    @Override
     public Pair<StorageRscData, Set<RscLayerObject>> load(
         Resource resourceRef,
         int rscIdRef,
