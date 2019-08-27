@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.CollectionDatabaseDriver;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
@@ -73,4 +74,10 @@ public interface DbEngine
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
         ValueOutOfRangeException;
+
+    <DATA, LIST_TYPE> CollectionDatabaseDriver<DATA, LIST_TYPE> generateCollectionToJsonStringArrayDriver(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column colRef,
+        DataToString<DATA> dataToStringRef
+    );
 }

@@ -97,6 +97,19 @@ public class StringUtils
         return sb.toString();
     }
 
+    public static List<String> asStrList(Collection<?> collection)
+    {
+        List<String> ret = new ArrayList<>();
+        if (collection != null)
+        {
+            for (Object obj : collection)
+            {
+                ret.add(Objects.toString(obj));
+            }
+        }
+        return ret;
+    }
+
     public static class ConditionalStringJoiner
     {
         private final StringJoiner stringJoiner;

@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers.etcd;
 
 import static com.ibm.etcd.client.KeyUtils.bs;
 
+import com.linbit.CollectionDatabaseDriver;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
@@ -229,6 +230,22 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
 
             }
         };
+    }
+
+    @Override
+    public <DATA, LIST_TYPE> CollectionDatabaseDriver<DATA, LIST_TYPE> generateCollectionToJsonStringArrayDriver(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
+        Column colRef,
+        DataToString<DATA> dataToStringRef
+    )
+    {
+        return new ETCDListToJsonArrayDriver<DATA, LIST_TYPE>(
+            errorReporter,
+            settersRef,
+            colRef,
+            dataToStringRef,
+            transMgrProvider
+        );
     }
 
     private <DATA> String[] getPrimaryKeys(

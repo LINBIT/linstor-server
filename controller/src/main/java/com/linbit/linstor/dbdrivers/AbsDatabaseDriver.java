@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.CollectionDatabaseDriver;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
@@ -146,6 +147,13 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
             this::getId,
             dataValueToString
         );
+    }
+
+    protected <LIST_TYPE> CollectionDatabaseDriver<DATA, LIST_TYPE> generateCollectionToJsonStringArrayDriver(
+        Column col
+    )
+    {
+        return dbEngine.generateCollectionToJsonStringArrayDriver(setters, col, this::getId);
     }
 
     protected void setColumnSetter(
