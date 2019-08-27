@@ -179,12 +179,14 @@ public class SysFsHandler
             ApiConsts.NAMESPC_SYS_FS
         );
         String knownThrottle = deviceThrottleMap.get(majMinRef);
-        if ((!vlmDataRef.exists() && majMinRef != null) || (expectedThrottle == null && knownThrottle != null))
+
+        if (expectedThrottle == null && knownThrottle != null)
         {
-            deleteThrottle(sysFsPath, majMinRef, deviceThrottleMap);
+            setSysFs(sysFsPath, majMinRef + " 0");
+            deviceThrottleMap.remove(majMinRef);
         }
-        else
-        if (expectedThrottle != null &&
+        else if (
+            expectedThrottle != null &&
             (knownThrottle == null || !knownThrottle.equals(expectedThrottle))
         )
         {
@@ -197,13 +199,6 @@ public class SysFsHandler
                 "SysFs: '%s' for %s already has expected value of %s", sysFsPath, majMinRef, expectedThrottle
             );
         }
-    }
-
-    private void deleteThrottle(String sysFsPath,  String majMinRef, Map<String, String> deviceThrottleMap)
-        throws StorageException
-    {
-        setSysFs(sysFsPath, majMinRef + " 0");
-        deviceThrottleMap.remove(majMinRef);
     }
 
     private String getMajorMinor(VlmProviderObject vlmDataRef) throws StorageException
