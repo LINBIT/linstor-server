@@ -102,7 +102,7 @@ public class ResourceGroupDataControllerFactory
             transMgrProvider
         );
 
-        driver.persist(rscGrp);
+        driver.create(rscGrp);
 
         return rscGrp;
     }

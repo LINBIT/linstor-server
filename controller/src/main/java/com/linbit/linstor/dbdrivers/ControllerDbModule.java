@@ -10,7 +10,7 @@ import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDriver;
-import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceGroupDriver;
 import com.linbit.linstor.core.objects.ResourceLayerETCDDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
@@ -80,8 +80,9 @@ public class ControllerDbModule extends AbstractModule
     {
         bind(DatabaseDriver.class).to(DatabaseLoader.class);
 
-        bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDriver.class);
         bind(NodeDataDatabaseDriver.class).to(NodeDriver.class);
+        bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDriver.class);
+        bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDriver.class);
         bind(VolumeDataDatabaseDriver.class).to(VolumeDriver.class);
         switch (dbType)
         {
@@ -92,7 +93,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 
                 bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
-                bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDataGenericDbDriver.class);
                 bind(ResourceDataDatabaseDriver.class).to(ResourceDataGenericDbDriver.class);
                 bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataGenericDbDriver.class);
                 bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDataGenericDbDriver.class);

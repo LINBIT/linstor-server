@@ -24,7 +24,7 @@ public class SatelliteRscGrpDriver implements ResourceGroupDataDatabaseDriver
     }
 
     @Override
-    public void persist(ResourceGroupData rscGrpRef) throws DatabaseException
+    public void create(ResourceGroupData rscGrpRef) throws DatabaseException
     {
         // no-op
     }

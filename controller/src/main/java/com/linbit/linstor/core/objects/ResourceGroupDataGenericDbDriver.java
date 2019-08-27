@@ -200,7 +200,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void persist(ResourceGroupData rscGrp) throws DatabaseException
+    public void create(ResourceGroupData rscGrp) throws DatabaseException
     {
         errorReporter.logTrace("Creating ResourceGroup %s", getId(rscGrp));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))

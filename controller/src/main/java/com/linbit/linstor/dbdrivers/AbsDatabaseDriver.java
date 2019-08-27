@@ -187,11 +187,23 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         return dbEngine.getType();
     }
 
-    protected String toString(List<String> asStrListRef) throws LinStorDBRuntimeException
+    protected String toString(List<?> asStrListRef) throws LinStorDBRuntimeException
     {
         try
         {
             return OBJ_MAPPER.writeValueAsString(asStrListRef);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new LinStorDBRuntimeException("Failed to write json array");
+        }
+    }
+
+    protected byte[] toBlob(List<?> asStrListRef) throws LinStorDBRuntimeException
+    {
+        try
+        {
+            return OBJ_MAPPER.writeValueAsBytes(asStrListRef);
         }
         catch (JsonProcessingException exc)
         {

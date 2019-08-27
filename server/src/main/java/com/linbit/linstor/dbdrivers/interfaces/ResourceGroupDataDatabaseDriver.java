@@ -3,7 +3,6 @@ package com.linbit.linstor.dbdrivers.interfaces;
 import com.linbit.CollectionDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.core.objects.ResourceGroupData;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -12,12 +11,8 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface ResourceGroupDataDatabaseDriver
+public interface ResourceGroupDataDatabaseDriver extends GenericDatabaseDriver<ResourceGroupData>
 {
-    void persist(ResourceGroupData rscGrp) throws DatabaseException;
-
-    void delete(ResourceGroupData rscGrp) throws DatabaseException;
-
     SingleColumnDatabaseDriver<ResourceGroupData, String> getDescriptionDriver();
 
     CollectionDatabaseDriver<ResourceGroupData, DeviceLayerKind> getLayerStackDriver();

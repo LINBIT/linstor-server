@@ -35,7 +35,7 @@ import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceGroupDriver;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -68,6 +68,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
 
@@ -113,7 +114,7 @@ public class DatabaseLoader implements DatabaseDriver
     }
 
     private final AccessContext dbCtx;
-    private final ResourceGroupDataGenericDbDriver rscGrpDriver;
+    private final ResourceGroupDriver rscGrpDriver;
     private final NodeDriver nodeDriver;
     private final NetInterfaceDataGenericDbDriver netIfDriver;
     private final NodeConnectionDataGenericDbDriver nodeConnDriver;
@@ -149,7 +150,7 @@ public class DatabaseLoader implements DatabaseDriver
     @Inject
     public DatabaseLoader(
         @SystemContext AccessContext privCtx,
-        ResourceGroupDataGenericDbDriver rscGrpDriverRef,
+        ResourceGroupDriver rscGrpDriverRef,
         NodeDriver nodeDriverRef,
         NetInterfaceDataGenericDbDriver netIfDriverRef,
         NodeConnectionDataGenericDbDriver nodeConnDriverRef,
@@ -226,7 +227,7 @@ public class DatabaseLoader implements DatabaseDriver
         {
             // load the resource groups
             Map<ResourceGroup, ResourceGroup.InitMaps> loadedRscGroupsMap =
-                Collections.unmodifiableMap(rscGrpDriver.loadAll());
+                Collections.unmodifiableMap(rscGrpDriver.loadAll(null));
 
             // temporary map to restore rscDfn <-> rscGroup relations
             Map<ResourceGroupName, ResourceGroup> tmpRscGroups =
@@ -698,9 +699,25 @@ public class DatabaseLoader implements DatabaseDriver
     public static List<DeviceLayerKind> asDevLayerKindList(Collection<String> strList)
     {
         List<DeviceLayerKind> ret = new ArrayList<>();
-        for (String str : strList)
+        if (strList != null)
         {
-            ret.add(DeviceLayerKind.valueOf(str));
+            for (String str : strList)
+            {
+                ret.add(DeviceLayerKind.valueOf(str));
+            }
+        }
+        return ret;
+    }
+
+    public static List<DeviceProviderKind> asDevLayerProviderList(Collection<String> strList)
+    {
+        List<DeviceProviderKind> ret = new ArrayList<>();
+        if (strList != null)
+        {
+            for (String str : strList)
+            {
+                ret.add(DeviceProviderKind.valueOf(str));
+            }
         }
         return ret;
     }
