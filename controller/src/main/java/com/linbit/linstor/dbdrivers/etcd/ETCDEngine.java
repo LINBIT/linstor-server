@@ -2,7 +2,6 @@ package com.linbit.linstor.dbdrivers.etcd;
 
 import static com.ibm.etcd.client.KeyUtils.bs;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
@@ -11,20 +10,25 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -188,26 +192,95 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
 
     @Override
     public <DATA, FLAG extends Enum<FLAG> & Flags> StateFlagsPersistence<DATA> generateFlagsDriver(
-        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
-        Column colRef,
-        Class<FLAG> flagsClassRef,
-        DataToString<DATA> idFormatterRef
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column flagColumn,
+        Class<FLAG> flagsClass,
+        DataToString<DATA> dataToString
     )
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        return (data, flags) ->
+        {
+            try
+            {
+                String fromFlags = StringUtils.join(
+                    FlagsHelper.toStringList(flagsClass, (long) setters.get(flagColumn).accept(data)),
+                    ", "
+                );
+                String toFlags = StringUtils.join(
+                    FlagsHelper.toStringList(flagsClass, flags),
+                    ", "
+                );
+                String inlineId = dataToString.toString(data);
+
+                errorReporter
+                    .logTrace(
+                        "Updating %s's flags from [%s] to [%s] %s",
+                        flagColumn.getTable().getName(),
+                        fromFlags,
+                        toFlags,
+                        inlineId
+                    );
+                namespace(flagColumn.getTable(), getPrimaryKeys(flagColumn.getTable(), data, setters))
+                    .put(flagColumn, Long.toString(flags));
+            }
+            catch (AccessDeniedException exc)
+            {
+                DatabaseLoader.handleAccessDeniedException(exc);
+
+            }
+        };
+    }
+
+    private <DATA> String[] getPrimaryKeys(
+        Table table,
+        DATA data,
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters
+    )
+        throws AccessDeniedException
+    {
+        List<String> pkList = new ArrayList<>();
+        for (Column col : table.values())
+        {
+            if (col.isPk())
+            {
+                pkList.add(Objects.toString(setters.get(col).accept(data)));
+            }
+        }
+
+        String[] pks = new String[pkList.size()];
+        pkList.toArray(pks);
+        return pks;
     }
 
     @Override
     public <DATA, INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriver(
-        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
-        Column colRef,
-        Function<INPUT_TYPE, DB_TYPE> typeMapperRef,
-        DataToString<DATA> dataToStringRef,
-        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column col,
+        Function<INPUT_TYPE, DB_TYPE> typeMapper,
+        DataToString<DATA> dataToString,
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToString
     )
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        return (data, colValue) ->
+        {
+            try
+            {
+                errorReporter.logTrace(
+                    "Updating %s's %s from [%s] to [%s] %s",
+                    col.getTable().getName(),
+                    col.getName(),
+                    dataValueToString.accept(data),
+                    Objects.toString(colValue),
+                    dataToString.toString(data)
+                );
+                namespace(col.getTable(), getPrimaryKeys(col.getTable(), data, setters))
+                    .put(col, Objects.toString(colValue));
+            }
+            catch (AccessDeniedException exc)
+            {
+                DatabaseLoader.handleAccessDeniedException(exc);
+
+            }
+        };
     }
 }
