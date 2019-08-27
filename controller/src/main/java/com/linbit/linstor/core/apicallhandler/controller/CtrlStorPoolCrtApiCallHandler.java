@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -11,6 +12,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -128,22 +130,57 @@ public class CtrlStorPoolCrtApiCallHandler
             deviceProviderKindRef,
             freeSpaceMgrNameStr
         );
-        ctrlPropsHelper.fillProperties(
-            LinStorObject.STORAGEPOOL,
-            storPoolPropsMap, ctrlPropsHelper.getProps(storPool),
-            ApiConsts.FAIL_ACC_DENIED_STOR_POOL
-        );
 
-        updateStorPoolDfnMap(storPool);
+        try
+        {
+            // check if specified preferred network interface exists
+            ctrlPropsHelper.checkPrefNic(
+                peerAccCtx.get(),
+                storPool.getNode(),
+                storPoolPropsMap.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+                ApiConsts.MASK_STOR_POOL
+            );
+            ctrlPropsHelper.checkPrefNic(
+                peerAccCtx.get(),
+                storPool.getNode(),
+                storPoolPropsMap.get(ApiConsts.NAMESPC_NVME + "/" + ApiConsts.KEY_PREF_NIC),
+                ApiConsts.MASK_STOR_POOL
+            );
 
-        ctrlTransactionHelper.commit();
+            ctrlPropsHelper.fillProperties(
+                LinStorObject.STORAGEPOOL,
+                storPoolPropsMap, ctrlPropsHelper.getProps(storPool),
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+            );
+
+            updateStorPoolDfnMap(storPool);
+
+            ctrlTransactionHelper.commit();
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            try
+            {
+                responses = responseConverter.reportException(
+                    storPool.getNode().getPeer(peerAccCtx.get()), context, exc
+                );
+            }
+            catch (AccessDeniedException accDenExc)
+            {
+                throw new ApiAccessDeniedException(
+                    accDenExc,
+                    "get peer from node",
+                    ApiConsts.FAIL_ACC_DENIED_NODE
+                );
+            }
+        }
 
         Flux<ApiCallRc> updateResponses = ctrlSatelliteUpdateCaller
-                .updateSatellite(storPool)
-                .onErrorResume(
-                        ApiRcException.class,
-                        apiRcException -> Flux.just(apiRcException.getApiCallRc())
-                );
+            .updateSatellite(storPool)
+            .onErrorResume(
+                ApiRcException.class,
+                apiRcException -> Flux.just(apiRcException.getApiCallRc())
+            );
 
         responseConverter.addWithOp(responses, context,
             ApiSuccessUtils.defaultRegisteredEntry(storPool.getUuid(), getStorPoolDescriptionInline(storPool)));

@@ -101,6 +101,20 @@ public class CtrlStorPoolApiCallHandler
 
             Props props = ctrlPropsHelper.getProps(storPool);
 
+            // check if specified preferred network interface exists
+            ctrlPropsHelper.checkPrefNic(
+                peerAccCtx.get(),
+                storPool.getNode(),
+                overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+                ApiConsts.MASK_STOR_POOL
+            );
+            ctrlPropsHelper.checkPrefNic(
+                peerAccCtx.get(),
+                storPool.getNode(),
+                overrideProps.get(ApiConsts.NAMESPC_NVME + "/" + ApiConsts.KEY_PREF_NIC),
+                ApiConsts.MASK_STOR_POOL
+            );
+
             ctrlPropsHelper.fillProperties(
                 LinStorObject.STORAGEPOOL,
                 overrideProps,
