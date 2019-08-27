@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
@@ -127,7 +128,8 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         return dbEngine.getType();
     }
 
-    protected abstract Pair<DATA, INIT_MAPS> load(RawParameters raw) throws DatabaseException, InvalidNameException;
+    protected abstract Pair<DATA, INIT_MAPS> load(RawParameters raw, LOAD_ALL parentRef)
+        throws DatabaseException, InvalidNameException, ValueOutOfRangeException;
 
     protected abstract String getId(DATA data);
 

@@ -5,7 +5,7 @@ import com.linbit.linstor.core.objects.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.NodeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NodeDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
@@ -21,8 +21,8 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeDriver;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
@@ -76,6 +76,8 @@ public class ControllerDbModule extends AbstractModule
     {
         bind(DatabaseDriver.class).to(DatabaseLoader.class);
 
+        bind(NodeDataDatabaseDriver.class).to(NodeDriver.class);
+        bind(VolumeDataDatabaseDriver.class).to(VolumeDriver.class);
         switch (dbType)
         {
             case SQL:
@@ -85,13 +87,11 @@ public class ControllerDbModule extends AbstractModule
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 
                 bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
-                bind(NodeDataDatabaseDriver.class).to(NodeDataGenericDbDriver.class);
                 bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDataGenericDbDriver.class);
                 bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDataGenericDbDriver.class);
                 bind(ResourceDataDatabaseDriver.class).to(ResourceDataGenericDbDriver.class);
                 bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataGenericDbDriver.class);
                 bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDataGenericDbDriver.class);
-                bind(VolumeDataDatabaseDriver.class).to(VolumeDataGenericDbDriver.class);
                 bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataGenericDbDriver.class);
                 bind(StorPoolDataDatabaseDriver.class).to(StorPoolDataGenericDbDriver.class);
                 bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDataGenericDbDriver.class);
@@ -117,7 +117,7 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionEtcdDriver.class);
                 break;
-                default:
+            default:
                 throw new RuntimeException("ETCD database driver not implemented.");
         }
     }

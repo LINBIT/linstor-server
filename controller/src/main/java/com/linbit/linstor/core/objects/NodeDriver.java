@@ -40,7 +40,6 @@ import java.util.TreeMap;
 @Singleton
 public class NodeDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void> implements NodeDataDatabaseDriver
 {
-    private final AccessContext dbCtx;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<? extends TransactionMgr> transMgrProvider;
@@ -59,7 +58,6 @@ public class NodeDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void>
     )
     {
         super(GeneratedDatabaseTables.NODES, dbEngine, objProtDriverRef);
-        dbCtx = dbCtxRef;
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
@@ -67,24 +65,13 @@ public class NodeDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void>
         setColumnSetter(UUID, node -> node.getUuid().toString());
         setColumnSetter(NODE_NAME, node -> node.getName().value);
         setColumnSetter(NODE_DSP_NAME, node -> node.getName().displayValue);
-        switch (getDbType())
-        {
-            case ETCD:
-                setColumnSetter(NODE_FLAGS, node -> Long.toString(node.getFlags().getFlagsBits(dbCtx)));
-                setColumnSetter(NODE_TYPE, node -> node.getNodeType(dbCtx).name());
-                break;
-            case SQL:
-                setColumnSetter(NODE_FLAGS, node -> node.getFlags().getFlagsBits(dbCtx));
-                setColumnSetter(NODE_TYPE, node -> node.getNodeType(dbCtx).getFlagValue());
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + dbEngine.getType());
-        }
+        setColumnSetter(NODE_FLAGS, node -> node.getFlags().getFlagsBits(dbCtxRef));
+        setColumnSetter(NODE_TYPE, node -> node.getNodeType(dbCtxRef).getFlagValue());
 
         flagsDriver = generateFlagDriver(NODE_FLAGS, Node.NodeFlag.class);
         nodeTypeDriver = generateSingleColumnDriver(
             NODE_TYPE,
-            node -> node.getNodeType(dbCtx).toString(),
+            node -> node.getNodeType(dbCtxRef).toString(),
             NodeType::getFlagValue
         );
     }
@@ -108,7 +95,7 @@ public class NodeDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void>
     }
 
     @Override
-    protected Pair<NodeData, Node.InitMaps> load(RawParameters raw)
+    protected Pair<NodeData, Node.InitMaps> load(RawParameters raw, Void ignored)
         throws DatabaseException, InvalidNameException
     {
         final Map<ResourceName, Resource> rscMap = new TreeMap<>();

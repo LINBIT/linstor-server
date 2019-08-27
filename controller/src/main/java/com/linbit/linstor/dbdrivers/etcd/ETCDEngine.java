@@ -20,6 +20,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 import com.google.inject.Provider;
@@ -69,7 +70,7 @@ public class ETCDEngine implements DbEngine
                 String key = getColumnKey(setters, col, data);
 
                 PutRequest putRequest = PutRequest.newBuilder().setKey(bs(key)).setValue(
-                    bs((String) setters.get(col).accept(data))
+                    bs(Objects.toString(setters.get(col).accept(data)))
                 )
                     .build();
 
@@ -116,7 +117,7 @@ public class ETCDEngine implements DbEngine
         {
             if (col.isPk())
             {
-                sb.append((String) setters.get(col).accept(data)).append(EtcdUtils.PK_DELIMITER);
+                sb.append(Objects.toString(setters.get(col).accept(data))).append(EtcdUtils.PK_DELIMITER);
             }
         }
         sb.setLength(sb.length() - EtcdUtils.PK_DELIMITER.length()); // cut last PK_DELIMITER
