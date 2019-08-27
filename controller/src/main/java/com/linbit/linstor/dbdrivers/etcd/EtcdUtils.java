@@ -46,6 +46,14 @@ public class EtcdUtils
         return sb.toString();
     }
 
+    public static String buildKey(
+        Column column,
+        String... pks
+    )
+    {
+        return buildKey(column.getTable(), pks) + column.getName();
+    }
+
     public static Map<String, String> getTableRow(KvClient client, String key)
     {
         RangeResponse rspRow = client.get(bs(key)).asPrefix().sync();
@@ -86,11 +94,11 @@ public class EtcdUtils
         {
             for (String pk : pks)
             {
-                ret.append(pk).append(PATH_DELIMITER);
+                ret.append(pk).append(PK_DELIMITER);
             }
             if (pks.length > 0)
             {
-                ret.setLength(ret.length() - PATH_DELIMITER.length());
+                ret.setLength(ret.length() - PK_DELIMITER.length());
             }
         }
         return ret.toString();

@@ -11,6 +11,7 @@ import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceLayerETCDDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDataGenericDbDriver;
@@ -119,6 +120,7 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionEtcdDriver.class);
 
+                bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerETCDDriver.class);
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerETCDDriver.class);
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishETCDDriver.class);
                 break;

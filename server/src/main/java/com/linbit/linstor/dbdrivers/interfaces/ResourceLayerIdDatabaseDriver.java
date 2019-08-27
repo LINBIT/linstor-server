@@ -9,6 +9,8 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
+import java.util.List;
+
 public interface ResourceLayerIdDatabaseDriver
 {
     void persist(RscLayerObject rscLayerObject) throws DatabaseException;
@@ -23,7 +25,7 @@ public interface ResourceLayerIdDatabaseDriver
 
         ResourceName getResourceName();
 
-        long getId();
+        int getId();
 
         Integer getParentId();
 
@@ -31,5 +33,10 @@ public interface ResourceLayerIdDatabaseDriver
 
         String getRscSuffix();
     }
+
+    /*
+     * Methods only needed for loading
+     */
+    List<? extends RscLayerInfo> loadAllResourceIds() throws DatabaseException;
 
 }

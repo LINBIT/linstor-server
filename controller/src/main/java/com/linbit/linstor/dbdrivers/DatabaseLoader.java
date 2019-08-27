@@ -36,8 +36,6 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver.RscLayerInfoData;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -60,6 +58,8 @@ import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver.RscLayerInfo;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
@@ -130,7 +130,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final SnapshotDataGenericDbDriver snapshotDriver;
     private final SnapshotVolumeDataGenericDbDriver snapshotVolumeDriver;
     private final KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriver;
-    private final ResourceLayerIdGenericDbDriver rscLayerObjDriver;
+    private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
     private final DrbdLayerGenericDbDriver drbdLayerDriver;
     private final LuksLayerGenericDbDriver luksLayerDriver;
     private final StorageLayerDatabaseDriver storageLayerDriver;
@@ -167,7 +167,7 @@ public class DatabaseLoader implements DatabaseDriver
         SnapshotDataGenericDbDriver snapshotDriverRef,
         SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
         KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriverRef,
-        ResourceLayerIdGenericDbDriver rscLayerObjDriverRef,
+        ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
         DrbdLayerGenericDbDriver drbdLayerDriverRef,
         LuksLayerGenericDbDriver luksLayerDriverRef,
         StorageLayerGenericDbDriver storageLayerDriverRef,
@@ -573,7 +573,7 @@ public class DatabaseLoader implements DatabaseDriver
         throws DatabaseException, AccessDeniedException, ImplementationError
     {
         // load RscLayerObjects and VlmLayerObjects
-        List<RscLayerInfoData> rscLayerInfoList = rscLayerObjDriver.loadAllResourceIds();
+        List<? extends RscLayerInfo> rscLayerInfoList = rscLayerObjDriver.loadAllResourceIds();
 
         Set<Integer> parentIds = null;
         boolean loadNext = true;
@@ -583,34 +583,34 @@ public class DatabaseLoader implements DatabaseDriver
         while (loadNext)
         {
             // we need to load in a top-down fashion.
-            List<RscLayerInfoData> nextRscInfoToLoad = nextRscLayerToLoad(rscLayerInfoList, parentIds);
+            List<? extends RscLayerInfo> nextRscInfoToLoad = nextRscLayerToLoad(rscLayerInfoList, parentIds);
             loadNext = !nextRscInfoToLoad.isEmpty();
 
             parentIds = new HashSet<>();
-            for (RscLayerInfoData rli : nextRscInfoToLoad)
+            for (RscLayerInfo rli : nextRscInfoToLoad)
             {
                 Pair<? extends RscLayerObject, Set<RscLayerObject>> rscLayerObjectPair;
-                ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rli.resourceName);
-                Resource rsc = rscDfn.getResource(dbCtx, rli.nodeName);
+                ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rli.getResourceName());
+                Resource rsc = rscDfn.getResource(dbCtx, rli.getNodeName());
 
                 resourcesWithLayerData.add(rsc);
 
                 RscLayerObject parent = null;
                 Set<RscLayerObject> currentRscLayerDatasChildren = null;
-                if (rli.parentId != null)
+                if (rli.getParentId() != null)
                 {
-                    Pair<RscLayerObject, Set<RscLayerObject>> pair = rscLayerObjectChildren.get(rli.parentId);
+                    Pair<RscLayerObject, Set<RscLayerObject>> pair = rscLayerObjectChildren.get(rli.getParentId());
 
                     parent = pair.objA;
                     currentRscLayerDatasChildren = pair.objB;
                 }
-                switch (rli.kind)
+                switch (rli.getKind())
                 {
                     case DRBD:
                         rscLayerObjectPair = drbdLayerDriver.load(
                             rsc,
-                            rli.id,
-                            rli.rscSuffix,
+                            rli.getId(),
+                            rli.getRscSuffix(),
                             parent,
                             tmpStorPoolMapRef
                         );
@@ -618,32 +618,32 @@ public class DatabaseLoader implements DatabaseDriver
                     case LUKS:
                         rscLayerObjectPair = luksLayerDriver.load(
                             rsc,
-                            rli.id,
-                            rli.rscSuffix,
+                            rli.getId(),
+                            rli.getRscSuffix(),
                             parent
                         );
                         break;
                     case STORAGE:
                         rscLayerObjectPair = storageLayerDriver.load(
                             rsc,
-                            rli.id,
-                            rli.rscSuffix,
+                            rli.getId(),
+                            rli.getRscSuffix(),
                             parent
                         );
                         break;
                     case NVME:
                         rscLayerObjectPair = nvmeLayerDriver.load(
                             rsc,
-                            rli.id,
-                            rli.rscSuffix,
+                            rli.getId(),
+                            rli.getRscSuffix(),
                             parent
                         );
                         break;
                     default:
-                        throw new ImplementationError("Unhandled case for device kind '" + rli.kind + "'");
+                        throw new ImplementationError("Unhandled case for device kind '" + rli.getKind() + "'");
                 }
                 RscLayerObject rscLayerObject = rscLayerObjectPair.objA;
-                rscLayerObjectChildren.put(rli.id, new Pair<>(rscLayerObject, rscLayerObjectPair.objB));
+                rscLayerObjectChildren.put(rli.getId(), new Pair<>(rscLayerObject, rscLayerObjectPair.objB));
                 if (parent == null)
                 {
                     rsc.setLayerData(dbCtx, rscLayerObject);
@@ -654,26 +654,27 @@ public class DatabaseLoader implements DatabaseDriver
                 }
 
                 // rli will be the parent for the next iteration
-                parentIds.add(rli.id);
+                parentIds.add(rli.getId());
             }
         }
         return resourcesWithLayerData;
     }
 
-    private List<RscLayerInfoData> nextRscLayerToLoad(
-        List<RscLayerInfoData> rscLayerInfoListRef,
+    private List<? extends RscLayerInfo> nextRscLayerToLoad(
+        List<? extends RscLayerInfo> rscLayerInfoListRef,
         Set<Integer> ids
     )
     {
-        List<RscLayerInfoData> ret;
+        List<? extends RscLayerInfo> ret;
         if (ids == null)
         {
             // root rscLayerObjects
-            ret = rscLayerInfoListRef.stream().filter(rlo -> rlo.parentId == null).collect(Collectors.toList());
+            ret = rscLayerInfoListRef.stream().filter(rlo -> rlo.getParentId() == null).collect(Collectors.toList());
         }
         else
         {
-            ret = rscLayerInfoListRef.stream().filter(rlo -> ids.contains(rlo.parentId)).collect(Collectors.toList());
+            ret = rscLayerInfoListRef.stream().filter(rlo -> ids.contains(rlo.getParentId()))
+                .collect(Collectors.toList());
         }
         return ret;
     }

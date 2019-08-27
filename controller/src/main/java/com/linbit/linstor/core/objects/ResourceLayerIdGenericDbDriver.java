@@ -12,7 +12,6 @@ import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
@@ -33,6 +32,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+
 import com.google.inject.Provider;
 
 @Singleton
@@ -78,6 +78,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
         parentDriver = new ParentDriver();
     }
 
+    @Override
     public List<RscLayerInfoData> loadAllResourceIds() throws DatabaseException
     {
         List<RscLayerInfoData> ret = new ArrayList<>();
@@ -201,7 +202,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
         public final DeviceLayerKind kind;
         public final String rscSuffix;
 
-        private RscLayerInfoData(
+        RscLayerInfoData(
             NodeName nodeNameRef,
             ResourceName resourceNameRef,
             int idRef,
@@ -232,7 +233,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
         }
 
         @Override
-        public long getId()
+        public int getId()
         {
             return id;
         }
