@@ -13,6 +13,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
@@ -51,6 +52,7 @@ public class VolumeDriver
 
     @Inject
     public VolumeDriver(
+        ErrorReporter errorReporterRef,
         @SystemContext AccessContext dbCtxRef,
         DbEngine dbEngineRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
@@ -59,7 +61,7 @@ public class VolumeDriver
         TransactionObjectFactory transObjFactoryRef
     )
     {
-        super(GeneratedDatabaseTables.VOLUMES, dbEngineRef, objProtDriverRef);
+        super(errorReporterRef, GeneratedDatabaseTables.VOLUMES, dbEngineRef, objProtDriverRef);
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
@@ -90,16 +92,18 @@ public class VolumeDriver
     {
         final NodeName nodeName = raw.build(NODE_NAME, NodeName::new);
         final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
-        final VolumeNumber vlmNr = raw.build(VLM_NR, VolumeNumber::new);
+        final VolumeNumber vlmNr;
 
         final long flags;
         switch(getDbType())
         {
             case ETCD:
                 flags = Long.parseLong(raw.get(VLM_FLAGS));
+                vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
                 break;
             case SQL:
                 flags = raw.get(VLM_FLAGS);
+                vlmNr = raw.build(VLM_NR, VolumeNumber::new);
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());

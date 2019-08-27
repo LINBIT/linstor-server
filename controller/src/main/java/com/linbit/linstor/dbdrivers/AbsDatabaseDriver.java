@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
@@ -8,6 +9,7 @@ import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 import com.linbit.linstor.dbdrivers.interfaces.GenericDatabaseDriver;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
@@ -31,18 +33,22 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
 {
     protected static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
+    private final ErrorReporter errorReporter;
     private final Table table;
     private final DbEngine dbEngine;
     private final ObjectProtectionDatabaseDriver objProtDriver;
 
     private final Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters;
 
+
     public AbsDatabaseDriver(
+        ErrorReporter errorReporterRef,
         Table tableRef,
         DbEngine dbEngineRef,
         ObjectProtectionDatabaseDriver objProtDriverRef
     )
     {
+        errorReporter = errorReporterRef;
         table = tableRef;
         dbEngine = dbEngineRef;
         objProtDriver = objProtDriverRef;
@@ -73,6 +79,49 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError("Database driver does not have enough privileges");
+        }
+    }
+
+    public ArrayList<DATA> loadAllAsList(LOAD_ALL loadAllData) throws DatabaseException
+    {
+        return new ArrayList<>(loadAll(loadAllData).keySet());
+    }
+
+    public Map<DATA, INIT_MAPS> loadAll(LOAD_ALL parentRef) throws DatabaseException
+    {
+        // fail fast is not configured correctly
+        performSanityCheck();
+
+        errorReporter.logTrace("Loading all %ss", table.getName());
+        Map<DATA, INIT_MAPS> loadedObjectsMap;
+        try
+        {
+            loadedObjectsMap = dbEngine.loadAll(table, parentRef, this::load, RawParameters::new);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("Database context does not have enough privileges");
+        }
+        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException exc)
+        {
+            // TODO improve exception-handling
+            throw new DatabaseException("Failed to restore data", exc);
+        }
+        errorReporter.logTrace("Loaded %d %ss", loadedObjectsMap.size(), table.getName());
+        return loadedObjectsMap;
+    }
+
+    public void performSanityCheck()
+    {
+        for (Column col : table.values())
+        {
+            if (!setters.containsKey(col))
+            {
+                throw new ImplementationError(
+                    "Missing column-setter for " + table.getName() + "." + col.getName() +
+                        " in " + this.getClass().getSimpleName()
+                );
+            }
         }
     }
 
@@ -128,8 +177,11 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         return dbEngine.getType();
     }
 
-    protected abstract Pair<DATA, INIT_MAPS> load(RawParameters raw, LOAD_ALL parentRef)
-        throws DatabaseException, InvalidNameException, ValueOutOfRangeException;
+    protected abstract Pair<DATA, INIT_MAPS> load(
+        AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters raw,
+        LOAD_ALL parentRef
+    )
+        throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException;
 
     protected abstract String getId(DATA data);
 

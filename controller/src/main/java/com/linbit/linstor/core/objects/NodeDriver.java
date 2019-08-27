@@ -15,6 +15,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtection;
@@ -49,6 +50,7 @@ public class NodeDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void>
 
     @Inject
     public NodeDriver(
+        ErrorReporter errorReporterRef,
         @SystemContext AccessContext dbCtxRef,
         DbEngine dbEngine,
         Provider<? extends TransactionMgr> transMgrProviderRef,
@@ -57,7 +59,7 @@ public class NodeDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void>
         TransactionObjectFactory transObjFactoryRef
     )
     {
-        super(GeneratedDatabaseTables.NODES, dbEngine, objProtDriverRef);
+        super(errorReporterRef, GeneratedDatabaseTables.NODES, dbEngine, objProtDriverRef);
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;

@@ -1,7 +1,11 @@
 package com.linbit.linstor.dbdrivers.sql;
 
+import com.linbit.InvalidIpAddressException;
+import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
@@ -14,6 +18,7 @@ import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.utils.ExceptionThrowingFunction;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -21,9 +26,11 @@ import javax.inject.Singleton;
 import java.sql.Connection;
 import java.sql.JDBCType;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -89,6 +96,25 @@ public class SQLEngine implements DbEngine
         {
             DatabaseLoader.handleAccessDeniedException(exc);
         }
+    }
+
+    private String getSelectStatement(Table table)
+    {
+        String sql = insertStatements.get(table);
+        if (sql == null)
+        {
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT ");
+            for (Column col : table.values())
+            {
+                sqlBuilder.append(col.getName()).append(DELIMITER_LIST);
+            }
+            sqlBuilder.setLength(sqlBuilder.length() - DELIMITER_LIST.length());
+            sqlBuilder.append(" FROM ").append(table.getName());
+
+            sql = sqlBuilder.toString();
+        }
+        return sql;
     }
 
     private String getInsertStatement(Table table)
@@ -203,6 +229,94 @@ public class SQLEngine implements DbEngine
             dataToStringRef,
             dataValueToStringRef
         );
+    }
+
+    @Override
+    public <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
+        Table table,
+        LOAD_ALL parentsRef,
+        DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoaderRef,
+        Function<Object[], AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters> objsToRawArgs
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
+        try (PreparedStatement stmt = getConnection().prepareStatement(getSelectStatement(table)))
+        {
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                while (resultSet.next())
+                {
+                    Pair<DATA, INIT_MAPS> pair = restoreData(
+                        table, resultSet, parentsRef, dataLoaderRef, objsToRawArgs
+                    );
+                    loadedObjectsMap.put(pair.objA, pair.objB);
+                }
+            }
+        }
+        catch (SQLException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+        return loadedObjectsMap;
+    }
+
+    private <DATA, INIT_MAPS, LOAD_ALL> Pair<DATA, INIT_MAPS> restoreData(
+        Table table,
+        ResultSet resultSet,
+        LOAD_ALL parents,
+        DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader,
+        Function<Object[], AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters> objsToRawArgs
+    )
+        throws DatabaseException
+    {
+        Column[] columns = table.values();
+        Object[] objects = new Object[columns.length];
+        try
+        {
+            for (int idx = 0; idx < columns.length; ++idx)
+            {
+                objects[idx] = resultSet.getObject(idx + 1);
+                if (resultSet.wasNull())
+                {
+                    objects[idx] = null;
+                }
+            }
+        }
+        catch (SQLException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+
+        Pair<DATA, INIT_MAPS> pair;
+        try
+        {
+            pair = dataLoader.loadImpl(objsToRawArgs.apply(objects), parents);
+        }
+        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException exc)
+        {
+            StringBuilder pk = new StringBuilder("Primary key: ");
+            for (Column col : columns)
+            {
+                if (col.isPk())
+                {
+                    pk.append(col.getName()).append(" = '").append(objects[col.getIndex()]).append("', ");
+                }
+            }
+            pk.setLength(pk.length() - 2);
+            throw new LinStorDBRuntimeException(
+                String.format(
+                    "Database entry of table %s could not be restore.",
+                    table.getName()
+                ),
+                null,
+                null,
+                null,
+                pk.toString(),
+                exc
+            );
+        }
+        return pair;
     }
 
     Connection getConnection()

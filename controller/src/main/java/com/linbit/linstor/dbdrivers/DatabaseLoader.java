@@ -25,7 +25,7 @@ import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.NodeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NodeDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
@@ -55,9 +55,9 @@ import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
@@ -113,14 +113,14 @@ public class DatabaseLoader implements DatabaseDriver
 
     private final AccessContext dbCtx;
     private final ResourceGroupDataGenericDbDriver rscGrpDriver;
-    private final NodeDataGenericDbDriver nodeDriver;
+    private final NodeDriver nodeDriver;
     private final NetInterfaceDataGenericDbDriver netIfDriver;
     private final NodeConnectionDataGenericDbDriver nodeConnDriver;
     private final ResourceDefinitionDataGenericDbDriver rscDfnDriver;
     private final ResourceDataGenericDbDriver rscDriver;
     private final ResourceConnectionDataGenericDbDriver rscConnDriver;
     private final VolumeDefinitionDataGenericDbDriver vlmDfnDriver;
-    private final VolumeDataGenericDbDriver vlmDriver;
+    private final VolumeDriver vlmDriver;
     private final VolumeConnectionDataGenericDbDriver vlmConnDriver;
     private final StorPoolDefinitionDataGenericDbDriver storPoolDfnDriver;
     private final StorPoolDataGenericDbDriver storPoolDriver;
@@ -150,7 +150,7 @@ public class DatabaseLoader implements DatabaseDriver
     public DatabaseLoader(
         @SystemContext AccessContext privCtx,
         ResourceGroupDataGenericDbDriver rscGrpDriverRef,
-        NodeDataGenericDbDriver nodeDriverRef,
+        NodeDriver nodeDriverRef,
         NetInterfaceDataGenericDbDriver netIfDriverRef,
         NodeConnectionDataGenericDbDriver nodeConnDriverRef,
         ResourceDefinitionDataGenericDbDriver resesourceDefinitionDriverRef,
@@ -158,7 +158,7 @@ public class DatabaseLoader implements DatabaseDriver
         ResourceConnectionDataGenericDbDriver rscConnDriverRef,
         VolumeGroupDataGenericDbDriver vlmGrpDriverRef,
         VolumeDefinitionDataGenericDbDriver vlmDfnDriverRef,
-        VolumeDataGenericDbDriver volumeDriverRef,
+        VolumeDriver volumeDriverRef,
         VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
         StorPoolDefinitionDataGenericDbDriver storPoolDefinitionDriverRef,
         StorPoolDataGenericDbDriver storPoolDriverRef,
@@ -244,7 +244,7 @@ public class DatabaseLoader implements DatabaseDriver
 
             // load the main objects (nodes, rscDfns, storPoolDfns)
             Map<Node, Node.InitMaps> loadedNodesMap =
-                Collections.unmodifiableMap(nodeDriver.loadAll());
+                Collections.unmodifiableMap(nodeDriver.loadAll(null));
             Map<ResourceDefinition, ResourceDefinition.InitMaps> loadedRscDfnsMap =
                 Collections.unmodifiableMap(rscDfnDriver.loadAll(tmpRscGroups));
             Map<StorPoolDefinition, StorPoolDefinition.InitMaps> loadedStorPoolDfnsMap =
@@ -365,8 +365,7 @@ public class DatabaseLoader implements DatabaseDriver
             // loading volumes
             Map<Volume, Volume.InitMaps> loadedVolumes = Collections.unmodifiableMap(
                 vlmDriver.loadAll(
-                    tmpRscMap,
-                    tmpVlmDfnMap
+                    new Pair<>(tmpRscMap, tmpVlmDfnMap)
                 )
             );
 
