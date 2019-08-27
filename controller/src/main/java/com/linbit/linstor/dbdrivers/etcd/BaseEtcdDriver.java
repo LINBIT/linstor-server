@@ -77,9 +77,20 @@ public abstract class BaseEtcdDriver
          */
         public FluentLinstorTransaction put(Column column, String valueRef)
         {
+            return put(column.getName(), valueRef);
+        }
+
+        /**
+         * Puts an arbitrary key for the previously defined base key.
+         *
+         * @param column
+         * @param valueRef
+         */
+        public FluentLinstorTransaction put(String key, String valueRef)
+        {
             txn.put(
                 PutRequest.newBuilder()
-                    .setKey(bs(currentBaseKey + EtcdUtils.PATH_DELIMITER + column.getName()))
+                    .setKey(bs(currentBaseKey + EtcdUtils.PATH_DELIMITER + key))
                     .setValue(bs(valueRef)).build()
             );
             return this;

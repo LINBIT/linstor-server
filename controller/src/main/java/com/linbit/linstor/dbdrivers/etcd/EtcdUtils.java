@@ -54,6 +54,15 @@ public class EtcdUtils
         return buildKey(column.getTable(), pks) + column.getName();
     }
 
+    public static String buildKey(
+        String arbitraryKey,
+        Table table,
+        String... pks
+    )
+    {
+        return buildKey(table, pks) + arbitraryKey;
+    }
+
     public static Map<String, String> getTableRow(KvClient client, String key)
     {
         RangeResponse rspRow = client.get(bs(key)).asPrefix().sync();

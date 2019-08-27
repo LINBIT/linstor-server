@@ -25,33 +25,33 @@ public interface PropsConDatabaseDriver
      *
      * @throws DatabaseException
      */
-    void persist(String isntanceName, String key, String value) throws DatabaseException;
+    void persist(String instanceName, String key, String value) throws DatabaseException;
 
     /**
      * Performs an insert or update for the given key/value pairs
      *
      * @throws DatabaseException
      */
-    void persist(String isntanceName, Map<String, String> props) throws DatabaseException;
+    void persist(String instanceName, Map<String, String> props) throws DatabaseException;
 
     /**
      * Removes the given key from the database
      *
      * @throws DatabaseException
      */
-    void remove(String isntanceName, String key) throws DatabaseException;
+    void remove(String instanceName, String key) throws DatabaseException;
 
     /**
      * Removes the given keys from the database
      *
      * @throws DatabaseException
      */
-    void remove(String isntanceName, Set<String> keys) throws DatabaseException;
+    void remove(String instanceName, Set<String> keys) throws DatabaseException;
 
     /**
      * Removes all entries of this instance from the database
      *
      * @throws DatabaseException
      */
-    void removeAll(String isntanceName) throws DatabaseException;
+    void removeAll(String instanceName) throws DatabaseException;
 }
