@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.core.objects.DrbdLayerETCDDriver;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
@@ -112,9 +113,9 @@ public class ControllerDbModule extends AbstractModule
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
 
-                // TODO
 
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
+                // TODO
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
                 break;
@@ -126,6 +127,7 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(PropsConDatabaseDriver.class).to(PropsConETCDDriver.class);
                 bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerETCDDriver.class);
+                bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerETCDDriver.class);
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerETCDDriver.class);
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishETCDDriver.class);
                 break;

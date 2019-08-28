@@ -266,6 +266,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * These caches are only used during loading. Having them cleared after having loaded all data
      * these caches should never be used again.
      */
+    @Override
     public void clearLoadCache()
     {
         drbdRscDfnCache.clear();
@@ -279,6 +280,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * @param rscDfnMap
      * @throws DatabaseException
      */
+    @Override
     public void loadLayerData(Map<ResourceName, ResourceDefinition> rscDfnMap) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RSC_DFN_AND_VLM_DFN))
@@ -419,6 +421,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * @throws DatabaseException
      * @throws AccessDeniedException
      */
+    @Override
     public Pair<DrbdRscData, Set<RscLayerObject>> load(
         Resource rsc,
         int id,
@@ -602,7 +605,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         errorReporter.logTrace("Creating DrbdRscData %s", getId(drbdRscDataRef));
         try (PreparedStatement stmt = connection.prepareStatement(INSERT_RSC))
         {
-            stmt.setLong(1, drbdRscDataRef.getRscLayerId());
+            stmt.setInt(1, drbdRscDataRef.getRscLayerId());
             stmt.setShort(2, drbdRscDataRef.getPeerSlots());
             stmt.setInt(3, drbdRscDataRef.getAlStripes());
             stmt.setLong(4, drbdRscDataRef.getAlStripeSize());
@@ -652,7 +655,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         errorReporter.logTrace("Creating DrbdVlmData %s", getId(drbdVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
         {
-            stmt.setLong(1, drbdVlmDataRef.getRscLayerId());
+            stmt.setInt(1, drbdVlmDataRef.getRscLayerId());
             stmt.setInt(2, drbdVlmDataRef.getVlmNr().value);
             StorPool externalMetaDataStorPool = drbdVlmDataRef.getExternalMetaDataStorPool();
             if (externalMetaDataStorPool != null)
@@ -701,7 +704,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         errorReporter.logTrace("Deleting DrbdRscDataRef %s", getId(drbdRscDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_RSC))
         {
-            stmt.setLong(1, drbdRscDataRef.getRscLayerId());
+            stmt.setInt(1, drbdRscDataRef.getRscLayerId());
 
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdRscDataRef deleted %s", getId(drbdRscDataRef));
@@ -736,7 +739,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         errorReporter.logTrace("Deleting DrbdVlmData %s", getId(drbdVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
         {
-            stmt.setLong(1, drbdVlmDataRef.getRscLayerId());
+            stmt.setInt(1, drbdVlmDataRef.getRscLayerId());
             stmt.setInt(2, drbdVlmDataRef.getVlmNr().value);
 
             stmt.executeUpdate();

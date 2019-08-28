@@ -15,7 +15,6 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
@@ -59,6 +58,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver.RscLayerInfo;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
@@ -133,7 +133,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final SnapshotVolumeDbDriver snapshotVolumeDriver;
     private final KeyValueStoreDbDriver keyValueStoreDataGenericDbDriver;
     private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
-    private final DrbdLayerGenericDbDriver drbdLayerDriver;
+    private final DrbdLayerDatabaseDriver drbdLayerDriver;
     private final LuksLayerGenericDbDriver luksLayerDriver;
     private final StorageLayerDatabaseDriver storageLayerDriver;
     private final NvmeLayerGenericDbDriver nvmeLayerDriver;
@@ -170,7 +170,7 @@ public class DatabaseLoader implements DatabaseDriver
         SnapshotVolumeDbDriver snapshotVolumeDriverRef,
         KeyValueStoreDbDriver keyValueStoreDataGenericDbDriverRef,
         ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
-        DrbdLayerGenericDbDriver drbdLayerDriverRef,
+        DrbdLayerDatabaseDriver drbdLayerDriverRef,
         LuksLayerGenericDbDriver luksLayerDriverRef,
         StorageLayerGenericDbDriver storageLayerDriverRef,
         NvmeLayerGenericDbDriver nvmeLayerDriverRef,
