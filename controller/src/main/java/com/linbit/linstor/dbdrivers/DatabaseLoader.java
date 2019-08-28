@@ -42,7 +42,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionData;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.SnapshotVolumeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.SnapshotVolumeDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorPool;
@@ -130,7 +130,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final SnapshotDefinitionDbDriver snapshotDefinitionDriver;
     private final SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriver;
     private final SnapshotDataDbDriver snapshotDriver;
-    private final SnapshotVolumeDataGenericDbDriver snapshotVolumeDriver;
+    private final SnapshotVolumeDbDriver snapshotVolumeDriver;
     private final KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriver;
     private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
     private final DrbdLayerGenericDbDriver drbdLayerDriver;
@@ -167,7 +167,7 @@ public class DatabaseLoader implements DatabaseDriver
         SnapshotDefinitionDbDriver snapshotDefinitionDriverRef,
         SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataDbDriver snapshotDriverRef,
-        SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
+        SnapshotVolumeDbDriver snapshotVolumeDriverRef,
         KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriverRef,
         ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
         DrbdLayerGenericDbDriver drbdLayerDriverRef,
@@ -457,10 +457,12 @@ public class DatabaseLoader implements DatabaseDriver
 
             // loading snapshot volumes
             List<SnapshotVolume> loadedSnapshotVolumes =
-                snapshotVolumeDriver.loadAll(
-                    tmpSnapshotMap,
-                    tmpSnapshotVlmDfnMap,
-                    tmpStorPoolMap
+                snapshotVolumeDriver.loadAllAsList(
+                    new Triple<>(
+                        tmpSnapshotMap,
+                        tmpSnapshotVlmDfnMap,
+                        tmpStorPoolMap
+                    )
                 );
             for (SnapshotVolume snapshotVolume : loadedSnapshotVolumes)
             {
