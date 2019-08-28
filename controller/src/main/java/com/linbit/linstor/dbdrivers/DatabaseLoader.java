@@ -24,7 +24,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.NodeDbDriver;
-import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
@@ -59,6 +58,7 @@ import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver.RscLayerInfo;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
@@ -136,7 +136,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final DrbdLayerDatabaseDriver drbdLayerDriver;
     private final LuksLayerDatabaseDriver luksLayerDriver;
     private final StorageLayerDatabaseDriver storageLayerDriver;
-    private final NvmeLayerGenericDbDriver nvmeLayerDriver;
+    private final NvmeLayerDatabaseDriver nvmeLayerDriver;
     private final Provider<CtrlLayerDataHelper> ctrlLayerDataHelper;
 
     private final CoreModule.NodesMap nodesMap;
@@ -173,7 +173,7 @@ public class DatabaseLoader implements DatabaseDriver
         DrbdLayerDatabaseDriver drbdLayerDriverRef,
         LuksLayerDatabaseDriver luksLayerDriverRef,
         StorageLayerGenericDbDriver storageLayerDriverRef,
-        NvmeLayerGenericDbDriver nvmeLayerDriverRef,
+        NvmeLayerDatabaseDriver nvmeLayerDriverRef,
         Provider<CtrlLayerDataHelper> ctrlLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,

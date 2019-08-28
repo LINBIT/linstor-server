@@ -8,6 +8,7 @@ import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.NodeDbDriver;
+import com.linbit.linstor.core.objects.NvmeLayerETCDDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
@@ -117,7 +118,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
-                // TODO
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
                 break;
             case ETCD:
@@ -132,6 +132,7 @@ public class ControllerDbModule extends AbstractModule
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerETCDDriver.class);
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerETCDDriver.class);
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishETCDDriver.class);
+                bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerETCDDriver.class);
                 break;
             default:
                 throw new RuntimeException("ETCD database driver not implemented.");
