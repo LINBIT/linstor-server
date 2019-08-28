@@ -219,7 +219,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException;
 
-    protected abstract String getId(DATA data);
+    protected abstract String getId(DATA data) throws AccessDeniedException;
 
     public class RawParameters
     {

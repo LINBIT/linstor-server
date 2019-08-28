@@ -22,7 +22,7 @@ public interface DbEngine
 {
     interface DataToString<DATA>
     {
-        String toString(DATA data);
+        String toString(DATA data) throws AccessDeniedException;
     }
 
     public static interface DataLoader<DATA, INIT_MAPS, LOAD_ALL>

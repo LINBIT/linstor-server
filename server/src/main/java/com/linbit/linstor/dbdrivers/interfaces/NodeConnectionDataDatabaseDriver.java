@@ -8,24 +8,6 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface NodeConnectionDataDatabaseDriver
+public interface NodeConnectionDataDatabaseDriver extends GenericDatabaseDriver<NodeConnectionData>
 {
-    /**
-     * Persists the given {@link com.linbit.linstor.core.objects.NodeConnectionData} into the database.
-     *
-     * @param nodeConDfnData
-     *  The data to be stored (including the primary key)
-     * @throws DatabaseException
-     */
-    void create(NodeConnectionData nodeConDfnData) throws DatabaseException;
-
-    /**
-     * Removes the given {@link NodeConnectionData} from the database
-     *
-     * @param nodeConDfnData
-     *  The data identifying the database entry to delete
-     * @throws DatabaseException
-     */
-    void delete(NodeConnectionData nodeConDfnData) throws DatabaseException;
-
 }

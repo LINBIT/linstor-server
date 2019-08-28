@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,16 +69,16 @@ class ETCDListToJsonArrayDriver<DATA, LIST_TYPE> extends BaseEtcdDriver
     private void update(DATA data, LIST_TYPE ignored, Collection<LIST_TYPE> backingCollection)
         throws DatabaseException
     {
-        String inlineId = dataToString.toString(data);
-        errorReporter.logTrace(
-            "Updating %s's %s to %s of %s",
-            table.getName(),
-            columnToUpdate.getName(),
-            backingCollection.toString(),
-            inlineId
-        );
         try
         {
+            String inlineId = dataToString.toString(data);
+            errorReporter.logTrace(
+                "Updating %s's %s to %s of %s",
+                table.getName(),
+                columnToUpdate.getName(),
+                backingCollection.toString(),
+                inlineId
+            );
             namespace(table, getPrimaryKey(data, table))
                 .put(
                     columnToUpdate,

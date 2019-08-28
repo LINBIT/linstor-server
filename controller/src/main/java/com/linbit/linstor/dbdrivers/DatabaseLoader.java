@@ -24,7 +24,7 @@ import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
-import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.NodeDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
@@ -117,7 +117,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final ResourceGroupDbDriver rscGrpDriver;
     private final NodeDbDriver nodeDriver;
     private final NetInterfaceDbDriver netIfDriver;
-    private final NodeConnectionDataGenericDbDriver nodeConnDriver;
+    private final NodeConnectionDbDriver nodeConnDriver;
     private final ResourceDefinitionDbDriver rscDfnDriver;
     private final ResourceDbDriver rscDriver;
     private final ResourceConnectionDataGenericDbDriver rscConnDriver;
@@ -153,7 +153,7 @@ public class DatabaseLoader implements DatabaseDriver
         ResourceGroupDbDriver rscGrpDriverRef,
         NodeDbDriver nodeDriverRef,
         NetInterfaceDbDriver netIfDriverRef,
-        NodeConnectionDataGenericDbDriver nodeConnDriverRef,
+        NodeConnectionDbDriver nodeConnDriverRef,
         ResourceDefinitionDbDriver resesourceDefinitionDriverRef,
         ResourceDbDriver resourceDriverRef,
         ResourceConnectionDataGenericDbDriver rscConnDriverRef,
@@ -281,7 +281,7 @@ public class DatabaseLoader implements DatabaseDriver
                 }
             }
 
-            List<NodeConnectionData> loadedNodeConns = nodeConnDriver.loadAll(tmpNodesMap);
+            List<NodeConnectionData> loadedNodeConns = nodeConnDriver.loadAllAsList(tmpNodesMap);
             for (NodeConnectionData nodeConn : loadedNodeConns)
             {
                 Node sourceNode = nodeConn.getSourceNode(dbCtx);
