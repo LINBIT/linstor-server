@@ -102,7 +102,7 @@ public class Commands
             extCmd,
             new String[]
                 {
-                    "wipefs",
+                    "wipefs", "-a", "-f",
                     devicePath
                 },
             "Failed to wipeFs of " + devicePath,
