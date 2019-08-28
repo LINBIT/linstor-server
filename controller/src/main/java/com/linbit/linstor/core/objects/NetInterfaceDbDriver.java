@@ -75,16 +75,7 @@ public class NetInterfaceDbDriver
         setColumnSetter(NODE_NET_NAME, netIf -> netIf.getName().value);
         setColumnSetter(NODE_NET_DSP_NAME, netIf -> netIf.getName().displayValue);
         setColumnSetter(INET_ADDRESS, netIf -> netIf.getAddress(dbCtxRef).getAddress());
-        setColumnSetter(STLT_CONN_PORT, netIf ->
-        {
-            TcpPortNumber port = netIf.getStltConnPort(dbCtxRef);
-            Integer ret = null;
-            if (port != null)
-            {
-                ret = port.value;
-            }
-            return ret;
-        });
+        setColumnSetter(STLT_CONN_PORT, netIf -> TcpPortNumber.getValueNullable(netIf.getStltConnPort(dbCtxRef)));
         setColumnSetter(STLT_CONN_ENCR_TYPE, netIf ->
         {
             EncryptionType type = netIf.getStltConnEncryptionType(dbCtxRef);

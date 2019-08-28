@@ -29,7 +29,7 @@ import com.linbit.linstor.core.objects.NodeDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
-import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -120,7 +120,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final NodeConnectionDbDriver nodeConnDriver;
     private final ResourceDefinitionDbDriver rscDfnDriver;
     private final ResourceDbDriver rscDriver;
-    private final ResourceConnectionDataGenericDbDriver rscConnDriver;
+    private final ResourceConnectionDbDriver rscConnDriver;
     private final VolumeDefinitionDbDriver vlmDfnDriver;
     private final VolumeDbDriver vlmDriver;
     private final VolumeConnectionDataGenericDbDriver vlmConnDriver;
@@ -156,7 +156,7 @@ public class DatabaseLoader implements DatabaseDriver
         NodeConnectionDbDriver nodeConnDriverRef,
         ResourceDefinitionDbDriver resesourceDefinitionDriverRef,
         ResourceDbDriver resourceDriverRef,
-        ResourceConnectionDataGenericDbDriver rscConnDriverRef,
+        ResourceConnectionDbDriver rscConnDriverRef,
         VolumeGroupDbDriver vlmGrpDriverRef,
         VolumeDefinitionDbDriver vlmDfnDriverRef,
         VolumeDbDriver volumeDriverRef,
@@ -338,7 +338,7 @@ public class DatabaseLoader implements DatabaseDriver
             );
 
             // loading resource connections
-            List<ResourceConnectionData> loadedRscConns = rscConnDriver.loadAll(tmpRscMap);
+            List<ResourceConnectionData> loadedRscConns = rscConnDriver.loadAllAsList(tmpRscMap);
             for (ResourceConnectionData rscConn : loadedRscConns)
             {
                 Resource sourceResource = rscConn.getSourceResource(dbCtx);
