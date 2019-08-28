@@ -154,6 +154,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     private static final String DELETE_RSC =
         " DELETE FROM " + TBL_LAYER_DRBD_RESOURCES +
         " WHERE " + LAYER_RESOURCE_ID    + " = ?";
+    private static final String DELETE_VLM =
+        " DELETE FROM " + TBL_LAYER_DRBD_VOLUMES +
+        " WHERE " + LAYER_RESOURCE_ID + " = ? AND " +
+                    VLM_NR +            " = ?";
     private static final String DELETE_RSC_DFN =
         " DELETE FROM " + TBL_LAYER_DRBD_RESOURCE_DEFINITIONS +
         " WHERE " + RESOURCE_NAME        + " = ? AND " +
@@ -729,8 +733,19 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     @Override
     public void delete(DrbdVlmData drbdVlmDataRef) throws DatabaseException
     {
-        // no-op - there is no special database table.
-        // this method only exists if DrbdVlmData will get a database table in future.
+        errorReporter.logTrace("Deleting DrbdVlmData %s", getId(drbdVlmDataRef));
+        try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
+        {
+            stmt.setLong(1, drbdVlmDataRef.getRscLayerId());
+            stmt.setInt(2, drbdVlmDataRef.getVlmNr().value);
+
+            stmt.executeUpdate();
+            errorReporter.logTrace("DrbdVlmData deleted %s", getId(drbdVlmDataRef));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
     }
 
     @Override
