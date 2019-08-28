@@ -44,7 +44,8 @@ import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionData;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolDbDriver;
@@ -128,7 +129,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final StorPoolDefinitionDbDriver storPoolDfnDriver;
     private final StorPoolDbDriver storPoolDriver;
     private final SnapshotDefinitionDbDriver snapshotDefinitionDriver;
-    private final SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriver;
+    private final SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriver;
     private final SnapshotDataGenericDbDriver snapshotDriver;
     private final SnapshotVolumeDataGenericDbDriver snapshotVolumeDriver;
     private final KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriver;
@@ -165,7 +166,7 @@ public class DatabaseLoader implements DatabaseDriver
         StorPoolDefinitionDbDriver storPoolDefinitionDriverRef,
         StorPoolDbDriver storPoolDriverRef,
         SnapshotDefinitionDbDriver snapshotDefinitionDriverRef,
-        SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriverRef,
+        SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataGenericDbDriver snapshotDriverRef,
         SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
         KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriverRef,
