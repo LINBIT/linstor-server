@@ -37,14 +37,13 @@ import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
+import com.linbit.linstor.core.objects.SnapshotDataDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionData;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionData;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
@@ -130,7 +129,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final StorPoolDbDriver storPoolDriver;
     private final SnapshotDefinitionDbDriver snapshotDefinitionDriver;
     private final SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriver;
-    private final SnapshotDataGenericDbDriver snapshotDriver;
+    private final SnapshotDataDbDriver snapshotDriver;
     private final SnapshotVolumeDataGenericDbDriver snapshotVolumeDriver;
     private final KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriver;
     private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
@@ -167,7 +166,7 @@ public class DatabaseLoader implements DatabaseDriver
         StorPoolDbDriver storPoolDriverRef,
         SnapshotDefinitionDbDriver snapshotDefinitionDriverRef,
         SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriverRef,
-        SnapshotDataGenericDbDriver snapshotDriverRef,
+        SnapshotDataDbDriver snapshotDriverRef,
         SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
         KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriverRef,
         ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
@@ -437,7 +436,9 @@ public class DatabaseLoader implements DatabaseDriver
             );
 
             // loading snapshots
-            Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = snapshotDriver.loadAll(tmpNodesMap, tmpSnapshotDfnMap);
+            Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = snapshotDriver.loadAll(
+                new Pair<>(tmpNodesMap, tmpSnapshotDfnMap)
+            );
             for (Snapshot snapshot : loadedSnapshots.keySet())
             {
                 loadedNodesMap.get(snapshot.getNode()).getSnapshotMap()
