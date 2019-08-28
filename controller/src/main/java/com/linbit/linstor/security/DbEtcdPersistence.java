@@ -3,6 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecConfiguration;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecDfltRoles;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdRoleMap;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdentities;
@@ -215,7 +216,7 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
     {
         return EtcdUtils.getFirstValue(
             etcdDb.getKvClient(),
-            EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_SEC_LEVEL)
+            EtcdUtils.buildKey(SecConfiguration.ENTRY_VALUE, SecurityDbConsts.KEY_SEC_LEVEL)
         );
     }
 
@@ -235,7 +236,7 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
     {
         etcdDb.getKvClient().batch().put(
             EtcdUtils.putReq(
-                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_SEC_LEVEL),
+                EtcdUtils.buildKey(SecConfiguration.ENTRY_VALUE, SecurityDbConsts.KEY_SEC_LEVEL),
                 newLevel.name()
             )
         ).sync();

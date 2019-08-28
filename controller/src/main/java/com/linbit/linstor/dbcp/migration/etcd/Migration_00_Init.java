@@ -304,7 +304,8 @@ public class Migration_00_Init extends EtcdMigration
         return txn
             .put(putReq(
                 GeneratedDatabaseTables.DATABASE_SCHEMA_NAME +
-                    "/" + GeneratedDatabaseTables.PROPS_CONTAINERS.getName() + "/" + propsInstance + "/" + propKey,
+                    "/" + GeneratedDatabaseTables.PROPS_CONTAINERS.getName() + "/" +
+                    propsInstance + PRIMARY_KEY_DELI + propKey,
                 propValue
             ));
     }
