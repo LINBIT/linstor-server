@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
-import com.linbit.linstor.core.objects.KeyValueStoreData;
 import com.linbit.linstor.core.objects.KeyValueStore.InitMaps;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
@@ -15,7 +14,6 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -23,6 +21,7 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -99,25 +98,6 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
         {
             throw new DatabaseException(sqlExc);
         }
-    }
-
-    @Override
-    public boolean exists(KeyValueStoreName kvsName) throws DatabaseException
-    {
-        boolean exists = false;
-        try (PreparedStatement stmt = getConnection().prepareStatement(KVS_SELECT))
-        {
-            stmt.setString(1, kvsName.value);
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                exists = resultSet.next();
-            }
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new DatabaseException(sqlExc);
-        }
-        return exists;
     }
 
     public Map<KeyValueStoreData, InitMaps> loadAll() throws DatabaseException

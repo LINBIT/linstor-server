@@ -18,7 +18,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
-import com.linbit.linstor.core.objects.KeyValueStoreDataGenericDbDriver;
+import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
@@ -131,7 +131,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriver;
     private final SnapshotDataDbDriver snapshotDriver;
     private final SnapshotVolumeDbDriver snapshotVolumeDriver;
-    private final KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriver;
+    private final KeyValueStoreDbDriver keyValueStoreDataGenericDbDriver;
     private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
     private final DrbdLayerGenericDbDriver drbdLayerDriver;
     private final LuksLayerGenericDbDriver luksLayerDriver;
@@ -168,7 +168,7 @@ public class DatabaseLoader implements DatabaseDriver
         SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataDbDriver snapshotDriverRef,
         SnapshotVolumeDbDriver snapshotVolumeDriverRef,
-        KeyValueStoreDataGenericDbDriver keyValueStoreDataGenericDbDriverRef,
+        KeyValueStoreDbDriver keyValueStoreDataGenericDbDriverRef,
         ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
         DrbdLayerGenericDbDriver drbdLayerDriverRef,
         LuksLayerGenericDbDriver luksLayerDriverRef,
@@ -474,7 +474,7 @@ public class DatabaseLoader implements DatabaseDriver
 
             // load and put key value store map
             Map<KeyValueStore, KeyValueStore.InitMaps> loadedKeyValueStoreMap =
-                Collections.unmodifiableMap(keyValueStoreDataGenericDbDriver.loadAll());
+                Collections.unmodifiableMap(keyValueStoreDataGenericDbDriver.loadAll(null));
             Map<KeyValueStoreName, KeyValueStore> tmpKeyValueStoreMap =
                 mapByName(loadedKeyValueStoreMap, KeyValueStore::getName);
             keyValueStoreMap.putAll(tmpKeyValueStoreMap);

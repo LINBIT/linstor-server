@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
-import com.linbit.linstor.core.objects.KeyValueStoreDataGenericDbDriver;
+import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
@@ -97,6 +97,7 @@ public class ControllerDbModule extends AbstractModule
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionDbDriver.class);
         bind(SnapshotDataDatabaseDriver.class).to(SnapshotDataDbDriver.class);
         bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDbDriver.class);
+        bind(KeyValueStoreDataDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
         switch (dbType)
         {
             case SQL:
@@ -112,7 +113,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
 
                 // TODO
-                bind(KeyValueStoreDataDatabaseDriver.class).to(KeyValueStoreDataGenericDbDriver.class);
 
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
