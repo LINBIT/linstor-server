@@ -31,7 +31,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceData;
-import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -53,9 +53,9 @@ import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
@@ -119,7 +119,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final NetInterfaceDataGenericDbDriver netIfDriver;
     private final NodeConnectionDataGenericDbDriver nodeConnDriver;
     private final ResourceDefinitionDbDriver rscDfnDriver;
-    private final ResourceDataGenericDbDriver rscDriver;
+    private final ResourceDbDriver rscDriver;
     private final ResourceConnectionDataGenericDbDriver rscConnDriver;
     private final VolumeDefinitionDataGenericDbDriver vlmDfnDriver;
     private final VolumeDbDriver vlmDriver;
@@ -155,7 +155,7 @@ public class DatabaseLoader implements DatabaseDriver
         NetInterfaceDataGenericDbDriver netIfDriverRef,
         NodeConnectionDataGenericDbDriver nodeConnDriverRef,
         ResourceDefinitionDbDriver resesourceDefinitionDriverRef,
-        ResourceDataGenericDbDriver resourceDriverRef,
+        ResourceDbDriver resourceDriverRef,
         ResourceConnectionDataGenericDbDriver rscConnDriverRef,
         VolumeGroupDataGenericDbDriver vlmGrpDriverRef,
         VolumeDefinitionDataGenericDbDriver vlmDfnDriverRef,

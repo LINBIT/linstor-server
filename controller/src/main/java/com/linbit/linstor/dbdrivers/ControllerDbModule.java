@@ -8,7 +8,7 @@ import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerETCDDriver;
@@ -24,8 +24,8 @@ import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.SwordfishETCDDriver;
 import com.linbit.linstor.core.objects.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
+import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
@@ -84,6 +84,7 @@ public class ControllerDbModule extends AbstractModule
         bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
         bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDbDriver.class);
         bind(VolumeDataDatabaseDriver.class).to(VolumeDbDriver.class);
+        bind(ResourceDataDatabaseDriver.class).to(ResourceDbDriver.class);
         switch (dbType)
         {
             case SQL:
@@ -93,7 +94,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 
                 bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
-                bind(ResourceDataDatabaseDriver.class).to(ResourceDataGenericDbDriver.class);
                 bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataGenericDbDriver.class);
                 bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDataGenericDbDriver.class);
                 bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataGenericDbDriver.class);
