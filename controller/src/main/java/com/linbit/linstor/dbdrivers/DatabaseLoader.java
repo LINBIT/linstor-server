@@ -46,7 +46,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
-import com.linbit.linstor.core.objects.StorPoolDataGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
@@ -125,7 +125,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final VolumeDbDriver vlmDriver;
     private final VolumeConnectionDataGenericDbDriver vlmConnDriver;
     private final StorPoolDefinitionDbDriver storPoolDfnDriver;
-    private final StorPoolDataGenericDbDriver storPoolDriver;
+    private final StorPoolDbDriver storPoolDriver;
     private final SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriver;
     private final SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriver;
     private final SnapshotDataGenericDbDriver snapshotDriver;
@@ -162,7 +162,7 @@ public class DatabaseLoader implements DatabaseDriver
         VolumeDbDriver volumeDriverRef,
         VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
         StorPoolDefinitionDbDriver storPoolDefinitionDriverRef,
-        StorPoolDataGenericDbDriver storPoolDriverRef,
+        StorPoolDbDriver storPoolDriverRef,
         SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriverRef,
         SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataGenericDbDriver snapshotDriverRef,
@@ -290,15 +290,16 @@ public class DatabaseLoader implements DatabaseDriver
                 loadedNodesMap.get(targetNode).getNodeConnMap().put(sourceNode.getName(), nodeConn);
             }
 
-            // loading free space managers
-            Map<FreeSpaceMgrName, FreeSpaceMgr> tmpFreeSpaceMgrMap = storPoolDriver.loadAllFreeSpaceMgrs();
 
             // loading storage pools
-            Map<StorPool, StorPool.InitMaps> loadedStorPools = Collections.unmodifiableMap(storPoolDriver.loadAll(
-                tmpNodesMap,
-                tmpStorPoolDfnMap,
-                tmpFreeSpaceMgrMap
-            ));
+            Map<StorPool, StorPool.InitMaps> loadedStorPools = Collections.unmodifiableMap(
+                storPoolDriver.loadAll(
+                    new Pair<>(
+                        tmpNodesMap,
+                        tmpStorPoolDfnMap
+                    )
+                )
+            );
             for (StorPool storPool : loadedStorPools.keySet())
             {
                 loadedNodesMap.get(storPool.getNode()).getStorPoolMap()
@@ -306,7 +307,8 @@ public class DatabaseLoader implements DatabaseDriver
                 loadedStorPoolDfnsMap.get(storPool.getDefinition(dbCtx)).getStorPoolMap()
                     .put(storPool.getNode().getName(), storPool);
             }
-
+            // loading free space managers
+            Map<FreeSpaceMgrName, FreeSpaceMgr> tmpFreeSpaceMgrMap = storPoolDriver.getAllLoadedFreeSpaceMgrs();
 
             // temporary storPool map
             Map<Pair<NodeName, StorPoolName>, StorPool> tmpStorPoolMap =

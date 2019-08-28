@@ -1,6 +1,11 @@
 package com.linbit.linstor;
 
-import javax.inject.Inject;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
@@ -8,21 +13,20 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import org.junit.Before;
-import org.junit.Test;
+import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,11 +36,8 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public class StorPoolDataGenericDbDriverTest extends GenericDbBase
 {
@@ -271,43 +272,6 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         assertFalse("Database did not delete storPool", resultSet.next());
 
         resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testEnsureExist() throws Exception
-    {
-        StorPoolData storPool = TestFactory.createStorPoolData(
-            uuid,
-            node,
-            spdd,
-            DeviceProviderKind.LVM,
-            fsm,
-            driver,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>()
-        );
-
-        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_STOR_POOLS);
-        ResultSet resultSet = stmt.executeQuery();
-        assertFalse(resultSet.next());
-        resultSet.close();
-
-        driver.ensureEntryExists(storPool);
-        commit();
-
-        resultSet = stmt.executeQuery();
-        assertTrue(resultSet.next());
-        resultSet.close();
-
-        driver.ensureEntryExists(storPool);
-
-        resultSet = stmt.executeQuery();
-        assertTrue(resultSet.next());
-        resultSet.close();
-
         stmt.close();
     }
 

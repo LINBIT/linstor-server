@@ -28,6 +28,7 @@ import com.linbit.utils.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -268,41 +269,6 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
 
             stmt.executeUpdate();
             errorReporter.logTrace("StorPool deleted %s", getId(storPool));
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new DatabaseException(sqlExc);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DatabaseLoader.handleAccessDeniedException(accDeniedExc);
-        }
-    }
-
-    @Override
-    public void ensureEntryExists(StorPoolData storPoolData) throws DatabaseException
-    {
-        errorReporter.logTrace("Ensuring StorPool exists %s", getId(storPoolData));
-        Node node = storPoolData.getNode();
-        StorPoolDefinition storPoolDfn;
-        try (PreparedStatement stmt = getConnection().prepareStatement(SP_SELECT_BY_NODE_AND_SP);)
-        {
-            storPoolDfn = storPoolData.getDefinition(dbCtx);
-
-            stmt.setString(1, node.getName().value);
-            stmt.setString(2, storPoolDfn.getName().value);
-
-            try (ResultSet resultSet = stmt.executeQuery())
-            {
-                if (!resultSet.next())
-                {
-                    create(storPoolData);
-                }
-                else
-                {
-                    errorReporter.logTrace("StorPool existed, nothing to do %s", getId(storPoolData));
-                }
-            }
         }
         catch (SQLException sqlExc)
         {
