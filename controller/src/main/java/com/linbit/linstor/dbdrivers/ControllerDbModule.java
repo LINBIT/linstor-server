@@ -3,7 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
-import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
@@ -89,6 +89,7 @@ public class ControllerDbModule extends AbstractModule
         bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDbDriver.class);
         bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDbDriver.class);
         bind(StorPoolDataDatabaseDriver.class).to(StorPoolDbDriver.class);
+        bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDbDriver.class);
         switch (dbType)
         {
             case SQL:
@@ -104,7 +105,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
 
                 // TODO
-                bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDataGenericDbDriver.class);
                 bind(NodeConnectionDataDatabaseDriver.class).to(NodeConnectionDataGenericDbDriver.class);
                 bind(ResourceConnectionDataDatabaseDriver.class).to(ResourceConnectionDataGenericDbDriver.class);
                 bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDataGenericDbDriver.class);

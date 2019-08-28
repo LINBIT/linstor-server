@@ -21,7 +21,7 @@ import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStoreDataGenericDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceData;
-import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
@@ -116,7 +116,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final AccessContext dbCtx;
     private final ResourceGroupDbDriver rscGrpDriver;
     private final NodeDbDriver nodeDriver;
-    private final NetInterfaceDataGenericDbDriver netIfDriver;
+    private final NetInterfaceDbDriver netIfDriver;
     private final NodeConnectionDataGenericDbDriver nodeConnDriver;
     private final ResourceDefinitionDbDriver rscDfnDriver;
     private final ResourceDbDriver rscDriver;
@@ -152,7 +152,7 @@ public class DatabaseLoader implements DatabaseDriver
         @SystemContext AccessContext privCtx,
         ResourceGroupDbDriver rscGrpDriverRef,
         NodeDbDriver nodeDriverRef,
-        NetInterfaceDataGenericDbDriver netIfDriverRef,
+        NetInterfaceDbDriver netIfDriverRef,
         NodeConnectionDataGenericDbDriver nodeConnDriverRef,
         ResourceDefinitionDbDriver resesourceDefinitionDriverRef,
         ResourceDbDriver resourceDriverRef,
@@ -267,7 +267,7 @@ public class DatabaseLoader implements DatabaseDriver
                 mapByName(loadedStorPoolDfnsMap, StorPoolDefinition::getName);
 
             // loading net interfaces
-            List<NetInterfaceData> loadedNetIfs = netIfDriver.loadAll(tmpNodesMap);
+            List<NetInterfaceData> loadedNetIfs = netIfDriver.loadAllAsList(tmpNodesMap);
             for (NetInterfaceData netIf : loadedNetIfs)
             {
                 Node node = netIf.getNode();

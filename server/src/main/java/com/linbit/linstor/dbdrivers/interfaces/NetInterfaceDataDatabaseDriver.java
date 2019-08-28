@@ -12,26 +12,8 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface NetInterfaceDataDatabaseDriver
+public interface NetInterfaceDataDatabaseDriver extends GenericDatabaseDriver<NetInterfaceData>
 {
-    /**
-     * Persists the given {@link NetInterfaceData} into the database.
-     *
-     * @param netInterfaceData
-     *  The data to be stored (including the primary key)
-     * @throws DatabaseException
-     */
-    void create(NetInterfaceData netInterfaceData) throws DatabaseException;
-
-    /**
-     * Removes the given {@link NetInterfaceData} from the database
-     *
-     * @param netInterfaceData
-     *  The data identifying the database entry to delete
-     * @throws DatabaseException
-     */
-    void delete(NetInterfaceData netInterfaceData) throws DatabaseException;
-
     /**
      * A special sub-driver to update the persisted ipAddress.
      */

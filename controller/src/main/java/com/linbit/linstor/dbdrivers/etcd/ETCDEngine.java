@@ -82,12 +82,16 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
             {
                 String key = getColumnKey(setters, col, data);
 
-                PutRequest putRequest = PutRequest.newBuilder().setKey(bs(key)).setValue(
-                    bs(Objects.toString(setters.get(col).accept(data)))
-                )
-                    .build();
+                Object obj = setters.get(col).accept(data);
+                if (obj != null)
+                {
+                    PutRequest putRequest = PutRequest.newBuilder()
+                        .setKey(bs(key))
+                        .setValue(bs(Objects.toString(obj)))
+                        .build();
 
-                transaction.put(putRequest);
+                    transaction.put(putRequest);
+                }
             }
         }
         // sync will be called within transMgr.commit()
@@ -291,8 +295,16 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     Objects.toString(colValue),
                     dataToString.toString(data)
                 );
-                namespace(col.getTable(), getPrimaryKeys(col.getTable(), data, setters))
-                    .put(col, Objects.toString(colValue));
+                if (colValue != null)
+                {
+                    namespace(col.getTable(), getPrimaryKeys(col.getTable(), data, setters))
+                        .put(col, Objects.toString(colValue));
+                }
+                else
+                {
+                    namespace(EtcdUtils.buildKey(col, getPrimaryKeys(col.getTable(), data, setters)))
+                        .delete(false);
+                }
             }
             catch (AccessDeniedException exc)
             {
