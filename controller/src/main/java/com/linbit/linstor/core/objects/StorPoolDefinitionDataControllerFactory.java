@@ -65,7 +65,7 @@ public class StorPoolDefinitionDataControllerFactory
             UUID.randomUUID(),
             objectProtectionFactory.getInstance(
                 accCtx,
-                ObjectProtection.buildPathSPD(storPoolName),
+                ObjectProtection.buildPath(storPoolName),
                 true
             ),
             storPoolName,

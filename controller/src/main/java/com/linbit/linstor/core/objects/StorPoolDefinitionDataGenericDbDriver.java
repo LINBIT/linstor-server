@@ -236,7 +236,7 @@ public class StorPoolDefinitionDataGenericDbDriver implements StorPoolDefinition
         throws DatabaseException, ImplementationError
     {
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
-            ObjectProtection.buildPathSPD(storPoolName),
+            ObjectProtection.buildPath(storPoolName),
             false // no need to log a warning, as we would fail then anyways
         );
         if (objProt == null)

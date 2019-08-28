@@ -53,7 +53,7 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
         spName = new StorPoolName("TestStorPool");
-        objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPathSPD(spName), true);
+        objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPath(spName), true);
         spdd = TestFactory.createStorPoolDefinitionData(
             uuid,
             objProt,

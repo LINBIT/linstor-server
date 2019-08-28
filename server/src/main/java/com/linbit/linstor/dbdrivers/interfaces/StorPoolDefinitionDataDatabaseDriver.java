@@ -8,27 +8,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface StorPoolDefinitionDataDatabaseDriver
+public interface StorPoolDefinitionDataDatabaseDriver extends GenericDatabaseDriver<StorPoolDefinitionData>
 {
-    /**
-     * Persists the given {@link com.linbit.linstor.core.objects.StorPoolDefinitionData} into the database.
-     *
-     * @param storPoolDefinition
-     *  The data to be stored (including the primary key)
-     *
-     * @throws DatabaseException
-     */
-    void create(StorPoolDefinitionData storPoolDefinition) throws DatabaseException;
-
-    /**
-     * Removes the given {@link com.linbit.linstor.core.objects.StorPoolDefinitionData} from the database.
-     *
-     * @param storPoolDefinition
-     *  The data identifying the row to delete
-     *
-     * @throws DatabaseException
-     */
-    void delete(StorPoolDefinitionData storPoolDefinition) throws DatabaseException;
-
     StorPoolDefinitionData createDefaultDisklessStorPool() throws DatabaseException;
 }

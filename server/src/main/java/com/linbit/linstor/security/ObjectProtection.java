@@ -509,7 +509,7 @@ public final class ObjectProtection extends BaseTransactionObject
      * @param storPoolName
      * @return
      */
-    public static String buildPathSPD(StorPoolName storPoolName)
+    public static String buildPath(StorPoolName storPoolName)
     {
         return PATH_STOR_POOL_DEFINITIONS + storPoolName.value;
     }

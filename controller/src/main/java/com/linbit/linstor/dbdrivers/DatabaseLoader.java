@@ -48,7 +48,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
@@ -124,7 +124,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final VolumeDefinitionDbDriver vlmDfnDriver;
     private final VolumeDbDriver vlmDriver;
     private final VolumeConnectionDataGenericDbDriver vlmConnDriver;
-    private final StorPoolDefinitionDataGenericDbDriver storPoolDfnDriver;
+    private final StorPoolDefinitionDbDriver storPoolDfnDriver;
     private final StorPoolDataGenericDbDriver storPoolDriver;
     private final SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriver;
     private final SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriver;
@@ -161,7 +161,7 @@ public class DatabaseLoader implements DatabaseDriver
         VolumeDefinitionDbDriver vlmDfnDriverRef,
         VolumeDbDriver volumeDriverRef,
         VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
-        StorPoolDefinitionDataGenericDbDriver storPoolDefinitionDriverRef,
+        StorPoolDefinitionDbDriver storPoolDefinitionDriverRef,
         StorPoolDataGenericDbDriver storPoolDriverRef,
         SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriverRef,
         SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriverRef,
@@ -249,7 +249,7 @@ public class DatabaseLoader implements DatabaseDriver
             Map<ResourceDefinition, ResourceDefinition.InitMaps> loadedRscDfnsMap =
                 Collections.unmodifiableMap(rscDfnDriver.loadAll(tmpRscGroups));
             Map<StorPoolDefinition, StorPoolDefinition.InitMaps> loadedStorPoolDfnsMap =
-                Collections.unmodifiableMap(storPoolDfnDriver.loadAll());
+                Collections.unmodifiableMap(storPoolDfnDriver.loadAll(null));
 
             // add the rscDfns into the corresponding rscGroup rscDfn-map
             for (ResourceDefinition rscDfn : loadedRscDfnsMap.keySet())
