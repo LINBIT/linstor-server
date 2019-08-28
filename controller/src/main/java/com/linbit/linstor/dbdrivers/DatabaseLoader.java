@@ -52,7 +52,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
-import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
@@ -123,7 +123,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final ResourceConnectionDbDriver rscConnDriver;
     private final VolumeDefinitionDbDriver vlmDfnDriver;
     private final VolumeDbDriver vlmDriver;
-    private final VolumeConnectionDataGenericDbDriver vlmConnDriver;
+    private final VolumeConnectionDbDriver vlmConnDriver;
     private final StorPoolDefinitionDbDriver storPoolDfnDriver;
     private final StorPoolDbDriver storPoolDriver;
     private final SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriver;
@@ -160,7 +160,7 @@ public class DatabaseLoader implements DatabaseDriver
         VolumeGroupDbDriver vlmGrpDriverRef,
         VolumeDefinitionDbDriver vlmDfnDriverRef,
         VolumeDbDriver volumeDriverRef,
-        VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
+        VolumeConnectionDbDriver vlmConnDriverRef,
         StorPoolDefinitionDbDriver storPoolDefinitionDriverRef,
         StorPoolDbDriver storPoolDriverRef,
         SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriverRef,
@@ -389,7 +389,7 @@ public class DatabaseLoader implements DatabaseDriver
                 )
             );
 
-            List<VolumeConnectionData> loadedVlmConns = vlmConnDriver.loadAll(tmpVlmMap);
+            List<VolumeConnectionData> loadedVlmConns = vlmConnDriver.loadAllAsList(tmpVlmMap);
             for (VolumeConnectionData vlmConn : loadedVlmConns)
             {
                 Volume sourceVolume = vlmConn.getSourceVolume(dbCtx);

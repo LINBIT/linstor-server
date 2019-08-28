@@ -23,7 +23,7 @@ import com.linbit.linstor.core.objects.StorageLayerETCDDriver;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.SwordfishETCDDriver;
 import com.linbit.linstor.core.objects.SwordfishLayerGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
@@ -92,6 +92,7 @@ public class ControllerDbModule extends AbstractModule
         bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDbDriver.class);
         bind(NodeConnectionDataDatabaseDriver.class).to(NodeConnectionDbDriver.class);
         bind(ResourceConnectionDataDatabaseDriver.class).to(ResourceConnectionDbDriver.class);
+        bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDbDriver.class);
         switch (dbType)
         {
             case SQL:
@@ -107,7 +108,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
 
                 // TODO
-                bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDataGenericDbDriver.class);
                 bind(SnapshotDefinitionDataDatabaseDriver.class).to(SnapshotDefinitionDataGenericDbDriver.class);
                 bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionGenericDbDriver.class);
                 bind(SnapshotDataDatabaseDriver.class).to(SnapshotDataGenericDbDriver.class);
