@@ -46,14 +46,14 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
     private final StateFlagsPersistence<ResourceData> flagsDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public ResourceDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngine,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef

@@ -42,7 +42,7 @@ public class VolumeConnectionDbDriver extends
     implements VolumeConnectionDataDatabaseDriver
 {
     private final AccessContext dbCtx;
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
@@ -51,7 +51,7 @@ public class VolumeConnectionDbDriver extends
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef

@@ -70,7 +70,7 @@ public class ResourceGroupDbDriver
     private final CollectionDatabaseDriver<ResourceGroupData, String> replicasOnDifferentListDriver;
     private final CollectionDatabaseDriver<ResourceGroupData, DeviceProviderKind> allowedProviderListDriver;
     private final SingleColumnDatabaseDriver<ResourceGroupData, Boolean> disklessOnRemainingDriver;
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public ResourceGroupDbDriver(
@@ -80,7 +80,7 @@ public class ResourceGroupDbDriver
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<? extends TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(

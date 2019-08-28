@@ -46,7 +46,7 @@ public class VolumeDbDriver
 
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     private final StateFlagsPersistence<VolumeData> flagsDriver;
 
@@ -56,7 +56,7 @@ public class VolumeDbDriver
         @SystemContext AccessContext dbCtxRef,
         DbEngine dbEngineRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef
     )

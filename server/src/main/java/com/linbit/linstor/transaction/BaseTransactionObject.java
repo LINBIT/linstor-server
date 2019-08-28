@@ -1,8 +1,8 @@
 package com.linbit.linstor.transaction;
 
-import java.util.List;
-
 import javax.inject.Provider;
+
+import java.util.List;
 
 public abstract class BaseTransactionObject extends AbsTransactionObject
 {

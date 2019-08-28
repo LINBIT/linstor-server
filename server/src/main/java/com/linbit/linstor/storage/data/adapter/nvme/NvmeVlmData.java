@@ -1,9 +1,7 @@
 package com.linbit.linstor.storage.data.adapter.nvme;
 
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
@@ -16,6 +14,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Provider;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

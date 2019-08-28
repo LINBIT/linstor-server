@@ -37,7 +37,7 @@ public class VolumeGroupDbDriver
     implements VolumeGroupDataDatabaseDriver
 {
     private final AccessContext dbCtx;
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
@@ -46,7 +46,7 @@ public class VolumeGroupDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef

@@ -48,7 +48,7 @@ public class ResourceConnectionDbDriver
     implements ResourceConnectionDataDatabaseDriver
 {
     private final AccessContext dbCtx;
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final DynamicNumberPool tcpPortPool;
@@ -61,7 +61,7 @@ public class ResourceConnectionDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,

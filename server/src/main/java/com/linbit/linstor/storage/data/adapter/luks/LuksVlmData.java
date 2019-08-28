@@ -124,6 +124,7 @@ public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
         return usableSize;
     }
 
+    @Override
     public void setUsableSize(long usableSizeRef)
     {
         usableSize = usableSizeRef;

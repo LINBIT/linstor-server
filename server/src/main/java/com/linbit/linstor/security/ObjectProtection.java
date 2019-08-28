@@ -17,6 +17,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,7 +74,7 @@ public final class ObjectProtection extends BaseTransactionObject
         AccessContext accCtx,
         String objPath,
         boolean createIfNotExists,
-        Provider<TransactionMgr> transMgrProvider,
+        Provider<? extends TransactionMgr> transMgrProvider,
         TransactionObjectFactory transObjFactoryRef,
         ObjectProtectionDatabaseDriver dbDriver
     )

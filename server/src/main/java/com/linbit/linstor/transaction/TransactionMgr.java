@@ -1,7 +1,5 @@
 package com.linbit.linstor.transaction;
 
-import com.linbit.linstor.api.LinStorScope;
-
 public interface TransactionMgr
 {
     void register(TransactionObject transObj);

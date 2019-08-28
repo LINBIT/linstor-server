@@ -23,8 +23,6 @@ import com.linbit.linstor.api.rest.v1.GrizzlyHttpService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
@@ -70,6 +68,7 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -619,7 +618,6 @@ public final class Controller
                 new ControllerCoreModule(),
                 new ControllerSatelliteCommunicationModule(),
                 new ControllerDbModule(dbType),
-                new DbConnectionPoolModule(),
                 new NetComModule(),
                 new NumberPoolModule(),
                 new ApiModule(apiType, apiCalls),

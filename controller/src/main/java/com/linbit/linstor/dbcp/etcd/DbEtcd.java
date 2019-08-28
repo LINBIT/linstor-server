@@ -11,6 +11,9 @@ import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.ibm.etcd.api.RangeResponse;
@@ -18,6 +21,7 @@ import com.ibm.etcd.client.EtcdClient;
 import com.ibm.etcd.client.KvStoreClient;
 import com.ibm.etcd.client.kv.KvClient;
 
+@Singleton
 public class DbEtcd implements ControllerETCDDatabase
 {
     private static final ServiceName SERVICE_NAME;
@@ -39,6 +43,12 @@ public class DbEtcd implements ControllerETCDDatabase
         {
             throw new ImplementationError(invalidNameExc);
         }
+    }
+
+    @Inject
+    public DbEtcd(
+    )
+    {
     }
 
     @Override

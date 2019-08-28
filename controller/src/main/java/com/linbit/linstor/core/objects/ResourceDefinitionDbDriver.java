@@ -54,7 +54,7 @@ public class ResourceDefinitionDbDriver
 {
     private final AccessContext dbCtx;
 
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
     private final StateFlagsPersistence<ResourceDefinitionData> flagsDriver;
     private final CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> layerStackDrvier;
     private final PropsContainerFactory propsContainerFactory;
@@ -65,7 +65,7 @@ public class ResourceDefinitionDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef

@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.objects.DrbdLayerETCDDriver;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
@@ -30,9 +31,12 @@ import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
+import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
+import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
@@ -58,6 +62,7 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.propscon.PropsConETCDDriver;
 import com.linbit.linstor.propscon.PropsConGenericDbDriver;
 import com.linbit.linstor.security.DbAccessor;
@@ -104,6 +109,9 @@ public class ControllerDbModule extends AbstractModule
         switch (dbType)
         {
             case SQL:
+                bind(ControllerDatabase.class).to(DbConnectionPool.class);
+                bind(DbEngine.class).to(SQLEngine.class);
+
                 bind(DbInitializer.class).to(DbConnectionPoolInitializer.class);
                 bind(DbAccessor.class).to(DbSQLPersistence.class);
 
@@ -115,12 +123,14 @@ public class ControllerDbModule extends AbstractModule
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
 
-
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
                 break;
             case ETCD:
+                bind(ControllerDatabase.class).to(DbEtcd.class);
+                bind(DbEngine.class).to(ETCDEngine.class);
+
                 bind(DbInitializer.class).to(DbEtcdInitializer.class);
                 bind(DbAccessor.class).to(DbEtcdPersistence.class);
 

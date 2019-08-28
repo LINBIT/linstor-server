@@ -1,8 +1,5 @@
 package com.linbit.linstor.api;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.multibindings.MapBinder;
-import com.google.inject.name.Names;
 import com.linbit.linstor.annotation.ApiCallScoped;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
@@ -10,9 +7,14 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrETCD;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 
 import java.util.List;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Names;
 
 public class ApiModule extends AbstractModule
 {
@@ -69,6 +71,9 @@ public class ApiModule extends AbstractModule
             .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
         bind(TransactionMgrSQL.class)
+            .toProvider(LinStorScope.seededKeyProvider())
+            .in(ApiCallScoped.class);
+        bind(TransactionMgrETCD.class)
             .toProvider(LinStorScope.seededKeyProvider())
             .in(ApiCallScoped.class);
     }

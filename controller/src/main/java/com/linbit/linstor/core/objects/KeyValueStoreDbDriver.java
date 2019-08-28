@@ -33,7 +33,7 @@ public class KeyValueStoreDbDriver
     extends AbsDatabaseDriver<KeyValueStoreData, KeyValueStore.InitMaps, Void>
     implements KeyValueStoreDataDatabaseDriver
 {
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
@@ -41,7 +41,7 @@ public class KeyValueStoreDbDriver
     public KeyValueStoreDbDriver(
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef

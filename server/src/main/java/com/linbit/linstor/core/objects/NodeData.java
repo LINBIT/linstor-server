@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.objects;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
@@ -30,9 +32,9 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
-import reactor.core.publisher.FluxSink;
 
 import javax.inject.Provider;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,7 +46,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import reactor.core.publisher.FluxSink;
 
 /**
  *

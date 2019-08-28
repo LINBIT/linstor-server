@@ -43,7 +43,7 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
 {
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     private final StateFlagsPersistence<NodeData> flagsDriver;
     private final SingleColumnDatabaseDriver<NodeData, NodeType> nodeTypeDriver;
@@ -53,7 +53,7 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext dbCtxRef,
         DbEngine dbEngine,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef

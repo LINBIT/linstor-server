@@ -46,7 +46,7 @@ public class VolumeDefinitionDbDriver extends
 {
     private final StateFlagsPersistence<VolumeDefinitionData> flagsDriver;
     private final SingleColumnDatabaseDriver<VolumeDefinitionData, Long> volumeSizeDriver;
-    private final Provider<? extends TransactionMgr> transMgrProvider;
+    private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
@@ -55,7 +55,7 @@ public class VolumeDefinitionDbDriver extends
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Provider<TransactionMgr> transMgrProviderRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef
