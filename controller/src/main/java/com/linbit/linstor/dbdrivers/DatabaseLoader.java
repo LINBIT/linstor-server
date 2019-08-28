@@ -39,7 +39,8 @@ import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.SnapshotDefinitionData;
+import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
@@ -126,7 +127,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final VolumeConnectionDbDriver vlmConnDriver;
     private final StorPoolDefinitionDbDriver storPoolDfnDriver;
     private final StorPoolDbDriver storPoolDriver;
-    private final SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriver;
+    private final SnapshotDefinitionDbDriver snapshotDefinitionDriver;
     private final SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriver;
     private final SnapshotDataGenericDbDriver snapshotDriver;
     private final SnapshotVolumeDataGenericDbDriver snapshotVolumeDriver;
@@ -163,7 +164,7 @@ public class DatabaseLoader implements DatabaseDriver
         VolumeConnectionDbDriver vlmConnDriverRef,
         StorPoolDefinitionDbDriver storPoolDefinitionDriverRef,
         StorPoolDbDriver storPoolDriverRef,
-        SnapshotDefinitionDataGenericDbDriver snapshotDefinitionDriverRef,
+        SnapshotDefinitionDbDriver snapshotDefinitionDriverRef,
         SnapshotVolumeDefinitionGenericDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataGenericDbDriver snapshotDriverRef,
         SnapshotVolumeDataGenericDbDriver snapshotVolumeDriverRef,
@@ -399,8 +400,9 @@ public class DatabaseLoader implements DatabaseDriver
             }
 
             // loading snapshot definitions
-            Map<SnapshotDefinition, SnapshotDefinition.InitMaps> loadedSnapshotDfns =
-                snapshotDefinitionDriver.loadAll(tmpRscDfnMap);
+            Map<SnapshotDefinitionData, SnapshotDefinition.InitMaps> loadedSnapshotDfns = snapshotDefinitionDriver.loadAll(
+                tmpRscDfnMap
+            );
             for (SnapshotDefinition snapshotDfn : loadedSnapshotDfns.keySet())
             {
                 loadedRscDfnsMap.get(snapshotDfn.getResourceDefinition()).getSnapshotDfnMap()
@@ -408,7 +410,7 @@ public class DatabaseLoader implements DatabaseDriver
             }
 
             // temporary snapshot definition map
-            Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapshotDfnMap =
+            Map<Pair<ResourceName, SnapshotName>, SnapshotDefinitionData> tmpSnapshotDfnMap =
                 mapByName(loadedSnapshotDfns, snapshotDfn -> new Pair<>(
                         snapshotDfn.getResourceName(),
                         snapshotDfn.getName()
