@@ -18,7 +18,6 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
-import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.Node;
@@ -59,6 +58,7 @@ import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver.RscLayerInfo;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
@@ -134,7 +134,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final KeyValueStoreDbDriver keyValueStoreDataGenericDbDriver;
     private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
     private final DrbdLayerDatabaseDriver drbdLayerDriver;
-    private final LuksLayerGenericDbDriver luksLayerDriver;
+    private final LuksLayerDatabaseDriver luksLayerDriver;
     private final StorageLayerDatabaseDriver storageLayerDriver;
     private final NvmeLayerGenericDbDriver nvmeLayerDriver;
     private final Provider<CtrlLayerDataHelper> ctrlLayerDataHelper;
@@ -171,7 +171,7 @@ public class DatabaseLoader implements DatabaseDriver
         KeyValueStoreDbDriver keyValueStoreDataGenericDbDriverRef,
         ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
         DrbdLayerDatabaseDriver drbdLayerDriverRef,
-        LuksLayerGenericDbDriver luksLayerDriverRef,
+        LuksLayerDatabaseDriver luksLayerDriverRef,
         StorageLayerGenericDbDriver storageLayerDriverRef,
         NvmeLayerGenericDbDriver nvmeLayerDriverRef,
         Provider<CtrlLayerDataHelper> ctrlLayerDataHelperRef,

@@ -11,9 +11,6 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
@@ -28,6 +25,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -91,16 +89,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerDatabaseDriver
         vlmPwDriver = new VlmPwDriver();
     }
 
-    /**
-     * Fully loads a {@link DrbdRscData} object, including the {@link DrbdRscDfnData}, {@link DrbdVlmData} and
-     * {@link DrbdVlmDfnData}
-     * @param parentRef
-     *
-     * @return a {@link Pair}, where the first object is the actual DrbdRscData and the second object
-     * is the first objects backing list of the children-resource layer data. This list is expected to be filled
-     * upon further loading, without triggering transaction (and possibly database-) updates.
-     * @throws SQLException
-     */
+    @Override
     @SuppressWarnings("checkstyle:magicnumber")
     public Pair<LuksRscData, Set<RscLayerObject>> load(
         Resource rsc,

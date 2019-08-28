@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.core.objects.DrbdLayerETCDDriver;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
+import com.linbit.linstor.core.objects.LuksLayerETCDDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
@@ -115,8 +116,8 @@ public class ControllerDbModule extends AbstractModule
 
 
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
-                // TODO
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
+                // TODO
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
                 break;
             case ETCD:
@@ -128,6 +129,7 @@ public class ControllerDbModule extends AbstractModule
                 bind(PropsConDatabaseDriver.class).to(PropsConETCDDriver.class);
                 bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerETCDDriver.class);
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerETCDDriver.class);
+                bind(LuksLayerDatabaseDriver.class).to(LuksLayerETCDDriver.class);
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerETCDDriver.class);
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishETCDDriver.class);
                 break;
