@@ -3,9 +3,6 @@ package com.linbit.linstor;
 import com.linbit.SystemService;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 /**
  * Database access for the linstor Controller module
  *
@@ -31,4 +28,9 @@ public interface ControllerDatabase extends SystemService
 
     @Override
     void shutdown();
+
+    /**
+     * Throws a DatabaseException if the database cannot be reached
+     */
+    void checkHealth() throws DatabaseException;
 }

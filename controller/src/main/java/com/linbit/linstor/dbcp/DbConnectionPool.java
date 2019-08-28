@@ -1,8 +1,5 @@
 package com.linbit.linstor.dbcp;
 
-import com.linbit.linstor.ControllerSQLDatabase;
-import com.linbit.linstor.DatabaseInfo;
-import com.google.common.collect.ImmutableMap;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -10,13 +7,29 @@ import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.ControllerSQLDatabase;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -25,17 +38,6 @@ import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 
 /**
  * JDBC pool
@@ -306,6 +308,28 @@ public class DbConnectionPool implements ControllerSQLDatabase
     public boolean isStarted()
     {
         return atomicStarted.get();
+    }
+
+    @Override
+    public void checkHealth() throws DatabaseException
+    {
+        Connection conn = null;
+        try
+        {
+            conn = getConnection();
+            conn.createStatement().executeQuery("SELECT 1 FROM " + TBL_SEC_CONFIGURATION);
+        }
+        catch (SQLException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                returnConnection(conn);
+            }
+        }
     }
 
     private void setTransactionIsolation(String dbType)

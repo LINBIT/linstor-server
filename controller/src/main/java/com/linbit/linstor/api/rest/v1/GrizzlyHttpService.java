@@ -4,23 +4,21 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
-
-import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.ExceptionMapper;
+
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +54,7 @@ public class GrizzlyHttpService implements SystemService
     private Path trustStoreFile;
     private String trustStorePassword;
     private ResourceConfig v1ResourceConfig;
-    private final DbConnectionPool dbConnectionPool;
+    private final ControllerDatabase ctrlDb;
     private final Map<ServiceName, SystemService> systemServiceMap;
 
     private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
@@ -78,7 +76,7 @@ public class GrizzlyHttpService implements SystemService
     )
     {
         errorReporter = errorReporterRef;
-        dbConnectionPool = injector.getInstance(DbConnectionPool.class);
+        ctrlDb = injector.getInstance(ControllerDatabase.class);
         listenAddress = listenAddressRef;
         listenAddressSecure = listenAddressSecureRef;
         keyStoreFile = keyStoreFileRef;
@@ -117,12 +115,9 @@ public class GrizzlyHttpService implements SystemService
                         }
                         else if (request.getHttpHandlerPath().equals("/health"))
                         {
-                            Connection conn = null;
                             try
                             {
-                                conn = dbConnectionPool.getConnection();
-                                conn.createStatement().executeQuery("SELECT 1 FROM " + TBL_SEC_CONFIGURATION);
-
+                                ctrlDb.checkHealth();
                                 List<String> notRunning = systemServiceMap.values().stream()
                                     .filter(service -> !service.isStarted())
                                     .map(service -> service.getServiceName().getDisplayName())
@@ -140,19 +135,12 @@ public class GrizzlyHttpService implements SystemService
                                     response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
                                 }
                             }
-                            catch (SQLException exc)
+                            catch (DatabaseException exc)
                             {
                                 final String errorMsg = "Failed to connect to database: " + exc.getMessage();
                                 response.setContentLength(errorMsg.length());
                                 response.getWriter().write(errorMsg);
                                 response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-                            }
-                            finally
-                            {
-                                if (conn != null)
-                                {
-                                    dbConnectionPool.returnConnection(conn);
-                                }
                             }
                         }
                         else
@@ -187,11 +175,9 @@ public class GrizzlyHttpService implements SystemService
                         }
                         else if (request.getHttpHandlerPath().equals("/health"))
                         {
-                            Connection conn = null;
                             try
                             {
-                                conn = dbConnectionPool.getConnection();
-                                conn.createStatement().executeQuery("SELECT 1 FROM " + TBL_SEC_CONFIGURATION);
+                                ctrlDb.checkHealth();
 
                                 List<String> notRunning = systemServiceMap.values().stream()
                                     .filter(service -> !service.isStarted())
@@ -210,19 +196,12 @@ public class GrizzlyHttpService implements SystemService
                                     response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
                                 }
                             }
-                            catch (SQLException exc)
+                            catch (DatabaseException exc)
                             {
                                 final String errorMsg = "Failed to connect to database: " + exc.getMessage();
                                 response.setContentLength(errorMsg.length());
                                 response.getWriter().write(errorMsg);
                                 response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-                            }
-                            finally
-                            {
-                                if (conn != null)
-                                {
-                                    dbConnectionPool.returnConnection(conn);
-                                }
                             }
                         }
                         else

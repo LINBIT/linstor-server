@@ -9,6 +9,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 
 import javax.inject.Inject;
@@ -153,5 +154,15 @@ public class DbEtcd implements ControllerETCDDatabase
     public boolean isStarted()
     {
         return atomicStarted.get();
+    }
+
+    @Override
+    public void checkHealth() throws DatabaseException
+    {
+        RangeResponse sync = etcdClient.getKvClient().get(bs(EtcdUtils.LINSTOR_PREFIX)).asPrefix().limit(1).sync();
+        if (sync.getKvsList().size() == 0)
+        {
+            throw new DatabaseException("ETCD database reported 0 entries ");
+        }
     }
 }
