@@ -6,6 +6,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
@@ -105,7 +106,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         {
             throw new ImplementationError("Database context does not have enough privileges");
         }
-        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException exc)
+        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException | MdException exc)
         {
             // TODO improve exception-handling
             throw new DatabaseException("Failed to restore data", exc);
@@ -215,7 +216,8 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters raw,
         LOAD_ALL parentRef
     )
-        throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException;
+        throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
+        MdException, RuntimeException;
 
     protected abstract String getId(DATA data);
 

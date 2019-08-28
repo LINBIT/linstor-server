@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
@@ -30,7 +31,8 @@ public interface DbEngine
             AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters raw,
             LOAD_ALL parents
         )
-            throws InvalidNameException, InvalidIpAddressException, ValueOutOfRangeException, DatabaseException;
+            throws InvalidNameException, InvalidIpAddressException, ValueOutOfRangeException, DatabaseException,
+            MdException;
     }
 
     DatabaseType getType();
@@ -73,7 +75,7 @@ public interface DbEngine
         Function<Object[], AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters> objsToRawArgs
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
-        ValueOutOfRangeException;
+        ValueOutOfRangeException, MdException;
 
     <DATA, LIST_TYPE> CollectionDatabaseDriver<DATA, LIST_TYPE> generateCollectionToJsonStringArrayDriver(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,

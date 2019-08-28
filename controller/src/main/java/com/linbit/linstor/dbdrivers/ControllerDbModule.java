@@ -25,7 +25,7 @@ import com.linbit.linstor.core.objects.SwordfishETCDDriver;
 import com.linbit.linstor.core.objects.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
-import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
@@ -85,6 +85,7 @@ public class ControllerDbModule extends AbstractModule
         bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDbDriver.class);
         bind(VolumeDataDatabaseDriver.class).to(VolumeDbDriver.class);
         bind(ResourceDataDatabaseDriver.class).to(ResourceDbDriver.class);
+        bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDbDriver.class);
         switch (dbType)
         {
             case SQL:
@@ -94,7 +95,12 @@ public class ControllerDbModule extends AbstractModule
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 
                 bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
-                bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataGenericDbDriver.class);
+
+                bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
+                bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
+                bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
+
+                // TODO
                 bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDataGenericDbDriver.class);
                 bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataGenericDbDriver.class);
                 bind(StorPoolDataDatabaseDriver.class).to(StorPoolDataGenericDbDriver.class);
@@ -108,11 +114,8 @@ public class ControllerDbModule extends AbstractModule
                 bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDataGenericDbDriver.class);
                 bind(KeyValueStoreDataDatabaseDriver.class).to(KeyValueStoreDataGenericDbDriver.class);
 
-                bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
-                bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
-                bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
                 break;
             case ETCD:

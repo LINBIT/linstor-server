@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
@@ -249,7 +250,7 @@ public class SQLEngine implements DbEngine
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoaderRef,
         Function<Object[], AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters> objsToRawArgs
     )
-        throws DatabaseException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException, MdException
     {
         Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(getSelectStatement(table)))
@@ -279,7 +280,7 @@ public class SQLEngine implements DbEngine
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader,
         Function<Object[], AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters> objsToRawArgs
     )
-        throws DatabaseException
+        throws DatabaseException, MdException
     {
         Column[] columns = table.values();
         Object[] objects = new Object[columns.length];

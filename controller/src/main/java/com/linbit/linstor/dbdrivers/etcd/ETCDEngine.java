@@ -7,6 +7,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
@@ -123,7 +124,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         Function<Object[], AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters> objsToRawArgs
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
-        ValueOutOfRangeException
+        ValueOutOfRangeException, MdException
     {
         Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
         final Column[] columns = table.values();

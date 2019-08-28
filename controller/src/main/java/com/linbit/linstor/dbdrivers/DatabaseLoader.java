@@ -55,7 +55,7 @@ import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
@@ -121,7 +121,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final ResourceDefinitionDbDriver rscDfnDriver;
     private final ResourceDbDriver rscDriver;
     private final ResourceConnectionDataGenericDbDriver rscConnDriver;
-    private final VolumeDefinitionDataGenericDbDriver vlmDfnDriver;
+    private final VolumeDefinitionDbDriver vlmDfnDriver;
     private final VolumeDbDriver vlmDriver;
     private final VolumeConnectionDataGenericDbDriver vlmConnDriver;
     private final StorPoolDefinitionDataGenericDbDriver storPoolDfnDriver;
@@ -158,7 +158,7 @@ public class DatabaseLoader implements DatabaseDriver
         ResourceDbDriver resourceDriverRef,
         ResourceConnectionDataGenericDbDriver rscConnDriverRef,
         VolumeGroupDataGenericDbDriver vlmGrpDriverRef,
-        VolumeDefinitionDataGenericDbDriver vlmDfnDriverRef,
+        VolumeDefinitionDbDriver vlmDfnDriverRef,
         VolumeDbDriver volumeDriverRef,
         VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
         StorPoolDefinitionDataGenericDbDriver storPoolDefinitionDriverRef,
