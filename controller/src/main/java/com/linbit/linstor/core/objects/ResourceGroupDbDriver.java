@@ -52,7 +52,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 @Singleton
-public class ResourceGroupDriver
+public class ResourceGroupDbDriver
     extends AbsDatabaseDriver<ResourceGroupData, ResourceGroup.InitMaps, Void>
     implements ResourceGroupDataDatabaseDriver
 {
@@ -73,7 +73,7 @@ public class ResourceGroupDriver
     private final Provider<? extends TransactionMgr> transMgrProvider;
 
     @Inject
-    public ResourceGroupDriver(
+    public ResourceGroupDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngine,

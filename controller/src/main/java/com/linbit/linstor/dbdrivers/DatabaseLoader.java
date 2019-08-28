@@ -25,7 +25,7 @@ import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.NodeDriver;
+import com.linbit.linstor.core.objects.NodeDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
@@ -33,9 +33,9 @@ import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionDriver;
+import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.ResourceGroupDriver;
+import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -55,7 +55,7 @@ import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeDriver;
+import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
@@ -114,15 +114,15 @@ public class DatabaseLoader implements DatabaseDriver
     }
 
     private final AccessContext dbCtx;
-    private final ResourceGroupDriver rscGrpDriver;
-    private final NodeDriver nodeDriver;
+    private final ResourceGroupDbDriver rscGrpDriver;
+    private final NodeDbDriver nodeDriver;
     private final NetInterfaceDataGenericDbDriver netIfDriver;
     private final NodeConnectionDataGenericDbDriver nodeConnDriver;
-    private final ResourceDefinitionDriver rscDfnDriver;
+    private final ResourceDefinitionDbDriver rscDfnDriver;
     private final ResourceDataGenericDbDriver rscDriver;
     private final ResourceConnectionDataGenericDbDriver rscConnDriver;
     private final VolumeDefinitionDataGenericDbDriver vlmDfnDriver;
-    private final VolumeDriver vlmDriver;
+    private final VolumeDbDriver vlmDriver;
     private final VolumeConnectionDataGenericDbDriver vlmConnDriver;
     private final StorPoolDefinitionDataGenericDbDriver storPoolDfnDriver;
     private final StorPoolDataGenericDbDriver storPoolDriver;
@@ -150,16 +150,16 @@ public class DatabaseLoader implements DatabaseDriver
     @Inject
     public DatabaseLoader(
         @SystemContext AccessContext privCtx,
-        ResourceGroupDriver rscGrpDriverRef,
-        NodeDriver nodeDriverRef,
+        ResourceGroupDbDriver rscGrpDriverRef,
+        NodeDbDriver nodeDriverRef,
         NetInterfaceDataGenericDbDriver netIfDriverRef,
         NodeConnectionDataGenericDbDriver nodeConnDriverRef,
-        ResourceDefinitionDriver resesourceDefinitionDriverRef,
+        ResourceDefinitionDbDriver resesourceDefinitionDriverRef,
         ResourceDataGenericDbDriver resourceDriverRef,
         ResourceConnectionDataGenericDbDriver rscConnDriverRef,
         VolumeGroupDataGenericDbDriver vlmGrpDriverRef,
         VolumeDefinitionDataGenericDbDriver vlmDfnDriverRef,
-        VolumeDriver volumeDriverRef,
+        VolumeDbDriver volumeDriverRef,
         VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
         StorPoolDefinitionDataGenericDbDriver storPoolDefinitionDriverRef,
         StorPoolDataGenericDbDriver storPoolDriverRef,

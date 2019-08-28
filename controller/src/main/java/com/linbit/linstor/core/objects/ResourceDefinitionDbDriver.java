@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class ResourceDefinitionDriver
+public class ResourceDefinitionDbDriver
     extends
     AbsDatabaseDriver<ResourceDefinitionData, ResourceDefinition.InitMaps, Map<ResourceGroupName, ResourceGroup>>
     implements ResourceDefinitionDataDatabaseDriver
@@ -61,7 +61,7 @@ public class ResourceDefinitionDriver
     private final TransactionObjectFactory transObjFactory;
 
     @Inject
-    public ResourceDefinitionDriver(
+    public ResourceDefinitionDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,

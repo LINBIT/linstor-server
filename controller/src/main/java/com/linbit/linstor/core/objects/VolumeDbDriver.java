@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class VolumeDriver
+public class VolumeDbDriver
     extends AbsDatabaseDriver<VolumeData,
         Volume.InitMaps,
         Pair<Map<Pair<NodeName, ResourceName>, ? extends Resource>,
@@ -51,7 +51,7 @@ public class VolumeDriver
     private final StateFlagsPersistence<VolumeData> flagsDriver;
 
     @Inject
-    public VolumeDriver(
+    public VolumeDbDriver(
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext dbCtxRef,
         DbEngine dbEngineRef,

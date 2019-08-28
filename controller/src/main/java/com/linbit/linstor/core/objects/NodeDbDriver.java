@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class NodeDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void> implements NodeDataDatabaseDriver
+public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void> implements NodeDataDatabaseDriver
 {
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -49,7 +49,7 @@ public class NodeDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void>
     private final SingleColumnDatabaseDriver<NodeData, NodeType> nodeTypeDriver;
 
     @Inject
-    public NodeDriver(
+    public NodeDbDriver(
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext dbCtxRef,
         DbEngine dbEngine,
