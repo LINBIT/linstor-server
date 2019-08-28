@@ -16,7 +16,7 @@ public class SatelliteVlmGrpDriver implements VolumeGroupDataDatabaseDriver
     }
 
     @Override
-    public void persist(VolumeGroupData vlmGrpDataRef) throws DatabaseException
+    public void create(VolumeGroupData vlmGrpDataRef) throws DatabaseException
     {
         // no-op
     }

@@ -26,7 +26,7 @@ import com.linbit.linstor.core.objects.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
-import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
@@ -83,6 +83,7 @@ public class ControllerDbModule extends AbstractModule
         bind(NodeDataDatabaseDriver.class).to(NodeDbDriver.class);
         bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
         bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDbDriver.class);
+        bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDbDriver.class);
         bind(VolumeDataDatabaseDriver.class).to(VolumeDbDriver.class);
         bind(ResourceDataDatabaseDriver.class).to(ResourceDbDriver.class);
         bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDbDriver.class);
@@ -101,7 +102,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
 
                 // TODO
-                bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDataGenericDbDriver.class);
                 bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataGenericDbDriver.class);
                 bind(StorPoolDataDatabaseDriver.class).to(StorPoolDataGenericDbDriver.class);
                 bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDataGenericDbDriver.class);

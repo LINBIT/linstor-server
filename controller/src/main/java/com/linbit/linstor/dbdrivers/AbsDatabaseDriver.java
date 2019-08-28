@@ -217,7 +217,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         LOAD_ALL parentRef
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
-        MdException, RuntimeException;
+        MdException;
 
     protected abstract String getId(DATA data);
 

@@ -57,7 +57,7 @@ import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupData;
-import com.linbit.linstor.core.objects.VolumeGroupDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver.RscLayerInfo;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
@@ -145,7 +145,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
-    private final VolumeGroupDataGenericDbDriver vlmGrpDriver;
+    private final VolumeGroupDbDriver vlmGrpDriver;
 
     @Inject
     public DatabaseLoader(
@@ -157,7 +157,7 @@ public class DatabaseLoader implements DatabaseDriver
         ResourceDefinitionDbDriver resesourceDefinitionDriverRef,
         ResourceDbDriver resourceDriverRef,
         ResourceConnectionDataGenericDbDriver rscConnDriverRef,
-        VolumeGroupDataGenericDbDriver vlmGrpDriverRef,
+        VolumeGroupDbDriver vlmGrpDriverRef,
         VolumeDefinitionDbDriver vlmDfnDriverRef,
         VolumeDbDriver volumeDriverRef,
         VolumeConnectionDataGenericDbDriver vlmConnDriverRef,
@@ -234,7 +234,7 @@ public class DatabaseLoader implements DatabaseDriver
                 mapByName(loadedRscGroupsMap, ResourceGroup::getName);
 
             List<VolumeGroupData> vlmGrpList =
-                Collections.unmodifiableList(vlmGrpDriver.loadAll(tmpRscGroups));
+                Collections.unmodifiableList(vlmGrpDriver.loadAllAsList(tmpRscGroups));
             for (VolumeGroupData vlmGrp : vlmGrpList)
             {
                 loadedRscGroupsMap.get(vlmGrp.getResourceGroup()).getVlmGrpMap().put(

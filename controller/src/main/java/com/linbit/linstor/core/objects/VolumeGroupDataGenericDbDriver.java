@@ -24,6 +24,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -81,7 +82,7 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void persist(VolumeGroupData vlmGrp) throws DatabaseException
+    public void create(VolumeGroupData vlmGrp) throws DatabaseException
     {
         errorReporter.logTrace("Creating VolumeGroup %s", getId(vlmGrp));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))

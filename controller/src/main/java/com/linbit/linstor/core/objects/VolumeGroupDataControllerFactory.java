@@ -66,7 +66,7 @@ public class VolumeGroupDataControllerFactory
             transMgrProvider
         );
 
-        driver.persist(vlmGrpData);
+        driver.create(vlmGrpData);
         ((ResourceGroupData) rscGrp).putVolumeGroup(accCtx, vlmGrpData);
 
         return vlmGrpData;
