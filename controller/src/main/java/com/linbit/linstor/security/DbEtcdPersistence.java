@@ -3,11 +3,15 @@ package com.linbit.linstor.security;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecAccessTypes;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecConfiguration;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecDfltRoles;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdRoleMap;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdentities;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecRoles;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypeRules;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypes;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
@@ -20,6 +24,10 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 @Singleton
 public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
@@ -36,14 +44,14 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
 
         Map<String, String> identityRow = EtcdUtils.getTableRow(
             etcdDb.getKvClient(),
-            EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_IDENTITIES, idName.value, "")
+            EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_IDENTITIES, idName.value)
         );
 
         if (identityRow.size() > 0)
         {
             Map<String, String> dfltRoleRow = EtcdUtils.getTableRow(
                 etcdDb.getKvClient(),
-                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_DFLT_ROLES, idName.value, "")
+                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_DFLT_ROLES, idName.value)
             );
 
             if (dfltRoleRow.isEmpty())
@@ -54,8 +62,7 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
                 etcdDb.getKvClient(),
                 EtcdUtils.buildKey(
                     GeneratedDatabaseTables.SEC_ROLES,
-                    dfltRoleRow.get(SecDfltRoles.ROLE_NAME.getName()),
-                    ""
+                    dfltRoleRow.get(SecDfltRoles.ROLE_NAME.getName())
                 )
             );
             if (roleRow.isEmpty())
@@ -137,59 +144,83 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
     @Override
     public List<String> loadIdentities(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return getPkList(
-            EtcdUtils.getTableRow(
-                etcdDb.getKvClient(),
-                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_IDENTITIES)
-            )
-        );
+        return loadDistinctSecDspNames(etcdDb, SecIdentities.IDENTITY_DSP_NAME);
     }
 
     @Override
     public List<String> loadSecurityTypes(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return getPkList(
-            EtcdUtils.getTableRow(
-                etcdDb.getKvClient(),
-                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_TYPES)
-            )
-        );
+        return loadDistinctSecDspNames(etcdDb, SecTypes.TYPE_DSP_NAME);
     }
 
     @Override
     public List<String> loadRoles(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        return getPkList(
-            EtcdUtils.getTableRow(
-                etcdDb.getKvClient(),
-                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_ROLES)
-            )
-        );
+        return loadDistinctSecDspNames(etcdDb, SecRoles.ROLE_DSP_NAME);
     }
 
-    private List<String> getPkList(Map<String, String> tableRowRef)
+    private List<String> loadDistinctSecDspNames(ControllerETCDDatabase etcdDb, Column dspNameCol)
     {
+        Set<String> pkSet = getPkSet(
+            EtcdUtils.getTableRow(
+                etcdDb.getKvClient(),
+                EtcdUtils.buildKey(dspNameCol.getTable())
+            )
+        );
         List<String> ret = new ArrayList<>();
-        for (String key : tableRowRef.keySet())
+        for (String pk : pkSet)
         {
-            // key is something like
-            // LINSTOR/$table/$composedPk/$column = $valueOfColumn
-            int postDelimIdx = key.lastIndexOf(EtcdUtils.PATH_DELIMITER);
-            int preDelimIdx = key.lastIndexOf(EtcdUtils.PATH_DELIMITER, postDelimIdx - 1);
-            ret.add(key.substring(preDelimIdx + 1, postDelimIdx));
+            ret.add(
+                EtcdUtils.getFirstValue(
+                    etcdDb.getKvClient(),
+                    EtcdUtils.buildKey(dspNameCol, pk)
+                )
+            );
         }
         return ret;
+    }
+
+    private Set<String> getPkSet(Map<String, String> tableRowRef)
+    {
+        Set<String> ret = new TreeSet<>();
+        for (String key : tableRowRef.keySet())
+        {
+            ret.add(extractPrimaryKey(key));
+        }
+        return ret;
+    }
+
+    private String extractPrimaryKey(String key)
+    {
+        // key is something like
+        // LINSTOR/$table/$composedPk/$column = $valueOfColumn
+        int postDelimIdx = key.lastIndexOf(EtcdUtils.PATH_DELIMITER);
+        int preDelimIdx = key.lastIndexOf(EtcdUtils.PATH_DELIMITER, postDelimIdx - 1);
+        return key.substring(preDelimIdx + 1, postDelimIdx);
     }
 
     @Override
     public List<TypeEnforcementRulePojo> loadTeRules(ControllerETCDDatabase etcdDb) throws DatabaseException
     {
-        List<String> composedPkList = getPkList(
+        Set<String> composedPkList = getPkSet(
             EtcdUtils.getTableRow(
                 etcdDb.getKvClient(),
                 EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_TYPE_RULES)
             )
         );
+
+        TreeMap<String, String> accTypeIntToName = new TreeMap<>();
+        Map<String, String> accTypeTable = EtcdUtils
+            .getTableRow(etcdDb.getKvClient(), EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_ACCESS_TYPES));
+
+        for (Entry<String, String> entry : accTypeTable.entrySet())
+        {
+            if (entry.getKey().endsWith(SecAccessTypes.ACCESS_TYPE_VALUE.getName()))
+            {
+                accTypeIntToName.put(entry.getValue(), extractPrimaryKey(entry.getKey()));
+            }
+        }
+
         List<TypeEnforcementRulePojo> ret = new ArrayList<>();
         for (String composedPk : composedPkList)
         {
@@ -198,11 +229,13 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
                 new TypeEnforcementRulePojo(
                     pk[0],
                     pk[1],
-                    EtcdUtils.getFirstValue(
-                        etcdDb.getKvClient(),
-                        EtcdUtils.buildKey(
-                            GeneratedDatabaseTables.SEC_TYPE_RULES,
-                            pk
+                    accTypeIntToName.get(
+                        EtcdUtils.getFirstValue(
+                            etcdDb.getKvClient(),
+                            EtcdUtils.buildKey(
+                                SecTypeRules.ACCESS_TYPE,
+                                pk
+                            )
                         )
                     )
                 )

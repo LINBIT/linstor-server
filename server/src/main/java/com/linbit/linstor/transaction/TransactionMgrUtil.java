@@ -11,15 +11,18 @@ public class TransactionMgrUtil
         {
             initScope.seed(TransactionMgrSQL.class, (TransactionMgrSQL) transMgr);
         }
+        else if (transMgr instanceof TransactionMgrETCD)
+        {
+            initScope.seed(TransactionMgrETCD.class, (TransactionMgrETCD) transMgr);
+        }
         else if (transMgr instanceof SatelliteTransactionMgr)
         {
 
         }
         else
         {
+            // TODO report error instead runtimeExc
             throw new RuntimeException("Not implemented");
-            // TODO seed ETCD
-            // else report error
         }
     }
 }

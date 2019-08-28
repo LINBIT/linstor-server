@@ -70,9 +70,9 @@ public class EtcdUtils
         HashMap<String, String> rowMap = new HashMap<>();
         for (KeyValue keyValue : rspRow.getKvsList())
         {
-            final String recKey = keyValue.getKey().toStringUtf8();
-            final String columnName = recKey.substring(recKey.lastIndexOf("/") + 1);
-            rowMap.put(columnName, keyValue.getValue().toStringUtf8());
+            // final String recKey = keyValue.getKey().toStringUtf8();
+            // final String columnName = recKey.substring(recKey.lastIndexOf("/") + 1);
+            rowMap.put(keyValue.getKey().toStringUtf8(), keyValue.getValue().toStringUtf8());
         }
 
         return rowMap;
