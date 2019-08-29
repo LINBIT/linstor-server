@@ -15,6 +15,7 @@ import javax.inject.Singleton;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 @Singleton
 public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDatabaseDriver
@@ -35,7 +36,26 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
     public Map<String, String> loadAll(String instanceName) throws DatabaseException
     {
         errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
-        return namespace(GeneratedDatabaseTables.PROPS_CONTAINERS, instanceName).get(true);
+        String etcdNamespace = EtcdUtils.buildKey(GeneratedDatabaseTables.PROPS_CONTAINERS, instanceName);
+        /*
+         * buildKeys adds a trailing / at the end of our "primary key".
+         * However, instanceName is only the first part of our primary key, and the trailing / prevents
+         * ETCD finding the rest of the primary key
+         */
+        etcdNamespace = etcdNamespace.substring(0, etcdNamespace.length() - EtcdUtils.PATH_DELIMITER.length());
+        Map<String, String> etcdMap = namespace(etcdNamespace).get(true);
+
+        final int propsKeyStart = etcdNamespace.length() + EtcdUtils.PK_DELIMITER.length();
+
+        Map<String, String> propsMap = new TreeMap<>();
+        for (Entry<String, String> entry : etcdMap.entrySet())
+        {
+            propsMap.put(
+                entry.getKey().substring(propsKeyStart),
+                entry.getValue()
+            );
+        }
+        return propsMap;
     }
 
     @Override

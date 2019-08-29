@@ -191,6 +191,8 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
     {
         cachedStorVlmInfoByRscLayerId.clear();
         cachedStorVlmInfoByRscLayerId = null;
+
+        sfDbDriver.clearLoadAllCache();
     }
 
     @Override

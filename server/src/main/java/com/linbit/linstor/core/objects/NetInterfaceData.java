@@ -223,6 +223,17 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
+    public int compareTo(NetInterface oRef)
+    {
+        int cmp = niNode.compareTo(oRef.getNode());
+        if (cmp == 0)
+        {
+            cmp = niName.compareTo(oRef.getName());
+        }
+        return cmp;
+    }
+
+    @Override
     public String toString()
     {
         return "Node: '" + niNode.getName() + "', " +

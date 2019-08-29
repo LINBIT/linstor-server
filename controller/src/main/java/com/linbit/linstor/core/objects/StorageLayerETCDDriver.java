@@ -57,7 +57,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     private final ResourceLayerIdDatabaseDriver rscIdDriver;
     private final TransactionObjectFactory transObjFactory;
     private final AccessContext dbCtx;
-    private final SwordfishLayerGenericDbDriver sfDbDriver;
+    private final SwordfishETCDDriver sfDbDriver;
 
     private final SingleColumnDatabaseDriver<VlmProviderObject, StorPool> storPoolDriver;
 
@@ -70,7 +70,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         Provider<TransactionMgrETCD> transMgrProviderRef,
         TransactionObjectFactory transObjFactoryRef,
         ResourceLayerIdDatabaseDriver rscIdDriverRef,
-        SwordfishLayerGenericDbDriver sfDbDriverRef
+        SwordfishETCDDriver sfDbDriverRef
     )
     {
         super(transMgrProviderRef);
@@ -102,6 +102,8 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     {
         cachedStorVlmInfoByRscLayerId.clear();
         cachedStorVlmInfoByRscLayerId = null;
+
+        sfDbDriver.clearLoadAllCache();
     }
 
     @Override
@@ -306,10 +308,9 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     }
 
     @Override
-    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef)
+    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws DatabaseException
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        sfDbDriver.loadLayerData(tmpRscDfnMapRef);
     }
 
     @Override

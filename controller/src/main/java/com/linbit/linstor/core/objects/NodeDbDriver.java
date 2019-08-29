@@ -112,7 +112,7 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
         switch (getDbType())
         {
             case ETCD:
-                nodeType = NodeType.valueOf(raw.get(NODE_TYPE));
+                nodeType = Node.NodeType.getByValue(Long.parseLong(raw.get(NODE_TYPE)));
                 flags = Long.parseLong(raw.get(NODE_FLAGS));
                 break;
             case SQL:

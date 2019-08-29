@@ -47,7 +47,6 @@ import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
-import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
@@ -172,7 +171,7 @@ public class DatabaseLoader implements DatabaseDriver
         ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
         DrbdLayerDatabaseDriver drbdLayerDriverRef,
         LuksLayerDatabaseDriver luksLayerDriverRef,
-        StorageLayerGenericDbDriver storageLayerDriverRef,
+        StorageLayerDatabaseDriver storageLayerDriverRef,
         NvmeLayerDatabaseDriver nvmeLayerDriverRef,
         Provider<CtrlLayerDataHelper> ctrlLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,

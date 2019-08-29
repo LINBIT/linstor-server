@@ -140,25 +140,28 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
             Object[] rawObjects = new Object[columns.length];
             String[] pks = composedPk.split(EtcdUtils.PK_DELIMITER);
 
-            int rawIdx = 0;
-            for (; rawIdx < pks.length; ++rawIdx)
-            {
-                rawObjects[rawIdx] = pks[rawIdx];
-            }
+            int pkIdx = 0;
 
             for (Column col : columns)
             {
-                String colKey = composedPk + EtcdUtils.PATH_DELIMITER + col.getName();
-                String colData = dataMap.get(colKey);
-                if (colData == null && !col.isNullable())
+                if (col.isPk())
                 {
-                    throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
+                    rawObjects[col.getIndex()] = pks[pkIdx++];
                 }
-                rawObjects[rawIdx] = colData;
-                ++rawIdx;
+                else
+                {
+                    String colKey = EtcdUtils.buildKey(col, pks);
+                    String colData = dataMap.get(colKey);
+                    if (colData == null && !col.isNullable())
+                    {
+                        throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
+                    }
+                    rawObjects[col.getIndex()] = colData;
+                }
             }
 
             Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(objsToRawArgs.apply(rawObjects), parents);
+            loadedObjectsMap.put(pair.objA, pair.objB);
         }
 
         return loadedObjectsMap;

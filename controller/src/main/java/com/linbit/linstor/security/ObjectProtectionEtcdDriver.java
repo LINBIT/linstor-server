@@ -153,17 +153,17 @@ public class ObjectProtectionEtcdDriver extends BaseEtcdDriver implements Object
                 identity = Identity.get(
                     new IdentityName(
                         opMap.get(
-                            composedOpKey + EtcdUtils.PATH_DELIMITER + CREATOR_IDENTITY_NAME.getName()
+                            EtcdUtils.buildKey(CREATOR_IDENTITY_NAME, composedOpKey)
                         )
                     )
                 );
                 // TODO: role should be part of the key, not a dedicated column
-                String roleNameStr = opMap.get(composedOpKey + EtcdUtils.PATH_DELIMITER + OWNER_ROLE_NAME.getName());
+                String roleNameStr = opMap.get(EtcdUtils.buildKey(OWNER_ROLE_NAME, composedOpKey));
                 role = Role.get(new RoleName(roleNameStr));
                 secType = SecurityType.get(
                     new SecTypeName(
                         opMap.get(
-                            composedOpKey + EtcdUtils.PATH_DELIMITER + SECURITY_TYPE_NAME.getName()
+                            EtcdUtils.buildKey(SECURITY_TYPE_NAME, composedOpKey)
                         )
                     )
                 );
@@ -173,7 +173,7 @@ public class ObjectProtectionEtcdDriver extends BaseEtcdDriver implements Object
                 PrivilegeSet privLimitSet = new PrivilegeSet(
                     Long.parseLong(
                         roleMap.get(
-                            roleNameStr + EtcdUtils.PATH_DELIMITER + SecRoles.ROLE_PRIVILEGES.getName()
+                            EtcdUtils.buildKey(SecRoles.ROLE_PRIVILEGES, roleNameStr)
                         )
                     )
                 );
@@ -226,14 +226,14 @@ public class ObjectProtectionEtcdDriver extends BaseEtcdDriver implements Object
                     Role role = Role.get(
                         new RoleName(
                             aclMap.get(
-                                aclKey + EtcdUtils.PATH_DELIMITER + SecAclMap.ROLE_NAME.getName()
+                                EtcdUtils.buildKey(SecAclMap.ROLE_NAME, aclKey)
                             )
                         )
                     );
                     AccessType type = AccessType.get(
                         Integer.parseInt(
                             aclMap.get(
-                                aclKey + EtcdUtils.PATH_DELIMITER + SecAclMap.ACCESS_TYPE.getName()
+                                EtcdUtils.buildKey(SecAclMap.ACCESS_TYPE, aclKey)
                             )
                         )
                     );

@@ -118,16 +118,19 @@ public class EtcdUtils
         Set<String> ret = new TreeSet<>();
         for (String key : tableRowRef.keySet())
         {
-            // key is something like
-            // LINSTOR/$table/$composedPk/$column = $valueOfColumn
-            int tableStartIdx = key.indexOf(PATH_DELIMITER);
-            int composedKeyStartIdx = key.indexOf(PATH_DELIMITER, tableStartIdx + 1);
-            int composedKeyEndIdx = key.lastIndexOf(PATH_DELIMITER);
-
-            String composedKey = key.substring(composedKeyStartIdx + 1, composedKeyEndIdx);
-
-            ret.add(composedKey);
+            ret.add(extractPrimaryKey(key));
         }
         return ret;
+    }
+
+    public static String extractPrimaryKey(String key)
+    {
+        // key is something like
+        // LINSTOR/$table/$composedPk/$column = $valueOfColumn
+        int tableStartIdx = key.indexOf(PATH_DELIMITER);
+        int composedKeyStartIdx = key.indexOf(PATH_DELIMITER, tableStartIdx + 1);
+        int composedKeyEndIdx = key.lastIndexOf(PATH_DELIMITER);
+
+        return key.substring(composedKeyStartIdx + 1, composedKeyEndIdx);
     }
 }

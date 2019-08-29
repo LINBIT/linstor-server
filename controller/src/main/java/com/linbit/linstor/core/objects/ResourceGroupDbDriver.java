@@ -249,11 +249,12 @@ public class ResourceGroupDbDriver
         Map<VolumeNumber, VolumeGroup> vlmGrpMap = new TreeMap<>();
         Map<ResourceName, ResourceDefinition> rscDfnMap = new TreeMap<>();
 
-        final int replicaCount;
+        final Integer replicaCount;
         switch (getDbType())
         {
             case ETCD:
-                replicaCount = Integer.parseInt(raw.get(REPLICA_COUNT));
+                String replicaCountStr = raw.get(REPLICA_COUNT);
+                replicaCount = replicaCountStr != null ? Integer.parseInt(replicaCountStr) : null;
                 break;
             case SQL:
                 replicaCount = raw.get(REPLICA_COUNT);

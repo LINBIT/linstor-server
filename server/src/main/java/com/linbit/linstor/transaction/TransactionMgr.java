@@ -24,6 +24,7 @@ public interface TransactionMgr
                 (
                     className.equals(TransactionMgr.class.getName()) ||
                     className.equals(ControllerSQLTransactionMgr.class.getName()) ||
+                    className.equals(ControllerETCDTransactionMgr.class.getName()) ||
                     className.equals(SatelliteTransactionMgr.class.getName())
                 ) &&
                 elem.getMethodName().equals(methodName)
