@@ -90,7 +90,15 @@ public class ResourceDefinitionDbDriver
             case ETCD:
                 setColumnSetter(
                     RESOURCE_EXTERNAL_NAME,
-                    rscDfn -> Base64.encode(rscDfn.getExternalName())
+                    rscDfn -> {
+                        byte[] extName = rscDfn.getExternalName();
+                        String extNameBase64 = null;
+                        if (extName != null)
+                        {
+                            extNameBase64 = Base64.encode(rscDfn.getExternalName());
+                        }
+                        return extNameBase64;
+                    }
                 );
                 break;
             case SQL:
@@ -134,7 +142,8 @@ public class ResourceDefinitionDbDriver
         {
             case ETCD:
                 flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
-                extName = Base64.decode(raw.get(RESOURCE_EXTERNAL_NAME));
+                String extNameBase64 = raw.get(RESOURCE_EXTERNAL_NAME);
+                extName = extNameBase64 != null ? Base64.decode(extNameBase64) : null;
                 break;
             case SQL:
                 flags = raw.get(RESOURCE_FLAGS);
