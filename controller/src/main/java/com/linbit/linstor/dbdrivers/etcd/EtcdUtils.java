@@ -5,8 +5,10 @@ import static com.ibm.etcd.client.KeyUtils.bs;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -38,7 +40,11 @@ public class EtcdUtils
         {
             for (String pk : pks)
             {
-                sb.append(pk).append(PK_DELIMITER);
+                if (pk != null)
+                {
+                    sb.append(pk);
+                }
+                sb.append(PK_DELIMITER);
             }
             sb.setLength(sb.length() - PK_DELIMITER.length()); // cut last PK_DELIMITER
             sb.append(PATH_DELIMITER);
@@ -132,5 +138,35 @@ public class EtcdUtils
         int composedKeyEndIdx = key.lastIndexOf(PATH_DELIMITER);
 
         return key.substring(composedKeyStartIdx + 1, composedKeyEndIdx);
+    }
+
+    public static String[] splitPks(String composedPkRef, boolean emptyStringAsNull)
+    {
+        // DO NOT USE String.split(":") as it will NOT include null pks
+        List<String> pks = new ArrayList<>();
+        int startIdx = 0;
+        int endIdx;
+        do
+        {
+            endIdx = composedPkRef.indexOf(PK_DELIMITER, startIdx);
+            if (endIdx != -1)
+            {
+                if (startIdx == endIdx && emptyStringAsNull)
+                {
+                    pks.add(null);
+                }
+                else
+                {
+                    pks.add(composedPkRef.substring(startIdx, endIdx));
+                }
+                startIdx = endIdx + PK_DELIMITER.length();
+            }
+        }
+        while (endIdx != -1);
+        pks.add(composedPkRef.substring(startIdx)); // add pk after last ":"
+
+        String[] pkArr = new String[pks.size()];
+        pks.toArray(pkArr);
+        return pkArr;
     }
 }

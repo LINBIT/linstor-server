@@ -131,11 +131,13 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                     cachedStorVlmInfoByRscLayerId.put(rscLayerId, infoList);
                 }
                 NodeName nodeName = new NodeName(
-                    allVlmDataMap.get(composedPk + EtcdUtils.PATH_DELIMITER + LayerStorageVolumes.NODE_NAME.getName())
+                    allVlmDataMap.get(
+                        EtcdUtils.buildKey(LayerStorageVolumes.NODE_NAME, pks)
+                    )
                 );
                 StorPoolName storPoolName = new StorPoolName(
                     allVlmDataMap.get(
-                        composedPk + EtcdUtils.PATH_DELIMITER + LayerStorageVolumes.STOR_POOL_NAME.getName()
+                        EtcdUtils.buildKey(LayerStorageVolumes.STOR_POOL_NAME, pks)
                     )
                 );
                 Pair<StorPool, InitMaps> storPoolWithInitMap = tmpStorPoolMapRef.get(
@@ -147,7 +149,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                         vlmNr,
                         DeviceProviderKind.valueOf(
                             allVlmDataMap.get(
-                                composedPk + EtcdUtils.PATH_DELIMITER + LayerStorageVolumes.PROVIDER_KIND.getName()
+                                EtcdUtils.buildKey(LayerStorageVolumes.PROVIDER_KIND, pks)
                             )
                         ),
                         storPoolWithInitMap.objA,

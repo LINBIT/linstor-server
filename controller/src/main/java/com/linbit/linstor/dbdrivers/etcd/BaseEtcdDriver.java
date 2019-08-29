@@ -90,7 +90,7 @@ public abstract class BaseEtcdDriver
         {
             txn.put(
                 PutRequest.newBuilder()
-                    .setKey(bs(currentBaseKey + EtcdUtils.PATH_DELIMITER + key))
+                    .setKey(bs(currentBaseKey + key))
                     .setValue(bs(valueRef)).build()
             );
             return this;

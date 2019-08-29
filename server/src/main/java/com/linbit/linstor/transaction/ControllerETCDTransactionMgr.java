@@ -2,17 +2,23 @@ package com.linbit.linstor.transaction;
 
 import static com.ibm.etcd.client.KeyUtils.bs;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.LinStorDBRuntimeException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.ibm.etcd.api.KeyValue;
 import com.ibm.etcd.api.RangeResponse;
+import com.ibm.etcd.api.RequestOp;
+import com.ibm.etcd.api.TxnRequest;
 import com.ibm.etcd.api.TxnResponse;
 import com.ibm.etcd.client.kv.KvClient;
 import com.ibm.etcd.client.kv.KvClient.FluentRangeRequest;
+import com.ibm.etcd.client.kv.KvClient.FluentTxnOps;
 
 public class ControllerETCDTransactionMgr implements TransactionMgrETCD
 {
@@ -52,11 +58,13 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
     @Override
     public void commit() throws TransactionException
     {
+        removeDuplucateRequests();
+
         // TODO check for errors
         TxnResponse txnResponse = currentTransaction.sync();
         if (txnResponse.getSucceeded())
         {
-           transactionObjectCollection.commitAll();
+            transactionObjectCollection.commitAll();
 
             clearTransactionObjects();
 
@@ -69,6 +77,66 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
                 new LinStorDBRuntimeException(txnResponse.toString())
             );
         }
+    }
+
+    private void removeDuplucateRequests()
+    {
+        // ETCD does not allow duplicate updates for the same key
+        TxnRequest request = currentTransaction.asRequest();
+        List<RequestOp> successList = new ArrayList<>(request.getSuccessList());
+        // we do not use .elseDo(), thus we also only have success entries
+
+        HashMap<String, RequestOp> lastReqMap = new HashMap<>();
+        for (RequestOp req : successList)
+        {
+            String key;
+            switch (req.getRequestCase())
+            {
+                case REQUEST_DELETE_RANGE:
+                    key = req.getRequestDeleteRange().getKey().toStringUtf8();
+                    break;
+                case REQUEST_NOT_SET:
+                    key = null;
+                    break;
+                case REQUEST_PUT:
+                    key = req.getRequestPut().getKey().toStringUtf8();
+                    break;
+                case REQUEST_RANGE:
+                    key = req.getRequestRange().getKey().toStringUtf8();
+                    break;
+                case REQUEST_TXN:
+                    key = null;
+                    break;
+                default:
+                    throw new ImplementationError("Unknown ETCD Request case: " + req.getRequestCase());
+            }
+            if (key != null)
+            {
+                lastReqMap.put(key, req);
+            }
+        }
+        FluentTxnOps<?> actualTransaction = getClient().batch();
+        for (RequestOp req : lastReqMap.values())
+        {
+            switch (req.getRequestCase())
+            {
+                case REQUEST_DELETE_RANGE:
+                    actualTransaction.delete(req.getRequestDeleteRangeOrBuilder());
+                    break;
+                case REQUEST_PUT:
+                    actualTransaction.put(req.getRequestPutOrBuilder());
+                    break;
+                case REQUEST_RANGE:
+                    actualTransaction.get(req.getRequestRangeOrBuilder());
+                    break;
+                case REQUEST_NOT_SET:
+                case REQUEST_TXN:
+                    break;
+                default:
+                    throw new ImplementationError("Unknown ETCD Request case: " + req.getRequestCase());
+            }
+        }
+        currentTransaction = actualTransaction;
     }
 
     @Override

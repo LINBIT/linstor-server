@@ -154,6 +154,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     String colData = dataMap.get(colKey);
                     if (colData == null && !col.isNullable())
                     {
+                        EtcdUtils.buildKey(col, pks);
                         throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
                     }
                     rawObjects[col.getIndex()] = colData;

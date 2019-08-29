@@ -18,7 +18,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
 
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_ID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_KIND;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_PARENT_ID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUFFIX;
@@ -80,18 +79,18 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
         Set<String> pks = EtcdUtils.getComposedPkList(allIds);
         try
         {
-            for (String pk : pks)
+            for (String layerId : pks)
             {
-                String parentIdStr = allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_PARENT_ID, pk));
+                String parentIdStr = allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_PARENT_ID, layerId));
 
                 ret.add(
                     new RscLayerInfoData(
-                        new NodeName(allIds.get(EtcdUtils.buildKey(NODE_NAME, pk))),
-                        new ResourceName(allIds.get(EtcdUtils.buildKey(RESOURCE_NAME, pk))),
-                        Integer.parseInt(allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_ID, pk))),
+                        new NodeName(allIds.get(EtcdUtils.buildKey(NODE_NAME, layerId))),
+                        new ResourceName(allIds.get(EtcdUtils.buildKey(RESOURCE_NAME, layerId))),
+                        Integer.parseInt(layerId),
                         parentIdStr != null && !parentIdStr.isEmpty() ? Integer.parseInt(parentIdStr) : null,
-                        DeviceLayerKind.valueOf(allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_KIND, pk))),
-                        allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_SUFFIX, pk))
+                        DeviceLayerKind.valueOf(allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_KIND, layerId))),
+                        allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_SUFFIX, layerId))
                     )
                 );
             }

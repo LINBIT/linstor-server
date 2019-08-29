@@ -63,6 +63,7 @@ import java.util.TreeMap;
 @Singleton
 public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerDatabaseDriver
 {
+    private static final String NULL = ":null";
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final ResourceLayerIdDatabaseDriver idDriver;
@@ -140,9 +141,13 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerData
         {
             Map<String, String> allDrbdRscDfnMap = namespace(GeneratedDatabaseTables.LAYER_DRBD_RESOURCE_DEFINITIONS)
                 .get(true);
-            Set<String> rscDfnNames = EtcdUtils.getComposedPkList(allDrbdRscDfnMap);
-            for (String rscDfnStr : rscDfnNames)
+            Set<String> composedPkSet = EtcdUtils.getComposedPkList(allDrbdRscDfnMap);
+            for (String composedPk : composedPkSet)
             {
+                String[] pks = EtcdUtils.splitPks(composedPk, true);
+                String rscDfnStr = pks[LayerDrbdResourceDefinitions.RESOURCE_NAME.getIndex()];
+                String rscNameSuffix = pks[LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX.getIndex()];
+
                 ResourceName rscName = new ResourceName(rscDfnStr);
                 ResourceDefinition rscDfn = rscDfnMap.get(rscName);
                 if (rscDfn == null)
@@ -152,31 +157,26 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerData
                             rscName + "'"
                     );
                 }
-                String rscNameSuffix = get(
-                    allDrbdRscDfnMap,
-                    LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX,
-                    rscDfnStr
-                );
                 DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(dbCtx, DeviceLayerKind.DRBD, rscNameSuffix);
                 if (drbdRscDfnData == null)
                 {
                     short peerSlots = Short.parseShort(
-                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.PEER_SLOTS, rscDfnStr)
+                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.PEER_SLOTS, pks)
                     );
                     int alStripes = Integer.parseInt(
-                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.AL_STRIPES, rscDfnStr)
+                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.AL_STRIPES, pks)
                     );
                     long alStripeSize = Long.parseLong(
-                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.AL_STRIPE_SIZE, rscDfnStr)
+                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.AL_STRIPE_SIZE, pks)
                     );
                     int tcpPort = Integer.parseInt(
-                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.TCP_PORT, rscDfnStr)
+                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.TCP_PORT, pks)
                     );
 
                     TransportType transportType = TransportType.byValue(
-                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.TRANSPORT_TYPE, rscDfnStr)
+                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.TRANSPORT_TYPE, pks)
                     );
-                    String secret = get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.SECRET, rscDfnStr);
+                    String secret = get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.SECRET, pks);
 
                     List<DrbdRscData> rscDataList = new ArrayList<>();
 
@@ -245,7 +245,8 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerData
         catch (InvalidNameException invalidNameExc)
         {
             throw new LinStorDBRuntimeException(
-                "Failed to restore stored resourceName [" + invalidNameExc.invalidName + "]"
+                "Failed to restore stored resourceName [" + invalidNameExc.invalidName + "]",
+                invalidNameExc
             );
         }
         catch (ValueOutOfRangeException | ExhaustedPoolException | ValueInUseException exc)
@@ -376,7 +377,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerData
                 );
 
                 StorPool extMetaDataStorPool = null;
-                if (extMetaStorPoolNameStr != null)
+                if (extMetaStorPoolNameStr != null && !extMetaStorPoolNameStr.equalsIgnoreCase(NULL))
                 {
                     StorPoolName extStorPoolName = new StorPoolName(extMetaStorPoolNameStr);
                     extMetaDataStorPool = storPoolMapRef.get(
@@ -513,8 +514,8 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerData
         {
             // TODO: needs improvement
             getNamespace(drbdVlmDataRef)
-                .put(LayerDrbdVolumes.NODE_NAME, "null")
-                .put(LayerDrbdVolumes.POOL_NAME, "null");
+                .put(LayerDrbdVolumes.NODE_NAME, NULL)
+                .put(LayerDrbdVolumes.POOL_NAME, NULL);
         }
         else
         {
