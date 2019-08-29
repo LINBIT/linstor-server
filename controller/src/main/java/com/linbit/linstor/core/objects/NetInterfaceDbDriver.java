@@ -98,7 +98,7 @@ public class NetInterfaceDbDriver
             TcpPortNumber::getValueNullable
         );
         encrTypeDriver = generateSingleColumnDriver(
-            STLT_CONN_PORT,
+            STLT_CONN_ENCR_TYPE,
             netIf -> Objects.toString(netIf.getStltConnEncryptionType(dbCtxRef)),
             EncryptionType::name
         );
@@ -138,7 +138,7 @@ public class NetInterfaceDbDriver
                 port = portStr != null ? new TcpPortNumber(Integer.parseInt(portStr)) : null;
                 break;
             case SQL:
-                port = raw.build(STLT_CONN_PORT, TcpPortNumber::new);
+                port = new TcpPortNumber(raw.<Short> get(STLT_CONN_PORT).intValue());
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());

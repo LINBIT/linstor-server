@@ -133,6 +133,17 @@ public class SnapshotVolumeData extends BaseTransactionObject implements Snapsho
     }
 
     @Override
+    public int compareTo(SnapshotVolume other)
+    {
+        int cmp = snapshot.compareTo(other.getSnapshot());
+        if (cmp == 0)
+        {
+            cmp = snapshotVolumeDefinition.compareTo(other.getSnapshotVolumeDefinition());
+        }
+        return cmp;
+    }
+
+    @Override
     public SnapshotVlmApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {

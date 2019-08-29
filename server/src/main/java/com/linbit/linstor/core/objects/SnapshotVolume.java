@@ -17,7 +17,7 @@ import java.util.UUID;
  * Snapshot volumes are stored independently of the source volumes so that we have accurate information about the
  * content of the snapshots even when the source resource is later modified or deleted.
  */
-public interface SnapshotVolume extends TransactionObject, DbgInstanceUuid
+public interface SnapshotVolume extends TransactionObject, DbgInstanceUuid, Comparable<SnapshotVolume>
 {
     UUID getUuid();
 
