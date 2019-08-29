@@ -109,26 +109,31 @@ public class StorPoolDefinitionDbDriver
         final Map<NodeName, StorPool> storPoolsMap = new TreeMap<>();
 
         final StorPoolName storPoolName = raw.build(POOL_DSP_NAME, StorPoolName::new);
+
+        StorPoolDefinitionData storPoolDfn = new StorPoolDefinitionData(
+            raw.build(UUID, java.util.UUID::fromString),
+            getObjectProtection(ObjectProtection.buildPath(storPoolName)),
+            storPoolName,
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            storPoolsMap
+        );
+        if (storPoolName.displayValue.equals(LinStor.DISKLESS_STOR_POOL_NAME))
+        {
+            disklessStorPoolDfn = storPoolDfn;
+        }
         return new Pair<>(
-            new StorPoolDefinitionData(
-                raw.build(UUID, java.util.UUID::fromString),
-                getObjectProtection(ObjectProtection.buildPath(storPoolName)),
-                storPoolName,
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                storPoolsMap
-            ),
+            storPoolDfn,
             new InitMapsImpl(storPoolsMap)
         );
     }
 
     @Override
-    protected String getId(StorPoolDefinitionData dataRef)
+    protected String getId(StorPoolDefinitionData data)
     {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
+        return " (StorPoolName=" + data.getName().displayValue + ")";
     }
 
     private class InitMapsImpl implements StorPoolDefinition.InitMaps
