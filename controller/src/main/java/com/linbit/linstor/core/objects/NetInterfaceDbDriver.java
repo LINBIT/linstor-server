@@ -138,7 +138,8 @@ public class NetInterfaceDbDriver
                 port = portStr != null ? new TcpPortNumber(Integer.parseInt(portStr)) : null;
                 break;
             case SQL:
-                port = new TcpPortNumber(raw.<Short> get(STLT_CONN_PORT).intValue());
+                Short portShort = raw.<Short> get(STLT_CONN_PORT);
+                port = portShort != null ? new TcpPortNumber(portShort.intValue()) : null;
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
