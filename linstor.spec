@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.0.1
+Version: 1.1.0
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -131,6 +131,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Thu Aug 30 2019 Gabor Hernadi <gabor.hernadi@linbit.com> 1.1.0-1
+- New upstream release. Added ETCD support.
+
 * Thu Aug 9 2019 Rene Peinthor <rene.peinthor@linbit.com> 1.0.1-1
 - New upstream release. Fix postgresql migration.
 

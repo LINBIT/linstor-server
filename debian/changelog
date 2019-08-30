@@ -1,3 +1,104 @@
+linstor-server (1.1.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * db/security: abstract security loader classes
+  * databasetype: fix typo in etcd db type
+  * dbconnectionpool: remove unnecessary DbConnectionPool usages
+  * dbinitializer: introduce a database initializer interface
+  * databaseinfo: pass productinfo to migrate and static only databaseinfo
+  * remove unused skipHostnameCheck
+  * satellite: parse satellite settings from toml file
+  * StltRscApiCallHandler: set properties on all remote nodes
+  * improve checkstyle rules
+  * drbd-check: allow any node name for linstor nodes
+  * transactionmgr: subinterface SQL transaction manager
+  * signignentry: Fix nullpointer exception on getSalt() or getHash()
+  * StorPoolData: correclty set snaphot supported field
+  * remove old database.cfg samples
+  * db/etcd: initial implementation
+  * etcd: Migration_00_Init implementation
+
+  [ Gabor Hernadi ]
+  * MigrationUtils: Renamed method for better understanding
+  * MigrationUtils: Unified equal handling for cases
+  * MigrationUtils: Added ETCD cases
+  * StorPoolApi: Added supportsSnapshot
+  * IntAuthResponse: Fixed version mismatch impl error
+  * NvmeUtils: Fixed typo
+  * NetIf: fixed NPE for setActive
+  * CheckStyle: Make more warnings suppressible
+  * DbDriver: Added Database constants generator
+  * SysFsHandler: cleanup caches on delete
+  * NvmeUtils: Fixed potential bug with exists flag
+  * LvmProvider: changed "wiping_in_progress" lv-suffix
+  * SysFsHandler: not deleting entry for missing device
+  * linstor-common: NVMe/PrefNic whitelisted for storPool
+  * ETCDDriver: added security drivers
+  * VlmDriver: added generic driver for Volumes
+  * DbEngine: Added loadAll method
+  * ETCDEngine: Implemented missing methods
+  * SwordfishETCDDriver
+  * StorageLayerETCDDriver
+  * ResourceLayerETCDDriver
+  * PropsConETCDDriver
+  * AbsDbDriver: added generic collection to json driver
+  * ResourceDefinitionDriver
+  * ResourceGroupDriver
+  * Renamed some DbDrivers
+  * ResourceDbDriver
+  * VolumeDefinitionDbDriver
+  * VolumeGroupDbDriver
+  * StorPoolDefinitionDbDriver
+  * StorPoolDbDriver
+  * NetInterfaceDbDriver
+  * NodeConnectionDbDriver
+  * ResourceConnectionDbDriver
+  * VolumeConnectionDbDriver
+  * SnapshotDefinitionDbDriver
+  * SnapshotVolumeDefinitionDbDriver
+  * SnapshotDataDbDriver
+  * SnapshotVolumeDbDriver
+  * KeyValueStoreDbDriver
+  * DrbdLayerGenericDbDriver: implemented missing delete method
+  * DrbdLayerETCDDriver
+  * LuksLayerETCDDriver
+  * NvmeLayerETCDDriver
+  * TransMgr: Fixed generic provider parameter
+  * CheckHealth: made the checks DB-specific
+  * ETCD: fixed minor differences in migration and driver
+  * ETCD: load security objects
+  * ETCD: fixed loading bugs
+  * StorPoolDfnDbDriver: fixed loading disklessStorPoolDfn
+  * DB: fixed minor issues in common drivers
+  * RscDfnDbDriver: fixed NPE
+  * ETCD: fixed minor issues
+  * Controller: removed dummy ETCD initializer
+  * NetIfDriver: Fixed possible NPE
+  * ETCD: fixed duplicated key in txn bug
+  * NetIfDbDriver: (SQL) fixed wrong type when loading
+  * SQL: added special call for setting blob type
+  * SQL: Fixed loading blob fields
+  * NVMe: Workaround to avoid hanging nvme disconnect
+
+  [ Robert Altnoeder ]
+  * External name handling fixes
+  * Fix: Load external names map upon controller startup
+  * Modified handling of external names
+  * Added external name dump to debug command DspRscDfn
+  * CtrlRscDfnApiCallHandler: Removed unused import
+
+  [ Rainer Laschober ]
+  * Add parameter 'hostnqn' in commands 'discover' and 'connect'
+  * Fix grep-commands for setting device-path
+  * Minor code improvements
+  * Disable deletion of nvme volumes (block on controller)
+  * Added checkPrefNic to storPool-create and -modify
+  * Fix external call wipefs so that it really wipes the fs :)
+
+  [Beorn Facchini]
+  * Add truststore to config and HTTPS rest-api
+
+ -- Gabor Hernadi <gabor.hernadi@linbit.com>  Fri, 30 Aug 2019 12:27:03 +0200
 linstor-server (1.0.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
