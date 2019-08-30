@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -138,8 +139,30 @@ public class NetInterfaceDbDriver
                 port = portStr != null ? new TcpPortNumber(Integer.parseInt(portStr)) : null;
                 break;
             case SQL:
-                Short portShort = raw.<Short> get(STLT_CONN_PORT);
-                port = portShort != null ? new TcpPortNumber(portShort.intValue()) : null;
+                Object portObj = raw.get(STLT_CONN_PORT);
+                if (portObj != null)
+                {
+                    int portInt;
+                    if (portObj instanceof Integer)
+                    {
+                        portInt = ((Integer) portObj).intValue();
+                    }
+                    else if (portObj instanceof Short)
+                    {
+                        portInt = ((Short) portObj).intValue();
+                    }
+                    else
+                    {
+                        throw new LinStorDBRuntimeException(
+                            "Unexpected type for " + STLT_CONN_PORT.getName() + ": " + portObj.getClass()
+                        );
+                    }
+                    port = new TcpPortNumber(portInt);
+                }
+                else
+                {
+                    port = null;
+                }
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
