@@ -289,7 +289,15 @@ public class SQLEngine implements DbEngine
         {
             for (int idx = 0; idx < columns.length; ++idx)
             {
-                objects[idx] = resultSet.getObject(idx + 1);
+                if (columns[idx].getSqlType() == Types.BLOB)
+                {
+                    // otherwise .getObjects could return a java.h2.JdbcBlob
+                    objects[idx] = resultSet.getBytes(idx + 1);
+                }
+                else
+                {
+                    objects[idx] = resultSet.getObject(idx + 1);
+                }
                 if (resultSet.wasNull())
                 {
                     objects[idx] = null;

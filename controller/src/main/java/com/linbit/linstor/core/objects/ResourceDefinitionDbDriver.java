@@ -138,6 +138,7 @@ public class ResourceDefinitionDbDriver
         final ResourceName rscName = raw.build(RESOURCE_DSP_NAME, ResourceName::new);
         final long flags;
         final byte[] extName;
+
         switch (getDbType())
         {
             case ETCD:
@@ -152,7 +153,6 @@ public class ResourceDefinitionDbDriver
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
-
         return new Pair<>(
             new ResourceDefinitionData(
                 raw.build(UUID, java.util.UUID::fromString),
@@ -173,6 +173,7 @@ public class ResourceDefinitionDbDriver
             ),
             new RscDfnInitMaps(vlmDfnMap, rscMap, snapshotDfnMap)
         );
+
     }
 
     @Override

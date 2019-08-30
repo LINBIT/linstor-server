@@ -46,6 +46,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -250,17 +253,40 @@ public class ResourceGroupDbDriver
         Map<ResourceName, ResourceDefinition> rscDfnMap = new TreeMap<>();
 
         final Integer replicaCount;
-        switch (getDbType())
+        final List<String> replicasOnSame;
+        final List<String> replicasOnDifferent;
+
+        try
         {
-            case ETCD:
-                String replicaCountStr = raw.get(REPLICA_COUNT);
-                replicaCount = replicaCountStr != null ? Integer.parseInt(replicaCountStr) : null;
-                break;
-            case SQL:
-                replicaCount = raw.get(REPLICA_COUNT);
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + getDbType());
+            switch (getDbType())
+            {
+                case ETCD:
+                    String replicaCountStr = raw.get(REPLICA_COUNT);
+                    replicaCount = replicaCountStr != null ? Integer.parseInt(replicaCountStr) : null;
+
+                    String replicasOnSameStr = raw.get(REPLICAS_ON_SAME);
+                    replicasOnSame = replicasOnSameStr != null
+                        ? new ArrayList<>(OBJ_MAPPER.readValue(replicasOnSameStr, List.class))
+                        : null;
+
+                    String replicasOnDifferentStr = raw.get(REPLICAS_ON_DIFFERENT);
+                    replicasOnDifferent = replicasOnDifferentStr != null
+                        ? new ArrayList<>(OBJ_MAPPER.readValue(replicasOnDifferentStr, List.class))
+                        : null;
+                    break;
+                case SQL:
+                    replicaCount = raw.get(REPLICA_COUNT);
+
+                    replicasOnSame = raw.getAsStringList(REPLICAS_ON_SAME);
+                    replicasOnDifferent = raw.getAsStringList(REPLICAS_ON_DIFFERENT);
+                    break;
+                default:
+                    throw new ImplementationError("Unknown database type: " + getDbType());
+            }
+        }
+        catch (IOException exc)
+        {
+            throw new DatabaseException(exc);
         }
         return new Pair<>(
             new ResourceGroupData(
@@ -273,8 +299,8 @@ public class ResourceGroupDbDriver
                 raw.get(POOL_NAME),
                 raw.getAsStringList(DO_NOT_PLACE_WITH_RSC_LIST),
                 raw.get(DO_NOT_PLACE_WITH_RSC_REGEX),
-                raw.getAsStringList(REPLICAS_ON_SAME),
-                raw.getAsStringList(REPLICAS_ON_DIFFERENT),
+                replicasOnSame,
+                replicasOnDifferent,
                 DatabaseLoader.asDevLayerProviderList(raw.getAsStringList(ALLOWED_PROVIDER_LIST)),
                 raw.get(DISKLESS_ON_REMAINING),
                 vlmGrpMap,
