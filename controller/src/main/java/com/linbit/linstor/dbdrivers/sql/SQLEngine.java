@@ -30,6 +30,7 @@ import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -386,7 +387,15 @@ public class SQLEngine implements DbEngine
                 {
                     if (col.isNullable())
                     {
-                        stmt.setNull(idx, col.getSqlType());
+                        switch (col.getSqlType())
+                        {
+                            case Types.BLOB:
+                                stmt.setBytes(idx, (byte[]) obj);
+                                break;
+                            default:
+                                stmt.setNull(idx, col.getSqlType());
+                                break;
+                        }
                     }
                     else
                     {
@@ -403,7 +412,15 @@ public class SQLEngine implements DbEngine
                 {
                     try
                     {
-                        stmt.setObject(idx, obj, col.getSqlType());
+                        switch (col.getSqlType())
+                        {
+                            case Types.BLOB:
+                                stmt.setBytes(idx, (byte[]) obj);
+                                break;
+                            default:
+                                stmt.setObject(idx, obj, col.getSqlType());
+                                break;
+                        }
                     }
                     catch (Exception exc)
                     {
