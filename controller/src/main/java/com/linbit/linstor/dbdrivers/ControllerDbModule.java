@@ -9,6 +9,7 @@ import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.NodeDbDriver;
+import com.linbit.linstor.core.objects.NodeETCDDriver;
 import com.linbit.linstor.core.objects.NvmeLayerETCDDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
@@ -88,7 +89,6 @@ public class ControllerDbModule extends AbstractModule
     {
         bind(DatabaseDriver.class).to(DatabaseLoader.class);
 
-        bind(NodeDataDatabaseDriver.class).to(NodeDbDriver.class);
         bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
         bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDbDriver.class);
         bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDbDriver.class);
@@ -119,10 +119,11 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
 
+                bind(NodeDataDatabaseDriver.class).to(NodeDbDriver.class);
+
                 bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
-
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
@@ -137,6 +138,9 @@ public class ControllerDbModule extends AbstractModule
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionEtcdDriver.class);
 
                 bind(PropsConDatabaseDriver.class).to(PropsConETCDDriver.class);
+
+                bind(NodeDataDatabaseDriver.class).to(NodeETCDDriver.class);
+
                 bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerETCDDriver.class);
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerETCDDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerETCDDriver.class);

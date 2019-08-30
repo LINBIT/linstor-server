@@ -35,7 +35,7 @@ public abstract class BaseEtcdDriver
      *
      * @param baseKeyRef
      */
-    protected FluentLinstorTransaction namespace(Table table, String... pks)
+    public FluentLinstorTransaction namespace(Table table, String... pks)
     {
         return namespace(EtcdUtils.buildKey(table, pks));
     }
@@ -45,7 +45,7 @@ public abstract class BaseEtcdDriver
      *
      * @param baseKeyRef
      */
-    protected FluentLinstorTransaction namespace(String baseKey)
+    public FluentLinstorTransaction namespace(String baseKey)
     {
         return new FluentLinstorTransaction(getTransaction(), baseKey);
     }

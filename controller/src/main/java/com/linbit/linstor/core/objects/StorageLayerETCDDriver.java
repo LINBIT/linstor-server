@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver.StorVlmInfoData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerStorageVolumes;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
@@ -346,12 +347,22 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     @Override
     public void delete(VlmProviderObject vlmDataRef) throws DatabaseException
     {
-        namespace(
-            GeneratedDatabaseTables.LAYER_STORAGE_VOLUMES,
+        /*
+         * DO NOT USE ranged delete!
+         * same issue as described in NodeETCDDriver, but with toggle disk (remove diskless
+         * vlmData, insert diskfull vlmData in same txn)
+         */
+        String[] pk = new String[] {
             Integer.toString(vlmDataRef.getRscLayerObject().getRscLayerId()),
             Integer.toString(vlmDataRef.getVlmNr().value)
-        )
-            .delete(true);
+        };
+        for (Column col : LayerStorageVolumes.ALL)
+        {
+            if (!col.isPk())
+            {
+                namespace(EtcdUtils.buildKey(col, pk)).delete(false);
+            }
+        }
     }
 
     @Override

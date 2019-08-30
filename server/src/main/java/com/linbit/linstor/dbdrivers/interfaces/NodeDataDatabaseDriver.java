@@ -1,10 +1,9 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Node.NodeFlag;
 import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
@@ -12,26 +11,8 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface NodeDataDatabaseDriver
+public interface NodeDataDatabaseDriver extends GenericDatabaseDriver<NodeData>
 {
-    /**
-     * Persists the given {@link NodeData} into the database.
-     *
-     * @param nodeData
-     *  The data to be stored (including the primary key)
-     * @throws DatabaseException
-     */
-    void create(NodeData nodeData) throws DatabaseException;
-
-    /**
-     * Removes the given {@link NodeData} from the database
-     *
-     * @param node
-     *  The data identifying the database entry to delete
-     * @throws DatabaseException
-     */
-    void delete(NodeData node) throws DatabaseException;
-
     /**
      * A special sub-driver to update the persisted {@link NodeFlag}s. The data record
      * is specified by the primary key stored as instance variables.

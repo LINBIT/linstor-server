@@ -14,6 +14,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -22,6 +23,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionMgrETCD;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 
@@ -41,12 +43,12 @@ import java.util.TreeMap;
 @Singleton
 public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void> implements NodeDataDatabaseDriver
 {
-    private final PropsContainerFactory propsContainerFactory;
-    private final TransactionObjectFactory transObjFactory;
-    private final Provider<TransactionMgr> transMgrProvider;
+    protected final PropsContainerFactory propsContainerFactory;
+    protected final TransactionObjectFactory transObjFactory;
+    protected final Provider<? extends TransactionMgr> transMgrProvider;
 
-    private final StateFlagsPersistence<NodeData> flagsDriver;
-    private final SingleColumnDatabaseDriver<NodeData, NodeType> nodeTypeDriver;
+    protected final StateFlagsPersistence<NodeData> flagsDriver;
+    protected final SingleColumnDatabaseDriver<NodeData, NodeType> nodeTypeDriver;
 
     @Inject
     public NodeDbDriver(
@@ -64,11 +66,7 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
 
-        setColumnSetter(UUID, node -> node.getUuid().toString());
-        setColumnSetter(NODE_NAME, node -> node.getName().value);
-        setColumnSetter(NODE_DSP_NAME, node -> node.getName().displayValue);
-        setColumnSetter(NODE_FLAGS, node -> node.getFlags().getFlagsBits(dbCtxRef));
-        setColumnSetter(NODE_TYPE, node -> node.getNodeType(dbCtxRef).getFlagValue());
+        initSetters(dbCtxRef);
 
         flagsDriver = generateFlagDriver(NODE_FLAGS, Node.NodeFlag.class);
         nodeTypeDriver = generateSingleColumnDriver(
@@ -76,6 +74,43 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
             node -> node.getNodeType(dbCtxRef).toString(),
             NodeType::getFlagValue
         );
+    }
+
+    /**
+     * Special constructor for {@link NodeETCDDriver}
+     */
+    NodeDbDriver(
+        ErrorReporter errorReporterRef,
+        AccessContext dbCtxRef,
+        ETCDEngine etcdEngineRef,
+        Provider<TransactionMgrETCD> transMgrProviderRef,
+        ObjectProtectionDatabaseDriver objProtDriverRef,
+        PropsContainerFactory propsContainerFactoryRef,
+        TransactionObjectFactory transObjFactoryRef
+    )
+    {
+        super(errorReporterRef, GeneratedDatabaseTables.NODES, etcdEngineRef, objProtDriverRef);
+        transMgrProvider = transMgrProviderRef;
+        propsContainerFactory = propsContainerFactoryRef;
+        transObjFactory = transObjFactoryRef;
+
+        initSetters(dbCtxRef);
+
+        flagsDriver = generateFlagDriver(NODE_FLAGS, Node.NodeFlag.class);
+        nodeTypeDriver = generateSingleColumnDriver(
+            NODE_TYPE,
+            node -> node.getNodeType(dbCtxRef).toString(),
+            NodeType::getFlagValue
+        );
+    }
+
+    private void initSetters(AccessContext dbCtxRef)
+    {
+        setColumnSetter(UUID, node -> node.getUuid().toString());
+        setColumnSetter(NODE_NAME, node -> node.getName().value);
+        setColumnSetter(NODE_DSP_NAME, node -> node.getName().displayValue);
+        setColumnSetter(NODE_FLAGS, node -> node.getFlags().getFlagsBits(dbCtxRef));
+        setColumnSetter(NODE_TYPE, node -> node.getNodeType(dbCtxRef).getFlagValue());
     }
 
     @Override
