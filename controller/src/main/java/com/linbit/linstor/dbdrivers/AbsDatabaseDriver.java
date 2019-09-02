@@ -11,7 +11,9 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
+import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.GenericDatabaseDriver;
+import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
@@ -100,7 +102,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         Map<DATA, INIT_MAPS> loadedObjectsMap;
         try
         {
-            loadedObjectsMap = dbEngine.loadAll(table, parentRef, this::load, RawParameters::new);
+            loadedObjectsMap = dbEngine.loadAll(table, parentRef, this::load);
         }
         catch (AccessDeniedException exc)
         {
@@ -213,7 +215,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
     }
 
     protected abstract Pair<DATA, INIT_MAPS> load(
-        AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters raw,
+        RawParameters raw,
         LOAD_ALL parentRef
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
@@ -221,12 +223,19 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
 
     protected abstract String getId(DATA data) throws AccessDeniedException;
 
-    public class RawParameters
+    /**
+     * This class is basically only a wrapper for an Object[]. {@link ETCDEngine} or {@link SQLEngine}
+     * already have written their java-raw types in this Object[] ({@link ETCDEngine} only {@link String}s
+     * but {@link SQLEngine} the types defined in {@link GeneratedDatabaseTables}).
+     */
+    public static class RawParameters
     {
+        private final Table table;
         private final Object[] rawParameters;
 
-        private RawParameters(Object[] rawParametersRef)
+        public RawParameters(Table tableRef, Object[] rawParametersRef)
         {
+            table = tableRef;
             rawParameters = rawParametersRef;
         }
 

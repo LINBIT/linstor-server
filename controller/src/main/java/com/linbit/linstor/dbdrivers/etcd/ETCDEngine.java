@@ -9,7 +9,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
-import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.AbsDatabaseDriver.RawParameters;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
@@ -124,8 +124,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     public <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
         Table table,
         LOAD_ALL parents,
-        DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader,
-        Function<Object[], AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>.RawParameters> objsToRawArgs
+        DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
         ValueOutOfRangeException, MdException
@@ -160,8 +159,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     rawObjects[col.getIndex()] = colData;
                 }
             }
-
-            Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(objsToRawArgs.apply(rawObjects), parents);
+            Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(new RawParameters(table, rawObjects), parents);
             loadedObjectsMap.put(pair.objA, pair.objB);
         }
 
