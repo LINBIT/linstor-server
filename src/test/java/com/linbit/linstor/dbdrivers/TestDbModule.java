@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
@@ -24,6 +23,7 @@ import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -45,6 +45,7 @@ import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.propscon.PropsConGenericDbDriver;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.DbSQLPersistence;
@@ -59,6 +60,7 @@ public class TestDbModule extends AbstractModule
     protected void configure()
     {
         bind(DbAccessor.class).to(DbSQLPersistence.class);
+        bind(DbEngine.class).to(SQLEngine.class);
 
         bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 
