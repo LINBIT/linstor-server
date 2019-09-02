@@ -2,7 +2,6 @@ package com.linbit.linstor.dbcp.migration.etcd;
 
 import static com.ibm.etcd.client.KeyUtils.bs;
 
-import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 
@@ -17,7 +16,6 @@ public class EtcdMigration
 
     protected static String tblKey(GeneratedDatabaseTables.Column tableColumn, String primKey)
     {
-        return EtcdUtils.LINSTOR_PREFIX + tableColumn.getTable().getName() + "/" + primKey + "/"
-            + tableColumn.getName();
+        return EtcdUtils.buildKey(tableColumn, primKey);
     }
 }
