@@ -7,6 +7,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcImpl.EntryBuilder;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -599,21 +600,31 @@ public class DeviceHandlerImpl implements DeviceHandler
             );
             success = true;
         }
-        catch (StorageException exc)
+        catch (AccessDeniedException | DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (Exception exc)
         {
             success = false;
             errorReporter.reportError(exc);
 
+            EntryBuilder builder = ApiCallRcImpl.entryBuilder(
+                // TODO maybe include a ret-code into the StorageException
+                ApiConsts.FAIL_UNKNOWN_ERROR,
+                "Preparing resources for layer " + layer.getName() + " failed"
+            );
+            if (exc instanceof LinStorException)
+            {
+                LinStorException linstorExc = (LinStorException) exc;
+                builder = builder
+                    .setCause(linstorExc.getCauseText())
+                    .setCorrection(linstorExc.getCorrectionText())
+                    .setDetails(linstorExc.getDetailsText());
+            }
+
             ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
-                ApiCallRcImpl.entryBuilder(
-                    // TODO maybe include a ret-code into the StorageException
-                    ApiConsts.FAIL_UNKNOWN_ERROR,
-                    "Preparing resources for layer " + layer.getName() + " failed"
-                )
-                .setCause(exc.getCauseText())
-                .setCorrection(exc.getCorrectionText())
-                .setDetails(exc.getDetailsText())
-                .build()
+                builder.build()
             );
             for (RscLayerObject failedResourceData : rscDataList)
             {
@@ -622,10 +633,6 @@ public class DeviceHandlerImpl implements DeviceHandler
                     apiCallRc
                 );
             }
-        }
-        catch (AccessDeniedException | DatabaseException exc)
-        {
-            throw new ImplementationError(exc);
         }
         return success;
     }
