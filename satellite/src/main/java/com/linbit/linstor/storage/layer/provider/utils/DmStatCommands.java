@@ -3,22 +3,30 @@ package com.linbit.linstor.storage.layer.provider.utils;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.linstor.storage.StorageException;
 import com.linbit.extproc.ExtCmdUtils;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.StringUtils;
 
 import java.io.IOException;
 
 public class DmStatCommands
 {
+    private static final String DMSTATS_COMMAND = "dmstats";
+
     public static String[] getDmstatCreateCommand(String devPath)
     {
-        return new String[] {"dmstat", "create", devPath};
+        return new String[]
+        {
+            DMSTATS_COMMAND, "create", devPath
+        };
     }
 
     public static String[] getDmstatDeleteCommand(String devPath)
     {
-        return new String[] {"dmstat", "delete", devPath, "--allregions"};
+        return new String[]
+        {
+            DMSTATS_COMMAND, "delete", devPath, "--allregions"
+        };
     }
 
     public static void create(ExtCmd extCmd, String devPath) throws StorageException

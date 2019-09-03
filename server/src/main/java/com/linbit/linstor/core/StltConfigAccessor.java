@@ -1,15 +1,15 @@
 package com.linbit.linstor.core;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-
-import java.util.Optional;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import java.util.Optional;
 
 public class StltConfigAccessor
 {
@@ -34,7 +34,7 @@ public class StltConfigAccessor
         {
             throw new ImplementationError("Hardcoded invalid property keys", exc);
         }
-        return dmStatsStr != null && Boolean.valueOf(dmStatsStr);
+        return dmStatsStr != null && Boolean.parseBoolean(dmStatsStr);
     }
 
     public String getNodeName()
