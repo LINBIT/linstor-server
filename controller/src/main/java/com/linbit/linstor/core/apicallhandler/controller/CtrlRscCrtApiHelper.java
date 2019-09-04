@@ -40,6 +40,7 @@ import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -53,6 +54,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -61,6 +63,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCal
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -87,6 +90,7 @@ public class CtrlRscCrtApiHelper
     private final ResourceDataControllerFactory resourceDataFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final ResourceCreateCheck resourceCreateCheck;
+    private final CtrlLayerDataHelper layerDataHelper;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -101,7 +105,8 @@ public class CtrlRscCrtApiHelper
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDataControllerFactory resourceDataFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        ResourceCreateCheck resourceCreateCheckRef
+        ResourceCreateCheck resourceCreateCheckRef,
+        CtrlLayerDataHelper layerDataHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -116,6 +121,7 @@ public class CtrlRscCrtApiHelper
         resourceDataFactory = resourceDataFactoryRef;
         peerAccCtx = peerAccCtxRef;
         resourceCreateCheck = resourceCreateCheckRef;
+        layerDataHelper = layerDataHelperRef;
     }
 
     /**
@@ -146,10 +152,43 @@ public class CtrlRscCrtApiHelper
 
         List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
 
-        if (!layerStack.isEmpty() && !layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
+        if (layerStack.isEmpty())
         {
-            layerStack.add(DeviceLayerKind.STORAGE);
-            warnAddedStorageLayer(responses);
+            layerStack = getLayerStack(rscDfn);
+            if (layerStack.isEmpty())
+            {
+                Set<List<DeviceLayerKind>> existingLayerStacks = extractExistingLayerStacks(rscDfn);
+                switch (existingLayerStacks.size())
+                {
+                    case 0:  // ignore, will be filled later by CtrlLayerDataHelper#createDefaultLayerStack
+                        // but that method requires the resource to already exist.
+                        break;
+                    case 1:
+                        layerStack = existingLayerStacks.iterator().next();
+                        break;
+                    default:
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_LAYER_STACK,
+                                "Could not figure out what layer-list to default to."
+                            )
+                                .setDetails(
+                                    "Layer lists of already existing resources: \n   " +
+                                        StringUtils.join(existingLayerStacks, "\n   ")
+                                )
+                                .setCorrection("Please specify a layer-list")
+                        );
+
+                }
+            }
+        }
+        else
+        {
+            if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
+            {
+                layerStack.add(DeviceLayerKind.STORAGE);
+                warnAddedStorageLayer(responses);
+            }
         }
 
         resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
@@ -684,5 +723,43 @@ public class CtrlRscCrtApiHelper
             ApiConsts.WARN_ALL_DISKLESS,
             "Resource '" + rscName + "' unusable because it is diskless on all its nodes"
         ));
+    }
+
+    private List<DeviceLayerKind> getLayerStack(ResourceDefinitionData rscDfnRef)
+    {
+        List<DeviceLayerKind> layerStack;
+        try
+        {
+            layerStack = rscDfnRef.getLayerStack(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "accessing layerstack of " + getRscDfnDescriptionInline(rscDfnRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        return layerStack;
+    }
+
+    private Set<List<DeviceLayerKind>> extractExistingLayerStacks(ResourceDefinitionData rscDfn)
+    {
+        Set<List<DeviceLayerKind>> ret;
+        try
+        {
+            ret = rscDfn.streamResource(peerAccCtx.get()).map(
+                layerDataHelper::getLayerStack
+            ).collect(Collectors.toSet());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "accessing resources of " + getRscDfnDescriptionInline(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        return ret;
     }
 }
