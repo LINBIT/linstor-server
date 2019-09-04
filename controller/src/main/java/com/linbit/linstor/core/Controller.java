@@ -298,10 +298,6 @@ public final class Controller
         boolean restEnabled = true;
         String restBindAddress;
         String restBindAddresSecure;
-        Path keyStorePath = null;
-        String keyStorePassword;
-        Path trustStorePath = null;
-        String trustStorePassword;
         try
         {
             if (cArgs.getRESTBindAddress() != null)
@@ -346,9 +342,13 @@ public final class Controller
                 }
             }
 
+            Path keyStorePath = null;
+            String keyStorePassword;
+            Path trustStorePath = null;
+            String trustStorePassword;
             final String keyStorePathProp = linstorConfig.getHTTPS().getKeystore();
             final String trustStorePathProp = linstorConfig.getHTTPS().getTruststore();
-            if (keyStorePathProp != null)
+            if (keyStorePathProp != null && linstorConfig.getHTTPS().isEnabled())
             {
                 keyStorePath = Paths.get(keyStorePathProp);
                 if (!keyStorePath.isAbsolute())
