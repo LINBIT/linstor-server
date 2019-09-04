@@ -27,13 +27,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.RetryResourcesTask;
 
-import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Duration;
@@ -43,6 +40,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
+
 /**
  * Notifies satellites of updates, returning the responses from the deployment of these changes.
  */
@@ -51,7 +52,7 @@ public class CtrlSatelliteUpdateCaller
 {
     private final AccessContext apiCtx;
     private final CtrlStltSerializer internalComSerializer;
-    private final RetryResourcesTask retryResourceTask;
+    private final Provider<RetryResourcesTask> retryResourceTaskProvider;
     private final SatelliteConnectorImpl stltConnector;
     private final Provider<CtrlAuthenticator> ctrlAuthenticator;
 
@@ -59,14 +60,14 @@ public class CtrlSatelliteUpdateCaller
     private CtrlSatelliteUpdateCaller(
         @ApiContext AccessContext apiCtxRef,
         CtrlStltSerializer serializerRef,
-        RetryResourcesTask retryResourceTaskRef,
+        Provider<RetryResourcesTask> retryResourceTaskProviderRef,
         SatelliteConnectorImpl stltConnectorRef,
         Provider<CtrlAuthenticator> ctrlAuthenticatorRef
     )
     {
         apiCtx = apiCtxRef;
         internalComSerializer = serializerRef;
-        retryResourceTask = retryResourceTaskRef;
+        retryResourceTaskProvider = retryResourceTaskProviderRef;
         stltConnector = stltConnectorRef;
         ctrlAuthenticator = ctrlAuthenticatorRef;
     }
@@ -294,7 +295,7 @@ public class CtrlSatelliteUpdateCaller
                     PeerNotConnectedException.class,
                     ignored -> notConnectedHandler.handleNotConnected(nodeName)
                 )
-                .doOnError(ignored -> retryResourceTask.add(currentRsc));
+                .doOnError(ignored -> retryResourceTaskProvider.get().add(currentRsc));
         }
 
         return response;

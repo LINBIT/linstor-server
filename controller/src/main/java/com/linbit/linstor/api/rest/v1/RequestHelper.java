@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;

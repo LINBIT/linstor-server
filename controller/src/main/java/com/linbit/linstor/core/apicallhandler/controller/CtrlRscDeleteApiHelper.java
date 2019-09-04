@@ -38,6 +38,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.UUID;
@@ -142,7 +143,7 @@ public class CtrlRscDeleteApiHelper
         return flux;
     }
 
-    private Flux<ApiCallRc> deleteData(NodeName nodeName, ResourceName rscName)
+    public Flux<ApiCallRc> deleteData(NodeName nodeName, ResourceName rscName)
     {
         return scopeRunner
             .fluxInTransactionalScope(
