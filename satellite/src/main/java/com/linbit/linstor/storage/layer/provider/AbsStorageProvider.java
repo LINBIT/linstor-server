@@ -432,12 +432,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         {
             String lvId = asLvIdentifier(vlmData);
 
-            deleteLvImpl(vlmData, lvId);
-
             if (stltConfigAccessor.useDmStats() && updateDmStats())
             {
                 DmStatCommands.delete(extCmdFactory.create(), vlmData.getDevicePath());
             }
+
+            deleteLvImpl(vlmData, lvId);
 
             if (!vlmData.getVolume().getResource().getStateFlags().isSet(
                 storDriverAccCtx,
