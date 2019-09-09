@@ -279,7 +279,7 @@ public class RscInternalCallHandler
                 rscName,
                 true
             );
-            retryResourceTask.add(rsc);
+            retryResourceTask.add(rsc, null);
         }
     }
 }

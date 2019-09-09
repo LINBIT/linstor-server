@@ -45,6 +45,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -175,19 +176,20 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             firstLetterCaps(getSnapshotDfnDescriptionInline(rscName, snapshotName)) + " marked down for rollback."
         ));
 
-        Flux<ApiCallRc> updateResponsesRscDfn =
-            ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError())
-                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
-                    updateResponses,
-                    rscName,
-                    "Deactivated resource {1} on {0} for rollback"
-                ))
-                .onErrorResume(exception -> reactivateRscDfn(rscName, exception));
-
+        Flux<ApiCallRc> nextStep = startRollback(rscName, snapshotName);
         return Flux
             .just(responses)
-            .concatWith(updateResponsesRscDfn)
-            .concatWith(startRollback(rscName, snapshotName))
+            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), nextStep)
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscName,
+                        "Deactivated resource {1} on {0} for rollback"
+                    )
+                )
+                .onErrorResume(exception -> reactivateRscDfn(rscName, exception))
+            )
+            .concatWith(nextStep)
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
     }
 
@@ -215,18 +217,22 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
         ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> satelliteUpdateResponses =
-            ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
-                // ensure that the individual node update fluxes are subscribed to, but ignore the responses
-                .flatMap(Tuple2::getT2).thenMany(Flux.<ApiCallRc>empty())
-                .concatWith(Flux.just(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.MODIFIED,
-                    "Rollback of '" + rscName + "' aborted due to error deactivating"
-                ))))
-                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
-
-        return satelliteUpdateResponses
-            .concatWith(Flux.error(exception));
+        Flux<ApiCallRc> nextStep = Flux.error(exception);
+        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
+            // ensure that the individual node update fluxes are subscribed to, but ignore the responses
+            .flatMap(Tuple2::getT2).thenMany(Flux.<ApiCallRc> empty())
+            .concatWith(
+                Flux.just(
+                    ApiCallRcImpl.singletonApiCallRc(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.MODIFIED,
+                            "Rollback of '" + rscName + "' aborted due to error deactivating"
+                        )
+                    )
+                )
+            )
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
+            .concatWith(nextStep);
     }
 
     private Flux<ApiCallRc> startRollback(ResourceName rscName, SnapshotName snapshotName)
@@ -289,22 +295,20 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             }
         }
 
-        Flux<ApiCallRc> updateResponsesRscDfn =
-            ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
-                .map(nodeResponse -> handleRollbackResponse(
-                    rscName,
-                    nodeResponse
-                ))
-                .transform(responses -> CtrlResponseUtils.combineResponses(
-                    responses,
-                    rscName,
-                    diskNodeNames,
-                    "Rolled resource {1} back on {0}",
-                    null
-                ));
-
-        return updateResponsesRscDfn
-            .concatWith(finishRollback(rscName));
+        Flux<ApiCallRc> finishRollback = finishRollback(rscName);
+        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, finishRollback)
+            .map(nodeResponse -> handleRollbackResponse(
+                rscName,
+                nodeResponse
+            ))
+            .transform(responses -> CtrlResponseUtils.combineResponses(
+                responses,
+                rscName,
+                diskNodeNames,
+                "Rolled resource {1} back on {0}",
+                null
+            ))
+            .concatWith(finishRollback);
     }
 
     private Tuple2<NodeName, Flux<ApiCallRc>> handleRollbackResponse(
@@ -356,7 +360,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
 
-        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
+        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
             .transform(responses -> CtrlResponseUtils.combineResponses(
                 responses,
                 rscName,

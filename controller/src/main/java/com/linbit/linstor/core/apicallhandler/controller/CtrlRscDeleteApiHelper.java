@@ -127,7 +127,8 @@ public class CtrlRscDeleteApiHelper
         }
         else
         {
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
+            Flux<ApiCallRc> nextStep = deleteData(nodeName, rscName);
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
@@ -135,7 +136,7 @@ public class CtrlRscDeleteApiHelper
                     "Deleted {1} on {0}",
                     "Notified {0} that {1} is being deleted on ''" + nodeName + "''"
                 ))
-                .concatWith(deleteData(nodeName, rscName))
+                .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 

@@ -221,9 +221,10 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
             Flux<ApiCallRc> satelliteUpdateResponses;
 
+            Flux<ApiCallRc> nextStep = deleteRemaining(rscName);
             if (hasDisklessResources)
             {
-                satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
+                satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
                     .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
                         rscName,
@@ -236,7 +237,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             }
 
             flux = satelliteUpdateResponses
-                .concatWith(deleteRemaining(rscName))
+                .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
@@ -278,13 +279,14 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             }
             ctrlTransactionHelper.commit();
 
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
+            Flux<ApiCallRc> nextStep = deleteData(rscName);
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
                     "Resource {1} on {0} deleted"
                 ))
-                .concatWith(deleteData(rscName))
+                .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 

@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -145,17 +146,12 @@ public class CtrlSatelliteUpdateCaller
     /**
      * See {@link CtrlSatelliteUpdateCaller}.
      */
-    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(Resource rsc)
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
+        Resource rsc,
+        Publisher<ApiCallRc> nextStepRef
+    )
     {
-        return updateSatellites(rsc.getDefinition());
-    }
-
-    /**
-     * See {@link CtrlSatelliteUpdateCaller}.
-     */
-    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(ResourceDefinition rscDfn)
-    {
-        return updateSatellites(rscDfn, notConnectedWarn());
+        return updateSatellites(rsc.getDefinition(), nextStepRef);
     }
 
     /**
@@ -163,7 +159,19 @@ public class CtrlSatelliteUpdateCaller
      */
     public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
         ResourceDefinition rscDfn,
-        NotConnectedHandler notConnectedHandler
+        Publisher<ApiCallRc> nextStepRef
+    )
+    {
+        return updateSatellites(rscDfn, notConnectedWarn(), nextStepRef);
+    }
+
+    /**
+     * See {@link CtrlSatelliteUpdateCaller}.
+     */
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
+        ResourceDefinition rscDfn,
+        NotConnectedHandler notConnectedHandler,
+        Publisher<ApiCallRc> nextStep
     )
     {
         List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();
@@ -176,7 +184,7 @@ public class CtrlSatelliteUpdateCaller
             {
                 Resource currentRsc = rscIterator.next();
 
-                Flux<ApiCallRc> response = updateResource(currentRsc, notConnectedHandler);
+                Flux<ApiCallRc> response = updateResource(currentRsc, notConnectedHandler, nextStep);
 
                 responses.add(Tuples.of(currentRsc.getAssignedNode().getName(), response));
             }
@@ -260,7 +268,8 @@ public class CtrlSatelliteUpdateCaller
 
     private Flux<ApiCallRc> updateResource(
         Resource currentRsc,
-        NotConnectedHandler notConnectedHandler
+        NotConnectedHandler notConnectedHandler,
+        Publisher<ApiCallRc> nextStepRef
     )
         throws AccessDeniedException
     {
@@ -294,7 +303,7 @@ public class CtrlSatelliteUpdateCaller
                     PeerNotConnectedException.class,
                     ignored -> notConnectedHandler.handleNotConnected(nodeName)
                 )
-                .doOnError(ignored -> retryResourceTaskProvider.get().add(currentRsc));
+                .doOnError(ignored -> retryResourceTaskProvider.get().add(currentRsc, nextStepRef));
         }
 
         return response;

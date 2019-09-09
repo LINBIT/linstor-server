@@ -128,7 +128,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
 
         ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
+        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
             .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                 updateResponses,
                 rscDfn.getName(),

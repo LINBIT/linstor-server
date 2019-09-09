@@ -18,7 +18,6 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
-import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -26,9 +25,10 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.util.context.Context;
 
 @Singleton
 public class RetryResourcesTask implements Task
@@ -50,7 +50,7 @@ public class RetryResourcesTask implements Task
     private static final String RSC_RETRY_API_NAME = "RetryResource";
 
     private final Object syncObj = new Object();
-    private final HashMap<Resource, Pair<Integer, Long>> failedResources = new HashMap<>();
+    private final HashMap<Resource, RetryConfig> failedResources = new HashMap<>();
 
     private final AccessContext sysCtx;
     private final CtrlStltSerializer serializer;
@@ -71,15 +71,20 @@ public class RetryResourcesTask implements Task
         errorReporter = errorReporterRef;
     }
 
-    public boolean add(Resource rsc)
+    public boolean add(Resource rsc, Publisher<ApiCallRc> nextStepRef)
     {
         boolean added = false;
         synchronized (syncObj)
         {
-            if (!failedResources.containsKey(rsc))
+            RetryConfig config = failedResources.get(rsc);
+            if (config == null)
             {
                 added = true;
-                failedResources.put(rsc, new Pair<>(0, System.currentTimeMillis()));
+                failedResources.put(rsc, new RetryConfig(rsc, nextStepRef));
+            }
+            else if (config.fluxAfterSuccess == null)
+            {
+                config.fluxAfterSuccess = nextStepRef;
             }
         }
         if (added)
@@ -114,14 +119,15 @@ public class RetryResourcesTask implements Task
     @Override
     public long run()
     {
-        List<Resource> rscsToRetry;
+        List<RetryConfig> rscsToRetry;
         synchronized (syncObj)
         {
             rscsToRetry = getResourcesToRetry();
         }
 
-        for (Resource rsc : rscsToRetry)
+        for (RetryConfig retryConfig : rscsToRetry)
         {
+            Resource rsc = retryConfig.rsc;
             if (!rsc.isDeleted())
             {
                 try
@@ -137,8 +143,15 @@ public class RetryResourcesTask implements Task
                             nodeName.displayValue,
                             rsc.getDefinition().getName().displayValue
                         );
+
                         // only update the one satellite, not every involved satellites
-                        Flux<ApiCallRc> flux = peer.apiCall(
+                        Publisher<ApiCallRc> nextStep = retryConfig.fluxAfterSuccess;
+                        if (nextStep == null)
+                        {
+                            nextStep = Flux.empty();
+                        }
+
+                        peer.apiCall(
                             InternalApiConsts.API_CHANGED_RSC,
                             serializer
                                 .headerlessBuilder()
@@ -152,27 +165,19 @@ public class RetryResourcesTask implements Task
                                 nodeName,
                                 inputStream
                             )
-                        );
-
-                        if (rsc.getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
-                        {
-                            flux = flux.concatWith(
-                                rscDelHelper.deleteData(
-                                    nodeName,
-                                    rsc.getDefinition().getName()
-                                )
-                            )
-                                .onErrorResume(ApiRcException.class, ignore -> Flux.empty())
-                                .onErrorResume(PeerNotConnectedException.class, ignore -> Flux.empty())
-                                .subscriberContext(
-                                reactor.util.context.Context.of(
-                                    ApiModule.API_CALL_NAME, RSC_RETRY_API_NAME,
+                        )
+                            .concatWith(nextStep)
+                            .onErrorResume(ApiRcException.class, ignore -> Flux.empty())
+                            .onErrorResume(PeerNotConnectedException.class, ignore -> Flux.empty())
+                            .subscriberContext(
+                                Context.of(
+                                    ApiModule.API_CALL_NAME,
+                                    RSC_RETRY_API_NAME,
                                     AccessContext.class, peer.getAccessContext(),
                                     Peer.class, peer
                                 )
-                            );
-                        }
-                        flux.subscribe();
+                            )
+                            .subscribe();
                     }
                     else
                     {
@@ -184,42 +189,63 @@ public class RetryResourcesTask implements Task
                     errorReporter.reportError(new ImplementationError(accDeniedExc));
                 }
             }
+            else
+            {
+                remove(rsc);
+            }
         }
         return TASK_TIMEOUT;
     }
 
-    private List<Resource> getResourcesToRetry()
+    private List<RetryConfig> getResourcesToRetry()
     {
-        List<Resource> ret = new ArrayList<>();
+        List<RetryConfig> ret = new ArrayList<>();
         long now = System.currentTimeMillis();
 
-        for (Entry<Resource, Pair<Integer, Long>> entry : failedResources.entrySet())
+        for (RetryConfig config : failedResources.values())
         {
-            Pair<Integer, Long> pair = entry.getValue();
             int retryIdx;
             int times = 1;
 
-            if (pair.objA >= RETRY_DELAYS.length)
+            if (config.retryTimes >= RETRY_DELAYS.length)
             {
                 retryIdx = RETRY_DELAYS.length - 1;
-                times = pair.objA - RETRY_DELAYS.length + 1;
+                times = config.retryTimes - RETRY_DELAYS.length + 1;
             }
             else
             {
-                retryIdx = pair.objA;
+                retryIdx = config.retryTimes;
             }
 
-            long retryAt = pair.objB + RETRY_DELAYS[retryIdx] * times;
+            long retryAt = config.lastFailTimestamp + RETRY_DELAYS[retryIdx] * times;
             retryAt = (retryAt / TASK_TIMEOUT) * TASK_TIMEOUT;
 
             if (now >= retryAt)
             {
-                ret.add(entry.getKey());
-                pair.objA += 1;
-                pair.objB = now;
+                ret.add(config);
+                config.retryTimes += 1;
+                config.lastFailTimestamp = now;
             }
         }
 
         return ret;
+    }
+
+    private static class RetryConfig
+    {
+        private final Resource rsc;
+
+        private Publisher<ApiCallRc> fluxAfterSuccess;
+        private long lastFailTimestamp;
+        private int retryTimes;
+
+        private RetryConfig(Resource rscRef, Publisher<ApiCallRc> fluxAfterSuccessRef)
+        {
+            rsc = rscRef;
+            fluxAfterSuccess = fluxAfterSuccessRef;
+
+            retryTimes = 0;
+            lastFailTimestamp = System.currentTimeMillis();
+        }
     }
 }

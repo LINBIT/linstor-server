@@ -245,7 +245,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         }
         else
         {
-            responseFlux = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
+            Flux<ApiCallRc> nextStep = resourceDeleted(nodeName, rscName);
+            responseFlux = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
@@ -253,7 +254,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                     "Deleted resource {1} on {0}",
                     "Notified {0} that resource {1} on ''" + nodeName + "'' is being deleted"
                 ))
-                .concatWith(resourceDeleted(nodeName, rscName))
+                .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
                 // Suppress offline warnings because they were already generated in the first step
                 .map(this::removeOfflineWarnings);

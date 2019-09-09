@@ -237,13 +237,14 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
         else
         {
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
+            Flux<ApiCallRc> deleteDataFlux = deleteData(rscName, vlmNr);
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), deleteDataFlux)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
                     "Deleted volume " + vlmNr + " of {1} on {0}"
                 ))
-                .concatWith(deleteData(rscName, vlmNr))
+                .concatWith(deleteDataFlux)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 

@@ -40,6 +40,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -249,22 +250,25 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         }
         else
         {
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
-                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
-                    updateResponses,
-                    rscName,
-                    "Updated volume " + vlmNr + " of {1} on {0}"
-                )
-            );
+            Flux<ApiCallRc> nextStep = Flux.empty();
             if (resize)
             {
                 if (hasDrbd(vlmDfn))
                 {
-                    flux = flux.concatWith(resizeDrbd(rscName, vlmNr));
+                    nextStep = resizeDrbd(rscName, vlmNr);
                 }
-                flux = flux.concatWith(finishResize(rscName, vlmNr));
+                nextStep = nextStep.concatWith(finishResize(rscName, vlmNr));
             }
-            flux = flux.onErrorResume(
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), nextStep)
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscName,
+                        "Updated volume " + vlmNr + " of {1} on {0}"
+                    )
+                )
+                .concatWith(nextStep)
+                .onErrorResume(
                 CtrlResponseUtils.DelayedApiRcException.class,
                 ignored -> Flux.empty()
             );
@@ -333,7 +337,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
             ctrlTransactionHelper.commit();
 
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition())
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), Flux.empty())
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,

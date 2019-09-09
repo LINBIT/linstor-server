@@ -495,7 +495,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
             String actionSelf = removeDisk ? "Removed disk on {0}" : null;
             String actionPeer = removeDisk ? null : "Prepared {0} to expect disk on ''" + nodeName.displayValue + "''";
-            Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
+            Flux<ApiCallRc> nextStep = finishOperation(nodeName, rscName, removeDisk);
+            Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
@@ -517,7 +518,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                                 .concatWith(Flux.error(error))
                         )
                 )
-                .concatWith(finishOperation(nodeName, rscName, removeDisk))
+                .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
 
@@ -545,7 +546,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
+        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
             .transform(responses -> CtrlResponseUtils.combineResponses(
                 responses,
                 rscName,
@@ -592,15 +593,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String actionSelf = removeDisk ? null : "Added disk on {0}";
         String actionPeer = removeDisk ?
             "Notified {0} that disk has been removed on ''" + nodeName.displayValue + "''" : null;
-        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc)
-            .transform(updateResponses -> CtrlResponseUtils.combineResponses(
-                updateResponses,
-                rscName,
-                Collections.singleton(nodeName),
-                actionSelf,
-                actionPeer
-            ));
-
         Publisher<ApiCallRc> migrationFlux;
         Props rscProps = getPropsPrivileged(rsc);
         String migrateFromNodeNameStr = rscProps.map().get(ApiConsts.KEY_RSC_MIGRATE_FROM);
@@ -619,7 +611,14 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         return Flux
             .<ApiCallRc>just(responses)
-            .concatWith(satelliteUpdateResponses)
+            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rsc, migrationFlux)
+                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    updateResponses,
+                    rscName,
+                    Collections.singleton(nodeName),
+                    actionSelf,
+                    actionPeer
+                )))
             .concatWith(migrationFlux);
     }
 

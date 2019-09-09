@@ -379,15 +379,6 @@ public class CtrlRscCrtApiHelper
             .map(displayName -> "''" + displayName + "''")
             .collect(Collectors.joining(", "));
 
-        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn)
-            .transform(updateResponses -> CtrlResponseUtils.combineResponses(
-                updateResponses,
-                rscName,
-                nodeNames,
-                "Created resource {1} on {0}",
-                "Added peer(s) " + nodeNamesStr + " to resource {1} on {0}"
-            ));
-
         Publisher<ApiCallRc> readyResponses;
         if (getVolumeDfnCountPrivileged(rscDfn) == 0)
         {
@@ -424,7 +415,20 @@ public class CtrlRscCrtApiHelper
             readyResponses = Flux.merge(resourceReadyResponses);
         }
 
-        return satelliteUpdateResponses.concatWith(readyResponses);
+        return ctrlSatelliteUpdateCaller.updateSatellites(
+            rscDfn,
+            Flux.empty() // if failed, there is no need for the retry-task to wait for readyState
+            // this is only true as long as there is no other flux concatenated after readyResponses
+        )
+            .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                updateResponses,
+                rscName,
+                nodeNames,
+                "Created resource {1} on {0}",
+                "Added peer(s) " + nodeNamesStr + " to resource {1} on {0}"
+                )
+            )
+            .concatWith(readyResponses);
     }
 
 
