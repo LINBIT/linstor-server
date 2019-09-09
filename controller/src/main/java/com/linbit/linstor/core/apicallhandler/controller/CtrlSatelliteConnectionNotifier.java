@@ -3,22 +3,25 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlSatelliteConnectionNotifier
@@ -39,12 +42,12 @@ public class CtrlSatelliteConnectionNotifier
         satelliteConnectionListeners = satelliteConnectionListenersRef;
     }
 
-    public Flux<?> resourceConnected(Resource rsc)
+    public Flux<?> resourceConnected(Resource rsc, ResponseContext context)
     {
         ResourceDefinition rscDfn = rsc.getDefinition();
 
         return Flux.merge(
-            checkResourceDefinitionConnected(rsc.getDefinition()),
+            checkResourceDefinitionConnected(rsc.getDefinition(), context),
             notifyListeners(
                 "connecting to node '" + rsc.getAssignedNode().getName() + "' for resource '" + rscDfn.getName() + "'",
                 connectionListener -> connectionListener.resourceConnected(rsc)
@@ -52,7 +55,7 @@ public class CtrlSatelliteConnectionNotifier
         );
     }
 
-    public Flux<?> checkResourceDefinitionConnected(ResourceDefinition rscDfn)
+    public Flux<?> checkResourceDefinitionConnected(ResourceDefinition rscDfn, ResponseContext context)
     {
         boolean allOnline = true;
         try
@@ -76,7 +79,7 @@ public class CtrlSatelliteConnectionNotifier
         return allOnline ?
             notifyListeners(
                 "connecting to all nodes for resource '" + rscDfn.getName() + "'",
-                connectionListener -> connectionListener.resourceDefinitionConnected(rscDfn)
+                connectionListener -> connectionListener.resourceDefinitionConnected(rscDfn, context)
             ) :
             Flux.empty();
     }

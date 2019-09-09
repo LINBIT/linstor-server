@@ -666,7 +666,7 @@ public class CtrlNodeApiCallHandler
         return "node '" + nodeNameStr + "'";
     }
 
-    static ResponseContext makeNodeContext(
+    public static ResponseContext makeNodeContext(
         ApiOperation operation,
         String nodeNameStr
     )

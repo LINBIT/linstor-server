@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import reactor.core.publisher.Flux;
@@ -54,6 +56,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
+    private final CtrlRscAutoHelper autoHelper;
 
     @Inject
     public CtrlRscDeleteApiCallHandler(
@@ -65,7 +68,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         ResponseConverter responseConverterRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        CtrlRscAutoHelper autoHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -77,13 +81,22 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         peerAccCtx = peerAccCtxRef;
+        autoHelper = autoHelperRef;
     }
 
     @Override
-    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn)
+    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(
+        ResourceDefinition rscDfn,
+        ResponseContext context
+    )
         throws AccessDeniedException
     {
         List<Flux<ApiCallRc>> fluxes = new ArrayList<>();
+        Set<NodeName> nodeNamesToDelete = new TreeSet<>();
+
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        autoHelper.manage(responses, context, rscDfn);
 
         Iterator<Resource> rscIter = rscDfn.iterateResource(apiCtx);
         while (rscIter.hasNext())
@@ -94,9 +107,17 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                     rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DELETE)
             )
             {
-                fluxes.add(ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(
-                    rsc.getAssignedNode().getName(), rscDfn.getName()));
+                nodeNamesToDelete.add(rsc.getAssignedNode().getName());
             }
+        }
+
+        if (nodeNamesToDelete.isEmpty())
+        {
+            fluxes.add(
+                ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(
+                    nodeNamesToDelete, rscDfn.getName()
+                )
+            );
         }
 
         return fluxes;
@@ -120,12 +141,12 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             .fluxInTransactionalScope(
                 "Delete resource",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
-                () -> deleteResourceInTransaction(nodeNameStr, rscNameStr)
+                () -> deleteResourceInTransaction(nodeNameStr, rscNameStr, context)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> deleteResourceInTransaction(String nodeNameStr, String rscNameStr)
+    private Flux<ApiCallRc> deleteResourceInTransaction(String nodeNameStr, String rscNameStr, ResponseContext context)
     {
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, false);
 
@@ -137,6 +158,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             ));
         }
 
+        Set<NodeName> nodeNamesToDelete = new TreeSet<>();
+        List<Flux<ApiCallRc>> rscsToCreate = new ArrayList<>();
         NodeName nodeName = rsc.getAssignedNode().getName();
         ResourceName rscName = rsc.getDefinition().getName();
 
@@ -147,22 +170,30 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         failIfDependentSnapshot(rsc);
 
         ctrlRscDeleteApiHelper.markDeletedWithVolumes(rsc);
+        nodeNamesToDelete.add(nodeName);
+
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        Flux<ApiCallRc> autoFlux = autoHelper.manage(responses, context, rsc.getDefinition());
 
         ctrlTransactionHelper.commit();
 
         String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
-        ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
-            .entryBuilder(
-                ApiConsts.DELETED,
-                descriptionFirstLetterCaps + " marked for deletion."
+        responses.addEntries(
+            ApiCallRcImpl.singletonApiCallRc(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.DELETED,
+                        descriptionFirstLetterCaps + " marked for deletion."
+                    )
+                    .setDetails(descriptionFirstLetterCaps + " UUID is: " + rsc.getUuid())
+                    .build()
             )
-            .setDetails(descriptionFirstLetterCaps + " UUID is: " + rsc.getUuid())
-            .build()
         );
 
         return Flux
-            .just(responses)
-            .concatWith(ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(nodeName, rscName));
+            .<ApiCallRc> just(responses)
+            .concatWith(ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(nodeNamesToDelete, rscName))
+            .concatWith(autoFlux);
     }
 
     private void ensureNotLastDisk(ResourceName rscName, Resource rsc)

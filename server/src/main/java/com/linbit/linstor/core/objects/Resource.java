@@ -330,7 +330,7 @@ public class Resource extends BaseTransactionObject
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
             assgNode.removeResource(accCtx, this);
-            ((ResourceDefinition) resourceDfn).removeResource(accCtx, this);
+            resourceDfn.removeResource(accCtx, this);
 
             // preventing ConcurrentModificationException
             Collection<ResourceConnection> rscConnValues = new ArrayList<>(resourceConnections.values());
@@ -540,7 +540,7 @@ public class Resource extends BaseTransactionObject
         Map<ResourceKey, ResourceConnection> getRscConnMap();
         Map<VolumeNumber, Volume> getVlmMap();
     }
-    
+
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         CLEAN(1L << 0),
@@ -549,7 +549,7 @@ public class Resource extends BaseTransactionObject
         DISK_ADD_REQUESTED(1L << 3),
         DISK_ADDING(1L << 4),
         DISK_REMOVE_REQUESTED(1L << 5),
-        DISK_REMOVING(1L << 6);
+        DISK_REMOVING(1L << 6), TIE_BREAKER(DISKLESS.flagValue | 1L << 7);
 
         public final long flagValue;
 

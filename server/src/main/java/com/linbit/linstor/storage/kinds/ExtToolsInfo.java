@@ -95,4 +95,11 @@ public class ExtToolsInfo
         sb.append("]");
         return sb.toString();
     }
+
+    public boolean hasVersionOrHigher(int maj, int min, int patch)
+    {
+        return versionMajor != null && versionMajor >= maj &&
+            versionMinor != null && versionMinor >= min &&
+            (versionPatch == null || versionPatch >= patch);
+    }
 }

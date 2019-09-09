@@ -149,7 +149,7 @@ public class ConfFileBuilder
                 try (Section optionsSection = new Section())
                 {
                     appendConflictingDrbdOptions(
-                        LinStorObject.RESOURCE_DEFINITION,
+                        LinStorObject.CONTROLLER,
                         ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
                         prioProps,
                         true

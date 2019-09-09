@@ -218,7 +218,7 @@ public class CtrlFullSyncApiCallHandler
         Flux<byte[]> flux;
         try
         {
-            flux = fullSyncResponse.processReactive(satellitePeerRef, inputStream);
+            flux = fullSyncResponse.processReactive(satellitePeerRef, inputStream, null);
         }
         catch (IOException exc)
         {

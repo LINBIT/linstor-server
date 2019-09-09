@@ -38,8 +38,10 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import reactor.core.publisher.Flux;
@@ -105,88 +107,110 @@ public class CtrlRscDeleteApiHelper
     }
 
     // Restart from here when connection established and DELETE flag set
-    public Flux<ApiCallRc> updateSatellitesForResourceDelete(NodeName nodeName, ResourceName rscName)
+    public Flux<ApiCallRc> updateSatellitesForResourceDelete(Set<NodeName> nodeNames, ResourceName rscName)
     {
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Update for resource deletion",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.RSC_DFN_MAP),
-                () -> updateSatellitesInScope(nodeName, rscName)
+                () -> updateSatellitesInScope(nodeNames, rscName)
             );
     }
 
-    private Flux<ApiCallRc> updateSatellitesInScope(NodeName nodeName, ResourceName rscName)
+    private Flux<ApiCallRc> updateSatellitesInScope(Set<NodeName> nodeNames, ResourceName rscName)
     {
-        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
+        ResourceDefinition rscDfn = null;
+        for (NodeName nodeName : nodeNames)
+        {
+            Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
+            if (rsc != null)
+            {
+                rscDfn = rsc.getDefinition();
+                break;
+            }
+        }
 
         Flux<ApiCallRc> flux;
-
-        if (rsc == null)
+        if (rscDfn != null)
         {
-            flux = Flux.empty();
-        }
-        else
-        {
-            Flux<ApiCallRc> nextStep = deleteData(nodeName, rscName);
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep)
+            Flux<ApiCallRc> nextStep = deleteData(nodeNames, rscName);
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
-                    Collections.singleton(nodeName),
+                    nodeNames,
                     "Deleted {1} on {0}",
-                    "Notified {0} that {1} is being deleted on ''" + nodeName + "''"
-                ))
+                    "Notified {0} that {1} is being deleted on Node(s): '" + nodeNames + "'"
+                    )
+                )
                 .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
-
+        else
+        {
+            flux = Flux.empty();
+        }
         return flux;
     }
 
-    public Flux<ApiCallRc> deleteData(NodeName nodeName, ResourceName rscName)
+    public Flux<ApiCallRc> deleteData(Set<NodeName> nodeNames, ResourceName rscName)
     {
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete resource data",
                 lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
-                () -> deleteDataInTransaction(nodeName, rscName)
+                () -> deleteDataInTransaction(nodeNames, rscName)
             );
     }
 
-    private Flux<ApiCallRc> deleteDataInTransaction(NodeName nodeName, ResourceName rscName)
+    private Flux<ApiCallRc> deleteDataInTransaction(Set<NodeName> nodeNames, ResourceName rscName)
     {
-        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
+        List<Resource> rscList = new ArrayList<>();
+        for (NodeName nodeName : nodeNames)
+        {
+            Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
+            if (rsc != null)
+            {
+                rscList.add(rsc);
+            }
+        }
 
         Flux<ApiCallRc> flux;
 
-        if (rsc == null)
+        if (rscList.isEmpty())
         {
             flux = Flux.empty();
         }
         else
         {
-            UUID rscUuid = rsc.getUuid();
-            String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
-            ResourceDefinition rscDfn = rsc.getDefinition();
-
-            deletePrivileged(rsc);
-
-            if (rscDfn.getResourceCount() == 0)
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            for (Resource rsc : rscList)
             {
-                // remove primary flag
-                errorReporter.logDebug(
-                    String.format("Resource definition '%s' empty, deleting primary flag.", rscName)
-                );
-                removePropPrimarySetPrivileged(rscDfn);
-            }
+                UUID rscUuid = rsc.getUuid();
+                String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
+                ResourceDefinition rscDfn = rsc.getDefinition();
 
+                deletePrivileged(rsc);
+
+                if (rscDfn.getResourceCount() == 0)
+                {
+                    // remove primary flag
+                    errorReporter.logDebug(
+                        String.format("Resource definition '%s' empty, deleting primary flag.", rscName)
+                    );
+                    removePropPrimarySetPrivileged(rscDfn);
+                }
+
+                apiCallRc.addEntry(
+                    ApiCallRcImpl
+                        .entryBuilder(ApiConsts.DELETED, descriptionFirstLetterCaps + " deletion complete.")
+                        .setDetails(descriptionFirstLetterCaps + " UUID was: " + rscUuid)
+                        .build()
+                );
+            }
             ctrlTransactionHelper.commit();
 
-            flux = Flux.just(ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
-                .entryBuilder(ApiConsts.DELETED, descriptionFirstLetterCaps + " deletion complete.")
-                .setDetails(descriptionFirstLetterCaps + " UUID was: " + rscUuid)
-                .build()
-            ));
+            flux = Flux.just(apiCallRc);
         }
 
         return flux;

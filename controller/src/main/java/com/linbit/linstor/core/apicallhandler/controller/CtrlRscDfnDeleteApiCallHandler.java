@@ -84,7 +84,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     }
 
     @Override
-    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn)
+    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn, ResponseContext context)
         throws AccessDeniedException
     {
         return rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.DELETE)

@@ -97,7 +97,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     }
 
     @Override
-    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn)
+    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn, ResponseContext context)
         throws AccessDeniedException
     {
         List<Flux<ApiCallRc>> fluxes = new ArrayList<>();
@@ -109,7 +109,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             if (rsc.getAssignedNode().getFlags().isSet(apiCtx, Node.Flags.DELETE))
             {
                 NodeName nodeName = rsc.getAssignedNode().getName();
-                fluxes.add(updateSatellites(nodeName, rscDfn.getName()));
+                fluxes.add(updateSatellites(nodeName, rscDfn.getName(), context));
             }
         }
 
@@ -210,7 +210,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 }
 
                 List<Flux<ApiCallRc>> resourceDeletionResponses = getRscStreamPrivileged(node)
-                    .map(rsc -> updateSatellites(nodeName, rsc.getDefinition().getName()))
+                    .map(rsc -> updateSatellites(nodeName, rsc.getDefinition().getName(), context))
                     .collect(toList());
 
                 responseFlux = Flux
@@ -223,17 +223,17 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     }
 
     // Restart from here when connection established and DELETE flag set
-    private Flux<ApiCallRc> updateSatellites(NodeName nodeName, ResourceName rscName)
+    private Flux<ApiCallRc> updateSatellites(NodeName nodeName, ResourceName rscName, ResponseContext context)
     {
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Update for node deletion",
                 lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-                () -> updateSatellitesInScope(nodeName, rscName)
+                () -> updateSatellitesInScope(nodeName, rscName, context)
             );
     }
 
-    private Flux<ApiCallRc> updateSatellitesInScope(NodeName nodeName, ResourceName rscName)
+    private Flux<ApiCallRc> updateSatellitesInScope(NodeName nodeName, ResourceName rscName, ResponseContext context)
     {
         Flux<ApiCallRc> responseFlux;
 
@@ -245,7 +245,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         }
         else
         {
-            Flux<ApiCallRc> nextStep = resourceDeleted(nodeName, rscName);
+            Flux<ApiCallRc> nextStep = resourceDeleted(nodeName, rscName, context);
             responseFlux = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
@@ -272,19 +272,20 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         );
     }
 
-    private Flux<ApiCallRc> resourceDeleted(NodeName nodeName, ResourceName rscName)
+    private Flux<ApiCallRc> resourceDeleted(NodeName nodeName, ResourceName rscName, ResponseContext context)
     {
         return scopeRunner
             .fluxInTransactionalScope(
                 "Resource deleted",
                 lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-                () -> resourceDeletedInTransaction(nodeName, rscName)
+                () -> resourceDeletedInTransaction(nodeName, rscName, context)
             );
     }
 
     private Flux<ApiCallRc> resourceDeletedInTransaction(
         NodeName nodeName,
-        ResourceName rscName
+        ResourceName rscName,
+        ResponseContext context
     )
     {
         Flux<ApiCallRc> responseFlux;
@@ -320,7 +321,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 // they can continue. For instance, when a resource definition and node are being
                 // deleted at the same time.
                 Flux<?> operationContinuation =
-                    ctrlSatelliteConnectionNotifier.get().checkResourceDefinitionConnected(rscDfn);
+                    ctrlSatelliteConnectionNotifier.get().checkResourceDefinitionConnected(rscDfn, context);
 
                 responseFlux = Flux
                     .<ApiCallRc>just(ApiCallRcImpl.singletonApiCallRc(response))

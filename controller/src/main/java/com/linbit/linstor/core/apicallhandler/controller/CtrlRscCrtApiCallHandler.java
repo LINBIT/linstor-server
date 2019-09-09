@@ -41,11 +41,13 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
@@ -60,6 +62,7 @@ public class CtrlRscCrtApiCallHandler
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerCtxProvider;
+    private final CtrlRscAutoHelper autoHelper;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
@@ -69,7 +72,8 @@ public class CtrlRscCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
-        @PeerContext Provider<AccessContext> peerCtxProviderRef
+        @PeerContext Provider<AccessContext> peerCtxProviderRef,
+        CtrlRscAutoHelper autoHelperRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -79,6 +83,7 @@ public class CtrlRscCrtApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         peerCtxProvider = peerCtxProviderRef;
+        autoHelper = autoHelperRef;
     }
 
     public Flux<ApiCallRc> createResource(
@@ -143,7 +148,9 @@ public class CtrlRscCrtApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        List<Resource> deployedResources = new ArrayList<>();
+        Set<String> tieBreakerResources = new HashSet<>();
+        Set<Resource> deployedResources = new TreeSet<>();
+        List<Flux<ApiCallRc>> autoFlux = new ArrayList<>();
         for (ResourceWithPayloadApi rscWithPayloadApi : rscApiList)
         {
             ResourceApi rscapi = rscWithPayloadApi.getRscApi();
@@ -157,6 +164,12 @@ public class CtrlRscCrtApiCallHandler
                 thinFreeCapacities,
                 rscWithPayloadApi.getLayerStack()
             ).extractApiCallRc(responses));
+
+            // add returns false if the parameter was already added
+            if (tieBreakerResources.add(rscapi.getName()))
+            {
+                autoFlux.add(autoHelper.manage(responses, context, rscapi.getName()));
+            }
         }
 
         ctrlTransactionHelper.commit();
@@ -174,6 +187,7 @@ public class CtrlRscCrtApiCallHandler
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
             .concatWith(setInitialized(deployedResources, context))
+            .concatWith(Flux.merge(autoFlux))
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
@@ -181,7 +195,7 @@ public class CtrlRscCrtApiCallHandler
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
     }
 
-    private Flux<ApiCallRc> setInitialized(List<Resource> deployedResourcesRef, ResponseContext context)
+    private Flux<ApiCallRc> setInitialized(Set<Resource> deployedResourcesRef, ResponseContext context)
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -194,7 +208,7 @@ public class CtrlRscCrtApiCallHandler
             );
     }
 
-    private Flux<ApiCallRc> setInitializedInTransaction(List<Resource> deployedResourcesRef, ResponseContext contextRef)
+    private Flux<ApiCallRc> setInitializedInTransaction(Set<Resource> deployedResourcesRef, ResponseContext contextRef)
     {
         try
         {

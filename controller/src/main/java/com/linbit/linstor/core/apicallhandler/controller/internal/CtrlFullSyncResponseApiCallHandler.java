@@ -4,7 +4,10 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSatelliteConnectionNotifier;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.netcom.Peer;
@@ -54,22 +57,34 @@ public class CtrlFullSyncResponseApiCallHandler
 
     public Flux<?> fullSyncSuccess()
     {
-        return fullSyncSuccess(satelliteProvider.get());
+        return fullSyncSuccess(satelliteProvider.get(), null);
     }
 
-    public Flux<?> fullSyncSuccess(Peer satellitePeerRef)
+    public Flux<?> fullSyncSuccess(Peer satellitePeerRef, ResponseContext context)
     {
-        return scopeRunner.fluxInTransactionlessScope(
+        final ResponseContext ctx;
+        if (context == null)
+        {
+            ctx = CtrlNodeApiCallHandler.makeNodeContext(
+                ApiOperation.makeCreateOperation(),
+                satellitePeerRef.getNode().getName().displayValue
+            );
+        }
+        else
+        {
+            ctx = context;
+        }
+        return scopeRunner.fluxInTransactionalScope(
             "Handle full sync success",
             LockGuard.createDeferred(
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.readLock()
             ),
-            () -> fullSyncSuccessInScope(satellitePeerRef)
+            () -> fullSyncSuccessInScope(satellitePeerRef, ctx)
         );
     }
 
-    private Flux<?> fullSyncSuccessInScope(Peer satellitePeerRef)
+    private Flux<?> fullSyncSuccessInScope(Peer satellitePeerRef, ResponseContext context)
     {
         satellitePeerRef.setConnectionStatus(Peer.ConnectionStatus.ONLINE);
 
@@ -83,7 +98,7 @@ public class CtrlFullSyncResponseApiCallHandler
             while (localRscIter.hasNext())
             {
                 Resource localRsc = localRscIter.next();
-                fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc));
+                fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc, context));
             }
         }
         catch (AccessDeniedException exc)

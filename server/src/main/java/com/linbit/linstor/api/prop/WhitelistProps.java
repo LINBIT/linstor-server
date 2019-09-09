@@ -3,23 +3,24 @@ package com.linbit.linstor.api.prop;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.logging.ErrorReporter;
 
-import java.util.Arrays;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -37,7 +38,7 @@ public class WhitelistProps
     @Inject
     public WhitelistProps(ErrorReporter errorReporterRef)
     {
-        rules = new HashMap<>();
+        rules = new TreeMap<>();
         errorReporter = errorReporterRef;
 
         List<Property> props = GeneratedPropertyRules.getWhitelistedProperties();
@@ -49,7 +50,7 @@ public class WhitelistProps
         Map<LinStorObject, List<String>> rulesStr = GeneratedPropertyRules.getWhitelistedRules();
         for (Entry<LinStorObject, List<String>> ruleEntry : rulesStr.entrySet())
         {
-            Map<String, Property> rulesPropMap = new HashMap<>();
+            Map<String, Property> rulesPropMap = new TreeMap<>();
             for (String ruleProp : ruleEntry.getValue())
             {
                 Property property = propsByName.get(ruleProp);
@@ -65,7 +66,7 @@ public class WhitelistProps
         // init unused objects with an empty whitelist. avoid null pointer
         Arrays.stream(LinStorObject.values())
             .filter(obj -> !rules.containsKey(obj))
-            .forEach(obj -> rules.put(obj, new HashMap<>()));
+            .forEach(obj -> rules.put(obj, new TreeMap<>()));
     }
 
     /**

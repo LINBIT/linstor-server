@@ -118,12 +118,12 @@ public class CtrlNodeLostApiCallHandler
             .fluxInTransactionalScope(
                 "Remove lost node",
                 LockGuard.createDeferred(nodesMapLock.writeLock()),
-                () -> lostNodeInTransaction(nodeNameStr)
+                () -> lostNodeInTransaction(nodeNameStr, context)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> lostNodeInTransaction(String nodeNameStr)
+    private Flux<ApiCallRc> lostNodeInTransaction(String nodeNameStr, ResponseContext context)
     {
         requireNodesMapChangeAccess();
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
@@ -223,7 +223,7 @@ public class CtrlNodeLostApiCallHandler
         // It may be possible to continue some operations since we are no longer waiting for the node to come online
         Flux<?> operationContinuation = Flux.merge(
             rscDfnToCheck.stream()
-                .map(ctrlSatelliteConnectionNotifier::checkResourceDefinitionConnected)
+                .map(rscDfn -> ctrlSatelliteConnectionNotifier.checkResourceDefinitionConnected(rscDfn, context))
                 .collect(Collectors.toSet())
         );
 

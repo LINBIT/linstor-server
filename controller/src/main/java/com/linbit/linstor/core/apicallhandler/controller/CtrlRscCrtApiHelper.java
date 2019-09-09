@@ -354,7 +354,7 @@ public class CtrlRscCrtApiHelper
     /**
      * Deploy at least one resource of a resource definition to the satellites and wait for them to be ready.
      */
-    public Flux<ApiCallRc> deployResources(ResponseContext context, List<Resource> deployedResources)
+    public Flux<ApiCallRc> deployResources(ResponseContext context, Set<Resource> deployedResources)
     {
         long rscDfnCount = deployedResources.stream()
             .map(Resource::getDefinition)
@@ -366,7 +366,7 @@ public class CtrlRscCrtApiHelper
             throw new IllegalArgumentException("Resources belonging to precisely one resource definition expected");
         }
 
-        ResourceDefinition rscDfn = deployedResources.get(0).getDefinition();
+        ResourceDefinition rscDfn = deployedResources.iterator().next().getDefinition();
         ResourceName rscName = rscDfn.getName();
 
         Set<NodeName> nodeNames = deployedResources.stream()

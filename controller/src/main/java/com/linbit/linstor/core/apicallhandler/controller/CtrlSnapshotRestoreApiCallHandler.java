@@ -46,13 +46,14 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -71,6 +72,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
+    private final CtrlRscAutoHelper autoHelper;
 
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
@@ -83,7 +85,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlRscAutoHelper ctrlRscAutoHelperRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -96,6 +99,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
         lockGuardFactory = lockGuardFactoryRef;
+        autoHelper = ctrlRscAutoHelperRef;
     }
 
     private ResponseContext makeSnapshotRestoreContext(String rscNameStr)
@@ -139,6 +143,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     {
         Flux<ApiCallRc> deploymentResponses = Flux.just();
         Flux<ApiCallRc> cleanupPropertiesFlux = Flux.empty();
+        Flux<ApiCallRc> autoFlux;
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = new ResponseContext(
             new ApiOperation(ApiConsts.MASK_CRT, new OperationDescription("restore", "restoring")),
@@ -167,7 +172,7 @@ public class CtrlSnapshotRestoreApiCallHandler
 
             ctrlSnapshotHelper.ensureSnapshotSuccessful(fromSnapshotDfn);
 
-            List<Resource> restoredResources = new ArrayList<>();
+            Set<Resource> restoredResources = new TreeSet<>();
 
             if (nodeNameStrs.isEmpty())
             {
@@ -184,6 +189,8 @@ public class CtrlSnapshotRestoreApiCallHandler
                     restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node));
                 }
             }
+
+            autoFlux = autoHelper.manage(responses, context, toRscDfn);
 
             ctrlTransactionHelper.commit();
 
@@ -222,12 +229,14 @@ public class CtrlSnapshotRestoreApiCallHandler
         catch (Exception | ImplementationError exc)
         {
             responses = responseConverter.reportException(peer.get(), context, exc);
+            autoFlux = Flux.empty();
         }
 
         final Flux<ApiCallRc> cleanupFlux = cleanupPropertiesFlux;
 
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
+            .concatWith(autoFlux)
             .concatWith(cleanupFlux)
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> cleanupFlux)
             .onErrorResume(EventStreamTimeoutException.class,
@@ -240,7 +249,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             );
     }
 
-    private Flux<ApiCallRc> cleanupProperties(List<Resource> restoredResourcesRef)
+    private Flux<ApiCallRc> cleanupProperties(Set<Resource> restoredResourcesRef)
     {
         return scopeRunner.fluxInTransactionalScope(
             "Cleanup restore-properties",
@@ -252,7 +261,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         );
     }
 
-    private Flux<ApiCallRc> cleanupPropertiesInTransaction(List<Resource> restoredResourcesRef)
+    private Flux<ApiCallRc> cleanupPropertiesInTransaction(Set<Resource> restoredResourcesRef)
     {
         try
         {

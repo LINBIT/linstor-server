@@ -39,13 +39,14 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,6 +68,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
+    private final Provider<CtrlRscAutoHelper> autoHelperProvider;
 
     @Inject
     public CtrlRscAutoPlaceApiCallHandler(
@@ -82,7 +84,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         NodesMap nodesMapRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        Provider<CtrlRscAutoHelper> autoHelperProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -98,6 +101,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        autoHelperProvider = autoHelperProviderRef;
     }
 
     public Flux<ApiCallRc> autoPlace(
@@ -227,7 +231,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             {
                 Candidate candidate = bestCandidate.get();
 
-                List<Resource> deployedResources = createResources(
+                Set<Resource> deployedResources = createResources(
                     context,
                     responses,
                     rscNameStr,
@@ -236,6 +240,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     null,
                     layerStackStrList
                 );
+
 
                 ctrlTransactionHelper.commit();
 
@@ -259,10 +264,11 @@ public class CtrlRscAutoPlaceApiCallHandler
                 );
             }
         }
-
+        Flux<ApiCallRc> autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr);
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
+            .concatWith(autoFlux)
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
@@ -323,7 +329,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         Candidate candidate = bestCandidate
             .orElseThrow(() -> failNotEnoughCandidates(storPoolName, rscSize));
 
-        List<Resource> deployedResources = createResources(
+        Set<Resource> deployedResources = createResources(
             context,
             responses,
             rscNameStr,
@@ -389,7 +395,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             .collect(Collectors.toList());
     }
 
-    private List<Resource> createResources(
+    private Set<Resource> createResources(
         ResponseContext context,
         ApiCallRcImpl responses,
         String rscNameStr,
@@ -403,7 +409,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         String selectedStorPoolName = bestCandidate.storPoolName.displayValue;
         rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, selectedStorPoolName);
 
-        List<Resource> deployedResources = new ArrayList<>();
+        Set<Resource> deployedResources = new TreeSet<>();
         for (Node node : bestCandidate.nodes)
         {
             Resource rsc = ctrlRscCrtApiHelper.createResourceDb(

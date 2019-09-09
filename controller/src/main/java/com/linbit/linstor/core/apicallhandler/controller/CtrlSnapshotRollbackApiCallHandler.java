@@ -112,7 +112,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     }
 
     @Override
-    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn)
+    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn, ResponseContext context)
         throws AccessDeniedException
     {
         boolean anyNodeRollbackPending = false;

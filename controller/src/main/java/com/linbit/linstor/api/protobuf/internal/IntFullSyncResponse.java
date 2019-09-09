@@ -7,8 +7,11 @@ import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncResponseApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
@@ -64,11 +67,25 @@ public class IntFullSyncResponse implements ApiCallReactive
     @Override
     public Flux<byte[]> executeReactive(InputStream msgDataIn) throws IOException
     {
-        return processReactive(satelliteProvider.get(), msgDataIn);
+        return processReactive(satelliteProvider.get(), msgDataIn, null);
     }
 
-    public Flux<byte[]> processReactive(Peer satellitePeerRef, InputStream msgDataIn) throws IOException
+    public Flux<byte[]> processReactive(Peer satellitePeerRef, InputStream msgDataIn, ResponseContext context)
+        throws IOException
     {
+        final ResponseContext ctx;
+        if (context == null)
+        {
+            ctx = CtrlNodeApiCallHandler.makeNodeContext(
+                ApiOperation.makeCreateOperation(),
+                satellitePeerRef.getNode().getName().displayValue
+            );
+        }
+        else
+        {
+            ctx = context;
+        }
+
         MsgIntFullSyncResponse msgIntFullSyncResponse = MsgIntFullSyncResponse.parseDelimitedFrom(msgDataIn);
 
         Flux<byte[]> flux;
@@ -90,11 +107,11 @@ public class IntFullSyncResponse implements ApiCallReactive
 
             flux = scopeRunner
                 .fluxInTransactionalScope(
-                    "Handle full sync success",
+                    "Handle full sync api success",
                     LockGuard.createDeferred(nodesMapLock.writeLock(), storPoolDfnMapLock.writeLock()),
                     () -> updateCapacities(satellitePeerRef, capacityInfoPojoList)
                 )
-                .thenMany(ctrlFullSyncApiCallHandler.fullSyncSuccess(satellitePeerRef)
+                .thenMany(ctrlFullSyncApiCallHandler.fullSyncSuccess(satellitePeerRef, ctx)
                     .thenMany(Flux.<byte[]>empty())
                 );
         }

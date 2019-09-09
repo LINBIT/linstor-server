@@ -154,7 +154,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     }
 
     @Override
-    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn)
+    public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn, ResponseContext context)
         throws AccessDeniedException
     {
         List<Flux<ApiCallRc>> fluxes = new ArrayList<>();
@@ -665,7 +665,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         else
         {
             ctrlRscDeleteApiHelper.markDeletedWithVolumes(migrateFromRsc);
-            deleteFlux = ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(migrateFromNodeName, rscName);
+            deleteFlux = ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(
+                Collections.singleton(migrateFromNodeName),
+                rscName
+            );
         }
 
         ctrlTransactionHelper.commit();
