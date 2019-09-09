@@ -640,7 +640,11 @@ public class NvmeUtils
             {
                 if (outputLine.contains("subnqn:"))
                 {
-                    subsystemNames.add(outputLine.substring(outputLine.indexOf(NVME_SUBSYSTEM_PREFIX)));
+                    int idx = outputLine.indexOf(NVME_SUBSYSTEM_PREFIX);
+                    if (idx >= 0)
+                    {
+                        subsystemNames.add(outputLine.substring(idx));
+                    }
                 }
             }
         }
