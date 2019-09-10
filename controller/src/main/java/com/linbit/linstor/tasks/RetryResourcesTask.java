@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
@@ -163,6 +164,7 @@ public class RetryResourcesTask implements Task
                                 )
                             )
                                 .onErrorResume(ApiRcException.class, ignore -> Flux.empty())
+                                .onErrorResume(PeerNotConnectedException.class, ignore -> Flux.empty())
                                 .subscriberContext(
                                 reactor.util.context.Context.of(
                                     ApiModule.API_CALL_NAME, RSC_RETRY_API_NAME,
