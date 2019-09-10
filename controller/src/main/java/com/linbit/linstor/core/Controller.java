@@ -512,12 +512,13 @@ public final class Controller
         );
         LinStor.printStartupInfo();
 
-        ErrorReporter errorLog = new StdErrorReporter(
+        StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.CONTROLLER_MODULE,
             Paths.get(cArgs.getLogDirectory()),
             cArgs.isPrintStacktraces(),
             LinStor.getHostName(),
-            cArgs.getLogLevel()
+            cArgs.getLogLevel(),
+            () -> null
         );
 
         LinstorConfigToml linstorConfig = parseControllerConfig(errorLog, cArgs);

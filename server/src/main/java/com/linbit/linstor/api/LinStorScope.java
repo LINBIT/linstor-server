@@ -9,14 +9,17 @@ package com.linbit.linstor.api;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.linbit.linstor.annotation.ErrorReporterContext;
+
+import java.lang.annotation.Annotation;
+import java.util.Map;
+
 import com.google.common.collect.Maps;
 import com.google.inject.Key;
 import com.google.inject.OutOfScopeException;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Scopes;
-
-import java.util.Map;
 
 /**
  * Holds objects which are scoped to a specific API call.
@@ -77,21 +80,25 @@ public class LinStorScope implements Scope
     {
         return new Provider<T>()
         {
+            @SuppressWarnings("unchecked")
             @Override
             public T get()
             {
                 Map<Key<?>, Object> scopedObjects = getScopedObjectMap(key);
 
-                @SuppressWarnings("unchecked")
-                T current = (T) scopedObjects.get(key);
-                if (current == null && !scopedObjects.containsKey(key))
+                T current = null;
+                if (scopedObjects != null)
                 {
-                    current = unscoped.get();
-
-                    // don't remember proxies; these exist only to serve circular dependencies
-                    if (!Scopes.isCircularProxy(current))
+                    current = (T) scopedObjects.get(key);
+                    if (current == null && !scopedObjects.containsKey(key))
                     {
-                        scopedObjects.put(key, current);
+                        current = unscoped.get();
+
+                        // don't remember proxies; these exist only to serve circular dependencies
+                        if (!Scopes.isCircularProxy(current))
+                        {
+                            scopedObjects.put(key, current);
+                        }
                     }
                 }
                 return current;
@@ -104,7 +111,17 @@ public class LinStorScope implements Scope
         Map<Key<?>, Object> scopedObjects = values.get();
         if (scopedObjects == null)
         {
-            throw new OutOfScopeException("Cannot access " + key + " outside of a scoping block");
+            Annotation annotation = key.getAnnotation();
+            Class<? extends Annotation> annotationType = key.getAnnotationType();
+
+            boolean isErrorReporterContext = annotation != null && (annotation instanceof ErrorReporterContext);
+            isErrorReporterContext |= annotationType != null && annotationType.equals(ErrorReporterContext.class);
+            if (!isErrorReporterContext)
+            {
+                throw new OutOfScopeException(
+                    "Cannot access " + key + " outside of a scoping block"
+                );
+            }
         }
         return scopedObjects;
     }

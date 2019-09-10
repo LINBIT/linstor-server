@@ -47,6 +47,7 @@ import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -395,12 +396,13 @@ public final class Satellite
         );
         LinStor.printStartupInfo();
 
-        ErrorReporter errorLog = new StdErrorReporter(
+        StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.SATELLITE_MODULE,
             Paths.get(cArgs.getLogDirectory()),
             cArgs.isPrintStacktraces(),
             cArgs.getOverrideNodeName() != null ? cArgs.getOverrideNodeName() : LinStor.getHostName(),
-            cArgs.getLogLevel()
+            cArgs.getLogLevel(),
+            () -> null
         );
 
         SatelliteConfigToml stltConfig = parseSatelliteConfig(errorLog, cArgs);

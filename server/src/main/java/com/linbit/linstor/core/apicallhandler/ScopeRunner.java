@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler;
 
+import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
@@ -14,6 +15,7 @@ import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
@@ -126,6 +128,7 @@ public class ScopeRunner
         try
         {
             apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);
+            apiCallScope.seed(Key.get(AccessContext.class, ErrorReporterContext.class), accCtx);
             if (peer != null)
             {
                 apiCallScope.seed(Peer.class, peer);

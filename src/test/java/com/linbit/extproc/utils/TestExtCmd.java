@@ -1,5 +1,13 @@
 package com.linbit.extproc.utils;
 
+import static org.junit.Assert.fail;
+
+import com.linbit.ChildProcessTimeoutException;
+import com.linbit.extproc.ExtCmd;
+import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.timer.Action;
+import com.linbit.timer.GenericTimer;
+
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Paths;
@@ -9,14 +17,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.linbit.ChildProcessTimeoutException;
-import com.linbit.extproc.ExtCmd;
-import com.linbit.linstor.logging.StdErrorReporter;
-import com.linbit.timer.Action;
-import com.linbit.timer.GenericTimer;
-
-import static org.junit.Assert.fail;
-
 public class TestExtCmd extends ExtCmd
 {
     private BehaviorManager behaviorMgr = new BehaviorManager();
@@ -24,7 +24,7 @@ public class TestExtCmd extends ExtCmd
     public TestExtCmd()
     {
         super(new GenericTimer<String, Action<String>>(),
-            new StdErrorReporter("LINSTOR-UNITTESTS", Paths.get("build/test-logs"), true, "", null)
+            new StdErrorReporter("LINSTOR-UNITTESTS", Paths.get("build/test-logs"), true, "", null, () -> null)
         );
     }
 

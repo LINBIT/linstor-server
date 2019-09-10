@@ -1,5 +1,23 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.annotation.ErrorReporterContext;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.utils.AbsApiCallTester;
+import com.linbit.linstor.core.ApiTestBase;
+import com.linbit.linstor.core.DoNotSeedDefaultPeer;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.DummySecurityInitializer;
+import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.security.SecurityLevel;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -11,24 +29,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import com.google.inject.Key;
-
-import com.linbit.linstor.annotation.PeerContext;
-import com.linbit.linstor.api.utils.AbsApiCallTester;
-import com.linbit.linstor.core.ApiTestBase;
-import com.linbit.linstor.core.DoNotSeedDefaultPeer;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
-import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.DummySecurityInitializer;
-import com.linbit.linstor.security.GenericDbBase;
-import com.linbit.linstor.security.SecurityLevel;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -123,6 +123,7 @@ public class NodeApiTest extends ApiTestBase
         );
 
         testScope.seed(Key.get(AccessContext.class, PeerContext.class), GenericDbBase.PUBLIC_CTX);
+        testScope.seed(Key.get(AccessContext.class, ErrorReporterContext.class), GenericDbBase.PUBLIC_CTX);
         testScope.seed(Peer.class, mockPeer);
         Mockito.when(mockPeer.getAccessContext()).thenReturn(GenericDbBase.PUBLIC_CTX);
 
@@ -209,6 +210,7 @@ public class NodeApiTest extends ApiTestBase
         DummySecurityInitializer.setSecurityLevel(SYS_CTX, SecurityLevel.MAC);
 
         testScope.seed(Key.get(AccessContext.class, PeerContext.class), ApiTestBase.ALICE_ACC_CTX);
+        testScope.seed(Key.get(AccessContext.class, ErrorReporterContext.class), ApiTestBase.ALICE_ACC_CTX);
         testScope.seed(Peer.class, mockPeer);
         Mockito.when(mockPeer.getAccessContext()).thenReturn(GenericDbBase.PUBLIC_CTX);
 

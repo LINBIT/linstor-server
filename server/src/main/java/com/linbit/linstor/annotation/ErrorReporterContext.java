@@ -13,6 +13,6 @@ import java.lang.annotation.Target;
 @Qualifier
 @Target({FIELD, PARAMETER, METHOD})
 @Retention(RUNTIME)
-public @interface PeerContext
+public @interface ErrorReporterContext
 {
 }

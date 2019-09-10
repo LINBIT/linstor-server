@@ -1,8 +1,5 @@
 package com.linbit.linstor;
 
-import com.google.inject.Guice;
-import javax.inject.Inject;
-import com.google.inject.Injector;
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -12,12 +9,12 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroupDataSatelliteFactory;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataSatelliteFactory;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.logging.LoggingModule;
@@ -30,14 +27,17 @@ import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 import java.nio.file.Paths;
 import java.util.UUID;
 
-import javax.inject.Provider;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ResourceDefinitionDataSatelliteTest
 {
@@ -69,7 +69,7 @@ public class ResourceDefinitionDataSatelliteTest
     {
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
-            new LoggingModule(new StdErrorReporter("TESTS", Paths.get("build/test-logs"), true, "", null)),
+            new LoggingModule(new StdErrorReporter("TESTS", Paths.get("build/test-logs"), true, "", null, () -> null)),
             new TestSecurityModule(SYS_CTX),
             new CoreModule(),
             new SatelliteDbModule(),

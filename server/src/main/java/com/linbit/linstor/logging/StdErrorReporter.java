@@ -10,6 +10,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 
+import javax.inject.Provider;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,17 +54,20 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     private final Logger mainLogger;
     private final AtomicLong errorNr;
     private final Path baseLogDirectory;
+    private Provider<AccessContext> peerCtxProvider;
 
     public StdErrorReporter(
         String moduleName,
         Path logDirectory,
         boolean printStackTraces,
         String nodeName,
-        String logLevelRef
+        String logLevelRef,
+        Provider<AccessContext> peerCtxProviderRef
     )
     {
         super(moduleName, printStackTraces, nodeName);
         this.baseLogDirectory = logDirectory;
+        peerCtxProvider = peerCtxProviderRef;
         mainLogger = org.slf4j.LoggerFactory.getLogger(LinStor.PROGRAM + "/" + moduleName);
 
         errorNr = new AtomicLong();
@@ -80,7 +85,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             try
             {
-                setLogLevelImpl(Level.valueOf(logLevelRef));
+                setLogLevelImpl(Level.valueOf(logLevelRef.toUpperCase()));
             }
             catch (IllegalArgumentException exc)
             {
@@ -282,22 +287,22 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             switch (logLevel)
             {
                 case ERROR:
-                    mainLogger.error(logMsg);
+                    logError(logMsg);
                     break;
                 case WARN:
-                    mainLogger.warn(logMsg);
+                    logWarning(logMsg);
                     break;
                 case INFO:
-                    mainLogger.info(logMsg);
+                    logInfo(logMsg);
                     break;
                 case DEBUG:
-                    mainLogger.debug(logMsg);
+                    logDebug(logMsg);
                     break;
                 case TRACE:
-                    mainLogger.trace(logMsg);
+                    logTrace(logMsg);
                     break;
                 default:
-                    mainLogger.error(logMsg);
+                    logError(logMsg);
                     reportError(
                         new IllegalArgumentException(
                             String.format(
@@ -426,22 +431,22 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 switch (logLevel)
                 {
                     case ERROR:
-                        mainLogger.error(logMsg);
+                        logError(logMsg);
                         break;
                     case WARN:
-                        mainLogger.warn(logMsg);
+                        logWarning(logMsg);
                         break;
                     case INFO:
-                        mainLogger.info(logMsg);
+                        logInfo(logMsg);
                         break;
                     case DEBUG:
-                        mainLogger.debug(logMsg);
+                        logDebug(logMsg);
                         break;
                     case TRACE:
-                        mainLogger.trace(logMsg);
+                        logTrace(logMsg);
                         break;
                     default:
-                        mainLogger.error(logMsg);
+                        logError(logMsg);
                         reportError(
                             new IllegalArgumentException(
                                 String.format(
@@ -736,30 +741,47 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     @Override
     public void logTrace(String format, Object... args)
     {
-        mainLogger.trace(String.format(format, args));
+        mainLogger.trace(appendUserNameAndFormat(format, args));
     }
 
     @Override
     public void logDebug(String format, Object... args)
     {
-        mainLogger.debug(String.format(format, args));
+        mainLogger.debug(appendUserNameAndFormat(format, args));
     }
 
     @Override
     public void logInfo(String format, Object... args)
     {
-        mainLogger.info(String.format(format, args));
+        mainLogger.info(appendUserNameAndFormat(format, args));
     }
 
     @Override
     public void logWarning(String format, Object... args)
     {
-        mainLogger.warn(String.format(format, args));
+        mainLogger.warn(appendUserNameAndFormat(format, args));
     }
 
     @Override
     public void logError(String format, Object... args)
     {
-        mainLogger.error(String.format(format, args));
+        mainLogger.error(appendUserNameAndFormat(format, args));
+    }
+
+    private String appendUserNameAndFormat(String formatRef, Object... args)
+    {
+        String user;
+        AccessContext peerCtx = peerCtxProvider.get();
+        if (peerCtx == null)
+        {
+            user = "SYSTEM";
+        }
+        else
+        {
+            user = peerCtx.subjectId.name.displayValue;
+        }
+        // extending the format with "%s" would be easy, but extending the var args would include
+        // a system array copy.
+        return String.format(user + " - " + formatRef, args);
     }
 }

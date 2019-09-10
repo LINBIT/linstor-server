@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
@@ -218,6 +219,7 @@ public class RequestHelper
         try
         {
             apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);
+            apiCallScope.seed(Key.get(AccessContext.class, ErrorReporterContext.class), accCtx);
             apiCallScope.seed(Peer.class, peer);
 
             if (transMgr != null)

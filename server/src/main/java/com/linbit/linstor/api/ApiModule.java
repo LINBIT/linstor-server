@@ -1,6 +1,7 @@
 package com.linbit.linstor.api;
 
 import com.linbit.linstor.annotation.ApiCallScoped;
+import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 import com.linbit.linstor.netcom.Message;
@@ -56,6 +57,10 @@ public class ApiModule extends AbstractModule
         bind(AccessContext.class)
             .annotatedWith(PeerContext.class)
             .toProvider(LinStorScope.seededKeyProvider())
+            .in(ApiCallScoped.class);
+        bind(AccessContext.class)
+            .annotatedWith(ErrorReporterContext.class)
+            .toProvider(() -> null) // do not complain about not being in a scope, just return null
             .in(ApiCallScoped.class);
         bind(Peer.class)
             .toProvider(LinStorScope.seededKeyProvider())

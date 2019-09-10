@@ -1,10 +1,14 @@
 package com.linbit.linstor.security;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerLinstorModule;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.ControllerArgumentsModule;
@@ -55,7 +59,6 @@ import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.TestDbModule;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -72,6 +75,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -103,9 +107,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 public abstract class GenericDbBase implements GenericDbTestConstants
 {
     @Rule
@@ -125,8 +126,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     private static final int PROPS_COL_ID_KEY = 2;
     private static final int PROPS_COL_ID_VAL = 3;
 
-    protected static ErrorReporter errorReporter =
-        new StdErrorReporter("TESTS", Paths.get("build/test-logs"), false, "", null);
+    protected static StdErrorReporter errorReporter =
+        new StdErrorReporter("TESTS", Paths.get("build/test-logs"), false, "", null, () -> null);
 
     protected static final AccessContext SYS_CTX = DummySecurityInitializer.getSystemAccessContext();
     protected static final AccessContext PUBLIC_CTX = DummySecurityInitializer.getPublicAccessContext();
@@ -276,6 +277,10 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         {
             testScope.seed(
                 Key.get(AccessContext.class, PeerContext.class),
+                seedDefaultPeerRule.getDefaultPeerAccessContext()
+            );
+            testScope.seed(
+                Key.get(AccessContext.class, ErrorReporterContext.class),
                 seedDefaultPeerRule.getDefaultPeerAccessContext()
             );
             testScope.seed(Peer.class, mockPeer);
