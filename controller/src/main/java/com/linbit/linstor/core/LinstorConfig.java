@@ -120,7 +120,7 @@ public class LinstorConfig
     private static class CmdSetPlainPort implements Callable<Object>
     {
         @CommandLine.Parameters(index = "0", description = "Database configuration file.")
-        private File dbCfgFile = new File("./linstor.toml");
+        private File linstorTomlFile = new File("./linstor.toml");
 
         @CommandLine.Parameters(index = "1", description = "New Port number.")
         private int controllerPort = ApiConsts.DFLT_CTRL_PORT_PLAIN;
@@ -129,7 +129,7 @@ public class LinstorConfig
         public Object call() throws Exception
         {
             try (PoolingDataSource<PoolableConnection> dataSource =
-                     initConnectionProviderFromCfg(dbCfgFile);
+                     initConnectionProviderFromCfg(linstorTomlFile);
                  Connection con = dataSource.getConnection())
             {
                 con.setSchema(DATABASE_SCHEMA_NAME);
@@ -141,7 +141,7 @@ public class LinstorConfig
             }
             catch (IOException ioExc)
             {
-                System.err.println(String.format("Unable to parse config file '%s':", dbCfgFile.toString()));
+                System.err.println(String.format("Unable to parse config file '%s':", linstorTomlFile.toString()));
                 System.err.println(ioExc.getMessage());
                 System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
@@ -153,7 +153,7 @@ public class LinstorConfig
     private static class CmdSetPlainListen implements Callable<Object>
     {
         @CommandLine.Parameters(index = "0", description = "Database configuration file.")
-        private File dbCfgFile = new File("./linstor.toml");
+        private File linstorTomlFile = new File("./linstor.toml");
 
         @CommandLine.Parameters(index = "1", description = "new Port number.")
         private String listenAddress = "::0";
@@ -162,7 +162,7 @@ public class LinstorConfig
         public Object call() throws Exception
         {
             try (PoolingDataSource<PoolableConnection> dataSource =
-                     initConnectionProviderFromCfg(dbCfgFile);
+                     initConnectionProviderFromCfg(linstorTomlFile);
                  Connection con = dataSource.getConnection())
             {
                 con.setSchema(DATABASE_SCHEMA_NAME);
@@ -175,7 +175,7 @@ public class LinstorConfig
             }
             catch (IOException ioExc)
             {
-                System.err.println(String.format("Unable to parse config file '%s':", dbCfgFile.toString()));
+                System.err.println(String.format("Unable to parse config file '%s':", linstorTomlFile.toString()));
                 System.err.println(ioExc.getMessage());
                 System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
@@ -188,7 +188,7 @@ public class LinstorConfig
     private static class CmdSqlScript implements Callable<Object>
     {
         @CommandLine.Parameters(index = "0", description = "Database configuration file.")
-        private File dbCfgFile = new File("./linstor.toml");
+        private File linstorTomlFile = new File("./linstor.toml");
 
         @CommandLine.Parameters(index = "1", description = "SQL script.", arity = "0..1")
         private File sqlFile = null;
@@ -199,7 +199,7 @@ public class LinstorConfig
             Reader input = sqlFile != null ? new FileReader(sqlFile) : new InputStreamReader(System.in);
 
             try (PoolingDataSource<PoolableConnection> dataSource =
-                     initConnectionProviderFromCfg(dbCfgFile);
+                     initConnectionProviderFromCfg(linstorTomlFile);
                  Connection con = dataSource.getConnection())
             {
                 con.setAutoCommit(false);
@@ -221,7 +221,7 @@ public class LinstorConfig
             }
             catch (IOException ioExc)
             {
-                System.err.println(String.format("Unable to parse config file '%s':", dbCfgFile.toString()));
+                System.err.println(String.format("Unable to parse config file '%s':", linstorTomlFile.toString()));
                 System.err.println(ioExc.getMessage());
                 System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
@@ -234,7 +234,7 @@ public class LinstorConfig
     private static class CmdMigrateDatabaseConfig implements Callable<Object>
     {
         @CommandLine.Parameters(index = "0", description = "Old Database configuration file.")
-        private File dbCfgFile = new File("./datbase.cfg");
+        private File linstorTomlFile = new File("./datbase.cfg");
 
         @CommandLine.Parameters(index = "1", description = "Linstor toml configuration file.")
         private File tomlFile = new File("./linstor.toml");
@@ -244,13 +244,13 @@ public class LinstorConfig
         {
             Properties dbProps = new Properties();
 
-            if (!dbCfgFile.exists())
+            if (!linstorTomlFile.exists())
             {
-                System.err.println(String.format("Old database config file does not exist: '%s'.", dbCfgFile));
+                System.err.println(String.format("Old database config file does not exist: '%s'.", linstorTomlFile));
                 System.exit(EXIT_CODE_CONFIG_PARSE_ERROR);
             }
 
-            try (FileInputStream fis = new FileInputStream(dbCfgFile))
+            try (FileInputStream fis = new FileInputStream(linstorTomlFile))
             {
                 dbProps.loadFromXML(fis);
             }
