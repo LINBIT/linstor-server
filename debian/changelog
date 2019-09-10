@@ -1,3 +1,31 @@
+linstor-server (1.1.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * DbEngine: Added JavaDoc
+  * Fixed unit tests
+  * EtcdMigration: Unified key building method
+  * dmstats: fixed broken command
+  * Gradle: shortened linstor's classpath
+  * DevHandler: added exception handling for prepare-step
+  * dmstats: fixed incorrect ext-cmd order when deleting volume
+  * RetryTask: Cleanup successfully deleted resource
+  * Create Rsc: change default layer list
+  * NvmeUtils: Fixed ArrayIndexOutOfBoundsException
+  * StdErrorReporter: Added username to log entries
+  * RetryResourceTask: Ignore peer not connected exception
+
+  [ Rene Peinthor ]
+  * node-reconnect: Also add offline/failed nodes to the reconnector on request
+  * linstorconfig: clearly state the linstorTomlFile as param
+
+  [ Rainer Laschober ]
+  * Check if HTTPS is enabled
+
+  [ Robert Altnoeder ]
+  * Add database fixes for resource definition external name entries
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 10 Sep 2019 14:54:20 +0200
+
 linstor-server (1.1.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
