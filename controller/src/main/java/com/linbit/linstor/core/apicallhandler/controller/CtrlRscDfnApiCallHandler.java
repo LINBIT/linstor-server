@@ -22,6 +22,7 @@ import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -138,7 +139,8 @@ public class CtrlRscDfnApiCallHandler
         List<VlmDfnWtihCreationPayload> volDescrMap,
         List<String> layerStackStrList,
         Short peerSlotsRef,
-        String rscGrpNameStr
+        String rscGrpNameStr,
+        boolean throwOnError
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -216,7 +218,21 @@ public class CtrlRscDfnApiCallHandler
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            if (throwOnError)
+            {
+                if (exc instanceof ApiRcException)
+                {
+                    throw (ApiRcException)exc;
+                }
+                else
+                {
+                    throw new ApiException(exc);
+                }
+            }
+            else
+            {
+                responses = responseConverter.reportException(peer.get(), context, exc);
+            }
         }
 
         return responses;

@@ -222,7 +222,8 @@ public class CtrlApiCallHandler
                 vlmDescrMapRef,
                 layerStackRef,
                 peerSlotsRef,
-                rscGrpNameRef
+                rscGrpNameRef,
+                false
             );
         }
         return apiCallRc;

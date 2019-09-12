@@ -685,7 +685,8 @@ public class CtrlRscGrpApiCallHandler
                     vlmDfnCrtList,
                     layerStackStr,
                     null,
-                    rscGrpNameRef
+                    rscGrpNameRef,
+                    true
                 )
             );
 
