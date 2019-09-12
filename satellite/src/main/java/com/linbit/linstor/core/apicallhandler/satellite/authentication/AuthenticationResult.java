@@ -1,35 +1,31 @@
 package com.linbit.linstor.core.apicallhandler.satellite.authentication;
 
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+
 import java.util.List;
 
 public class AuthenticationResult
 {
-    private final List<DeviceLayerKind> supportedDeviceLayer;
-    private final List<DeviceProviderKind> supportedDeviceProvider;
+    private final List<ExtToolsInfo> extToolsInfoList;
 
     private final boolean authenticated;
 
     private final ApiCallRcImpl apiCallRcImpl;
 
     public AuthenticationResult(
-        List<DeviceLayerKind> supportedDeviceLayerRef,
-        List<DeviceProviderKind> supportedDeviceProviderRef,
+        List<ExtToolsInfo> extToolsInfoListRef,
         ApiCallRcImpl apiCallRcImplRef
     )
     {
-        supportedDeviceLayer = supportedDeviceLayerRef;
-        supportedDeviceProvider = supportedDeviceProviderRef;
+        extToolsInfoList = extToolsInfoListRef;
         apiCallRcImpl = apiCallRcImplRef;
         authenticated = true;
     }
 
     public AuthenticationResult(ApiCallRcImpl failedApiCallRcImplRef)
     {
-        supportedDeviceLayer = null;
-        supportedDeviceProvider = null;
+        extToolsInfoList = null;
         apiCallRcImpl = failedApiCallRcImplRef;
         authenticated = false;
     }
@@ -39,14 +35,9 @@ public class AuthenticationResult
         return authenticated;
     }
 
-    public List<DeviceLayerKind> getSupportedDeviceLayer()
+    public List<ExtToolsInfo> getExternalToolsInfoList()
     {
-        return supportedDeviceLayer;
-    }
-
-    public List<DeviceProviderKind> getSupportedDeviceProvider()
-    {
-        return supportedDeviceProvider;
+        return extToolsInfoList;
     }
 
     public ApiCallRcImpl getApiCallRc()

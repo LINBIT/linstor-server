@@ -3,20 +3,24 @@ package com.linbit.linstor.api.protobuf;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
+import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo;
+import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo.ExternalTools;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
-import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
-import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
-import com.linbit.linstor.api.pojo.RscGrpPojo;
-import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
+import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -192,6 +196,45 @@ public class ProtoDeserializationUtils
         return kind;
     }
 
+    public static ArrayList<ExtToolsInfo> parseExternalToolInfoList(
+        List<ExternalToolsInfo> extToolsListRef,
+        boolean throwIfUnknown
+    )
+    {
+        ArrayList<ExtToolsInfo> ret = new ArrayList<>();
+        for (ExternalToolsInfo protoLayerInfo : extToolsListRef)
+        {
+            ExtTools kind = parseExtToolsKind(protoLayerInfo.getExtTool(), throwIfUnknown);
+            if (kind != null)
+            {
+                Integer major = null;
+                Integer minor = null;
+                Integer patch = null;
+
+                boolean isSupported = protoLayerInfo.getSupported();
+
+                if (isSupported)
+                {
+                    major = protoLayerInfo.getVersionMajor();
+                    minor = protoLayerInfo.getVersionMinor();
+                    patch = protoLayerInfo.getVersionPatch();
+                }
+
+                ret.add(
+                    new ExtToolsInfo(
+                        kind,
+                        isSupported,
+                        major,
+                        minor,
+                        patch,
+                        protoLayerInfo.getReasonsForNotSupportedList()
+                    )
+                );
+            }
+        }
+        return ret;
+    }
+
     public static StorPoolApi parseStorPool(StorPool storPoolProto, long fullSyncId, long updateId)
     {
         return new StorPoolPojo(
@@ -256,5 +299,39 @@ public class ProtoDeserializationUtils
             vlmGrpProto.getVlmNr(),
             vlmGrpProto.getVlmDfnPropsMap()
         );
+    }
+
+    public static ExtTools parseExtToolsKind(ExternalTools extToolsRef, boolean throwIfUnknown)
+    {
+        ExtTools tool = null;
+        switch (extToolsRef)
+        {
+            case DRBD9:
+                tool = ExtTools.DRBD9;
+                break;
+            case DRBD_PROXY:
+                tool = ExtTools.DRBD_PROXY;
+                break;
+            case CRYPT_SETUP:
+                tool = ExtTools.CRYPT_SETUP;
+                break;
+            case LVM:
+                tool = ExtTools.LVM;
+                break;
+            case NVME:
+                tool = ExtTools.NVME;
+                break;
+            case ZFS:
+                tool = ExtTools.ZFS;
+                break;
+            case UNKNOWN: // fall-through
+            case UNRECOGNIZED: // fall-through
+            default:
+                if (throwIfUnknown)
+                {
+                    throw new ImplementationError("Unknown (proto) Externaltool: " + extToolsRef);
+                }
+        }
+        return tool;
     }
 }

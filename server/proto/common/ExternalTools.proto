@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.common;
+
+message ExternalToolsInfo
+{
+    enum ExternalTools
+    {
+        UNKNOWN = 0;
+
+        DRBD9 = 1;
+        DRBD_PROXY = 2;
+        CRYPT_SETUP = 3;
+        LVM = 4;
+        ZFS = 5;
+        NVME = 6;
+    }
+
+    common.ExternalToolsInfo.ExternalTools ext_tool = 1;
+
+    bool supported = 2;
+
+    // the following version fields are all null if the layer is not supported
+    uint32 version_major = 3;
+    uint32 version_minor = 4;
+    uint32 version_patch = 5;
+
+    repeated string reasons_for_not_supported = 6;
+}

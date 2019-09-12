@@ -26,6 +26,7 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import javax.inject.Inject;
 
@@ -35,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import com.google.inject.testing.fieldbinder.Bind;
 import junitparams.JUnitParamsRunner;
@@ -71,6 +73,9 @@ public class RscApiTest extends ApiTestBase
 
     @Mock
     protected Peer mockSatellite;
+
+    @Mock
+    protected ExtToolsManager mockExtToolsMgr;
 
     @Bind @Mock
     protected FreeCapacityFetcher freeCapacityFetcher;
@@ -146,8 +151,11 @@ public class RscApiTest extends ApiTestBase
     public void createRscSuccess() throws Exception
     {
         Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
-        Mockito.when(mockSatellite.getSupportedLayers()).thenReturn(Arrays.asList(DeviceLayerKind.values()));
-        Mockito.when(mockSatellite.getSupportedProviders()).thenReturn(Arrays.asList(DeviceProviderKind.values()));
+        Mockito.when(mockSatellite.getExtToolsManager()).thenReturn(mockExtToolsMgr);
+        Mockito.when(mockExtToolsMgr.getSupportedLayers())
+            .thenReturn(new TreeSet<>(Arrays.asList(DeviceLayerKind.values())));
+        Mockito.when(mockExtToolsMgr.getSupportedProviders())
+            .thenReturn(new TreeSet<>(Arrays.asList(DeviceProviderKind.values())));
         evaluateTest(
             new CrtRscCall(
                 // Registered

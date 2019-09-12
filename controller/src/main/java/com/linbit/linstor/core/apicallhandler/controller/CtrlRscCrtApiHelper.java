@@ -516,7 +516,7 @@ public class CtrlRscCrtApiHelper
         usedDeviceLayerKinds.removeAll(
             rsc.getAssignedNode()
                 .getPeer(peerAccCtx.get())
-                .getSupportedLayers()
+                .getExtToolsManager().getSupportedLayers()
         );
 
         return usedDeviceLayerKinds;

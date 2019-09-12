@@ -5,6 +5,7 @@ import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -51,12 +52,12 @@ import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
-import org.slf4j.event.Level;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -74,6 +75,8 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import org.slf4j.event.Level;
+
 @Singleton
 public class StltApiCallHandler
 {
@@ -90,7 +93,7 @@ public class StltApiCallHandler
     private final StltRscApiCallHandler rscHandler;
     private final StltStorPoolApiCallHandler storPoolHandler;
     private final StltSnapshotApiCallHandler snapshotHandler;
-    private final StltDeviceLayerChecker deviceLayerChecker;
+    private final StltExtToolsChecker deviceLayerChecker;
 
     private final CtrlStltSerializer interComSerializer;
 
@@ -132,7 +135,7 @@ public class StltApiCallHandler
         StltRscApiCallHandler rscHandlerRef,
         StltStorPoolApiCallHandler storPoolHandlerRef,
         StltSnapshotApiCallHandler snapshotHandlerRef,
-        StltDeviceLayerChecker deviceLayerCheckerRef,
+        StltExtToolsChecker deviceLayerCheckerRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
@@ -239,7 +242,15 @@ public class StltApiCallHandler
             stltConf.setProp(LinStor.KEY_NODE_NAME, nodeName);
             transMgrProvider.get().commit();
 
-            authResult = deviceLayerChecker.getSupportedLayerAndProvider(nodeName);
+            authResult = new AuthenticationResult(
+                deviceLayerChecker.getExternalTools(),
+                ApiCallRcImpl.singletonApiCallRc(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.CREATED | ApiConsts.MASK_NODE,
+                        "successfully authenticated"
+                    )
+                )
+            );
         }
         catch (AccessDeniedException | InvalidKeyException | InvalidValueException | DatabaseException exc)
         {

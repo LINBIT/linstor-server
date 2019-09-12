@@ -7,14 +7,12 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import javax.net.ssl.SSLException;
+
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import org.reactivestreams.Publisher;
@@ -27,6 +25,7 @@ public class PeerREST implements Peer
     static ServiceName serviceName;
 
     private AccessContext accessContext;
+    private final ExtToolsManager extToolsMgr;
 
     public PeerREST(
         String peerIdRef,
@@ -37,6 +36,7 @@ public class PeerREST implements Peer
         peerId = peerIdRef;
         userAgent = userAgentRef;
         accessContext = defaultCtx;
+        extToolsMgr = new ExtToolsManager();
 
         try
         {
@@ -338,27 +338,9 @@ public class PeerREST implements Peer
     }
 
     @Override
-    public void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerListRef)
+    public ExtToolsManager getExtToolsManager()
     {
-        // ignore, client peer does not support anything
-    }
-
-    @Override
-    public List<DeviceLayerKind> getSupportedLayers()
-    {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderListRef)
-    {
-        // ignore, client peer does not support anything
-    }
-
-    @Override
-    public List<DeviceProviderKind> getSupportedProviders()
-    {
-        return Collections.emptyList();
+        return extToolsMgr;
     }
 
     @Override

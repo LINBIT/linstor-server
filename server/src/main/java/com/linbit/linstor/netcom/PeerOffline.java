@@ -1,23 +1,21 @@
 package com.linbit.linstor.netcom;
 
-import javax.net.ssl.SSLException;
-import java.io.ByteArrayInputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+
+import javax.net.ssl.SSLException;
+
+import java.io.ByteArrayInputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -31,6 +29,7 @@ public class PeerOffline implements Peer
 
     private final ReadWriteLock satelliteStateLock;
     private SatelliteState satelliteState;
+    private final ExtToolsManager extToolMgr;
 
     static
     {
@@ -53,6 +52,7 @@ public class PeerOffline implements Peer
         inetSocketAddress = inetAddress;
         node = nodeRef;
         satelliteStateLock = new ReentrantReadWriteLock(true);
+        extToolMgr = new ExtToolsManager();
 
         if (node != null)
         {
@@ -365,26 +365,8 @@ public class PeerOffline implements Peer
     }
 
     @Override
-    public void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerListRef)
+    public ExtToolsManager getExtToolsManager()
     {
-        // ignore, offline peer does support everything
-    }
-
-    @Override
-    public List<DeviceLayerKind> getSupportedLayers()
-    {
-        return Arrays.asList(DeviceLayerKind.values());
-    }
-
-    @Override
-    public void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderListRef)
-    {
-        // ignore, offline peer does support everything
-    }
-
-    @Override
-    public List<DeviceProviderKind> getSupportedProviders()
-    {
-        return Arrays.asList(DeviceProviderKind.values());
+        return extToolMgr;
     }
 }

@@ -7,8 +7,8 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_AUTHENTICATION_ERROR;
 import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_CONNECTED;
@@ -22,9 +22,10 @@ import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_UNKNOWN;
 import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_VERSION_MISMATCH;
 
 import javax.net.ssl.SSLException;
+
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import org.reactivestreams.Publisher;
@@ -413,37 +414,5 @@ public interface Peer
      */
     Message nextCurrentMsgIn();
 
-    /**
-     * Sets the list of device layers supported by the satellite of this peer.
-     * @param parseDeviceLayerKindListRef
-     */
-    void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerList);
-
-    /**
-     * Gets the list of device layers supported by the satellite of this peer.
-     * @param parseDeviceLayerKindListRef
-     */
-    List<DeviceLayerKind> getSupportedLayers();
-
-    default boolean isDeviceLayerSupported(DeviceLayerKind kind)
-    {
-        return getSupportedLayers().contains(kind);
-    }
-
-    /**
-     * Sets the list of device providers supported by the satellite of this peer.
-     * @param parseDeviceLayerKindListRef
-     */
-    void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderList);
-
-    /**
-     * Gets the list of device providers supported by the satellite of this peer.
-     * @param parseDeviceLayerKindListRef
-     */
-    List<DeviceProviderKind> getSupportedProviders();
-
-    default boolean isDeviceProviderSupported(DeviceProviderKind kind)
-    {
-        return getSupportedProviders().contains(kind);
-    }
+    ExtToolsManager getExtToolsManager();
 }

@@ -4,6 +4,11 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.linstor.timer.CoreTimerImpl;
+
+import static com.linbit.drbd.DrbdVersion.DRBD9_MAJOR_VSN;
+import static com.linbit.drbd.DrbdVersion.UNDETERMINED_VERSION;
+import static com.linbit.drbd.DrbdVersion.VSN_QUERY_COMMAND;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,9 +20,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.HashSet;
 
-import static com.linbit.drbd.DrbdVersion.DRBD9_MAJOR_VSN;
-import static com.linbit.drbd.DrbdVersion.UNDETERMINED_VERSION;
-import static com.linbit.drbd.DrbdVersion.VSN_QUERY_COMMAND;
 import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)

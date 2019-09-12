@@ -28,7 +28,7 @@ public enum DeviceProviderKind
         true,
         false,
         new LvmDriverKind(),
-        StartupVerification.LVM
+        ExtTools.LVM
     ),
     LVM_THIN(
         true,
@@ -37,7 +37,7 @@ public enum DeviceProviderKind
         true,
         true,
         new LvmThinDriverKind(),
-        StartupVerification.LVM
+        ExtTools.LVM
     ),
     ZFS(
         true,
@@ -46,7 +46,7 @@ public enum DeviceProviderKind
         true,
         false,
         new ZfsDriverKind(),
-        StartupVerification.ZFS
+        ExtTools.ZFS
     ),
     ZFS_THIN(
         true,
@@ -55,7 +55,7 @@ public enum DeviceProviderKind
         true,
         true,
         new ZfsThinDriverKind(),
-        StartupVerification.ZFS
+        ExtTools.ZFS
     ),
     SWORDFISH_TARGET(
         false,
@@ -108,7 +108,7 @@ public enum DeviceProviderKind
     private final boolean usesThinProvisioning;
     @Deprecated
     private final StorageDriverKind storageDriverKind;
-    private final StartupVerification[] startupVerifications;
+    private final ExtTools[] startupVerifications;
 
     DeviceProviderKind(
         boolean isSnapshotSupportedRef,
@@ -117,7 +117,7 @@ public enum DeviceProviderKind
         boolean hasBackingDeviceRef,
         boolean usesThinProvisioningRef,
         StorageDriverKind storageDriverKindRef,
-        StartupVerification... startupVerificationsRef
+        ExtTools... startupVerificationsRef
     )
     {
         isSnapshotSupported = isSnapshotSupportedRef;
@@ -160,7 +160,7 @@ public enum DeviceProviderKind
         return storageDriverKind;
     }
 
-    public StartupVerification[] getStartupVerifications()
+    public ExtTools[] getExtToolDependencies()
     {
         return startupVerifications;
     }

@@ -1,5 +1,8 @@
 package com.linbit.linstor.netcom;
 
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
+
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
@@ -9,15 +12,10 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.utils.OrderingFlux;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.UnicastProcessor;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
+
+import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,28 +23,27 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
-
 import java.nio.channels.SelectionKey;
-import java.util.ArrayList;
+import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-
-import javax.net.ssl.SSLException;
-import java.nio.channels.SocketChannel;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.UnicastProcessor;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 /**
  * Tracks the status of the communication with a peer
@@ -145,8 +142,7 @@ public class TcpConnectorPeer implements Peer
     private AtomicLong nextApiCallId = new AtomicLong(1);
     private Map<Long, FluxSink<ByteArrayInputStream>> openRpcs = Collections.synchronizedMap(new TreeMap<>());
 
-    private List<DeviceLayerKind> supportedDeviceLayerKinds = new ArrayList<>();
-    private List<DeviceProviderKind> supportedDeviceProviderKinds = new ArrayList<>();
+    private ExtToolsManager externalToolsManager = new ExtToolsManager();
 
     protected TcpConnectorPeer(
         ErrorReporter errorReporterRef,
@@ -1007,28 +1003,8 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void setSupportedLayers(List<DeviceLayerKind> supportedDeviceLayerListRef)
+    public ExtToolsManager getExtToolsManager()
     {
-        supportedDeviceLayerKinds.clear();
-        supportedDeviceLayerKinds.addAll(supportedDeviceLayerListRef);
-    }
-
-    @Override
-    public List<DeviceLayerKind> getSupportedLayers()
-    {
-        return supportedDeviceLayerKinds;
-    }
-
-    @Override
-    public void setSupportedProviders(List<DeviceProviderKind> supportedDeviceProviderListRef)
-    {
-        supportedDeviceProviderKinds.clear();
-        supportedDeviceProviderKinds.addAll(supportedDeviceProviderListRef);
-    }
-
-    @Override
-    public List<DeviceProviderKind> getSupportedProviders()
-    {
-        return supportedDeviceProviderKinds;
+        return externalToolsManager;
     }
 }

@@ -19,8 +19,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
@@ -81,11 +80,10 @@ public class CtrlAuthResponseApiCallHandler
         ApiCallRcImpl apiCallResponse,
         Long expectedFullSyncId,
         String nodeUname,
-        Integer versionMajor,
-        Integer versionMinor,
-        Integer versionPatch,
-        List<DeviceLayerKind> supportedLayers,
-        List<DeviceProviderKind> supportedProviders,
+        Integer linstorVersionMajor,
+        Integer linstorVersionMinor,
+        Integer linstorVersionPatch,
+        List<ExtToolsInfo> externalToolsInfoList,
         boolean waitForFullSyncAnswerRef
     )
     {
@@ -98,11 +96,10 @@ public class CtrlAuthResponseApiCallHandler
                 apiCallResponse,
                 expectedFullSyncId,
                 nodeUname,
-                versionMajor,
-                versionMinor,
-                versionPatch,
-                supportedLayers,
-                supportedProviders,
+                linstorVersionMajor,
+                linstorVersionMinor,
+                linstorVersionPatch,
+                externalToolsInfoList,
                 waitForFullSyncAnswerRef
             )
         );
@@ -114,11 +111,10 @@ public class CtrlAuthResponseApiCallHandler
         ApiCallRcImpl apiCallResponse,
         Long expectedFullSyncId,
         String nodeUname,
-        Integer versionMajor,
-        Integer versionMinor,
-        Integer versionPatch,
-        List<DeviceLayerKind> supportedLayers,
-        List<DeviceProviderKind> supportedProviders,
+        Integer linstorVersionMajor,
+        Integer linstorVersionMinor,
+        Integer linstorVersionPatch,
+        List<ExtToolsInfo> externalToolsInfoList,
         boolean waitForFullSyncAnswerRef
     )
     {
@@ -127,15 +123,15 @@ public class CtrlAuthResponseApiCallHandler
         if (success)
         {
             if (LinStor.VERSION_INFO_PROVIDER.equalsVersion(
-                versionMajor,
-                versionMinor,
-                versionPatch)
+                    linstorVersionMajor,
+                    linstorVersionMinor,
+                    linstorVersionPatch
+                )
             )
             {
                 peer.setAuthenticated(true);
                 peer.setConnectionStatus(Peer.ConnectionStatus.CONNECTED);
-                peer.setSupportedLayers(supportedLayers);
-                peer.setSupportedProviders(supportedProviders);
+                peer.getExtToolsManager().updateExternalToolsInfo(externalToolsInfoList);
 
                 // Set the satellite's access context
                 // Certain APIs called by the satellite are executed with a privileged access context by the controller,
@@ -202,9 +198,9 @@ public class CtrlAuthResponseApiCallHandler
                     String.format(
                         "Satellite '%s' version mismatch(v%d.%d.%d).",
                         peer.getNode().getName(),
-                        versionMajor,
-                        versionMinor,
-                        versionPatch
+                        linstorVersionMajor,
+                        linstorVersionMinor,
+                        linstorVersionPatch
                     )
                 );
                 peer.closeConnection();

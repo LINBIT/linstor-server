@@ -143,7 +143,7 @@ public class StorPoolHelper
             isKindAllowed =
                 peer == null || // if we are creating the node we also create a dfltDisklessStorPool
                 // where this peer will be uninitialized
-                peer.getSupportedProviders().contains(kind);
+                peer.getExtToolsManager().isProviderSupported(kind);
         }
         catch (AccessDeniedException exc)
         {

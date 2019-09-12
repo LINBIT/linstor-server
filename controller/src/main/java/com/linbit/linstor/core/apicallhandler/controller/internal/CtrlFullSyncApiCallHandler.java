@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.internal;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
@@ -19,8 +21,11 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuard;
-import reactor.core.publisher.Flux;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -30,9 +35,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
-import static java.util.stream.Collectors.toList;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlFullSyncApiCallHandler
@@ -153,6 +162,21 @@ public class CtrlFullSyncApiCallHandler
 
             if (waitForAnswer)
             {
+                StringBuilder details = new StringBuilder();
+                ExtToolsManager extToolsManager = satellitePeer.getExtToolsManager();
+                Map<DeviceLayerKind, List<String>> unsupportedLayersWithResons =
+                    extToolsManager.getUnsupportedLayersWithResons();
+                Map<DeviceProviderKind, List<String>> unsupportedProvidersWithResons =
+                    extToolsManager.getUnsupportedProvidersWithResons();
+
+                details.append("Supported storage providers: ")
+                    .append(extToolsManager.getSupportedProviders().toString().toLowerCase())
+                    .append("\nSupported resource layers  : ")
+                    .append(extToolsManager.getSupportedLayers().toString().toLowerCase());
+
+                renderUnsupportedDetails(details, unsupportedProvidersWithResons, "storage providers");
+                renderUnsupportedDetails(details, unsupportedLayersWithResons, "resource layers");
+
                 flux = satellitePeer.apiCall(
                         InternalApiConsts.API_FULL_SYNC_DATA,
                         data
@@ -165,12 +189,7 @@ public class CtrlFullSyncApiCallHandler
                                     ApiConsts.CONN_STATUS_AUTHENTICATED,
                                     "Node '" + satelliteNode.getName().displayValue + "' authenticated"
                                 )
-                                .setDetails(
-                                    "Supported storage providers: " +
-                                        satellitePeer.getSupportedProviders().toString().toLowerCase() + "\n" +
-                                    "Supported resource layers  : " +
-                                        satellitePeer.getSupportedLayers().toString().toLowerCase()
-                                )
+                                .setDetails(details.toString())
                             )
                         )
                     );
@@ -206,5 +225,36 @@ public class CtrlFullSyncApiCallHandler
             flux = Flux.error(exc);
         }
         return flux;
+    }
+
+    private <T extends Enum<T>> void renderUnsupportedDetails(
+        StringBuilder details,
+        Map<T, List<String>> unsupportedTypeWithReasons,
+        String type
+    )
+    {
+        if (!unsupportedTypeWithReasons.isEmpty())
+        {
+            details.append("\nUnsupported ").append(type).append(":\n");
+            for (Entry<T, List<String>> entry : unsupportedTypeWithReasons.entrySet())
+            {
+                details.append("    ").append(entry.getKey()).append(": ");
+                String indent = StringUtils.repeat(" ", "", 4 + 2 + entry.getKey().name().length());
+
+                boolean first = true;
+                for (String reason : entry.getValue())
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        details.append(indent);
+                    }
+                    details.append(reason).append("\n");
+                }
+            }
+        }
     }
 }

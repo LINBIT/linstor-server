@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.kinds;
 
-public enum StartupVerification
+public enum ExtTools
 {
     DRBD9, DRBD_PROXY,
     CRYPT_SETUP,

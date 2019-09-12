@@ -10,8 +10,8 @@ import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlAuthRespon
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -72,25 +72,20 @@ public class IntAuthResponse implements ApiCallReactive
 
         final boolean success = msgAuthResponse.getSuccess();
         final Long expectedFullSyncId;
-        final Integer versionMajor;
-        final Integer versionMinor;
-        final Integer versionPatch;
-        final List<DeviceLayerKind> supportedLayers;
-        final List<DeviceProviderKind> supportedProviders;
+        final Integer linstorVersionMajor;
+        final Integer linstorVersionMinor;
+        final Integer linstorVersionPatch;
+        final List<ExtToolsInfo> externalToolsInfoList;
         final String nodeUname;
         if (success)
         {
             expectedFullSyncId = msgAuthResponse.getExpectedFullSyncId();
             nodeUname = msgAuthResponse.getNodeUname();
-            versionMajor = msgAuthResponse.getVersionMajor();
-            versionMinor = msgAuthResponse.getVersionMinor();
-            versionPatch = msgAuthResponse.getVersionPatch();
-            supportedLayers = ProtoDeserializationUtils.parseDeviceLayerKindList(
-                msgAuthResponse.getSupportedLayerList(),
-                false
-            );
-            supportedProviders = ProtoDeserializationUtils.parseDeviceProviderKind(
-                msgAuthResponse.getSupportedProviderList(),
+            linstorVersionMajor = msgAuthResponse.getLinstorVersionMajor();
+            linstorVersionMinor = msgAuthResponse.getLinstorVersionMinor();
+            linstorVersionPatch = msgAuthResponse.getLinstorVersionPatch();
+            externalToolsInfoList = ProtoDeserializationUtils.parseExternalToolInfoList(
+                msgAuthResponse.getExtToolsInfoList(),
                 false
             );
         }
@@ -98,11 +93,10 @@ public class IntAuthResponse implements ApiCallReactive
         {
             expectedFullSyncId = null;
             nodeUname = null;
-            versionMajor = null;
-            versionMinor = null;
-            versionPatch = null;
-            supportedLayers = null;
-            supportedProviders = null;
+            linstorVersionMajor = null;
+            linstorVersionMinor = null;
+            linstorVersionPatch = null;
+            externalToolsInfoList = null;
         }
         return ctrlAuthResponseApiCallHandler.authResponse(
             peer,
@@ -110,11 +104,10 @@ public class IntAuthResponse implements ApiCallReactive
             apiCallResponse,
             expectedFullSyncId,
             nodeUname,
-            versionMajor,
-            versionMinor,
-            versionPatch,
-            supportedLayers,
-            supportedProviders,
+            linstorVersionMajor,
+            linstorVersionMinor,
+            linstorVersionPatch,
+            externalToolsInfoList,
             waitForFullSyncAnswer
         );
     }

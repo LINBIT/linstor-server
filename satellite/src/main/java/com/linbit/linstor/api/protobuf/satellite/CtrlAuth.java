@@ -1,9 +1,5 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
@@ -19,6 +15,11 @@ import com.linbit.linstor.core.apicallhandler.satellite.authentication.Authentic
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass.MsgIntAuth;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -95,8 +96,7 @@ public class CtrlAuth implements ApiCall
                     updateMonitor.getNextFullSyncId(),
                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
                     nodeUname,
-                    authResult.getSupportedDeviceLayer(),
-                    authResult.getSupportedDeviceProvider(),
+                    authResult.getExternalToolsInfoList(),
                     authResult.getApiCallRc()
                 )
                 .build();

@@ -52,12 +52,13 @@ import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
+import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo;
+import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo.ExternalTools;
 import com.linbit.linstor.proto.common.FilterOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksRsc;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
-import com.linbit.linstor.proto.common.NetInterfaceOuterClass.NetInterface.Builder;
 import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeRsc;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
@@ -106,6 +107,8 @@ import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.Pair;
 
 import java.io.ByteArrayOutputStream;
@@ -259,23 +262,20 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         long expectedFullSyncIdRef,
         int[] stltVersionRef,
         String uname,
-        List<DeviceLayerKind> supportedDeviceLayerRef,
-        List<DeviceProviderKind> supportedDeviceProviderRef,
+        List<ExtToolsInfo> extToolsList,
         ApiCallRc responses
     )
     {
         try
         {
-
             MsgIntAuthResponse.newBuilder()
                 .setSuccess(true)
                 .setExpectedFullSyncId(expectedFullSyncIdRef)
-                .setVersionMajor(stltVersionRef[0])
-                .setVersionMinor(stltVersionRef[1])
-                .setVersionPatch(stltVersionRef[2])
+                .setLinstorVersionMajor(stltVersionRef[0])
+                .setLinstorVersionMinor(stltVersionRef[1])
+                .setLinstorVersionPatch(stltVersionRef[2])
                 .addAllResponses(serializeApiCallRc(responses))
-                .addAllSupportedLayer(asProtoLayerTypeList(supportedDeviceLayerRef))
-                .addAllSupportedProvider(asProtoProviderTypeList(supportedDeviceProviderRef))
+                .addAllExtToolsInfo(asExternalToolsList(extToolsList))
                 .setNodeUname(uname)
                 .build()
                 .writeDelimitedTo(baos);
@@ -287,26 +287,32 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return this;
     }
 
-    private static List<LayerType> asProtoLayerTypeList(List<DeviceLayerKind> devLayerKindList)
+    private ArrayList<ExternalToolsInfo> asExternalToolsList(List<ExtToolsInfo> layerInfoListRef)
     {
-        List<LayerType> layerTypes = new ArrayList<>();
-        for (DeviceLayerKind devLayerKind : devLayerKindList)
+        ArrayList<ExternalToolsInfo> ret = new ArrayList<>();
+        for (ExtToolsInfo info : layerInfoListRef)
         {
-            layerTypes.add(asLayerType(devLayerKind));
+            ExternalToolsInfo.Builder builder = ExternalToolsInfo.newBuilder();
+            builder
+                .setExtTool(asExtTools(info.getTool()))
+                .setSupported(info.isSupported());
+            if (info.isSupported())
+            {
+                builder
+                    .setVersionMajor(info.getVersionMajor())
+                    .setVersionMinor(info.getVersionMinor());
+                if (info.getVersionPatch() != null)
+                {
+                    builder.setVersionPatch(info.getVersionPatch());
+                }
+            }
+            else
+            {
+                builder.addAllReasonsForNotSupported(info.getNotSupportedReasons());
+            }
+            ret.add(builder.build());
         }
-        return layerTypes;
-    }
-
-    private static List<ProviderType> asProtoProviderTypeList(
-        List<DeviceProviderKind> devProviderKindList
-    )
-    {
-        List<ProviderType> providerTypes = new ArrayList<>();
-        for (DeviceProviderKind devProviderKind : devProviderKindList)
-        {
-            providerTypes.add(asProviderType(devProviderKind));
-        }
-        return providerTypes;
+        return ret;
     }
 
     @Override
@@ -552,7 +558,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     )
         throws AccessDeniedException
     {
-        Builder builder = NetInterfaceOuterClass.NetInterface.newBuilder()
+        NetInterfaceOuterClass.NetInterface.Builder builder = NetInterfaceOuterClass.NetInterface.newBuilder()
             .setUuid(netIf.getUuid().toString())
             .setName(netIf.getName().displayValue)
             .setAddress(netIf.getAddress(accCtx).getAddress());
@@ -1012,6 +1018,35 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             default: throw new RuntimeException("Not implemented.");
         }
         return layerType;
+    }
+
+    private ExternalTools asExtTools(ExtTools toolRef)
+    {
+        ExternalTools ret;
+        switch (toolRef)
+        {
+            case CRYPT_SETUP:
+                ret = ExternalTools.CRYPT_SETUP;
+                break;
+            case DRBD9:
+                ret = ExternalTools.DRBD9;
+                break;
+            case DRBD_PROXY:
+                ret = ExternalTools.DRBD_PROXY;
+                break;
+            case LVM:
+                ret = ExternalTools.LVM;
+                break;
+            case NVME:
+                ret = ExternalTools.NVME;
+                break;
+            case ZFS:
+                ret = ExternalTools.ZFS;
+                break;
+            default:
+                throw new RuntimeException("Not implemented.");
+        }
+        return ret;
     }
 
     public static class LayerObjectSerializer

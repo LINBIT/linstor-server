@@ -27,6 +27,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -242,7 +243,7 @@ public class CtrlAutoStorPoolSelector
                 for (Node node : nodeList)
                 {
                     StorPool storPool = node.getStorPool(apiAccCtx, storPoolName);
-                    if (!node.getPeer(apiAccCtx).getSupportedLayers().containsAll(layerStackList))
+                    if (!node.getPeer(apiAccCtx).getExtToolsManager().getSupportedLayers().containsAll(layerStackList))
                     {
                         storPoolsOfTheseNodesNotSupportingLayersOrProviders.add(node);
                     }

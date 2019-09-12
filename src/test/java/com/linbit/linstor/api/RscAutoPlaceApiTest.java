@@ -37,6 +37,7 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
@@ -54,6 +55,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -1220,14 +1222,18 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final RscAutoPlaceApiCall parent;
         private final Node stlt;
         private final Peer mockedPeer;
+        private final ExtToolsManager mockedExtToolsMgr;
 
         SatelliteBuilder(RscAutoPlaceApiCall parentRef, Node stltRef)
         {
             mockedPeer = Mockito.mock(Peer.class);
+            mockedExtToolsMgr = Mockito.mock(ExtToolsManager.class);
+
             // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be ready
             Mockito.when(mockedPeer.apiCall(anyString(), any()))
                 .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
             Mockito.when(mockedPeer.isConnected()).thenReturn(true);
+            Mockito.when(mockedPeer.getExtToolsManager()).thenReturn(mockedExtToolsMgr);
 
             try
             {
@@ -1318,13 +1324,33 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         public SatelliteBuilder setSupportedLayers(DeviceLayerKind... layers)
         {
-            Mockito.when(mockedPeer.getSupportedLayers()).thenReturn(Arrays.asList(layers));
+            List<DeviceLayerKind> kinds = new ArrayList<>(Arrays.asList(DeviceLayerKind.values()));
+            for (DeviceLayerKind supportedLayer : layers)
+            {
+                Mockito.when(mockedExtToolsMgr.isLayerSupported(supportedLayer)).thenReturn(true);
+                kinds.remove(supportedLayer);
+            }
+            for (DeviceLayerKind unsupportedLayer : kinds)
+            {
+                Mockito.when(mockedExtToolsMgr.isLayerSupported(unsupportedLayer)).thenReturn(false);
+            }
+            Mockito.when(mockedExtToolsMgr.getSupportedLayers()).thenReturn(new TreeSet<>(Arrays.asList(layers)));
             return this;
         }
 
         public SatelliteBuilder setSupportedProviders(DeviceProviderKind... providers)
         {
-            Mockito.when(mockedPeer.getSupportedProviders()).thenReturn(Arrays.asList(providers));
+            List<DeviceProviderKind> kinds = new ArrayList<>(Arrays.asList(DeviceProviderKind.values()));
+            for (DeviceProviderKind supportedProvider : providers)
+            {
+                Mockito.when(mockedExtToolsMgr.isProviderSupported(supportedProvider)).thenReturn(true);
+                kinds.remove(supportedProvider);
+            }
+            for (DeviceProviderKind unsupportedProviderLayer : providers)
+            {
+                Mockito.when(mockedExtToolsMgr.isProviderSupported(unsupportedProviderLayer)).thenReturn(false);
+            }
+            Mockito.when(mockedExtToolsMgr.getSupportedProviders()).thenReturn(new TreeSet<>(Arrays.asList(providers)));
             return this;
         }
 

@@ -7,11 +7,16 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.slf4j.event.Level;
 
@@ -47,12 +52,14 @@ public class DrbdVersion
 
     private CoreTimer timerRef;
     private ErrorReporter errorLogRef;
+    private List<String> notSupportedReasons;
 
     @Inject
     public DrbdVersion(CoreTimer coreTimer, ErrorReporter errorReporter)
     {
         this.timerRef = coreTimer;
         this.errorLogRef = errorReporter;
+        notSupportedReasons = new ArrayList<>();
     }
 
     /**
@@ -94,6 +101,14 @@ public class DrbdVersion
                     majorVsn = (short) ((vsnCode >>> SHIFT_MAJOR_VSN) & MASK_VSN_ELEM);
                     minorVsn = (short) ((vsnCode >>> SHIFT_MINOR_VSN) & MASK_VSN_ELEM);
                     patchLvl = (short) (vsnCode & MASK_VSN_ELEM);
+
+                    if (!hasDrbd9())
+                    {
+                        notSupportedReasons.add(
+                            "DRBD version has to be >= 9. Current DRBD version: " +
+                                majorVsn + "." + minorVsn + "." + patchLvl
+                        );
+                    }
                 }
             }
         }
@@ -116,6 +131,7 @@ public class DrbdVersion
         catch (IOException | ChildProcessTimeoutException exc)
         {
             errorLogRef.logWarning("Unable to check drbdadm version. '" + exc.getMessage() + "'");
+            notSupportedReasons.add(exc.getClass().getSimpleName() + " occurred when checking DRBD version");
         }
     }
 
@@ -212,5 +228,11 @@ public class DrbdVersion
         majorVsn = UNDETERMINED_VERSION;
         minorVsn = UNDETERMINED_VERSION;
         patchLvl = UNDETERMINED_VERSION;
+        notSupportedReasons.clear();
+    }
+
+    public List<String> getNotSupportedReasons()
+    {
+        return Collections.unmodifiableList(notSupportedReasons);
     }
 }

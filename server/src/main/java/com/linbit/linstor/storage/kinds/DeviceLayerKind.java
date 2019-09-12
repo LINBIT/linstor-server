@@ -4,7 +4,7 @@ public enum DeviceLayerKind
 {
     DRBD(
         false,
-        StartupVerification.DRBD9
+        ExtTools.DRBD9
     ),
     //    DRBD_PROXY(
     //        false,
@@ -15,27 +15,27 @@ public enum DeviceLayerKind
     //    ),
     LUKS(
         true,
-        StartupVerification.CRYPT_SETUP
+        ExtTools.CRYPT_SETUP
     ),
     NVME(
         false,
-        StartupVerification.NVME
+        ExtTools.NVME
     ),
     STORAGE(true);
-    private final StartupVerification[] startupVerifications;
+    private final ExtTools[] startupVerifications;
 
     private boolean localOnly;
 
     DeviceLayerKind(
         boolean localOnlyRef,
-        StartupVerification... startupVerificationsRef
+        ExtTools... startupVerificationsRef
     )
     {
         startupVerifications = startupVerificationsRef;
         localOnly = localOnlyRef;
     }
 
-    public StartupVerification[] getStartupVerifications()
+    public ExtTools[] getExtToolDependencies()
     {
         return startupVerifications;
     }
