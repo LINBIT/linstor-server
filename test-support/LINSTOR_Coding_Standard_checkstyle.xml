@@ -320,7 +320,7 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         </module>
 
         <module name="MethodTypeParameterName">
-            <property name="format" value="^([A-Z]|[A-Z][a-zA-Z0-9]+)$"/>
+            <property name="format" value="^([A-Z]|[A-Z][A-Z0-9_]+)$"/>
             <property name="severity" value="warning"/>
             <property name="id" value="checkstyle:methodtypeparamname"/>
         </module>
