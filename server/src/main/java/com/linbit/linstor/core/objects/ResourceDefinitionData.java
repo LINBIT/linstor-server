@@ -382,6 +382,22 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public boolean hasDisklessNotDeleting(AccessContext accCtx) throws AccessDeniedException
+    {
+        boolean hasDisklessNotDeleting = false;
+        for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
+        {
+            if (rsc.getStateFlags().isSet(accCtx, Resource.RscFlags.DISKLESS) &&
+                rsc.getStateFlags().isUnset(accCtx, Resource.RscFlags.DELETE))
+            {
+                hasDisklessNotDeleting = true;
+                break;
+            }
+        }
+        return hasDisklessNotDeleting;
+    }
+
+    @Override
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         getFlags().enableFlags(accCtx, RscDfnFlags.DELETE);

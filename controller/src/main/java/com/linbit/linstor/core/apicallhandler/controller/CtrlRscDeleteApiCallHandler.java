@@ -170,7 +170,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         try
         {
             if (!rsc.isDiskless(peerAccCtx.get()) &&
-                rsc.getDefinition().hasDiskless(peerAccCtx.get()) &&
+                rsc.getDefinition().hasDisklessNotDeleting(peerAccCtx.get()) &&
                 rsc.getDefinition().diskfullCount(peerAccCtx.get()) == 1)
             {
                 throw new ApiRcException(ApiCallRcImpl

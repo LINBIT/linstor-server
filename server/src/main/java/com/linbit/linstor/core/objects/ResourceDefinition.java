@@ -91,6 +91,9 @@ public interface ResourceDefinition
     boolean hasDiskless(AccessContext accCtx)
         throws AccessDeniedException;
 
+    boolean hasDisklessNotDeleting(AccessContext accCtx)
+        throws AccessDeniedException;
+
     Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
