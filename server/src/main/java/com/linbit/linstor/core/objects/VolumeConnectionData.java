@@ -27,7 +27,8 @@ import java.util.UUID;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public class VolumeConnectionData extends BaseTransactionObject implements VolumeConnection
+public class VolumeConnectionData extends BaseTransactionObject
+    implements VolumeConnection, Comparable<VolumeConnectionData>
 {
     // Object identifier
     private final UUID objId;
@@ -206,6 +207,20 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         {
             throw new AccessToDeletedDataException("Access to deleted volume connection");
         }
+    }
+
+    @Override
+    public int compareTo(VolumeConnectionData other)
+    {
+        return (sourceVolume.getResource().getAssignedNode().getName().value +
+            targetVolume.getResource().getAssignedNode().getName().value +
+            sourceVolume.getResourceDefinition().getName().value +
+            sourceVolume.getVolumeDefinition().getVolumeNumber()).compareTo(
+                other.sourceVolume.getResource().getAssignedNode().getName().value +
+                other.targetVolume.getResource().getAssignedNode().getName().value +
+                other.sourceVolume.getResourceDefinition().getName().value +
+                other.sourceVolume.getVolumeDefinition().getVolumeNumber()
+        );
     }
 
     @Override

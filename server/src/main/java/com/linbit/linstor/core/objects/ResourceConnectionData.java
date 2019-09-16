@@ -34,7 +34,8 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class ResourceConnectionData extends BaseTransactionObject implements ResourceConnection
+public class ResourceConnectionData extends BaseTransactionObject
+    implements ResourceConnection, Comparable<ResourceConnectionData>
 {
     // Object identifier
     private final UUID objId;
@@ -276,6 +277,17 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
             deleted.set(true);
         }
+    }
+
+    private ResourceConnectionKey getConnectionKey()
+    {
+        return connectionKey;
+    }
+
+    @Override
+    public int compareTo(ResourceConnectionData other)
+    {
+        return ResourceConnectionKey.COMPARATOR.compare(connectionKey, other.getConnectionKey());
     }
 
     @Override

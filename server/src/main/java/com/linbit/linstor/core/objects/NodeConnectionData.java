@@ -25,7 +25,7 @@ import java.util.UUID;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public class NodeConnectionData extends BaseTransactionObject implements NodeConnection
+public class NodeConnectionData extends BaseTransactionObject implements NodeConnection, Comparable<NodeConnectionData>
 {
     // Object identifier
     private final UUID objId;
@@ -176,6 +176,13 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         {
             throw new AccessToDeletedDataException("Access to deleted node connection");
         }
+    }
+
+    @Override
+    public int compareTo(NodeConnectionData other)
+    {
+        return (sourceNode.getName().value + targetNode.getName().value).compareTo(
+            other.sourceNode.getName().value + targetNode.getName().value);
     }
 
     @Override
