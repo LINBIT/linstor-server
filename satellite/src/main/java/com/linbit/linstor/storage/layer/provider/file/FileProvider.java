@@ -34,6 +34,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -64,7 +65,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     private static final String LODEV_FILE = "/var/lib/linstor/loop_device_mapping";
     private static final String LODEV_FILE_TMP = LODEV_FILE + ".tmp";
 
-    private final Map<String, String> loDevs = new TreeMap<>();
+    private static final Map<String, String> LOSETUP_DEVICES = new TreeMap<>();
 
     protected FileProvider(
         ErrorReporter errorReporter,
@@ -235,7 +236,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
             )
             .stdoutData).trim();
 
-        loDevs.put(loDev, backingFile.toString());
+        LOSETUP_DEVICES.put(loDev, backingFile.toString());
         fileData.setDevicePath(loDev);
     }
 
@@ -293,7 +294,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
                 }
             }
         );
-        loDevs.remove(devicePath);
+        LOSETUP_DEVICES.remove(devicePath);
     }
 
     @Override
@@ -452,7 +453,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         {
             String backingFile = entry.getKey();
             backingFileToFileDataMap.remove(backingFile);
-            loDevs.put(entry.getValue().loPath.toString(), backingFile);
+            LOSETUP_DEVICES.put(entry.getValue().loPath.toString(), backingFile);
         }
 
         for (Entry<String, FileData> entry : backingFileToFileDataMap.entrySet())
@@ -606,13 +607,9 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
     public void clearCache() throws StorageException
     {
         StringBuilder sb = new StringBuilder();
-        for (Entry<String, String> entry : loDevs.entrySet())
+        for (Entry<String, String> entry : LOSETUP_DEVICES.entrySet())
         {
             sb.append(entry.getKey()).append(":").append(entry.getValue()).append("\n");
-        }
-        if (sb.length() > 0)
-        {
-            sb.setLength(sb.length()-1);
         }
 
         File tmp = new File(LODEV_FILE_TMP);

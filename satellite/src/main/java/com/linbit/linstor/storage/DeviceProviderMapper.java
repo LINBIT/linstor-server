@@ -13,8 +13,10 @@ import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorPro
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishTargetProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsThinProvider;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,7 +65,8 @@ public class DeviceProviderMapper
             sfTargetProvider,
             sfInitProvider,
             disklessProvider,
-            fileProvider
+            fileProvider,
+            fileThinProvider
         );
     }
 
