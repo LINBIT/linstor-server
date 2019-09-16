@@ -1,3 +1,14 @@
+linstor-server (1.1.2-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * resourcegroup-spawn: throw exception on early rsc-dfn-create errors
+  * db-loading: fix loading of Node/Resource/Volume-Connection data
+  * resource-deletion: allow deleting resources if diskless in deleting state
+  * checkstyle: modify MethodTypeParameter to allow DB_TYPE
+  * gradle: upgrade jackson-databind to fix some CVE's
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 16 Sep 2019 08:47:43 +0200
+
 linstor-server (1.1.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
