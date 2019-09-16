@@ -11,6 +11,11 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+
+import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -28,6 +33,7 @@ public class EventProcessor
 {
     private final ErrorReporter errorReporter;
     private final Map<String, Provider<EventHandler>> eventHandlers;
+    private final LockGuardFactory lockGuardFactory;
 
     // Synchronizes access to incomingEventStreamStore and pendingEventsPerPeer
     private final ReentrantLock eventHandlingLock;
@@ -37,11 +43,13 @@ public class EventProcessor
     @Inject
     public EventProcessor(
         ErrorReporter errorReporterRef,
-        Map<String, Provider<EventHandler>> eventHandlersRef
+        Map<String, Provider<EventHandler>> eventHandlersRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         errorReporter = errorReporterRef;
         eventHandlers = eventHandlersRef;
+        lockGuardFactory = lockGuardFactoryRef;
 
         eventHandlingLock = new ReentrantLock();
         incomingEventStreamStore = new EventStreamStoreImpl();
@@ -87,49 +95,52 @@ public class EventProcessor
         InputStream eventDataIn
     )
     {
-        eventHandlingLock.lock();
-        try
+        try (LockGuard lockGuard = lockGuardFactory.build(LockGuardFactory.LockType.READ, NODES_MAP))
         {
-            Provider<EventHandler> eventHandlerProvider = eventHandlers.get(eventName);
-            if (eventHandlerProvider == null)
+            eventHandlingLock.lock();
+            try
             {
-                errorReporter.logWarning("Unknown event '%s' received", eventName);
-            }
-            else
-            {
-                ResourceName resourceName =
-                    resourceNameStr != null ? new ResourceName(resourceNameStr) : null;
-                VolumeNumber volumeNumber =
-                    volumeNr != null ? new VolumeNumber(volumeNr) : null;
-                SnapshotName snapshotName =
-                    snapshotNameStr != null ? new SnapshotName(snapshotNameStr) : null;
-
-                EventIdentifier eventIdentifier = new EventIdentifier(eventName, new ObjectIdentifier(
-                    peer.getNode().getName(), resourceName, volumeNumber, snapshotName
-                ));
-
-                incomingEventStreamStore.addEventStreamIfNew(eventIdentifier);
-
-                errorReporter.logTrace("Peer %s, event '%s' %s", peer, eventIdentifier, eventAction);
-                eventHandlerProvider.get().execute(eventAction, eventIdentifier, eventDataIn);
-
-                if (eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
+                Provider<EventHandler> eventHandlerProvider = eventHandlers.get(eventName);
+                if (eventHandlerProvider == null)
                 {
-                    incomingEventStreamStore.removeEventStream(eventIdentifier);
+                    errorReporter.logWarning("Unknown event '%s' received", eventName);
+                }
+                else
+                {
+                    ResourceName resourceName =
+                        resourceNameStr != null ? new ResourceName(resourceNameStr) : null;
+                    VolumeNumber volumeNumber =
+                        volumeNr != null ? new VolumeNumber(volumeNr) : null;
+                    SnapshotName snapshotName =
+                        snapshotNameStr != null ? new SnapshotName(snapshotNameStr) : null;
+
+                    EventIdentifier eventIdentifier = new EventIdentifier(eventName, new ObjectIdentifier(
+                        peer.getNode().getName(), resourceName, volumeNumber, snapshotName
+                    ));
+
+                    incomingEventStreamStore.addEventStreamIfNew(eventIdentifier);
+
+                    errorReporter.logTrace("Peer %s, event '%s' %s", peer, eventIdentifier, eventAction);
+                    eventHandlerProvider.get().execute(eventAction, eventIdentifier, eventDataIn);
+
+                    if (eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
+                    {
+                        incomingEventStreamStore.removeEventStream(eventIdentifier);
+                    }
                 }
             }
-        }
-        catch (InvalidNameException | ValueOutOfRangeException exc)
-        {
-            errorReporter.logWarning("Invalid event received: " + exc.getMessage());
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            errorReporter.reportError(exc);
-        }
-        finally
-        {
-            eventHandlingLock.unlock();
+            catch (InvalidNameException | ValueOutOfRangeException exc)
+            {
+                errorReporter.logWarning("Invalid event received: " + exc.getMessage());
+            }
+            catch (Exception | ImplementationError exc)
+            {
+                errorReporter.reportError(exc);
+            }
+            finally
+            {
+                eventHandlingLock.unlock();
+            }
         }
     }
 
