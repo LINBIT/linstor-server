@@ -27,7 +27,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.FreeSpaceMgrControllerFactory;
-import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
+import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionDataFactory;
 import com.linbit.linstor.core.objects.NodeControllerFactory;
@@ -191,7 +191,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     @Inject protected ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
     @Inject protected ResourceGroupDataControllerFactory resourceGroupDataFactory;
-    @Inject protected NetInterfaceDataFactory netInterfaceDataFactory;
+    @Inject protected NetInterfaceFactory netInterfaceFactory;
 
     @Inject protected LinStorScope testScope;
     @Inject protected TransactionObjectFactory transObjFactory;

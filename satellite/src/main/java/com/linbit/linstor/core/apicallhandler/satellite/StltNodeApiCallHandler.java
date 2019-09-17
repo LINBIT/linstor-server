@@ -8,11 +8,12 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.NetInterface;
-import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
+import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeConnectionDataFactory;
@@ -50,7 +51,7 @@ class StltNodeApiCallHandler
     private final CoreModule.NodesMap nodesMap;
     private final NodeSatelliteFactory nodeFactory;
     private final NodeConnectionDataFactory nodeConnectionDataFactory;
-    private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final NetInterfaceFactory netInterfaceFactory;
     private final ControllerPeerConnector controllerPeerConnector;
     private final Provider<TransactionMgr> transMgrProvider;
 
@@ -64,7 +65,7 @@ class StltNodeApiCallHandler
         CoreModule.NodesMap nodesMapRef,
         NodeSatelliteFactory nodeFactoryRef,
         NodeConnectionDataFactory nodeConnectionDataFactoryRef,
-        NetInterfaceDataFactory netInterfaceDataFactoryRef,
+        NetInterfaceFactory netInterfaceFactoryRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -77,7 +78,7 @@ class StltNodeApiCallHandler
         nodesMap = nodesMapRef;
         nodeFactory = nodeFactoryRef;
         nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
-        netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        netInterfaceFactory = netInterfaceFactoryRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -170,14 +171,14 @@ class StltNodeApiCallHandler
                 nodeConnProps.keySet().retainAll(nodeConn.getNodeConnProps().keySet());
             }
 
-            for (NetInterface.NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())
+            for (NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())
             {
                 NetInterfaceName netIfName = new NetInterfaceName(netIfApi.getName());
                 LsIpAddress ipAddress = new LsIpAddress(netIfApi.getAddress());
                 NetInterface netIf = node.getNetInterface(apiCtx, netIfName);
                 if (netIf == null)
                 {
-                    netInterfaceDataFactory.getInstanceSatellite(
+                    netInterfaceFactory.getInstanceSatellite(
                         apiCtx,
                         netIfApi.getUuid(),
                         node,

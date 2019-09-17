@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 
 import java.util.UUID;
 
@@ -8,7 +8,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class NetInterfacePojo implements NetInterface.NetInterfaceApi
+public class NetInterfacePojo implements NetInterfaceApi
 {
     private final UUID uuid;
     private final String name;

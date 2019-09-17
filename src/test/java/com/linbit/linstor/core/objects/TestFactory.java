@@ -32,21 +32,21 @@ import java.util.UUID;
 public class TestFactory
 {
     /**
-     * Creates a new {@link NetInterfaceData} without persisting it to the database
+     * Creates a new {@link NetInterface} without persisting it to the database
      */
-    public static NetInterfaceData createNetInterfaceData(
+    public static NetInterface createNetInterface(
         UUID niUuidRef,
         NetInterfaceName niNameRef,
         Node nodeRef,
         LsIpAddress niAddrRef,
         TcpPortNumber niStltConnPortRef,
         EncryptionType niStltConnEncrTypeRef,
-        NetInterfaceDataGenericDbDriver dbDriverRef,
+        NetInterfaceGenericDbDriver dbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
-        return new NetInterfaceData(
+        return new NetInterface(
             niUuidRef,
             niNameRef,
             nodeRef,

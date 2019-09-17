@@ -41,7 +41,7 @@ import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
@@ -97,7 +97,7 @@ public class ControllerDbModule extends AbstractModule
         bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDbDriver.class);
         bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDbDriver.class);
         bind(StorPoolDataDatabaseDriver.class).to(StorPoolDbDriver.class);
-        bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDbDriver.class);
+        bind(NetInterfaceDatabaseDriver.class).to(NetInterfaceDbDriver.class);
         bind(NodeConnectionDataDatabaseDriver.class).to(NodeConnectionDbDriver.class);
         bind(ResourceConnectionDataDatabaseDriver.class).to(ResourceConnectionDbDriver.class);
         bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDbDriver.class);

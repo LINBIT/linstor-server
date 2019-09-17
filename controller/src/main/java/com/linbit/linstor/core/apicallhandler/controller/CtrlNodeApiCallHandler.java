@@ -24,14 +24,13 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.core.objects.NetInterfaceData;
-import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
+import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.StorPool;
@@ -76,7 +75,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeControllerFactory nodeFactory;
-    private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final NetInterfaceFactory netInterfaceFactory;
     private final NodeRepository nodeRepository;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final SatelliteConnector satelliteConnector;
@@ -97,7 +96,7 @@ public class CtrlNodeApiCallHandler
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeControllerFactory nodeFactoryRef,
-        NetInterfaceDataFactory netInterfaceDataFactoryRef,
+        NetInterfaceFactory netInterfaceFactoryRef,
         NodeRepository nodeRepositoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         SatelliteConnector satelliteConnectorRef,
@@ -117,7 +116,7 @@ public class CtrlNodeApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeFactory = nodeFactoryRef;
-        netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        netInterfaceFactory = netInterfaceFactoryRef;
         nodeRepository = nodeRepositoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         satelliteConnector = satelliteConnectorRef;
@@ -171,7 +170,7 @@ public class CtrlNodeApiCallHandler
                     encrType = LinstorParsingUtils.asEncryptionType(netIfApi.getSatelliteConnectionEncryptionType());
                 }
 
-                NetInterfaceData netIf = createNetInterface(
+                NetInterface netIf = createNetInterface(
                     node,
                     LinstorParsingUtils.asNetInterfaceName(netIfApi.getName()),
                     LinstorParsingUtils.asLsIpAddress(netIfApi.getAddress()),
@@ -302,7 +301,7 @@ public class CtrlNodeApiCallHandler
         return responses;
     }
 
-    private void setActiveStltConn(Node node, NetInterfaceData netIf)
+    private void setActiveStltConn(Node node, NetInterface netIf)
     {
         try
         {
@@ -539,7 +538,7 @@ public class CtrlNodeApiCallHandler
         );
     }
 
-    private NetInterfaceData createNetInterface(
+    private NetInterface createNetInterface(
         Node node,
         NetInterfaceName netName,
         LsIpAddress addr,
@@ -547,10 +546,10 @@ public class CtrlNodeApiCallHandler
         EncryptionType type
     )
     {
-        NetInterfaceData netIf;
+        NetInterface netIf;
         try
         {
-            netIf = netInterfaceDataFactory.create(
+            netIf = netInterfaceFactory.create(
                 peerAccCtx.get(),
                 node,
                 netName,

@@ -19,7 +19,7 @@ import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
-import com.linbit.linstor.core.objects.NetInterfaceData;
+import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
@@ -269,8 +269,8 @@ public class DatabaseLoader implements DatabaseDriver
                 mapByName(loadedStorPoolDfnsMap, StorPoolDefinition::getName);
 
             // loading net interfaces
-            List<NetInterfaceData> loadedNetIfs = netIfDriver.loadAllAsList(tmpNodesMap);
-            for (NetInterfaceData netIf : loadedNetIfs)
+            List<NetInterface> loadedNetIfs = netIfDriver.loadAllAsList(tmpNodesMap);
+            for (NetInterface netIf : loadedNetIfs)
             {
                 Node node = netIf.getNode();
                 loadedNodesMap.get(node).getNetIfMap()

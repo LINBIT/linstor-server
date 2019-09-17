@@ -10,8 +10,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandl
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
-import com.linbit.linstor.core.objects.NetInterface;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -29,6 +29,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -237,7 +238,7 @@ public class Nodes
             Response resp;
             if (optNode.isPresent())
             {
-                Stream<NetInterface.NetInterfaceApi> netIfApiStream = optNode.get().getNetInterfaces()
+                Stream<NetInterfaceApi> netIfApiStream = optNode.get().getNetInterfaces()
                     .stream()
                     .filter(netInterfaceApi -> netInterfaceName == null ||
                         netInterfaceApi.getName().equalsIgnoreCase(netInterfaceName));
@@ -248,7 +249,7 @@ public class Nodes
                 }
 
                 ArrayList<JsonGenTypes.NetInterface> netIfs = new ArrayList<>();
-                for (NetInterface.NetInterfaceApi netif : netIfApiStream.collect(Collectors.toList()))
+                for (NetInterfaceApi netif : netIfApiStream.collect(Collectors.toList()))
                 {
                     JsonGenTypes.NetInterface netIfResp = Json.apiToNetInterface(netif);
                     if (netif.getUuid().equals(optNode.get().getActiveStltConn().getUuid()))
@@ -288,16 +289,16 @@ public class Nodes
     {
         return requestHelper.doInScope(ApiConsts.API_CRT_NET_IF, request, () ->
         {
-            JsonGenTypes.NetInterface netInterfaceData = objectMapper
+            JsonGenTypes.NetInterface netInterface = objectMapper
                 .readValue(jsonData, JsonGenTypes.NetInterface.class);
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.createNetInterface(
                 nodeName,
-                netInterfaceData.name,
-                netInterfaceData.address,
-                netInterfaceData.satellite_port,
-                netInterfaceData.satellite_encryption_type,
-                netInterfaceData.is_active
+                netInterface.name,
+                netInterface.address,
+                netInterface.satellite_port,
+                netInterface.satellite_encryption_type,
+                netInterface.is_active
             );
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
@@ -314,16 +315,16 @@ public class Nodes
     {
         return requestHelper.doInScope(ApiConsts.API_MOD_NET_IF, request, () ->
         {
-            JsonGenTypes.NetInterface netInterfaceData = objectMapper
+            JsonGenTypes.NetInterface netInterface = objectMapper
                 .readValue(jsonData, JsonGenTypes.NetInterface.class);
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.modifyNetInterface(
                 nodeName,
                 netIfName,
-                netInterfaceData.address,
-                netInterfaceData.satellite_port,
-                netInterfaceData.satellite_encryption_type,
-                netInterfaceData.is_active
+                netInterface.address,
+                netInterface.satellite_port,
+                netInterface.satellite_encryption_type,
+                netInterface.is_active
             );
 
             return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);

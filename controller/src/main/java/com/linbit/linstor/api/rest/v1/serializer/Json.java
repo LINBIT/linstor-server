@@ -19,11 +19,11 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
@@ -76,7 +76,7 @@ public class Json
 
         List<JsonGenTypes.NetInterface> netIfsList =
             nodeApi.getNetInterfaces().stream().map(Json::apiToNetInterface).collect(Collectors.toList());
-        NetInterface.NetInterfaceApi activeStltConn = nodeApi.getActiveStltConn();
+        NetInterfaceApi activeStltConn = nodeApi.getActiveStltConn();
         for (JsonGenTypes.NetInterface netInterface : netIfsList)
         {
             if (activeStltConn != null && netInterface.uuid.equalsIgnoreCase(activeStltConn.getUuid().toString()))
@@ -91,7 +91,7 @@ public class Json
         return nd;
     }
 
-    public static JsonGenTypes.NetInterface apiToNetInterface(NetInterface.NetInterfaceApi netIfApi)
+    public static JsonGenTypes.NetInterface apiToNetInterface(NetInterfaceApi netIfApi)
     {
         JsonGenTypes.NetInterface netif = new JsonGenTypes.NetInterface();
         netif.name = netIfApi.getName();
@@ -106,7 +106,7 @@ public class Json
         return netif;
     }
 
-    public static NetInterface.NetInterfaceApi netInterfacetoApi(JsonGenTypes.NetInterface netif)
+    public static NetInterfaceApi netInterfacetoApi(JsonGenTypes.NetInterface netif)
     {
         return new NetInterfacePojo(
             null,

@@ -1,6 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class NetInterfaceApiData implements NetInterface.NetInterfaceApi
+public class NetInterfaceApiData implements NetInterfaceApi
 {
     private final NetInterfaceOuterClass.NetInterface netInterface;
 
@@ -61,10 +61,10 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi
     }
 
     public static List<NetInterfaceOuterClass.NetInterface> toNetInterfaceProtoList(
-        List<NetInterface.NetInterfaceApi> netInterfaceApiList)
+        List<NetInterfaceApi> netInterfaceApiList)
     {
         ArrayList<NetInterfaceOuterClass.NetInterface> resultList = new ArrayList<>();
-        for (NetInterface.NetInterfaceApi netInterApi : netInterfaceApiList)
+        for (NetInterfaceApi netInterApi : netInterfaceApiList)
         {
             resultList.add(toNetInterfaceProto(netInterApi));
         }
@@ -72,7 +72,7 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi
     }
 
     public static NetInterfaceOuterClass.NetInterface toNetInterfaceProto(
-            final NetInterface.NetInterfaceApi netInterApi)
+            final NetInterfaceApi netInterApi)
     {
         NetInterfaceOuterClass.NetInterface.Builder bld = NetInterfaceOuterClass.NetInterface.newBuilder();
         bld.setUuid(netInterApi.getUuid().toString());

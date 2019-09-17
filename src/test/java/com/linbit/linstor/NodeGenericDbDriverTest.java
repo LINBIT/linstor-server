@@ -14,7 +14,6 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnectionData;
@@ -345,7 +344,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             nodesMap.put(node1.getName(), node1);
 
             // node1's netIface
-            NetInterfaceData netIf = netInterfaceDataFactory.create(
+            NetInterface netIf = netInterfaceFactory.create(
                 SYS_CTX,
                 node1,
                 netName,

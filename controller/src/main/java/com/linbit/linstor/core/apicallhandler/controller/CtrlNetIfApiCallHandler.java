@@ -21,8 +21,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.NetInterfaceData;
-import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
+import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -54,7 +53,7 @@ class CtrlNetIfApiCallHandler
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final NetInterfaceFactory netInterfaceFactory;
     private final SatelliteConnector satelliteConnector;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
@@ -68,7 +67,7 @@ class CtrlNetIfApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        NetInterfaceDataFactory netInterfaceDataFactoryRef,
+        NetInterfaceFactory netInterfaceFactoryRef,
         SatelliteConnector satelliteConnectorRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -81,7 +80,7 @@ class CtrlNetIfApiCallHandler
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        netInterfaceFactory = netInterfaceFactoryRef;
         satelliteConnector = satelliteConnectorRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
@@ -122,7 +121,7 @@ class CtrlNetIfApiCallHandler
             }
 
             NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
-            NetInterfaceData netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
+            NetInterface netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
 
             if (node.getActiveStltConn(peerAccCtx.get()) == null || Boolean.TRUE.equals(setActive))
             {
@@ -367,7 +366,7 @@ class CtrlNetIfApiCallHandler
         return responses;
     }
 
-    private NetInterfaceData createNetIf(
+    private NetInterface createNetIf(
         Node node,
         NetInterfaceName netIfName,
         String address,
@@ -378,7 +377,7 @@ class CtrlNetIfApiCallHandler
         String nodeNameStr = node.getName().displayValue;
         String netIfNameStr = netIfName.displayValue;
 
-        NetInterfaceData netIf;
+        NetInterface netIf;
         try
         {
             TcpPortNumber port = null;
@@ -389,7 +388,7 @@ class CtrlNetIfApiCallHandler
                 type = asEncryptionType(stltConnEncrType);
             }
 
-            netIf = netInterfaceDataFactory.create(
+            netIf = netInterfaceFactory.create(
                 peerAccCtx.get(),
                 node,
                 netIfName,

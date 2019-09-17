@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apis;
 
-import com.linbit.linstor.core.objects.NetInterface;
-import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.netcom.Peer;
 
 import java.util.List;
@@ -16,6 +14,6 @@ public interface NodeApi
     Peer.ConnectionStatus connectionStatus();
     Map<String, String> getProps();
     long getFlags();
-    List<NetInterface.NetInterfaceApi> getNetInterfaces();
+    List<NetInterfaceApi> getNetInterfaces();
     NetInterfaceApi getActiveStltConn();
 }

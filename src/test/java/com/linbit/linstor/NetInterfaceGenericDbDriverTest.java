@@ -1,15 +1,20 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.NetInterfaceData;
-import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
-import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
+import com.linbit.linstor.core.objects.NetInterfaceGenericDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.TestFactory;
-import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -24,13 +29,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
+public class NetInterfaceGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_NODE_NET_INTERFACES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + NODE_NET_NAME + ", " + NODE_NET_DSP_NAME + ", " +
@@ -48,13 +47,13 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
 
     private Node node;
 
-    private NetInterfaceDataGenericDbDriver dbDriver;
+    private NetInterfaceGenericDbDriver dbDriver;
 
     private java.util.UUID niUuid;
-    private NetInterfaceData niData;
-    private SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> niAddrDriver;
+    private NetInterface niData;
+    private SingleColumnDatabaseDriver<NetInterface, LsIpAddress> niAddrDriver;
 
-    public NetInterfaceDataGenericDbDriverTest() throws Exception
+    public NetInterfaceGenericDbDriverTest() throws Exception
     {
         nodeName = new NodeName("TestNodeName");
         niName = new NetInterfaceName("TestNetInterfaceName");
@@ -81,13 +80,13 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             null // flags
         );
 
-        dbDriver = new NetInterfaceDataGenericDbDriver(SYS_CTX, errorReporter, transObjFactory, transMgrProvider);
+        dbDriver = new NetInterfaceGenericDbDriver(SYS_CTX, errorReporter, transObjFactory, transMgrProvider);
         niAddrDriver = dbDriver.getNetInterfaceAddressDriver();
 
         niUuid = java.util.UUID.randomUUID();
 
         // not persisted
-        niData = TestFactory.createNetInterfaceData(
+        niData = TestFactory.createNetInterface(
             niUuid,
             niName,
             node,
@@ -140,7 +139,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     public void testPersistGetInstance() throws Exception
     {
         NetInterfaceName netInterfaceName = new NetInterfaceName("TestNetIface");
-        netInterfaceDataFactory.create(
+        netInterfaceFactory.create(
             SYS_CTX,
             node,
             netInterfaceName,
@@ -171,11 +170,11 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
 
         Map<NodeName, Node> tmpNodesMap = new HashMap<>();
         tmpNodesMap.put(nodeName, node);
-        List<NetInterfaceData> niList = dbDriver.loadAll(tmpNodesMap);
+        List<NetInterface> niList = dbDriver.loadAll(tmpNodesMap);
         assertNotNull(niList);
         assertEquals(1, niList.size());
 
-        NetInterfaceData netData = niList.get(0);
+        NetInterface netData = niList.get(0);
 
         assertNotNull(netData);
         assertEquals(niUuid, netData.getUuid());
@@ -189,9 +188,9 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     public void testLoadGetInstanceTwice() throws Exception
     {
         dbDriver.create(niData);
-        ((Node) node).addNetInterface(SYS_CTX, niData);
+        node.addNetInterface(SYS_CTX, niData);
 
-        NetInterfaceData netData1 = (NetInterfaceData) node.getNetInterface(SYS_CTX, niName);
+        NetInterface netData1 = node.getNetInterface(SYS_CTX, niName);
 
         assertNotNull(netData1);
         assertEquals(niUuid, netData1.getUuid());
@@ -200,7 +199,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         assertEquals(niName.displayValue, netData1.getName().displayValue);
         assertEquals(niAddrStr, netData1.getAddress(SYS_CTX).getAddress());
 
-        NetInterfaceData netData2 = (NetInterfaceData) node.getNetInterface(SYS_CTX, niName);
+        NetInterface netData2 = node.getNetInterface(SYS_CTX, niName);
         assertTrue(netData1 == netData2);
     }
 
@@ -210,9 +209,9 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
         dbDriver.create(niData);
         nodesMap.put(nodeName, node);
 
-        List<NetInterfaceData> niList = dbDriver.loadAll(nodesMap);
+        List<NetInterface> niList = dbDriver.loadAll(nodesMap);
         assertEquals(1, niList.size());
-        NetInterfaceData netData = niList.get(0);
+        NetInterface netData = niList.get(0);
 
         assertNotNull(netData);
         assertEquals(niUuid, netData.getUuid());
@@ -225,7 +224,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        NetInterfaceData storedInstance = netInterfaceDataFactory.create(
+        NetInterface storedInstance = netInterfaceFactory.create(
             SYS_CTX,
             node,
             niName,
@@ -322,9 +321,9 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         dbDriver.create(niData);
-        ((Node) node).addNetInterface(SYS_CTX, niData);
+        node.addNetInterface(SYS_CTX, niData);
 
-        netInterfaceDataFactory.create(
+        netInterfaceFactory.create(
             SYS_CTX,
             node,
             niName,

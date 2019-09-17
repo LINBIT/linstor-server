@@ -2,7 +2,7 @@ package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
-import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NetInterfaceGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
@@ -24,7 +24,7 @@ import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
@@ -75,7 +75,7 @@ public class TestDbModule extends AbstractModule
         bind(VolumeDataDatabaseDriver.class).to(VolumeDataGenericDbDriver.class);
         bind(StorPoolDefinitionDataDatabaseDriver.class).to(StorPoolDefinitionDataGenericDbDriver.class);
         bind(StorPoolDataDatabaseDriver.class).to(StorPoolDataGenericDbDriver.class);
-        bind(NetInterfaceDataDatabaseDriver.class).to(NetInterfaceDataGenericDbDriver.class);
+        bind(NetInterfaceDatabaseDriver.class).to(NetInterfaceGenericDbDriver.class);
         bind(NodeConnectionDataDatabaseDriver.class).to(NodeConnectionDataGenericDbDriver.class);
         bind(ResourceConnectionDataDatabaseDriver.class).to(ResourceConnectionDataGenericDbDriver.class);
         bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDataGenericDbDriver.class);

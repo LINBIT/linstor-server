@@ -1,12 +1,7 @@
 package com.linbit.linstor.core;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import java.util.List;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.inject.testing.fieldbinder.Bind;
-import com.google.inject.util.Modules;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
@@ -16,10 +11,10 @@ import com.linbit.linstor.api.ApiRcUtils;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
@@ -35,6 +30,14 @@ import com.linbit.linstor.transaction.ControllerSQLTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+
+import java.util.List;
+
+import com.google.inject.testing.fieldbinder.Bind;
+import com.google.inject.util.Modules;
 import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mock;
@@ -42,8 +45,6 @@ import org.mockito.Mockito;
 import reactor.core.scheduler.Scheduler;
 import reactor.test.scheduler.VirtualTimeScheduler;
 import reactor.util.context.Context;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class ApiTestBase extends GenericDbBase
 {

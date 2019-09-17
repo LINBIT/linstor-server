@@ -9,19 +9,16 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.NetInterface;
-import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
@@ -40,7 +37,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Singleton
-public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabaseDriver
+public class NetInterfaceGenericDbDriver implements NetInterfaceDatabaseDriver
 {
     private static final String TBL_NODE_NET = DbConstants.TBL_NODE_NET_INTERFACES;
 
@@ -88,9 +85,9 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         " WHERE " + NODE_NAME           + " = ? AND " +
         "       " + NET_NAME            + " = ?";
 
-    private final SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> netIfAddressDriver;
-    private final SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber> netIfStltConnPortDriver;
-    private final SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType> netIfStltConnEncrTypeDriver;
+    private final SingleColumnDatabaseDriver<NetInterface, LsIpAddress> netIfAddressDriver;
+    private final SingleColumnDatabaseDriver<NetInterface, TcpPortNumber> netIfStltConnPortDriver;
+    private final SingleColumnDatabaseDriver<NetInterface, EncryptionType> netIfStltConnEncrTypeDriver;
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -98,7 +95,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public NetInterfaceDataGenericDbDriver(
+    public NetInterfaceGenericDbDriver(
         @SystemContext AccessContext ctx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -115,10 +112,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         netIfStltConnEncrTypeDriver = new StltConnEncrTypeDriver();
     }
 
-    public List<NetInterfaceData> loadAll(Map<NodeName, ? extends Node> tmpNodesMap) throws DatabaseException
+    public List<NetInterface> loadAll(Map<NodeName, ? extends Node> tmpNodesMap) throws DatabaseException
     {
         errorReporter.logTrace("Loading all NetworkInterfaces");
-        List<NetInterfaceData> netIfs = new ArrayList<>();
+        List<NetInterface> netIfs = new ArrayList<>();
         String nodeNameStr = null;
         try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_ALL))
         {
@@ -183,23 +180,23 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(NetInterfaceData netInterfaceData) throws DatabaseException
+    public void create(NetInterface netInterface) throws DatabaseException
     {
-        errorReporter.logTrace("Creating NetInterface %s", getId(netInterfaceData));
+        errorReporter.logTrace("Creating NetInterface %s", getId(netInterface));
         try (PreparedStatement stmt = getConnection().prepareStatement(NNI_INSERT_WITH_STLT_CONN))
         {
-            LsIpAddress inetAddress = getAddress(netInterfaceData);
+            LsIpAddress inetAddress = getAddress(netInterface);
 
-            stmt.setString(1, netInterfaceData.getUuid().toString());
-            stmt.setString(2, netInterfaceData.getNode().getName().value);
-            stmt.setString(3, netInterfaceData.getName().value);
-            stmt.setString(4, netInterfaceData.getName().displayValue);
+            stmt.setString(1, netInterface.getUuid().toString());
+            stmt.setString(2, netInterface.getNode().getName().value);
+            stmt.setString(3, netInterface.getName().value);
+            stmt.setString(4, netInterface.getName().displayValue);
             stmt.setString(5, inetAddress.getAddress());
 
-            if (netInterfaceData.isUsableAsStltConn(dbCtx))
+            if (netInterface.isUsableAsStltConn(dbCtx))
             {
-                stmt.setInt(6, netInterfaceData.getStltConnPort(dbCtx).value);
-                stmt.setString(7, netInterfaceData.getStltConnEncryptionType(dbCtx).name());
+                stmt.setInt(6, netInterface.getStltConnPort(dbCtx).value);
+                stmt.setString(7, netInterface.getStltConnEncryptionType(dbCtx).name());
             }
             else
             {
@@ -216,10 +213,10 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         {
             DatabaseLoader.handleAccessDeniedException(accDeniedExc);
         }
-        errorReporter.logTrace("NetInterface created %s", getId(netInterfaceData));
+        errorReporter.logTrace("NetInterface created %s", getId(netInterface));
     }
 
-    public void ensureEntryExists(NetInterfaceData netIfData) throws DatabaseException
+    public void ensureEntryExists(NetInterface netIfData) throws DatabaseException
     {
         errorReporter.logTrace("Ensuring NetInterface exists %s", getId(netIfData));
         try (PreparedStatement stmt = getConnection().prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
@@ -242,13 +239,13 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
     }
 
     @Override
-    public void delete(NetInterfaceData netInterfaceData) throws DatabaseException
+    public void delete(NetInterface netInterface) throws DatabaseException
     {
-        errorReporter.logTrace("Deleting NetInterface %s", getId(netInterfaceData));
+        errorReporter.logTrace("Deleting NetInterface %s", getId(netInterface));
         try (PreparedStatement stmt = getConnection().prepareStatement(NNI_DELETE))
         {
-            stmt.setString(1, netInterfaceData.getNode().getName().value);
-            stmt.setString(2, netInterfaceData.getName().value);
+            stmt.setString(1, netInterface.getNode().getName().value);
+            stmt.setString(2, netInterface.getName().value);
 
             stmt.executeUpdate();
         }
@@ -256,23 +253,23 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         {
             throw new DatabaseException(sqlExc);
         }
-        errorReporter.logTrace("NetInterface deleted %s", getId(netInterfaceData));
+        errorReporter.logTrace("NetInterface deleted %s", getId(netInterface));
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver()
+    public SingleColumnDatabaseDriver<NetInterface, LsIpAddress> getNetInterfaceAddressDriver()
     {
         return netIfAddressDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType> getStltConnEncrTypeDriver()
+    public SingleColumnDatabaseDriver<NetInterface, EncryptionType> getStltConnEncrTypeDriver()
     {
         return netIfStltConnEncrTypeDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber> getStltConnPortDriver()
+    public SingleColumnDatabaseDriver<NetInterface, TcpPortNumber> getStltConnPortDriver()
     {
         return netIfStltConnPortDriver;
     }
@@ -291,7 +288,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         return ip;
     }
 
-    private NetInterfaceData restoreInstance(
+    private NetInterface restoreInstance(
         Node node,
         NetInterfaceName netName,
         ResultSet resultSet
@@ -364,7 +361,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
                     illegalArgExc
                 );
             }
-            NetInterfaceData ret = new NetInterfaceData(
+            NetInterface ret = new NetInterface(
                 uuid,
                 netName,
                 node,
@@ -389,7 +386,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(NetInterfaceData netIfData)
+    private String getId(NetInterface netIfData)
     {
         return getId(
             netIfData.getNode().getName().displayValue,
@@ -402,11 +399,11 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         return "(NodeName=" + nodeName + " NetInterfaceName=" + niName + ")";
     }
 
-    private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>
+    private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterface, LsIpAddress>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void update(NetInterfaceData parent, LsIpAddress inetAddress)
+        public void update(NetInterface parent, LsIpAddress inetAddress)
             throws DatabaseException
         {
             errorReporter.logTrace(
@@ -436,11 +433,11 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         }
     }
 
-    private class StltConnPortDriver implements SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber>
+    private class StltConnPortDriver implements SingleColumnDatabaseDriver<NetInterface, TcpPortNumber>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void update(NetInterfaceData parent, TcpPortNumber port)
+        public void update(NetInterface parent, TcpPortNumber port)
             throws DatabaseException
         {
             Integer portNumber = null;
@@ -475,7 +472,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             );
         }
 
-        private TcpPortNumber getStltPort(NetInterfaceData netIf)
+        private TcpPortNumber getStltPort(NetInterface netIf)
         {
             TcpPortNumber port = null;
             try
@@ -490,11 +487,11 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
         }
     }
 
-    private class StltConnEncrTypeDriver implements SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType>
+    private class StltConnEncrTypeDriver implements SingleColumnDatabaseDriver<NetInterface, EncryptionType>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void update(NetInterfaceData parent, EncryptionType encrType)
+        public void update(NetInterface parent, EncryptionType encrType)
             throws DatabaseException
         {
             errorReporter.logTrace(
@@ -523,7 +520,7 @@ public class NetInterfaceDataGenericDbDriver implements NetInterfaceDataDatabase
             );
         }
 
-        private String getStltEncrType(NetInterfaceData parent)
+        private String getStltEncrType(NetInterface parent)
         {
             String type = null;
             try

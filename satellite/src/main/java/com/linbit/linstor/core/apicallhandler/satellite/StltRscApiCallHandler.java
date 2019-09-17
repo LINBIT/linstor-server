@@ -23,7 +23,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
-import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
+import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
@@ -94,7 +94,7 @@ class StltRscApiCallHandler
     private final ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
     private final VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     private final NodeSatelliteFactory nodeFactory;
-    private final NetInterfaceDataFactory netInterfaceDataFactory;
+    private final NetInterfaceFactory netInterfaceFactory;
     private final ResourceDataSatelliteFactory resourceDataFactory;
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
@@ -120,7 +120,7 @@ class StltRscApiCallHandler
         ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactoryRef,
         VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactoryRef,
         NodeSatelliteFactory nodeFactoryRef,
-        NetInterfaceDataFactory netInterfaceDataFactoryRef,
+        NetInterfaceFactory netInterfaceFactoryRef,
         ResourceDataSatelliteFactory resourceDataFactoryRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataSatelliteFactory storPoolDataFactoryRef,
@@ -145,7 +145,7 @@ class StltRscApiCallHandler
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
         nodeFactory = nodeFactoryRef;
-        netInterfaceDataFactory = netInterfaceDataFactoryRef;
+        netInterfaceFactory = netInterfaceFactoryRef;
         resourceDataFactory = resourceDataFactoryRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
@@ -325,7 +325,7 @@ class StltRscApiCallHandler
                     // set node's netinterfaces
                     for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRscRaw.getNetInterfacefPojos())
                     {
-                        netInterfaceDataFactory.getInstanceSatellite(
+                        netInterfaceFactory.getInstanceSatellite(
                             apiCtx,
                             otherNodeNetIf.getUuid(),
                             remoteNode,
@@ -470,7 +470,7 @@ class StltRscApiCallHandler
                             // set node's netinterfaces
                             for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRsc.getNetInterfacefPojos())
                             {
-                                netInterfaceDataFactory.getInstanceSatellite(
+                                netInterfaceFactory.getInstanceSatellite(
                                     apiCtx,
                                     otherNodeNetIf.getUuid(),
                                     remoteNode,

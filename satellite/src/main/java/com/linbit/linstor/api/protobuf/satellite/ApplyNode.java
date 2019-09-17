@@ -7,8 +7,7 @@ import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
-import com.linbit.linstor.core.objects.NetInterface;
-import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
@@ -68,9 +67,9 @@ public class ApplyNode implements ApiCall
         );
     }
 
-    static List<NetInterface.NetInterfaceApi> extractNetIfs(List<IntNetIf> nodeNetIfsList)
+    static List<NetInterfaceApi> extractNetIfs(List<IntNetIf> nodeNetIfsList)
     {
-        List<NetInterface.NetInterfaceApi> netIfs = new ArrayList<>();
+        List<NetInterfaceApi> netIfs = new ArrayList<>();
         for (IntNetIf netIf : nodeNetIfsList)
         {
             netIfs.add(

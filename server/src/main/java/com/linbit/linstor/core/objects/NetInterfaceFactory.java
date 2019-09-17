@@ -7,7 +7,7 @@ import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -16,17 +16,18 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.UUID;
 
-public class NetInterfaceDataFactory
+public class NetInterfaceFactory
 {
-    private final NetInterfaceDataDatabaseDriver driver;
+    private final NetInterfaceDatabaseDriver driver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public NetInterfaceDataFactory(
-        NetInterfaceDataDatabaseDriver driverRef,
+    public NetInterfaceFactory(
+        NetInterfaceDatabaseDriver driverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -36,7 +37,7 @@ public class NetInterfaceDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public NetInterfaceData create(
+    public NetInterface create(
         AccessContext accCtx,
         Node node,
         NetInterfaceName netName,
@@ -48,16 +49,16 @@ public class NetInterfaceDataFactory
     {
         node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        NetInterfaceData netData = null;
+        NetInterface netData = null;
 
-        netData = (NetInterfaceData) node.getNetInterface(accCtx, netName);
+        netData = node.getNetInterface(accCtx, netName);
 
         if (netData != null)
         {
             throw new LinStorDataAlreadyExistsException("The NetInterface already exists");
         }
 
-        netData = new NetInterfaceData(
+        netData = new NetInterface(
             UUID.randomUUID(),
             netName,
             node,
@@ -69,12 +70,12 @@ public class NetInterfaceDataFactory
             transMgrProvider
         );
         driver.create(netData);
-        ((Node) node).addNetInterface(accCtx, netData);
+        node.addNetInterface(accCtx, netData);
 
         return netData;
     }
 
-    public NetInterfaceData getInstanceSatellite(
+    public NetInterface getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
         Node node,
@@ -84,10 +85,10 @@ public class NetInterfaceDataFactory
         throws ImplementationError
     {
 
-        NetInterfaceData netData;
+        NetInterface netData;
         try
         {
-            netData = (NetInterfaceData) node.getNetInterface(accCtx, netName);
+            netData = node.getNetInterface(accCtx, netName);
             if (netData == null)
             {
                 /*
@@ -96,7 +97,7 @@ public class NetInterfaceDataFactory
                  * the port and encr type are not needed
                  */
 
-                netData = new NetInterfaceData(
+                netData = new NetInterface(
                     uuid,
                     netName,
                     node,
@@ -107,7 +108,7 @@ public class NetInterfaceDataFactory
                     transObjFactory,
                     transMgrProvider
                 );
-                ((Node) node).addNetInterface(accCtx, netData);
+                node.addNetInterface(accCtx, netData);
             }
         }
         catch (Exception exc)

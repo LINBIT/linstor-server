@@ -9,6 +9,7 @@ import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -686,7 +687,7 @@ public class Node extends BaseTransactionObject
     )
         throws AccessDeniedException
     {
-        List<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
+        List<NetInterfaceApi> netInterfaces = new ArrayList<>();
         for (NetInterface ni : streamNetInterfaces(accCtx).collect(toList()))
         {
             netInterfaces.add(ni.getApiData(accCtx));

@@ -17,7 +17,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -43,16 +43,16 @@ import java.util.Objects;
 
 @Singleton
 public class NetInterfaceDbDriver
-    extends AbsDatabaseDriver<NetInterfaceData, Void, Map<NodeName, ? extends Node>>
-    implements NetInterfaceDataDatabaseDriver
+    extends AbsDatabaseDriver<NetInterface, Void, Map<NodeName, ? extends Node>>
+    implements NetInterfaceDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
-    private final SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> addressDriver;
-    private final SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber> portDriver;
-    private final SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType> encrTypeDriver;
+    private final SingleColumnDatabaseDriver<NetInterface, LsIpAddress> addressDriver;
+    private final SingleColumnDatabaseDriver<NetInterface, TcpPortNumber> portDriver;
+    private final SingleColumnDatabaseDriver<NetInterface, EncryptionType> encrTypeDriver;
 
     @Inject
     public NetInterfaceDbDriver(
@@ -106,25 +106,25 @@ public class NetInterfaceDbDriver
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver()
+    public SingleColumnDatabaseDriver<NetInterface, LsIpAddress> getNetInterfaceAddressDriver()
     {
         return addressDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, TcpPortNumber> getStltConnPortDriver()
+    public SingleColumnDatabaseDriver<NetInterface, TcpPortNumber> getStltConnPortDriver()
     {
         return portDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, EncryptionType> getStltConnEncrTypeDriver()
+    public SingleColumnDatabaseDriver<NetInterface, EncryptionType> getStltConnEncrTypeDriver()
     {
         return encrTypeDriver;
     }
 
     @Override
-    protected Pair<NetInterfaceData, Void> load(
+    protected Pair<NetInterface, Void> load(
         RawParameters raw,
         Map<NodeName, ? extends Node> nodesMap
     )
@@ -169,7 +169,7 @@ public class NetInterfaceDbDriver
         }
 
         return new Pair<>(
-            new NetInterfaceData(
+            new NetInterface(
                 raw.build(UUID, java.util.UUID::fromString),
                 raw.build(NODE_NET_DSP_NAME, NetInterfaceName::new),
                 nodesMap.get(raw.build(NODE_NAME, NodeName::new)),
@@ -185,7 +185,7 @@ public class NetInterfaceDbDriver
     }
 
     @Override
-    protected String getId(NetInterfaceData netIf)
+    protected String getId(NetInterface netIf)
     {
         return "(NodeName=" + netIf.getNode().getName().displayValue +
             " NetInterfaceName=" + netIf.getName().displayValue + ")";

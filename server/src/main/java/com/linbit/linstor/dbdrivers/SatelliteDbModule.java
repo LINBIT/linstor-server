@@ -4,7 +4,7 @@ import com.google.inject.AbstractModule;
 import com.linbit.linstor.SatelliteDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
@@ -73,7 +73,7 @@ public class SatelliteDbModule extends AbstractModule
         bind(VolumeDataDatabaseDriver.class).to(SatelliteVolDriver.class);
         bind(StorPoolDefinitionDataDatabaseDriver.class).to(SatelliteStorPoolDfnDriver.class);
         bind(StorPoolDataDatabaseDriver.class).to(SatelliteStorPoolDriver.class);
-        bind(NetInterfaceDataDatabaseDriver.class).to(SatelliteNiDriver.class);
+        bind(NetInterfaceDatabaseDriver.class).to(SatelliteNiDriver.class);
         bind(NodeConnectionDataDatabaseDriver.class).to(SatelliteNodeConDfnDriver.class);
         bind(ResourceConnectionDataDatabaseDriver.class).to(SatelliteResConDfnDriver.class);
         bind(VolumeConnectionDataDatabaseDriver.class).to(SatelliteVolConDfnDriver.class);
