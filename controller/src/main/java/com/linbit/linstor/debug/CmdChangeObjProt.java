@@ -19,7 +19,6 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -499,9 +498,9 @@ public class CmdChangeObjProt extends BaseDebugCmd
             }
             catch (AccessDeniedException accExc)
             {
-                responseMsg.append(
-                    "WARNING: The MAC privilege " + Privilege.PRIV_MAC_OVRD + " could not be enabled\n"
-                );
+                responseMsg.append("WARNING: The MAC privilege ");
+                responseMsg.append(Privilege.PRIV_MAC_OVRD);
+                responseMsg.append(" could not be enabled\n");
             }
         }
 
