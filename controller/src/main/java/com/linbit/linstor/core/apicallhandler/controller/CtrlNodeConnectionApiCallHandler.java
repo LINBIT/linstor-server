@@ -16,8 +16,8 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.objects.NodeConnectionData;
-import com.linbit.linstor.core.objects.NodeConnectionDataFactory;
+import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.NodeConnectionFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
@@ -40,7 +40,7 @@ class CtrlNodeConnectionApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final NodeConnectionDataFactory nodeConnectionDataFactory;
+    private final NodeConnectionFactory nodeConnectionFactory;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
@@ -52,7 +52,7 @@ class CtrlNodeConnectionApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        NodeConnectionDataFactory nodeConnectionDataFactoryRef,
+        NodeConnectionFactory nodeConnectionFactoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
@@ -63,7 +63,7 @@ class CtrlNodeConnectionApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
+        nodeConnectionFactory = nodeConnectionFactoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
@@ -88,7 +88,7 @@ class CtrlNodeConnectionApiCallHandler
             Node node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
             Node node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
 
-            NodeConnectionData nodeConn = createNodeConn(node1, node2);
+            NodeConnection nodeConn = createNodeConn(node1, node2);
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.NODE_CONN, nodeConnPropsMap, getProps(nodeConn), ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
@@ -127,7 +127,7 @@ class CtrlNodeConnectionApiCallHandler
 
         try
         {
-            NodeConnectionData nodeConn = loadNodeConn(nodeName1, nodeName2, true);
+            NodeConnection nodeConn = loadNodeConn(nodeName1, nodeName2, true);
 
             if (nodeConnUuid != null && !nodeConnUuid.equals(nodeConn.getUuid()))
             {
@@ -171,7 +171,7 @@ class CtrlNodeConnectionApiCallHandler
 
         try
         {
-            NodeConnectionData nodeConn = loadNodeConn(nodeName1Str, nodeName2Str, false);
+            NodeConnection nodeConn = loadNodeConn(nodeName1Str, nodeName2Str, false);
             if (nodeConn == null)
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -201,12 +201,12 @@ class CtrlNodeConnectionApiCallHandler
         return responses;
     }
 
-    private NodeConnectionData createNodeConn(Node node1, Node node2)
+    private NodeConnection createNodeConn(Node node1, Node node2)
     {
-        NodeConnectionData nodeConnection;
+        NodeConnection nodeConnection;
         try
         {
-            nodeConnection = nodeConnectionDataFactory.create(
+            nodeConnection = nodeConnectionFactory.create(
                 peerAccCtx.get(),
                 node1,
                 node2
@@ -234,15 +234,15 @@ class CtrlNodeConnectionApiCallHandler
         return nodeConnection;
     }
 
-    private NodeConnectionData loadNodeConn(String nodeName1, String nodeName2, boolean failIfNull)
+    private NodeConnection loadNodeConn(String nodeName1, String nodeName2, boolean failIfNull)
     {
         Node node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
         Node node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
 
-        NodeConnectionData nodeConn;
+        NodeConnection nodeConn;
         try
         {
-            nodeConn = NodeConnectionData.get(
+            nodeConn = NodeConnection.get(
                 peerAccCtx.get(),
                 node1,
                 node2
@@ -267,7 +267,7 @@ class CtrlNodeConnectionApiCallHandler
         return nodeConn;
     }
 
-    private Props getProps(NodeConnectionData nodeConn)
+    private Props getProps(NodeConnection nodeConn)
     {
         Props props;
         try
@@ -285,7 +285,7 @@ class CtrlNodeConnectionApiCallHandler
         return props;
     }
 
-    private ApiCallRc updateSatellites(NodeConnectionData nodeConn)
+    private ApiCallRc updateSatellites(NodeConnection nodeConn)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 

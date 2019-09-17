@@ -16,7 +16,6 @@ import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
-import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.RscFlags;
@@ -470,7 +469,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             vol2Uuid = vol2.getUuid();
 
             // nodeCon node1 <-> node2
-            NodeConnectionData nodeCon = nodeConnectionDataFactory.create(
+            NodeConnection nodeCon = nodeConnectionFactory.create(
                 SYS_CTX,
                 node1,
                 node2

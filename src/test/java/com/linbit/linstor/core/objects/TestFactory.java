@@ -60,21 +60,21 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link NodeConnectionData} without persisting it to the database
+     * Creates a new {@link NodeConnection} without persisting it to the database
      * @throws DatabaseException
      */
-    public static NodeConnectionData createNodeConnectionData(
+    public static NodeConnection createNodeConnection(
         UUID uuidRef,
         Node nodeSrcRef,
         Node nodeDstRef,
-        NodeConnectionDataGenericDbDriver driverRef,
+        NodeConnectionGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {
-        return new NodeConnectionData(
+        return new NodeConnection(
             uuidRef,
             nodeSrcRef,
             nodeDstRef,

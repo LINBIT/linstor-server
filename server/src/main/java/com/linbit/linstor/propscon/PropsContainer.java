@@ -2264,7 +2264,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
-     * PropsCon-Path for NodeConnectionData
+     * PropsCon-Path for NodeConnection
      */
     public static String buildPath(NodeName sourceName, NodeName targetName)
     {

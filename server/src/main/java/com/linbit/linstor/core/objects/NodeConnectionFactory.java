@@ -3,7 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -15,16 +15,16 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import java.util.UUID;
 
-public class NodeConnectionDataFactory
+public class NodeConnectionFactory
 {
-    private final NodeConnectionDataDatabaseDriver dbDriver;
+    private final NodeConnectionDatabaseDriver dbDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public NodeConnectionDataFactory(
-        NodeConnectionDataDatabaseDriver dbDriverRef,
+    public NodeConnectionFactory(
+        NodeConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -36,7 +36,7 @@ public class NodeConnectionDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public NodeConnectionData create(
+    public NodeConnection create(
         AccessContext accCtx,
         Node node1,
         Node node2
@@ -46,14 +46,14 @@ public class NodeConnectionDataFactory
         node1.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         node2.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        NodeConnectionData nodeConData = NodeConnectionData.get(accCtx, node1, node2);
+        NodeConnection nodeConData = NodeConnection.get(accCtx, node1, node2);
 
         if (nodeConData != null)
         {
             throw new LinStorDataAlreadyExistsException("The NodeConnection already exists");
         }
 
-        nodeConData = new NodeConnectionData(
+        nodeConData = new NodeConnection(
             UUID.randomUUID(),
             node1,
             node2,
@@ -70,7 +70,7 @@ public class NodeConnectionDataFactory
         return nodeConData;
     }
 
-    public NodeConnectionData getInstanceSatellite(
+    public NodeConnection getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
         Node node1,
@@ -78,7 +78,7 @@ public class NodeConnectionDataFactory
     )
         throws ImplementationError
     {
-        NodeConnectionData nodeConData = null;
+        NodeConnection nodeConData = null;
 
         Node source;
         Node target;
@@ -95,10 +95,10 @@ public class NodeConnectionDataFactory
 
         try
         {
-            nodeConData = (NodeConnectionData) source.getNodeConnection(accCtx, target);
+            nodeConData = (NodeConnection) source.getNodeConnection(accCtx, target);
             if (nodeConData == null)
             {
-                nodeConData = new NodeConnectionData(
+                nodeConData = new NodeConnection(
                     uuid,
                     source,
                     target,

@@ -5,8 +5,8 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
-import com.linbit.linstor.core.objects.NodeConnectionData;
-import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.NodeConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
+public class NodeConnectionGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RES_CON_DFNS =
         " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " + NODE_NAME_DST +
@@ -37,10 +37,10 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     private Node nodeSrc;
     private Node nodeDst;
 
-    private NodeConnectionData nodeCon;
-    @Inject private NodeConnectionDataGenericDbDriver driver;
+    private NodeConnection nodeCon;
+    @Inject private NodeConnectionGenericDbDriver driver;
 
-    public NodeConnectionDataGenericDbDriverTest() throws InvalidNameException
+    public NodeConnectionGenericDbDriverTest() throws InvalidNameException
     {
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
@@ -64,7 +64,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodeDst = nodeFactory.create(SYS_CTX, targetName, null, null);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
-        nodeCon = TestFactory.createNodeConnectionData(
+        nodeCon = TestFactory.createNodeConnection(
             uuid, nodeSrc, nodeDst, driver, propsContainerFactory, transObjFactory, transMgrProvider
         );
     }
@@ -81,7 +81,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        nodeConnectionDataFactory.create(SYS_CTX, nodeSrc, nodeDst);
+        nodeConnectionFactory.create(SYS_CTX, nodeSrc, nodeDst);
         commit();
 
         checkDbPersist(false);
@@ -93,7 +93,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(nodeCon);
 
-        List<NodeConnectionData> cons = driver.loadAll(nodesMap);
+        List<NodeConnection> cons = driver.loadAll(nodesMap);
 
         assertNotNull(cons);
 
@@ -112,7 +112,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodeSrc.setNodeConnection(SYS_CTX, nodeCon);
         nodeDst.setNodeConnection(SYS_CTX, nodeCon);
 
-        NodeConnectionData loadedConDfn = NodeConnectionData.get(
+        NodeConnection loadedConDfn = NodeConnection.get(
             SYS_CTX,
             nodeSrc,
             nodeDst
@@ -124,7 +124,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        NodeConnectionData storedInstance = nodeConnectionDataFactory.create(
+        NodeConnection storedInstance = nodeConnectionFactory.create(
             SYS_CTX,
             nodeSrc,
             nodeDst
@@ -132,7 +132,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, NodeConnectionData.get(
+        assertEquals(storedInstance, NodeConnection.get(
             SYS_CTX,
             nodeSrc,
             nodeDst
@@ -170,7 +170,7 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
         nodeSrc.setNodeConnection(SYS_CTX, nodeCon);
         nodeDst.setNodeConnection(SYS_CTX, nodeCon);
 
-        nodeConnectionDataFactory.create(SYS_CTX, nodeSrc, nodeDst);
+        nodeConnectionFactory.create(SYS_CTX, nodeSrc, nodeDst);
     }
 
 

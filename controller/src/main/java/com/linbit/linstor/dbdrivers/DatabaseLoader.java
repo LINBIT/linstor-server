@@ -22,7 +22,7 @@ import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeConnectionData;
+import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeDbDriver;
@@ -283,8 +283,8 @@ public class DatabaseLoader implements DatabaseDriver
                 }
             }
 
-            List<NodeConnectionData> loadedNodeConns = nodeConnDriver.loadAllAsList(tmpNodesMap);
-            for (NodeConnectionData nodeConn : loadedNodeConns)
+            List<NodeConnection> loadedNodeConns = nodeConnDriver.loadAllAsList(tmpNodesMap);
+            for (NodeConnection nodeConn : loadedNodeConns)
             {
                 Node sourceNode = nodeConn.getSourceNode(dbCtx);
                 Node targetNode = nodeConn.getTargetNode(dbCtx);

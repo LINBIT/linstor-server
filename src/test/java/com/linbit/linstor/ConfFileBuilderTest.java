@@ -11,7 +11,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
-import com.linbit.linstor.core.objects.NodeConnectionData;
+import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
@@ -343,7 +343,7 @@ public class ConfFileBuilderTest
         VolumeDefinition volumeDefinition = Mockito.mock(VolumeDefinition.class);
         StorPool storPool = Mockito.mock(StorPool.class);
         rscConn = Mockito.mock(ResourceConnectionData.class);
-        nodeConn = Mockito.mock(NodeConnectionData.class);
+        nodeConn = Mockito.mock(NodeConnection.class);
 
         Props storPoolProps = Mockito.mock(Props.class);
         Props vlmProps = Mockito.mock(Props.class);

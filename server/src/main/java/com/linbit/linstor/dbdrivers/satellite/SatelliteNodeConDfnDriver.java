@@ -1,12 +1,12 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.objects.NodeConnectionData;
-import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
+import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import javax.inject.Inject;
 
-public class SatelliteNodeConDfnDriver implements NodeConnectionDataDatabaseDriver
+public class SatelliteNodeConDfnDriver implements NodeConnectionDatabaseDriver
 {
     private final AccessContext dbCtx;
 
@@ -17,13 +17,13 @@ public class SatelliteNodeConDfnDriver implements NodeConnectionDataDatabaseDriv
     }
 
     @Override
-    public void create(NodeConnectionData nodeConDfnData)
+    public void create(NodeConnection nodeConDfnData)
     {
         // no-op
     }
 
     @Override
-    public void delete(NodeConnectionData nodeConDfnData)
+    public void delete(NodeConnection nodeConDfnData)
     {
         // no-op
     }

@@ -7,7 +7,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 @Singleton
-public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataDatabaseDriver
+public class NodeConnectionGenericDbDriver implements NodeConnectionDatabaseDriver
 {
     private static final String TBL_NODE_CON_DFN = DbConstants.TBL_NODE_CONNECTIONS;
     private static final String UUID = DbConstants.UUID;
@@ -62,7 +62,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public NodeConnectionDataGenericDbDriver(
+    public NodeConnectionGenericDbDriver(
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -77,11 +77,11 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         transMgrProvider = transMgrProviderRef;
     }
 
-    public List<NodeConnectionData> loadAll(Map<NodeName, ? extends Node> tmpNodesMap)
+    public List<NodeConnection> loadAll(Map<NodeName, ? extends Node> tmpNodesMap)
         throws DatabaseException
     {
         errorReporter.logTrace("Loading all NodeConnections");
-        List<NodeConnectionData> nodeConnections = new ArrayList<>();
+        List<NodeConnection> nodeConnections = new ArrayList<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
@@ -101,7 +101,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
                         throw new ImplementationError(invalidNameExc);
                     }
 
-                    NodeConnectionData conDfn = restoreNodeConnection(
+                    NodeConnection conDfn = restoreNodeConnection(
                         resultSet,
                         tmpNodesMap.get(sourceNodeName),
                         tmpNodesMap.get(targetNodeName)
@@ -118,7 +118,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         return nodeConnections;
     }
 
-    private NodeConnectionData restoreNodeConnection(
+    private NodeConnection restoreNodeConnection(
         ResultSet resultSet,
         Node sourceNode,
         Node targetNode
@@ -126,7 +126,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
         throws DatabaseException
     {
         try {
-            return new NodeConnectionData(
+            return new NodeConnection(
                 java.util.UUID.fromString(resultSet.getString(UUID)),
                 sourceNode,
                 targetNode,
@@ -144,7 +144,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(NodeConnectionData nodeConDfnData) throws DatabaseException
+    public void create(NodeConnection nodeConDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating NodeConnection %s", getId(nodeConDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
@@ -171,7 +171,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     }
 
     @Override
-    public void delete(NodeConnectionData nodeConDfnData) throws DatabaseException
+    public void delete(NodeConnection nodeConDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting NodeConnection %s", getId(nodeConDfnData));
         try
@@ -206,7 +206,7 @@ public class NodeConnectionDataGenericDbDriver implements NodeConnectionDataData
     /*
      * Debug ID methods
      */
-    private String getId(NodeConnectionData conData)
+    private String getId(NodeConnection conData)
     {
         String id = null;
         try

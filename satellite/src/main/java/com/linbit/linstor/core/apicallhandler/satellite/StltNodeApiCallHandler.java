@@ -15,8 +15,8 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeConnectionData;
-import com.linbit.linstor.core.objects.NodeConnectionDataFactory;
+import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.NodeConnectionFactory;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -50,7 +50,7 @@ class StltNodeApiCallHandler
     private final ReadWriteLock nodesMapLock;
     private final CoreModule.NodesMap nodesMap;
     private final NodeSatelliteFactory nodeFactory;
-    private final NodeConnectionDataFactory nodeConnectionDataFactory;
+    private final NodeConnectionFactory nodeConnectionFactory;
     private final NetInterfaceFactory netInterfaceFactory;
     private final ControllerPeerConnector controllerPeerConnector;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -64,7 +64,7 @@ class StltNodeApiCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         CoreModule.NodesMap nodesMapRef,
         NodeSatelliteFactory nodeFactoryRef,
-        NodeConnectionDataFactory nodeConnectionDataFactoryRef,
+        NodeConnectionFactory nodeConnectionFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -77,7 +77,7 @@ class StltNodeApiCallHandler
         nodesMapLock = nodesMapLockRef;
         nodesMap = nodesMapRef;
         nodeFactory = nodeFactoryRef;
-        nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
+        nodeConnectionFactory = nodeConnectionFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         transMgrProvider = transMgrProviderRef;
@@ -160,7 +160,7 @@ class StltNodeApiCallHandler
                     Node.Type.valueOf(nodeConn.getOtherNodeType()),
                     Node.Flags.restoreFlags(nodeConn.getOtherNodeFlags())
                 );
-                NodeConnectionData nodeCon = nodeConnectionDataFactory.getInstanceSatellite(
+                NodeConnection nodeCon = nodeConnectionFactory.getInstanceSatellite(
                     apiCtx,
                     nodeConn.getNodeConnUuid(),
                     node,

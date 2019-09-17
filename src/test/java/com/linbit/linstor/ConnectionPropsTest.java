@@ -8,7 +8,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeConnectionData;
+import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
@@ -60,7 +60,7 @@ public class ConnectionPropsTest extends GenericDbBase
     private VolumeData vol1;
     private VolumeData vol2;
 
-    private NodeConnectionData nodeCon;
+    private NodeConnection nodeCon;
     private ResourceConnectionData resCon;
     private VolumeConnectionData volCon;
 
@@ -137,7 +137,7 @@ public class ConnectionPropsTest extends GenericDbBase
             Collections.singletonMap("", storPool2)
         );
 
-        nodeCon = nodeConnectionDataFactory.create(SYS_CTX, node1, node2);
+        nodeCon = nodeConnectionFactory.create(SYS_CTX, node1, node2);
         resCon = resourceConnectionDataFactory.create(SYS_CTX, res1, res2, null);
         volCon = volumeConnectionDataFactory.create(SYS_CTX, vol1, vol2);
 
