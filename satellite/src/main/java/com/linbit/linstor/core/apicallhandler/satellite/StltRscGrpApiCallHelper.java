@@ -11,7 +11,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.AutoSelectorConfigData;
+import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.objects.ResourceGroupData;
@@ -99,7 +99,7 @@ class StltRscGrpApiCallHelper
 
             rscGrp.setDescription(apiCtx, rscGrpApiRef.getDescription());
 
-            AutoSelectorConfigData autoPlaceConfig = (AutoSelectorConfigData) rscGrp.getAutoPlaceConfig();
+            AutoSelectorConfig autoPlaceConfig = (AutoSelectorConfig) rscGrp.getAutoPlaceConfig();
 
             autoPlaceConfig.applyChanges(autoPlaceConfigPojo);
         }

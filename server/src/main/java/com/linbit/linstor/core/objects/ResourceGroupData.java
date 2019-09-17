@@ -53,7 +53,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
 
     private final TransactionMap<VolumeNumber, VolumeGroup> vlmMap;
 
-    private final AutoSelectorConfigData autoPlaceConfig;
+    private final AutoSelectorConfig autoPlaceConfig;
 
     private final TransactionMap<ResourceName, ResourceDefinition> rscDfnMap;
 
@@ -103,7 +103,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
 
         rscDfnMap = transObjFactory.createTransactionMap(rscDfnMapRef, null);
 
-        autoPlaceConfig = new AutoSelectorConfigData(
+        autoPlaceConfig = new AutoSelectorConfig(
             this,
             autoPlaceReplicaCountRef,
             autoPlaceStorPoolNameRef,

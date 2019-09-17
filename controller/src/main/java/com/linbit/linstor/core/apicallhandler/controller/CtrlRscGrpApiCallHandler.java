@@ -31,7 +31,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
-import com.linbit.linstor.core.objects.AutoSelectorConfigData;
+import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupData;
@@ -306,8 +306,8 @@ public class CtrlRscGrpApiCallHandler
 
             if (autoApiRef != null)
             {
-                AutoSelectorConfigData autoPlaceConfig =
-                    (AutoSelectorConfigData) rscGrpData.getAutoPlaceConfig();
+                AutoSelectorConfig autoPlaceConfig =
+                    (AutoSelectorConfig) rscGrpData.getAutoPlaceConfig();
                 Integer newReplicaCount = autoApiRef.getReplicaCount();
                 autoPlaceConfig.applyChanges(autoApiRef);
 
