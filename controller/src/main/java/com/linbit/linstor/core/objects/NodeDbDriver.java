@@ -8,14 +8,13 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.objects.SnapshotDefinition.Key;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -41,14 +40,14 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Void> implements NodeDataDatabaseDriver
+public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> implements NodeDatabaseDriver
 {
     protected final PropsContainerFactory propsContainerFactory;
     protected final TransactionObjectFactory transObjFactory;
     protected final Provider<? extends TransactionMgr> transMgrProvider;
 
-    protected final StateFlagsPersistence<NodeData> flagsDriver;
-    protected final SingleColumnDatabaseDriver<NodeData, NodeType> nodeTypeDriver;
+    protected final StateFlagsPersistence<Node> flagsDriver;
+    protected final SingleColumnDatabaseDriver<Node, Node.Type> nodeTypeDriver;
 
     @Inject
     public NodeDbDriver(
@@ -68,11 +67,11 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
 
         initSetters(dbCtxRef);
 
-        flagsDriver = generateFlagDriver(NODE_FLAGS, Node.NodeFlag.class);
+        flagsDriver = generateFlagDriver(NODE_FLAGS, Node.Flags.class);
         nodeTypeDriver = generateSingleColumnDriver(
             NODE_TYPE,
             node -> node.getNodeType(dbCtxRef).toString(),
-            NodeType::getFlagValue
+            Node.Type::getFlagValue
         );
     }
 
@@ -96,11 +95,11 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
 
         initSetters(dbCtxRef);
 
-        flagsDriver = generateFlagDriver(NODE_FLAGS, Node.NodeFlag.class);
+        flagsDriver = generateFlagDriver(NODE_FLAGS, Node.Flags.class);
         nodeTypeDriver = generateSingleColumnDriver(
             NODE_TYPE,
             node -> node.getNodeType(dbCtxRef).toString(),
-            NodeType::getFlagValue
+            Node.Type::getFlagValue
         );
     }
 
@@ -114,25 +113,25 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
     }
 
     @Override
-    public StateFlagsPersistence<NodeData> getStateFlagPersistence()
+    public StateFlagsPersistence<Node> getStateFlagPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NodeData, NodeType> getNodeTypeDriver()
+    public SingleColumnDatabaseDriver<Node, Node.Type> getNodeTypeDriver()
     {
         return nodeTypeDriver;
     }
 
     @Override
-    protected String getId(NodeData dataRef)
+    protected String getId(Node dataRef)
     {
         return "Node(" + dataRef.getName().displayValue + ")";
     }
 
     @Override
-    protected Pair<NodeData, Node.InitMaps> load(RawParameters raw, Void ignored)
+    protected Pair<Node, Node.InitMaps> load(RawParameters raw, Void ignored)
         throws DatabaseException, InvalidNameException
     {
         final Map<ResourceName, Resource> rscMap = new TreeMap<>();
@@ -142,24 +141,24 @@ public class NodeDbDriver extends AbsDatabaseDriver<NodeData, Node.InitMaps, Voi
         final Map<NodeName, NodeConnection> nodeConnMap = new TreeMap<>();
 
         final NodeName nodeName = raw.build(NODE_DSP_NAME, NodeName::new);
-        final NodeType nodeType;
+        final Node.Type nodeType;
         final long flags;
         switch (getDbType())
         {
             case ETCD:
-                nodeType = Node.NodeType.getByValue(Long.parseLong(raw.get(NODE_TYPE)));
+                nodeType = Node.Type.getByValue(Long.parseLong(raw.get(NODE_TYPE)));
                 flags = Long.parseLong(raw.get(NODE_FLAGS));
                 break;
             case SQL:
-                nodeType = Node.NodeType.getByValue(raw.<Integer> get(NODE_TYPE).longValue());
+                nodeType = Node.Type.getByValue(raw.<Integer> get(NODE_TYPE).longValue());
                 flags = raw.get(NODE_FLAGS);
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
-        return new Pair<NodeData, Node.InitMaps>(
-            new NodeData(
+        return new Pair<Node, Node.InitMaps>(
+            new Node(
                 raw.build(UUID, java.util.UUID::fromString),
                 getObjectProtection(ObjectProtection.buildPath(nodeName)),
                 nodeName,

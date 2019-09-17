@@ -44,13 +44,13 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder changedSnapshot(String rscName, UUID snapshotUuid, String snapshotName);
 
         CtrlStltSerializerBuilder controllerData(long fullSyncTimestamp, long updateId);
-        CtrlStltSerializerBuilder nodeData(
+        CtrlStltSerializerBuilder node(
             Node node,
             Collection<Node> relatedNodes,
             long fullSyncTimestamp,
             long updateId
         );
-        CtrlStltSerializerBuilder deletedNodeData(String nodeNameStr, long fullSyncTimestamp, long updateId);
+        CtrlStltSerializerBuilder deletedNode(String nodeNameStr, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder resourceData(Resource localResource, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder deletedResourceData(String rscNameStr, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder storPoolData(StorPool storPool, long fullSyncTimestamp, long updateId);

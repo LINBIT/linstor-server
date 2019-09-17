@@ -23,12 +23,12 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -38,11 +38,10 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import reactor.core.publisher.Flux;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -52,6 +51,8 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlRscAutoPlaceApiCallHandler
@@ -437,7 +438,8 @@ public class CtrlRscAutoPlaceApiCallHandler
             {
                 try
                 {
-                    if (disklessNode.getNodeType(apiCtx) == Node.NodeType.SATELLITE && // only deploy on satellites
+                    if (
+                        disklessNode.getNodeType(apiCtx) == Node.Type.SATELLITE && // only deploy on satellites
                         disklessNode.getResource(apiCtx, LinstorParsingUtils.asRscName(rscNameStr)) == null)
                     {
                         deployedResources.add(

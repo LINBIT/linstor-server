@@ -1,6 +1,13 @@
 package com.linbit.linstor.api;
 
-import com.google.inject.testing.fieldbinder.Bind;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -17,15 +24,14 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -33,16 +39,15 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,19 +60,15 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
+import com.google.inject.testing.fieldbinder.Bind;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -1121,10 +1122,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         {
             enterScope();
 
-            NodeData stlt = nodeDataFactory.create(
+            Node stlt = nodeFactory.create(
                 ApiTestBase.BOB_ACC_CTX,
                 new NodeName(stltName),
-                Node.NodeType.SATELLITE,
+                Node.Type.SATELLITE,
                 null
             );
 
@@ -1218,10 +1219,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private class SatelliteBuilder
     {
         private final RscAutoPlaceApiCall parent;
-        private final NodeData stlt;
+        private final Node stlt;
         private final Peer mockedPeer;
 
-        SatelliteBuilder(RscAutoPlaceApiCall parentRef, NodeData stltRef)
+        SatelliteBuilder(RscAutoPlaceApiCall parentRef, Node stltRef)
         {
             mockedPeer = Mockito.mock(Peer.class);
             // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be ready

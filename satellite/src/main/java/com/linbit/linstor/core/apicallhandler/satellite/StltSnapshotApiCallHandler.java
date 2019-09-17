@@ -13,7 +13,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -224,7 +224,7 @@ class StltSnapshotApiCallHandler
         throws DivergentUuidsException, AccessDeniedException, ValueOutOfRangeException, InvalidNameException,
             DatabaseException
     {
-        NodeData localNode = controllerPeerConnector.getLocalNode();
+        Node localNode = controllerPeerConnector.getLocalNode();
         Snapshot snapshot = snapshotDfn.getSnapshot(apiCtx, localNode.getName());
         Snapshot.SnapshotFlags[] snapshotFlags = Snapshot.SnapshotFlags.restoreFlags(snapshotRaw.getFlags());
         if (snapshot == null)

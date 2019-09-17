@@ -13,8 +13,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolData;
@@ -49,7 +47,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     private final NodeName nodeName;
     private final StorPoolName spName;
 
-    private NodeData node;
+    private Node node;
 
     private java.util.UUID uuid;
 
@@ -77,7 +75,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_NODE_STOR_POOL
         );
 
-        node = nodeDataFactory.create(SYS_CTX, nodeName, NodeType.SATELLITE, null);
+        node = nodeFactory.create(SYS_CTX, nodeName, Node.Type.SATELLITE, null);
         spdd = storPoolDefinitionDataFactory.create(SYS_CTX, spName);
 
         fsm = freeSpaceMgrFactory.getInstance(SYS_CTX, new FreeSpaceMgrName(node.getName(), spdd.getName()));

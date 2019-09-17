@@ -42,26 +42,26 @@ public class ApplyNode implements ApiCall
     public void execute(InputStream msgDataIn)
         throws IOException
     {
-        MsgIntApplyNode nodeData = MsgIntApplyNode.parseDelimitedFrom(msgDataIn);
+        MsgIntApplyNode applyNodeMsg = MsgIntApplyNode.parseDelimitedFrom(msgDataIn);
         NodePojo nodePojo = asNodePojo(
-            nodeData.getNode(),
-            nodeData.getFullSyncId(),
-            nodeData.getUpdateId()
+            applyNodeMsg.getNode(),
+            applyNodeMsg.getFullSyncId(),
+            applyNodeMsg.getUpdateId()
         );
         apiCallHandler.applyNodeChanges(nodePojo);
     }
 
-    static NodePojo asNodePojo(IntNode nodeData, long fullSyncId, long updateId)
+    static NodePojo asNodePojo(IntNode nodeMsg, long fullSyncId, long updateId)
     {
         return new NodePojo(
-            UUID.fromString(nodeData.getUuid()),
-            nodeData.getName(),
-            nodeData.getType(),
-            nodeData.getFlags(),
-            extractNetIfs(nodeData.getNetIfsList()),
+            UUID.fromString(nodeMsg.getUuid()),
+            nodeMsg.getName(),
+            nodeMsg.getType(),
+            nodeMsg.getFlags(),
+            extractNetIfs(nodeMsg.getNetIfsList()),
             null,
-            extractNodeConns(nodeData.getNodeConnsList()),
-            nodeData.getPropsMap(),
+            extractNodeConns(nodeMsg.getNodeConnsList()),
+            nodeMsg.getPropsMap(),
             Peer.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
             fullSyncId,
             updateId

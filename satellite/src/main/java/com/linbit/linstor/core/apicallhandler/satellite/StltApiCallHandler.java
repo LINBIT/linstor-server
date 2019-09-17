@@ -33,7 +33,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.drbdstate.DrbdResource;
@@ -64,6 +63,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -530,7 +530,7 @@ public class StltApiCallHandler
         if (drbdVersion.hasDrbd9())
         {
             Path tmpResFileOut = Paths.get(CoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
-            NodeType localNodeType;
+            Node.Type localNodeType;
             try
             {
                 localNodeType = controllerPeerConnector.getLocalNode().getNodeType(apiCtx);
@@ -539,7 +539,7 @@ public class StltApiCallHandler
             {
                 throw new ImplementationError(exc);
             }
-            if (tmpResFileOut != null && !localNodeType.equals(NodeType.SWORDFISH_TARGET))
+            if (tmpResFileOut != null && !localNodeType.equals(Node.Type.SWORDFISH_TARGET))
             {
                 try (
                     FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())
@@ -642,7 +642,7 @@ public class StltApiCallHandler
 
     public void applyNodeChanges(NodePojo nodePojo)
     {
-        applyChangedData(new ApplyNodeData(nodePojo));
+        applyChangedData(new ApplyNode(nodePojo));
     }
 
     public void applyDeletedNodeChange(
@@ -651,7 +651,7 @@ public class StltApiCallHandler
         long updateId
     )
     {
-        applyChangedData(new ApplyNodeData(nodeName, fullSyncId, updateId));
+        applyChangedData(new ApplyNode(nodeName, fullSyncId, updateId));
     }
 
     public void applyResourceChanges(RscPojo rscRawData)
@@ -881,14 +881,14 @@ public class StltApiCallHandler
         }
     }
 
-    private class ApplyNodeData implements ApplyData
+    private class ApplyNode implements ApplyData
     {
         private NodePojo nodePojo;
         private String deletedNodeName;
         private long fullSyncId;
         private long updateId;
 
-        ApplyNodeData(NodePojo nodePojoRef)
+        ApplyNode(NodePojo nodePojoRef)
         {
             nodePojo = nodePojoRef;
             deletedNodeName = null;
@@ -896,7 +896,7 @@ public class StltApiCallHandler
             this.updateId = nodePojoRef.getUpdateId();
         }
 
-        ApplyNodeData(String nodeNameRef, long fullSyncIdRef, long updateIdRef)
+        ApplyNode(String nodeNameRef, long fullSyncIdRef, long updateIdRef)
         {
             nodePojo = null;
             deletedNodeName = nodeNameRef;

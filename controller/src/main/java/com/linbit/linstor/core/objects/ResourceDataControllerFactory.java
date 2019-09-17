@@ -2,7 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -97,7 +97,7 @@ public class ResourceDataControllerFactory
 
 
         dbDriver.create(rscData);
-        ((NodeData) node).addResource(accCtx, rscData);
+        ((Node) node).addResource(accCtx, rscData);
         ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
 
         List<DeviceLayerKind> layerStack = layerStackRef;

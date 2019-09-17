@@ -177,7 +177,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder nodeData(
+    public ProtoCtrlStltSerializerBuilder node(
         Node node,
         Collection<Node> relatedNodes,
         long fullSyncTimestamp,
@@ -187,7 +187,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgIntApplyNode.newBuilder()
-                .setNode(nodeSerializerHelper.buildNodeDataMsg(node, relatedNodes))
+                .setNode(nodeSerializerHelper.buildNodeMsg(node, relatedNodes))
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(serializerId)
                 .build()
@@ -205,7 +205,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder deletedNodeData(
+    public ProtoCtrlStltSerializerBuilder deletedNode(
         String nodeNameStr,
         long fullSyncTimestamp,
         long updateId
@@ -399,7 +399,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 Node node = nodes.removeFirst();
                 serializedNodes.add(
-                    nodeSerializerHelper.buildNodeDataMsg(node, nodes)
+                    nodeSerializerHelper.buildNodeMsg(node, nodes)
                 );
             }
             for (StorPool storPool : storPools)
@@ -689,7 +689,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     private class NodeSerializerHelper
     {
-        private IntNode buildNodeDataMsg(Node node, Collection<Node> relatedNodes)
+        private IntNode buildNodeMsg(Node node, Collection<Node> relatedNodes)
             throws AccessDeniedException
         {
             return IntNode.newBuilder()

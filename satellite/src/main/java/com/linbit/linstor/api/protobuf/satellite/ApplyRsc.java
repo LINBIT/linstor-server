@@ -42,6 +42,7 @@ import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -263,7 +264,7 @@ public class ApplyRsc implements ApiCall
                     protoNode.getName(),
                     UUID.fromString(protoNode.getUuid()),
                     protoNode.getType(),
-                    FlagsHelper.fromStringList(Node.NodeFlag.class, protoNode.getFlagsList()),
+                    FlagsHelper.fromStringList(Node.Flags.class, protoNode.getFlagsList()),
                     protoNode.getPropsMap(),
                     extractNetIfs(protoNode),
                     UUID.fromString(protoRsc.getUuid()),

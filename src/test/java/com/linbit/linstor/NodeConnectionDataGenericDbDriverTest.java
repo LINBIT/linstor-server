@@ -7,7 +7,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -34,8 +34,8 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
     private final NodeName targetName;
 
     private java.util.UUID uuid;
-    private NodeData nodeSrc;
-    private NodeData nodeDst;
+    private Node nodeSrc;
+    private Node nodeDst;
 
     private NodeConnectionData nodeCon;
     @Inject private NodeConnectionDataGenericDbDriver driver;
@@ -59,9 +59,9 @@ public class NodeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
-        nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);
+        nodeSrc = nodeFactory.create(SYS_CTX, sourceName, null, null);
         nodesMap.put(nodeSrc.getName(), nodeSrc);
-        nodeDst = nodeDataFactory.create(SYS_CTX, targetName, null, null);
+        nodeDst = nodeFactory.create(SYS_CTX, targetName, null, null);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         nodeCon = TestFactory.createNodeConnectionData(

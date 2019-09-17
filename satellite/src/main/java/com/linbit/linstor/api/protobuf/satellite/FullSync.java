@@ -132,9 +132,9 @@ public class FullSync implements ApiCall
     {
         ArrayList<NodePojo> nodes = new ArrayList<>(nodesList.size());
 
-        for (IntNode nodeData : nodesList)
+        for (IntNode node : nodesList)
         {
-            nodes.add(ApplyNode.asNodePojo(nodeData, fullSyncId, updateId));
+            nodes.add(ApplyNode.asNodePojo(node, fullSyncId, updateId));
         }
         return nodes;
     }

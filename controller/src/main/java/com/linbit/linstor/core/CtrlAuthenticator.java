@@ -12,7 +12,7 @@ import com.linbit.linstor.api.protobuf.internal.IntAuthResponse;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -86,7 +86,7 @@ public class CtrlAuthenticator
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP),
             () -> completeAuthenticationInTransaction(node)
         )
-            .concatMap(inputStream -> this.processAuthResponse((NodeData) node, inputStream))
+            .concatMap(inputStream -> this.processAuthResponse((Node) node, inputStream))
             .onErrorResume(
                 PeerNotConnectedException.class,
                 ignored -> Flux.empty()
@@ -150,7 +150,7 @@ public class CtrlAuthenticator
         return flux;
     }
 
-    private Flux<ApiCallRc> processAuthResponse(NodeData node, ByteArrayInputStream inputStream)
+    private Flux<ApiCallRc> processAuthResponse(Node node, ByteArrayInputStream inputStream)
     {
         Flux<ApiCallRc> authResponseFlux;
         Peer peer = getPeerPrivileged(node);
@@ -176,7 +176,7 @@ public class CtrlAuthenticator
         return authResponseFlux;
     }
 
-    private Peer getPeerPrivileged(NodeData node)
+    private Peer getPeerPrivileged(Node node)
     {
         Peer peer;
         try

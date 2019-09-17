@@ -19,6 +19,7 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
+import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -63,7 +64,7 @@ public class Json
     }
 
     public static JsonGenTypes.Node apiToNode(
-        Node.NodeApi nodeApi
+        NodeApi nodeApi
     )
     {
         JsonGenTypes.Node nd = new JsonGenTypes.Node();
@@ -71,7 +72,7 @@ public class Json
         nd.type = nodeApi.getType();
         nd.connection_status = nodeApi.connectionStatus().toString();
         nd.props = nodeApi.getProps();
-        nd.flags = Node.NodeFlag.toStringList(nodeApi.getFlags());
+        nd.flags = Node.Flags.toStringList(nodeApi.getFlags());
 
         List<JsonGenTypes.NetInterface> netIfsList =
             nodeApi.getNetInterfaces().stream().map(Json::apiToNetInterface).collect(Collectors.toList());

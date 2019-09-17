@@ -8,10 +8,6 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.LUKSVolume;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node.InitMaps;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceData;
@@ -66,13 +62,13 @@ public interface DbEngine
      * The object-specific loader method, creating the actual data object with its initialization-maps
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link NodeData}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
      * @param <INIT_MAPS>
      *     The Linstor-object's initialization maps.
-     *     For example, if DATA is {@link NodeData}, then INIT_MAPS should be {@link Node}.{@link InitMaps},
+     *     For example, if DATA is {@link Node}, then INIT_MAPS should be {@link Node}.{@link Node.InitMaps},
      * @param <LOAD_ALL>
      *     The parent objects needed to create the DATA object. <br/>
-     *     For example, {@link NodeData} does not need anything for initialization, so LOAD_ALL can be
+     *     For example, {@link Node} does not need anything for initialization, so LOAD_ALL can be
      *     {@link Void}.<br />
      *     {@link ResourceData} needs a data-structure containing a <code>Map&lt;NodeName, Node&gt;</code> and a
      *     <code>Map&lt;ResourceName, ResourceDefinition&gt;</code>
@@ -110,16 +106,16 @@ public interface DbEngine
      * Returns a {@link StateFlagsPersistence} for the given DATA type.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link NodeData}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
      * @param <FLAG>
      *     The flag-enum for the given DATA type. <br/>
-     *     For example {@link NodeFlag}, {@link RscFlags}, ...
+     *     For example {@link Flags}, {@link RscFlags}, ...
      * @param settersRef
      *     This map contains accessors for all columns of the given {@link Table}.<br/>
      *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
      *     value of correct type for the given {@link Column}. <br />
      *     For example, {@link Nodes#NODE_FLAGS} has to have an {@link ExceptionThrowingFunction}
-     *     that gets a {@link NodeData} which returns a long value from {@link StateFlags#getFlagsBits}
+     *     that gets a {@link Node} which returns a long value from {@link StateFlags#getFlagsBits}
      * @param colRef
      *     The {@link Column} of the FLAG, i.e. {@link Nodes#NODE_FLAGS}
      * @param flagsClassRef
@@ -138,9 +134,9 @@ public interface DbEngine
      * Returns a {@link SingleColumnDatabaseDriver} for the given DATA type.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link NodeData}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
      * @param <INPUT_TYPE>
-     *     The Linstor-type which is updated, i.e. {@link NodeType}, {@link String} for
+     *     The Linstor-type which is updated, i.e. {@link Type}, {@link String} for
      *     {@link ResourceGroup}'s description-driver, <code>byte[]</code>
      *     for the encryption column for {@link LUKSVolume}
      * @param <DB_TYPE>
@@ -152,7 +148,7 @@ public interface DbEngine
      *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
      *     value of correct type for the given {@link Column}. <br />
      *     For example, {@link Nodes#NODE_FLAGS} has to have an {@link ExceptionThrowingFunction}
-     *     that gets a {@link NodeData} which returns a long value from {@link StateFlags#getFlagsBits}
+     *     that gets a {@link Node} which returns a long value from {@link StateFlags#getFlagsBits}
      * @param colRef
      *     The {@link Column} of the FLAG, i.e. {@link Nodes#NODE_FLAGS}
      * @param typeMapperRef
@@ -174,7 +170,7 @@ public interface DbEngine
      * Returns a {@link CollectionDatabaseDriver} for the given DATA type.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link NodeData}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
      * @param <LIST_TYPE>
      *     The type of the elements of the {@link Collection}.
      * @param setters
@@ -182,7 +178,7 @@ public interface DbEngine
      *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
      *     value of correct type for the given {@link Column}. <br />
      *     For example, {@link Nodes#NODE_FLAGS} has to have an {@link ExceptionThrowingFunction}
-     *     that gets a {@link NodeData} which returns a long value from {@link StateFlags#getFlagsBits}
+     *     that gets a {@link Node} which returns a long value from {@link StateFlags#getFlagsBits}
      * @param colRef
      *     The {@link Column} of the FLAG, i.e. {@link Nodes#NODE_FLAGS}
      * @param dataToStringRef
@@ -198,13 +194,13 @@ public interface DbEngine
      * Persists the given data object into the database.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link NodeData}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
      * @param setters
      *     This map contains accessors for all columns of the given {@link Table}.<br/>
      *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
      *     value of correct type for the given {@link Column}. <br />
      *     For example, {@link Nodes#NODE_FLAGS} has to have an {@link ExceptionThrowingFunction}
-     *     that gets a {@link NodeData} which returns a long value from {@link StateFlags#getFlagsBits}
+     *     that gets a {@link Node} which returns a long value from {@link StateFlags#getFlagsBits}
      * @param dataRef
      *     The actual data which should be persisted
      * @param table
@@ -226,14 +222,14 @@ public interface DbEngine
      * Deletes the given data object from the database.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link NodeData}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
      * @param setters
      *     This map contains accessors for all columns of the given {@link Table}.<br/>
      *     Required for accessing the primary key<br />
      *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
      *     value of correct type for the given {@link Column}. <br />
      *     For example, {@link Nodes#NODE_FLAGS} has to have an {@link ExceptionThrowingFunction}
-     *     that gets a {@link NodeData} which returns a long value from {@link StateFlags#getFlagsBits}
+     *     that gets a {@link Node} which returns a long value from {@link StateFlags#getFlagsBits}
      * @param dataRef
      *     The actual data which should be deleted
      * @param table
@@ -257,13 +253,13 @@ public interface DbEngine
      * {@link ResourceDefinition}s are fully loaded)
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link NodeData}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
      * @param <INIT_MAPS>
      *     The Linstor-object's initialization maps.
-     *     For example, if DATA is {@link NodeData}, then INIT_MAPS should be {@link Node.InitMaps},
+     *     For example, if DATA is {@link Node}, then INIT_MAPS should be {@link Node.InitMaps},
      * @param <LOAD_ALL>
      *     The parent objects needed to create the DATA object. <br/>
-     *     For example, {@link NodeData} does not need anything for initialization, so LOAD_ALL can be
+     *     For example, {@link Node} does not need anything for initialization, so LOAD_ALL can be
      *     {@link Void}.<br />
      *     {@link ResourceData} needs a data-structure containing a <code>Map&lt;NodeName, Node&gt;</code> and a
      *     <code>Map&lt;ResourceName, ResourceDefinition&gt;</code>

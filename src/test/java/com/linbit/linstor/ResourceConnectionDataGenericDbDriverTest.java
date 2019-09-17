@@ -5,7 +5,7 @@ import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
@@ -49,8 +49,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
 
     private java.util.UUID uuid;
     private ResourceDefinitionData resDfn;
-    private NodeData nodeSrc;
-    private NodeData nodeDst;
+    private Node nodeSrc;
+    private Node nodeDst;
 
     private ResourceConnectionData resCon;
 
@@ -98,8 +98,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
             createDefaultResourceGroup(SYS_CTX)
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
-        nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, null, null);
-        nodeDst = nodeDataFactory.create(SYS_CTX, targetName, null, null);
+        nodeSrc = nodeFactory.create(SYS_CTX, sourceName, null, null);
+        nodeDst = nodeFactory.create(SYS_CTX, targetName, null, null);
 
         nodeIdSrc = 13;
         nodeIdDst = 14;

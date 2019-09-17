@@ -4,7 +4,7 @@ import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.NodeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
@@ -26,7 +26,7 @@ import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
@@ -67,7 +67,7 @@ public class TestDbModule extends AbstractModule
         bind(DatabaseDriver.class).to(DatabaseLoader.class);
 
         bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
-        bind(NodeDataDatabaseDriver.class).to(NodeDataGenericDbDriver.class);
+        bind(NodeDatabaseDriver.class).to(NodeGenericDbDriver.class);
         bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDataGenericDbDriver.class);
         bind(ResourceDefinitionDataDatabaseDriver.class).to(ResourceDefinitionDataGenericDbDriver.class);
         bind(ResourceDataDatabaseDriver.class).to(ResourceDataGenericDbDriver.class);

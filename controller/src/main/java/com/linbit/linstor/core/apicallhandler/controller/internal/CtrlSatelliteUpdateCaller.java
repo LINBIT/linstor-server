@@ -14,7 +14,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -381,7 +381,7 @@ public class CtrlSatelliteUpdateCaller
         )));
     }
 
-    public Flux<Boolean> attemptConnecting(AccessContext accCtx, NodeData nodeRef, long timeoutMillis)
+    public Flux<Boolean> attemptConnecting(AccessContext accCtx, Node nodeRef, long timeoutMillis)
     {
         return Flux.<Boolean>create(fluxSink ->
             {

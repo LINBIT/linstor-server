@@ -1,32 +1,36 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.Volume.InitMaps;
+import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.Volume.InitMaps;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
-import org.junit.Before;
-import org.junit.Test;
 
 import javax.inject.Inject;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Arrays;
@@ -35,11 +39,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public class VolumeDataGenericDbDriverTest extends GenericDbBase
 {
@@ -49,7 +50,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         " FROM " + TBL_VOLUMES;
 
     private NodeName nodeName;
-    private NodeData node;
+    private Node node;
 
     private ResourceName resName;
     private Integer resPort;
@@ -83,10 +84,10 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         );
 
         nodeName = new NodeName("TestNodeName");
-        node = nodeDataFactory.create(
+        node = nodeFactory.create(
             SYS_CTX,
             nodeName,
-            NodeType.SATELLITE,
+            Node.Type.SATELLITE,
             null
         );
 

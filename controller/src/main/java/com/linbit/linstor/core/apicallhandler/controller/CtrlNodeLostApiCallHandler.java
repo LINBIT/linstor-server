@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -21,7 +23,6 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -34,12 +35,15 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuard;
-import reactor.core.publisher.Flux;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -51,9 +55,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-import static java.util.stream.Collectors.toList;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlNodeLostApiCallHandler
@@ -125,8 +127,8 @@ public class CtrlNodeLostApiCallHandler
     {
         requireNodesMapChangeAccess();
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-        NodeData nodeData = ctrlApiDataLoader.loadNode(nodeName, false);
-        if (nodeData == null)
+        Node node = ctrlApiDataLoader.loadNode(nodeName, false);
+        if (node == null)
         {
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(
@@ -138,7 +140,7 @@ public class CtrlNodeLostApiCallHandler
             );
         }
 
-        Peer nodePeer = getPeerPrivileged(nodeData);
+        Peer nodePeer = getPeerPrivileged(node);
         if (nodePeer != null && nodePeer.isConnected())
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -157,7 +159,7 @@ public class CtrlNodeLostApiCallHandler
         // compile a list of used resource definitions that should be checked if they are now fully connected
         List<ResourceDefinition> rscDfnToCheck = new ArrayList<>();
 
-        for (Resource rsc : getRscStreamPrivileged(nodeData).collect(toList()))
+        for (Resource rsc : getRscStreamPrivileged(node).collect(toList()))
         {
             ResourceDefinition rscDfn = rsc.getDefinition();
             rscDfnToCheck.add(rscDfn);
@@ -175,11 +177,11 @@ public class CtrlNodeLostApiCallHandler
         nodesToContact.remove(nodeName);
 
         // set node mark deleted for updates to other satellites
-        markDeleted(nodeData);
+        markDeleted(node);
 
         // If the node has no resources, then there should not be any volumes referenced
         // by the storage pool -- double check and delete storage pools
-        Iterator<StorPool> storPoolIterator = getStorPoolIteratorPrivileged(nodeData);
+        Iterator<StorPool> storPoolIterator = getStorPoolIteratorPrivileged(node);
         while (storPoolIterator.hasNext())
         {
             StorPool storPool = storPoolIterator.next();
@@ -201,16 +203,16 @@ public class CtrlNodeLostApiCallHandler
             }
         }
 
-        Collection<Snapshot> snapshots = new ArrayList<>(getSnapshotsPrivileged(nodeData));
+        Collection<Snapshot> snapshots = new ArrayList<>(getSnapshotsPrivileged(node));
         for (Snapshot snapshot : snapshots)
         {
             deletePrivileged(snapshot);
         }
 
         String successMessage = firstLetterCaps(getNodeDescriptionInline(nodeNameStr)) + " deleted.";
-        UUID nodeUuid = nodeData.getUuid(); // store node uuid to avoid deleted node access
+        UUID nodeUuid = node.getUuid(); // store node uuid to avoid deleted node access
 
-        deletePrivileged(nodeData);
+        deletePrivileged(node);
 
         removeNodePrivileged(nodeName);
 
@@ -342,12 +344,12 @@ public class CtrlNodeLostApiCallHandler
         return iterateStorPools;
     }
 
-    private Collection<Snapshot> getSnapshotsPrivileged(NodeData nodeData)
+    private Collection<Snapshot> getSnapshotsPrivileged(Node node)
     {
         Collection<Snapshot> snapshots;
         try
         {
-            snapshots = nodeData.getSnapshots(apiCtx);
+            snapshots = node.getSnapshots(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -374,7 +376,7 @@ public class CtrlNodeLostApiCallHandler
         return isMarkedForDeletion;
     }
 
-    private void markDeleted(NodeData node)
+    private void markDeleted(Node node)
     {
         try
         {
@@ -398,10 +400,10 @@ public class CtrlNodeLostApiCallHandler
     {
         try
         {
-            Node.NodeType nodeType = node.getNodeType(apiCtx);
+            Node.Type nodeType = node.getNodeType(apiCtx);
             node.delete(peerAccCtx.get());
 
-            if (Node.NodeType.SWORDFISH_TARGET.equals(nodeType))
+            if (Node.Type.SWORDFISH_TARGET.equals(nodeType))
             {
                 sfTargetProcessMgr.stopProcess(node);
             }

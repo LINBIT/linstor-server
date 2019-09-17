@@ -9,12 +9,10 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -31,6 +29,7 @@ import com.linbit.utils.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,7 +38,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
+public class NodeGenericDbDriver implements NodeDatabaseDriver
 {
     private static final String TBL_NODE = DbConstants.TBL_NODES;
 
@@ -74,8 +73,8 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    private final StateFlagsPersistence<NodeData> flagDriver;
-    private final SingleColumnDatabaseDriver<NodeData, NodeType> typeDriver;
+    private final StateFlagsPersistence<Node> flagDriver;
+    private final SingleColumnDatabaseDriver<Node, Node.Type> typeDriver;
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
@@ -84,7 +83,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public NodeDataGenericDbDriver(
+    public NodeGenericDbDriver(
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
@@ -107,7 +106,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(NodeData node) throws DatabaseException
+    public void create(Node node) throws DatabaseException
     {
         errorReporter.logTrace("Creating Node %s", getId(node));
         try (PreparedStatement stmt = getConnection().prepareStatement(NODE_INSERT))
@@ -131,17 +130,17 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         }
     }
 
-    public Map<NodeData, Node.InitMaps> loadAll() throws DatabaseException
+    public Map<Node, Node.InitMaps> loadAll() throws DatabaseException
     {
         errorReporter.logTrace("Loading all Nodes");
-        Map<NodeData, Node.InitMaps> loadedNodesMap = new TreeMap<>();
+        Map<Node, Node.InitMaps> loadedNodesMap = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(NODE_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    Pair<NodeData, Node.InitMaps> pair = restoreNode(resultSet);
+                    Pair<Node, Node.InitMaps> pair = restoreNode(resultSet);
                     loadedNodesMap.put(
                         pair.objA,
                         pair.objB
@@ -157,11 +156,11 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         return loadedNodesMap;
     }
 
-    private Pair<NodeData, Node.InitMaps> restoreNode(ResultSet resultSet)
+    private Pair<Node, Node.InitMaps> restoreNode(ResultSet resultSet)
         throws DatabaseException, ImplementationError
     {
-        Pair<NodeData, Node.InitMaps> retPair = new Pair<>();
-        NodeData node;
+        Pair<Node, Node.InitMaps> retPair = new Pair<>();
+        Node node;
         NodeName nodeName;
 
         try {
@@ -186,11 +185,11 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
             final Map<StorPoolName, StorPool> storPoolMap = new TreeMap<>();
             final Map<NodeName, NodeConnection> nodeConnMap = new TreeMap<>();
 
-            node = new NodeData(
+            node = new Node(
                 java.util.UUID.fromString(resultSet.getString(NODE_UUID)),
                 objProt,
                 nodeName,
-                Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
+                Node.Type.getByValue(resultSet.getLong(NODE_TYPE)),
                 resultSet.getLong(NODE_FLAGS),
                 this,
                 propsContainerFactory,
@@ -238,7 +237,7 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public void delete(NodeData node) throws DatabaseException
+    public void delete(Node node) throws DatabaseException
     {
         errorReporter.logTrace("Deleting node %s", getId(node));
         try (PreparedStatement stmt = getConnection().prepareStatement(NODE_DELETE))
@@ -260,18 +259,18 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public StateFlagsPersistence<NodeData> getStateFlagPersistence()
+    public StateFlagsPersistence<Node> getStateFlagPersistence()
     {
         return flagDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NodeData, NodeType> getNodeTypeDriver()
+    public SingleColumnDatabaseDriver<Node, Node.Type> getNodeTypeDriver()
     {
         return typeDriver;
     }
 
-    private String getId(NodeData node)
+    private String getId(Node node)
     {
         return getId(node.getName().displayValue);
     }
@@ -286,23 +285,23 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         return "(NodeName=" + nodeName + ")";
     }
 
-    private class NodeFlagPersistence implements StateFlagsPersistence<NodeData>
+    private class NodeFlagPersistence implements StateFlagsPersistence<Node>
     {
         @Override
-        public void persist(NodeData node, long flags) throws DatabaseException
+        public void persist(Node node, long flags) throws DatabaseException
         {
             try
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        NodeFlag.class,
+                        Node.Flags.class,
                         node.getFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        NodeFlag.class,
+                        Node.Flags.class,
                         flags
                     ),
                     ", "
@@ -337,10 +336,10 @@ public class NodeDataGenericDbDriver implements NodeDataDatabaseDriver
         }
     }
 
-    private class NodeTypeDriver implements SingleColumnDatabaseDriver<NodeData, NodeType>
+    private class NodeTypeDriver implements SingleColumnDatabaseDriver<Node, Node.Type>
     {
         @Override
-        public void update(NodeData parent, NodeType element) throws DatabaseException
+        public void update(Node parent, Node.Type element) throws DatabaseException
         {
             try
             {

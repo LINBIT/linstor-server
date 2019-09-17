@@ -7,13 +7,10 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -26,12 +23,13 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.UUID;
 
 @Singleton
-public class NodeDataControllerFactory
+public class NodeControllerFactory
 {
-    private final NodeDataDatabaseDriver dbDriver;
+    private final NodeDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final StorPoolDataControllerFactory storPoolDataFactory;
     private final PropsContainerFactory propsContainerFactory;
@@ -56,8 +54,8 @@ public class NodeDataControllerFactory
     }
 
     @Inject
-    public NodeDataControllerFactory(
-        NodeDataDatabaseDriver dbDriverRef,
+    public NodeControllerFactory(
+        NodeDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         StorPoolDataControllerFactory storPoolDataFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -80,22 +78,22 @@ public class NodeDataControllerFactory
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
     }
 
-    public NodeData create(
+    public Node create(
         AccessContext accCtx,
         NodeName nameRef,
-        Node.NodeType type,
-        Node.NodeFlag[] flags
+        Node.Type type,
+        Node.Flags[] flags
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        NodeData nodeData = nodeRepository.get(accCtx, nameRef);
+        Node node = nodeRepository.get(accCtx, nameRef);
 
-        if (nodeData != null)
+        if (node != null)
         {
             throw new LinStorDataAlreadyExistsException("The Node already exists");
         }
 
-        nodeData = new NodeData(
+        node = new Node(
             UUID.randomUUID(),
             objectProtectionFactory.getInstance(
                 accCtx,
@@ -110,8 +108,8 @@ public class NodeDataControllerFactory
             transObjFactory,
             transMgrProvider
         );
-        dbDriver.create(nodeData);
+        dbDriver.create(node);
 
-        return nodeData;
+        return node;
     }
 }

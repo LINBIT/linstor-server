@@ -17,7 +17,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
@@ -216,8 +216,8 @@ class CtrlVlmConnectionApiCallHandler
         int vlmNrInt
     )
     {
-        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
-        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
+        Node node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
+        Node node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
 
         Resource rsc1 = getRsc(node1, rscNameStr);
         Resource rsc2 = getRsc(node2, rscNameStr);
@@ -263,8 +263,8 @@ class CtrlVlmConnectionApiCallHandler
         int vlmNr
     )
     {
-        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
-        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
+        Node node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
+        Node node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
 
         Resource rsc1 = getRsc(node1, rscNameStr);
         Resource rsc2 = getRsc(node2, rscNameStr);
@@ -292,7 +292,7 @@ class CtrlVlmConnectionApiCallHandler
         return vlmConn;
     }
 
-    private Resource getRsc(NodeData node, String rscNameStr)
+    private Resource getRsc(Node node, String rscNameStr)
     {
         Resource rsc;
         try

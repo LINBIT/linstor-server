@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.internal;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
@@ -17,13 +19,12 @@ import com.linbit.locks.LockGuard;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
-
-import static java.util.stream.Collectors.toList;
 
 public class NodeInternalCallHandler
 {
@@ -64,7 +65,7 @@ public class NodeInternalCallHandler
             NodeName nodeName = new NodeName(nodeNameStr);
 
             Node node = nodeRepository.get(apiCtx, nodeName); // TODO use CtrlApiLoader.loadNode
-            if (node != null && !node.isDeleted() && node.getFlags().isUnset(apiCtx, Node.NodeFlag.DELETE))
+            if (node != null && !node.isDeleted() && node.getFlags().isUnset(apiCtx, Node.Flags.DELETE))
             {
                 if (node.getUuid().equals(nodeUuid))
                 {
@@ -89,7 +90,7 @@ public class NodeInternalCallHandler
                     currentPeer.sendMessage(
                         ctrlStltSerializer
                             .onewayBuilder(InternalApiConsts.API_APPLY_NODE)
-                            .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
+                            .node(node, otherNodes, fullSyncTimestamp, serializerId)
                             .build()
                     );
                 }
@@ -111,7 +112,7 @@ public class NodeInternalCallHandler
                 long serializerId = currentPeer.getNextSerializerId();
                 currentPeer.sendMessage(
                     ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_APPLY_NODE_DELETED)
-                        .deletedNodeData(nodeNameStr, fullSyncTimestamp, serializerId)
+                        .deletedNode(nodeNameStr, fullSyncTimestamp, serializerId)
                         .build()
                 );
             }

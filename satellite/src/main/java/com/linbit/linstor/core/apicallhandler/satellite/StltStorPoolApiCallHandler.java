@@ -17,7 +17,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDataSatelliteFactory;
@@ -137,7 +137,7 @@ class StltStorPoolApiCallHandler
             // checkUuid(satellite.localNode, storPoolRaw);
 
             storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
-            NodeData localNode = controllerPeerConnector.getLocalNode();
+            Node localNode = controllerPeerConnector.getLocalNode();
             StorPool storPool;
             if (localNode == null)
             {

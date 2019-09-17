@@ -5,7 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
@@ -46,7 +46,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     private final Integer resPort;
     private final Integer nodeId;
 
-    private NodeData node;
+    private Node node;
     private ResourceDefinitionData resDfn;
 
     private java.util.UUID resUuid;
@@ -75,7 +75,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_RESOURCES
         );
 
-        node = nodeDataFactory.create(SYS_CTX, nodeName, null, null);
+        node = nodeFactory.create(SYS_CTX, nodeName, null, null);
         resDfn = resourceDefinitionDataFactory.create(
             SYS_CTX,
             resName,

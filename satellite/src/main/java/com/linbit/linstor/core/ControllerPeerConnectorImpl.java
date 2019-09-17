@@ -7,8 +7,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.NodeDataSatelliteFactory;
+import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -22,6 +21,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -41,7 +41,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
     private final AccessContext sysCtx;
 
-    private final NodeDataSatelliteFactory nodeDataFactory;
+    private final NodeSatelliteFactory nodeFactory;
 
     private final Provider<TransactionMgr> transMgrProvider;
     private final CommonSerializer commonSerializer;
@@ -64,7 +64,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext sysCtxRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
-        NodeDataSatelliteFactory nodeDataFactoryRef,
+        NodeSatelliteFactory nodeFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         CommonSerializer commonSerializerRef
     )
@@ -78,15 +78,15 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         errorReporter = errorReporterRef;
         sysCtx = sysCtxRef;
-        nodeDataFactory = nodeDataFactoryRef;
+        nodeFactory = nodeFactoryRef;
         transMgrProvider = transMgrProviderRef;
         commonSerializer = commonSerializerRef;
     }
 
     @Override
-    public NodeData getLocalNode()
+    public Node getLocalNode()
     {
-        return localNodeName == null ? null : (NodeData) nodesMap.get(localNodeName);
+        return localNodeName == null ? null : (Node) nodesMap.get(localNodeName);
     }
 
     @Override
@@ -124,17 +124,17 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             AccessContext tmpCtx = sysCtx.clone();
             tmpCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            NodeData localNode;
+            Node localNode;
             try
             {
                 localNodeName = new NodeName(nodeName);
 
-                localNode = nodeDataFactory.getInstanceSatellite(
+                localNode = nodeFactory.getInstanceSatellite(
                     sysCtx,
                     nodeUuid,
                     localNodeName,
-                    Node.NodeType.SATELLITE,
-                    new Node.NodeFlag[] {}
+                    Node.Type.SATELLITE,
+                    new Node.Flags[] {}
                 );
 
                 nodesMap.clear();

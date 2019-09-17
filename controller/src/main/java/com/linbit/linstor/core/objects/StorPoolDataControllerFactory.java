@@ -2,11 +2,6 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IllegalStorageDriverException;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.StorPoolData;
-import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -19,6 +14,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -63,7 +59,7 @@ public class StorPoolDataControllerFactory
             throw new LinStorDataAlreadyExistsException("The StorPool already exists");
         }
 
-        NodeType nodeType = node.getNodeType(accCtx);
+        Node.Type nodeType = node.getNodeType(accCtx);
         if (!nodeType.isDeviceProviderKindAllowed(deviceProviderKindRef))
         {
             throw new IllegalStorageDriverException(
@@ -90,7 +86,7 @@ public class StorPoolDataControllerFactory
         );
         driver.create(storPoolData);
         freeSpaceTrackerRef.add(accCtx, storPoolData);
-        ((NodeData) node).addStorPool(accCtx, storPoolData);
+        node.addStorPool(accCtx, storPoolData);
         ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
 
         return storPoolData;

@@ -1,13 +1,17 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
-import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPoolData;
@@ -15,8 +19,6 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -32,9 +34,6 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 public class ConnectionPropsTest extends GenericDbBase
 {
     private NodeName nodeName1;
@@ -49,8 +48,8 @@ public class ConnectionPropsTest extends GenericDbBase
     private Integer minor;
     private long volSize;
 
-    private NodeData node1;
-    private NodeData node2;
+    private Node node1;
+    private Node node2;
     private ResourceDefinitionData resDfn;
     private ResourceData res1;
     private ResourceData res2;
@@ -91,8 +90,8 @@ public class ConnectionPropsTest extends GenericDbBase
         minor = 12;
         volSize = 9001;
 
-        node1 = nodeDataFactory.create(SYS_CTX, nodeName1, NodeType.SATELLITE, null);
-        node2 = nodeDataFactory.create(SYS_CTX, nodeName2, NodeType.SATELLITE, null);
+        node1 = nodeFactory.create(SYS_CTX, nodeName1, Node.Type.SATELLITE, null);
+        node2 = nodeFactory.create(SYS_CTX, nodeName2, Node.Type.SATELLITE, null);
 
         dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
 

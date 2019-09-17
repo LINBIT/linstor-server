@@ -18,7 +18,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeConnectionDataFactory;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -85,8 +85,8 @@ class CtrlNodeConnectionApiCallHandler
 
         try
         {
-            NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
-            NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
+            Node node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
+            Node node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
 
             NodeConnectionData nodeConn = createNodeConn(node1, node2);
 
@@ -201,7 +201,7 @@ class CtrlNodeConnectionApiCallHandler
         return responses;
     }
 
-    private NodeConnectionData createNodeConn(NodeData node1, NodeData node2)
+    private NodeConnectionData createNodeConn(Node node1, Node node2)
     {
         NodeConnectionData nodeConnection;
         try
@@ -236,8 +236,8 @@ class CtrlNodeConnectionApiCallHandler
 
     private NodeConnectionData loadNodeConn(String nodeName1, String nodeName2, boolean failIfNull)
     {
-        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
-        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
+        Node node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
+        Node node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
 
         NodeConnectionData nodeConn;
         try
@@ -302,7 +302,7 @@ class CtrlNodeConnectionApiCallHandler
         return responses;
     }
 
-    public static String getNodeConnectionDescription(NodeData node1, NodeData node2)
+    public static String getNodeConnectionDescription(Node node1, Node node2)
     {
         return getNodeConnectionDescription(node1.getName().displayValue, node2.getName().displayValue);
     }
@@ -312,7 +312,7 @@ class CtrlNodeConnectionApiCallHandler
         return "Node connection between " + nodeName1Str + " and " + nodeName2Str;
     }
 
-    public static String getNodeConnectionDescriptionInline(NodeData node1, NodeData node2)
+    public static String getNodeConnectionDescriptionInline(Node node1, Node node2)
     {
         return getNodeConnectionDescriptionInline(node1.getName().displayValue, node2.getName().displayValue);
     }

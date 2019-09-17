@@ -69,7 +69,7 @@ public class NetInterfaceDataFactory
             transMgrProvider
         );
         driver.create(netData);
-        ((NodeData) node).addNetInterface(accCtx, netData);
+        ((Node) node).addNetInterface(accCtx, netData);
 
         return netData;
     }
@@ -107,7 +107,7 @@ public class NetInterfaceDataFactory
                     transObjFactory,
                     transMgrProvider
                 );
-                ((NodeData) node).addNetInterface(accCtx, netData);
+                ((Node) node).addNetInterface(accCtx, netData);
             }
         }
         catch (Exception exc)

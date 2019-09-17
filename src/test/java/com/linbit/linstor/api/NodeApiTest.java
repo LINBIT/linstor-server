@@ -9,8 +9,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessType;
@@ -40,8 +39,8 @@ public class NodeApiTest extends ApiTestBase
     @Inject private Provider<CtrlNodeCrtApiCallHandler> nodeCrtApiCallHandlerProvider;
 
     private NodeName testNodeName;
-    private NodeType testNodeType;
-    private NodeData testNode;
+    private Node.Type testNodeType;
+    private Node testNode;
 
     private boolean inScope = false;
 
@@ -52,7 +51,7 @@ public class NodeApiTest extends ApiTestBase
     {
         super();
         testNodeName = new NodeName("TestController");
-        testNodeType = NodeType.CONTROLLER;
+        testNodeType = Node.Type.CONTROLLER;
     }
 
     @Before
@@ -60,7 +59,7 @@ public class NodeApiTest extends ApiTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        testNode = nodeDataFactory.create(
+        testNode = nodeFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testNodeName,
             testNodeType,

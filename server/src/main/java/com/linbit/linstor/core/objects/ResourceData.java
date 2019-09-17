@@ -335,7 +335,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-            ((NodeData) assgNode).removeResource(accCtx, this);
+            ((Node) assgNode).removeResource(accCtx, this);
             ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
 
             // preventing ConcurrentModificationException

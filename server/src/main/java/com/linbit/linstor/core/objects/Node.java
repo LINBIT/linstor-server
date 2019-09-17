@@ -1,22 +1,44 @@
 package com.linbit.linstor.core.objects;
 
+import static java.util.stream.Collectors.toList;
+
+import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.NodePojo;
+import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsAccess;
+import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
-import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
+
+import javax.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,117 +47,796 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import reactor.core.publisher.FluxSink;
 
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Node>, ProtectedObject
+public class Node extends BaseTransactionObject
+    implements DbgInstanceUuid, Comparable<Node>, ProtectedObject
 {
-    UUID getUuid();
+    public static interface InitMaps
+    {
+        Map<ResourceName, Resource> getRscMap();
+        Map<SnapshotDefinition.Key, Snapshot> getSnapshotMap();
+        Map<NetInterfaceName, NetInterface> getNetIfMap();
+        Map<StorPoolName, StorPool> getStorPoolMap();
+        Map<NodeName, NodeConnection> getNodeConnMap();
+    }
 
-    NodeName getName();
+    // Object identifier
+    private final UUID objId;
 
-    NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName)
-        throws AccessDeniedException;
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
 
-    Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
-        throws AccessDeniedException;
+    // Node name
+    private final NodeName clNodeName;
 
-    Stream<NetInterface> streamNetInterfaces(AccessContext accCtx)
-        throws AccessDeniedException;
+    // State flags
+    private final StateFlags<Flags> flags;
 
-    Resource getResource(AccessContext accCtx, ResourceName name)
-        throws AccessDeniedException;
+    // Node type
+    private final TransactionSimpleObject<Node, Type> nodeType;
 
-    void addResource(AccessContext accCtx, Resource resRef)
-        throws AccessDeniedException;
+    // List of resources assigned to this cluster node
+    private final TransactionMap<ResourceName, Resource> resourceMap;
 
-    NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
-        throws AccessDeniedException;
+    // List of snapshots on this cluster node
+    private final TransactionMap<SnapshotDefinition.Key, Snapshot> snapshotMap;
 
-    void setNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
-        throws AccessDeniedException;
+    // List of network interfaces used for replication on this cluster node
+    private final TransactionMap<NetInterfaceName, NetInterface> netInterfaceMap;
 
-    void removeNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
-        throws AccessDeniedException;
+    // List of storage pools
+    private final TransactionMap<StorPoolName, StorPool> storPoolMap;
 
-    int getResourceCount();
+    // Map to the other endpoint of a node connection (this is NOT necessarily the source!)
+    private final TransactionMap<NodeName, NodeConnection> nodeConnections;
 
-    Iterator<Resource> iterateResources(AccessContext accCtx)
-        throws AccessDeniedException;
+    // Access controls for this object
+    private final ObjectProtection objProt;
 
-    Stream<Resource> streamResources(AccessContext accCtx)
-        throws AccessDeniedException;
+    // Properties container for this node
+    private final Props nodeProps;
 
-    void addSnapshot(AccessContext accCtx, Snapshot snapshot)
-        throws AccessDeniedException;
+    private final NodeDatabaseDriver dbDriver;
 
-    void removeSnapshot(SnapshotData snapshotData);
+    private transient Peer peer;
 
-    boolean hasSnapshots(AccessContext accCtx)
-        throws AccessDeniedException;
+    private transient TransactionSimpleObject<Node, NetInterface> activeStltConn;
 
-    Collection<Snapshot> getInProgressSnapshots(AccessContext accCtx)
-        throws AccessDeniedException;
+    private final TransactionSimpleObject<Node, Boolean> deleted;
 
-    Collection<Snapshot> getSnapshots(AccessContext accCtx)
-        throws AccessDeniedException;
+    private FluxSink<Boolean> initialConnectSink;
 
-    void copyStorPoolMap(AccessContext accCtx, Map<? super StorPoolName, ? super StorPool> dstMap)
-        throws AccessDeniedException;
+    Node(
+        UUID uuidRef,
+        ObjectProtection objProtRef,
+        NodeName nameRef,
+        Type type,
+        long initialFlags,
+        NodeDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<? extends TransactionMgr> transMgrProvider
+    )
+        throws DatabaseException
+    {
+        this(
+            uuidRef,
+            objProtRef,
+            nameRef,
+            type,
+            initialFlags,
+            dbDriverRef,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>(),
+            new TreeMap<>(),
+            new TreeMap<>(),
+            new TreeMap<>(),
+            new TreeMap<>()
+        );
 
-    int getStorPoolCount();
+    }
 
-    StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
-        throws AccessDeniedException;
+    Node(
+        UUID uuidRef,
+        ObjectProtection objProtRef,
+        NodeName nameRef,
+        Type type,
+        long initialFlags,
+        NodeDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<? extends TransactionMgr> transMgrProvider,
+        Map<ResourceName, Resource> rscMapRef,
+        Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
+        Map<NetInterfaceName, NetInterface> netIfMapRef,
+        Map<StorPoolName, StorPool> storPoolMapRef,
+        Map<NodeName, NodeConnection> nodeConnMapRef
+    )
+        throws DatabaseException
+    {
+        super(transMgrProvider);
+        ErrorCheck.ctorNotNull(Node.class, NodeName.class, nameRef);
 
-    Iterator<StorPool> iterateStorPools(AccessContext accCtx)
-        throws AccessDeniedException;
+        objId = uuidRef;
+        dbgInstanceId = UUID.randomUUID();
+        objProt = objProtRef;
+        clNodeName = nameRef;
+        dbDriver = dbDriverRef;
 
-    Stream<StorPool> streamStorPools(AccessContext accCtx)
-        throws AccessDeniedException;
+        resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
+        snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);
+        netInterfaceMap = transObjFactory.createTransactionMap(netIfMapRef, null);
+        storPoolMap = transObjFactory.createTransactionMap(storPoolMapRef, null);
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
-    Props getProps(AccessContext accCtx)
-        throws AccessDeniedException;
+        nodeProps = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(nameRef)
+        );
+        nodeConnections = transObjFactory.createTransactionMap(nodeConnMapRef, null);
 
-    NodeType getNodeType(AccessContext accCtx)
-        throws AccessDeniedException;
+        flags = transObjFactory.createStateFlagsImpl(
+            objProt,
+            this,
+            Flags.class,
+            dbDriver.getStateFlagPersistence(),
+            initialFlags
+        );
 
-    boolean hasNodeType(AccessContext accCtx, NodeType reqType)
-        throws AccessDeniedException;
+        // Default to creating an AUXILIARY type node
+        Type checkedType = type == null ? Type.AUXILIARY : type;
+        nodeType = transObjFactory.createTransactionSimpleObject(
+            this, checkedType, dbDriver.getNodeTypeDriver()
+        );
 
-    StateFlags<NodeFlag> getFlags();
+        activeStltConn = transObjFactory.createTransactionSimpleObject(this, null, null);
+        transObjs = Arrays.<TransactionObject>asList(
+            flags,
+            nodeType,
+            objProt,
+            resourceMap,
+            snapshotMap,
+            netInterfaceMap,
+            storPoolMap,
+            nodeConnections,
+            nodeProps,
+            deleted, activeStltConn
+        );
+    }
 
-    void setPeer(AccessContext accCtx, Peer peer) throws AccessDeniedException;
 
-    Peer getPeer(AccessContext accCtx) throws AccessDeniedException;
+    @Override
+    public int compareTo(Node node)
+    {
+        return this.getName().compareTo(node.getName());
+    }
 
-    NetInterface getActiveStltConn(AccessContext accCtx)
-        throws AccessDeniedException;
+    public UUID getUuid()
+    {
+        checkDeleted();
+        return objId;
+    }
 
-    void setActiveStltConn(AccessContext accCtx, NetInterface netIf)
-        throws AccessDeniedException, DatabaseException;
+    public NodeName getName()
+    {
+        checkDeleted();
+        return clNodeName;
+    }
+
+    public Resource getResource(AccessContext accCtx, ResourceName resName)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return resourceMap.get(resName);
+    }
+
+
+    public NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        otherNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return nodeConnections.get(otherNode.getName());
+    }
+
+
+    public void setNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        Node sourceNode = nodeConnection.getSourceNode(accCtx);
+        Node targetNode = nodeConnection.getTargetNode(accCtx);
+
+        sourceNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        if (sourceNode == this)
+        {
+            nodeConnections.put(targetNode.getName(), nodeConnection);
+        }
+        else
+        {
+            nodeConnections.put(sourceNode.getName(), nodeConnection);
+        }
+    }
+
+
+    public void removeNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+
+        Node sourceNode = nodeConnection.getSourceNode(accCtx);
+        Node targetNode = nodeConnection.getTargetNode(accCtx);
+
+        sourceNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        if (sourceNode == this)
+        {
+            nodeConnections.remove(targetNode.getName());
+        }
+        else
+        {
+            nodeConnections.remove(sourceNode.getName());
+        }
+    }
+
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        checkDeleted();
+        return objProt;
+    }
+
+
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, objProt, nodeProps);
+    }
+
+
+    public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        resourceMap.put(resRef.getDefinition().getName(), resRef);
+    }
+
+    void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        resourceMap.remove(resRef.getDefinition().getName());
+    }
+
+
+    public int getResourceCount()
+    {
+        return resourceMap.size();
+    }
+
+
+    public Iterator<Resource> iterateResources(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return resourceMap.values().iterator();
+    }
+
+
+    public Stream<Resource> streamResources(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return resourceMap.values().stream();
+    }
+
+
+    public void addSnapshot(AccessContext accCtx, Snapshot snapshot)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        snapshotMap.put(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()), snapshot);
+    }
+
+
+    public void removeSnapshot(SnapshotData snapshotData)
+    {
+        checkDeleted();
+        snapshotMap.remove(new SnapshotDefinition.Key(snapshotData.getSnapshotDefinition()));
+    }
+
+
+    public boolean hasSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return !snapshotMap.isEmpty();
+    }
+
+
+    public Collection<Snapshot> getInProgressSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        List<Snapshot> inProgressSnapshots = new ArrayList<>();
+        for (Snapshot snapshot : snapshotMap.values())
+        {
+            if (snapshot.getSnapshotDefinition().getInProgress(accCtx))
+            {
+                inProgressSnapshots.add(snapshot);
+            }
+        }
+        return inProgressSnapshots;
+    }
+
+
+    public Collection<Snapshot> getSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return snapshotMap.values();
+    }
+
+
+    public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return netInterfaceMap.get(niName);
+    }
+
+    public void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        netInterfaceMap.put(niRef.getName(), niRef);
+    }
+
+    void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        netInterfaceMap.remove(niRef.getName());
+
+        if (Objects.equals(activeStltConn.get(), niRef))
+        {
+            removeActiveSatelliteconnection(accCtx);
+        }
+    }
+
+
+    public Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return netInterfaceMap.values().iterator();
+    }
+
+
+    public Stream<NetInterface> streamNetInterfaces(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return netInterfaceMap.values().stream();
+    }
+
+
+    public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return storPoolMap.get(poolName);
+    }
+
+    public void addStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        storPoolMap.put(pool.getName(), pool);
+    }
+
+    public void removeStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        storPoolMap.remove(pool.getName());
+    }
+
+
+    public int getStorPoolCount()
+    {
+        return storPoolMap.size();
+    }
+
+
+    public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return storPoolMap.values().iterator();
+    }
+
+
+    public Stream<StorPool> streamStorPools(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return storPoolMap.values().stream();
+    }
+
+
+    public void copyStorPoolMap(AccessContext accCtx, Map<? super StorPoolName, ? super StorPool> dstMap)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        dstMap.putAll(storPoolMap);
+    }
+
+    public Type setNodeType(AccessContext accCtx, Type newType)
+        throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        return nodeType.set(newType);
+    }
+
+
+    public Type getNodeType(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return nodeType.get();
+    }
+
+
+    public boolean hasNodeType(AccessContext accCtx, Type reqType)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        long reqFlags = reqType.getFlagValue();
+        return (nodeType.get().getFlagValue() & reqFlags) == reqFlags;
+    }
+
+
+    public StateFlags<Flags> getFlags()
+    {
+        checkDeleted();
+        return flags;
+    }
+
+
+    public Peer getPeer(AccessContext accCtx) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return peer;
+    }
+
+
+    public void setPeer(AccessContext accCtx, Peer peerRef) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        peer = peerRef;
+    }
+
+
+    public NetInterface getActiveStltConn(AccessContext accCtx) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return activeStltConn.get();
+    }
+
+
+    public void setActiveStltConn(AccessContext accCtx, NetInterface satelliteConnectionRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        activeStltConn.set(satelliteConnectionRef);
+        try
+        {
+            nodeProps.setProp(
+                ApiConsts.KEY_CUR_STLT_CONN_NAME,
+                satelliteConnectionRef.getName().displayValue
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    void removeActiveSatelliteconnection(AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        activeStltConn.set(null);
+        try
+        {
+            nodeProps.removeProp(ApiConsts.KEY_CUR_STLT_CONN_NAME);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        getFlags().enableFlags(accCtx, Flags.DELETE);
+    }
+
+
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        if (!deleted.get())
+        {
+            objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+            if (!resourceMap.isEmpty())
+            {
+                throw new ImplementationError("Node with resources cannot be deleted");
+            }
+
+            if (!snapshotMap.isEmpty())
+            {
+                throw new ImplementationError("Node with snapshots cannot be deleted");
+            }
+
+            // Shallow copy the collection because elements may be removed from it
+            ArrayList<NodeConnection> values = new ArrayList<>(nodeConnections.values());
+            for (NodeConnection nodeConn : values)
+            {
+                nodeConn.delete(accCtx);
+            }
+
+            // Shallow copy the collection because elements may be removed from it
+            ArrayList<StorPool> storPools = new ArrayList<>(storPoolMap.values());
+            for (StorPool storPool : storPools)
+            {
+                storPool.delete(accCtx);
+            }
+
+            nodeProps.delete();
+            objProt.delete(accCtx);
+
+            activateTransMgr();
+            dbDriver.delete(this);
+
+            deleted.set(true);
+        }
+    }
+
+
+    public boolean isDeleted()
+    {
+        return deleted.get();
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted.get())
+        {
+            throw new AccessToDeletedDataException("Access to deleted node");
+        }
+    }
+
+
+    public NodeApi getApiData(
+        AccessContext accCtx,
+        Long fullSyncId,
+        Long updateId
+    )
+        throws AccessDeniedException
+    {
+        List<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
+        for (NetInterface ni : streamNetInterfaces(accCtx).collect(toList()))
+        {
+            netInterfaces.add(ni.getApiData(accCtx));
+        }
+
+        List<NodeConnPojo> nodeConns = new ArrayList<>();
+        for (NodeConnection nodeConn : nodeConnections.values())
+        {
+            Node otherNode;
+
+            Node sourceNode = nodeConn.getSourceNode(accCtx);
+            if (this.equals(sourceNode))
+            {
+                otherNode = nodeConn.getTargetNode(accCtx);
+            }
+            else
+            {
+                otherNode = sourceNode;
+            }
+            nodeConns.add(
+                new NodeConnPojo(
+                    nodeConn.getUuid(),
+                    otherNode.getUuid(),
+                    otherNode.getName().displayValue,
+                    otherNode.getNodeType(accCtx).name(),
+                    otherNode.getFlags().getFlagsBits(accCtx),
+                    nodeConn.getProps(accCtx).map()
+                )
+            );
+        }
+
+        Peer tmpPeer = getPeer(accCtx);
+
+        return new NodePojo(
+            getUuid(),
+            getName().getDisplayName(),
+            getNodeType(accCtx).name(),
+            getFlags().getFlagsBits(accCtx),
+            netInterfaces,
+            activeStltConn.get() != null ? activeStltConn.get().getApiData(accCtx) : null,
+            nodeConns,
+            getProps(accCtx).map(),
+            tmpPeer != null ? tmpPeer.getConnectionStatus() : Peer.ConnectionStatus.UNKNOWN,
+            fullSyncId,
+            updateId
+        );
+    }
+
+
+    @Override
+    public String toString()
+    {
+        return "Node: '" + clNodeName + "'";
+    }
+
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
+    }
+
+    public void registerInitialConnectSink(FluxSink<Boolean> fluxSinkRef)
+    {
+        if (initialConnectSink != null)
+        {
+            throw new ImplementationError("Only one initialConnectSink allowed");
+        }
+        initialConnectSink = fluxSinkRef;
+    }
 
     /**
      * @return true iff this is the initial connection attempt
      */
-    boolean connectionEstablished();
+    public boolean connectionEstablished()
+    {
+        boolean ret = false;
+        if (initialConnectSink != null)
+        {
+            initialConnectSink.next(true);
+            initialConnectSink.complete();
+            initialConnectSink = null;
+            ret = true;
+        }
+        return ret;
+    }
 
-    void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, DatabaseException;
+    public enum Flags implements com.linbit.linstor.stateflags.Flags
+    {
+        DELETE(1L),
+        QIGNORE(0x10000L);
 
-    void delete(AccessContext accCtx)
-        throws AccessDeniedException, DatabaseException;
+        public final long flagValue;
 
-    boolean isDeleted();
+        Flags(long value)
+        {
+            flagValue = value;
+        }
 
-    NodeApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
-        throws AccessDeniedException;
+        @Override
+        public long getFlagValue()
+        {
+            return flagValue;
+        }
 
-    enum NodeType implements Flags
+        public static Flags[] valuesOfIgnoreCase(String string)
+        {
+            Flags[] flags;
+            if (string == null)
+            {
+                flags = new Flags[0];
+            }
+            else
+            {
+                String[] split = string.split(",");
+                flags = new Flags[split.length];
+
+                for (int idx = 0; idx < split.length; idx++)
+                {
+                    flags[idx] = Flags.valueOf(split[idx].toUpperCase().trim());
+                }
+            }
+            return flags;
+        }
+
+        public static Flags[] restoreFlags(long nodeFlags)
+        {
+            List<Flags> flagList = new ArrayList<>();
+            for (Flags flag : Flags.values())
+            {
+                if ((nodeFlags & flag.flagValue) == flag.flagValue)
+                {
+                    flagList.add(flag);
+                }
+            }
+            return flagList.toArray(new Flags[flagList.size()]);
+        }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(Flags.class, flagsMask);
+        }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(Flags.class, listFlags);
+        }
+    }
+
+    public enum Type implements com.linbit.linstor.stateflags.Flags
     {
         CONTROLLER(1, Collections.emptyList()),
         SATELLITE(
@@ -175,7 +876,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         private final int flag;
         private final List<DeviceProviderKind> allowedKindClasses;
 
-        NodeType(int flagValue, List<DeviceProviderKind> allowedKindClassesRef)
+        Type(int flagValue, List<DeviceProviderKind> allowedKindClassesRef)
         {
 
             flag = flagValue;
@@ -188,10 +889,10 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
             return flag;
         }
 
-        public static NodeType getByValue(long value)
+        public static Type getByValue(long value)
         {
-            NodeType ret = null;
-            for (NodeType type : NodeType.values())
+            Type ret = null;
+            for (Type type : Type.values())
             {
                 if (type.flag == value)
                 {
@@ -202,13 +903,13 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
             return ret;
         }
 
-        public static NodeType valueOfIgnoreCase(String string, NodeType defaultValue)
+        public static Type valueOfIgnoreCase(String string, Type defaultValue)
             throws IllegalArgumentException
         {
-            NodeType ret = defaultValue;
+            Type ret = defaultValue;
             if (string != null)
             {
-                NodeType val = valueOf(string.toUpperCase());
+                Type val = valueOf(string.toUpperCase());
                 if (val != null)
                 {
                     ret = val;
@@ -226,88 +927,5 @@ public interface Node extends TransactionObject, DbgInstanceUuid, Comparable<Nod
         {
             return allowedKindClasses.contains(kindRef);
         }
-    }
-
-    enum NodeFlag implements Flags
-    {
-        DELETE(1L),
-        QIGNORE(0x10000L);
-
-        public final long flagValue;
-
-        NodeFlag(long value)
-        {
-            flagValue = value;
-        }
-
-        @Override
-        public long getFlagValue()
-        {
-            return flagValue;
-        }
-
-        public static NodeFlag[] valuesOfIgnoreCase(String string)
-        {
-            NodeFlag[] flags;
-            if (string == null)
-            {
-                flags = new NodeFlag[0];
-            }
-            else
-            {
-                String[] split = string.split(",");
-                flags = new NodeFlag[split.length];
-
-                for (int idx = 0; idx < split.length; idx++)
-                {
-                    flags[idx] = NodeFlag.valueOf(split[idx].toUpperCase().trim());
-                }
-            }
-            return flags;
-        }
-
-        public static NodeFlag[] restoreFlags(long nodeFlags)
-        {
-            List<NodeFlag> flagList = new ArrayList<>();
-            for (NodeFlag flag : NodeFlag.values())
-            {
-                if ((nodeFlags & flag.flagValue) == flag.flagValue)
-                {
-                    flagList.add(flag);
-                }
-            }
-            return flagList.toArray(new NodeFlag[flagList.size()]);
-        }
-
-        public static List<String> toStringList(long flagsMask)
-        {
-            return FlagsHelper.toStringList(NodeFlag.class, flagsMask);
-        }
-
-        public static long fromStringList(List<String> listFlags)
-        {
-            return FlagsHelper.fromStringList(NodeFlag.class, listFlags);
-        }
-    }
-
-    interface NodeApi
-    {
-        String getName();
-        String getType();
-        UUID getUuid();
-        Peer.ConnectionStatus connectionStatus();
-        Map<String, String> getProps();
-        long getFlags();
-        List<NetInterface.NetInterfaceApi> getNetInterfaces();
-        NetInterfaceApi getActiveStltConn();
-    }
-
-    interface InitMaps
-    {
-        Map<ResourceName, Resource> getRscMap();
-        Map<SnapshotDefinition.Key, Snapshot> getSnapshotMap();
-        Map<NetInterfaceName, NetInterface> getNetIfMap();
-        Map<StorPoolName, StorPool> getStorPoolMap();
-        Map<NodeName, NodeConnection> getNodeConnMap();
     }
 }

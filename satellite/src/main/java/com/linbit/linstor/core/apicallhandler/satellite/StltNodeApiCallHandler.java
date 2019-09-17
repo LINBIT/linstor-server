@@ -16,17 +16,19 @@ import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionData;
 import com.linbit.linstor.core.objects.NodeConnectionDataFactory;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.NodeDataSatelliteFactory;
+import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.util.HashSet;
 import java.util.List;
@@ -37,11 +39,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
 @Singleton
 class StltNodeApiCallHandler
 {
@@ -51,7 +48,7 @@ class StltNodeApiCallHandler
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
     private final CoreModule.NodesMap nodesMap;
-    private final NodeDataSatelliteFactory nodeDataFactory;
+    private final NodeSatelliteFactory nodeFactory;
     private final NodeConnectionDataFactory nodeConnectionDataFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final ControllerPeerConnector controllerPeerConnector;
@@ -65,7 +62,7 @@ class StltNodeApiCallHandler
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         CoreModule.NodesMap nodesMapRef,
-        NodeDataSatelliteFactory nodeDataFactoryRef,
+        NodeSatelliteFactory nodeFactoryRef,
         NodeConnectionDataFactory nodeConnectionDataFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         ControllerPeerConnector controllerPeerConnectorRef,
@@ -78,7 +75,7 @@ class StltNodeApiCallHandler
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
         nodesMap = nodesMapRef;
-        nodeDataFactory = nodeDataFactoryRef;
+        nodeFactory = nodeFactoryRef;
         nodeConnectionDataFactory = nodeConnectionDataFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         controllerPeerConnector = controllerPeerConnectorRef;
@@ -126,23 +123,23 @@ class StltNodeApiCallHandler
         }
     }
 
-    public NodeData applyChanges(NodePojo nodePojo)
+    public Node applyChanges(NodePojo nodePojo)
     {
         Lock reConfReadLock = reconfigurationLock.readLock();
         Lock nodesWriteLock = nodesMapLock.writeLock();
 
-        NodeData node = null;
+        Node node = null;
         try
         {
             reConfReadLock.lock();
             nodesWriteLock.lock();
 
-            NodeFlag[] nodeFlags = NodeFlag.restoreFlags(nodePojo.getNodeFlags());
-            node = nodeDataFactory.getInstanceSatellite(
+            Node.Flags[] nodeFlags = Node.Flags.restoreFlags(nodePojo.getNodeFlags());
+            node = nodeFactory.getInstanceSatellite(
                 apiCtx,
                 nodePojo.getUuid(),
                 new NodeName(nodePojo.getName()),
-                NodeType.valueOf(nodePojo.getType()),
+                Node.Type.valueOf(nodePojo.getType()),
                 nodeFlags
             );
             checkUuid(node, nodePojo);
@@ -155,12 +152,12 @@ class StltNodeApiCallHandler
 
             for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
             {
-                NodeData otherNode = nodeDataFactory.getInstanceSatellite(
+                Node otherNode = nodeFactory.getInstanceSatellite(
                     apiCtx,
                     nodeConn.getOtherNodeUuid(),
                     new NodeName(nodeConn.getOtherNodeName()),
-                    NodeType.valueOf(nodeConn.getOtherNodeType()),
-                    NodeFlag.restoreFlags(nodeConn.getOtherNodeFlags())
+                    Node.Type.valueOf(nodeConn.getOtherNodeType()),
+                    Node.Flags.restoreFlags(nodeConn.getOtherNodeFlags())
                 );
                 NodeConnectionData nodeCon = nodeConnectionDataFactory.getInstanceSatellite(
                     apiCtx,
@@ -220,7 +217,7 @@ class StltNodeApiCallHandler
         return node;
     }
 
-    private void checkUuid(NodeData node, NodePojo nodePojo) throws DivergentUuidsException
+    private void checkUuid(Node node, NodePojo nodePojo) throws DivergentUuidsException
     {
         checkUuid(
             node.getUuid(),

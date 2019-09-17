@@ -16,7 +16,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
@@ -177,7 +177,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             {
                 for (String nodeNameStr : nodeNameStrs)
                 {
-                    NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+                    Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
                     restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node));
                 }
             }

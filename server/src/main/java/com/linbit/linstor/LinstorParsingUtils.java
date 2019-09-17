@@ -16,11 +16,12 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,26 +54,29 @@ public class LinstorParsingUtils
         return nodeName;
     }
 
-    public static NodeType asNodeType(String nodeTypeStr)
+    public static Node.Type asNodeType(String nodeTypeStr)
     {
-        NodeType nodeType;
+        Node.Type nodeType;
         try
         {
-            nodeType = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
+            nodeType = Node.Type.valueOfIgnoreCase(nodeTypeStr, Node.Type.SATELLITE);
         }
         catch (IllegalArgumentException illegalArgExc)
         {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(
-                    ApiConsts.FAIL_INVLD_NODE_TYPE,
-                    "The specified node type '" + nodeTypeStr + "' is invalid."
-                )
-                .setCorrection("Valid node types are:\n" +
-                    NodeType.CONTROLLER.name() + "\n" +
-                    NodeType.SATELLITE.name() + "\n" +
-                    NodeType.COMBINED.name() + "\n" +
-                    NodeType.AUXILIARY.name() + "\n")
-                .build(),
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_INVLD_NODE_TYPE,
+                        "The specified node type '" + nodeTypeStr + "' is invalid."
+                    )
+                    .setCorrection(
+                        "Valid node types are:\n" +
+                            Node.Type.CONTROLLER.name() + "\n" +
+                            Node.Type.SATELLITE.name() + "\n" +
+                            Node.Type.COMBINED.name() + "\n" +
+                            Node.Type.AUXILIARY.name() + "\n"
+                    )
+                    .build(),
                 illegalArgExc
             );
         }

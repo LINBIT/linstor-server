@@ -3,10 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionFactory;
@@ -16,11 +13,12 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.UUID;
 
-public class NodeDataSatelliteFactory
+public class NodeSatelliteFactory
 {
-    private final NodeDataDatabaseDriver dbDriver;
+    private final NodeDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final PropsContainerFactory propsContainerFactory;
@@ -30,8 +28,8 @@ public class NodeDataSatelliteFactory
     private final CoreModule.NodesMap nodesMap;
 
     @Inject
-    public NodeDataSatelliteFactory(
-        NodeDataDatabaseDriver dbDriverRef,
+    public NodeSatelliteFactory(
+        NodeDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         StorPoolDataSatelliteFactory storPoolDataFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -51,23 +49,23 @@ public class NodeDataSatelliteFactory
         nodesMap = nodesMapRef;
     }
 
-    public NodeData getInstanceSatellite(
+    public Node getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
         NodeName nameRef,
-        Node.NodeType typeRef,
-        Node.NodeFlag[] flags
+        Node.Type typeRef,
+        Node.Flags[] flags
     )
         throws ImplementationError
     {
-        NodeData nodeData = null;
+        Node node = null;
         try
         {
             // we should have system context anyways, so we skip the objProt check
-            nodeData = (NodeData) nodesMap.get(nameRef);
-            if (nodeData == null)
+            node = nodesMap.get(nameRef);
+            if (node == null)
             {
-                nodeData = new NodeData(
+                node = new Node(
                     uuid,
                     objectProtectionFactory.getInstance(
                         accCtx,
@@ -91,6 +89,6 @@ public class NodeDataSatelliteFactory
                 exc
             );
         }
-        return nodeData;
+        return node;
     }
 }

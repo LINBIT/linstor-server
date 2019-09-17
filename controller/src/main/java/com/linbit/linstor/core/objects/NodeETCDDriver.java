@@ -68,7 +68,7 @@ public class NodeETCDDriver extends NodeDbDriver
      * See javadoc of {@link NodeETCDDriver} above for more details
      */
     @Override
-    public void delete(NodeData node) throws DatabaseException
+    public void delete(Node node) throws DatabaseException
     {
         // DO NOT USE ranged delete here! see java-doc of this class
 

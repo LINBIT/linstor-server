@@ -7,20 +7,20 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import java.util.Iterator;
-
 import static com.linbit.linstor.numberpool.NumberPoolModule.LAYER_RSC_ID_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.SF_TARGET_PORT_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.TCP_PORT_POOL;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import java.util.Iterator;
 
 public class DbNumberPoolInitializer
 {
@@ -81,7 +81,7 @@ public class DbNumberPoolInitializer
         {
             for (Node curNode : nodesMap.values())
             {
-                if (NodeType.SWORDFISH_TARGET.equals(curNode.getNodeType(initCtx)))
+                if (Node.Type.SWORDFISH_TARGET.equals(curNode.getNodeType(initCtx)))
                 {
                     try
                     {

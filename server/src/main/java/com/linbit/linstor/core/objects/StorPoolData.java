@@ -203,7 +203,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             node.getObjProt().requireAccess(accCtx, AccessType.USE);
             storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-            ((NodeData) node).removeStorPool(accCtx, this);
+            ((Node) node).removeStorPool(accCtx, this);
             ((StorPoolDefinitionData) storPoolDef).removeStorPool(accCtx, this);
             freeSpaceTracker.remove(accCtx, this);
 

@@ -16,7 +16,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
@@ -84,19 +84,19 @@ public class CtrlApiDataLoader
         resourceGroupRepository = resourceGroupRepositoryRef;
     }
 
-    public final NodeData loadNode(String nodeNameStr, boolean failIfNull)
+    public final Node loadNode(String nodeNameStr, boolean failIfNull)
     {
         return loadNode(LinstorParsingUtils.asNodeName(nodeNameStr), failIfNull);
     }
 
-    public final NodeData loadNode(NodeName nodeName, boolean failIfNull)
+    public final Node loadNode(NodeName nodeName, boolean failIfNull)
     {
         return loadNode(nodeName, failIfNull, false);
     }
 
-    public final NodeData loadNode(NodeName nodeName, boolean failIfNull, boolean ignoreSearchDomain)
+    public final Node loadNode(NodeName nodeName, boolean failIfNull, boolean ignoreSearchDomain)
     {
-        NodeData node;
+        Node node;
         NodeName fqdnName = nodeName;
         try
         {

@@ -97,7 +97,7 @@ public class ResourceDefinitionDataGenericDbDriverTest extends GenericDbBase
         dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
 
         node1Id = new NodeId(1);
-        node1 = nodeDataFactory.create(
+        node1 = nodeFactory.create(
             SYS_CTX,
             nodeName,
             null,

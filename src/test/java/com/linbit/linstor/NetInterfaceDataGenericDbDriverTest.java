@@ -7,7 +7,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterfaceDataGenericDbDriver;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.types.LsIpAddress;
@@ -74,7 +74,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
             TBL_COL_COUNT_NODE_NET_INTERFACES
         );
 
-        node = nodeDataFactory.create(
+        node = nodeFactory.create(
             SYS_CTX,
             nodeName,
             null, // types
@@ -189,7 +189,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     public void testLoadGetInstanceTwice() throws Exception
     {
         dbDriver.create(niData);
-        ((NodeData) node).addNetInterface(SYS_CTX, niData);
+        ((Node) node).addNetInterface(SYS_CTX, niData);
 
         NetInterfaceData netData1 = (NetInterfaceData) node.getNetInterface(SYS_CTX, niName);
 
@@ -322,7 +322,7 @@ public class NetInterfaceDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         dbDriver.create(niData);
-        ((NodeData) node).addNetInterface(SYS_CTX, niData);
+        ((Node) node).addNetInterface(SYS_CTX, niData);
 
         netInterfaceDataFactory.create(
             SYS_CTX,

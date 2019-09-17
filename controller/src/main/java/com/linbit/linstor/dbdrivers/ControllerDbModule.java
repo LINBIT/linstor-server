@@ -43,7 +43,7 @@ import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
@@ -119,7 +119,7 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
 
-                bind(NodeDataDatabaseDriver.class).to(NodeDbDriver.class);
+                bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
 
                 bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
@@ -139,7 +139,7 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(PropsConDatabaseDriver.class).to(PropsConETCDDriver.class);
 
-                bind(NodeDataDatabaseDriver.class).to(NodeETCDDriver.class);
+                bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
 
                 bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerETCDDriver.class);
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerETCDDriver.class);

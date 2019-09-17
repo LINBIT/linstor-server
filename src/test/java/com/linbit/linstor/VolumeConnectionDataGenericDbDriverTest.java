@@ -1,13 +1,19 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
@@ -18,8 +24,6 @@ import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -40,11 +44,6 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VLM_CON_DFNS =
@@ -64,8 +63,8 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 
     private java.util.UUID uuid;
 
-    private NodeData nodeSrc;
-    private NodeData nodeDst;
+    private Node nodeSrc;
+    private Node nodeDst;
     private ResourceDefinitionData resDfn;
     private VolumeDefinitionData volDfn;
     private ResourceData resSrc;
@@ -111,9 +110,9 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
-        nodeSrc = nodeDataFactory.create(SYS_CTX, sourceName, NodeType.SATELLITE, null);
+        nodeSrc = nodeFactory.create(SYS_CTX, sourceName, Node.Type.SATELLITE, null);
         nodesMap.put(nodeSrc.getName(), nodeSrc);
-        nodeDst = nodeDataFactory.create(SYS_CTX, targetName, NodeType.SATELLITE, null);
+        nodeDst = nodeFactory.create(SYS_CTX, targetName, Node.Type.SATELLITE, null);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         resDfn = resourceDefinitionDataFactory.create(

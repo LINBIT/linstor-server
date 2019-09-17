@@ -25,34 +25,31 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.NodeDataSatelliteFactory;
+import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDataSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
 import com.linbit.linstor.core.objects.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDataFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataSatelliteFactory;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
-import com.linbit.linstor.core.objects.Volume.VlmApi;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -69,6 +66,7 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -95,7 +93,7 @@ class StltRscApiCallHandler
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
     private final VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
-    private final NodeDataSatelliteFactory nodeDataFactory;
+    private final NodeSatelliteFactory nodeFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final ResourceDataSatelliteFactory resourceDataFactory;
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
@@ -121,7 +119,7 @@ class StltRscApiCallHandler
         StorPoolDefinitionMap storPoolDfnMapRef,
         ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactoryRef,
         VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactoryRef,
-        NodeDataSatelliteFactory nodeDataFactoryRef,
+        NodeSatelliteFactory nodeFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         ResourceDataSatelliteFactory resourceDataFactoryRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
@@ -146,7 +144,7 @@ class StltRscApiCallHandler
         storPoolDfnMap = storPoolDfnMapRef;
         resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
-        nodeDataFactory = nodeDataFactoryRef;
+        nodeFactory = nodeFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         resourceDataFactory = resourceDataFactoryRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
@@ -288,7 +286,7 @@ class StltRscApiCallHandler
                 }
             }
 
-            final List<NodeData> nodesToRegister = new ArrayList<>();
+            final List<Node> nodesToRegister = new ArrayList<>();
             final Set<Resource.Key> createdRscSet = new TreeSet<>();
             final Set<Resource.Key> updatedRscSet = new TreeSet<>();
             Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
@@ -297,7 +295,7 @@ class StltRscApiCallHandler
                 // our rscDfn is empty
                 // that means, just create everything we need
 
-                NodeData localNode = controllerPeerConnector.getLocalNode();
+                Node localNode = controllerPeerConnector.getLocalNode();
 
                 localRsc = createRsc(
                     rscRawData.getLocalRscUuid(),
@@ -314,12 +312,12 @@ class StltRscApiCallHandler
 
                 for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
                 {
-                    NodeData remoteNode = nodeDataFactory.getInstanceSatellite(
+                    Node remoteNode = nodeFactory.getInstanceSatellite(
                         apiCtx,
                         otherRscRaw.getNodeUuid(),
                         new NodeName(otherRscRaw.getNodeName()),
-                        NodeType.valueOf(otherRscRaw.getNodeType()),
-                        NodeFlag.restoreFlags(otherRscRaw.getNodeFlags())
+                        Node.Type.valueOf(otherRscRaw.getNodeType()),
+                        Node.Flags.restoreFlags(otherRscRaw.getNodeFlags())
                     );
                     checkUuid(remoteNode, otherRscRaw);
                     remoteNode.getProps(apiCtx).map().putAll(otherRscRaw.getNodeProps());
@@ -458,15 +456,15 @@ class StltRscApiCallHandler
                         // controller sent us a resource that we don't know
                         // create its node
                         NodeName nodeName = new NodeName(otherRsc.getNodeName());
-                        NodeData remoteNode = (NodeData) nodesMap.get(nodeName);
+                        Node remoteNode = nodesMap.get(nodeName);
                         if (remoteNode == null)
                         {
-                            remoteNode = nodeDataFactory.getInstanceSatellite(
+                            remoteNode = nodeFactory.getInstanceSatellite(
                                 apiCtx,
                                 otherRsc.getNodeUuid(),
                                 nodeName,
-                                NodeType.valueOf(otherRsc.getNodeType()),
-                                NodeFlag.restoreFlags(otherRsc.getNodeFlags())
+                                Node.Type.valueOf(otherRsc.getNodeType()),
+                                Node.Flags.restoreFlags(otherRsc.getNodeFlags())
                             );
 
                             // set node's netinterfaces
@@ -656,7 +654,7 @@ class StltRscApiCallHandler
 
     private ResourceData createRsc(
         UUID rscUuid,
-        NodeData node,
+        Node node,
         ResourceDefinitionData rscDfn,
         RscFlags[] flags,
         Map<String, String> rscProps,

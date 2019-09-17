@@ -24,19 +24,17 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
+import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.NodeDataControllerFactory;
+import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
@@ -58,6 +56,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +75,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final NodeDataControllerFactory nodeDataFactory;
+    private final NodeControllerFactory nodeFactory;
     private final NetInterfaceDataFactory netInterfaceDataFactory;
     private final NodeRepository nodeRepository;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -97,7 +96,7 @@ public class CtrlNodeApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        NodeDataControllerFactory nodeDataFactoryRef,
+        NodeControllerFactory nodeFactoryRef,
         NetInterfaceDataFactory netInterfaceDataFactoryRef,
         NodeRepository nodeRepositoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -117,7 +116,7 @@ public class CtrlNodeApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        nodeDataFactory = nodeDataFactoryRef;
+        nodeFactory = nodeFactoryRef;
         netInterfaceDataFactory = netInterfaceDataFactoryRef;
         nodeRepository = nodeRepositoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -132,7 +131,7 @@ public class CtrlNodeApiCallHandler
         scheduler = schedulerRef;
     }
 
-    NodeData createNodeImpl(
+    Node createNodeImpl(
         String nodeNameStr,
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
@@ -145,7 +144,7 @@ public class CtrlNodeApiCallHandler
         throws AccessDeniedException
     {
         requireNodesMapChangeAccess();
-        NodeData node = null;
+        Node node = null;
         if (netIfs.isEmpty())
         {
             // TODO for auxiliary nodes maybe no netif required?
@@ -155,7 +154,7 @@ public class CtrlNodeApiCallHandler
         {
             NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
 
-            NodeType type = LinstorParsingUtils.asNodeType(nodeTypeStr);
+            Node.Type type = LinstorParsingUtils.asNodeType(nodeTypeStr);
 
             node = createNode(nodeName, type);
 
@@ -245,7 +244,7 @@ public class CtrlNodeApiCallHandler
             while (retry)
             {
                 retry = false;
-                NodeData node = null;
+                Node node = null;
                 try
                 {
                     int sfTargetPort = sfTargetPortPool.autoAllocate();
@@ -262,7 +261,7 @@ public class CtrlNodeApiCallHandler
                     );
                     node = createNodeImpl(
                         nodeNameStr,
-                        NodeType.SWORDFISH_TARGET.name(),
+                        Node.Type.SWORDFISH_TARGET.name(),
                         netIfs,
                         propsMap,
                         responses,
@@ -360,7 +359,7 @@ public class CtrlNodeApiCallHandler
         {
             requireNodesMapChangeAccess();
             NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-            NodeData node = ctrlApiDataLoader.loadNode(nodeName, true);
+            Node node = ctrlApiDataLoader.loadNode(nodeName, true);
             if (nodeUuid != null && !nodeUuid.equals(node.getUuid()))
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -417,7 +416,7 @@ public class CtrlNodeApiCallHandler
         {
             for (String nodeStr : nodes)
             {
-                NodeData node = ctrlApiDataLoader.loadNode(new NodeName(nodeStr), true);
+                Node node = ctrlApiDataLoader.loadNode(new NodeName(nodeStr), true);
                 Peer peer = node.getPeer(apiCtx); // check for access
 
                 reconnectorTask.add(peer, false);
@@ -450,9 +449,9 @@ public class CtrlNodeApiCallHandler
         return responses;
     }
 
-    ArrayList<Node.NodeApi> listNodes()
+    ArrayList<NodeApi> listNodes()
     {
-        ArrayList<Node.NodeApi> nodes = new ArrayList<>();
+        ArrayList<NodeApi> nodes = new ArrayList<>();
         try
         {
             for (Node node : nodeRepository.getMapForView(peerAccCtx.get()).values())
@@ -477,16 +476,16 @@ public class CtrlNodeApiCallHandler
         return nodes;
     }
 
-    private NodeData createNode(NodeName nodeName, NodeType type)
+    private Node createNode(NodeName nodeName, Node.Type type)
     {
-        NodeData node;
+        Node node;
         try
         {
-            node = nodeDataFactory.create(
+            node = nodeFactory.create(
                 peerAccCtx.get(),
                 nodeName,
                 type,
-                new NodeFlag[0]
+                new Node.Flags[0]
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -587,9 +586,9 @@ public class CtrlNodeApiCallHandler
         return netIf;
     }
 
-    private void setNodeType(NodeData node, String nodeTypeStr)
+    private void setNodeType(Node node, String nodeTypeStr)
     {
-        NodeType nodeType = LinstorParsingUtils.asNodeType(nodeTypeStr);
+        Node.Type nodeType = LinstorParsingUtils.asNodeType(nodeTypeStr);
         try
         {
             if (!node.streamStorPools(apiCtx)
@@ -607,7 +606,7 @@ public class CtrlNodeApiCallHandler
                     .build()
                 );
             }
-            if (NodeType.SWORDFISH_TARGET.equals(nodeType) && node.streamNetInterfaces(apiCtx).count() != 1)
+            if (Node.Type.SWORDFISH_TARGET.equals(nodeType) && node.streamNetInterfaces(apiCtx).count() != 1)
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.entryBuilder(

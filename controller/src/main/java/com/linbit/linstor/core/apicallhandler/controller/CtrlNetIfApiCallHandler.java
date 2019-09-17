@@ -20,12 +20,10 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
@@ -44,6 +42,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -110,9 +109,9 @@ class CtrlNetIfApiCallHandler
 
         try
         {
-            NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+            Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
 
-            if (NodeType.SWORDFISH_TARGET.equals(node.getNodeType(apiCtx)))
+            if (Node.Type.SWORDFISH_TARGET.equals(node.getNodeType(apiCtx)))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
@@ -186,7 +185,7 @@ class CtrlNetIfApiCallHandler
         {
             NetInterface netIf = loadNetIf(nodeNameStr, netIfNameStr);
             Node node = netIf.getNode();
-            NodeType nodeType = netIf.getNode().getNodeType(apiCtx);
+            Node.Type nodeType = netIf.getNode().getNodeType(apiCtx);
             boolean isModifyingActiveStltConn =
                 netIf.getUuid().equals(node.getActiveStltConn(peerAccCtx.get()).getUuid());
 
@@ -195,7 +194,7 @@ class CtrlNetIfApiCallHandler
                 !isModifyingActiveStltConn && Boolean.TRUE.equals(setActive) ||
                 isModifyingActiveStltConn && (addressStr != null || stltPort != null && stltEncrType != null);
 
-            if (needsReconnect && NodeType.SWORDFISH_TARGET.equals(nodeType))
+            if (needsReconnect && Node.Type.SWORDFISH_TARGET.equals(nodeType))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.entryBuilder(
@@ -218,7 +217,7 @@ class CtrlNetIfApiCallHandler
                 boolean needsStartProc = false;
                 if (
                     oldPort != null && stltPort != oldPort.value &&
-                    NodeType.SWORDFISH_TARGET.equals(nodeType)
+                    Node.Type.SWORDFISH_TARGET.equals(nodeType)
                 )
                 {
                     sfTargetProcessMgr.stopProcess(netIf.getNode());
@@ -369,7 +368,7 @@ class CtrlNetIfApiCallHandler
     }
 
     private NetInterfaceData createNetIf(
-        NodeData node,
+        Node node,
         NetInterfaceName netIfName,
         String address,
         Integer stltConnPort,

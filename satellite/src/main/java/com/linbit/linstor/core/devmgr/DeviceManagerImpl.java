@@ -29,7 +29,7 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -758,7 +758,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             storPoolWrLock.lock();
 
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            NodeData localNode = controllerPeerConnector.getLocalNode();
+            Node localNode = controllerPeerConnector.getLocalNode();
 
             deviceMgrScope.enter();
             TransactionMgrUtil.seedTransactionMgr(deviceMgrScope, transMgr);

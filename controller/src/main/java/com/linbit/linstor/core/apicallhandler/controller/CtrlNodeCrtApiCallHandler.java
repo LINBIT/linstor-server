@@ -19,9 +19,8 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerOffline;
@@ -113,7 +112,7 @@ public class CtrlNodeCrtApiCallHandler
      *  </li>
      *  <li>{@link ApiConsts#FAIL_MISSING_STLT_CONN} when the list of satellite connection apis is empty</li>
      *  <li>{@link ApiConsts#FAIL_INVLD_NODE_NAME} when the {@link NodeName} is invalid</li>
-     *  <li>{@link ApiConsts#FAIL_INVLD_NODE_TYPE} when the {@link NodeType} is invalid</li>
+     *  <li>{@link ApiConsts#FAIL_INVLD_NODE_TYPE} when the {@link Type} is invalid</li>
      *  <li>{@link ApiConsts#CREATED} when the node was created successfully </li>
      * </ul>
      *
@@ -154,7 +153,7 @@ public class CtrlNodeCrtApiCallHandler
         Flux<ApiCallRc> flux;
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        NodeData node;
+        Node node;
         try
         {
             node = ctrlNodeApiCallHandler.createNodeImpl(
@@ -170,9 +169,9 @@ public class CtrlNodeCrtApiCallHandler
 
             flux = Flux.<ApiCallRc>just(responses);
 
-            NodeType nodeType = node.getNodeType(apiCtx);
-            if (!NodeType.CONTROLLER.equals(nodeType) &&
-                !NodeType.AUXILIARY.equals(nodeType))
+            Node.Type nodeType = node.getNodeType(apiCtx);
+            if (!Node.Type.CONTROLLER.equals(nodeType) &&
+                !Node.Type.AUXILIARY.equals(nodeType))
             {
                 flux = flux
                     .concatWith(
@@ -200,7 +199,7 @@ public class CtrlNodeCrtApiCallHandler
         return flux;
     }
 
-    private Flux<ApiCallRc> processConnectingResponse(NodeData node, boolean connected)
+    private Flux<ApiCallRc> processConnectingResponse(Node node, boolean connected)
     {
         Flux<ApiCallRc> connectedFlux;
         if (connected)

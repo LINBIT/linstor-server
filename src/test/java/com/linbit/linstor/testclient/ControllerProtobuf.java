@@ -126,7 +126,7 @@ public class ControllerProtobuf extends ProtobufIO
         );
     }
 
-    public void sendNodeData(
+    public void sendNode(
         final Node node,
         final Collection<Node> relatedNodes,
         final long fullSyncTimestamp,
@@ -139,7 +139,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_NODE,
                 getNextApiCallId()
             )
-            .nodeData(
+            .node(
                 node,
                 relatedNodes,
                 fullSyncTimestamp,
@@ -149,7 +149,7 @@ public class ControllerProtobuf extends ProtobufIO
         );
     }
 
-    public void sendDeletedNodeData(
+    public void sendDeletedNode(
         final String nodeNameStr,
         final long fullSyncId,
         final long updateId
@@ -161,7 +161,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_NODE_DELETED,
                 getNextApiCallId()
             )
-            .deletedNodeData(nodeNameStr, fullSyncId, updateId)
+            .deletedNode(nodeNameStr, fullSyncId, updateId)
             .build()
         );
     }

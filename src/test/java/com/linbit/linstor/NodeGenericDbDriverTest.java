@@ -1,5 +1,10 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -8,17 +13,20 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnectionData;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.NodeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPool;
@@ -27,20 +35,13 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.Node.InitMaps;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.propscon.Props;
@@ -58,15 +59,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-public class NodeDataGenericDbDriverTest extends GenericDbBase
+public class NodeGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_NODES =
         " SELECT " + NODE_NAME + ", " + NODE_DSP_NAME + ", " + NODE_FLAGS + ", " + NODE_TYPE +
@@ -95,15 +92,15 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
 
     private final NodeName nodeName;
 
-    @Inject private NodeDataGenericDbDriver dbDriver;
+    @Inject private NodeGenericDbDriver dbDriver;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
     private long initialFlags;
-    private NodeType initialType;
-    private NodeData node;
+    private Node.Type initialType;
+    private Node node;
     private ResourceGroupData dfltRscGrp;
 
-    public NodeDataGenericDbDriverTest() throws Exception
+    public NodeGenericDbDriverTest() throws Exception
     {
         nodeName = new NodeName("TestNodeName");
     }
@@ -126,9 +123,9 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             ObjectProtection.buildPath(nodeName),
             true
         );
-        initialFlags = NodeFlag.QIGNORE.flagValue;
-        initialType = NodeType.AUXILIARY;
-        node = TestFactory.createNodeData(
+        initialFlags = Node.Flags.QIGNORE.flagValue;
+        initialType = Node.Type.AUXILIARY;
+        node = TestFactory.createNode(
             uuid,
             objProt,
             nodeName,
@@ -155,8 +152,8 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         assertTrue(resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(nodeName.displayValue, resultSet.getString(NODE_DSP_NAME));
-        assertEquals(NodeFlag.QIGNORE.flagValue, resultSet.getLong(NODE_FLAGS));
-        assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
+        assertEquals(Node.Flags.QIGNORE.flagValue, resultSet.getLong(NODE_FLAGS));
+        assertEquals(Node.Type.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
 
         assertFalse(resultSet.next());
         resultSet.close();
@@ -167,7 +164,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        nodeDataFactory.create(
+        nodeFactory.create(
             SYS_CTX,
             nodeName,
             null,
@@ -177,11 +174,11 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
 
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
-        assertTrue("Database did not persist NodeData instance", resultSet.next());
+        assertTrue("Database did not persist Node instance", resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(nodeName.displayValue, resultSet.getString(NODE_DSP_NAME));
         assertEquals(0, resultSet.getLong(NODE_FLAGS));
-        assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
+        assertEquals(Node.Type.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
         assertFalse("Database contains too many datasets", resultSet.next());
 
         resultSet.close();
@@ -226,24 +223,24 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testUpdateFlags() throws Exception
     {
-        insertNode(uuid, nodeName, 0, NodeType.AUXILIARY);
+        insertNode(uuid, nodeName, 0, Node.Type.AUXILIARY);
         commit();
 
-        Iterator<NodeData> nodeIt = dbDriver.loadAll().keySet().iterator();
-        NodeData loaded = nodeIt.next();
+        Iterator<Node> nodeIt = dbDriver.loadAll().keySet().iterator();
+        Node loaded = nodeIt.next();
         assertFalse(nodeIt.hasNext());
 
         assertNotNull(loaded);
-        loaded.getFlags().enableFlags(SYS_CTX, NodeFlag.DELETE);
+        loaded.getFlags().enableFlags(SYS_CTX, Node.Flags.DELETE);
         commit();
 
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
-        assertTrue("Database deleted NodeData", resultSet.next());
+        assertTrue("Database deleted Node", resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(nodeName.displayValue, resultSet.getString(NODE_DSP_NAME));
-        assertEquals(NodeFlag.DELETE.flagValue, resultSet.getLong(NODE_FLAGS));
-        assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
+        assertEquals(Node.Flags.DELETE.flagValue, resultSet.getLong(NODE_FLAGS));
+        assertEquals(Node.Type.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
         assertFalse("Database contains too many datasets", resultSet.next());
 
         resultSet.close();
@@ -336,11 +333,11 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
 
         {
             // node1
-            NodeData node1 = nodeDataFactory.create(
+            Node node1 = nodeFactory.create(
                 SYS_CTX,
                 nodeName,
-                NodeType.COMBINED,
-                new NodeFlag[] {NodeFlag.QIGNORE}
+                Node.Type.COMBINED,
+                new Node.Flags[] {Node.Flags.QIGNORE}
             );
             node1.getProps(SYS_CTX).setProp(node1TestKey, node1TestValue);
             node1Uuid = node1.getUuid();
@@ -359,10 +356,10 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             netIfUuid = netIf.getUuid();
 
             // node2
-            NodeData node2 = nodeDataFactory.create(
+            Node node2 = nodeFactory.create(
                 SYS_CTX,
                 nodeName2,
-                NodeType.COMBINED,
+                Node.Type.COMBINED,
                 null
             );
 
@@ -504,12 +501,12 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             commit();
         }
 
-        NodeData loadedNode = nodeRepository.get(SYS_CTX, nodeName);
-        NodeData loadedNode2 = nodeRepository.get(SYS_CTX, nodeName2);
+        Node loadedNode = nodeRepository.get(SYS_CTX, nodeName);
+        Node loadedNode2 = nodeRepository.get(SYS_CTX, nodeName2);
 
         assertNotNull(loadedNode);
 
-        assertEquals(NodeFlag.QIGNORE.flagValue, loadedNode.getFlags().getFlagsBits(SYS_CTX));
+        assertEquals(Node.Flags.QIGNORE.flagValue, loadedNode.getFlags().getFlagsBits(SYS_CTX));
         assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
         {
             NetInterface netIf = loadedNode.getNetInterface(SYS_CTX, netName);
@@ -524,7 +521,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
             assertEquals(netIfUuid, netIf.getUuid());
         }
 
-        assertEquals(NodeType.COMBINED, loadedNode.getNodeType(SYS_CTX));
+        assertEquals(Node.Type.COMBINED, loadedNode.getNodeType(SYS_CTX));
         assertNotNull(loadedNode.getObjProt());
         {
             Props nodeProps = loadedNode.getProps(SYS_CTX);
@@ -694,18 +691,18 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
     {
         dbDriver.create(node);
         NodeName nodeName2 = new NodeName("NodeName2");
-        NodeData node2 = nodeDataFactory.create(
+        Node node2 = nodeFactory.create(
             SYS_CTX,
             nodeName2,
-            NodeType.CONTROLLER,
+            Node.Type.CONTROLLER,
             null
         );
         nodesMap.put(nodeName, node);
         nodesMap.put(nodeName2, node2);
-        Map<NodeData, InitMaps> allNodes = dbDriver.loadAll();
+        Map<Node, Node.InitMaps> allNodes = dbDriver.loadAll();
         assertEquals(2, allNodes.size());
 
-        Iterator<NodeData> loadedNodesIterator = allNodes.keySet().iterator();
+        Iterator<Node> loadedNodesIterator = allNodes.keySet().iterator();
         Node loadedNode0 = loadedNodesIterator.next();
         Node loadedNode1 = loadedNodesIterator.next();
 
@@ -732,7 +729,7 @@ public class NodeDataGenericDbDriverTest extends GenericDbBase
         dbDriver.create(node);
         nodesMap.put(nodeName, node);
 
-        nodeDataFactory.create(SYS_CTX, nodeName, initialType, null);
+        nodeFactory.create(SYS_CTX, nodeName, initialType, null);
     }
 
 }

@@ -7,9 +7,8 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.objects.NetInterface;
-import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
@@ -23,6 +22,7 @@ import com.linbit.linstor.tasks.ReconnectorTask;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -58,11 +58,11 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     {
         try
         {
-            NodeType nodeType = node.getNodeType(accCtx);
+            Node.Type nodeType = node.getNodeType(accCtx);
             if (
-                nodeType.equals(NodeType.SATELLITE) ||
-                nodeType.equals(NodeType.COMBINED) ||
-                nodeType.equals(NodeType.SWORDFISH_TARGET)
+                nodeType.equals(Node.Type.SATELLITE) ||
+                nodeType.equals(Node.Type.COMBINED) ||
+                nodeType.equals(Node.Type.SWORDFISH_TARGET)
             )
             {
                 NetInterface activeStltConn = node.getActiveStltConn(accCtx);

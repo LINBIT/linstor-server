@@ -19,6 +19,8 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.utils.StringUtils;
 
+import javax.inject.Provider;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +31,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,8 +38,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import javax.inject.Provider;
+import java.util.stream.Collectors;
 
 /**
  * Hierarchical properties container
@@ -2203,7 +2203,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
-     * PropsCon-path for NodeData
+     * PropsCon-path for Node
      */
     public static String buildPath(NodeName nodeName)
     {

@@ -90,7 +90,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         while (rscIter.hasNext())
         {
             Resource rsc = rscIter.next();
-            if (!rsc.getAssignedNode().getFlags().isSet(apiCtx, Node.NodeFlag.DELETE) &&
+            if (
+                !rsc.getAssignedNode().getFlags().isSet(apiCtx, Node.Flags.DELETE) &&
                 !rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.RscDfnFlags.DELETE) &&
                 rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DELETE))
             {

@@ -8,7 +8,6 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -66,8 +65,8 @@ public class TestFactory
      */
     public static NodeConnectionData createNodeConnectionData(
         UUID uuidRef,
-        NodeData nodeSrcRef,
-        NodeData nodeDstRef,
+        Node nodeSrcRef,
+        Node nodeDstRef,
         NodeConnectionDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -87,23 +86,23 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link NodeData} without persisting it to the database
+     * Creates a new {@link Node} without persisting it to the database
      * @throws DatabaseException
      */
-    public static NodeData createNodeData(
+    public static Node createNode(
         UUID uuidRef,
         ObjectProtection objProtRef,
         NodeName nodeNameRef,
-        NodeType initialTypeRef,
+        Node.Type initialTypeRef,
         long initialFlagsRef,
-        NodeDataGenericDbDriver dbDriverRef,
+        NodeGenericDbDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {
-        return new NodeData(
+        return new Node(
             uuidRef,
             objProtRef,
             nodeNameRef,
@@ -156,7 +155,7 @@ public class TestFactory
         UUID resUuidRef,
         ObjectProtection objProtRef,
         ResourceDefinitionData resDfnRef,
-        NodeData nodeRef,
+        Node nodeRef,
         long initFlagsRef,
         ResourceDataGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -230,7 +229,7 @@ public class TestFactory
      */
     public static StorPoolData createStorPoolData(
         UUID uuidRef,
-        NodeData nodeRef,
+        Node nodeRef,
         StorPoolDefinitionData spddRef,
         DeviceProviderKind lvmRef,
         FreeSpaceMgr fsmRef,

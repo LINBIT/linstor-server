@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
@@ -79,7 +79,7 @@ public class StorPoolDataSatelliteFactory
                     transMgrProvider,
                     new TreeMap<>()
                 );
-                ((NodeData) node).addStorPool(accCtx, storPoolData);
+                ((Node) node).addStorPool(accCtx, storPoolData);
                 ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
             }
         }

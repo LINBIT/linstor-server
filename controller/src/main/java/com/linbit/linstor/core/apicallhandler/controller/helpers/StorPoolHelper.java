@@ -13,7 +13,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.objects.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDataControllerFactory;
@@ -60,7 +60,7 @@ public class StorPoolHelper
         String freeSpaceMgrNameStr
     )
     {
-        NodeData node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         StorPoolDefinitionData storPoolDef = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, false);
 
         if (!isDeviceProviderKindAllowed(node, deviceProviderKindRef))
@@ -134,7 +134,7 @@ public class StorPoolHelper
     }
 
     private boolean isDeviceProviderKindAllowed(
-        NodeData node,
+        Node node,
         DeviceProviderKind kind
     )
     {

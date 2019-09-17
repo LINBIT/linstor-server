@@ -1,26 +1,27 @@
 package com.linbit.linstor.api;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.objects.NodeData;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
-import com.linbit.linstor.core.objects.Node.NodeFlag;
-import com.linbit.linstor.core.objects.Node.NodeType;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource.RscApi;
 import com.linbit.linstor.core.objects.Resource.RscWithPayloadApi;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.VlmApiData;
-import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
+import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.common.RscOuterClass.Rsc;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.security.GenericDbBase;
@@ -28,6 +29,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,23 +48,20 @@ import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-
 @RunWith(JUnitParamsRunner.class)
 public class RscApiTest extends ApiTestBase
 {
     @Inject private CtrlRscCrtApiCallHandler rscCrtApiCallHandler;
 
     private NodeName testControllerName;
-    private NodeType testControllerType;
-    private NodeFlag[] testControllerFlags;
-    private NodeData testControllerNode;
+    private Node.Type testControllerType;
+    private Node.Flags[] testControllerFlags;
+    private Node testControllerNode;
 
     private NodeName testSatelliteName;
-    private NodeType testSatelliteType;
-    private NodeFlag[] testSatelliteFlags;
-    private NodeData testSatelliteNode;
+    private Node.Type testSatelliteType;
+    private Node.Flags[] testSatelliteFlags;
+    private Node testSatelliteNode;
 
     private ResourceName testRscName;
     private Integer testRscDfnPort;
@@ -82,11 +81,11 @@ public class RscApiTest extends ApiTestBase
     {
         super();
         testControllerName = new NodeName("TestController");
-        testControllerType = NodeType.CONTROLLER;
+        testControllerType = Node.Type.CONTROLLER;
         testControllerFlags = null;
 
         testSatelliteName = new NodeName("TestSatellite");
-        testSatelliteType = NodeType.SATELLITE;
+        testSatelliteType = Node.Type.SATELLITE;
         testSatelliteFlags = null;
 
         testRscName = new ResourceName("TestRsc");
@@ -101,7 +100,7 @@ public class RscApiTest extends ApiTestBase
     public void setUp() throws Exception
     {
         super.setUp();
-        testControllerNode = nodeDataFactory.create(
+        testControllerNode = nodeFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testControllerName,
             testControllerType,
@@ -110,7 +109,7 @@ public class RscApiTest extends ApiTestBase
         nodesMap.put(testControllerName, testControllerNode);
 
         Mockito.when(mockSatellite.apiCall(anyString(), any())).thenReturn(Flux.empty());
-        testSatelliteNode = nodeDataFactory.create(
+        testSatelliteNode = nodeFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testSatelliteName,
             testSatelliteType,

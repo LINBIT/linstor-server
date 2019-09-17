@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -22,7 +24,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -36,11 +37,14 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import reactor.core.publisher.Flux;
+
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,9 +55,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
-import static com.linbit.utils.StringUtils.firstLetterCaps;
-import static java.util.stream.Collectors.toList;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionListener
@@ -105,7 +107,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         while (rscIter.hasNext())
         {
             Resource rsc = rscIter.next();
-            if (rsc.getAssignedNode().getFlags().isSet(apiCtx, Node.NodeFlag.DELETE))
+            if (rsc.getAssignedNode().getFlags().isSet(apiCtx, Node.Flags.DELETE))
             {
                 NodeName nodeName = rsc.getAssignedNode().getName();
                 fluxes.add(updateSatellites(nodeName, rscDfn.getName()));
@@ -147,7 +149,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
         requireNodesMapChangeAccess();
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
-        NodeData node = ctrlApiDataLoader.loadNode(nodeName, false);
+        Node node = ctrlApiDataLoader.loadNode(nodeName, false);
         if (node == null)
         {
             responseConverter.addWithDetail(responses, context, ApiCallRcImpl
@@ -500,7 +502,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         return stream;
     }
 
-    private void markDeleted(NodeData node)
+    private void markDeleted(Node node)
     {
         try
         {

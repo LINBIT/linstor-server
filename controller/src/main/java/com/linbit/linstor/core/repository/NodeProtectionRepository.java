@@ -3,7 +3,7 @@ package com.linbit.linstor.core.repository;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -53,7 +53,7 @@ public class NodeProtectionRepository implements NodeRepository
     }
 
     @Override
-    public NodeData get(
+    public Node get(
         AccessContext accCtx,
         NodeName nodeName
     )
@@ -61,7 +61,7 @@ public class NodeProtectionRepository implements NodeRepository
     {
         checkProtSet();
         nodesMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (NodeData) nodesMap.get(nodeName);
+        return (Node) nodesMap.get(nodeName);
     }
 
     @Override

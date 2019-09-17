@@ -6,7 +6,6 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -60,13 +59,13 @@ public class SwordfishTargetProcessManager
     public void initialize()
     {
         nodesMap.values().stream()
-            .filter(node -> getNodeType(node).equals(NodeType.SWORDFISH_TARGET))
+            .filter(node -> getNodeType(node).equals(Node.Type.SWORDFISH_TARGET))
             .forEach(this::sneakyStart);
     }
 
-    private NodeType getNodeType(Node node)
+    private Node.Type getNodeType(Node node)
     {
-        NodeType type;
+        Node.Type type;
         try
         {
             type = node.getNodeType(sysCtx);

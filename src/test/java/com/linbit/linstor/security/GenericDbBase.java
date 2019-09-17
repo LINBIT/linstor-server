@@ -29,9 +29,8 @@ import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.core.objects.NetInterfaceDataFactory;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node.NodeType;
 import com.linbit.linstor.core.objects.NodeConnectionDataFactory;
-import com.linbit.linstor.core.objects.NodeDataControllerFactory;
+import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDataControllerFactory;
@@ -180,7 +179,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @Inject protected ObjectProtectionFactory objectProtectionFactory;
     @Inject protected PropsContainerFactory propsContainerFactory;
-    @Inject protected NodeDataControllerFactory nodeDataFactory;
+    @Inject protected NodeControllerFactory nodeFactory;
     @Inject protected ResourceConnectionDataControllerFactory resourceConnectionDataFactory;
     @Inject protected ResourceDataControllerFactory resourceDataFactory;
     @Inject protected StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
@@ -484,12 +483,12 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         java.util.UUID uuid,
         NodeName nodeName,
         long flags,
-        NodeType... types
+        Node.Type... types
     )
         throws SQLException
     {
         long typeMask = 0;
-        for (NodeType type : types)
+        for (Node.Type type : types)
         {
             typeMask |= type.getFlagValue();
         }

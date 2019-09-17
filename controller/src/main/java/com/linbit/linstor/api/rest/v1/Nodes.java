@@ -10,8 +10,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandl
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.objects.NetInterface;
-import com.linbit.linstor.core.objects.Node;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -90,7 +90,7 @@ public class Nodes
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_NODE, request), () ->
         {
-            Stream<Node.NodeApi> nodeApiStream = ctrlApiCallHandler.listNode().stream()
+            Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNode().stream()
                 .filter(nodeApi -> nodeName == null || nodeApi.getName().equalsIgnoreCase(nodeName));
 
             if (limit > 0)
@@ -229,8 +229,8 @@ public class Nodes
     {
         return requestHelper.doInScope(ApiConsts.API_LST_NET_IF, request, () ->
         {
-            List<Node.NodeApi> nodes =  ctrlApiCallHandler.listNode();
-            Optional<Node.NodeApi> optNode = nodes.stream()
+            List<NodeApi> nodes =  ctrlApiCallHandler.listNode();
+            Optional<NodeApi> optNode = nodes.stream()
                 .filter(nodeApi -> nodeApi.getName().equalsIgnoreCase(nodeName))
                 .findFirst();
 

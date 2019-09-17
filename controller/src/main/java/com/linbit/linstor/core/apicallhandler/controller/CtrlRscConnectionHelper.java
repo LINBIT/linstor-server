@@ -10,7 +10,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.objects.NodeData;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
@@ -76,8 +76,8 @@ class CtrlRscConnectionHelper
         ResourceConnection.RscConnFlags[] initFlags
     )
     {
-        NodeData node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
-        NodeData node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
+        Node node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
+        Node node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
         Resource rsc1 = ctrlApiDataLoader.loadRsc(node1.getName(), rscName, false);
