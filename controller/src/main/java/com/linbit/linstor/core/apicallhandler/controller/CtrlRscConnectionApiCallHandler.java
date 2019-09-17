@@ -138,7 +138,7 @@ class CtrlRscConnectionApiCallHandler
                     if (key.matches(ApiConsts.NAMESPC_CONNECTION_PATHS + "/.*/.*"))
                     {
                         // check node name is correct
-                        int lastSlash = key.lastIndexOf("/");
+                        int lastSlash = key.lastIndexOf('/');
                         String nodeName = key.substring(lastSlash + 1);
                         if (!nodeName.equals(nodeName1) && !nodeName.equals(nodeName2))
                         {

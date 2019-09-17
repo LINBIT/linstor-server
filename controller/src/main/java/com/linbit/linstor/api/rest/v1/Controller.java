@@ -68,7 +68,7 @@ public class Controller
     {
         String key = fullKey;
         String namespace = "";
-        int lastSlash = fullKey.lastIndexOf("/");
+        int lastSlash = fullKey.lastIndexOf('/');
         if (lastSlash > 0)
         {
             namespace = fullKey.substring(0, lastSlash);

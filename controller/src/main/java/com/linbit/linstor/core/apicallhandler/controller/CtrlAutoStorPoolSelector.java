@@ -336,7 +336,7 @@ public class CtrlAutoStorPoolSelector
     {
         String key = propEntry;
         String value = null;
-        int equalPos = propEntry.indexOf("=");
+        int equalPos = propEntry.indexOf('=');
         if (equalPos >= 0)
         {
             key = propEntry.substring(0, equalPos);

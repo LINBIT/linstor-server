@@ -45,7 +45,7 @@ public class DatabaseInfo
         else
         if (dbUpperName.startsWith(ID_DB2))
         {
-            int splitIdx = dbUpperName.indexOf("/");
+            int splitIdx = dbUpperName.indexOf('/');
             if (splitIdx != -1)
             {
                 String db2Id = dbUpperName.substring(0, splitIdx);

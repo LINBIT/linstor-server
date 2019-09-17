@@ -58,11 +58,11 @@ public class Migration_00_Init extends EtcdMigration
             ))
             .put(putReq(
                 tblKey(SecIdentities.ID_ENABLED, identityName),
-                Boolean.valueOf(idEnabled).toString().toUpperCase()
+                Boolean.toString(idEnabled).toUpperCase()
             ))
             .put(putReq(
                 tblKey(SecIdentities.ID_LOCKED, identityName),
-                Boolean.valueOf(idLocked).toString().toUpperCase()
+                Boolean.toString(idLocked).toUpperCase()
             ));
     }
 
@@ -84,7 +84,7 @@ public class Migration_00_Init extends EtcdMigration
             ))
             .put(putReq(
                 tblKey(SecTypes.TYPE_ENABLED, typeName),
-                Boolean.valueOf(typeEnabled).toString().toUpperCase()
+                Boolean.toString(typeEnabled).toUpperCase()
             )
         );
     }
@@ -113,11 +113,10 @@ public class Migration_00_Init extends EtcdMigration
             ))
             .put(putReq(
                 tblKey(SecRoles.ROLE_ENABLED, roleName),
-                Boolean.valueOf(roleEnabled).toString().toUpperCase()
+                Boolean.toString(roleEnabled).toUpperCase()
             ))
-            .put(putReq(
-                tblKey(SecRoles.ROLE_PRIVILEGES, roleName),
-                Integer.valueOf(rolePrivileges).toString()
+            .put(putReq(tblKey(SecRoles.ROLE_PRIVILEGES, roleName),
+                Integer.toString(rolePrivileges)
             ));
     }
 
@@ -150,9 +149,8 @@ public class Migration_00_Init extends EtcdMigration
                 tblKey(SecAccessTypes.ACCESS_TYPE_NAME, accessTypeName ),
                 accessTypeName
             ))
-            .put(putReq(
-                tblKey(SecAccessTypes.ACCESS_TYPE_VALUE, accessTypeName),
-                Integer.valueOf(accessTypeValue).toString()
+            .put(putReq(tblKey(SecAccessTypes.ACCESS_TYPE_VALUE, accessTypeName),
+                Integer.toString(accessTypeValue)
             ));
     }
 
@@ -173,9 +171,8 @@ public class Migration_00_Init extends EtcdMigration
                 tblKey(SecTypeRules.TYPE_NAME, pk),
                 typeName
             ))
-            .put(putReq(
-                tblKey(SecTypeRules.ACCESS_TYPE, pk),
-                Integer.valueOf(accessType).toString()
+            .put(putReq(tblKey(SecTypeRules.ACCESS_TYPE, pk),
+                Integer.toString(accessType)
             ));
     }
 
@@ -242,9 +239,8 @@ public class Migration_00_Init extends EtcdMigration
                 tblKey(SecAclMap.ROLE_NAME, pk),
                 roleName
             ))
-            .put(putReq(
-                tblKey(SecAclMap.ACCESS_TYPE, pk),
-                Integer.valueOf(accessType).toString()
+            .put(putReq(tblKey(SecAclMap.ACCESS_TYPE, pk),
+                Integer.toString(accessType)
             ));
     }
 

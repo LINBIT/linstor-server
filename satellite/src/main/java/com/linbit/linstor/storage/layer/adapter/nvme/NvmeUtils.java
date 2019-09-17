@@ -482,7 +482,7 @@ public class NvmeUtils
                         String nvmeNamespacePart = nvmePathParts[nvmePathParts.length - 2];
 
                         final int nvmeVlmIdx = Integer.parseInt(
-                            nvmeNamespacePart.substring(nvmeNamespacePart.lastIndexOf("n") + 1)
+                            nvmeNamespacePart.substring(nvmeNamespacePart.lastIndexOf('n') + 1)
                         );
 
                         nvmeVlmData.setDevicePath("/dev/nvme" + nvmeRscIdx + "n" + nvmeVlmIdx);
