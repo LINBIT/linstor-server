@@ -8,7 +8,7 @@ import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.objects.KeyValueStore.InitMaps;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDatabaseDriver
+public class KeyValueStoreGenericDbDriver implements KeyValueStoreDatabaseDriver
 {
     private static final String TBL_KVS = DbConstants.TBL_KEY_VALUE_STORE;
 
@@ -63,7 +63,7 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public KeyValueStoreDataGenericDbDriver(
+    public KeyValueStoreGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
@@ -82,7 +82,7 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(KeyValueStoreData kvs) throws DatabaseException
+    public void create(KeyValueStore kvs) throws DatabaseException
     {
         errorReporter.logTrace("Creating KeyValueStore %s", getId(kvs));
         try (PreparedStatement stmt = getConnection().prepareStatement(KVS_INSERT))
@@ -100,17 +100,17 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
         }
     }
 
-    public Map<KeyValueStoreData, InitMaps> loadAll() throws DatabaseException
+    public Map<KeyValueStore, KeyValueStore.InitMaps> loadAll() throws DatabaseException
     {
         errorReporter.logTrace("Loading all KeyValueStores");
-        Map<KeyValueStoreData, InitMaps> kvsMap = new TreeMap<>();
+        Map<KeyValueStore, KeyValueStore.InitMaps> kvsMap = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(KVS_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    Pair<KeyValueStoreData, InitMaps> pair = restoreKvs(resultSet);
+                    Pair<KeyValueStore, KeyValueStore.InitMaps> pair = restoreKvs(resultSet);
                     kvsMap.put(pair.objA, pair.objB);
                 }
             }
@@ -123,10 +123,10 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
         return kvsMap;
     }
 
-    private Pair<KeyValueStoreData, InitMaps> restoreKvs(ResultSet resultSet) throws DatabaseException
+    private Pair<KeyValueStore, KeyValueStore.InitMaps> restoreKvs(ResultSet resultSet) throws DatabaseException
     {
-        Pair<KeyValueStoreData, InitMaps> retPair = new Pair<>();
-        KeyValueStoreData kvs;
+        Pair<KeyValueStore, KeyValueStore.InitMaps> retPair = new Pair<>();
+        KeyValueStore kvs;
         KeyValueStoreName kvsName;
 
         try {
@@ -146,7 +146,7 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
 
             ObjectProtection objProt = getObjectProtection(kvsName);
 
-            kvs = new KeyValueStoreData(
+            kvs = new KeyValueStore(
                 java.util.UUID.fromString(resultSet.getString(KVS_UUID)),
                 objProt,
                 kvsName,
@@ -186,7 +186,7 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
     }
 
     @Override
-    public void delete(KeyValueStoreData kvs) throws DatabaseException
+    public void delete(KeyValueStore kvs) throws DatabaseException
     {
         errorReporter.logTrace("Deleting KeyValueStore %s", getId(kvs));
         try (PreparedStatement stmt = getConnection().prepareStatement(KVS_DELETE))
@@ -206,7 +206,7 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(KeyValueStoreData kvs)
+    private String getId(KeyValueStore kvs)
     {
         return getId(kvs.getName().displayValue);
     }
@@ -221,7 +221,7 @@ public class KeyValueStoreDataGenericDbDriver implements KeyValueStoreDataDataba
         return "(KvsName=" + kvsName + ")";
     }
 
-    private class KvsInitMaps implements InitMaps
+    private class KvsInitMaps implements KeyValueStore.InitMaps
     {
         // place holder class for future init maps
     }

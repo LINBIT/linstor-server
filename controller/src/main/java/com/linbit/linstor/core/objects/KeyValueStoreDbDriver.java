@@ -10,7 +10,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -30,8 +30,8 @@ import javax.inject.Singleton;
 
 @Singleton
 public class KeyValueStoreDbDriver
-    extends AbsDatabaseDriver<KeyValueStoreData, KeyValueStore.InitMaps, Void>
-    implements KeyValueStoreDataDatabaseDriver
+    extends AbsDatabaseDriver<KeyValueStore, KeyValueStore.InitMaps, Void>
+    implements KeyValueStoreDatabaseDriver
 {
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
@@ -59,7 +59,7 @@ public class KeyValueStoreDbDriver
     }
 
     @Override
-    protected Pair<KeyValueStoreData, InitMaps> load(
+    protected Pair<KeyValueStore, KeyValueStore.InitMaps> load(
         RawParameters raw,
         Void ignored
     )
@@ -68,7 +68,7 @@ public class KeyValueStoreDbDriver
         final KeyValueStoreName kvsName = raw.build(KVS_DSP_NAME, KeyValueStoreName::new);
 
         return new Pair<>(
-            new KeyValueStoreData(
+            new KeyValueStore(
                 raw.build(UUID, java.util.UUID::fromString),
                 getObjectProtection(ObjectProtection.buildPath(kvsName)),
                 kvsName,
@@ -82,7 +82,7 @@ public class KeyValueStoreDbDriver
     }
 
     @Override
-    protected String getId(KeyValueStoreData kvs) throws AccessDeniedException
+    protected String getId(KeyValueStore kvs) throws AccessDeniedException
     {
         return "(KvsName=" + kvs.getName().displayValue + ")";
     }

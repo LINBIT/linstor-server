@@ -17,6 +17,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
+import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceData;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
@@ -130,7 +131,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriver;
     private final SnapshotDataDbDriver snapshotDriver;
     private final SnapshotVolumeDbDriver snapshotVolumeDriver;
-    private final KeyValueStoreDbDriver keyValueStoreDataGenericDbDriver;
+    private final KeyValueStoreDbDriver keyValueStoreGenericDbDriver;
     private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
     private final DrbdLayerDatabaseDriver drbdLayerDriver;
     private final LuksLayerDatabaseDriver luksLayerDriver;
@@ -167,7 +168,7 @@ public class DatabaseLoader implements DatabaseDriver
         SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriverRef,
         SnapshotDataDbDriver snapshotDriverRef,
         SnapshotVolumeDbDriver snapshotVolumeDriverRef,
-        KeyValueStoreDbDriver keyValueStoreDataGenericDbDriverRef,
+        KeyValueStoreDbDriver keyValueStoreGenericDbDriverRef,
         ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
         DrbdLayerDatabaseDriver drbdLayerDriverRef,
         LuksLayerDatabaseDriver luksLayerDriverRef,
@@ -201,7 +202,7 @@ public class DatabaseLoader implements DatabaseDriver
         snapshotVolumeDefinitionDriver = snapshotVolumeDefinitionDriverRef;
         snapshotDriver = snapshotDriverRef;
         snapshotVolumeDriver = snapshotVolumeDriverRef;
-        keyValueStoreDataGenericDbDriver = keyValueStoreDataGenericDbDriverRef;
+        keyValueStoreGenericDbDriver = keyValueStoreGenericDbDriverRef;
         rscLayerObjDriver = rscLayerObjDriverRef;
         drbdLayerDriver = drbdLayerDriverRef;
         luksLayerDriver = luksLayerDriverRef;
@@ -473,7 +474,7 @@ public class DatabaseLoader implements DatabaseDriver
 
             // load and put key value store map
             Map<KeyValueStore, KeyValueStore.InitMaps> loadedKeyValueStoreMap =
-                Collections.unmodifiableMap(keyValueStoreDataGenericDbDriver.loadAll(null));
+                Collections.unmodifiableMap(keyValueStoreGenericDbDriver.loadAll(null));
             Map<KeyValueStoreName, KeyValueStore> tmpKeyValueStoreMap =
                 mapByName(loadedKeyValueStoreMap, KeyValueStore::getName);
             keyValueStoreMap.putAll(tmpKeyValueStoreMap);

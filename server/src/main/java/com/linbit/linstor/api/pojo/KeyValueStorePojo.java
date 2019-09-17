@@ -1,10 +1,10 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.KeyValueStore;
+import com.linbit.linstor.core.apis.KvsApi;
 
 import java.util.Map;
 
-public class KeyValueStorePojo implements KeyValueStore.KvsApi
+public class KeyValueStorePojo implements KvsApi
 {
     private final String kvsName;
     private final Map<String, String> props;

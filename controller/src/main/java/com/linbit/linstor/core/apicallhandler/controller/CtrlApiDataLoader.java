@@ -14,7 +14,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.KeyValueStoreData;
+import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeData;
 import com.linbit.linstor.core.objects.ResourceData;
@@ -482,14 +482,14 @@ public class CtrlApiDataLoader
         return storPool;
     }
 
-    public final KeyValueStoreData loadKvs(String kvsNameStr, boolean failIfNull)
+    public final KeyValueStore loadKvs(String kvsNameStr, boolean failIfNull)
     {
         return loadKvs(LinstorParsingUtils.asKvsName(kvsNameStr), failIfNull);
     }
 
-    public final KeyValueStoreData loadKvs(KeyValueStoreName kvsName, boolean failIfNull)
+    public final KeyValueStore loadKvs(KeyValueStoreName kvsName, boolean failIfNull)
     {
-        KeyValueStoreData kvs;
+        KeyValueStore kvs;
         try
         {
             kvs = kvsRepository.get(

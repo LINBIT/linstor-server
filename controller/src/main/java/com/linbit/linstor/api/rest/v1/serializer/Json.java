@@ -18,6 +18,7 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -33,7 +34,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -682,7 +682,7 @@ public class Json
         return maxVolumeSizes;
     }
 
-    public static JsonGenTypes.KeyValueStore apiToKeyValueStore(com.linbit.linstor.core.objects.KeyValueStore.KvsApi kvsApi)
+    public static JsonGenTypes.KeyValueStore apiToKeyValueStore(com.linbit.linstor.core.apis.KvsApi kvsApi)
     {
         JsonGenTypes.KeyValueStore keyValueStore = new JsonGenTypes.KeyValueStore();
         keyValueStore.name = kvsApi.getName();

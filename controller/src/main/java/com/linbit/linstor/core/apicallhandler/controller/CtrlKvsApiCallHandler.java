@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.google.inject.Provider;
-
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -14,10 +12,10 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.core.apis.KvsApi;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.objects.KeyValueStore;
-import com.linbit.linstor.core.objects.KeyValueStoreData;
-import com.linbit.linstor.core.objects.KeyValueStoreDataControllerFactory;
+import com.linbit.linstor.core.objects.KeyValueStoreControllerFactory;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -27,15 +25,18 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
+import static com.linbit.utils.StringUtils.firstLetterCaps;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
+import com.google.inject.Provider;
 
 @Singleton
 public class CtrlKvsApiCallHandler
@@ -45,7 +46,7 @@ public class CtrlKvsApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<AccessContext> apiCtx;
     private final KeyValueStoreRepository kvsRepo;
-    private final KeyValueStoreDataControllerFactory kvsFactory;
+    private final KeyValueStoreControllerFactory kvsFactory;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlPropsHelper ctrlPropsHelper;
 
@@ -56,7 +57,7 @@ public class CtrlKvsApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @ApiContext Provider<AccessContext> apiCtxRef,
         KeyValueStoreRepository kvsRepositoryRef,
-        KeyValueStoreDataControllerFactory kvsFactoryRef,
+        KeyValueStoreControllerFactory kvsFactoryRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlPropsHelper ctrlPropsHelperRef
     )
@@ -71,9 +72,9 @@ public class CtrlKvsApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
-    private KeyValueStoreData create(AccessContext accCtx, KeyValueStoreName kvsName)
+    private KeyValueStore create(AccessContext accCtx, KeyValueStoreName kvsName)
     {
-        KeyValueStoreData kvs;
+        KeyValueStore kvs;
         try
         {
             kvs = kvsFactory.create(accCtx, kvsName);
@@ -115,9 +116,9 @@ public class CtrlKvsApiCallHandler
         return kvs;
     }
 
-    Set<KeyValueStore.KvsApi> listKvs()
+    Set<KvsApi> listKvs()
     {
-        Set<KeyValueStore.KvsApi> retMap = new HashSet<>();
+        Set<KvsApi> retMap = new HashSet<>();
         try
         {
             AccessContext accCtx = peerAccCtx.get();
@@ -146,7 +147,7 @@ public class CtrlKvsApiCallHandler
         try
         {
             requireKvsMapChangeAccess();
-            KeyValueStoreData kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, false);
+            KeyValueStore kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, false);
             if (kvsUuid != null && kvs != null && !kvsUuid.equals(kvs.getUuid()))
             {
                 throw new ApiRcException(
@@ -217,7 +218,7 @@ public class CtrlKvsApiCallHandler
         try
         {
             requireKvsMapChangeAccess();
-            KeyValueStoreData kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, false);
+            KeyValueStore kvs = ctrlApiDataLoader.loadKvs(kvsNameStr, false);
             if (kvsUuidRef != null && kvs != null && !kvsUuidRef.equals(kvs.getUuid()))
             {
                 throw new ApiRcException(

@@ -2,7 +2,7 @@ package com.linbit.linstor.core.repository;
 
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
-import com.linbit.linstor.core.objects.KeyValueStoreData;
+import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -52,7 +52,7 @@ public class KeyValueStoreProtectionRepository implements KeyValueStoreRepositor
     }
 
     @Override
-    public KeyValueStoreData get(
+    public KeyValueStore get(
         AccessContext accCtx,
         KeyValueStoreName kvsName
     )
@@ -60,11 +60,11 @@ public class KeyValueStoreProtectionRepository implements KeyValueStoreRepositor
     {
         checkProtSet();
         kvsMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (KeyValueStoreData) kvsMap.get(kvsName);
+        return (KeyValueStore) kvsMap.get(kvsName);
     }
 
     @Override
-    public void put(AccessContext accCtx, KeyValueStoreName kvsName, KeyValueStoreData kvs)
+    public void put(AccessContext accCtx, KeyValueStoreName kvsName, KeyValueStore kvs)
         throws AccessDeniedException
     {
         checkProtSet();

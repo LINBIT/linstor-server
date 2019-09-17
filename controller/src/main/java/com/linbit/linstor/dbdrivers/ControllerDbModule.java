@@ -39,7 +39,7 @@ import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -105,7 +105,7 @@ public class ControllerDbModule extends AbstractModule
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionDbDriver.class);
         bind(SnapshotDataDatabaseDriver.class).to(SnapshotDataDbDriver.class);
         bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDbDriver.class);
-        bind(KeyValueStoreDataDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
+        bind(KeyValueStoreDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
         switch (dbType)
         {
             case SQL:

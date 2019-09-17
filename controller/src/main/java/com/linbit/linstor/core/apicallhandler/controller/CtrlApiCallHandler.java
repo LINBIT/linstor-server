@@ -3,7 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
-import com.linbit.linstor.core.objects.KeyValueStore;
+import com.linbit.linstor.core.apis.KvsApi;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayloa
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
+
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockObj.KVS_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -26,6 +27,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -1142,9 +1144,9 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public Set<KeyValueStore.KvsApi> listKvs()
+    public Set<KvsApi> listKvs()
     {
-        Set<KeyValueStore.KvsApi> kvs;
+        Set<KvsApi> kvs;
         try (LockGuard lg = lockGuardFactory.build(READ, KVS_MAP))
         {
             kvs = kvsApiCallHandler.listKvs();

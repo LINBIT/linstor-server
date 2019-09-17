@@ -9,7 +9,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.KeyValueStore;
-import com.linbit.linstor.core.objects.KeyValueStoreData;
+import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -844,7 +844,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
     private KeyValueStore getKeyValueStore(AccessContext accCtx, String objName)
         throws AccessDeniedException, LinStorException
     {
-        KeyValueStoreData kvStoreObj;
+        KeyValueStore kvStoreObj;
         try
         {
             KeyValueStoreName kvName = new KeyValueStoreName(objName);
