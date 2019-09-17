@@ -441,7 +441,7 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
             }
 
             // deprecated - only for compatibility with old versions
-            if (rscLayerObject.getResourceNameSuffix().equals("")) // for "" resources vlmProvider always have to exist
+            if (rscLayerObject.getResourceNameSuffix().isEmpty()) // for "" resources vlmProvider always have to exist
             {
                 compatStorPool = vlmProvider.getStorPool();
             }

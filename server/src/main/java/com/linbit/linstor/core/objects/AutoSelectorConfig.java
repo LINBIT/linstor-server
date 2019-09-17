@@ -234,7 +234,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             String pojoStorPool = autoPlaceConfigRef.getStorPoolNameStr();
             if (pojoStorPool != null)
             {
-                if (pojoStorPool.equals(""))
+                if (pojoStorPool.isEmpty())
                 {
                     storPoolName.set(null);
                 }
