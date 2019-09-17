@@ -456,16 +456,16 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         }
 
         public static Flags[] restoreFlags(long snapshotDfnFlags)
-                {
+        {
             List<Flags> flagList = new ArrayList<>();
             for (Flags flag : Flags.values())
-                    {
+            {
                 if ((snapshotDfnFlags & flag.flagValue) == flag.flagValue)
                 {
                     flagList.add(flag);
                 }
-                    }
-            return flagList.toArray(new Flags[0]);
+            }
+            return flagList.toArray(new Flags[flagList.size()]);
         }
 
         public static List<String> toStringList(long flagsMask)

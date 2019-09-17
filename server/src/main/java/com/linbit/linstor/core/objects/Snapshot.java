@@ -16,7 +16,6 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -350,7 +349,7 @@ public class Snapshot extends BaseTransactionObject implements DbgInstanceUuid, 
     {
         return snapshotDfn.getResourceDefinition();
     }
-    
+
     public enum Flags implements  com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L);
@@ -378,7 +377,7 @@ public class Snapshot extends BaseTransactionObject implements DbgInstanceUuid, 
                     flagList.add(flag);
                 }
             }
-            return flagList.toArray(new Flags[0]);
+            return flagList.toArray(new Snapshot.Flags[flagList.size()]);
         }
 
         public static List<String> toStringList(long flagsMask)

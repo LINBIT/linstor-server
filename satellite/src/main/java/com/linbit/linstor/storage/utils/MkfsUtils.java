@@ -87,9 +87,8 @@ public class MkfsUtils
 
         List<String> cmdList = shellSplit(cmdString);
 
-        return Commands.genericExecutor(
-            extCmd,
-            cmdList.toArray(new String[0]),
+        return Commands.genericExecutor(extCmd,
+            cmdList.toArray(new String[cmdList.size()]),
             "Failed to mkfs " + devicePath,
             "Failed to mfks " + devicePath
         );

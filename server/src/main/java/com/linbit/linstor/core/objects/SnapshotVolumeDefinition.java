@@ -262,7 +262,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
     {
         return getSnapshotDefinition().getName();
     }
-    
+
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         ENCRYPTED(1L);
@@ -290,7 +290,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
                     flagList.add(flag);
                 }
             }
-            return flagList.toArray(new Flags[0]);
+            return flagList.toArray(new SnapshotVolumeDefinition.Flags[flagList.size()]);
         }
 
         public static List<String> toStringList(long flagsMask)

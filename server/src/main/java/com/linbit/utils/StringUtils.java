@@ -72,7 +72,7 @@ public class StringUtils
     {
         List<String> result = new ArrayList<>(Arrays.asList(array));
         result.addAll(list);
-        return result.toArray(new String[0]);
+        return result.toArray(new String[result.size()]);
     }
 
     public static String[] concat(String[] array1, String[] array2)
