@@ -323,7 +323,8 @@ public class NetInterfaceGenericDbDriver implements NetInterfaceDatabaseDriver
                     stltPort = new TcpPortNumber(tmpPort);
                     stltEncrType = EncryptionType.valueOfIgnoreCase(tmpEncrType);
                 }
-            } catch (InvalidIpAddressException invalidIpAddressExc)
+            }
+            catch (InvalidIpAddressException invalidIpAddressExc)
             {
                 throw new LinStorDBRuntimeException(
                     String.format(
@@ -335,7 +336,8 @@ public class NetInterfaceGenericDbDriver implements NetInterfaceDatabaseDriver
                     ),
                     invalidIpAddressExc
                 );
-            } catch (ValueOutOfRangeException valOutOfRangeExc)
+            }
+            catch (ValueOutOfRangeException valOutOfRangeExc)
             {
                 throw new LinStorDBRuntimeException(
                     String.format(
@@ -347,7 +349,8 @@ public class NetInterfaceGenericDbDriver implements NetInterfaceDatabaseDriver
                     ),
                     valOutOfRangeExc
                 );
-            } catch (IllegalArgumentException illegalArgExc)
+            }
+            catch (IllegalArgumentException illegalArgExc)
             {
                 // exc from EncryptionType.valueOfIgnoreCase(...)
                 throw new LinStorDBRuntimeException(

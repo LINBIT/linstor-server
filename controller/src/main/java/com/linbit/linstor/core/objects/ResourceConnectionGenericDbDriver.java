@@ -177,7 +177,8 @@ public class ResourceConnectionGenericDbDriver implements ResourceConnectionData
     )
         throws DatabaseException
     {
-        try {
+        try
+        {
             ResourceConnection resConData = new ResourceConnection(
                 java.util.UUID.fromString(resultSet.getString(UUID)),
                 sourceResource,

@@ -71,7 +71,7 @@ public interface DbEngine
      *     <code>Map&lt;ResourceName, ResourceDefinition&gt;</code>
      */
     @FunctionalInterface
-    public static interface DataLoader<DATA, INIT_MAPS, LOAD_ALL>
+    public interface DataLoader<DATA, INIT_MAPS, LOAD_ALL>
     {
         /**
          * Creates the actual data objects from the given raw data and the already loaded parent-objects.

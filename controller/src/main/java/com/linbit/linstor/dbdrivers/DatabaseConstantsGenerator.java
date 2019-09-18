@@ -92,12 +92,15 @@ public final class DatabaseConstantsGenerator
             appendLine("// Schema name");
             appendLine("public static final String DATABASE_SCHEMA_NAME = \"%s\";", DB_SCHEMA);
 
-            try(ResultSet tables = con.getMetaData().getTables(
-                null,
-                DB_SCHEMA,
-                null,
-                new String[] { TYPE_TABLE }
-            ))
+            try
+            (
+                ResultSet tables = con.getMetaData().getTables(
+                    null,
+                    DB_SCHEMA,
+                    null,
+                    new String[] {TYPE_TABLE}
+                )
+            )
             {
                 while (tables.next())
                 {
@@ -241,9 +244,10 @@ public final class DatabaseConstantsGenerator
     {
         StringBuilder sb = new StringBuilder();
         boolean nextUpper = false;
-        for (char c : name)
+        for (char srcChar : name)
         {
-            if (c == '_')
+            char dstChar = srcChar;
+            if (srcChar == '_')
             {
                 nextUpper = true;
             }
@@ -251,9 +255,9 @@ public final class DatabaseConstantsGenerator
             {
                 if (nextUpper)
                 {
-                    c = Character.toUpperCase(c);
+                    dstChar = Character.toUpperCase(srcChar);
                 }
-                sb.append(c);
+                sb.append(dstChar);
                 nextUpper = false;
             }
         }

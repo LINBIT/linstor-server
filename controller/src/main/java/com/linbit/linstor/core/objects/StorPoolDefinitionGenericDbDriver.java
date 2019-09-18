@@ -191,11 +191,13 @@ public class StorPoolDefinitionGenericDbDriver implements StorPoolDefinitionData
             try
             {
                 storPoolName = new StorPoolName(resultSet.getString(SPD_DSP_NAME));
-            } catch (InvalidNameException invalidNameExc) {
+            }
+            catch (InvalidNameException invalidNameExc)
+            {
                 throw new LinStorDBRuntimeException(
                     String.format(
                         "A display StorPoolName of a stored StorPoolDefinition in the table %s could not be restored. " +
-                            "(invalid display StorPoolName=%s)",
+                        "(invalid display StorPoolName=%s)",
                         TBL_SPD,
                         resultSet.getString(SPD_DSP_NAME)
                     ),

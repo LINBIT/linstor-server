@@ -131,7 +131,7 @@ public class VolumeDefinitions
         @Override
         public VolumeDefinitionApi getVlmDfn()
         {
-            return Json.VolumeDefinitionToApi(vlmCreateData.volume_definition);
+            return Json.volumeDefinitionToApi(vlmCreateData.volume_definition);
         }
 
         @Override

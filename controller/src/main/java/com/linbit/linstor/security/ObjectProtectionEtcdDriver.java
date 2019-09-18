@@ -177,8 +177,8 @@ public class ObjectProtectionEtcdDriver extends BaseEtcdDriver implements Object
                         )
                     )
                 );
-                AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
-                objProt = new ObjectProtection(accCtx, objectPathRef, this, transObjFactory, transMgrProvider);
+                AccessContext loadedAccCtx = new AccessContext(identity, role, secType, privLimitSet);
+                objProt = new ObjectProtection(loadedAccCtx, objectPathRef, this, transObjFactory, transMgrProvider);
                 objProt.setPersisted(true);
             }
             catch (InvalidNameException invalidNameExc)

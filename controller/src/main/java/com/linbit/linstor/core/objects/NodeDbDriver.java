@@ -149,7 +149,7 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
                 flags = Long.parseLong(raw.get(NODE_FLAGS));
                 break;
             case SQL:
-                nodeType = Node.Type.getByValue(raw.<Integer> get(NODE_TYPE).longValue());
+                nodeType = Node.Type.getByValue(raw.<Integer>get(NODE_TYPE).longValue());
                 flags = raw.get(NODE_FLAGS);
                 break;
             default:

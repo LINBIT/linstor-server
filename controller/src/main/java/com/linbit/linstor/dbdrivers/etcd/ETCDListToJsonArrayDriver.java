@@ -95,10 +95,10 @@ class ETCDListToJsonArrayDriver<DATA, LIST_TYPE> extends BaseEtcdDriver
         }
     }
 
-    private String[] getPrimaryKey(DATA data, Table table) throws AccessDeniedException
+    private String[] getPrimaryKey(DATA data, Table tableRef) throws AccessDeniedException
     {
         List<String> pkList = new ArrayList<>();
-        for (Column col : table.values())
+        for (Column col : tableRef.values())
         {
             if (col.isPk())
             {

@@ -331,7 +331,7 @@ public class CtrlRscGrpApiCallHandler
                                 ctrlRscAutoPlaceApiCallHandler.autoPlace(
                                     rscDfn.getName().displayValue,
                                     autoApiRef,
-                                 // autoPlaceConfig.disklessOnRemaining might be null
+                                    // autoPlaceConfig.disklessOnRemaining might be null
                                     Boolean.TRUE.equals(autoPlaceConfig.getDisklessOnRemaining(peerCtx)),
                                     layerListStr
                                 )

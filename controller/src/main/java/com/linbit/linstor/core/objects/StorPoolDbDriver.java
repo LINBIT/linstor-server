@@ -103,7 +103,7 @@ public class StorPoolDbDriver
                 raw.build(UUID, java.util.UUID::fromString),
                 parent.objA.get(nodeName),
                 parent.objB.get(poolName),
-                LinstorParsingUtils.asProviderKind(raw.<String> get(DRIVER_NAME)),
+                LinstorParsingUtils.asProviderKind(raw.<String>get(DRIVER_NAME)),
                 fsm,
                 this,
                 propsContainerFactory,

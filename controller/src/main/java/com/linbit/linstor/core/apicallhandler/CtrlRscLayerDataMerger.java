@@ -289,7 +289,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         Volume vlm,
         StorageRscData storRscData,
         VlmLayerDataApi vlmDataApi,
-        StorPool StorPool
+        StorPool storPoolRef
     )
         throws DatabaseException
     {

@@ -215,7 +215,8 @@ public class ResourceGenericDbDriver implements ResourceDatabaseDriver
         ResourceInitMaps initMaps = new ResourceInitMaps(rscConnMap, vlmMap);
 
         Resource rscData;
-        try {
+        try
+        {
             rscData = new Resource(
                 UUID.fromString(resultSet.getString(RES_UUID)),
                 getObjectProection(node, rscDfn.getName()),

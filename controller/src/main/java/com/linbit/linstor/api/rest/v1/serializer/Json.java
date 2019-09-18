@@ -282,7 +282,7 @@ public class Json
         return vlmDfn;
     }
 
-    public static VolumeDefinitionApi VolumeDefinitionToApi(
+    public static VolumeDefinitionApi volumeDefinitionToApi(
         JsonGenTypes.VolumeDefinition vlmDfn
     )
     {

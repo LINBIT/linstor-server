@@ -107,7 +107,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     {
         boolean hasRequiredLevel = true;
         org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        switch(levelRef)
+        switch (levelRef)
         {
             case DEBUG:
                 hasRequiredLevel = crtLogger.isDebugEnabled();
@@ -592,12 +592,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                                         String line = br.readLine();
                                         while (line != null)
                                         {
-    //                                    if (date == null && line.startsWith(errorTimeLabel))
-    //                                    {
-    //                                        String dateStr = line.substring(errorTimeLabel.length()).trim();
-    //                                        date = TIMESTAMP_FORMAT.parse(dateStr);
-    //                                    }
-
                                             sb.append(line).append('\n');
 
                                             line = br.readLine();

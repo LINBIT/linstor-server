@@ -343,11 +343,12 @@ public class LinstorConfig
 
     private static PoolingDataSource<PoolableConnection> initConnectionProviderFromCfg(final File tomlFile)
     {
+        PoolingDataSource<PoolableConnection> dataSource = null;
         try
         {
             LinstorConfigToml linstorToml = new Toml().read(tomlFile).to(LinstorConfigToml.class);
 
-            return initConnectionProvider(
+            dataSource = initConnectionProvider(
                 linstorToml.getDB().getConnectionUrl(),
                 linstorToml.getDB().getUser(),
                 linstorToml.getDB().getPassword()
@@ -359,7 +360,7 @@ public class LinstorConfig
                 String.format("Unable to parse configuration file: '%s': %s", tomlFile, exc.getMessage())
             );
             System.exit(EXIT_CODE_CONFIG_PARSE_ERROR);
-            return null;
         }
+        return dataSource;
     }
 }

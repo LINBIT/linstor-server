@@ -166,7 +166,8 @@ public class VolumeDefinitionGenericDbDriver implements VolumeDefinitionDatabase
 
                 errorReporter.logTrace("VolumeDefinition %s created during restore", getId(vlmDfn));
                 // restore references
-            } catch (MdException mdExc)
+            }
+            catch (MdException mdExc)
             {
                 throw new LinStorDBRuntimeException(
                     String.format(

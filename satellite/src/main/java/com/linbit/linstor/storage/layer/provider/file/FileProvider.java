@@ -323,8 +323,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         // something like "rsc_00000_snap.img"
 
         String snapId = sourceLvIdRef
-            .substring(0, sourceLvIdRef.length() - 4) // cuts the trailing ".img"
-            + "_" + sourceSnapNameRef + ".img";
+            .substring(0, sourceLvIdRef.length() - 4) + // cuts the trailing ".img"
+            "_" + sourceSnapNameRef + ".img";
 
         Path storageDirectory = fileData.getStorageDirectory();
         Path devPath = storageDirectory.resolve(fileData.getIdentifier());
@@ -381,7 +381,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         );
     }
 
-    private Path getSnapVlmPath (
+    private Path getSnapVlmPath(
         Path storageDirectoryRef,
         String rscName,
         String rscSuffix,
@@ -594,7 +594,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
                     }
                 }
             }
-            catch (DatabaseException| InvalidKeyException exc)
+            catch (DatabaseException | InvalidKeyException exc)
             {
                 throw new ImplementationError(exc);
             }

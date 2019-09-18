@@ -416,9 +416,9 @@ public class CtrlNodeApiCallHandler
             for (String nodeStr : nodes)
             {
                 Node node = ctrlApiDataLoader.loadNode(new NodeName(nodeStr), true);
-                Peer peer = node.getPeer(apiCtx); // check for access
+                Peer crtNodePeer = node.getPeer(apiCtx); // check for access
 
-                reconnectorTask.add(peer, false);
+                reconnectorTask.add(crtNodePeer, false);
                 // the close connection has to run in its own thread
                 // otherwise we will get re-entering scope problems (Error report)
                 scheduler.schedule(() ->

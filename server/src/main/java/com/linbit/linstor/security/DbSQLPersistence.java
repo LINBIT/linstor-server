@@ -118,7 +118,7 @@ public class DbSQLPersistence implements DbAccessor<ControllerSQLDatabase>
     @FunctionalInterface
     public interface ThrowingConsumer<T, E extends SQLException>
     {
-        void accept(T t) throws E;
+        void accept(T obj) throws E;
     }
 
     private void runWithConnection(

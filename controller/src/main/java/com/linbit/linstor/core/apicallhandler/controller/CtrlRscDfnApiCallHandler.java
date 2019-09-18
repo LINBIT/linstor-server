@@ -222,7 +222,7 @@ public class CtrlRscDfnApiCallHandler
             {
                 if (exc instanceof ApiRcException)
                 {
-                    throw (ApiRcException)exc;
+                    throw (ApiRcException) exc;
                 }
                 else
                 {
@@ -409,13 +409,13 @@ public class CtrlRscDfnApiCallHandler
 
     private ResourceDefinition createRscDfn(
         String rscNameStr,
-        byte[] extName,
+        byte[] extNamePrm,
         String transportTypeStr,
         Integer portInt,
         String secret,
         List<DeviceLayerKind> layerStack,
         Short peerSlotsRef,
-        String rscGrpNameStr
+        String rscGrpNameStrPrm
     )
         throws InvalidNameException
     {
@@ -443,6 +443,7 @@ public class CtrlRscDfnApiCallHandler
 
         boolean generatedRscName = false;
         ResourceName rscName = null;
+        byte[] extName = extNamePrm;
         if (!rscNameStr.isEmpty())
         {
             // A resource name was specified, an external name may have been specified optionally
@@ -519,8 +520,14 @@ public class CtrlRscDfnApiCallHandler
         ResourceDefinition rscDfn;
         try
         {
-            if (rscGrpNameStr == null) {
+            String rscGrpNameStr;
+            if (rscGrpNameStrPrm == null)
+            {
                 rscGrpNameStr = InternalApiConsts.DEFAULT_RSC_GRP_NAME;
+            }
+            else
+            {
+                rscGrpNameStr = rscGrpNameStrPrm;
             }
 
             ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStr, false);
@@ -546,10 +553,12 @@ public class CtrlRscDfnApiCallHandler
                 }
                 else
                 {
-                    throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
-                        ApiConsts.FAIL_NOT_FOUND_RSC_GRP,
-                        String.format("Resource group '%s' could not be found.", rscGrpNameStr
-                    )));
+                    throw new ApiRcException(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_NOT_FOUND_RSC_GRP,
+                            String.format("Resource group '%s' could not be found.", rscGrpNameStr)
+                        )
+                    );
                 }
             }
 

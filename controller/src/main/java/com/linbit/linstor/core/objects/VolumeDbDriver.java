@@ -94,7 +94,7 @@ public class VolumeDbDriver
         final VolumeNumber vlmNr;
 
         final long flags;
-        switch(getDbType())
+        switch (getDbType())
         {
             case ETCD:
                 flags = Long.parseLong(raw.get(VLM_FLAGS));

@@ -129,7 +129,7 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = identityName + PRIMARY_KEY_DELI + roleName;
         return txn
             .put(putReq(
-                tblKey(SecIdRoleMap.IDENTITY_NAME, pk ),
+                tblKey(SecIdRoleMap.IDENTITY_NAME, pk),
                 identityName
             ))
             .put(putReq(
@@ -146,7 +146,7 @@ public class Migration_00_Init extends EtcdMigration
     {
         return txn
             .put(putReq(
-                tblKey(SecAccessTypes.ACCESS_TYPE_NAME, accessTypeName ),
+                tblKey(SecAccessTypes.ACCESS_TYPE_NAME, accessTypeName),
                 accessTypeName
             ))
             .put(putReq(tblKey(SecAccessTypes.ACCESS_TYPE_VALUE, accessTypeName),
@@ -164,7 +164,7 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = domainName + PRIMARY_KEY_DELI + typeName;
         return txn
             .put(putReq(
-                tblKey(SecTypeRules.DOMAIN_NAME, pk ),
+                tblKey(SecTypeRules.DOMAIN_NAME, pk),
                 domainName
             ))
             .put(putReq(
@@ -185,7 +185,7 @@ public class Migration_00_Init extends EtcdMigration
         final String pk = identityName;
         return txn
             .put(putReq(
-                tblKey(SecDfltRoles.IDENTITY_NAME, pk ),
+                tblKey(SecDfltRoles.IDENTITY_NAME, pk),
                 identityName
             ))
             .put(putReq(
@@ -316,19 +316,19 @@ public class Migration_00_Init extends EtcdMigration
         secIdentities(txn, "SYSTEM", "SYSTEM", true, true);
         secIdentities(txn, "PUBLIC", "PUBLIC", true, true);
 
-        secTypes(txn,"SYSTEM", "SYSTEM", true);
-        secTypes(txn,"PUBLIC", "PUBLIC", true);
-        secTypes(txn,"SHARED", "SHARED", true);
-        secTypes(txn,"SYSADM", "SysAdm", true);
-        secTypes(txn,"USER", "User", true);
+        secTypes(txn, "SYSTEM", "SYSTEM", true);
+        secTypes(txn, "PUBLIC", "PUBLIC", true);
+        secTypes(txn, "SHARED", "SHARED", true);
+        secTypes(txn, "SYSADM", "SysAdm", true);
+        secTypes(txn, "USER", "User", true);
 
         secRoles(txn, "SYSTEM", "SYSTEM", "SYSTEM", true, -1);
         secRoles(txn, "PUBLIC", "PUBLIC", "PUBLIC", true, 0);
         secRoles(txn, "SYSADM", "SysAdm", "SYSADM", true, -1);
         secRoles(txn, "USER", "User", "USER", true, 0);
 
-        secIdRoleMap(txn,"SYSTEM", "SYSTEM");
-        secIdRoleMap(txn,"PUBLIC", "PUBLIC");
+        secIdRoleMap(txn, "SYSTEM", "SYSTEM");
+        secIdRoleMap(txn, "PUBLIC", "PUBLIC");
 
         secAccessTypes(txn, "CONTROL", 15);
         secAccessTypes(txn, "CHANGE", 7);

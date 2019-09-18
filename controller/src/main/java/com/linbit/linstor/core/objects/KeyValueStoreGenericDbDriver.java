@@ -128,14 +128,18 @@ public class KeyValueStoreGenericDbDriver implements KeyValueStoreDatabaseDriver
         KeyValueStore kvs;
         KeyValueStoreName kvsName;
 
-        try {
-            try {
+        try
+        {
+            try
+            {
                 kvsName = new KeyValueStoreName(resultSet.getString(KVS_DSP_NAME));
-            } catch (InvalidNameException invalidNameExc) {
+            }
+            catch (InvalidNameException invalidNameExc)
+            {
                 throw new LinStorDBRuntimeException(
                     String.format(
                         "The display name of a stored KeyValueStore in the table %s could not be restored. " +
-                            "(invalid display KvsName=%s)",
+                        "(invalid display KvsName=%s)",
                         TBL_KVS,
                         resultSet.getString(KVS_DSP_NAME)
                     ),

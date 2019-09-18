@@ -293,9 +293,9 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
                 else
                 {
                     throw new DatabaseException(
-                        "Failed to deserialize json array. No handler found for sql type: "
-                            + JDBCType.valueOf(col.getSqlType()) +
-                            " in table " + table.getName() + ", column " + col.getName()
+                        "Failed to deserialize json array. No handler found for sql type: " +
+                        JDBCType.valueOf(col.getSqlType()) +
+                        " in table " + table.getName() + ", column " + col.getName()
                     );
                 }
             }

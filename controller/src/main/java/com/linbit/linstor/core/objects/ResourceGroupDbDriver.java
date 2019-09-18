@@ -264,14 +264,12 @@ public class ResourceGroupDbDriver
                     replicaCount = replicaCountStr != null ? Integer.parseInt(replicaCountStr) : null;
 
                     String replicasOnSameStr = raw.get(REPLICAS_ON_SAME);
-                    replicasOnSame = replicasOnSameStr != null
-                        ? new ArrayList<>(OBJ_MAPPER.readValue(replicasOnSameStr, List.class))
-                        : null;
+                    replicasOnSame = replicasOnSameStr != null ?
+                        new ArrayList<>(OBJ_MAPPER.readValue(replicasOnSameStr, List.class)) : null;
 
                     String replicasOnDifferentStr = raw.get(REPLICAS_ON_DIFFERENT);
-                    replicasOnDifferent = replicasOnDifferentStr != null
-                        ? new ArrayList<>(OBJ_MAPPER.readValue(replicasOnDifferentStr, List.class))
-                        : null;
+                    replicasOnDifferent = replicasOnDifferentStr != null ?
+                        new ArrayList<>(OBJ_MAPPER.readValue(replicasOnDifferentStr, List.class)) : null;
                     break;
                 case SQL:
                     replicaCount = raw.get(REPLICA_COUNT);

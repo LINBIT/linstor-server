@@ -163,16 +163,20 @@ public class NodeGenericDbDriver implements NodeDatabaseDriver
         Node node;
         NodeName nodeName;
 
-        try {
-            try {
+        try
+        {
+            try
+            {
                 nodeName = new NodeName(resultSet.getString(NODE_DSP_NAME));
-            } catch (InvalidNameException invalidNameExc) {
+            }
+            catch (InvalidNameException invalidNameExc)
+            {
                 throw new LinStorDBRuntimeException(
                     String.format(
                         "The display name of a stored Node could not be restored" +
-                            "(invalid display NodeName=%s)",
+                        "(invalid display NodeName=%s)",
                         resultSet.getString(NODE_DSP_NAME)
-                    ),
+                        ),
                     invalidNameExc
                 );
             }
