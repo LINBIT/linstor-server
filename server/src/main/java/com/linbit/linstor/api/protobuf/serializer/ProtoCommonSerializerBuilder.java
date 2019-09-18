@@ -26,6 +26,7 @@ import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -41,7 +42,6 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
@@ -604,17 +604,17 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return builder.build();
     }
 
-    public static Iterable<? extends VlmGrp> serializeVolumeGroups(List<VlmGrpApi> vlmGrpListRef)
+    public static Iterable<? extends VlmGrp> serializeVolumeGroups(List<VolumeGroupApi> vlmGrpListRef)
     {
         List<VlmGrp> list = new ArrayList<>(vlmGrpListRef.size());
-        for (VlmGrpApi vlmGrpApi : vlmGrpListRef)
+        for (VolumeGroupApi vlmGrpApi : vlmGrpListRef)
         {
             list.add(serializeVolumeGroup(vlmGrpApi));
         }
         return list;
     }
 
-    public static VlmGrp serializeVolumeGroup(VlmGrpApi vlmGrpApiRef)
+    public static VlmGrp serializeVolumeGroup(VolumeGroupApi vlmGrpApiRef)
     {
         return VlmGrp.newBuilder()
             .setUuid(vlmGrpApiRef.getUUID().toString())

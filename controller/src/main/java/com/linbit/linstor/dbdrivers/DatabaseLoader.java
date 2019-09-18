@@ -63,7 +63,7 @@ import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
-import com.linbit.linstor.core.objects.VolumeGroupData;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
@@ -243,9 +243,9 @@ public class DatabaseLoader implements DatabaseDriver
             Map<ResourceGroupName, ResourceGroup> tmpRscGroups =
                 mapByName(loadedRscGroupsMap, ResourceGroup::getName);
 
-            List<VolumeGroupData> vlmGrpList =
+            List<VolumeGroup> vlmGrpList =
                 Collections.unmodifiableList(vlmGrpDriver.loadAllAsList(tmpRscGroups));
-            for (VolumeGroupData vlmGrp : vlmGrpList)
+            for (VolumeGroup vlmGrp : vlmGrpList)
             {
                 loadedRscGroupsMap.get(vlmGrp.getResourceGroup()).getVlmGrpMap().put(
                     vlmGrp.getVolumeNumber(),

@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.apis.StorPoolApi;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
@@ -239,9 +239,9 @@ public class ProtoDeserializationUtils
         );
     }
 
-    public static List<VlmGrpApi> parseVlmGrpList(List<VlmGrp> vlmGrpProtoList)
+    public static List<VolumeGroupApi> parseVlmGrpList(List<VlmGrp> vlmGrpProtoList)
     {
-        List<VlmGrpApi> ret = new ArrayList<>();
+        List<VolumeGroupApi> ret = new ArrayList<>();
         for (VlmGrp vlmGrpProto : vlmGrpProtoList)
         {
             ret.add(parseVlmGrp(vlmGrpProto));

@@ -1,14 +1,14 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
-import com.linbit.linstor.core.objects.VolumeGroupData;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class SatelliteVlmGrpDriver implements VolumeGroupDataDatabaseDriver
+public class SatelliteVlmGrpDriver implements VolumeGroupDatabaseDriver
 {
     @Inject
     public SatelliteVlmGrpDriver()
@@ -16,13 +16,13 @@ public class SatelliteVlmGrpDriver implements VolumeGroupDataDatabaseDriver
     }
 
     @Override
-    public void create(VolumeGroupData vlmGrpDataRef) throws DatabaseException
+    public void create(VolumeGroup vlmGrp) throws DatabaseException
     {
         // no-op
     }
 
     @Override
-    public void delete(VolumeGroupData vlmGrpDataRef) throws DatabaseException
+    public void delete(VolumeGroup vlmGrp) throws DatabaseException
     {
         // no-op
     }

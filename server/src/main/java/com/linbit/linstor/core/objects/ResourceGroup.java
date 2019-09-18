@@ -5,10 +5,10 @@ import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -267,7 +267,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         return Collections.unmodifiableList(new ArrayList<>(vlmMap.values()));
     }
 
-    public void putVolumeGroup(AccessContext accCtx, VolumeGroupData vlmGrpDataRef)
+    public void putVolumeGroup(AccessContext accCtx, VolumeGroup vlmGrpDataRef)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -301,7 +301,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
 
     public ResourceGroupApi getApiData(AccessContext accCtxRef) throws AccessDeniedException
     {
-        List<VlmGrpApi> vlmGrpApiList = new ArrayList<>(vlmMap.size());
+        List<VolumeGroupApi> vlmGrpApiList = new ArrayList<>(vlmMap.size());
         for (VolumeGroup vlmGrp : vlmMap.values())
         {
             vlmGrpApiList.add(vlmGrp.getApiData(accCtxRef));

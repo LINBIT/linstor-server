@@ -3,7 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -18,16 +18,16 @@ import javax.inject.Singleton;
 import java.util.UUID;
 
 @Singleton
-public class VolumeGroupDataControllerFactory
+public class VolumeGroupControllerFactory
 {
-    private final VolumeGroupDataDatabaseDriver driver;
+    private final VolumeGroupDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public VolumeGroupDataControllerFactory(
-        VolumeGroupDataDatabaseDriver driverRef,
+    public VolumeGroupControllerFactory(
+        VolumeGroupDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -39,7 +39,7 @@ public class VolumeGroupDataControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public VolumeGroupData create(
+    public VolumeGroup create(
         AccessContext accCtx,
         ResourceGroup rscGrp,
         VolumeNumber vlmNr
@@ -49,14 +49,14 @@ public class VolumeGroupDataControllerFactory
 
         rscGrp.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        VolumeGroupData vlmGrpData = (VolumeGroupData) rscGrp.getVolumeGroup(accCtx, vlmNr);
+        VolumeGroup vlmGrpData = (VolumeGroup) rscGrp.getVolumeGroup(accCtx, vlmNr);
 
         if (vlmGrpData != null)
         {
             throw new LinStorDataAlreadyExistsException("The VolumeGroup already exists");
         }
 
-        vlmGrpData = new VolumeGroupData(
+        vlmGrpData = new VolumeGroup(
             UUID.randomUUID(),
             rscGrp,
             vlmNr,

@@ -20,14 +20,14 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.VolumeGroup;
-import com.linbit.linstor.core.objects.VolumeGroupData;
-import com.linbit.linstor.core.objects.VolumeGroupDataControllerFactory;
+import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.core.objects.VolumeGroupControllerFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -57,7 +57,7 @@ public class CtrlVlmGrpApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<Peer> peer;
-    private final VolumeGroupDataControllerFactory volumeGroupDataFactory;
+    private final VolumeGroupControllerFactory volumeGroupFactory;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResponseConverter responseConverter;
@@ -69,7 +69,7 @@ public class CtrlVlmGrpApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerRef,
-        VolumeGroupDataControllerFactory volumeGroupDataControllerFactoryRef,
+        VolumeGroupControllerFactory volumeGroupControllerFactoryRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResponseConverter responseConverterRef
@@ -80,13 +80,13 @@ public class CtrlVlmGrpApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         peerAccCtx = peerAccCtxRef;
         peer = peerRef;
-        volumeGroupDataFactory = volumeGroupDataControllerFactoryRef;
+        volumeGroupFactory = volumeGroupControllerFactoryRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         responseConverter = responseConverterRef;
     }
 
-    public <T extends VlmGrpApi> List<VolumeGroupData> createVlmGrps(
+    public <T extends VolumeGroupApi> List<VolumeGroup> createVlmGrps(
         ResourceGroup rscGrpRef,
         List<T> vlmGrpPojoListRef
     )
@@ -103,15 +103,15 @@ public class CtrlVlmGrpApiCallHandler
             );
         }
 
-        List<VolumeGroupData> vlmGrps = new ArrayList<>();
-        for (VlmGrpApi vlmGrpPojo : vlmGrpPojoListRef)
+        List<VolumeGroup> vlmGrps = new ArrayList<>();
+        for (VolumeGroupApi vlmGrpPojo : vlmGrpPojoListRef)
         {
             vlmGrps.add(createVolumeGroup(rscGrpRef, vlmGrpPojo));
         }
         return vlmGrps;
     }
 
-    public <T extends VlmGrpApi> ApiCallRc createVlmGrps(
+    public <T extends VolumeGroupApi> ApiCallRc createVlmGrps(
         String rscGrpNameRef,
         List<T> vlmGrpApiListRef
     )
@@ -145,11 +145,11 @@ public class CtrlVlmGrpApiCallHandler
 
             ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
 
-            List<VolumeGroupData> vlmGrpsCreated = createVlmGrps(rscGrp, vlmGrpApiListRef);
+            List<VolumeGroup> vlmGrpsCreated = createVlmGrps(rscGrp, vlmGrpApiListRef);
 
             ctrlTransactionHelper.commit();
 
-            for (VolumeGroupData vlmGrp : vlmGrpsCreated)
+            for (VolumeGroup vlmGrp : vlmGrpsCreated)
             {
                 responseConverter.addWithOp(responses, context, createVlmGrpCrtSuccessEntry(vlmGrp, rscGrpNameRef));
             }
@@ -162,12 +162,12 @@ public class CtrlVlmGrpApiCallHandler
         return responses;
     }
 
-    public List<VlmGrpApi> listVolumeGroups(String rscGrpNameRef, Integer vlmNrRef)
+    public List<VolumeGroupApi> listVolumeGroups(String rscGrpNameRef, Integer vlmNrRef)
     {
         Map<String, String> objRefs = new TreeMap<>();
         objRefs.put(ApiConsts.KEY_VLM_GRP, rscGrpNameRef);
 
-        List<VlmGrpApi> ret;
+        List<VolumeGroupApi> ret;
         try
         {
             if (vlmNrRef != null)
@@ -303,9 +303,9 @@ public class CtrlVlmGrpApiCallHandler
 
     }
 
-    private VolumeGroupData createVolumeGroup(
+    private VolumeGroup createVolumeGroup(
         ResourceGroup rscGrpRef,
-        VlmGrpApi vlmGrpApiRef
+        VolumeGroupApi vlmGrpApiRef
     )
     {
         VolumeNumber vlmNr = getOrGenerateVlmNr(vlmGrpApiRef, rscGrpRef);
@@ -316,11 +316,11 @@ public class CtrlVlmGrpApiCallHandler
             vlmNr.value
         );
 
-        VolumeGroupData vlmGrp;
+        VolumeGroup vlmGrp;
 
         try
         {
-            vlmGrp = createVolumeGroupData(
+            vlmGrp = createVolumeGroup(
                 peerAccCtx.get(),
                 rscGrpRef,
                 vlmNr
@@ -348,16 +348,16 @@ public class CtrlVlmGrpApiCallHandler
         return vlmGrp;
     }
 
-    private VolumeGroupData createVolumeGroupData(
+    private VolumeGroup createVolumeGroup(
         AccessContext accCtx,
         ResourceGroup rscGrp,
         VolumeNumber vlmNr
     )
     {
-        VolumeGroupData vlmGrp;
+        VolumeGroup vlmGrp;
         try
         {
-            vlmGrp = volumeGroupDataFactory.create(
+            vlmGrp = volumeGroupFactory.create(
                 accCtx,
                 rscGrp,
                 vlmNr
@@ -392,7 +392,7 @@ public class CtrlVlmGrpApiCallHandler
         return vlmGrp;
     }
 
-    private VolumeNumber getOrGenerateVlmNr(VlmGrpApi vlmGrpApi, ResourceGroup rscGrp)
+    private VolumeNumber getOrGenerateVlmNr(VolumeGroupApi vlmGrpApi, ResourceGroup rscGrp)
     {
         VolumeNumber vlmNr;
         try
@@ -427,7 +427,7 @@ public class CtrlVlmGrpApiCallHandler
         return vlmNr;
     }
 
-    private Props getVlmGrpProps(VolumeGroupData vlmGrpRef)
+    private Props getVlmGrpProps(VolumeGroup vlmGrpRef)
     {
         Props props;
         try
@@ -445,7 +445,7 @@ public class CtrlVlmGrpApiCallHandler
         return props;
     }
 
-    private RcEntry createVlmGrpCrtSuccessEntry(VolumeGroupData vlmGrp, String rscGrpNameRef)
+    private RcEntry createVlmGrpCrtSuccessEntry(VolumeGroup vlmGrp, String rscGrpNameRef)
     {
         ApiCallRcEntry vlmGrpCrtSuccessEntry = new ApiCallRcEntry();
         vlmGrpCrtSuccessEntry.setReturnCode(ApiConsts.CREATED);
@@ -466,7 +466,7 @@ public class CtrlVlmGrpApiCallHandler
         return "Resource group: " + rscGrpName + ", Volume number: " + vlmNr;
     }
 
-    public static String getVlmGrpDescriptionInline(VolumeGroupData vlmGrpData)
+    public static String getVlmGrpDescriptionInline(VolumeGroup vlmGrpData)
     {
         return getVlmGrpDescriptionInline(vlmGrpData.getResourceGroup(), vlmGrpData.getVolumeNumber());
     }

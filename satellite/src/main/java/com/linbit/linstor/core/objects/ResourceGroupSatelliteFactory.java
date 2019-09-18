@@ -6,7 +6,7 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -32,7 +32,7 @@ public class ResourceGroupSatelliteFactory
 {
     private final AccessContext sysCtx;
     private final ResourceGroupDatabaseDriver rscGrpDriver;
-    private final VolumeGroupDataDatabaseDriver vlmGrpDriver;
+    private final VolumeGroupDatabaseDriver vlmGrpDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -43,7 +43,7 @@ public class ResourceGroupSatelliteFactory
     public ResourceGroupSatelliteFactory(
         @SystemContext AccessContext sysCtxRef,
         ResourceGroupDatabaseDriver rscGrpDriverRef,
-        VolumeGroupDataDatabaseDriver vlmGrpDriverRef,
+        VolumeGroupDatabaseDriver vlmGrpDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,

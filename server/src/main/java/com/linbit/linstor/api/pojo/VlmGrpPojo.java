@@ -1,13 +1,13 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 
 import javax.annotation.Nullable;
 
 import java.util.Map;
 import java.util.UUID;
 
-public class VlmGrpPojo implements VlmGrpApi
+public class VlmGrpPojo implements VolumeGroupApi
 {
     private final UUID uuid;
     private final @Nullable Integer vlmNrInt;

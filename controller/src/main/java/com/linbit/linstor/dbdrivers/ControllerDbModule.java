@@ -62,7 +62,7 @@ import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.propscon.PropsConETCDDriver;
 import com.linbit.linstor.propscon.PropsConGenericDbDriver;
@@ -91,7 +91,7 @@ public class ControllerDbModule extends AbstractModule
 
         bind(ResourceDefinitionDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
         bind(ResourceGroupDatabaseDriver.class).to(ResourceGroupDbDriver.class);
-        bind(VolumeGroupDataDatabaseDriver.class).to(VolumeGroupDbDriver.class);
+        bind(VolumeGroupDatabaseDriver.class).to(VolumeGroupDbDriver.class);
         bind(VolumeDatabaseDriver.class).to(VolumeDbDriver.class);
         bind(ResourceDatabaseDriver.class).to(ResourceDbDriver.class);
         bind(VolumeDefinitionDatabaseDriver.class).to(VolumeDefinitionDbDriver.class);

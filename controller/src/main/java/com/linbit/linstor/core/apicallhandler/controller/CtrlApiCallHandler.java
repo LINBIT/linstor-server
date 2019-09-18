@@ -11,9 +11,9 @@ import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
@@ -1244,7 +1244,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc createVlmGrps(String rscGrpNameRef, List<VlmGrpApi> vlmGrpApiListRef)
+    public ApiCallRc createVlmGrps(String rscGrpNameRef, List<VolumeGroupApi> vlmGrpApiListRef)
     {
         ApiCallRc apiCallRc;
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
@@ -1257,9 +1257,9 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public List<VlmGrpApi> listVolumeGroups(String rscNameRef, Integer vlmNrRef)
+    public List<VolumeGroupApi> listVolumeGroups(String rscNameRef, Integer vlmNrRef)
     {
-        List<VlmGrpApi> listVolumeGroups;
+        List<VolumeGroupApi> listVolumeGroups;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_GRP_MAP))
         {
             listVolumeGroups = vlmGrpApiCallHandler.listVolumeGroups(rscNameRef, vlmNrRef);

@@ -30,6 +30,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
@@ -39,8 +40,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.VolumeGroup;
-import com.linbit.linstor.core.objects.VolumeGroupData;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -179,7 +179,7 @@ public class CtrlRscGrpApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_GRP
             );
 
-            List<VolumeGroupData> createdVlmGrps = ctrlVlmGrpApiCallHandler.createVlmGrps(
+            List<VolumeGroup> createdVlmGrps = ctrlVlmGrpApiCallHandler.createVlmGrps(
                 rscGrp,
                 rscGrpPojoRef.getVlmGrpList()
             );
@@ -188,7 +188,7 @@ public class CtrlRscGrpApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            for (VolumeGroupData vlmGrp : createdVlmGrps)
+            for (VolumeGroup vlmGrp : createdVlmGrps)
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
                 volSuccessEntry.setReturnCode(ApiConsts.MASK_VLM_GRP | ApiConsts.CREATED);
@@ -768,7 +768,7 @@ public class CtrlRscGrpApiCallHandler
         );
     }
 
-    static VolumeNumber getVlmNr(VlmGrpApi vlmGrpApi, ResourceGroup rscGrp, AccessContext accCtx)
+    static VolumeNumber getVlmNr(VolumeGroupApi vlmGrpApi, ResourceGroup rscGrp, AccessContext accCtx)
         throws LinStorException, ValueOutOfRangeException
     {
         VolumeNumber vlmNr;

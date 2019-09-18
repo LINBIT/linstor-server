@@ -4,12 +4,13 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.VolumeGroupDataSatelliteFactory;
+import com.linbit.linstor.VolumeGroupSatelliteFactory;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
@@ -40,7 +41,7 @@ class StltRscGrpApiCallHelper
     private final ControllerPeerConnector controllerPeerConnector;
     private final CoreModule.ResourceGroupMap rscGrpMap;
     private final ResourceGroupSatelliteFactory resourceGroupFactory;
-    private final VolumeGroupDataSatelliteFactory volumeGroupDataFactory;
+    private final VolumeGroupSatelliteFactory volumeGroupFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
@@ -51,7 +52,7 @@ class StltRscGrpApiCallHelper
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.ResourceGroupMap rscGrpMapRef,
         ResourceGroupSatelliteFactory resourceGroupFactoryRef,
-        VolumeGroupDataSatelliteFactory volumeGroupDataFactoryRef,
+        VolumeGroupSatelliteFactory volumeGroupFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -61,7 +62,7 @@ class StltRscGrpApiCallHelper
         controllerPeerConnector = controllerPeerConnectorRef;
         rscGrpMap = rscGrpMapRef;
         resourceGroupFactory = resourceGroupFactoryRef;
-        volumeGroupDataFactory = volumeGroupDataFactoryRef;
+        volumeGroupFactory = volumeGroupFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
 
@@ -113,13 +114,13 @@ class StltRscGrpApiCallHelper
 
         try
         {
-            for (VolumeGroup.VlmGrpApi vlmGrpApi : rscGrpApiRef.getVlmGrpList())
+            for (VolumeGroupApi vlmGrpApi : rscGrpApiRef.getVlmGrpList())
             {
                 VolumeNumber vlmNr = new VolumeNumber(vlmGrpApi.getVolumeNr());
                 VolumeGroup vlmGrp = vlmGrpsToDelete.remove(vlmNr);
                 if (vlmGrp == null)
                 {
-                    vlmGrp = volumeGroupDataFactory.getInstanceSatellite(
+                    vlmGrp = volumeGroupFactory.getInstanceSatellite(
                         vlmGrpApi.getUUID(),
                         rscGrp,
                         vlmNr

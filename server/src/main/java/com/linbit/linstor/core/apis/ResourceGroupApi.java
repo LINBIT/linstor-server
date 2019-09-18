@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apis;
 
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.objects.VolumeGroup;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 
 import javax.annotation.Nullable;
 
@@ -17,5 +16,5 @@ public interface ResourceGroupApi
     String getDescription();
     Map<String, String> getProps();
     @Nullable AutoSelectFilterApi getAutoSelectFilter();
-    List<VlmGrpApi> getVlmGrpList();
+    List<VolumeGroupApi> getVlmGrpList();
 }

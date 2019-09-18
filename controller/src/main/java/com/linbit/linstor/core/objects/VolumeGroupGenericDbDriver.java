@@ -8,7 +8,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 @Singleton
-public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDriver
+public class VolumeGroupGenericDbDriver implements VolumeGroupDatabaseDriver
 {
     private static final String[] VLM_GRP_FIELDS =
     {
@@ -65,7 +65,7 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public VolumeGroupDataGenericDbDriver(
+    public VolumeGroupGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -82,7 +82,7 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(VolumeGroupData vlmGrp) throws DatabaseException
+    public void create(VolumeGroup vlmGrp) throws DatabaseException
     {
         errorReporter.logTrace("Creating VolumeGroup %s", getId(vlmGrp));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
@@ -101,13 +101,13 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
         }
     }
 
-    public List<VolumeGroupData> loadAll(
+    public List<VolumeGroup> loadAll(
         Map<ResourceGroupName, ? extends ResourceGroup> rscGrpMap
     )
         throws DatabaseException
     {
         errorReporter.logTrace("Loading all volumeGroups");
-        List<VolumeGroupData> vlmGrpList = new ArrayList<>();
+        List<VolumeGroup> vlmGrpList = new ArrayList<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VLM_GRPS))
         {
             try (ResultSet resultSet = stmt.executeQuery())
@@ -161,17 +161,17 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
         return vlmGrpList;
     }
 
-    private VolumeGroupData restoreVlmGrp(
+    private VolumeGroup restoreVlmGrp(
         ResultSet resultSetRef,
         ResourceGroup resourceGroupRef,
         VolumeNumber vlmNrRef
     )
         throws DatabaseException
     {
-        VolumeGroupData volumeGroupData;
+        VolumeGroup volumeGroup;
         try
         {
-            volumeGroupData = new VolumeGroupData(
+            volumeGroup = new VolumeGroup(
                 java.util.UUID.fromString(resultSetRef.getString(UUID)),
                 resourceGroupRef,
                 vlmNrRef,
@@ -185,11 +185,11 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
         {
             throw new DatabaseException(exc);
         }
-        return volumeGroupData;
+        return volumeGroup;
     }
 
     @Override
-    public void delete(VolumeGroupData vlmGrp) throws DatabaseException
+    public void delete(VolumeGroup vlmGrp) throws DatabaseException
     {
         errorReporter.logTrace("Deleting VolumeGroup %s", getId(vlmGrp));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE))
@@ -212,7 +212,7 @@ public class VolumeGroupDataGenericDbDriver implements VolumeGroupDataDatabaseDr
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(VolumeGroupData vlmGrp)
+    private String getId(VolumeGroup vlmGrp)
     {
         return getId(vlmGrp.getResourceGroup().getName().displayValue, vlmGrp.getVolumeNumber().value);
     }

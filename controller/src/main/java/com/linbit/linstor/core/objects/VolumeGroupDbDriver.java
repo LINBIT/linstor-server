@@ -12,7 +12,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -33,8 +33,8 @@ import java.util.Map;
 
 @Singleton
 public class VolumeGroupDbDriver
-    extends AbsDatabaseDriver<VolumeGroupData, Void, Map<ResourceGroupName, ? extends ResourceGroup>>
-    implements VolumeGroupDataDatabaseDriver
+    extends AbsDatabaseDriver<VolumeGroup, Void, Map<ResourceGroupName, ? extends ResourceGroup>>
+    implements VolumeGroupDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -64,7 +64,7 @@ public class VolumeGroupDbDriver
     }
 
     @Override
-    protected Pair<VolumeGroupData, Void> load(
+    protected Pair<VolumeGroup, Void> load(
         RawParameters raw,
         Map<ResourceGroupName, ? extends ResourceGroup> rscGrpMap
     )
@@ -85,7 +85,7 @@ public class VolumeGroupDbDriver
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
         return new Pair<>(
-            new VolumeGroupData(
+            new VolumeGroup(
                 raw.build(UUID, java.util.UUID::fromString),
                 rscGrpMap.get(rscGrpName),
                 vlmNr,
@@ -99,7 +99,7 @@ public class VolumeGroupDbDriver
     }
 
     @Override
-    protected String getId(VolumeGroupData vlmGrp)
+    protected String getId(VolumeGroup vlmGrp)
     {
         return "(RscGrpName=" + vlmGrp.getResourceGroup().getName().displayValue +
             ", VlmNr=" + vlmGrp.getVolumeNumber().value + ")";

@@ -6,7 +6,7 @@ import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -76,7 +76,7 @@ public class VolumeGroups
             () ->
         {
 
-            List<VlmGrpApi> vlmGrpList =  ctrlApiCallHandler.listVolumeGroups(rscName, vlmNr);
+            List<VolumeGroupApi> vlmGrpList =  ctrlApiCallHandler.listVolumeGroups(rscName, vlmNr);
             int limit = vlmGrpList.size();
             if (limitRef != 0)
             {

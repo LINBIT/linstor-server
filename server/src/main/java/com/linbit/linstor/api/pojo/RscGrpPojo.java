@@ -2,7 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
-import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import javax.annotation.Nullable;
@@ -17,7 +17,7 @@ public class RscGrpPojo implements ResourceGroupApi
     private final String rscGrpName;
     private final String description;
     private final Map<String, String> rscDfnPropsMap;
-    private final List<VlmGrpApi> vlmGrpList;
+    private final List<VolumeGroupApi> vlmGrpList;
     private final @Nullable AutoSelectFilterApi autoSelectFilter;
 
     public RscGrpPojo(
@@ -25,7 +25,7 @@ public class RscGrpPojo implements ResourceGroupApi
         String rscGrpNameStrRef,
         String descriptionRef,
         Map<String, String> rscDfnPropsRef,
-        List<VlmGrpApi> vlmGrpListRef,
+        List<VolumeGroupApi> vlmGrpListRef,
         @Nullable AutoSelectFilterApi autoSelectFilterRef
     )
     {
@@ -56,7 +56,7 @@ public class RscGrpPojo implements ResourceGroupApi
     }
 
     @Override
-    public List<VlmGrpApi> getVlmGrpList()
+    public List<VolumeGroupApi> getVlmGrpList()
     {
         return vlmGrpList;
     }

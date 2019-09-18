@@ -1,13 +1,13 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 
 import java.util.Map;
 import java.util.UUID;
 
-public class VlmGrpApiData implements VolumeGroup.VlmGrpApi
+public class VlmGrpApiData implements VolumeGroupApi
 {
     private final VlmGrp vlmGrp;
 

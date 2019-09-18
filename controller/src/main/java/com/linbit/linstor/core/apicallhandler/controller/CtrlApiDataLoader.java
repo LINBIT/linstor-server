@@ -30,7 +30,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeGroupData;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
@@ -603,7 +603,7 @@ public class CtrlApiDataLoader
         return rscGrp;
     }
 
-    public final VolumeGroupData loadVlmGrp(String rscGrpNameStringRef, int vlmNrInt, boolean failIfNull)
+    public final VolumeGroup loadVlmGrp(String rscGrpNameStringRef, int vlmNrInt, boolean failIfNull)
     {
         return loadVlmGrp(
             LinstorParsingUtils.asRscGrpName(rscGrpNameStringRef),
@@ -612,19 +612,19 @@ public class CtrlApiDataLoader
         );
     }
 
-    public final VolumeGroupData loadVlmGrp(
+    public final VolumeGroup loadVlmGrp(
         ResourceGroupName rscGrpNameRef,
         VolumeNumber vlmNr,
         boolean failIfNull
     )
     {
-        VolumeGroupData vlmGrp = null;
+        VolumeGroup vlmGrp = null;
         try
         {
             ResourceGroup rscGrp = loadResourceGroup(rscGrpNameRef, failIfNull);
             if (rscGrp != null)
             {
-                vlmGrp = (VolumeGroupData) rscGrp.getVolumeGroup(peerAccCtx.get(), vlmNr);
+                vlmGrp = (VolumeGroup) rscGrp.getVolumeGroup(peerAccCtx.get(), vlmNr);
             }
             if (failIfNull && vlmGrp == null)
             {
