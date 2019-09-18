@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -63,9 +63,9 @@ public class ResourceConnections
     {
         return requestHelper.doInScope(ApiConsts.API_LST_RSC_CONN, request, () ->
         {
-            List<ResourceConnection.RscConnApi> rscConns = ctrlApiCallHandler.listResourceConnections(rscName);
+            List<ResourceConnectionApi> rscConns = ctrlApiCallHandler.listResourceConnections(rscName);
 
-            List<ResourceConnection.RscConnApi> filtered = rscConns.stream()
+            List<ResourceConnectionApi> filtered = rscConns.stream()
                 .filter(rscConnApi -> nodeA == null || (rscConnApi.getSourceNodeName().equalsIgnoreCase(nodeA) &&
                     rscConnApi.getTargetNodeName().equalsIgnoreCase(nodeB)))
                 .collect(Collectors.toList());

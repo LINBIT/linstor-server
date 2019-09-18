@@ -1,11 +1,8 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -20,20 +17,21 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.UUID;
 
 @Singleton
-public class ResourceConnectionDataControllerFactory
+public class ResourceConnectionControllerFactory
 {
-    private final ResourceConnectionDataDatabaseDriver dbDriver;
+    private final ResourceConnectionDatabaseDriver dbDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final DynamicNumberPool tcpPortPool;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public ResourceConnectionDataControllerFactory(
-        ResourceConnectionDataDatabaseDriver dbDriverRef,
+    public ResourceConnectionControllerFactory(
+        ResourceConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -47,25 +45,25 @@ public class ResourceConnectionDataControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public ResourceConnectionData create(
+    public ResourceConnection create(
         AccessContext accCtx,
         Resource sourceResource,
         Resource targetResource,
-        ResourceConnection.RscConnFlags[] initFlags
+        ResourceConnection.Flags[] initFlags
     )
         throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
         sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        ResourceConnectionData rscConData = ResourceConnectionData.get(accCtx, sourceResource, targetResource);
+        ResourceConnection rscConData = ResourceConnection.get(accCtx, sourceResource, targetResource);
 
         if (rscConData != null)
         {
             throw new LinStorDataAlreadyExistsException("The ResourceConnection already exists");
         }
 
-        rscConData = new ResourceConnectionData(
+        rscConData = new ResourceConnection(
             UUID.randomUUID(),
             sourceResource,
             targetResource,

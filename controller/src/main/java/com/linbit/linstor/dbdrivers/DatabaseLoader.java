@@ -27,7 +27,7 @@ import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeDbDriver;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
@@ -340,8 +340,8 @@ public class DatabaseLoader implements DatabaseDriver
             );
 
             // loading resource connections
-            List<ResourceConnectionData> loadedRscConns = rscConnDriver.loadAllAsList(tmpRscMap);
-            for (ResourceConnectionData rscConn : loadedRscConns)
+            List<ResourceConnection> loadedRscConns = rscConnDriver.loadAllAsList(tmpRscMap);
+            for (ResourceConnection rscConn : loadedRscConns)
             {
                 Resource sourceResource = rscConn.getSourceResource(dbCtx);
                 Resource targetResource = rscConn.getTargetResource(dbCtx);

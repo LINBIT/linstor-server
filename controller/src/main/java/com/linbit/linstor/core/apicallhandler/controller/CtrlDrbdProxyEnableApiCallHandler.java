@@ -36,6 +36,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -199,7 +200,7 @@ public class CtrlDrbdProxyEnableApiCallHandler
     {
         try
         {
-            rscConn.getStateFlags().enableFlags(peerAccCtx.get(), ResourceConnection.RscConnFlags.LOCAL_DRBD_PROXY);
+            rscConn.getStateFlags().enableFlags(peerAccCtx.get(), ResourceConnection.Flags.LOCAL_DRBD_PROXY);
         }
         catch (AccessDeniedException accDeniedExc)
         {

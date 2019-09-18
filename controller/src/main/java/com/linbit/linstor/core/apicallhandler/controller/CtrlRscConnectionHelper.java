@@ -13,8 +13,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
-import com.linbit.linstor.core.objects.ResourceConnectionDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceConnectionControllerFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -24,35 +23,36 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscConnectio
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.UUID;
 
 @Singleton
 class CtrlRscConnectionHelper
 {
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ResourceConnectionDataControllerFactory resourceConnectionDataFactory;
+    private final ResourceConnectionControllerFactory resourceConnectionFactory;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     CtrlRscConnectionHelper(
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        ResourceConnectionDataControllerFactory resourceConnectionDataFactoryRef,
+        ResourceConnectionControllerFactory resourceConnectionFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
+        resourceConnectionFactory = resourceConnectionFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
-    public ResourceConnectionData loadOrCreateRscConn(
+    public ResourceConnection loadOrCreateRscConn(
         UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
         String rscNameStr
     )
     {
-        ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr, false);
+        ResourceConnection rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr, false);
         if (rscConn == null)
         {
             rscConn = createRscConn(nodeName1, nodeName2, rscNameStr, null);
@@ -69,11 +69,11 @@ class CtrlRscConnectionHelper
         return rscConn;
     }
 
-    public ResourceConnectionData createRscConn(
+    public ResourceConnection createRscConn(
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr,
-        ResourceConnection.RscConnFlags[] initFlags
+        ResourceConnection.Flags[] initFlags
     )
     {
         Node node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
@@ -83,10 +83,10 @@ class CtrlRscConnectionHelper
         Resource rsc1 = ctrlApiDataLoader.loadRsc(node1.getName(), rscName, false);
         Resource rsc2 = ctrlApiDataLoader.loadRsc(node2.getName(), rscName, false);
 
-        ResourceConnectionData rscConn;
+        ResourceConnection rscConn;
         try
         {
-            rscConn = resourceConnectionDataFactory.create(
+            rscConn = resourceConnectionFactory.create(
                 peerAccCtx.get(),
                 rsc1,
                 rsc2,
@@ -116,7 +116,7 @@ class CtrlRscConnectionHelper
         return rscConn;
     }
 
-    public ResourceConnectionData loadRscConn(
+    public ResourceConnection loadRscConn(
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr,
@@ -130,10 +130,10 @@ class CtrlRscConnectionHelper
         Resource rsc1 = ctrlApiDataLoader.loadRsc(nodeName1, rscName, true);
         Resource rsc2 = ctrlApiDataLoader.loadRsc(nodeName2, rscName, true);
 
-        ResourceConnectionData rscConn;
+        ResourceConnection rscConn;
         try
         {
-            rscConn = ResourceConnectionData.get(
+            rscConn = ResourceConnection.get(
                 peerAccCtx.get(),
                 rsc1,
                 rsc2

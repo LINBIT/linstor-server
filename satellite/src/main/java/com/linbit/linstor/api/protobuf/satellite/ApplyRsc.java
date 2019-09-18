@@ -17,6 +17,7 @@ import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
@@ -94,7 +95,7 @@ public class ApplyRsc implements ApiCall
             fullSyncId,
             updateId
         );
-        List<ResourceConnection.RscConnApi> rscConns = extractRscConn(
+        List<ResourceConnectionApi> rscConns = extractRscConn(
             rscDfn.getRscName(),
             intRscData.getRscConnectionsList()
         );
@@ -224,7 +225,7 @@ public class ApplyRsc implements ApiCall
         return list;
     }
 
-    private static List<ResourceConnection.RscConnApi> extractRscConn(
+    private static List<ResourceConnectionApi> extractRscConn(
         String rscName,
         List<RscConn> rscConnections
     )
@@ -238,7 +239,7 @@ public class ApplyRsc implements ApiCall
                     rscName,
                     rscConnData.getRscConnPropsMap(),
                     FlagsHelper.fromStringList(
-                        ResourceConnection.RscConnFlags.class,
+                    ResourceConnection.Flags.class,
                         rscConnData.getRscConnFlagsList()
                     ),
                     rscConnData.getPort() == 0 ? null : rscConnData.getPort()

@@ -20,7 +20,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -88,7 +88,7 @@ class CtrlRscConnectionApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn =
+            ResourceConnection rscConn =
                 ctrlRscConnectionHelper.createRscConn(nodeName1Str, nodeName2Str, rscNameStr, null);
 
             ctrlPropsHelper.fillProperties(
@@ -128,7 +128,7 @@ class CtrlRscConnectionApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn =
+            ResourceConnection rscConn =
                 ctrlRscConnectionHelper.loadOrCreateRscConn(rscConnUuid, nodeName1, nodeName2, rscNameStr);
 
             for (String key : overrideProps.keySet())
@@ -221,7 +221,7 @@ class CtrlRscConnectionApiCallHandler
 
         try
         {
-            ResourceConnectionData rscConn =
+            ResourceConnection rscConn =
                 ctrlRscConnectionHelper.loadRscConn(nodeName1Str, nodeName2Str, rscNameStr, true);
             UUID rscConnUuid = rscConn.getUuid();
             delete(rscConn);
@@ -240,7 +240,7 @@ class CtrlRscConnectionApiCallHandler
         return responses;
     }
 
-    private Props getProps(ResourceConnectionData rscConn)
+    private Props getProps(ResourceConnection rscConn)
     {
         Props props;
         try
@@ -258,7 +258,7 @@ class CtrlRscConnectionApiCallHandler
         return props;
     }
 
-    private ApiCallRc updateSatellites(ResourceConnectionData rscConn)
+    private ApiCallRc updateSatellites(ResourceConnection rscConn)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
@@ -275,7 +275,7 @@ class CtrlRscConnectionApiCallHandler
         return responses;
     }
 
-    private void delete(ResourceConnectionData rscConn)
+    private void delete(ResourceConnection rscConn)
     {
         try
         {

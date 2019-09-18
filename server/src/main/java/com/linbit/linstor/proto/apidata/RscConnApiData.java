@@ -1,12 +1,13 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
 
 import java.util.Map;
 import java.util.UUID;
 
-public class RscConnApiData implements ResourceConnection.RscConnApi
+public class RscConnApiData implements ResourceConnectionApi
 {
     private RscConnOuterClass.RscConn rscConnProto;
 
@@ -48,7 +49,7 @@ public class RscConnApiData implements ResourceConnection.RscConnApi
     @Override
     public long getFlags()
     {
-        return ResourceConnection.RscConnFlags.fromStringList(rscConnProto.getRscConnFlagsList());
+        return ResourceConnection.Flags.fromStringList(rscConnProto.getRscConnFlagsList());
     }
 
     @Override
@@ -58,7 +59,7 @@ public class RscConnApiData implements ResourceConnection.RscConnApi
     }
 
     public static RscConnOuterClass.RscConn toProto(
-        final ResourceConnection.RscConnApi apiResourceConn
+        final ResourceConnectionApi apiResourceConn
     )
     {
         RscConnOuterClass.RscConn.Builder rscConnBld = RscConnOuterClass.RscConn.newBuilder();
@@ -68,7 +69,7 @@ public class RscConnApiData implements ResourceConnection.RscConnApi
         rscConnBld.setRscName(apiResourceConn.getResourceName());
         rscConnBld.putAllRscConnProps(apiResourceConn.getProps());
         rscConnBld.setRscConnUuid(apiResourceConn.getUuid().toString());
-        rscConnBld.addAllRscConnFlags(ResourceConnection.RscConnFlags.toStringList(apiResourceConn.getFlags()));
+        rscConnBld.addAllRscConnFlags(ResourceConnection.Flags.toStringList(apiResourceConn.getFlags()));
         if (apiResourceConn.getPort() != null)
         {
             rscConnBld.setPort(apiResourceConn.getPort());

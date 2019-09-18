@@ -11,7 +11,7 @@ import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 @Singleton
-public class ResourceConnectionDataGenericDbDriver implements ResourceConnectionDataDatabaseDriver
+public class ResourceConnectionGenericDbDriver implements ResourceConnectionDatabaseDriver
 {
     private static final String TBL_RES_CON_DFN = DbConstants.TBL_RESOURCE_CONNECTIONS;
     private static final String UUID = DbConstants.UUID;
@@ -93,10 +93,10 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
     private final FlagDriver flagDriver;
-    private final SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> portDriver;
+    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> portDriver;
 
     @Inject
-    public ResourceConnectionDataGenericDbDriver(
+    public ResourceConnectionGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -116,11 +116,11 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         portDriver = new PortDriver();
     }
 
-    public List<ResourceConnectionData> loadAll(Map<Pair<NodeName, ResourceName>, ? extends Resource> tmpRscMap)
+    public List<ResourceConnection> loadAll(Map<Pair<NodeName, ResourceName>, ? extends Resource> tmpRscMap)
         throws DatabaseException
     {
         errorReporter.logTrace("Loading all ResourceConnections");
-        List<ResourceConnectionData> rscConnections = new ArrayList<>();
+        List<ResourceConnection> rscConnections = new ArrayList<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
@@ -148,7 +148,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                         throw new ImplementationError(exc);
                     }
 
-                    ResourceConnectionData conDfn = restoreResourceConnection(
+                    ResourceConnection conDfn = restoreResourceConnection(
                         resultSet,
                         tmpRscMap.get(new Pair<>(sourceNodeName, rscName)),
                         tmpRscMap.get(new Pair<>(targetNodeName, rscName)),
@@ -168,7 +168,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         return rscConnections;
     }
 
-    private ResourceConnectionData restoreResourceConnection(
+    private ResourceConnection restoreResourceConnection(
         ResultSet resultSet,
         Resource sourceResource,
         Resource targetResource,
@@ -178,7 +178,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         throws DatabaseException
     {
         try {
-            ResourceConnectionData resConData = new ResourceConnectionData(
+            ResourceConnection resConData = new ResourceConnection(
                 java.util.UUID.fromString(resultSet.getString(UUID)),
                 sourceResource,
                 targetResource,
@@ -201,7 +201,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(ResourceConnectionData conDfnData) throws DatabaseException
+    public void create(ResourceConnection conDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating ResourceConnection %s", getId(conDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
@@ -243,7 +243,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(ResourceConnectionData conDfnData) throws DatabaseException
+    public void delete(ResourceConnection conDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting ResourceConnection %s", getId(conDfnData));
         try
@@ -277,7 +277,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(ResourceConnectionData conData)
+    private String getId(ResourceConnection conData)
     {
         String id = null;
         try
@@ -301,28 +301,28 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
     }
 
     @Override
-    public StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence()
+    public StateFlagsPersistence<ResourceConnection> getStateFlagPersistence()
     {
         return flagDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> getPortDriver()
+    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getPortDriver()
     {
         return portDriver;
     }
 
-    private class FlagDriver implements StateFlagsPersistence<ResourceConnectionData>
+    private class FlagDriver implements StateFlagsPersistence<ResourceConnection>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void persist(ResourceConnectionData rscCon, long flags) throws DatabaseException
+        public void persist(ResourceConnection rscCon, long flags) throws DatabaseException
         {
             try
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        ResourceConnection.RscConnFlags.class,
+                        ResourceConnection.Flags.class,
                         rscCon.getStateFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
@@ -368,11 +368,11 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
         }
     }
 
-    private class PortDriver implements SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber>
+    private class PortDriver implements SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void update(ResourceConnectionData rscCon, TcpPortNumber port)
+        public void update(ResourceConnection rscCon, TcpPortNumber port)
             throws DatabaseException
         {
             try

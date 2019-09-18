@@ -19,7 +19,6 @@ import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
@@ -482,7 +481,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             nodeConUuid = nodeCon.getUuid();
 
             // resCon res1 <-> res2
-            ResourceConnectionData resCon = resourceConnectionDataFactory.create(
+            ResourceConnection resCon = resourceConnectionFactory.create(
                 SYS_CTX,
                 res1,
                 res2,

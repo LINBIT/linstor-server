@@ -8,8 +8,8 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
-import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
+public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RES_CON_DFNS =
         " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " +
@@ -52,9 +52,9 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     private Node nodeSrc;
     private Node nodeDst;
 
-    private ResourceConnectionData resCon;
+    private ResourceConnection resCon;
 
-    @Inject private ResourceConnectionDataGenericDbDriver driver;
+    @Inject private ResourceConnectionGenericDbDriver driver;
 
     private Integer nodeIdSrc;
     private Integer nodeIdDst;
@@ -63,7 +63,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     private Resource resDst;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public ResourceConnectionDataGenericDbDriverTest() throws InvalidNameException
+    public ResourceConnectionGenericDbDriverTest() throws InvalidNameException
     {
         resName = new ResourceName("testResourceName");
         resPort = 9001;
@@ -107,7 +107,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc = resourceFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
         resDst = resourceFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
 
-        resCon = TestFactory.createResourceConnectionData(
+        resCon = TestFactory.createResourceConnection(
             uuid,
             resSrc,
             resDst,
@@ -133,7 +133,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst, null);
+        resourceConnectionFactory.create(SYS_CTX, resSrc, resDst, null);
         commit();
 
         checkDbPersist(false);
@@ -147,7 +147,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         Map<Pair<NodeName, ResourceName>, Resource> rscmap = new HashMap<>();
         rscmap.put(new Pair<NodeName, ResourceName>(sourceName, resName), resSrc);
         rscmap.put(new Pair<NodeName, ResourceName>(targetName, resName), resDst);
-        List<ResourceConnectionData> cons = driver.loadAll(rscmap);
+        List<ResourceConnection> cons = driver.loadAll(rscmap);
 
         assertNotNull(cons);
 
@@ -166,7 +166,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc.setResourceConnection(SYS_CTX, resCon);
         resDst.setResourceConnection(SYS_CTX, resCon);
 
-        ResourceConnectionData loadedConDfn = ResourceConnectionData.get(
+        ResourceConnection loadedConDfn = ResourceConnection.get(
             SYS_CTX,
             resSrc,
             resDst
@@ -178,7 +178,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        ResourceConnectionData storedInstance = resourceConnectionDataFactory.create(
+        ResourceConnection storedInstance = resourceConnectionFactory.create(
             SYS_CTX,
             resSrc,
             resDst,
@@ -187,7 +187,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, ResourceConnectionData.get(
+        assertEquals(storedInstance, ResourceConnection.get(
             SYS_CTX,
             resSrc,
             resDst
@@ -260,6 +260,6 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc.setResourceConnection(SYS_CTX, resCon);
         resDst.setResourceConnection(SYS_CTX, resCon);
 
-        resourceConnectionDataFactory.create(SYS_CTX, resSrc, resDst, null);
+        resourceConnectionFactory.create(SYS_CTX, resSrc, resDst, null);
     }
 }

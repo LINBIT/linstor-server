@@ -2273,7 +2273,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
-     * PropsCon-Path for ResourceConnectionData
+     * PropsCon-Path for ResourceConnection
      */
     public static String buildPath(NodeName sourceName, NodeName targetName, ResourceName resName)
     {
@@ -2283,7 +2283,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
-     * PropsCon-Path for ResourceConnectionData
+     * PropsCon-Path for VolumeConnection
      */
     public static String buildPath(
             NodeName sourceName,

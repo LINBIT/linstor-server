@@ -22,6 +22,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceApi;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -653,7 +654,7 @@ public class Json
     }
 
     public static JsonGenTypes.ResourceConnection apiToResourceConnection(
-        ResourceConnection.RscConnApi rscConnApi
+        ResourceConnectionApi rscConnApi
     )
     {
         JsonGenTypes.ResourceConnection resourceConnection = new JsonGenTypes.ResourceConnection();
@@ -661,7 +662,7 @@ public class Json
         resourceConnection.node_b = rscConnApi.getTargetNodeName();
         resourceConnection.props = rscConnApi.getProps();
         resourceConnection.flags = FlagsHelper.toStringList(
-            ResourceConnection.RscConnFlags.class, rscConnApi.getFlags()
+            ResourceConnection.Flags.class, rscConnApi.getFlags()
         );
         resourceConnection.port = rscConnApi.getPort();
         return resourceConnection;

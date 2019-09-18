@@ -116,16 +116,16 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link ResourceConnectionData} without persisting it to the database
+     * Creates a new {@link ResourceConnection} without persisting it to the database
      * @throws DatabaseException
      */
-    public static ResourceConnectionData createResourceConnectionData(
+    public static ResourceConnection createResourceConnection(
         UUID uuidRef,
         Resource resSrcRef,
         Resource resDstRef,
         TcpPortNumber portRef,
         DynamicNumberPool tcpPortPoolRef,
-        ResourceConnectionDataGenericDbDriver driverRef,
+        ResourceConnectionGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
@@ -133,7 +133,7 @@ public class TestFactory
     )
         throws DatabaseException
     {
-        return new ResourceConnectionData(
+        return new ResourceConnection(
             uuidRef,
             resSrcRef,
             resDstRef,

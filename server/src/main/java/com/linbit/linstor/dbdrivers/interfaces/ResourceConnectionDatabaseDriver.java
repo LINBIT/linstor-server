@@ -1,25 +1,25 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
- * Database driver for {@link ResourceConnectionData}.
+ * Database driver for {@link ResourceConnection}.
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface ResourceConnectionDataDatabaseDriver extends GenericDatabaseDriver<ResourceConnectionData>
+public interface ResourceConnectionDatabaseDriver extends GenericDatabaseDriver<ResourceConnection>
 {
     /**
      * A special sub-driver to update the persisted flags.
      */
-    StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence();
+    StateFlagsPersistence<ResourceConnection> getStateFlagPersistence();
 
     /**
      * A special sub-driver to update the port
      */
-    SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> getPortDriver();
+    SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getPortDriver();
 }

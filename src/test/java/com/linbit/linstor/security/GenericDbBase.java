@@ -32,7 +32,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnectionFactory;
 import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceConnectionDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceConnectionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
@@ -180,7 +180,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected ObjectProtectionFactory objectProtectionFactory;
     @Inject protected PropsContainerFactory propsContainerFactory;
     @Inject protected NodeControllerFactory nodeFactory;
-    @Inject protected ResourceConnectionDataControllerFactory resourceConnectionDataFactory;
+    @Inject protected ResourceConnectionControllerFactory resourceConnectionFactory;
     @Inject protected ResourceControllerFactory resourceFactory;
     @Inject protected StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;

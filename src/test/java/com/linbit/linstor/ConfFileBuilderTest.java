@@ -18,7 +18,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
@@ -334,14 +333,14 @@ public class ConfFileBuilderTest
         ResourceGroup rscGrp = Mockito.mock(ResourceGroup.class);
         VolumeGroup vlmGrp = Mockito.mock(VolumeGroup.class);
         StateFlags<Resource.Flags> rscStateFlags = Mockito.mock(ResourceStateFlags.class);
-        StateFlags<ResourceConnection.RscConnFlags> rscConnStateFlags = Mockito.mock(ResourceConnStateFlags.class);
+        StateFlags<ResourceConnection.Flags> rscConnStateFlags = Mockito.mock(ResourceConnStateFlags.class);
         Node assignedNode = Mockito.mock(Node.class);
         NetInterface netInterface = Mockito.mock(NetInterface.class);
         Volume volume = Mockito.mock(Volume.class);
         StateFlags<Volume.VlmFlags> volumeFlags = Mockito.mock(VolumeStateFlags.class);
         VolumeDefinition volumeDefinition = Mockito.mock(VolumeDefinition.class);
         StorPool storPool = Mockito.mock(StorPool.class);
-        rscConn = Mockito.mock(ResourceConnectionData.class);
+        rscConn = Mockito.mock(ResourceConnection.class);
         nodeConn = Mockito.mock(NodeConnection.class);
 
         Props storPoolProps = Mockito.mock(Props.class);
@@ -712,7 +711,7 @@ public class ConfFileBuilderTest
     {
     }
 
-    private interface ResourceConnStateFlags extends StateFlags<ResourceConnection.RscConnFlags>
+    private interface ResourceConnStateFlags extends StateFlags<ResourceConnection.Flags>
     {
     }
 

@@ -508,7 +508,7 @@ public class ConfFileBuilder
             netIf.getNode().getName().displayValue
         );
 
-        if (rscConn != null && rscConn.getStateFlags().isSet(accCtx, ResourceConnection.RscConnFlags.LOCAL_DRBD_PROXY))
+        if (rscConn != null && rscConn.getStateFlags().isSet(accCtx, ResourceConnection.Flags.LOCAL_DRBD_PROXY))
         {
             appendLine("host %s address 127.0.0.1:%d via proxy on %s", hostName, port, hostName);
             try (Section ignore = new Section())

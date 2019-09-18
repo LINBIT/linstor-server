@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceApi;
-import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -23,7 +23,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     private final Map<String, String> localRscProps;
     private final List<Volume.VlmApi> localVlms;
     private final List<OtherRscPojo> otherRscs;
-    private final List<ResourceConnection.RscConnApi> rscConnections;
+    private final List<ResourceConnectionApi> rscConnections;
     private final Long fullSyncId;
     private final Long updateId;
     private final RscLayerDataApi rscLayerDataPojo;
@@ -38,7 +38,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         final Map<String, String> localRscPropsRef,
         final List<Volume.VlmApi> localVlmsRef,
         final List<OtherRscPojo> otherRscListRef,
-        final List<ResourceConnection.RscConnApi> rscConnectionsRef,
+        final List<ResourceConnectionApi> rscConnectionsRef,
         final Long fullSyncIdRef,
         final Long updateIdRef,
         final RscLayerDataApi rscLayerDataPojoRef
@@ -189,7 +189,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         return otherRscs;
     }
 
-    public List<ResourceConnection.RscConnApi> getRscConnections()
+    public List<ResourceConnectionApi> getRscConnections()
     {
         return rscConnections;
     }

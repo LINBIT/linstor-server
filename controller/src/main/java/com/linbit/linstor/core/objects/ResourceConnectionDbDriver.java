@@ -14,7 +14,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -44,8 +44,8 @@ import java.util.Objects;
 
 @Singleton
 public class ResourceConnectionDbDriver
-    extends AbsDatabaseDriver<ResourceConnectionData, Void, Map<Pair<NodeName, ResourceName>, ? extends Resource>>
-    implements ResourceConnectionDataDatabaseDriver
+    extends AbsDatabaseDriver<ResourceConnection, Void, Map<Pair<NodeName, ResourceName>, ? extends Resource>>
+    implements ResourceConnectionDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -53,8 +53,8 @@ public class ResourceConnectionDbDriver
     private final TransactionObjectFactory transObjFactory;
     private final DynamicNumberPool tcpPortPool;
 
-    private final StateFlagsPersistence<ResourceConnectionData> flagsDriver;
-    private final SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> portDriver;
+    private final StateFlagsPersistence<ResourceConnection> flagsDriver;
+    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> portDriver;
 
     @Inject
     public ResourceConnectionDbDriver(
@@ -82,7 +82,7 @@ public class ResourceConnectionDbDriver
         setColumnSetter(FLAGS, rc -> rc.getStateFlags().getFlagsBits(dbCtxRef));
         setColumnSetter(TCP_PORT, rc -> TcpPortNumber.getValueNullable(rc.getPort(dbCtxRef)));
 
-        flagsDriver = generateFlagDriver(FLAGS, ResourceConnection.RscConnFlags.class);
+        flagsDriver = generateFlagDriver(FLAGS, ResourceConnection.Flags.class);
         portDriver = generateSingleColumnDriver(
             TCP_PORT,
             rc -> Objects.toString(rc.getPort(dbCtxRef)),
@@ -91,19 +91,19 @@ public class ResourceConnectionDbDriver
     }
 
     @Override
-    public StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence()
+    public StateFlagsPersistence<ResourceConnection> getStateFlagPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> getPortDriver()
+    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getPortDriver()
     {
         return portDriver;
     }
 
     @Override
-    protected Pair<ResourceConnectionData, Void> load(
+    protected Pair<ResourceConnection, Void> load(
         RawParameters raw,
         Map<Pair<NodeName, ResourceName>, ? extends Resource> rscMap
     )
@@ -131,7 +131,7 @@ public class ResourceConnectionDbDriver
         }
 
         return new Pair<>(
-            new ResourceConnectionData(
+            new ResourceConnection(
                 raw.build(UUID, java.util.UUID::fromString),
                 rscMap.get(new Pair<>(nodeNameSrc, rscName)),
                 rscMap.get(new Pair<>(nodeNameDst, rscName)),
@@ -148,7 +148,7 @@ public class ResourceConnectionDbDriver
     }
 
     @Override
-    protected String getId(ResourceConnectionData rc) throws AccessDeniedException
+    protected String getId(ResourceConnection rc) throws AccessDeniedException
     {
         Resource sourceRsc = rc.getSourceResource(dbCtx);
         return "(SourceNode=" + sourceRsc.getAssignedNode().getName().displayValue +

@@ -1,14 +1,14 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.core.objects.ResourceConnectionData;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.types.TcpPortNumber;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
 
-public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseDriver
+public class SatelliteResConDfnDriver implements ResourceConnectionDatabaseDriver
 {
     private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
     private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
@@ -19,28 +19,28 @@ public class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseD
     }
 
     @Override
-    public void create(ResourceConnectionData conDfnData)
+    public void create(ResourceConnection conDfnData)
     {
         // no-op
     }
 
     @Override
-    public void delete(ResourceConnectionData data)
+    public void delete(ResourceConnection data)
     {
         // no-op
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public StateFlagsPersistence<ResourceConnectionData> getStateFlagPersistence()
+    public StateFlagsPersistence<ResourceConnection> getStateFlagPersistence()
     {
-        return (StateFlagsPersistence<ResourceConnectionData>) stateFlagsDriver;
+        return (StateFlagsPersistence<ResourceConnection>) stateFlagsDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber> getPortDriver()
+    public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getPortDriver()
     {
-        return (SingleColumnDatabaseDriver<ResourceConnectionData, TcpPortNumber>) singleColDriver;
+        return (SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber>) singleColDriver;
     }
 }

@@ -17,6 +17,7 @@ import com.linbit.linstor.core.DivergentDataException;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltLayerRscDataMerger;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -28,7 +29,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceConnectionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
@@ -97,7 +98,7 @@ class StltRscApiCallHandler
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
-    private final ResourceConnectionDataSatelliteFactory resourceConnectionDataFactory;
+    private final ResourceConnectionSatelliteFactory resourceConnectionFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
@@ -125,7 +126,7 @@ class StltRscApiCallHandler
         VolumeDataFactory volumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
-        ResourceConnectionDataSatelliteFactory resourceConnectionDataFactoryRef,
+        ResourceConnectionSatelliteFactory resourceConnectionFactoryRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
         StltRscGrpApiCallHelper rscGrpApiCallHelperRef,
         StltLayerRscDataMerger layerRscDataMergerRef,
@@ -150,7 +151,7 @@ class StltRscApiCallHandler
         volumeDataFactory = volumeDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObjs = stltSecObjsRef;
-        resourceConnectionDataFactory = resourceConnectionDataFactoryRef;
+        resourceConnectionFactory = resourceConnectionFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
         rscGrpApiCallHelper = rscGrpApiCallHelperRef;
         layerRscDataMerger = layerRscDataMergerRef;
@@ -567,7 +568,7 @@ class StltRscApiCallHandler
             }
 
             // create resource connections
-            for (ResourceConnection.RscConnApi rscConnApi : rscRawData.getRscConnections())
+            for (ResourceConnectionApi rscConnApi : rscRawData.getRscConnections())
             {
                 Resource sourceResource = rscDfn.getResource(apiCtx, new NodeName(rscConnApi.getSourceNodeName()));
                 Resource targetResource = rscDfn.getResource(apiCtx, new NodeName(rscConnApi.getTargetNodeName()));
@@ -582,12 +583,13 @@ class StltRscApiCallHandler
                  */
                 if (sourceResource != null && targetResource != null)
                 {
-                    ResourceConnection rscConn = resourceConnectionDataFactory.getInstanceSatellite(
+                    ResourceConnection rscConn = resourceConnectionFactory.getInstanceSatellite(
                         apiCtx,
                         rscConnApi.getUuid(),
                         sourceResource,
                         targetResource,
-                        new ResourceConnection.RscConnFlags[] {},
+                        new ResourceConnection.Flags[]
+                        {},
                         null
                     );
 
@@ -596,7 +598,8 @@ class StltRscApiCallHandler
                     rscConnProps.keySet().retainAll(rscConnApi.getProps().keySet());
 
                     rscConn.getStateFlags().resetFlagsTo(
-                        apiCtx, ResourceConnection.RscConnFlags.restoreFlags(rscConnApi.getFlags()));
+                        apiCtx, ResourceConnection.Flags.restoreFlags(rscConnApi.getFlags())
+                    );
 
                     rscConn.setPort(
                         apiCtx, rscConnApi.getPort() == null ? null : new TcpPortNumber(rscConnApi.getPort()));

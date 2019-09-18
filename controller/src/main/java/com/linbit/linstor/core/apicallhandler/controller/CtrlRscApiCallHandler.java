@@ -17,6 +17,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -253,10 +254,10 @@ public class CtrlRscApiCallHandler
         return rscList;
     }
 
-    List<ResourceConnection.RscConnApi> listResourceConnections(final String rscNameString)
+    List<ResourceConnectionApi> listResourceConnections(final String rscNameString)
     {
         ResourceName rscName = null;
-        List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
+        List<ResourceConnectionApi> rscConns = new ArrayList<>();
         try
         {
             rscName = new ResourceName(rscNameString);
@@ -264,7 +265,7 @@ public class CtrlRscApiCallHandler
 
             if (rscDfn  != null)
             {
-                final Map<ResourceConnectionKey, ResourceConnection.RscConnApi> rscConMap = new TreeMap<>(
+                final Map<ResourceConnectionKey, ResourceConnectionApi> rscConMap = new TreeMap<>(
                     ResourceConnectionKey.COMPARATOR
                 );
 

@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -32,6 +31,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -150,7 +150,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
     {
         try
         {
-            rscConn.getStateFlags().disableFlags(peerAccCtx.get(), ResourceConnection.RscConnFlags.LOCAL_DRBD_PROXY);
+            rscConn.getStateFlags().disableFlags(peerAccCtx.get(), ResourceConnection.Flags.LOCAL_DRBD_PROXY);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -172,7 +172,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
         {
             rscConn.setPort(peerAccCtx.get(), null);
         }
-        catch (ValueOutOfRangeException | ValueInUseException exc)
+        catch (ValueInUseException exc)
         {
             throw new ImplementationError(exc);
         }

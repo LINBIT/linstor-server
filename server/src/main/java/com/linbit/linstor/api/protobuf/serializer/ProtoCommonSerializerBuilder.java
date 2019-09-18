@@ -783,7 +783,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .putAllRscConnProps(rscConn.getProps(accCtx).map())
             .addAllRscConnFlags(
                 FlagsHelper.toStringList(
-                    ResourceConnection.RscConnFlags.class,
+                    ResourceConnection.Flags.class,
                     rscConn.getStateFlags().getFlagsBits(accCtx)
                 )
             );

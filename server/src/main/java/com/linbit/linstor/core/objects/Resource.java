@@ -5,6 +5,7 @@ import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.apis.ResourceApi;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -404,7 +405,7 @@ public class Resource extends BaseTransactionObject
         {
             volumes.add(itVolumes.next().getApiData(null, accCtx));
         }
-        List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
+        List<ResourceConnectionApi> rscConns = new ArrayList<>();
         for (ResourceConnection rscConn : streamResourceConnections(accCtx).collect(Collectors.toList()))
         {
             rscConns.add(rscConn.getApiData(accCtx));

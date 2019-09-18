@@ -5,6 +5,7 @@ import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.KvsApi;
 import com.linbit.linstor.core.apis.NodeApi;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -389,9 +390,9 @@ public class CtrlApiCallHandler
         return resourceList;
     }
 
-    public List<ResourceConnection.RscConnApi> listResourceConnections(String rscName)
+    public List<ResourceConnectionApi> listResourceConnections(String rscName)
     {
-        List<ResourceConnection.RscConnApi> listRscConns;
+        List<ResourceConnectionApi> listRscConns;
         try (LockGuard lg = lockGuardFactory.build(READ, NODES_MAP, RSC_DFN_MAP))
         {
             listRscConns = rscApiCallHandler.listResourceConnections(rscName);

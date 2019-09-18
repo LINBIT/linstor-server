@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -159,7 +160,7 @@ public class CtrlVlmListApiCallHandler
                                 }
                             }
 
-                            List<ResourceConnection.RscConnApi> rscConns = new ArrayList<>();
+                            List<ResourceConnectionApi> rscConns = new ArrayList<>();
                             for (ResourceConnection rscConn : rsc.streamResourceConnections(peerAccCtx.get())
                                     .collect(toList()))
                             {
