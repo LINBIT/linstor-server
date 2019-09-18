@@ -39,7 +39,7 @@ import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroupGenericDbDriver;
-import com.linbit.linstor.core.objects.StorPoolDataControllerFactory;
+import com.linbit.linstor.core.objects.StorPoolControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataControllerFactory;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
@@ -185,7 +185,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;
     @Inject protected NodeConnectionFactory nodeConnectionFactory;
-    @Inject protected StorPoolDataControllerFactory storPoolDataFactory;
+    @Inject protected StorPoolControllerFactory storPoolFactory;
     @Inject protected FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
     @Inject protected VolumeDataControllerFactory volumeDataFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;

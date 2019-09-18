@@ -12,7 +12,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -39,11 +39,11 @@ import java.util.TreeMap;
 
 @Singleton
 public class StorPoolDbDriver
-    extends AbsDatabaseDriver<StorPoolData,
+    extends AbsDatabaseDriver<StorPool,
         StorPool.InitMaps,
         Pair<Map<NodeName, ? extends Node>,
             Map<StorPoolName, ? extends StorPoolDefinition>>>
-    implements StorPoolDataDatabaseDriver
+    implements StorPoolDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -85,7 +85,7 @@ public class StorPoolDbDriver
     }
 
     @Override
-    protected Pair<StorPoolData, InitMaps> load(
+    protected Pair<StorPool, StorPool.InitMaps> load(
         RawParameters raw,
         Pair<Map<NodeName, ? extends Node>,
             Map<StorPoolName, ? extends StorPoolDefinition>> parent
@@ -100,7 +100,7 @@ public class StorPoolDbDriver
 
         final Map<String, VlmProviderObject> vlmMap = new TreeMap<>();
         return new Pair<>(
-            new StorPoolData(
+            new StorPool(
                 raw.build(UUID, java.util.UUID::fromString),
                 parent.objA.get(nodeName),
                 parent.objB.get(poolName),
@@ -134,7 +134,7 @@ public class StorPoolDbDriver
     }
 
     @Override
-    protected String getId(StorPoolData sp)
+    protected String getId(StorPool sp)
     {
         return "(NodeName=" + sp.getNode().getName().displayValue +
             " PoolName=" + sp.getName().displayValue + ")";

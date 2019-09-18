@@ -19,7 +19,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -89,7 +89,7 @@ public class CtrlStorPoolApiCallHandler
 
         try
         {
-            StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr, true);
+            StorPool storPool = loadStorPool(nodeNameStr, storPoolNameStr, true);
 
             if (storPoolUuid != null && !storPoolUuid.equals(storPool.getUuid()))
             {
@@ -171,7 +171,7 @@ public class CtrlStorPoolApiCallHandler
                 );
             }
 
-            StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr, false);
+            StorPool storPool = loadStorPool(nodeNameStr, storPoolNameStr, false);
 
             if (storPool == null)
             {
@@ -244,7 +244,7 @@ public class CtrlStorPoolApiCallHandler
         return responses;
     }
 
-    private Collection<VlmProviderObject> getVolumes(StorPoolData storPool)
+    private Collection<VlmProviderObject> getVolumes(StorPool storPool)
     {
         Collection<VlmProviderObject> volumes;
         try
@@ -262,7 +262,7 @@ public class CtrlStorPoolApiCallHandler
         return volumes;
     }
 
-    private void delete(StorPoolData storPool)
+    private void delete(StorPool storPool)
     {
         try
         {
@@ -282,7 +282,7 @@ public class CtrlStorPoolApiCallHandler
         }
     }
 
-    private StorPoolData loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
+    private StorPool loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
     {
         return ctrlApiDataLoader.loadStorPool(
             ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true),

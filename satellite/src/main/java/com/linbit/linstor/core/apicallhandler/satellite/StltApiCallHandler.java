@@ -670,7 +670,7 @@ public class StltApiCallHandler
 
     public void applyStorPoolChanges(StorPoolPojo storPoolRaw)
     {
-        applyChangedData(new ApplyStorPoolData(storPoolRaw));
+        applyChangedData(new ApplyStorPool(storPoolRaw));
     }
 
     public void applyDeletedStorPoolChange(
@@ -679,7 +679,7 @@ public class StltApiCallHandler
         long updateId
     )
     {
-        applyChangedData(new ApplyStorPoolData(storPoolNameStr, fullSyncId, updateId));
+        applyChangedData(new ApplyStorPool(storPoolNameStr, fullSyncId, updateId));
     }
 
     public void applySnapshotChanges(SnapshotPojo snapshotRaw)
@@ -993,21 +993,21 @@ public class StltApiCallHandler
         }
     }
 
-    private class ApplyStorPoolData implements ApplyData
+    private class ApplyStorPool implements ApplyData
     {
         private StorPoolPojo storPoolPojo;
         private String deletedStorPoolName;
         private long fullSyncId;
         private long updateId;
 
-        ApplyStorPoolData(StorPoolPojo storPoolPojoRef)
+        ApplyStorPool(StorPoolPojo storPoolPojoRef)
         {
             storPoolPojo = storPoolPojoRef;
             fullSyncId = storPoolPojo.getFullSyncId();
             updateId = storPoolPojo.getUpdateId();
         }
 
-        ApplyStorPoolData(String storPoolNameRef, long fullSyncIdRef, long updateIdRef)
+        ApplyStorPool(String storPoolNameRef, long fullSyncIdRef, long updateIdRef)
         {
             deletedStorPoolName = storPoolNameRef;
             fullSyncId = fullSyncIdRef;

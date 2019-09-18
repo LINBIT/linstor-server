@@ -427,7 +427,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
         int id,
         String rscSuffixRef,
         RscLayerObject parentRef,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> storPoolMapRef
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolMapRef
     )
         throws DatabaseException
     {
@@ -513,7 +513,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
     private void restoreDrbdVolumes(
         DrbdRscData rscData,
         Map<VolumeNumber, DrbdVlmData> vlmMap,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> storPoolMapRef
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolMapRef
     )
         throws DatabaseException
     {

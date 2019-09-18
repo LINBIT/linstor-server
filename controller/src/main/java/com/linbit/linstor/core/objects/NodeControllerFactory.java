@@ -31,7 +31,7 @@ public class NodeControllerFactory
 {
     private final NodeDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
-    private final StorPoolDataControllerFactory storPoolDataFactory;
+    private final StorPoolControllerFactory storPoolFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
@@ -57,7 +57,7 @@ public class NodeControllerFactory
     public NodeControllerFactory(
         NodeDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
-        StorPoolDataControllerFactory storPoolDataFactoryRef,
+        StorPoolControllerFactory storPoolFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         FreeSpaceMgrControllerFactory freeSpaceMgrFactoryRef,
@@ -69,7 +69,7 @@ public class NodeControllerFactory
     {
         dbDriver = dbDriverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
-        storPoolDataFactory = storPoolDataFactoryRef;
+        storPoolFactory = storPoolFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;

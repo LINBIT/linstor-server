@@ -22,7 +22,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -102,7 +102,7 @@ public class StorPoolInternalCallHandler
                 currentPeer.sendMessage(
                     ctrlStltSerializer
                         .onewayBuilder(InternalApiConsts.API_APPLY_STOR_POOL)
-                        .storPoolData(storPool, fullSyncTimestamp, updateId)
+                        .storPool(storPool, fullSyncTimestamp, updateId)
                         .build()
                 );
             }
@@ -113,7 +113,7 @@ public class StorPoolInternalCallHandler
                 currentPeer.sendMessage(
                     ctrlStltSerializer
                         .onewayBuilder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED)
-                        .deletedStorPoolData(storPoolNameStr, fullSyncTimestamp, updateId)
+                        .deletedStorPool(storPoolNameStr, fullSyncTimestamp, updateId)
                         .build()
                 );
             }
@@ -138,7 +138,7 @@ public class StorPoolInternalCallHandler
         }
     }
 
-    private StorPoolData loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
+    private StorPool loadStorPool(String nodeNameStr, String storPoolNameStr, boolean failIfNull)
     {
         return ctrlApiDataLoader.loadStorPool(
             ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true),
@@ -147,7 +147,7 @@ public class StorPoolInternalCallHandler
         );
     }
 
-    private void setCapacityInfo(StorPoolData storPool, long freeCapacity, long totalCapacity)
+    private void setCapacityInfo(StorPool storPool, long freeCapacity, long totalCapacity)
     {
         try
         {
@@ -191,7 +191,7 @@ public class StorPoolInternalCallHandler
 
                         try
                         {
-                            StorPoolData storPool = loadStorPool(nodeName, capacityInfoPojo.getStorPoolName(), true);
+                            StorPool storPool = loadStorPool(nodeName, capacityInfoPojo.getStorPoolName(), true);
                             if (storPool.getUuid().equals(capacityInfoPojo.getStorPoolUuid()))
                             {
                                 storPool.clearReports();
@@ -247,10 +247,10 @@ public class StorPoolInternalCallHandler
     )
     {
         Peer currentPeer = peer.get();
-        StorPoolData storPool;
+        StorPool storPool;
         try
         {
-            storPool = (StorPoolData) currentPeer.getNode().getStorPool(apiCtx, new StorPoolName(storPoolNameRef));
+            storPool = (StorPool) currentPeer.getNode().getStorPool(apiCtx, new StorPoolName(storPoolNameRef));
             storPool.setSupportsSnapshot(apiCtx, supportsSnapshotsRef);
         }
         catch (AccessDeniedException | InvalidNameException | DatabaseException exc)

@@ -8,7 +8,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCall
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceApi;
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.apis.StorPoolApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -148,7 +148,7 @@ public class View
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
-            Flux<List<StorPool.StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
+            Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
                 .listStorPools(nodesFilter, storagePoolsFilter)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
@@ -157,7 +157,7 @@ public class View
     }
 
     private Mono<Response> storPoolListToResponse(
-        Flux<List<StorPool.StorPoolApi>> storPoolListFlux,
+        Flux<List<StorPoolApi>> storPoolListFlux,
         int limit,
         int offset
     )
@@ -165,7 +165,7 @@ public class View
         return storPoolListFlux.flatMap(storPoolList ->
         {
             Response resp;
-            Stream<StorPool.StorPoolApi> storPoolApiStream = storPoolList.stream();
+            Stream<StorPoolApi> storPoolApiStream = storPoolList.stream();
             if (limit > 0)
             {
                 storPoolApiStream = storPoolApiStream.skip(offset).limit(limit);

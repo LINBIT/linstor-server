@@ -124,18 +124,18 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         return storPools.values().stream();
     }
 
-    public void addStorPool(AccessContext accCtx, StorPoolData storPoolData) throws AccessDeniedException
+    public void addStorPool(AccessContext accCtx, StorPool storPool) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        storPools.put(storPoolData.getNode().getName(), storPoolData);
+        storPools.put(storPool.getNode().getName(), storPool);
     }
 
-    public void removeStorPool(AccessContext accCtx, StorPoolData storPoolData) throws AccessDeniedException
+    public void removeStorPool(AccessContext accCtx, StorPool storPool) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        storPools.remove(storPoolData.getNode().getName());
+        storPools.remove(storPool.getNode().getName());
     }
 
     @Override

@@ -18,7 +18,7 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
@@ -72,7 +72,7 @@ public class SatelliteDbModule extends AbstractModule
         bind(VolumeDefinitionDataDatabaseDriver.class).to(SatelliteVolDfnDriver.class);
         bind(VolumeDataDatabaseDriver.class).to(SatelliteVolDriver.class);
         bind(StorPoolDefinitionDataDatabaseDriver.class).to(SatelliteStorPoolDfnDriver.class);
-        bind(StorPoolDataDatabaseDriver.class).to(SatelliteStorPoolDriver.class);
+        bind(StorPoolDatabaseDriver.class).to(SatelliteStorPoolDriver.class);
         bind(NetInterfaceDatabaseDriver.class).to(SatelliteNiDriver.class);
         bind(NodeConnectionDatabaseDriver.class).to(SatelliteNodeConDfnDriver.class);
         bind(ResourceConnectionDatabaseDriver.class).to(SatelliteResConDfnDriver.class);

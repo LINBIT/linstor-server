@@ -49,6 +49,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
@@ -553,7 +554,7 @@ public class DatabaseLoader implements DatabaseDriver
     private void loadLayerObects(
         Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
         Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> tmpSnapshotMapRef,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef
     )
         throws DatabaseException, AccessDeniedException
     {
@@ -582,7 +583,7 @@ public class DatabaseLoader implements DatabaseDriver
 
     private List<Resource> loadRscLayerData(
         Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef
     )
         throws DatabaseException, AccessDeniedException, ImplementationError
     {

@@ -12,7 +12,7 @@ import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
+public class StorPoolGenericDbDriver implements StorPoolDatabaseDriver
 {
     private static final String TBL_NSP = DbConstants.TBL_NODE_STOR_POOL;
     private static final String SP_UUID = DbConstants.UUID;
@@ -91,7 +91,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public StorPoolDataGenericDbDriver(
+    public StorPoolGenericDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
@@ -110,16 +110,16 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(StorPoolData storPoolData) throws DatabaseException
+    public void create(StorPool storPool) throws DatabaseException
     {
-        errorReporter.logTrace("Creating StorPool %s", getId(storPoolData));
+        errorReporter.logTrace("Creating StorPool %s", getId(storPool));
         try (PreparedStatement stmt = getConnection().prepareStatement(SP_INSERT))
         {
-            FreeSpaceMgrName fsmName = storPoolData.getFreeSpaceTracker().getName();
-            stmt.setString(1, storPoolData.getUuid().toString());
-            stmt.setString(2, storPoolData.getNode().getName().value);
-            stmt.setString(3, storPoolData.getName().value);
-            stmt.setString(4, storPoolData.getDeviceProviderKind().name());
+            FreeSpaceMgrName fsmName = storPool.getFreeSpaceTracker().getName();
+            stmt.setString(1, storPool.getUuid().toString());
+            stmt.setString(2, storPool.getNode().getName().value);
+            stmt.setString(3, storPool.getName().value);
+            stmt.setString(4, storPool.getDeviceProviderKind().name());
             stmt.setString(5, fsmName.value);
             stmt.setString(6, fsmName.displayValue);
             stmt.executeUpdate();
@@ -128,7 +128,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         {
             throw new DatabaseException(sqlExc);
         }
-        errorReporter.logTrace("StorPool created %s", getId(storPoolData));
+        errorReporter.logTrace("StorPool created %s", getId(storPool));
     }
 
     public Map<FreeSpaceMgrName, FreeSpaceMgr> loadAllFreeSpaceMgrs()
@@ -174,14 +174,14 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         return ret;
     }
 
-    public Map<StorPoolData, InitMaps> loadAll(
+    public Map<StorPool, StorPool.InitMaps> loadAll(
         Map<NodeName, ? extends Node> nodesMap,
         Map<StorPoolName, ? extends StorPoolDefinition> storPoolDfnMap,
         Map<FreeSpaceMgrName, FreeSpaceMgr> freeSpaceMgrMap
     )
         throws DatabaseException
     {
-        Map<StorPoolData, StorPool.InitMaps> storPools = new TreeMap<>();
+        Map<StorPool, StorPool.InitMaps> storPools = new TreeMap<>();
         errorReporter.logTrace("Loading all Storage Pool");
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
@@ -195,7 +195,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
                         StorPoolName storPoolName = new StorPoolName(resultSet.getString(SP_POOL));
                         FreeSpaceMgrName fsmName = FreeSpaceMgrName.restoreName(resultSet.getString(SP_FSM_DSP_NAME));
 
-                        Pair<StorPoolData, InitMaps> pair = restoreStorPool(
+                        Pair<StorPool, StorPool.InitMaps> pair = restoreStorPool(
                             resultSet,
                             nodesMap.get(nodeName),
                             storPoolDfnMap.get(storPoolName),
@@ -224,7 +224,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         return storPools;
     }
 
-    private Pair<StorPoolData, InitMaps> restoreStorPool(
+    private Pair<StorPool, StorPool.InitMaps> restoreStorPool(
         ResultSet resultSet,
         Node node,
         StorPoolDefinition storPoolDfn,
@@ -235,7 +235,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         try
         {
             Map<String, VlmProviderObject> vlmMap = new TreeMap<>();
-            StorPoolData storPool = new StorPoolData(
+            StorPool storPool = new StorPool(
                 java.util.UUID.fromString(resultSet.getString(SP_UUID)),
                 node,
                 storPoolDfn,
@@ -256,7 +256,7 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
     }
 
     @Override
-    public void delete(StorPoolData storPool) throws DatabaseException
+    public void delete(StorPool storPool) throws DatabaseException
     {
         errorReporter.logTrace("Deleting StorPool %s", getId(storPool));
         try (PreparedStatement stmt = getConnection().prepareStatement(SP_DELETE))
@@ -285,11 +285,11 @@ public class StorPoolDataGenericDbDriver implements StorPoolDataDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(StorPoolData storPoolData)
+    private String getId(StorPool storPool)
     {
         return getId(
-            storPoolData.getNode().getName().displayValue,
-            storPoolData.getName().displayValue
+            storPool.getNode().getName().displayValue,
+            storPool.getName().displayValue
         );
     }
 

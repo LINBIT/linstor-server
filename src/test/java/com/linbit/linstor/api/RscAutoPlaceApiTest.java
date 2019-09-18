@@ -27,7 +27,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.netcom.Peer;
@@ -1142,7 +1142,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 BOB_ACC_CTX,
                 new FreeSpaceMgrName(stlt.getName(), DFLT_DISKLESS_STOR_POOL_NAME)
             );
-            storPoolDataFactory.create(
+            storPoolFactory.create(
                 BOB_ACC_CTX,
                 stlt,
                 dfltDisklessStorPoolDfn,
@@ -1301,7 +1301,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     FreeSpaceMgrName.restoreName(freeSpaceMgrName)
             );
 
-            StorPoolData storPool = storPoolDataFactory.create(
+            StorPool storPool = storPoolFactory.create(
                 ApiTestBase.BOB_ACC_CTX,
                 stlt,
                 storPoolDfn,

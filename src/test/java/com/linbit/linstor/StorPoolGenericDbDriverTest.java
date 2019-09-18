@@ -14,9 +14,9 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
-import com.linbit.linstor.core.objects.StorPoolData;
-import com.linbit.linstor.core.objects.StorPoolDataGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 
-public class StorPoolDataGenericDbDriverTest extends GenericDbBase
+public class StorPoolGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_STOR_POOLS =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + POOL_NAME + ", " + DRIVER_NAME +
@@ -53,12 +53,12 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
 
     private StorPoolDefinitionData spdd;
     @Inject private StorPoolDefinitionDataGenericDbDriver spdDriver;
-    @Inject private StorPoolDataGenericDbDriver driver;
+    @Inject private StorPoolGenericDbDriver driver;
 
     private FreeSpaceMgr fsm;
     private FreeSpaceMgr disklessFsm;
 
-    public StorPoolDataGenericDbDriverTest() throws InvalidNameException
+    public StorPoolGenericDbDriverTest() throws InvalidNameException
     {
         nodeName = new NodeName("TestNodeName");
         spName = new StorPoolName("TestStorPoolDefinition");
@@ -88,7 +88,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersist() throws Exception
     {
-        StorPoolData storPool = TestFactory.createStorPoolData(
+        StorPool storPool = TestFactory.createStorPool(
             uuid,
             node,
             spdd,
@@ -119,7 +119,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistStorGetInstance() throws Exception
     {
-        StorPool pool = storPoolDataFactory.create(
+        StorPool pool = storPoolFactory.create(
             SYS_CTX,
             node,
             spdd,
@@ -146,7 +146,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadAll() throws Exception
     {
-        StorPoolData storPool = TestFactory.createStorPoolData(
+        StorPool storPool = TestFactory.createStorPool(
             uuid,
             node,
             spdd,
@@ -176,30 +176,30 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         tmpFreeSpaceMgrMap.put(fsm.getName(), fsm);
         tmpFreeSpaceMgrMap.put(disklessFsm.getName(), disklessFsm);
 
-        Map<StorPoolData, InitMaps> storPools = driver.loadAll(tmpNodesMap, tmpStorPoolDfnMap, tmpFreeSpaceMgrMap);
+        Map<StorPool, StorPool.InitMaps> storPools = driver.loadAll(tmpNodesMap, tmpStorPoolDfnMap, tmpFreeSpaceMgrMap);
 
         assertNotNull(storPools);
         assertEquals(1, storPools.size()); // we didn't create the dfltDisklessStorPool here
 
         // one of the entries should be the default diskless stor pool, we just skip that
-        StorPoolData storPoolData = storPools.keySet().stream()
+        StorPool storPoolLoaded = storPools.keySet().stream()
             .filter(sp -> sp.getName().equals(spName))
             .findFirst()
             .get();
 
-        assertNotNull(storPoolData);
-        assertNotNull(storPoolData.getProps(SYS_CTX));
-        StorPoolDefinition spDfn = storPoolData.getDefinition(SYS_CTX);
+        assertNotNull(storPoolLoaded);
+        assertNotNull(storPoolLoaded.getProps(SYS_CTX));
+        StorPoolDefinition spDfn = storPoolLoaded.getDefinition(SYS_CTX);
         assertNotNull(spDfn);
         assertEquals(spName, spDfn.getName());
-        assertEquals(DeviceProviderKind.LVM, storPoolData.getDeviceProviderKind());
-        assertEquals(spName, storPoolData.getName());
+        assertEquals(DeviceProviderKind.LVM, storPoolLoaded.getDeviceProviderKind());
+        assertEquals(spName, storPoolLoaded.getName());
     }
 
     @Test
     public void testCache() throws Exception
     {
-        StorPoolData storedInstance = storPoolDataFactory.create(
+        StorPool storedInstance = storPoolFactory.create(
             SYS_CTX,
             node,
             spdd,
@@ -215,11 +215,11 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        StorPoolData loadedStorPool = (StorPoolData) node.getStorPool(SYS_CTX, spdd.getName());
+        StorPool loadedStorPool = (StorPool) node.getStorPool(SYS_CTX, spdd.getName());
 
         assertNull(loadedStorPool);
 
-        StorPoolData storPool = TestFactory.createStorPoolData(
+        StorPool storPool = TestFactory.createStorPool(
             uuid,
             node,
             spdd,
@@ -235,7 +235,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         node.addStorPool(SYS_CTX, storPool);
         spdd.addStorPool(SYS_CTX, storPool);
 
-        loadedStorPool = (StorPoolData) node.getStorPool(SYS_CTX, spdd.getName());
+        loadedStorPool = (StorPool) node.getStorPool(SYS_CTX, spdd.getName());
 
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
@@ -247,7 +247,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testDelete() throws Exception
     {
-        StorPoolData storPool = storPoolDataFactory.create(
+        StorPool storPool = storPoolFactory.create(
             SYS_CTX,
             node,
             spdd,
@@ -276,7 +276,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        StorPoolData storPool = TestFactory.createStorPoolData(
+        StorPool storPool = TestFactory.createStorPool(
             uuid,
             node,
             spdd,
@@ -292,7 +292,7 @@ public class StorPoolDataGenericDbDriverTest extends GenericDbBase
         node.addStorPool(SYS_CTX, storPool);
         spdd.addStorPool(SYS_CTX, storPool);
 
-        storPoolDataFactory.create(
+        storPoolFactory.create(
             SYS_CTX,
             node,
             spdd,

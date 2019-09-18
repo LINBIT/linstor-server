@@ -12,8 +12,10 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.netcom.Peer;
@@ -63,12 +65,12 @@ public class CtrlStorPoolListApiCallHandler
         peerAccCtx = peerAccCtxRef;
     }
 
-    public Flux<List<StorPool.StorPoolApi>> listStorPools(
+    public Flux<List<StorPoolApi>> listStorPools(
         List<String> nodeNames,
         List<String> storPoolNames
     )
     {
-        Flux<List<StorPool.StorPoolApi>> flux;
+        Flux<List<StorPoolApi>> flux;
         final Set<StorPoolName> storPoolsFilter =
             storPoolNames.stream().map(LinstorParsingUtils::asStorPoolName).collect(Collectors.toSet());
         final Set<NodeName> nodesFilter =
@@ -86,13 +88,13 @@ public class CtrlStorPoolListApiCallHandler
         return flux;
     }
 
-    private Flux<List<StorPool.StorPoolApi>> assembleList(
+    private Flux<List<StorPoolApi>> assembleList(
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolsFilter,
         Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> freeCapacityAnswers
     )
     {
-        ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
+        ArrayList<StorPoolApi> storPools = new ArrayList<>();
         try
         {
             storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()

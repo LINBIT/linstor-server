@@ -14,7 +14,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
@@ -70,8 +70,8 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     private Resource resSrc;
     private Resource resDst;
     private StorPoolDefinitionData storPoolDfn;
-    private StorPoolData storPool1;
-    private StorPoolData storPool2;
+    private StorPool storPool1;
+    private StorPool storPool2;
     private VolumeData volSrc;
     private VolumeData volDst;
 
@@ -139,10 +139,10 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
-        storPool1 = storPoolDataFactory.create(
+        storPool1 = storPoolFactory.create(
             SYS_CTX, nodeSrc, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, nodeSrc)
         );
-        storPool2 = storPoolDataFactory.create(
+        storPool2 = storPoolFactory.create(
             SYS_CTX, nodeDst, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, nodeDst)
         );
 

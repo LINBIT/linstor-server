@@ -16,7 +16,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -88,12 +88,12 @@ public class CtrlPropsHelper
         return props;
     }
 
-    public Props getProps(StorPoolData storPool)
+    public Props getProps(StorPool storPool)
     {
         return getProps(peerAccCtx.get(), storPool);
     }
 
-    public Props getProps(AccessContext accCtx, StorPoolData storPool)
+    public Props getProps(AccessContext accCtx, StorPool storPool)
     {
         Props props;
         try

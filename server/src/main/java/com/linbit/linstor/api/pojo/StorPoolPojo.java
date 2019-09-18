@@ -1,14 +1,14 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPoolApi
+public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
 {
     private final UUID storPoolUuid;
     private final UUID nodeUuid;

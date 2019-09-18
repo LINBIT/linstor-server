@@ -3,7 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IllegalStorageDriverException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -18,16 +18,16 @@ import javax.inject.Provider;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class StorPoolDataControllerFactory
+public class StorPoolControllerFactory
 {
-    private final StorPoolDataDatabaseDriver driver;
+    private final StorPoolDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public StorPoolDataControllerFactory(
-        StorPoolDataDatabaseDriver driverRef,
+    public StorPoolControllerFactory(
+        StorPoolDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -39,7 +39,7 @@ public class StorPoolDataControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public StorPoolData create(
+    public StorPool create(
         AccessContext accCtx,
         Node node,
         StorPoolDefinition storPoolDef,
@@ -50,11 +50,11 @@ public class StorPoolDataControllerFactory
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
-        StorPoolData storPoolData = null;
+        StorPool storPool = null;
 
-        storPoolData = (StorPoolData) node.getStorPool(accCtx, storPoolDef.getName());
+        storPool = node.getStorPool(accCtx, storPoolDef.getName());
 
-        if (storPoolData != null)
+        if (storPool != null)
         {
             throw new LinStorDataAlreadyExistsException("The StorPool already exists");
         }
@@ -72,7 +72,7 @@ public class StorPoolDataControllerFactory
                 null
             );
         }
-        storPoolData = new StorPoolData(
+        storPool = new StorPool(
             UUID.randomUUID(),
             node,
             storPoolDef,
@@ -84,11 +84,11 @@ public class StorPoolDataControllerFactory
             transMgrProvider,
             new TreeMap<>()
         );
-        driver.create(storPoolData);
-        freeSpaceTrackerRef.add(accCtx, storPoolData);
-        node.addStorPool(accCtx, storPoolData);
-        ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
+        driver.create(storPool);
+        freeSpaceTrackerRef.add(accCtx, storPool);
+        node.addStorPool(accCtx, storPool);
+        ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPool);
 
-        return storPoolData;
+        return storPool;
     }
 }

@@ -8,7 +8,6 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -553,8 +552,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         StorageConfigReader.checkFileStorageDirectoryEntry(props);
 
         // try to create a dummy snapshot to verify if we can
-        StorPoolData storPoolData = (StorPoolData) storPool;
-        if (!storPoolData.isSnapshotSupportedInitialized(storDriverAccCtx))
+        if (!storPool.isSnapshotSupportedInitialized(storDriverAccCtx))
         {
             try
             {
@@ -578,11 +576,11 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
                         dummyVlmPath,
                         dummyTargetPath
                     );
-                    storPoolData.setSupportsSnapshot(storDriverAccCtx, true);
+                    storPool.setSupportsSnapshot(storDriverAccCtx, true);
                 }
                 catch (StorageException ignored)
                 {
-                    storPoolData.setSupportsSnapshot(storDriverAccCtx, false);
+                    storPool.setSupportsSnapshot(storDriverAccCtx, false);
                 }
                 finally
                 {

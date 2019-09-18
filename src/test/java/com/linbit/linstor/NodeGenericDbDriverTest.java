@@ -22,7 +22,7 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
@@ -401,7 +401,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
             // node1 storPool
-            StorPoolData storPool1 = storPoolDataFactory.create(
+            StorPool storPool1 = storPoolFactory.create(
                 SYS_CTX,
                 node1,
                 storPoolDfn,
@@ -411,7 +411,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             storPool1.getProps(SYS_CTX).setProp(storPool1TestKey, storPool1TestValue);
 
             // node2 storPool
-            StorPoolData storPool2 = storPoolDataFactory.create(
+            StorPool storPool2 = storPoolFactory.create(
                 SYS_CTX,
                 node2,
                 storPoolDfn,

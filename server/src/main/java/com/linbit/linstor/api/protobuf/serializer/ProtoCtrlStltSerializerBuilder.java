@@ -278,7 +278,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder storPoolData(
+    public ProtoCtrlStltSerializerBuilder storPool(
         StorPool storPool,
         long fullSyncTimestamp,
         long updateId
@@ -287,7 +287,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgIntApplyStorPool.newBuilder()
-                .setStorPool(buildIntStorPoolDataMsg(storPool))
+                .setStorPool(buildIntStorPoolMsg(storPool))
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
                 .build()
@@ -305,7 +305,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder deletedStorPoolData(
+    public ProtoCtrlStltSerializerBuilder deletedStorPool(
         String storPoolNameStr,
         long fullSyncTimestamp,
         long updateId
@@ -405,7 +405,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             for (StorPool storPool : storPools)
             {
                 serializedStorPools.add(
-                    buildIntStorPoolDataMsg(storPool)
+                    buildIntStorPoolMsg(storPool)
                 );
             }
             for (Resource rsc : resources)
@@ -677,7 +677,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         }
     }
 
-    private IntStorPool buildIntStorPoolDataMsg(StorPool storPool)
+    private IntStorPool buildIntStorPoolMsg(StorPool storPool)
         throws AccessDeniedException
     {
         StorPoolDefinition storPoolDfn = storPool.getDefinition(serializerCtx);

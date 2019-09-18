@@ -18,7 +18,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.objects.StorPoolData;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -124,7 +124,7 @@ public class CtrlStorPoolCrtApiCallHandler
         // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
         requireStorPoolDfnMapChangeAccess();
 
-        StorPoolData storPool = storPoolHelper.createStorPool(
+        StorPool storPool = storPoolHelper.createStorPool(
             nodeNameStr,
             storPoolNameStr,
             deviceProviderKindRef,
@@ -209,7 +209,7 @@ public class CtrlStorPoolCrtApiCallHandler
         }
     }
 
-    private void updateStorPoolDfnMap(StorPoolData storPool)
+    private void updateStorPoolDfnMap(StorPool storPool)
     {
         try
         {

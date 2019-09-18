@@ -20,14 +20,14 @@ import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
-import com.linbit.linstor.core.objects.StorPoolDataSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
@@ -64,7 +64,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
 {
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
-    private final StorPoolDataSatelliteFactory storPoolDataFactory;
+    private final StorPoolSatelliteFactory storPoolFactory;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
 
     @Inject
@@ -73,14 +73,14 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
         LayerDataFactory layerDataFactoryRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataSatelliteFactory storPoolDataFactoryRef,
+        StorPoolSatelliteFactory storPoolFactoryRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef
     )
     {
         super(apiCtxRef, layerDataFactoryRef);
         storPoolDfnMap = storPoolDfnMapRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
-        storPoolDataFactory = storPoolDataFactoryRef;
+        storPoolFactory = storPoolFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
     }
 
@@ -364,7 +364,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
                     storPoolDfn.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolDfnProps());
                     storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                 }
-                storPool = storPoolDataFactory.getInstanceSatellite(
+                storPool = storPoolFactory.getInstanceSatellite(
                     apiCtx,
                     storPoolApi.getStorPoolUuid(),
                     vlm.getResource().getAssignedNode(),

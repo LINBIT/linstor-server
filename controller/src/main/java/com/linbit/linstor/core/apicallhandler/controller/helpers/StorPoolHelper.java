@@ -13,10 +13,8 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.objects.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolData;
-import com.linbit.linstor.core.objects.StorPoolDataControllerFactory;
+import com.linbit.linstor.core.objects.StorPoolControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataControllerFactory;
@@ -33,7 +31,7 @@ public class StorPoolHelper
 {
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
-    private final StorPoolDataControllerFactory storPoolDataFactory;
+    private final StorPoolControllerFactory storPoolFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
 
@@ -41,19 +39,19 @@ public class StorPoolHelper
     public StorPoolHelper(
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataControllerFactory storPoolDataFactoryRef,
+        StorPoolControllerFactory storPoolFactoryRef,
         FreeSpaceMgrControllerFactory freeSpaceMgrFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
-        storPoolDataFactory = storPoolDataFactoryRef;
+        storPoolFactory = storPoolFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
         peerAccCtx = peerAccCtxRef;
     }
 
-    public StorPoolData createStorPool(
+    public StorPool createStorPool(
         String nodeNameStr,
         String storPoolNameStr,
         DeviceProviderKind deviceProviderKindRef,
@@ -73,7 +71,7 @@ public class StorPoolHelper
             );
         }
 
-        StorPoolData storPool;
+        StorPool storPool;
         try
         {
             if (storPoolDef == null)
@@ -89,7 +87,7 @@ public class StorPoolHelper
                 LinstorParsingUtils.asFreeSpaceMgrName(freeSpaceMgrNameStr) :
                 new FreeSpaceMgrName(node.getName(), storPoolDef.getName());
 
-            storPool = storPoolDataFactory.create(
+            storPool = storPoolFactory.create(
                 peerAccCtx.get(),
                 node,
                 storPoolDef,

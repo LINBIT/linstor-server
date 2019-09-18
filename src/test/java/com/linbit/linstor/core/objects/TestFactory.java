@@ -224,16 +224,16 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link StorPoolData} without persisting it to the database
+     * Creates a new {@link StorPool} without persisting it to the database
      * @throws DatabaseException
      */
-    public static StorPoolData createStorPoolData(
+    public static StorPool createStorPool(
         UUID uuidRef,
         Node nodeRef,
         StorPoolDefinitionData spddRef,
         DeviceProviderKind lvmRef,
         FreeSpaceMgr fsmRef,
-        StorPoolDataGenericDbDriver driverRef,
+        StorPoolGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
@@ -241,7 +241,7 @@ public class TestFactory
     )
         throws DatabaseException
     {
-        return new StorPoolData(
+        return new StorPool(
             uuidRef,
             nodeRef,
             spddRef,

@@ -126,7 +126,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
     }
 
     @Override
-    public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef)
+    public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef)
         throws DatabaseException
     {
         loadStorVlmsIntoCache(tmpStorPoolMapRef);
@@ -134,7 +134,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
     }
 
     private void loadStorVlmsIntoCache(
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef
     )
         throws DatabaseException
     {
@@ -155,7 +155,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
                     }
                     NodeName nodeName = new NodeName(resultSet.getString(NODE_NAME));
                     StorPoolName storPoolName = new StorPoolName(resultSet.getString(STOR_POOL_NAME));
-                    Pair<StorPool, InitMaps> storPoolWithInitMap = tmpStorPoolMapRef.get(
+                    Pair<StorPool, StorPool.InitMaps> storPoolWithInitMap = tmpStorPoolMapRef.get(
                         new Pair<>(nodeName, storPoolName)
                     );
                     infoList.add(

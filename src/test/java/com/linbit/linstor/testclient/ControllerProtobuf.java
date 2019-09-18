@@ -204,7 +204,7 @@ public class ControllerProtobuf extends ProtobufIO
         );
     }
 
-    public void sendStorPoolData(
+    public void sendStorPool(
         final StorPool storPool,
         final long fullSyncTimestamp,
         final long updateId
@@ -216,7 +216,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_STOR_POOL,
                 getNextApiCallId()
             )
-            .storPoolData(
+            .storPool(
                 storPool,
                 fullSyncTimestamp,
                 updateId
@@ -225,7 +225,7 @@ public class ControllerProtobuf extends ProtobufIO
         );
     }
 
-    public void sendDeletedStorPoolData(
+    public void sendDeletedStorPool(
         final String nodeNameStr,
         final long fullSyncId,
         final long updateId
@@ -237,7 +237,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_STOR_POOL_DELETED,
                 getNextApiCallId()
             )
-            .deletedStorPoolData(nodeNameStr, fullSyncId, updateId)
+            .deletedStorPool(nodeNameStr, fullSyncId, updateId)
             .build()
         );
     }

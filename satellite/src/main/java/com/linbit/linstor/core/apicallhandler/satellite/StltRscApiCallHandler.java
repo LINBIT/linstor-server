@@ -18,6 +18,7 @@ import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltLayerRscDataMerger;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
+import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -35,8 +36,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
-import com.linbit.linstor.core.objects.StorPoolDataSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
@@ -94,7 +94,7 @@ class StltRscApiCallHandler
     private final NetInterfaceFactory netInterfaceFactory;
     private final ResourceSatelliteFactory resourceFactory;
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
-    private final StorPoolDataSatelliteFactory storPoolDataFactory;
+    private final StorPoolSatelliteFactory storPoolFactory;
     private final VolumeDataFactory volumeDataFactory;
     private final ResourceConnectionSatelliteFactory resourceConnectionFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -120,7 +120,7 @@ class StltRscApiCallHandler
         NetInterfaceFactory netInterfaceFactoryRef,
         ResourceSatelliteFactory resourceFactoryRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
-        StorPoolDataSatelliteFactory storPoolDataFactoryRef,
+        StorPoolSatelliteFactory storPoolFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
@@ -145,7 +145,7 @@ class StltRscApiCallHandler
         netInterfaceFactory = netInterfaceFactoryRef;
         resourceFactory = resourceFactoryRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
-        storPoolDataFactory = storPoolDataFactoryRef;
+        storPoolFactory = storPoolFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObjs = stltSecObjsRef;
@@ -779,7 +779,7 @@ class StltRscApiCallHandler
                         storPoolDfn.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolDfnProps());
                         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
                     }
-                    storPool = storPoolDataFactory.getInstanceSatellite(
+                    storPool = storPoolFactory.getInstanceSatellite(
                         apiCtx,
                         storPoolApi.getStorPoolUuid(),
                         rsc.getAssignedNode(),

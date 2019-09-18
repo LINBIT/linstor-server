@@ -20,7 +20,7 @@ public class NodeSatelliteFactory
 {
     private final NodeDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
-    private final StorPoolDataSatelliteFactory storPoolDataFactory;
+    private final StorPoolSatelliteFactory storPoolFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
@@ -31,7 +31,7 @@ public class NodeSatelliteFactory
     public NodeSatelliteFactory(
         NodeDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
-        StorPoolDataSatelliteFactory storPoolDataFactoryRef,
+        StorPoolSatelliteFactory storPoolFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
@@ -41,7 +41,7 @@ public class NodeSatelliteFactory
     {
         dbDriver = dbDriverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
-        storPoolDataFactory = storPoolDataFactoryRef;
+        storPoolFactory = storPoolFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;

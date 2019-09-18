@@ -5,12 +5,12 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.StorPool;
 
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 public interface FreeCapacityFetcher
 {

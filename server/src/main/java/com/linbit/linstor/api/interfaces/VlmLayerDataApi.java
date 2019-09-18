@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.interfaces;
 
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -23,7 +23,7 @@ public interface VlmLayerDataApi
 
     String getDiskState();
 
-    default StorPool.StorPoolApi getStorPoolApi()
+    default StorPoolApi getStorPoolApi()
     {
         return null; // layers should not have storage pools (only storage layer / diskless vlm)
     }

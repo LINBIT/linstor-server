@@ -3,7 +3,7 @@ package com.linbit.linstor.proto.apidata;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -15,7 +15,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class StorPoolApiData implements StorPool.StorPoolApi
+public class StorPoolApiData implements StorPoolApi
 {
     private StorPoolOuterClass.StorPool storPool;
 

@@ -270,7 +270,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerData
         int id,
         String rscSuffix,
         RscLayerObject parent,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> storPoolMap
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolMap
     )
         throws DatabaseException
     {
@@ -347,7 +347,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerData
     private void restoreDrbdVolumes(
         DrbdRscData rscData,
         Map<VolumeNumber, DrbdVlmData> vlmMap,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> storPoolMapRef
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolMapRef
     )
     {
         Resource rsc = rscData.getResource();

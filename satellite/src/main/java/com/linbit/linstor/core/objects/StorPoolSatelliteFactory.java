@@ -1,11 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.StorPoolData;
-import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -14,20 +10,21 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class StorPoolDataSatelliteFactory
+public class StorPoolSatelliteFactory
 {
-    private final StorPoolDataDatabaseDriver driver;
+    private final StorPoolDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
 
     @Inject
-    public StorPoolDataSatelliteFactory(
-        StorPoolDataDatabaseDriver driverRef,
+    public StorPoolSatelliteFactory(
+        StorPoolDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -41,7 +38,7 @@ public class StorPoolDataSatelliteFactory
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
     }
 
-    public StorPoolData getInstanceSatellite(
+    public StorPool getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
         Node node,
@@ -51,12 +48,12 @@ public class StorPoolDataSatelliteFactory
     )
         throws ImplementationError
     {
-        StorPoolData storPoolData = null;
+        StorPool storPool = null;
 
         try
         {
-            storPoolData = (StorPoolData) node.getStorPool(accCtx, storPoolDef.getName());
-            if (storPoolData == null)
+            storPool = node.getStorPool(accCtx, storPoolDef.getName());
+            if (storPool == null)
             {
                 FreeSpaceTracker fsm;
                 if (freeSpaceTrackerRef == null)
@@ -67,7 +64,7 @@ public class StorPoolDataSatelliteFactory
                 {
                     fsm = freeSpaceTrackerRef;
                 }
-                storPoolData = new StorPoolData(
+                storPool = new StorPool(
                     uuid,
                     node,
                     storPoolDef,
@@ -79,8 +76,8 @@ public class StorPoolDataSatelliteFactory
                     transMgrProvider,
                     new TreeMap<>()
                 );
-                ((Node) node).addStorPool(accCtx, storPoolData);
-                ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPoolData);
+                node.addStorPool(accCtx, storPool);
+                ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPool);
             }
         }
         catch (Exception exc)
@@ -92,6 +89,6 @@ public class StorPoolDataSatelliteFactory
         }
 
 
-        return storPoolData;
+        return storPool;
     }
 }

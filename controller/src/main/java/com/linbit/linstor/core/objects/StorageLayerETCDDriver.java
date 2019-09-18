@@ -108,7 +108,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     }
 
     @Override
-    public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef)
+    public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef)
     {
         cachedStorVlmInfoByRscLayerId = new HashMap<>();
 
@@ -141,7 +141,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                         EtcdUtils.buildKey(LayerStorageVolumes.STOR_POOL_NAME, pks)
                     )
                 );
-                Pair<StorPool, InitMaps> storPoolWithInitMap = tmpStorPoolMapRef.get(
+                Pair<StorPool, StorPool.InitMaps> storPoolWithInitMap = tmpStorPoolMapRef.get(
                     new Pair<>(nodeName, storPoolName)
                 );
                 infoList.add(
