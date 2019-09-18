@@ -87,13 +87,9 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         sslEngine.closeInbound();
         sslEngine.closeOutbound();
 
-        // FIXME: using byte[] only for debugging purposses...
-//        encryptedReadBuffer = ByteBuffer.allocateDirect(sslEngine.getSession().getPacketBufferSize());
-//        encryptedWriteBuffer = ByteBuffer.allocateDirect(sslEngine.getSession().getPacketBufferSize());
-//        decryptedReadBuffer = ByteBuffer.allocateDirect(sslEngine.getSession().getApplicationBufferSize());
-        encryptedReadBuffer = ByteBuffer.wrap(new byte[sslEngine.getSession().getPacketBufferSize()]);
-        decryptedReadBuffer = ByteBuffer.wrap(new byte[sslEngine.getSession().getApplicationBufferSize()]);
-        encryptedWriteBuffer = ByteBuffer.wrap(new byte[sslEngine.getSession().getPacketBufferSize()]);
+        encryptedReadBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+        decryptedReadBuffer = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
+        encryptedWriteBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
         encryptedReadBuffer.limit(0);
         decryptedReadBuffer.limit(0);
         encryptedWriteBuffer.limit(0);
