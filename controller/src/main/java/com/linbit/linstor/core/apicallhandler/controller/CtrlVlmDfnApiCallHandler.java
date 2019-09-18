@@ -21,14 +21,14 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -101,7 +101,7 @@ class CtrlVlmDfnApiCallHandler
 
     ApiCallRc createVolumeDefinitions(
         String rscNameStr,
-        List<VlmDfnWtihCreationPayload> vlmDfnWithPayloadApiListRef
+        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiListRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -140,9 +140,9 @@ class CtrlVlmDfnApiCallHandler
                 rscList.add(iterateResource.next());
             }
 
-            List<VolumeDefinitionData> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnWithPayloadApiListRef);
+            List<VolumeDefinition> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnWithPayloadApiListRef);
 
-            for (VolumeDefinitionData vlmDfn : vlmDfnsCreated)
+            for (VolumeDefinition vlmDfn : vlmDfnsCreated)
             {
                 for (Resource rsc : rscList)
                 {
@@ -170,13 +170,13 @@ class CtrlVlmDfnApiCallHandler
         return responses;
     }
 
-    List<VolumeDefinitionData> createVlmDfns(
+    List<VolumeDefinition> createVlmDfns(
         ResourceDefinition rscDfn,
-        List<VlmDfnWtihCreationPayload> vlmDfnWithPayloadApiListRef
+        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiListRef
     )
     {
-        List<VolumeDefinitionData> vlmDfns = new ArrayList<>();
-        for (VlmDfnWtihCreationPayload vlmDfnApi : vlmDfnWithPayloadApiListRef)
+        List<VolumeDefinition> vlmDfns = new ArrayList<>();
+        for (VolumeDefinitionWtihCreationPayload vlmDfnApi : vlmDfnWithPayloadApiListRef)
         {
             vlmDfns.add(createVlmDfn(rscDfn, vlmDfnApi));
         }
@@ -186,9 +186,9 @@ class CtrlVlmDfnApiCallHandler
     /**
      * Throws contextualized exceptions.
      */
-    VolumeDefinitionData createVlmDfn(
+    VolumeDefinition createVlmDfn(
         ResourceDefinition rscDfn,
-        VlmDfnWtihCreationPayload vlmDfnApiRef
+        VolumeDefinitionWtihCreationPayload vlmDfnApiRef
     )
     {
         VolumeNumber volNr = getOrGenerateVlmNr(
@@ -203,12 +203,12 @@ class CtrlVlmDfnApiCallHandler
             volNr.value
         );
 
-        VolumeDefinitionData vlmDfn;
+        VolumeDefinition vlmDfn;
         try
         {
             long size = vlmDfnApiRef.getVlmDfn().getSize();
 
-            VlmDfnFlags[] vlmDfnInitFlags = VlmDfnFlags.restoreFlags(vlmDfnApiRef.getVlmDfn().getFlags());
+            VolumeDefinition.Flags[] vlmDfnInitFlags = VolumeDefinition.Flags.restoreFlags(vlmDfnApiRef.getVlmDfn().getFlags());
 
             vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
                 peerAccCtx.get(),
@@ -234,7 +234,7 @@ class CtrlVlmDfnApiCallHandler
                 );
             }
 
-            if (Arrays.asList(vlmDfnInitFlags).contains(VlmDfnFlags.ENCRYPTED))
+            if (Arrays.asList(vlmDfnInitFlags).contains(VolumeDefinition.Flags.ENCRYPTED))
             {
                 byte[] masterKey = secObjs.getCryptKey();
                 if (masterKey == null || masterKey.length == 0)
@@ -283,7 +283,7 @@ class CtrlVlmDfnApiCallHandler
         return iterator;
     }
 
-    private VolumeNumber getOrGenerateVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
+    private VolumeNumber getOrGenerateVlmNr(VolumeDefinitionApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
     {
         VolumeNumber vlmNr;
         try
@@ -309,7 +309,7 @@ class CtrlVlmDfnApiCallHandler
         return vlmNr;
     }
 
-    private Props getVlmDfnProps(VolumeDefinitionData vlmDfn)
+    private Props getVlmDfnProps(VolumeDefinition vlmDfn)
     {
         Props props;
         try

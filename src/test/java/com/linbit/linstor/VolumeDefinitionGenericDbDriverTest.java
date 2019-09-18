@@ -11,10 +11,10 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.InitMaps;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
+import com.linbit.linstor.core.objects.VolumeDefinitionGenericDbDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
@@ -34,7 +34,7 @@ import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 
-public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
+public class VolumeDefinitionGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VOL_DFN =
         " SELECT " + UUID + ", " + RESOURCE_NAME + ", " + VLM_NR + ", " +
@@ -50,9 +50,9 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
     private int minor;
     private long volSize;
 
-    private VolumeDefinitionData volDfn;
+    private VolumeDefinition volDfn;
 
-    @Inject private VolumeDefinitionDataGenericDbDriver driver;
+    @Inject private VolumeDefinitionGenericDbDriver driver;
 
     private ResourceGroup dfltRscGrp;
 
@@ -87,12 +87,12 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         volNr = new VolumeNumber(13);
         minor = 42;
         volSize = 5_000_000;
-        volDfn = TestFactory.VolumeDefinitionData(
+        volDfn = TestFactory.VolumeDefinition(
             uuid,
             resDfn,
             volNr,
             volSize,
-            VlmDfnFlags.DELETE.flagValue,
+            VolumeDefinition.Flags.DELETE.flagValue,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -120,7 +120,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
-        assertEquals(VlmDfnFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
+        assertEquals(VolumeDefinition.Flags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -150,13 +150,13 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
             dfltRscGrp
         );
 
-        volumeDefinitionDataFactory.create(
+        volumeDefinitionFactory.create(
             SYS_CTX,
             resDefinitionTest,
             volNr,
             minor,
             volSize,
-            new VlmDfnFlags[] {VlmDfnFlags.DELETE}
+            new VolumeDefinition.Flags[] {VolumeDefinition.Flags.DELETE}
         );
         commit();
 
@@ -165,7 +165,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals("TESTRESOURCE2", resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
-        assertEquals(VlmDfnFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
+        assertEquals(VolumeDefinition.Flags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -179,13 +179,13 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         driver.create(volDfn);
         resDfn.putVolumeDefinition(SYS_CTX, volDfn);
 
-        VolumeDefinitionData loadedVd = (VolumeDefinitionData) resDfn.getVolumeDfn(SYS_CTX, volNr);
+        VolumeDefinition loadedVd = (VolumeDefinition) resDfn.getVolumeDfn(SYS_CTX, volNr);
 
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
-        assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
+        assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VolumeDefinition.Flags.DELETE));
     }
 
     @Test
@@ -194,7 +194,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         driver.create(volDfn);
         rscDfnMap.put(resName, resDfn);
 
-        Map<VolumeDefinitionData, InitMaps> volDfnList = driver.loadAll(rscDfnMap);
+        Map<VolumeDefinition, VolumeDefinition.InitMaps> volDfnList = driver.loadAll(rscDfnMap);
 
         assertNotNull(volDfnList);
         assertEquals(1, volDfnList.size());
@@ -204,7 +204,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
-        assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
+        assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VolumeDefinition.Flags.DELETE));
     }
 
     @Test
@@ -334,6 +334,6 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         driver.create(volDfn);
         resDfn.putVolumeDefinition(SYS_CTX, volDfn);
 
-        volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
+        volumeDefinitionFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
     }
 }

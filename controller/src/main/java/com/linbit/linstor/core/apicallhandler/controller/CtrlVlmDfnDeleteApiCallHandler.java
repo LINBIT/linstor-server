@@ -27,7 +27,7 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -100,7 +100,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             VolumeDefinition vlmDfn = vlmDfnIter.next();
             if (
                 !rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.DELETE) &&
-                vlmDfn.getFlags().isSet(apiCtx, VolumeDefinition.VlmDfnFlags.DELETE))
+                vlmDfn.getFlags().isSet(apiCtx, VolumeDefinition.Flags.DELETE))
             {
                 fluxes.add(updateSatellites(rscDfn.getName(), vlmDfn.getVolumeNumber()));
             }
@@ -133,7 +133,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
         VolumeNumber vlmNr = LinstorParsingUtils.asVlmNr(vlmNrInt);
-        VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
 
         if (vlmDfn == null)
         {
@@ -228,7 +228,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
     private Flux<ApiCallRc> updateSatellitesInScope(ResourceName rscName, VolumeNumber vlmNr)
     {
-        VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
 
         Flux<ApiCallRc> flux;
 
@@ -263,7 +263,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
     private Flux<ApiCallRc> deleteDataInTransaction(ResourceName rscName, VolumeNumber vlmNr)
     {
-        VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
 
         Flux<ApiCallRc> flux;
 

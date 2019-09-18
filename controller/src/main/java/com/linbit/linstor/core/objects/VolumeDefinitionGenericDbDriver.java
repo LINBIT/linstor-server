@@ -9,12 +9,10 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.VolumeDefinition.InitMaps;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -29,6 +27,7 @@ import com.linbit.utils.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,7 +36,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionDataDatabaseDriver
+public class VolumeDefinitionGenericDbDriver implements VolumeDefinitionDatabaseDriver
 {
     private static final String TBL_VOL_DFN = DbConstants.TBL_VOLUME_DEFINITIONS;
     private static final String VD_UUID = DbConstants.UUID;
@@ -89,7 +88,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public VolumeDefinitionDataGenericDbDriver(
+    public VolumeDefinitionGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -108,7 +107,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(VolumeDefinitionData volumeDefinition) throws DatabaseException
+    public void create(VolumeDefinition volumeDefinition) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(VD_INSERT))
         {
@@ -134,23 +133,23 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         }
     }
 
-    private Pair<VolumeDefinitionData, InitMaps> restoreVolumeDefinition(
+    private Pair<VolumeDefinition, VolumeDefinition.InitMaps> restoreVolumeDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
         VolumeNumber volNr
     )
         throws DatabaseException
     {
-        Pair<VolumeDefinitionData, InitMaps> retPair;
+        Pair<VolumeDefinition, VolumeDefinition.InitMaps> retPair;
         try
         {
             errorReporter.logTrace("Restoring VolumeDefinition %s", getId(resDfn, volNr));
-            VolumeDefinitionData vlmDfn = null;
+            VolumeDefinition vlmDfn = null;
             try
             {
                 Map<String, Volume> vlmMap = new TreeMap<>();
 
-                vlmDfn = new VolumeDefinitionData(
+                vlmDfn = new VolumeDefinition(
                     java.util.UUID.fromString(resultSet.getString(VD_UUID)),
                     resDfn,
                     volNr,
@@ -190,13 +189,13 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     }
 
 
-    public Map<VolumeDefinitionData, VolumeDefinition.InitMaps> loadAll(
+    public Map<VolumeDefinition, VolumeDefinition.InitMaps> loadAll(
         Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
     )
         throws DatabaseException
     {
         errorReporter.logTrace("Loading all VolumeDefinitions");
-        Map<VolumeDefinitionData, VolumeDefinition.InitMaps> ret = new TreeMap<>();
+        Map<VolumeDefinition, VolumeDefinition.InitMaps> ret = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(VD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
@@ -231,7 +230,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
                         );
                     }
 
-                    Pair<VolumeDefinitionData, InitMaps> pair = restoreVolumeDefinition(
+                    Pair<VolumeDefinition, VolumeDefinition.InitMaps> pair = restoreVolumeDefinition(
                         resultSet,
                         rscDfnMap.get(rscName),
                         volNr
@@ -251,7 +250,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     }
 
     @Override
-    public void delete(VolumeDefinitionData volumeDefinition) throws DatabaseException
+    public void delete(VolumeDefinition volumeDefinition) throws DatabaseException
     {
         errorReporter.logTrace("Deleting VolumeDefinition %s", getId(volumeDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(VD_DELETE))
@@ -268,13 +267,13 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
     }
 
     @Override
-    public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence()
+    public StateFlagsPersistence<VolumeDefinition> getStateFlagsPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver()
+    public SingleColumnDatabaseDriver<VolumeDefinition, Long> getVolumeSizeDriver()
     {
         return sizeDriver;
     }
@@ -284,7 +283,7 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(VolumeDefinitionData volDfn)
+    private String getId(VolumeDefinition volDfn)
     {
         return getId(
             volDfn.getResourceDefinition(),
@@ -305,25 +304,25 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         return "(ResName=" + resName + " VolNum=" + volNum.value + ")";
     }
 
-    private class FlagDriver implements StateFlagsPersistence<VolumeDefinitionData>
+    private class FlagDriver implements StateFlagsPersistence<VolumeDefinition>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void persist(VolumeDefinitionData volumeDefinition, long flags)
+        public void persist(VolumeDefinition volumeDefinition, long flags)
             throws DatabaseException
         {
             try (PreparedStatement stmt = getConnection().prepareStatement(VD_UPDATE_FLAGS))
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        VlmDfnFlags.class,
+                        VolumeDefinition.Flags.class,
                         volumeDefinition.getFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        VlmDfnFlags.class,
+                        VolumeDefinition.Flags.class,
                         flags
                     ),
                     ", "
@@ -357,11 +356,11 @@ public class VolumeDefinitionDataGenericDbDriver implements VolumeDefinitionData
         }
     }
 
-    private class SizeDriver implements SingleColumnDatabaseDriver<VolumeDefinitionData, Long>
+    private class SizeDriver implements SingleColumnDatabaseDriver<VolumeDefinition, Long>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void update(VolumeDefinitionData volumeDefinition, Long size)
+        public void update(VolumeDefinition volumeDefinition, Long size)
             throws DatabaseException
         {
             try (PreparedStatement stmt = getConnection().prepareStatement(VD_UPDATE_SIZE))

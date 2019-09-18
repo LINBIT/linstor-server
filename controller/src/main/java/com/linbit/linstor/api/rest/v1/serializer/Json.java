@@ -30,6 +30,7 @@ import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -242,7 +243,7 @@ public class Json
     }
 
     public static JsonGenTypes.VolumeDefinition apiToVolumeDefinition(
-        VolumeDefinition.VlmDfnApi vlmDfnApi
+        VolumeDefinitionApi vlmDfnApi
     )
     {
         JsonGenTypes.VolumeDefinition vlmDfn = new JsonGenTypes.VolumeDefinition();
@@ -250,7 +251,7 @@ public class Json
         vlmDfn.size_kib = vlmDfnApi.getSize();
         vlmDfn.props = vlmDfnApi.getProps();
         vlmDfn.flags = FlagsHelper.toStringList(
-            VolumeDefinition.VlmDfnFlags.class,
+            VolumeDefinition.Flags.class,
             vlmDfnApi.getFlags()
         );
         vlmDfn.uuid = vlmDfnApi.getUuid().toString();
@@ -281,7 +282,7 @@ public class Json
         return vlmDfn;
     }
 
-    public static VolumeDefinition.VlmDfnApi VolumeDefinitionToApi(
+    public static VolumeDefinitionApi VolumeDefinitionToApi(
         JsonGenTypes.VolumeDefinition vlmDfn
     )
     {
@@ -290,7 +291,7 @@ public class Json
             null,
             vlmDfn.volume_number,
             vlmDfn.size_kib,
-            FlagsHelper.fromStringList(VolumeDefinition.VlmDfnFlags.class, vlmDfn.flags),
+            FlagsHelper.fromStringList(VolumeDefinition.Flags.class, vlmDfn.flags),
             vlmDfn.props,
             layerData
         );

@@ -14,7 +14,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -41,11 +41,11 @@ import com.google.common.base.Functions;
 
 @Singleton
 public class VolumeDefinitionDbDriver extends
-    AbsDatabaseDriver<VolumeDefinitionData, VolumeDefinition.InitMaps, Map<ResourceName, ResourceDefinition>>
-    implements VolumeDefinitionDataDatabaseDriver
+    AbsDatabaseDriver<VolumeDefinition, VolumeDefinition.InitMaps, Map<ResourceName, ResourceDefinition>>
+    implements VolumeDefinitionDatabaseDriver
 {
-    private final StateFlagsPersistence<VolumeDefinitionData> flagsDriver;
-    private final SingleColumnDatabaseDriver<VolumeDefinitionData, Long> volumeSizeDriver;
+    private final StateFlagsPersistence<VolumeDefinition> flagsDriver;
+    private final SingleColumnDatabaseDriver<VolumeDefinition, Long> volumeSizeDriver;
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -77,7 +77,7 @@ public class VolumeDefinitionDbDriver extends
         setColumnSetter(VLM_SIZE, vlmDfn -> vlmDfn.getVolumeSize(dbCtxRef));
         setColumnSetter(VLM_FLAGS, vlmDfn -> vlmDfn.getFlags().getFlagsBits(dbCtxRef));
 
-        flagsDriver = generateFlagDriver(VLM_FLAGS, VolumeDefinition.VlmDfnFlags.class);
+        flagsDriver = generateFlagDriver(VLM_FLAGS, VolumeDefinition.Flags.class);
         volumeSizeDriver = generateSingleColumnDriver(
             VLM_SIZE,
             vlmDfn -> Long.toString(vlmDfn.getVolumeSize(dbCtxRef)),
@@ -86,19 +86,19 @@ public class VolumeDefinitionDbDriver extends
     }
 
     @Override
-    public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence()
+    public StateFlagsPersistence<VolumeDefinition> getStateFlagsPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver()
+    public SingleColumnDatabaseDriver<VolumeDefinition, Long> getVolumeSizeDriver()
     {
         return volumeSizeDriver;
     }
 
     @Override
-    protected Pair<VolumeDefinitionData, InitMaps> load(
+    protected Pair<VolumeDefinition, VolumeDefinition.InitMaps> load(
         RawParameters raw,
         Map<ResourceName, ResourceDefinition> parent
     )
@@ -128,7 +128,7 @@ public class VolumeDefinitionDbDriver extends
 
         Map<String, Volume> vlmMap = new TreeMap<>();
         return new Pair<>(
-            new VolumeDefinitionData(
+            new VolumeDefinition(
                 raw.build(UUID, java.util.UUID::fromString),
                 parent.get(rscName),
                 vlmNr,
@@ -146,7 +146,7 @@ public class VolumeDefinitionDbDriver extends
     }
 
     @Override
-    protected String getId(VolumeDefinitionData vlmDfn)
+    protected String getId(VolumeDefinition vlmDfn)
     {
         return "(ResName=" + vlmDfn.getResourceDefinition().getName().displayValue +
             " VolNum=" + vlmDfn.getVolumeNumber().value + ")";

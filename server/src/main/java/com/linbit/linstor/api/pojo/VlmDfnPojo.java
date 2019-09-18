@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
-import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.utils.Pair;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class VlmDfnPojo implements VolumeDefinition.VlmDfnApi
+public class VlmDfnPojo implements VolumeDefinitionApi
 {
     private final UUID uuid;
     private final Integer volumeNr;

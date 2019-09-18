@@ -10,7 +10,7 @@ import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
-import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 
 public class RscPojo implements Comparable<RscPojo>, ResourceApi
 {
@@ -162,7 +162,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         return localRscProps;
     }
 
-    public List<VolumeDefinition.VlmDfnApi> getVlmDfns()
+    public List<VolumeDefinitionApi> getVlmDfns()
     {
         return rscDefinition.getVlmDfnList();
     }

@@ -26,8 +26,8 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -106,7 +106,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         while (vlmDfnIter.hasNext())
         {
             VolumeDefinition vlmDfn = vlmDfnIter.next();
-            boolean resizing = vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.RESIZE);
+            boolean resizing = vlmDfn.getFlags().isSet(apiCtx, VolumeDefinition.Flags.RESIZE);
             if (resizing)
             {
                 fluxes.add(updateSatellites(rscName, vlmDfn.getVolumeNumber(), true));
@@ -158,7 +158,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
         VolumeNumber vlmNr = LinstorParsingUtils.asVlmNr(vlmNrInt);
-        VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, true);
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, true);
 
         if (vlmDfnUuid != null && !vlmDfnUuid.equals(vlmDfn.getUuid()))
         {
@@ -242,7 +242,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
     private Flux<ApiCallRc> updateSatellitesInScope(ResourceName rscName, VolumeNumber vlmNr, boolean resize)
     {
-        VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
 
         Flux<ApiCallRc> flux;
 
@@ -276,7 +276,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         return flux;
     }
 
-    private boolean hasDrbd(VolumeDefinitionData vlmDfnRef)
+    private boolean hasDrbd(VolumeDefinition vlmDfnRef)
     {
         boolean anyResourceHasDrbdLayer;
         try
@@ -319,7 +319,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
     private Flux<ApiCallRc> resizeDrbdInTransaction(ResourceName rscName, VolumeNumber vlmNr)
     {
-        VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
 
         Flux<ApiCallRc> flux;
 
@@ -376,7 +376,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
     private Flux<ApiCallRc> finishResizeInTransaction(ResourceName rscName, VolumeNumber vlmNr)
     {
-        VolumeDefinitionData vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
 
         if (vlmDfn != null)
         {
@@ -396,7 +396,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         return Flux.empty();
     }
 
-    private Props getVlmDfnProps(VolumeDefinitionData vlmDfn)
+    private Props getVlmDfnProps(VolumeDefinition vlmDfn)
     {
         Props props;
         try
@@ -418,7 +418,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         try
         {
-            vlmDfn.getFlags().enableFlags(peerAccCtx.get(), VlmDfnFlags.RESIZE);
+            vlmDfn.getFlags().enableFlags(peerAccCtx.get(), VolumeDefinition.Flags.RESIZE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -438,7 +438,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         try
         {
-            vlmDfn.getFlags().disableFlags(apiCtx, VlmDfnFlags.RESIZE);
+            vlmDfn.getFlags().disableFlags(apiCtx, VolumeDefinition.Flags.RESIZE);
         }
         catch (AccessDeniedException accDeniedExc)
         {

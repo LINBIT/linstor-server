@@ -72,7 +72,7 @@ public class VolumeFactory
         );
         driver.create(volData);
         ((Resource) rsc).putVolume(accCtx, volData);
-        ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
+        ((VolumeDefinition) vlmDfn).putVolume(accCtx, volData);
 
         return volData;
     }
@@ -103,7 +103,7 @@ public class VolumeFactory
                     new TreeMap<>()
                 );
                 ((Resource) rsc).putVolume(accCtx, vlmData);
-                ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, vlmData);
+                ((VolumeDefinition) vlmDfn).putVolume(accCtx, vlmData);
 
                 vlmData.setAllocatedSize(accCtx, vlmDfn.getVolumeSize(accCtx));
                 // usable size depends on deviceLayer

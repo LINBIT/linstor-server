@@ -29,7 +29,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -192,18 +192,18 @@ public class CtrlApiDataLoader
         return rscDfn;
     }
 
-    public VolumeDefinitionData loadVlmDfn(String rscNameStr, int vlmNrInt, boolean failIfNull)
+    public VolumeDefinition loadVlmDfn(String rscNameStr, int vlmNrInt, boolean failIfNull)
     {
         return loadVlmDfn(LinstorParsingUtils.asRscName(rscNameStr), LinstorParsingUtils.asVlmNr(vlmNrInt), failIfNull);
     }
 
-    public VolumeDefinitionData loadVlmDfn(ResourceName rscName, VolumeNumber vlmNr, boolean failIfNull)
+    public VolumeDefinition loadVlmDfn(ResourceName rscName, VolumeNumber vlmNr, boolean failIfNull)
     {
         ResourceDefinition rscDfn = loadRscDfn(rscName, true);
-        VolumeDefinitionData vlmDfn;
+        VolumeDefinition vlmDfn;
         try
         {
-            vlmDfn = (VolumeDefinitionData) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
+            vlmDfn = (VolumeDefinition) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
 
             if (failIfNull && vlmDfn == null)
             {

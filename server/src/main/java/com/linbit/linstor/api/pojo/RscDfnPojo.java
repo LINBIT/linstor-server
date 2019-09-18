@@ -3,7 +3,7 @@ package com.linbit.linstor.api.pojo;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
-import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.utils.Pair;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public class RscDfnPojo implements ResourceDefinitionApi
     private final byte[] externalName;
     private final long flags;
     private final Map<String, String> props;
-    private final List<VolumeDefinition.VlmDfnApi> vlmdfns;
+    private final List<VolumeDefinitionApi> vlmdfns;
     private final List<Pair<String, RscDfnLayerDataApi>> layerData;
 
     public RscDfnPojo(
@@ -32,7 +32,7 @@ public class RscDfnPojo implements ResourceDefinitionApi
         final byte[] externalNameRef,
         final long flagsRef,
         final Map<String, String> propsRef,
-        final List<VolumeDefinition.VlmDfnApi> vlmdfnsRef,
+        final List<VolumeDefinitionApi> vlmdfnsRef,
         final List<Pair<String, RscDfnLayerDataApi>> layerDataRef
     )
     {
@@ -83,7 +83,7 @@ public class RscDfnPojo implements ResourceDefinitionApi
     }
 
     @Override
-    public List<VolumeDefinition.VlmDfnApi> getVlmDfnList()
+    public List<VolumeDefinitionApi> getVlmDfnList()
     {
         return vlmdfns;
     }

@@ -31,7 +31,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -204,7 +204,7 @@ public class CtrlRscCrtApiHelper
 
         for (VolumeApi vlmApi : vlmApiList)
         {
-            VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
+            VolumeDefinition vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
 
             Volume vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                 rsc,
@@ -531,7 +531,7 @@ public class CtrlRscCrtApiHelper
         }
     }
 
-    private VolumeDefinitionData loadVlmDfn(
+    private VolumeDefinition loadVlmDfn(
         ResourceDefinition rscDfn,
         int vlmNr,
         boolean failIfNull
@@ -540,16 +540,16 @@ public class CtrlRscCrtApiHelper
         return loadVlmDfn(rscDfn, LinstorParsingUtils.asVlmNr(vlmNr), failIfNull);
     }
 
-    private VolumeDefinitionData loadVlmDfn(
+    private VolumeDefinition loadVlmDfn(
         ResourceDefinition rscDfn,
         VolumeNumber vlmNr,
         boolean failIfNull
     )
     {
-        VolumeDefinitionData vlmDfn;
+        VolumeDefinition vlmDfn;
         try
         {
-            vlmDfn = (VolumeDefinitionData) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
+            vlmDfn = (VolumeDefinition) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
 
             if (failIfNull && vlmDfn == null)
             {

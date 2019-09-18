@@ -19,8 +19,8 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -100,13 +100,13 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
             for (SnapshotVolumeDefinition snapshotVlmDfn :
                 fromSnapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
             {
-                VolumeDefinitionData vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
+                VolumeDefinition vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
                     peerAccCtx.get(),
                     toRscDfn,
                     snapshotVlmDfn.getVolumeNumber(),
                     null,
                     snapshotVlmDfn.getVolumeSize(peerAccCtx.get()),
-                    new VlmDfnFlags[] {}
+                    new VolumeDefinition.Flags[] {}
                 );
 
                 Map<String, String> snapshotVlmDfnProps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
@@ -123,7 +123,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                             "Encrypted snapshot volume definition without crypt passwd found");
                     }
 
-                    vlmDfn.getFlags().enableFlags(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
+                    vlmDfn.getFlags().enableFlags(peerAccCtx.get(), VolumeDefinition.Flags.ENCRYPTED);
                     vlmDfnProps.put(
                         ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
                         cryptPasswd

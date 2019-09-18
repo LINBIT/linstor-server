@@ -22,18 +22,11 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
-import com.linbit.linstor.core.objects.VolumeConnection;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.propscon.Props;
@@ -380,13 +373,13 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             rscDfnMap.put(resDfn.getName(), resDfn);
 
             // volDfn
-            VolumeDefinitionData volDfn = volumeDefinitionDataFactory.create(
+            VolumeDefinition volDfn = volumeDefinitionFactory.create(
                 SYS_CTX,
                 resDfn,
                 volDfnNr,
                 volDfnMinorNr,
                 volDfnSize,
-                new VlmDfnFlags[] {VlmDfnFlags.DELETE}
+                new VolumeDefinition.Flags[] {VolumeDefinition.Flags.DELETE}
             );
             volDfn.getProps(SYS_CTX).setProp(volDfnTestKey, volDfnTestValue);
             volDfnUuid = volDfn.getUuid();
@@ -581,7 +574,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
                 assertEquals(vol1Uuid, vol.getUuid());
                 {
                     VolumeDefinition volDfn = vol.getVolumeDefinition();
-                    assertTrue(volDfn.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
+                    assertTrue(volDfn.getFlags().isSet(SYS_CTX, VolumeDefinition.Flags.DELETE));
                     {
                         Props volDfnProps = volDfn.getProps(SYS_CTX);
                         assertNotNull(volDfnProps);

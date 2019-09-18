@@ -1162,7 +1162,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             ResourceName rscName = new ResourceName(rscNameStrRef);
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
 
-            volumeDefinitionDataFactory.create(
+            volumeDefinitionFactory.create(
                 ApiTestBase.BOB_ACC_CTX,
                 rscDfn,
                 new VolumeNumber(vlmNrRef),

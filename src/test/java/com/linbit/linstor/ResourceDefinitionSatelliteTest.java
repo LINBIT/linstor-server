@@ -12,8 +12,8 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroupSatelliteFactory;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.VolumeDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinitionSatelliteFactory;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.logging.LoggingModule;
@@ -49,7 +49,7 @@ public class ResourceDefinitionSatelliteTest
 
     private java.util.UUID resDfnUuid;
 
-    @Inject private VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
+    @Inject private VolumeDefinitionSatelliteFactory volumeDefinitionFactory;
     @Inject private ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
     @Inject private ResourceGroupSatelliteFactory resourceGroupFactory;
 
@@ -116,7 +116,7 @@ public class ResourceDefinitionSatelliteTest
         );
         rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
 
-        VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
+        VolumeDefinition vlmDfn = volumeDefinitionFactory.getInstanceSatellite(
             SYS_CTX,
             java.util.UUID.randomUUID(),
             rscDfn,

@@ -36,7 +36,6 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdEventService;
@@ -820,7 +819,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                             while (vlmDfnIter.hasNext())
                             {
                                 VolumeDefinition vlmDfn = vlmDfnIter.next();
-                                if (vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.ENCRYPTED))
+                                if (vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.Flags.ENCRYPTED))
                                 {
                                     needMasterKey = true;
                                     break;

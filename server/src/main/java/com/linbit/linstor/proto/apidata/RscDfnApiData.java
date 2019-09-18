@@ -6,8 +6,8 @@ import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.utils.Pair;
@@ -76,9 +76,9 @@ public class RscDfnApiData implements ResourceDefinitionApi
     }
 
     @Override
-    public List<VolumeDefinition.VlmDfnApi> getVlmDfnList()
+    public List<VolumeDefinitionApi> getVlmDfnList()
     {
-        List<VolumeDefinition.VlmDfnApi> ret = new ArrayList<>();
+        List<VolumeDefinitionApi> ret = new ArrayList<>();
         for (VlmDfn vlmDfn : rscDfn.getVlmDfnsList())
         {
             ret.add(new VlmDfnApiData(vlmDfn));

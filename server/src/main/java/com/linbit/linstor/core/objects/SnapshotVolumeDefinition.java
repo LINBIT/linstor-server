@@ -83,7 +83,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         throws MdException, DatabaseException
     {
         super(transMgrProviderRef);
-        VolumeDefinitionData.checkVolumeSize(volSize);
+        VolumeDefinition.checkVolumeSize(volSize);
 
         objId = objIdRef;
         snapshotDfn = snapshotDfnRef;

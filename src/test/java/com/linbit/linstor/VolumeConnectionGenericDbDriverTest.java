@@ -20,7 +20,7 @@ import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeConnectionGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -64,7 +64,7 @@ public class VolumeConnectionGenericDbDriverTest extends GenericDbBase
     private Node nodeSrc;
     private Node nodeDst;
     private ResourceDefinition resDfn;
-    private VolumeDefinitionData volDfn;
+    private VolumeDefinition volDfn;
     private Resource resSrc;
     private Resource resDst;
     private StorPoolDefinition storPoolDfn;
@@ -126,7 +126,7 @@ public class VolumeConnectionGenericDbDriverTest extends GenericDbBase
             createDefaultResourceGroup(SYS_CTX)
         );
         rscDfnMap.put(resDfn.getName(), resDfn);
-        volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
+        volDfn = volumeDefinitionFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
 
         nodeIdSrc = 13;
         nodeIdDst = 14;

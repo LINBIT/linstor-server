@@ -29,6 +29,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
@@ -37,7 +38,6 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
@@ -638,7 +638,7 @@ public class CtrlRscGrpApiCallHandler
                 layerStackStr = Collections.emptyList();
             }
 
-            List<VlmDfnWtihCreationPayload> vlmDfnCrtList = new ArrayList<>();
+            List<VolumeDefinitionWtihCreationPayload> vlmDfnCrtList = new ArrayList<>();
 
             List<VolumeGroup> vlmGrps = rscGrp.getVolumeGroups(peerCtx);
             final int vlmSizeLen = vlmSizesRef.size();
@@ -753,7 +753,7 @@ public class CtrlRscGrpApiCallHandler
 
     }
 
-    private VlmDfnWtihCreationPayload createVlmDfnWithCreationPayload(Integer vlmNr, long vlmSizeRef)
+    private VolumeDefinitionWtihCreationPayload createVlmDfnWithCreationPayload(Integer vlmNr, long vlmSizeRef)
     {
         return new VlmDfnWithCreationPayloadPojo(
             new VlmDfnPojo(

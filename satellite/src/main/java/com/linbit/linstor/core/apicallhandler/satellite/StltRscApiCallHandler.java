@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.StltLayerRscDataMerger;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.VolumeApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -43,9 +44,9 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.VolumeDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
+import com.linbit.linstor.core.objects.VolumeDefinitionSatelliteFactory;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -88,7 +89,7 @@ class StltRscApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
-    private final VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
+    private final VolumeDefinitionSatelliteFactory volumeDefinitionFactory;
     private final NodeSatelliteFactory nodeFactory;
     private final NetInterfaceFactory netInterfaceFactory;
     private final ResourceSatelliteFactory resourceFactory;
@@ -114,7 +115,7 @@ class StltRscApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
         ResourceDefinitionSatelliteFactory resourceDefinitionFactoryRef,
-        VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactoryRef,
+        VolumeDefinitionSatelliteFactory volumeDefinitionFactoryRef,
         NodeSatelliteFactory nodeFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
         ResourceSatelliteFactory resourceFactoryRef,
@@ -139,7 +140,7 @@ class StltRscApiCallHandler
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         resourceDefinitionFactory = resourceDefinitionFactoryRef;
-        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        volumeDefinitionFactory = volumeDefinitionFactoryRef;
         nodeFactory = nodeFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
         resourceFactory = resourceFactoryRef;
@@ -241,18 +242,18 @@ class StltRscApiCallHandler
             {
                 Map<VolumeNumber, VolumeDefinition> vlmDfnsToDelete = new TreeMap<>();
 
-                for (VolumeDefinition.VlmDfnApi vlmDfnRaw : rscRawData.getVlmDfns())
+                for (VolumeDefinitionApi vlmDfnRaw : rscRawData.getVlmDfns())
                 {
-                    VlmDfnFlags[] vlmDfnFlags = VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags());
+                    VolumeDefinition.Flags[] vlmDfnFlags = VolumeDefinition.Flags.restoreFlags(vlmDfnRaw.getFlags());
                     VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
 
-                    VolumeDefinitionData vlmDfn = volumeDefinitionDataFactory.getInstanceSatellite(
+                    VolumeDefinition vlmDfn = volumeDefinitionFactory.getInstanceSatellite(
                         apiCtx,
                         vlmDfnRaw.getUuid(),
                         rscDfn,
                         vlmNr,
                         vlmDfnRaw.getSize(),
-                        VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags())
+                        VolumeDefinition.Flags.restoreFlags(vlmDfnRaw.getFlags())
                     );
                     checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
                     Props vlmDfnProps = vlmDfn.getProps(apiCtx);
@@ -263,7 +264,7 @@ class StltRscApiCallHandler
 
                     // corresponding volumes will be created later when iterating over (local|remote)vlmApis
 
-                    if (Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
+                    if (Arrays.asList(vlmDfnFlags).contains(VolumeDefinition.Flags.DELETE))
                     {
                         vlmDfnsToDelete.put(vlmNr, vlmDfn);
                     }
@@ -861,7 +862,7 @@ class StltRscApiCallHandler
 
     private void checkUuid(
         VolumeDefinition vlmDfn,
-        VolumeDefinition.VlmDfnApi vlmDfnRaw,
+        VolumeDefinitionApi vlmDfnRaw,
         String remoteRscName
     )
         throws DivergentUuidsException

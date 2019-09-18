@@ -34,6 +34,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
@@ -882,7 +883,7 @@ public class CtrlSnapshotCrtApiCallHandler
         boolean isEncrypted;
         try
         {
-            isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.VlmDfnFlags.ENCRYPTED);
+            isEncrypted = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.Flags.ENCRYPTED);
         }
         catch (AccessDeniedException accDeniedExc)
         {

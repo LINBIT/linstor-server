@@ -20,7 +20,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume.InitMaps;
 import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.core.objects.VolumeGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -66,7 +66,7 @@ public class VolumeGenericDbDriverTest extends GenericDbBase
     private VolumeNumber volNr;
     private Integer minor;
     private long volSize;
-    private VolumeDefinitionData volDfn;
+    private VolumeDefinition volDfn;
 
     private java.util.UUID uuid;
 
@@ -133,7 +133,7 @@ public class VolumeGenericDbDriverTest extends GenericDbBase
         volNr = new VolumeNumber(13);
         minor = 42;
         volSize = 5_000_000;
-        volDfn = volumeDefinitionDataFactory.create(
+        volDfn = volumeDefinitionFactory.create(
             SYS_CTX,
             resDfn,
             volNr,
@@ -231,7 +231,7 @@ public class VolumeGenericDbDriverTest extends GenericDbBase
         driver.create(vol);
 
         Map<Pair<NodeName, ResourceName>, Resource> rscMap = new HashMap<>();
-        Map<Pair<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap = new HashMap<>();
+        Map<Pair<ResourceName, VolumeNumber>, VolumeDefinition> vlmDfnMap = new HashMap<>();
 
         rscMap.put(new Pair<>(nodeName, resName), res);
         vlmDfnMap.put(new Pair<>(resName, volNr), volDfn);

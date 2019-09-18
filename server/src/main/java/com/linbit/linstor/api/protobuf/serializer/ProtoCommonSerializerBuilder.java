@@ -25,6 +25,7 @@ import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -40,7 +41,6 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.event.EventIdentifier;
@@ -686,11 +686,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     public static List<VlmDfnOuterClass.VlmDfn> serializeVolumeDefinition(
-        List<VolumeDefinition.VlmDfnApi> vlmDfnApiList
+        List<VolumeDefinitionApi> vlmDfnApiList
     )
     {
         List<VlmDfnOuterClass.VlmDfn> protoVlmDfnList = new ArrayList<>(vlmDfnApiList.size());
-        for (VlmDfnApi vlmDfnApi : vlmDfnApiList)
+        for (VolumeDefinitionApi vlmDfnApi : vlmDfnApiList)
         {
             protoVlmDfnList.add(serializeVolumeDefinition(vlmDfnApi));
         }
@@ -698,7 +698,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     public static VlmDfnOuterClass.VlmDfn serializeVolumeDefinition(
-        VolumeDefinition.VlmDfnApi vlmDfnApi
+        VolumeDefinitionApi vlmDfnApi
     )
     {
         VlmDfnOuterClass.VlmDfn.Builder builder = VlmDfn.newBuilder()

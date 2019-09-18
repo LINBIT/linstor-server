@@ -6,7 +6,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
@@ -83,7 +83,7 @@ public class VolumeControllerFactory
 
         driver.create(volData);
         ((Resource) rsc).putVolume(accCtx, volData);
-        ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
+        ((VolumeDefinition) vlmDfn).putVolume(accCtx, volData);
 
         LayerPayload payload = new LayerPayload();
         int vlmNr = vlmDfn.getVolumeNumber().value;

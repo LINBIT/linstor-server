@@ -316,7 +316,7 @@ public class TestFactory
     public static Volume createVolume(
         UUID uuidRef,
         Resource resRef,
-        VolumeDefinitionData volDfnRef,
+        VolumeDefinition volDfnRef,
         long flagValueRef,
         VolumeGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -340,17 +340,17 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link VolumeDefinitionData} without persisting it to the database
+     * Creates a new {@link VolumeDefinition} without persisting it to the database
      * @throws MdException
      * @throws DatabaseException
      */
-    public static VolumeDefinitionData VolumeDefinitionData(
+    public static VolumeDefinition VolumeDefinition(
         UUID uuidRef,
         ResourceDefinition resDfnRef,
         VolumeNumber volNrRef,
         long volSizeRef,
         long flagValueRef,
-        VolumeDefinitionDataGenericDbDriver driverRef,
+        VolumeDefinitionGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
@@ -359,7 +359,7 @@ public class TestFactory
     )
         throws DatabaseException, MdException
     {
-        return new VolumeDefinitionData(
+        return new VolumeDefinition(
             uuidRef,
             resDfnRef,
             volNrRef,

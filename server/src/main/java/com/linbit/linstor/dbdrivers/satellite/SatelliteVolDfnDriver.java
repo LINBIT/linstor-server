@@ -1,12 +1,12 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import javax.inject.Inject;
 
-public class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
+public class SatelliteVolDfnDriver implements VolumeDefinitionDatabaseDriver
 {
     private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
     private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
@@ -18,26 +18,26 @@ public class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence()
+    public StateFlagsPersistence<VolumeDefinition> getStateFlagsPersistence()
     {
-        return (StateFlagsPersistence<VolumeDefinitionData>) stateFlagsDriver;
+        return (StateFlagsPersistence<VolumeDefinition>) stateFlagsDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver()
+    public SingleColumnDatabaseDriver<VolumeDefinition, Long> getVolumeSizeDriver()
     {
-        return (SingleColumnDatabaseDriver<VolumeDefinitionData, Long>) singleColDriver;
+        return (SingleColumnDatabaseDriver<VolumeDefinition, Long>) singleColDriver;
     }
 
     @Override
-    public void create(VolumeDefinitionData volDfnData)
+    public void create(VolumeDefinition volDfnData)
     {
         // no-op
     }
 
     @Override
-    public void delete(VolumeDefinitionData data)
+    public void delete(VolumeDefinition data)
     {
         // no-op
     }

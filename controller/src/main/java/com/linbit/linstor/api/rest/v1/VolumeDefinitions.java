@@ -8,7 +8,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
-import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -92,7 +93,7 @@ public class VolumeDefinitions
             if (foundRscDfn.isPresent())
             {
                 List<JsonGenTypes.VolumeDefinition> data = new ArrayList<>();
-                for (VolumeDefinition.VlmDfnApi vlmDfnApi : foundRscDfn.get().getVlmDfnList().stream()
+                for (VolumeDefinitionApi vlmDfnApi : foundRscDfn.get().getVlmDfnList().stream()
                         .filter(vlmDfnApi -> vlmNumber == null || vlmDfnApi.getVolumeNr().equals(vlmNumber))
                         .collect(Collectors.toList()))
                 {
@@ -118,7 +119,7 @@ public class VolumeDefinitions
         }, false);
     }
 
-    private static class VlmDfnCreationWithPayload implements VolumeDefinition.VlmDfnWtihCreationPayload
+    private static class VlmDfnCreationWithPayload implements VolumeDefinitionWtihCreationPayload
     {
         JsonGenTypes.VolumeDefinitionCreate vlmCreateData;
 
@@ -128,7 +129,7 @@ public class VolumeDefinitions
         }
 
         @Override
-        public VolumeDefinition.VlmDfnApi getVlmDfn()
+        public VolumeDefinitionApi getVlmDfn()
         {
             return Json.VolumeDefinitionToApi(vlmCreateData.volume_definition);
         }
@@ -154,7 +155,7 @@ public class VolumeDefinitions
                 dataJson,
                 JsonGenTypes.VolumeDefinitionCreate.class
             );
-            List<VolumeDefinition.VlmDfnWtihCreationPayload> vlmList = new ArrayList<>();
+            List<VolumeDefinitionWtihCreationPayload> vlmList = new ArrayList<>();
             vlmList.add(new VlmDfnCreationWithPayload(vlmDfnData));
             ApiCallRc apiCallRc = ctrlApiCallHandler.createVlmDfns(rscName, vlmList);
 

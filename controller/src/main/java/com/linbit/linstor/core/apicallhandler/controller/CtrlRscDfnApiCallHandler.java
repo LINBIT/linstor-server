@@ -29,6 +29,8 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -39,9 +41,7 @@ import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -137,7 +137,7 @@ public class CtrlRscDfnApiCallHandler
         String secret,
         String transportTypeStr,
         Map<String, String> props,
-        List<VlmDfnWtihCreationPayload> volDescrMap,
+        List<VolumeDefinitionWtihCreationPayload> volDescrMap,
         List<String> layerStackStrList,
         Short peerSlotsRef,
         String rscGrpNameStr,
@@ -189,13 +189,13 @@ public class CtrlRscDfnApiCallHandler
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, props,
                 ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
-            List<VolumeDefinitionData> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
+            List<VolumeDefinition> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
 
             resourceDefinitionRepository.put(apiCtx, rscDfn);
 
             ctrlTransactionHelper.commit();
 
-            for (VolumeDefinitionData vlmDfn : createdVlmDfns)
+            for (VolumeDefinition vlmDfn : createdVlmDfns)
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
                 volSuccessEntry.setReturnCode(ApiConsts.MASK_VLM_DFN | ApiConsts.CREATED);
@@ -621,7 +621,7 @@ public class CtrlRscDfnApiCallHandler
         return rscDfn;
     }
 
-    static VolumeNumber getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
+    static VolumeNumber getVlmNr(VolumeDefinitionApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
         throws ValueOutOfRangeException, LinStorException
     {
         VolumeNumber vlmNr;

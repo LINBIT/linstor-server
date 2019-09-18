@@ -14,9 +14,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.VolumeDefinitionDataControllerFactory;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
+import com.linbit.linstor.core.objects.VolumeDefinitionControllerFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -30,31 +30,31 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCal
 class CtrlVlmDfnCrtApiHelper
 {
     private final AccessContext apiCtx;
-    private final VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
+    private final VolumeDefinitionControllerFactory volumeDefinitionFactory;
 
     @Inject
     CtrlVlmDfnCrtApiHelper(
         @ApiContext AccessContext apiCtxRef,
-        VolumeDefinitionDataControllerFactory volumeDefinitionDataFactoryRef
+        VolumeDefinitionControllerFactory volumeDefinitionFactoryRef
     )
     {
         apiCtx = apiCtxRef;
-        volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
+        volumeDefinitionFactory = volumeDefinitionFactoryRef;
     }
 
-    VolumeDefinitionData createVlmDfnData(
+    VolumeDefinition createVlmDfnData(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         VolumeNumber volNr,
         Integer minorNr,
         long size,
-        VlmDfnFlags[] vlmDfnInitFlags
+        VolumeDefinition.Flags[] vlmDfnInitFlags
     )
     {
-        VolumeDefinitionData vlmDfn;
+        VolumeDefinition vlmDfn;
         try
         {
-            vlmDfn = volumeDefinitionDataFactory.create(
+            vlmDfn = volumeDefinitionFactory.create(
                 accCtx,
                 rscDfn,
                 volNr,

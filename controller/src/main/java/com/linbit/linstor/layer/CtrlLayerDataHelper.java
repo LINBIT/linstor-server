@@ -16,8 +16,8 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
@@ -96,7 +96,7 @@ public class CtrlLayerDataHelper
      * Creates the linstor default stack, which is {@link DeviceLayerKind#DRBD} on an optional
      * {@link DeviceLayerKind#LUKS} on a {@link DeviceLayerKind#STORAGE} layer.
      * A LUKS layer is created if at least one {@link VolumeDefinition}
-     * has the {@link VolumeDefinition.VlmDfnFlags#ENCRYPTED} flag set.
+     * has the {@link VolumeDefinition.Flags#ENCRYPTED} flag set.
      * @param accCtxRef
      * @return
      */
@@ -187,7 +187,7 @@ public class CtrlLayerDataHelper
     }
 
     public void ensureVlmDfnLayerDataExits(
-        VolumeDefinitionData vlmDfn,
+        VolumeDefinition vlmDfn,
         String rscNameSuffix,
         LayerPayload payload
     )
@@ -440,7 +440,7 @@ public class CtrlLayerDataHelper
         {
             VolumeDefinition vlmDfn = iterateVolumeDefinitions.next();
 
-            if (vlmDfn.getFlags().isSet(accCtxRef, VlmDfnFlags.ENCRYPTED))
+            if (vlmDfn.getFlags().isSet(accCtxRef, VolumeDefinition.Flags.ENCRYPTED))
             {
                 needsLuksLayer = true;
                 break;

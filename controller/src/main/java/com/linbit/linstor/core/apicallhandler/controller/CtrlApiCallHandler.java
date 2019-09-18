@@ -10,9 +10,9 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
@@ -195,7 +195,7 @@ public class CtrlApiCallHandler
         String secretRef,
         String transportType,
         Map<String, String> propsRef,
-        List<VlmDfnWtihCreationPayload> vlmDescrMapRef,
+        List<VolumeDefinitionWtihCreationPayload> vlmDescrMapRef,
         List<String> layerStackRef,
         Short peerSlotsRef,
         String rscGrpNameRef
@@ -208,7 +208,7 @@ public class CtrlApiCallHandler
         {
             props = Collections.emptyMap();
         }
-        List<VlmDfnWtihCreationPayload> vlmDescrMap = vlmDescrMapRef;
+        List<VolumeDefinitionWtihCreationPayload> vlmDescrMap = vlmDescrMapRef;
         if (vlmDescrMap == null)
         {
             vlmDescrMap = Collections.emptyList();
@@ -295,11 +295,11 @@ public class CtrlApiCallHandler
      */
     public ApiCallRc createVlmDfns(
         String rscName,
-        List<VlmDfnWtihCreationPayload> vlmDfnWithCrtPayloadApiListRef
+        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithCrtPayloadApiListRef
     )
     {
         ApiCallRc apiCallRc;
-        List<VlmDfnWtihCreationPayload> vlmDfnWithPayloadApiList = vlmDfnWithCrtPayloadApiListRef;
+        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiList = vlmDfnWithCrtPayloadApiListRef;
         if (vlmDfnWithPayloadApiList == null)
         {
             vlmDfnWithPayloadApiList = Collections.emptyList();

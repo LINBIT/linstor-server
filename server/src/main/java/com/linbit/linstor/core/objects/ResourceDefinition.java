@@ -6,6 +6,7 @@ import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -463,7 +464,7 @@ public class ResourceDefinition extends BaseTransactionObject
         layerStorage.remove(new Pair<>(kind, rscNameSuffixRef)).delete();
         for (VolumeDefinition vlmDfn : volumeMap.values())
         {
-            ((VolumeDefinitionData) vlmDfn).removeLayerData(accCtx, kind, rscNameSuffixRef);
+            ((VolumeDefinition) vlmDfn).removeLayerData(accCtx, kind, rscNameSuffixRef);
         }
     }
 
@@ -546,7 +547,7 @@ public class ResourceDefinition extends BaseTransactionObject
     public ResourceDefinitionApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {
-        ArrayList<VolumeDefinition.VlmDfnApi> vlmDfnList = new ArrayList<>();
+        ArrayList<VolumeDefinitionApi> vlmDfnList = new ArrayList<>();
         Iterator<VolumeDefinition> vlmDfnIter = iterateVolumeDfn(accCtx);
         while (vlmDfnIter.hasNext())
         {

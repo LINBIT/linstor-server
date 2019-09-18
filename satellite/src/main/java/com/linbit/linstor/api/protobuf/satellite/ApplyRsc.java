@@ -19,13 +19,14 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NodeOuterClass;
@@ -89,7 +90,7 @@ public class ApplyRsc implements ApiCall
         Rsc localRsc = intRscData.getLocalRsc();
         RscDfn rscDfn = intRscData.getRscDfn();
 
-        List<VolumeDefinition.VlmDfnApi> vlmDfns = extractVlmDfns(rscDfn.getVlmDfnsList());
+        List<VolumeDefinitionApi> vlmDfns = extractVlmDfns(rscDfn.getVlmDfnsList());
         List<VolumeApi> localVlms = extractRawVolumes(localRsc.getVlmsList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(
             intRscData.getOtherResourcesList(),
@@ -180,9 +181,9 @@ public class ApplyRsc implements ApiCall
         );
     }
 
-    static List<VolumeDefinition.VlmDfnApi> extractVlmDfns(List<VlmDfn> vlmDfnsList)
+    static List<VolumeDefinitionApi> extractVlmDfns(List<VlmDfn> vlmDfnsList)
     {
-        List<VolumeDefinition.VlmDfnApi> list = new ArrayList<>();
+        List<VolumeDefinitionApi> list = new ArrayList<>();
         for (VlmDfn vlmDfn : vlmDfnsList)
         {
             list.add(
@@ -190,7 +191,7 @@ public class ApplyRsc implements ApiCall
                     UUID.fromString(vlmDfn.getVlmDfnUuid()),
                     vlmDfn.getVlmNr(),
                     vlmDfn.getVlmSize(),
-                    FlagsHelper.fromStringList(VlmDfnFlags.class, vlmDfn.getVlmFlagsList()),
+                    FlagsHelper.fromStringList(VolumeDefinition.Flags.class, vlmDfn.getVlmFlagsList()),
                     vlmDfn.getVlmPropsMap(),
                     ProtoLayerUtils.extractVlmDfnLayerData(vlmDfn.getLayerDataList())
                 )

@@ -1,21 +1,21 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
-import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 
-public class VlmDfnWithCreationPayloadPojo implements VlmDfnWtihCreationPayload
+public class VlmDfnWithCreationPayloadPojo implements VolumeDefinitionWtihCreationPayload
 {
-    private final VlmDfnApi vlmDfnApi;
+    private final VolumeDefinitionApi vlmDfnApi;
     private final Integer drbdMinorNr;
 
-    public VlmDfnWithCreationPayloadPojo(VlmDfnApi vlmDfnApiRef, Integer drbdMinorNrRef)
+    public VlmDfnWithCreationPayloadPojo(VolumeDefinitionApi vlmDfnApiRef, Integer drbdMinorNrRef)
     {
         vlmDfnApi = vlmDfnApiRef;
         drbdMinorNr = drbdMinorNrRef;
     }
 
     @Override
-    public VlmDfnApi getVlmDfn()
+    public VolumeDefinitionApi getVlmDfn()
     {
         return vlmDfnApi;
     }

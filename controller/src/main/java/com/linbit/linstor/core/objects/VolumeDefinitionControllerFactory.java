@@ -10,9 +10,8 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -28,9 +27,9 @@ import javax.inject.Provider;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class VolumeDefinitionDataControllerFactory
+public class VolumeDefinitionControllerFactory
 {
-    private final VolumeDefinitionDataDatabaseDriver driver;
+    private final VolumeDefinitionDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -38,8 +37,8 @@ public class VolumeDefinitionDataControllerFactory
     private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
-    public VolumeDefinitionDataControllerFactory(
-        VolumeDefinitionDataDatabaseDriver driverRef,
+    public VolumeDefinitionControllerFactory(
+        VolumeDefinitionDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -55,13 +54,13 @@ public class VolumeDefinitionDataControllerFactory
         layerStackHelper = layerStackHelperRef;
     }
 
-    public VolumeDefinitionData create(
+    public VolumeDefinition create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         VolumeNumber vlmNr,
         Integer minor,
         Long vlmSize,
-        VolumeDefinition.VlmDfnFlags[] initFlags
+        VolumeDefinition.Flags[] initFlags
     )
         throws DatabaseException, AccessDeniedException, MdException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
@@ -69,14 +68,14 @@ public class VolumeDefinitionDataControllerFactory
 
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        VolumeDefinitionData vlmDfnData = (VolumeDefinitionData) rscDfn.getVolumeDfn(accCtx, vlmNr);
+        VolumeDefinition vlmDfnData = (VolumeDefinition) rscDfn.getVolumeDfn(accCtx, vlmNr);
 
         if (vlmDfnData != null)
         {
             throw new LinStorDataAlreadyExistsException("The VolumeDefinition already exists");
         }
 
-        vlmDfnData = new VolumeDefinitionData(
+        vlmDfnData = new VolumeDefinition(
             UUID.randomUUID(),
             rscDfn,
             vlmNr,

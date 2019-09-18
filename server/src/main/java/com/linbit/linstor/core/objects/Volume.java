@@ -364,7 +364,7 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
             }
 
             resource.removeVolume(accCtx, this);
-            ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
+            ((VolumeDefinition) volumeDfn).removeVolume(accCtx, this);
 
             volumeProps.delete();
 
