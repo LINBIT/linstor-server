@@ -97,4 +97,8 @@ public class ParseUtils
         return result;
     }
 
+    private ParseUtils()
+    {
+    }
+
 }

@@ -68,4 +68,8 @@ public class LosetupCommands
             "Failed to resize loop back device '" + loopDevicePath + "'"
         );
     }
+
+    private LosetupCommands()
+    {
+    }
 }

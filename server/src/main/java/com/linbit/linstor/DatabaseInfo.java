@@ -80,4 +80,8 @@ public class DatabaseInfo
         }
         return dbProd;
     }
+
+    private DatabaseInfo()
+    {
+    }
 }

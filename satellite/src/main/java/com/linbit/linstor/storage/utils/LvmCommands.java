@@ -395,4 +395,8 @@ public class LvmCommands
             failMsg
         );
     }
+
+    private LvmCommands()
+    {
+    }
 }

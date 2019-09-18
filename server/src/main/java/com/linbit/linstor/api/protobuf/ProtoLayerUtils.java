@@ -521,4 +521,8 @@ public class ProtoLayerUtils
             protoNvmeVlm.getDiskState()
         );
     }
+
+    private ProtoLayerUtils()
+    {
+    }
 }

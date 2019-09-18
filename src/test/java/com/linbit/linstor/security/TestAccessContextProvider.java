@@ -58,5 +58,9 @@ public class TestAccessContextProvider
         }
         return ret;
     }
+
+    private TestAccessContextProvider()
+    {
+    }
 }
 

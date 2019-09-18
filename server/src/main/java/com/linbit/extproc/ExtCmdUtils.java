@@ -86,4 +86,8 @@ public class ExtCmdUtils
             );
         }
     }
+
+    private ExtCmdUtils()
+    {
+    }
 }

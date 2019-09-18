@@ -36,4 +36,8 @@ public class ProviderUtils
         }
         return sum;
     }
+
+    private ProviderUtils()
+    {
+    }
 }

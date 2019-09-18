@@ -26,4 +26,8 @@ public class StltProviderUtils
         }
         return size;
     }
+
+    private StltProviderUtils()
+    {
+    }
 }

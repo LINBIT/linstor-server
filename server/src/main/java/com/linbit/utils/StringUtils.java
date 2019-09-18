@@ -134,4 +134,8 @@ public class StringUtils
             return stringJoiner.toString();
         }
     }
+
+    private StringUtils()
+    {
+    }
 }

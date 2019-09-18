@@ -164,4 +164,8 @@ public class ApiCallRcConverter
                 )
             );
     }
+
+    private ApiCallRcConverter()
+    {
+    }
 }

@@ -44,4 +44,8 @@ public class AccessUtils
             throw new ImplementationError(excMessage);
         }
     }
+
+    private AccessUtils()
+    {
+    }
 }

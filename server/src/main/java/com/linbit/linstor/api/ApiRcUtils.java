@@ -251,4 +251,8 @@ public class ApiRcUtils
             (rcEntry.getReturnCode() & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR ||
                 (rcEntry.getReturnCode() & ApiConsts.MASK_WARN) == ApiConsts.MASK_WARN;
     }
+
+    private ApiRcUtils()
+    {
+    }
 }

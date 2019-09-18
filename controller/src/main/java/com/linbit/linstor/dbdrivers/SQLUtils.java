@@ -269,4 +269,8 @@ public class SQLUtils
         }
         return list;
     }
+
+    private SQLUtils()
+    {
+    }
 }

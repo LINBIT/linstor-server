@@ -56,4 +56,8 @@ public class DummySecurityInitializer
     {
         SecurityLevel.set(accCtx, newLevel, null, null);
     }
+
+    private DummySecurityInitializer()
+    {
+    }
 }

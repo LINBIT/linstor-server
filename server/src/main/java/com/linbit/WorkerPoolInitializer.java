@@ -38,4 +38,8 @@ public class WorkerPoolInitializer
             controllerDatabase
         );
     }
+
+    private WorkerPoolInitializer()
+    {
+    }
 }

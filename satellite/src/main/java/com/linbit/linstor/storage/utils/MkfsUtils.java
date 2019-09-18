@@ -209,4 +209,8 @@ public class MkfsUtils
             }
         }
     }
+
+    private MkfsUtils()
+    {
+    }
 }

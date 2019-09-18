@@ -109,4 +109,8 @@ public class DeviceLayerUtils
     {
         return props.getNamespace(DeviceProvider.STORAGE_NAMESPACE).orElse(ReadOnlyProps.emptyRoProps());
     }
+
+    private DeviceLayerUtils()
+    {
+    }
 }

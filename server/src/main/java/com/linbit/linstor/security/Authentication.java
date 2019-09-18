@@ -22,7 +22,7 @@ public final class Authentication
     private static final AtomicBoolean GLOBAL_AUTH_REQUIRED =
         new AtomicBoolean(true);
 
-    public Authentication(
+    private Authentication(
         AccessContext initCtx,
         ControllerDatabase ctrlDbRef,
         DbAccessor dbDriverRef

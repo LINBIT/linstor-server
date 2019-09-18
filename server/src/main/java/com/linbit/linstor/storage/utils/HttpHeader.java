@@ -83,4 +83,8 @@ public class HttpHeader
             return this;
         }
     }
+
+    private HttpHeader()
+    {
+    }
 }

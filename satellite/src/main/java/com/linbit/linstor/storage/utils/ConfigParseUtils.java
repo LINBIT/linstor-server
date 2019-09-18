@@ -58,4 +58,8 @@ public class ConfigParseUtils
         }
         return ret;
     }
+
+    private ConfigParseUtils()
+    {
+    }
 }

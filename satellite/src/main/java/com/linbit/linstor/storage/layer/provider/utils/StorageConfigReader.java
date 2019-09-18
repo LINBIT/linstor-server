@@ -141,4 +141,8 @@ public class StorageConfigReader
             throw new StorageException("IOException occurred when creating directory '" + path + "'", exc);
         }
     }
+
+    private StorageConfigReader()
+    {
+    }
 }

@@ -25,4 +25,8 @@ public class TransactionMgrUtil
             throw new RuntimeException("Not implemented");
         }
     }
+
+    private TransactionMgrUtil()
+    {
+    }
 }

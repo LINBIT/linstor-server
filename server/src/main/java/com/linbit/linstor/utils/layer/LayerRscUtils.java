@@ -40,4 +40,8 @@ public class LayerRscUtils
         }
         return rscLayerObjects;
     }
+
+    private LayerRscUtils()
+    {
+    }
 }

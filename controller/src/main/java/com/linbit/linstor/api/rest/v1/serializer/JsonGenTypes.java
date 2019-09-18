@@ -772,4 +772,8 @@ public class JsonGenTypes
         public Map<String, String> compression_props = Collections.emptyMap();
     }
 
+    private JsonGenTypes()
+    {
+    }
+
 }

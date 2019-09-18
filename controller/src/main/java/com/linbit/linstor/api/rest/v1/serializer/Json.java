@@ -743,4 +743,8 @@ public class Json
         vlmGrp.uuid = vlmGrpApi.getUUID().toString();
         return vlmGrp;
     }
+
+    private Json()
+    {
+    }
 }

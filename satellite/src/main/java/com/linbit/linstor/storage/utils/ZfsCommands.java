@@ -276,4 +276,8 @@ public class ZfsCommands
             "Failed to query 'zfs' info"
         );
     }
+
+    private ZfsCommands()
+    {
+    }
 }

@@ -69,4 +69,8 @@ public class SwordfishConsts
     public static final String DRIVER_SF_VLM_ID_KEY = "sfVlmId";
     public static final String DRIVER_SF_STOR_SVC_ID_KEY = "sfStorSvcId";
 
+    private SwordfishConsts()
+    {
+    }
+
 }

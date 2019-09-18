@@ -23,4 +23,8 @@ public class ApiUtils
         }
         return ret;
     }
+
+    private ApiUtils()
+    {
+    }
 }

@@ -164,4 +164,8 @@ public class Commands
             return true;
         }
     }
+
+    private Commands()
+    {
+    }
 }

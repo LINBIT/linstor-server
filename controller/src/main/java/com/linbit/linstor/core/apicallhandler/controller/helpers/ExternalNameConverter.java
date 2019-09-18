@@ -180,4 +180,8 @@ public class ExternalNameConverter
         }
         return idx < REPLACEABLE_CHAR_LIST.length;
     }
+
+    private ExternalNameConverter()
+    {
+    }
 }

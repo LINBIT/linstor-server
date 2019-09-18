@@ -140,4 +140,8 @@ public class FileCommands
             "Failed to fetch free space of storage pool '" + storageDirectory + "'"
         );
     }
+
+    private FileCommands()
+    {
+    }
 }

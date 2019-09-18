@@ -30,4 +30,8 @@ public class PropsUtils
     {
         return boolStr != null && Boolean.valueOf(boolStr);
     }
+
+    private PropsUtils()
+    {
+    }
 }

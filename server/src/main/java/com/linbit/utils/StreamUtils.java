@@ -48,4 +48,8 @@ public class StreamUtils
             }
         };
     }
+
+    private StreamUtils()
+    {
+    }
 }

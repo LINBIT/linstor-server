@@ -374,4 +374,8 @@ public class TestFactory
         );
     }
 
+    private TestFactory()
+    {
+    }
+
 }

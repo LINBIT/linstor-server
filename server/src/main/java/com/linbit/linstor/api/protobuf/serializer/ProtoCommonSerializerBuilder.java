@@ -1394,5 +1394,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
             return nvmeVlmBuilder.build();
         }
+
+        private LayerObjectSerializer()
+        {
+        }
     }
 }

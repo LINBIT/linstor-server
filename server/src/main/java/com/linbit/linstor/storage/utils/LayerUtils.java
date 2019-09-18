@@ -176,4 +176,8 @@ public class LayerUtils
         return ret;
     }
 
+    private LayerUtils()
+    {
+    }
+
 }

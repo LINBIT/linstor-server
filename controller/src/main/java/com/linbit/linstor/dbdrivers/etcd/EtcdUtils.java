@@ -169,4 +169,8 @@ public class EtcdUtils
         pks.toArray(pkArr);
         return pkArr;
     }
+
+    private EtcdUtils()
+    {
+    }
 }

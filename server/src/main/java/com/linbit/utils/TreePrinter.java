@@ -165,4 +165,8 @@ public class TreePrinter
             TreePrinter.print(out, current.build());
         }
     }
+
+    private TreePrinter()
+    {
+    }
 }

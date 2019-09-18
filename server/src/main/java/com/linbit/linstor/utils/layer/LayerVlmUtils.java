@@ -86,4 +86,8 @@ public class LayerVlmUtils
         }
         return storPoolMap;
     }
+
+    private LayerVlmUtils()
+    {
+    }
 }

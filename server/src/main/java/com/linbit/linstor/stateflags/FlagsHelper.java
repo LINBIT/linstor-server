@@ -65,4 +65,8 @@ public class FlagsHelper
         }
         return setFlags.toArray((E[]) Array.newInstance(enumClass, setFlags.size()));
     }
+
+    private FlagsHelper()
+    {
+    }
 }

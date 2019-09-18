@@ -84,4 +84,8 @@ public class DmStatCommands
 
     }
 
+    private DmStatCommands()
+    {
+    }
+
 }
