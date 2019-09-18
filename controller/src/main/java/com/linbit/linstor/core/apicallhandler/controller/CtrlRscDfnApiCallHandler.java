@@ -28,24 +28,24 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
-import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.ResourceGroupDataControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.debug.HexViewer;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -54,14 +54,15 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.debug.HexViewer;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -81,7 +82,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceGroupDataControllerFactory resourceGroupDataFactory;
-    private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
+    private final ResourceDefinitionControllerFactory resourceDefinitionFactory;
     private final ResourceGroupRepository resourceGroupRepository;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -100,7 +101,7 @@ public class CtrlRscDfnApiCallHandler
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceGroupDataControllerFactory resourceGroupDataFactoryRef,
-        ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
+        ResourceDefinitionControllerFactory resourceDefinitionFactoryRef,
         ResourceGroupRepository resourceGroupRepositoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -118,7 +119,7 @@ public class CtrlRscDfnApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceGroupDataFactory = resourceGroupDataFactoryRef;
-        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        resourceDefinitionFactory = resourceDefinitionFactoryRef;
         resourceGroupRepository = resourceGroupRepositoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -167,7 +168,7 @@ public class CtrlRscDfnApiCallHandler
                 }
             }
 
-            ResourceDefinitionData rscDfn = createRscDfn(
+            ResourceDefinition rscDfn = createRscDfn(
                 rscNameStr,
                 extName,
                 transportTypeStr,
@@ -297,7 +298,7 @@ public class CtrlRscDfnApiCallHandler
             requireRscDfnMapChangeAccess();
 
             ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
-            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
             if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
             {
                 throw new ApiRcException(ApiCallRcImpl
@@ -363,9 +364,9 @@ public class CtrlRscDfnApiCallHandler
         return responses;
     }
 
-    ArrayList<ResourceDefinitionData.RscDfnApi> listResourceDefinitions()
+    ArrayList<ResourceDefinitionApi> listResourceDefinitions()
     {
-        ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
+        ArrayList<ResourceDefinitionApi> rscdfns = new ArrayList<>();
         try
         {
             for (ResourceDefinition rscdfn : resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values())
@@ -407,7 +408,7 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
-    private ResourceDefinitionData createRscDfn(
+    private ResourceDefinition createRscDfn(
         String rscNameStr,
         byte[] extName,
         String transportTypeStr,
@@ -429,7 +430,8 @@ public class CtrlRscDfnApiCallHandler
         {
             try
             {
-                transportType = TransportType.byValue(transportTypeStr); // TODO needs exception handling
+                transportType = TransportType.byValue(transportTypeStr); // TODO needs exception
+                                                                         // handling
             }
             catch (IllegalArgumentException unknownValueExc)
             {
@@ -515,7 +517,7 @@ public class CtrlRscDfnApiCallHandler
             CtrlRscCrtApiHelper.ensureLayerStackIsAllowed(layerStack);
         }
 
-        ResourceDefinitionData rscDfn;
+        ResourceDefinition rscDfn;
         try
         {
             if (rscGrpNameStr == null) {
@@ -552,7 +554,7 @@ public class CtrlRscDfnApiCallHandler
                 }
             }
 
-            rscDfn = resourceDefinitionDataFactory.create(
+            rscDfn = resourceDefinitionFactory.create(
                 peerAccCtx.get(),
                 rscName,
                 extName,

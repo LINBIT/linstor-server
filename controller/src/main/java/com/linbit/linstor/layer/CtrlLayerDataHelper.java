@@ -12,7 +12,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -138,7 +138,7 @@ public class CtrlLayerDataHelper
     }
 
     public void ensureRequiredRscDfnLayerDataExits(
-        ResourceDefinitionData rscDfn,
+        ResourceDefinition rscDfn,
         String rscNameSuffix,
         LayerPayload payload
     )

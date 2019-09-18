@@ -32,6 +32,7 @@ import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupDbDriver;

@@ -20,7 +20,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionData;
@@ -211,7 +211,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         Throwable exception
     )
     {
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
 
         unmarkDownPrivileged(rscDfn);
 

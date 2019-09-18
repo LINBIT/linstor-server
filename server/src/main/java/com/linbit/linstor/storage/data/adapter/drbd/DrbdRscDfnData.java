@@ -6,7 +6,6 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;

@@ -7,7 +7,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 
 import javax.inject.Inject;
@@ -81,7 +81,7 @@ public class VolumeDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_DFN, request), () ->
         {
-            Optional<ResourceDefinition.RscDfnApi> foundRscDfn = ctrlApiCallHandler.listResourceDefinition().stream()
+            Optional<ResourceDefinitionApi> foundRscDfn = ctrlApiCallHandler.listResourceDefinition().stream()
                 .filter(rscDfnApi -> rscDfnApi.getResourceName().equalsIgnoreCase(rscName))
                 .findFirst();
             // TODO: instead of building a list of ALL rscDfns(Api) and filtering the one we are interested in

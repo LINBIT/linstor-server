@@ -12,8 +12,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
@@ -25,6 +24,7 @@ import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
@@ -54,7 +54,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
     private ResourceName resName;
     private Integer resPort;
-    private ResourceDefinitionData resDfn;
+    private ResourceDefinition resDfn;
 
     private Integer nodeId;
     private Resource res;
@@ -93,7 +93,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
         resName = new ResourceName("TestResName");
         resPort = 9001;
-        resDfn = resourceDefinitionDataFactory.create(
+        resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,

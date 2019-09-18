@@ -355,7 +355,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         {
             resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
-            ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
+            ((ResourceDefinition) resourceDfn).removeVolumeDefinition(accCtx, this);
 
             // preventing ConcurrentModificationException
             List<Volume> vlms = new ArrayList<>(volumes.values());

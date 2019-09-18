@@ -68,7 +68,7 @@ public class ResourceSatelliteFactory
                     new TreeMap<>()
                 );
                 node.addResource(accCtx, rscData);
-                ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
+                rscDfn.addResource(accCtx, rscData);
             }
         }
         catch (Exception exc)

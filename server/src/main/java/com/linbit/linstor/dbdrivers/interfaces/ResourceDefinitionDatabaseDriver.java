@@ -1,47 +1,47 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.CollectionDatabaseDriver;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 /**
- * Database driver for {@link ResourceDefinitionData}.
+ * Database driver for {@link ResourceDefinition}.
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface ResourceDefinitionDataDatabaseDriver
+public interface ResourceDefinitionDatabaseDriver
 {
     /**
-     * Persists the given {@link ResourceDefinitionData} into the database.
+     * Persists the given {@link ResourceDefinition} into the database.
      *
      * @param resourceDefinition
      *  The data to be stored (including the primary key)
      *
      * @throws DatabaseException
      */
-    void create(ResourceDefinitionData resourceDefinition) throws DatabaseException;
+    void create(ResourceDefinition resourceDefinition) throws DatabaseException;
 
     /**
-     * Removes the given {@link ResourceDefinitionData} from the database
+     * Removes the given {@link ResourceDefinition} from the database
      *
      * @param resourceDefinition
      *  The data identifying the row to delete
      *
      * @throws DatabaseException
      */
-    void delete(ResourceDefinitionData resourceDefinition) throws DatabaseException;
+    void delete(ResourceDefinition resourceDefinition) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted flags
      */
-    StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence();
+    StateFlagsPersistence<ResourceDefinition> getStateFlagsPersistence();
 
 
     /**
      * A special sub-driver to update the layer stack
      */
-    CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> getLayerStackDriver();
+    CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> getLayerStackDriver();
 
 }

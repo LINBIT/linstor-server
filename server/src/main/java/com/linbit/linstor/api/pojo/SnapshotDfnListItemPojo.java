@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnApi;
@@ -24,7 +24,7 @@ public class SnapshotDfnListItemPojo implements SnapshotDefinition.SnapshotDfnLi
     }
 
     @Override
-    public ResourceDefinition.RscDfnApi getRscDfn()
+    public ResourceDefinitionApi getRscDfn()
     {
         return snapshotDfnApi.getRscDfn();
     }

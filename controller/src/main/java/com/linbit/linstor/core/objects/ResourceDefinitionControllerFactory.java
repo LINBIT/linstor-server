@@ -5,12 +5,9 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
@@ -20,6 +17,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -27,14 +25,15 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 
 @Singleton
-public class ResourceDefinitionDataControllerFactory
+public class ResourceDefinitionControllerFactory
 {
-    private final ResourceDefinitionDataDatabaseDriver driver;
+    private final ResourceDefinitionDatabaseDriver driver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -43,8 +42,8 @@ public class ResourceDefinitionDataControllerFactory
     private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
-    public ResourceDefinitionDataControllerFactory(
-        ResourceDefinitionDataDatabaseDriver driverRef,
+    public ResourceDefinitionControllerFactory(
+        ResourceDefinitionDatabaseDriver driverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -62,12 +61,12 @@ public class ResourceDefinitionDataControllerFactory
         layerStackHelper = layerStackHelperRef;
     }
 
-    public ResourceDefinitionData create(
+    public ResourceDefinition create(
         AccessContext accCtx,
         ResourceName rscName,
         byte[] extName,
         Integer port,
-        RscDfnFlags[] flags,
+        ResourceDefinition.Flags[] flags,
         String secret,
         TransportType transType,
         List<DeviceLayerKind> layerStack,
@@ -77,14 +76,14 @@ public class ResourceDefinitionDataControllerFactory
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,
         ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
     {
-        ResourceDefinitionData rscDfn = resourceDefinitionRepository.get(accCtx, rscName);
+        ResourceDefinition rscDfn = resourceDefinitionRepository.get(accCtx, rscName);
 
         if (rscDfn != null)
         {
             throw new LinStorDataAlreadyExistsException("The ResourceDefinition already exists");
         }
 
-        rscDfn = new ResourceDefinitionData(
+        rscDfn = new ResourceDefinition(
             UUID.randomUUID(),
             objectProtectionFactory.getInstance(
                 accCtx,

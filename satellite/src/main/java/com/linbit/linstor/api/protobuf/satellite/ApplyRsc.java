@@ -150,7 +150,7 @@ public class ApplyRsc implements ApiCall
             rscDfn.getRscName(),
             rscDfn.getExternalName().toByteArray(),
             FlagsHelper.fromStringList(
-                ResourceDefinition.RscDfnFlags.class,
+                ResourceDefinition.Flags.class,
                 rscDfn.getRscDfnFlagsList()
             ),
             rscDfn.getRscDfnPropsMap(),

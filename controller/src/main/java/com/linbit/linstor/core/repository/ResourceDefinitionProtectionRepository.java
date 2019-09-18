@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -57,21 +57,21 @@ public class ResourceDefinitionProtectionRepository implements ResourceDefinitio
     }
 
     @Override
-    public ResourceDefinitionData get(AccessContext accCtx, ResourceName resourceName)
+    public ResourceDefinition get(AccessContext accCtx, ResourceName resourceName)
         throws AccessDeniedException
     {
         checkProtSet();
         resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (ResourceDefinitionData) rscDfnMap.get(resourceName);
+        return (ResourceDefinition) rscDfnMap.get(resourceName);
     }
 
     @Override
-    public ResourceDefinitionData get(AccessContext accCtx, byte[] externalName)
+    public ResourceDefinition get(AccessContext accCtx, byte[] externalName)
         throws AccessDeniedException
     {
         checkProtSet();
         resourceDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (ResourceDefinitionData) rscDfnMapExtName.get(externalName);
+        return (ResourceDefinition) rscDfnMapExtName.get(externalName);
     }
 
     @Override

@@ -18,7 +18,7 @@ import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -145,7 +145,7 @@ public class CtrlApiDataLoader
         return node;
     }
 
-    public final ResourceDefinitionData loadRscDfn(
+    public final ResourceDefinition loadRscDfn(
         String rscNameStr,
         boolean failIfNull
     )
@@ -153,12 +153,12 @@ public class CtrlApiDataLoader
         return loadRscDfn(LinstorParsingUtils.asRscName(rscNameStr), failIfNull);
     }
 
-    public final ResourceDefinitionData loadRscDfn(
+    public final ResourceDefinition loadRscDfn(
         ResourceName rscName,
         boolean failIfNull
     )
     {
-        ResourceDefinitionData rscDfn;
+        ResourceDefinition rscDfn;
         try
         {
             rscDfn = resourceDefinitionRepository.get(
@@ -199,7 +199,7 @@ public class CtrlApiDataLoader
 
     public VolumeDefinitionData loadVlmDfn(ResourceName rscName, VolumeNumber vlmNr, boolean failIfNull)
     {
-        ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
+        ResourceDefinition rscDfn = loadRscDfn(rscName, true);
         VolumeDefinitionData vlmDfn;
         try
         {
@@ -238,7 +238,7 @@ public class CtrlApiDataLoader
     public Resource loadRsc(NodeName nodeName, ResourceName rscName, boolean failIfNull)
     {
         Node node = loadNode(nodeName, true);
-        ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
+        ResourceDefinition rscDfn = loadRscDfn(rscName, true);
         return loadRsc(rscDfn, node, failIfNull);
     }
 

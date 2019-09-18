@@ -11,8 +11,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
@@ -25,6 +24,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -50,7 +50,7 @@ public class ConnectionPropsTest extends GenericDbBase
 
     private Node node1;
     private Node node2;
-    private ResourceDefinitionData resDfn;
+    private ResourceDefinition resDfn;
     private Resource res1;
     private Resource res2;
     private StorPoolDefinitionData storPoolDfn;
@@ -95,7 +95,7 @@ public class ConnectionPropsTest extends GenericDbBase
 
         dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
 
-        resDfn = resourceDefinitionDataFactory.create(
+        resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,

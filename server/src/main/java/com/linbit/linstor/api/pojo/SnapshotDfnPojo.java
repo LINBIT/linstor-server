@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 
@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public class SnapshotDfnPojo implements SnapshotDefinition.SnapshotDfnApi
 {
-    private final ResourceDefinition.RscDfnApi rscDfn;
+    private final ResourceDefinitionApi rscDfn;
     private final UUID uuid;
     private final String snapshotName;
     private final List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns;
@@ -18,7 +18,7 @@ public class SnapshotDfnPojo implements SnapshotDefinition.SnapshotDfnApi
     private final Map<String, String> props;
 
     public SnapshotDfnPojo(
-        ResourceDefinition.RscDfnApi rscDfnRef,
+        ResourceDefinitionApi rscDfnRef,
         UUID uuidRef,
         String snapshotNameRef,
         List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfnsRef,
@@ -35,7 +35,7 @@ public class SnapshotDfnPojo implements SnapshotDefinition.SnapshotDfnApi
     }
 
     @Override
-    public ResourceDefinition.RscDfnApi getRscDfn()
+    public ResourceDefinitionApi getRscDfn()
     {
         return rscDfn;
     }

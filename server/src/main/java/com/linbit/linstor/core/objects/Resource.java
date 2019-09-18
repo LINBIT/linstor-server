@@ -330,7 +330,7 @@ public class Resource extends BaseTransactionObject
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
             assgNode.removeResource(accCtx, this);
-            ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
+            ((ResourceDefinition) resourceDfn).removeResource(accCtx, this);
 
             // preventing ConcurrentModificationException
             Collection<ResourceConnection> rscConnValues = new ArrayList<>(resourceConnections.values());

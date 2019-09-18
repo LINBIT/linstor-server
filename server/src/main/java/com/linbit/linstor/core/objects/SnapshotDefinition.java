@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.DbgInstanceUuid;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -148,7 +149,7 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
 
     public interface SnapshotDfnApi
     {
-        ResourceDefinition.RscDfnApi getRscDfn();
+        ResourceDefinitionApi getRscDfn();
         UUID getUuid();
         String getSnapshotName();
         long getFlags();

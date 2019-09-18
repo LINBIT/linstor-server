@@ -8,7 +8,7 @@ import java.util.UUID;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 
@@ -17,7 +17,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     private final String rscName;
     private final String nodeName;
     private final UUID nodeUuid;
-    private final ResourceDefinition.RscDfnApi rscDefinition;
+    private final ResourceDefinitionApi rscDefinition;
     private final UUID localRscUuid;
     private final long localRscFlags;
     private final Map<String, String> localRscProps;
@@ -32,7 +32,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         final String rscNameRef,
         final String nodeNameRef,
         final UUID nodeUuidRef,
-        final ResourceDefinition.RscDfnApi rscDefinitionRef,
+        final ResourceDefinitionApi rscDefinitionRef,
         final UUID localRscUuidRef,
         final long localRscFlagsRef,
         final Map<String, String> localRscPropsRef,
@@ -121,7 +121,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         return rscDefinition.getUuid();
     }
 
-    public ResourceDefinition.RscDfnApi getRscDfnApi()
+    public ResourceDefinitionApi getRscDfnApi()
     {
         return rscDefinition;
     }

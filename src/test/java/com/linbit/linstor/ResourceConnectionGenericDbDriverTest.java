@@ -1,6 +1,9 @@
 package com.linbit.linstor;
 
-import javax.inject.Inject;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -8,18 +11,16 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionGenericDbDriver;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.utils.Pair;
-import org.junit.Before;
-import org.junit.Test;
+
+import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,10 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
 {
@@ -48,7 +47,7 @@ public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
     private final NodeName targetName;
 
     private java.util.UUID uuid;
-    private ResourceDefinitionData resDfn;
+    private ResourceDefinition resDfn;
     private Node nodeSrc;
     private Node nodeDst;
 
@@ -85,7 +84,7 @@ public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
-        resDfn = resourceDefinitionDataFactory.create(
+        resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,

@@ -4,7 +4,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -17,6 +17,7 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_TARG
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.List;
 
 /**
@@ -168,11 +169,13 @@ public class ResourceCreateCheck
     }
 
     /**
-     * Queries a resource definition for existing resources of specific roles (currently NVMe/Swordfish Target/Initiator)
+     * Queries a resource definition for existing resources of specific roles (currently NVMe/Swordfish
+     * Target/Initiator)
      *
-     * @param rscDfn ResourceDefinitionData potentially containing a resource of certain roles
+     * @param rscDfn
+     *     ResourceDefinition potentially containing a resource of certain roles
      */
-    public void getAndSetDeployedResourceRoles(ResourceDefinitionData rscDfn)
+    public void getAndSetDeployedResourceRoles(ResourceDefinition rscDfn)
     {
         hasNvmeTarget = execPrivileged(
             () -> rscDfn.streamResource(accessContext)).anyMatch(

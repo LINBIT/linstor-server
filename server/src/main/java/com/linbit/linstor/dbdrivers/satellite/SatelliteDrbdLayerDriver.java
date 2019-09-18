@@ -7,7 +7,6 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.types.TcpPortNumber;
@@ -20,6 +19,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;

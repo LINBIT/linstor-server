@@ -3,14 +3,14 @@ package com.linbit.linstor.dbdrivers.satellite;
 import com.linbit.CollectionDatabaseDriver;
 import com.linbit.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import javax.inject.Inject;
 
-public class SatelliteResDfnDriver implements ResourceDefinitionDataDatabaseDriver
+public class SatelliteResDfnDriver implements ResourceDefinitionDatabaseDriver
 {
     private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
     private final CollectionDatabaseDriver<?, ?> noOpColDriver = new NoOpCollectionDatabaseDriver<>();
@@ -24,27 +24,27 @@ public class SatelliteResDfnDriver implements ResourceDefinitionDataDatabaseDriv
 
     @SuppressWarnings("unchecked")
     @Override
-    public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence()
+    public StateFlagsPersistence<ResourceDefinition> getStateFlagsPersistence()
     {
-        return (StateFlagsPersistence<ResourceDefinitionData>) stateFlagsDriver;
+        return (StateFlagsPersistence<ResourceDefinition>) stateFlagsDriver;
     }
 
     @Override
-    public void create(ResourceDefinitionData resDfn)
+    public void create(ResourceDefinition resDfn)
     {
         // no-op
     }
 
     @Override
-    public void delete(ResourceDefinitionData data)
+    public void delete(ResourceDefinition data)
     {
         // no-op
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> getLayerStackDriver()
+    public CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> getLayerStackDriver()
     {
-        return (CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind>) noOpColDriver;
+        return (CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind>) noOpColDriver;
     }
 }

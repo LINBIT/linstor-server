@@ -94,7 +94,7 @@ public class ResourceControllerFactory
 
         dbDriver.create(rscData);
         node.addResource(accCtx, rscData);
-        ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
+        rscDfn.addResource(accCtx, rscData);
 
         List<DeviceLayerKind> layerStack = layerStackRef;
         if (layerStack.isEmpty())

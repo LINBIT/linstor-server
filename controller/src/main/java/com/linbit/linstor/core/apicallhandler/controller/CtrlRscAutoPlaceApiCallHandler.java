@@ -24,7 +24,6 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.event.EventStreamClosedException;
@@ -486,7 +485,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         long size = 0;
         try
         {
-            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
             Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(peerAccCtx.get());
             while (vlmDfnIt.hasNext())
             {

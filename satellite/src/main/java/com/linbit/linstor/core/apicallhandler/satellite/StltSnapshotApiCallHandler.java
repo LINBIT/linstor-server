@@ -9,26 +9,26 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDataSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -39,6 +39,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -54,7 +55,7 @@ class StltSnapshotApiCallHandler
     private final CoreModule.ResourceGroupMap rscGrpMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
-    private final ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
+    private final ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
     private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
     private final SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactory;
     private final SnapshotDataSatelliteFactory snapshotDataFactory;
@@ -70,7 +71,7 @@ class StltSnapshotApiCallHandler
         CoreModule.ResourceGroupMap rscGrpMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactoryRef,
+        ResourceDefinitionSatelliteFactory resourceDefinitionFactoryRef,
         SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
         SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactoryRef,
         SnapshotDataSatelliteFactory snapshotDataFactoryRef,
@@ -85,7 +86,7 @@ class StltSnapshotApiCallHandler
         rscGrpMap = rscGrpMapRef;
         rscDfnMap = rscDfnMapRef;
         controllerPeerConnector = controllerPeerConnectorRef;
-        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        resourceDefinitionFactory = resourceDefinitionFactoryRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         snapshotVolumeDefinitionFactory = snapshotVolumeDefinitionFactoryRef;
         snapshotDataFactory = snapshotDataFactoryRef;
@@ -123,19 +124,19 @@ class StltSnapshotApiCallHandler
         }
     }
 
-    private ResourceDefinition mergeResourceDefinition(ResourceDefinition.RscDfnApi rscDfnApi)
+    private ResourceDefinition mergeResourceDefinition(ResourceDefinitionApi rscDfnApi)
         throws InvalidNameException, DivergentUuidsException, AccessDeniedException, DatabaseException
     {
         ResourceName rscName = new ResourceName(rscDfnApi.getResourceName());
 
-        RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscDfnApi.getFlags());
+        ResourceDefinition.Flags[] rscDfnFlags = ResourceDefinition.Flags.restoreFlags(rscDfnApi.getFlags());
 
         ResourceGroup rscGrp = rscGrpApiCallHelper.mergeResourceGroup(rscDfnApi.getResourceGroup());
 
         ResourceDefinition rscDfn = rscDfnMap.get(rscName);
         if (rscDfn == null)
         {
-            rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
+            rscDfn = resourceDefinitionFactory.getInstanceSatellite(
                 apiCtx,
                 rscDfnApi.getUuid(),
                 rscGrp,
@@ -320,7 +321,7 @@ class StltSnapshotApiCallHandler
         }
     }
 
-    private void checkUuid(ResourceDefinition rscDfn, ResourceDefinition.RscDfnApi rscDfnApi)
+    private void checkUuid(ResourceDefinition rscDfn, ResourceDefinitionApi rscDfnApi)
         throws DivergentUuidsException
     {
         checkUuid(

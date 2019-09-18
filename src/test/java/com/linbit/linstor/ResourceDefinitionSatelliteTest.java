@@ -9,9 +9,8 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
-import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroupDataSatelliteFactory;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataSatelliteFactory;
@@ -23,6 +22,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.TestApiModule;
 import com.linbit.linstor.security.TestSecurityModule;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -39,7 +39,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ResourceDefinitionDataSatelliteTest
+public class ResourceDefinitionSatelliteTest
 {
     private static final AccessContext SYS_CTX = DummySecurityInitializer.getSystemAccessContext();
 
@@ -50,14 +50,14 @@ public class ResourceDefinitionDataSatelliteTest
     private java.util.UUID resDfnUuid;
 
     @Inject private VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
-    @Inject private ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
+    @Inject private ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
     @Inject private ResourceGroupDataSatelliteFactory resourceGroupDataFactory;
 
     @Inject private LinStorScope testScope;
     @Inject private Provider<TransactionMgr> transMgrProvider;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public ResourceDefinitionDataSatelliteTest() throws InvalidNameException, ValueOutOfRangeException
+    public ResourceDefinitionSatelliteTest() throws InvalidNameException, ValueOutOfRangeException
     {
         resName = new ResourceName("TestResName");
         port = new TcpPortNumber(4242);
@@ -94,7 +94,7 @@ public class ResourceDefinitionDataSatelliteTest
     @Test
     public void testDirtyParent() throws Exception
     {
-        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
+        ResourceDefinition rscDfn = resourceDefinitionFactory.getInstanceSatellite(
             SYS_CTX,
             resDfnUuid,
             resourceGroupDataFactory.getInstanceSatellite(
@@ -132,7 +132,7 @@ public class ResourceDefinitionDataSatelliteTest
      */
     public void testReplaceActiveTransaction() throws Exception
     {
-        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
+        ResourceDefinition rscDfn = resourceDefinitionFactory.getInstanceSatellite(
             SYS_CTX,
             resDfnUuid,
             resourceGroupDataFactory.getInstanceSatellite(

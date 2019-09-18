@@ -3,7 +3,7 @@ package com.linbit.linstor.core.repository;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -17,10 +17,10 @@ public interface ResourceDefinitionRepository extends ProtectedObject
     void requireAccess(AccessContext accCtx, AccessType requested)
         throws AccessDeniedException;
 
-    ResourceDefinitionData get(AccessContext accCtx, ResourceName nameRef)
+    ResourceDefinition get(AccessContext accCtx, ResourceName nameRef)
         throws AccessDeniedException;
 
-    ResourceDefinitionData get(AccessContext accCtx, byte[] externalName)
+    ResourceDefinition get(AccessContext accCtx, byte[] externalName)
         throws AccessDeniedException;
 
     void put(AccessContext accCtx, ResourceDefinition resourceDefinition)

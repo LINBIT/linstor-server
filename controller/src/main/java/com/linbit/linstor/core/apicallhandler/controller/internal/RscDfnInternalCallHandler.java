@@ -10,8 +10,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
-import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -36,7 +36,7 @@ public class RscDfnInternalCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
+    private final ResourceDefinitionControllerFactory resourceDefinitionFactory;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
@@ -53,7 +53,7 @@ public class RscDfnInternalCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        ResourceDefinitionDataControllerFactory resourceDefinitionDataFactoryRef,
+        ResourceDefinitionControllerFactory resourceDefinitionFactoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
@@ -68,7 +68,7 @@ public class RscDfnInternalCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        resourceDefinitionFactory = resourceDefinitionFactoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
@@ -88,7 +88,7 @@ public class RscDfnInternalCallHandler
         try (LockGuard ls = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             Resource res = ctrlApiDataLoader.loadRsc(currentPeer.getNode().getName().displayValue, rscNameStr, true);
-            ResourceDefinitionData resDfn = (ResourceDefinitionData) res.getDefinition();
+            ResourceDefinition resDfn = (ResourceDefinition) res.getDefinition();
 
             Props resDfnProps = ctrlPropsHelper.getProps(resDfn);
             if (resDfnProps.getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)

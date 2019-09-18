@@ -154,7 +154,7 @@ public class TestFactory
     public static Resource createResource(
         UUID resUuidRef,
         ObjectProtection objProtRef,
-        ResourceDefinitionData resDfnRef,
+        ResourceDefinition resDfnRef,
         Node nodeRef,
         long initFlagsRef,
         ResourceGenericDbDriver driverRef,
@@ -182,17 +182,17 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link ResourceDefinitionData} without persisting it to the database
+     * Creates a new {@link ResourceDefinition} without persisting it to the database
      * @throws DatabaseException
      */
-    public static ResourceDefinitionData createResourceDefinitionData(
+    public static ResourceDefinition createResourceDefinition(
         UUID resDfnUuidRef,
         ObjectProtection resDfnObjProtRef,
         ResourceName resNameRef,
         byte[] extName,
         long flagValueRef,
         List<DeviceLayerKind> layerStackRef,
-        ResourceDefinitionDataGenericDbDriver driverRef,
+        ResourceDefinitionGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
@@ -204,7 +204,7 @@ public class TestFactory
     )
         throws DatabaseException
     {
-        return new ResourceDefinitionData(
+        return new ResourceDefinition(
             resDfnUuidRef,
             resDfnObjProtRef,
             resNameRef,

@@ -20,6 +20,7 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.core.apis.ResourceApi;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -29,7 +30,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnApi;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.objects.StorPool;
@@ -630,11 +630,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     public static List<RscDfnOuterClass.RscDfn> serializeResourceDefinitions(
-        List<ResourceDefinition.RscDfnApi> rscDfnApis
+        List<ResourceDefinitionApi> rscDfnApis
     )
     {
         ArrayList<RscDfnOuterClass.RscDfn> protoRscDfs = new ArrayList<>();
-        for (ResourceDefinition.RscDfnApi rscDfnApi : rscDfnApis)
+        for (ResourceDefinitionApi rscDfnApi : rscDfnApis)
         {
             protoRscDfs.add(serializeResourceDefinition(rscDfnApi));
         }
@@ -642,7 +642,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     public static RscDfnOuterClass.RscDfn serializeResourceDefinition(
-        ResourceDefinition.RscDfnApi rscDfnApi
+        ResourceDefinitionApi rscDfnApi
     )
     {
         RscDfnOuterClass.RscDfn.Builder builder = RscDfnOuterClass.RscDfn.newBuilder()
@@ -1030,7 +1030,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
     public static class LayerObjectSerializer
     {
-        public static List<RscDfnLayerData> serializeRscDfnLayerData(RscDfnApi rscDfnApi)
+        public static List<RscDfnLayerData> serializeRscDfnLayerData(ResourceDefinitionApi rscDfnApi)
         {
             List<RscDfnLayerData> ret = new ArrayList<>();
 

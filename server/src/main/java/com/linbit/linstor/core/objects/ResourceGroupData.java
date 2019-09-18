@@ -175,7 +175,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public void addResourceDefinition(AccessContext accCtx, ResourceDefinitionData rscDfnRef)
+    public void addResourceDefinition(AccessContext accCtx, ResourceDefinition rscDfnRef)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -184,7 +184,7 @@ public class ResourceGroupData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public void removeResourceDefinition(AccessContext accCtx, ResourceDefinitionData rscDfnRef)
+    public void removeResourceDefinition(AccessContext accCtx, ResourceDefinition rscDfnRef)
         throws AccessDeniedException
     {
         checkDeleted();

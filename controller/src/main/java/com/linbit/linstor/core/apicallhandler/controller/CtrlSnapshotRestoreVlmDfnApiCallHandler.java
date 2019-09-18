@@ -16,7 +16,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -90,12 +90,12 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
 
         try
         {
-            ResourceDefinitionData fromRscDfn = ctrlApiDataLoader.loadRscDfn(fromRscNameStr, true);
+            ResourceDefinition fromRscDfn = ctrlApiDataLoader.loadRscDfn(fromRscNameStr, true);
 
             SnapshotName fromSnapshotName = LinstorParsingUtils.asSnapshotName(fromSnapshotNameStr);
             SnapshotDefinition fromSnapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(fromRscDfn, fromSnapshotName, true);
 
-            ResourceDefinitionData toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
+            ResourceDefinition toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
 
             for (SnapshotVolumeDefinition snapshotVlmDfn :
                 fromSnapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))

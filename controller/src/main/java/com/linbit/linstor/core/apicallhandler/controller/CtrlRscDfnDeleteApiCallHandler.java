@@ -19,7 +19,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -88,7 +87,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn)
         throws AccessDeniedException
     {
-        return rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.RscDfnFlags.DELETE) ?
+        return rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.DELETE)
+            ?
             Collections.singletonList(deleteDiskless(rscDfn.getName())) :
             Collections.emptyList();
     }
@@ -119,7 +119,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         requireRscDfnMapChangeAccess();
 
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, false);
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, false);
 
         if (rscDfn == null)
         {
@@ -198,7 +198,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
     private Flux<ApiCallRc> deleteDisklessInTransaction(ResourceName rscName)
     {
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
 
         Flux<ApiCallRc> flux;
 
@@ -255,7 +255,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
     private Flux<ApiCallRc> deleteRemainingInTransaction(ResourceName rscName)
     {
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
 
         Flux<ApiCallRc> flux;
 
@@ -303,14 +303,14 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
     private Flux<ApiCallRc> deleteDataInTransaction(ResourceName rscName)
     {
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
 
         return rscDfn == null ?
             Flux.empty() :
             Flux.just(commitDeleteRscDfnData(rscDfn));
     }
 
-    private ApiCallRc commitDeleteRscDfnData(ResourceDefinitionData rscDfn)
+    private ApiCallRc commitDeleteRscDfnData(ResourceDefinition rscDfn)
     {
         ResourceName rscName = rscDfn.getName();
         byte[] externalName = rscDfn.getExternalName();
@@ -347,7 +347,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
     }
 
-    private Stream<Resource> getRscStreamPrivileged(ResourceDefinitionData rscDfn)
+    private Stream<Resource> getRscStreamPrivileged(ResourceDefinition rscDfn)
     {
         Stream<Resource> stream;
         try
@@ -403,7 +403,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         return isDiskless;
     }
 
-    private void markDeleted(ResourceDefinitionData rscDfn)
+    private void markDeleted(ResourceDefinition rscDfn)
     {
         try
         {
@@ -445,7 +445,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
     }
 
-    private void delete(ResourceDefinitionData rscDfn)
+    private void delete(ResourceDefinition rscDfn)
     {
         try
         {

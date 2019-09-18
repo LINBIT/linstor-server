@@ -8,7 +8,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -91,7 +91,7 @@ public class VolumeDefinitionDataControllerFactory
         );
 
         driver.create(vlmDfnData);
-        ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
+        ((ResourceDefinition) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
 
         // TODO: might be a good idea to create this object earlier
         LayerPayload payload = new LayerPayload();

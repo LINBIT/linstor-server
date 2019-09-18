@@ -1,25 +1,28 @@
 package com.linbit.linstor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.VolumeDefinition.InitMaps;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
+import com.linbit.linstor.core.objects.VolumeDefinitionDataGenericDbDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import org.junit.Before;
-import org.junit.Test;
 import javax.inject.Inject;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -28,10 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 {
@@ -69,8 +70,17 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 
         resName = new ResourceName("TestResource");
         resPort = 9001;
-        resDfn = resourceDefinitionDataFactory.create(
-            SYS_CTX, resName, null, resPort, null, "secret", TransportType.IP, new ArrayList<>(), null, dfltRscGrp
+        resDfn = resourceDefinitionFactory.create(
+            SYS_CTX,
+            resName,
+            null,
+            resPort,
+            null,
+            "secret",
+            TransportType.IP,
+            new ArrayList<>(),
+            null,
+            dfltRscGrp
         );
 
         uuid = randomUUID();
@@ -127,7 +137,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDefinition resDefinitionTest = resourceDefinitionDataFactory.create(
+        ResourceDefinition resDefinitionTest = resourceDefinitionFactory.create(
             SYS_CTX,
             new ResourceName("TestResource2"),
             null,
@@ -167,7 +177,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
     public void testLoadGetInstance() throws Exception
     {
         driver.create(volDfn);
-        ((ResourceDefinitionData) resDfn).putVolumeDefinition(SYS_CTX, volDfn);
+        resDfn.putVolumeDefinition(SYS_CTX, volDfn);
 
         VolumeDefinitionData loadedVd = (VolumeDefinitionData) resDfn.getVolumeDfn(SYS_CTX, volNr);
 
@@ -322,7 +332,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(volDfn);
-        ((ResourceDefinitionData) resDfn).putVolumeDefinition(SYS_CTX, volDfn);
+        resDfn.putVolumeDefinition(SYS_CTX, volDfn);
 
         volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
     }

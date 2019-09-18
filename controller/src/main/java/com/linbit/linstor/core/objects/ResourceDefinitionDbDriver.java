@@ -11,13 +11,12 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceDefinition.InitMaps;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -49,14 +48,14 @@ import java.util.TreeMap;
 @Singleton
 public class ResourceDefinitionDbDriver
     extends
-    AbsDatabaseDriver<ResourceDefinitionData, ResourceDefinition.InitMaps, Map<ResourceGroupName, ResourceGroup>>
-    implements ResourceDefinitionDataDatabaseDriver
+    AbsDatabaseDriver<ResourceDefinition, ResourceDefinition.InitMaps, Map<ResourceGroupName, ResourceGroup>>
+    implements ResourceDefinitionDatabaseDriver
 {
     private final AccessContext dbCtx;
 
     private final Provider<TransactionMgr> transMgrProvider;
-    private final StateFlagsPersistence<ResourceDefinitionData> flagsDriver;
-    private final CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> layerStackDrvier;
+    private final StateFlagsPersistence<ResourceDefinition> flagsDriver;
+    private final CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> layerStackDrvier;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
@@ -109,24 +108,24 @@ public class ResourceDefinitionDbDriver
         }
 
 
-        flagsDriver = generateFlagDriver(RESOURCE_FLAGS, ResourceDefinition.RscDfnFlags.class);
+        flagsDriver = generateFlagDriver(RESOURCE_FLAGS, ResourceDefinition.Flags.class);
         layerStackDrvier = generateCollectionToJsonStringArrayDriver(LAYER_STACK);
     }
 
     @Override
-    public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence()
+    public StateFlagsPersistence<ResourceDefinition> getStateFlagsPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> getLayerStackDriver()
+    public CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> getLayerStackDriver()
     {
         return layerStackDrvier;
     }
 
     @Override
-    protected Pair<ResourceDefinitionData, InitMaps> load(
+    protected Pair<ResourceDefinition, ResourceDefinition.InitMaps> load(
         RawParameters raw,
         Map<ResourceGroupName, ResourceGroup> rscGrpMap
     )
@@ -154,7 +153,7 @@ public class ResourceDefinitionDbDriver
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
         return new Pair<>(
-            new ResourceDefinitionData(
+            new ResourceDefinition(
                 raw.build(UUID, java.util.UUID::fromString),
                 getObjectProtection(ObjectProtection.buildPath(rscName)),
                 rscName,
@@ -177,7 +176,7 @@ public class ResourceDefinitionDbDriver
     }
 
     @Override
-    protected String getId(ResourceDefinitionData rscDfn)
+    protected String getId(ResourceDefinition rscDfn)
     {
         return "(ResName=" + rscDfn.getName().displayValue + ")";
     }

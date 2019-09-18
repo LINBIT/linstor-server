@@ -12,14 +12,14 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import javax.inject.Inject;
@@ -46,7 +46,7 @@ public class ResourceGenericDbDriverTest extends GenericDbBase
     private final Integer nodeId;
 
     private Node node;
-    private ResourceDefinitionData resDfn;
+    private ResourceDefinition resDfn;
 
     private java.util.UUID resUuid;
     private ObjectProtection objProt;
@@ -75,7 +75,7 @@ public class ResourceGenericDbDriverTest extends GenericDbBase
         );
 
         node = nodeFactory.create(SYS_CTX, nodeName, null, null);
-        resDfn = resourceDefinitionDataFactory.create(
+        resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,

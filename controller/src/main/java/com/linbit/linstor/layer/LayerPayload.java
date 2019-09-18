@@ -3,9 +3,9 @@ package com.linbit.linstor.layer;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.utils.Pair;
 
 import java.util.Map;

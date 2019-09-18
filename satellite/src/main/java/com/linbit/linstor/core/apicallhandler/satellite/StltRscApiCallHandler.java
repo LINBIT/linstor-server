@@ -32,9 +32,7 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
-import com.linbit.linstor.core.objects.ResourceDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
@@ -90,7 +88,7 @@ class StltRscApiCallHandler
     private final CoreModule.ResourceGroupMap rscGrpMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final StorPoolDefinitionMap storPoolDfnMap;
-    private final ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactory;
+    private final ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
     private final VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     private final NodeSatelliteFactory nodeFactory;
     private final NetInterfaceFactory netInterfaceFactory;
@@ -116,7 +114,7 @@ class StltRscApiCallHandler
         CoreModule.ResourceGroupMap rscGrpMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
-        ResourceDefinitionDataSatelliteFactory resourceDefinitionDataFactoryRef,
+        ResourceDefinitionSatelliteFactory resourceDefinitionFactoryRef,
         VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactoryRef,
         NodeSatelliteFactory nodeFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
@@ -141,7 +139,7 @@ class StltRscApiCallHandler
         rscGrpMap = rscGrpMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
-        resourceDefinitionDataFactory = resourceDefinitionDataFactoryRef;
+        resourceDefinitionFactory = resourceDefinitionFactoryRef;
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
         nodeFactory = nodeFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
@@ -210,12 +208,12 @@ class StltRscApiCallHandler
         {
             ResourceName rscName;
 
-            ResourceDefinitionData rscDfnToRegister = null;
+            ResourceDefinition rscDfnToRegister = null;
 
             rscName = new ResourceName(rscRawData.getName());
-            RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
+            ResourceDefinition.Flags[] rscDfnFlags = ResourceDefinition.Flags.restoreFlags(rscRawData.getRscDfnFlags());
 
-            ResourceDefinitionData rscDfn = (ResourceDefinitionData) rscDfnMap.get(rscName);
+            ResourceDefinition rscDfn = rscDfnMap.get(rscName);
 
             ResourceGroup rscGrp = rscGrpApiCallHelper.mergeResourceGroup(
                 rscRawData.getRscDfnApi().getResourceGroup()
@@ -224,7 +222,7 @@ class StltRscApiCallHandler
             Resource localRsc = null;
             if (rscDfn == null)
             {
-                rscDfn = resourceDefinitionDataFactory.getInstanceSatellite(
+                rscDfn = resourceDefinitionFactory.getInstanceSatellite(
                     apiCtx,
                     rscRawData.getRscDfnUuid(),
                     rscGrp,
@@ -662,7 +660,7 @@ class StltRscApiCallHandler
     private Resource createRsc(
         UUID rscUuid,
         Node node,
-        ResourceDefinitionData rscDfn,
+        ResourceDefinition rscDfn,
         Resource.Flags[] flags,
         Map<String, String> rscProps,
         List<VolumeData.VlmApi> vlms,

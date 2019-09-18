@@ -27,7 +27,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeData;
@@ -146,7 +145,7 @@ public class CtrlRscCrtApiHelper
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-        ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
         List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
 
@@ -446,7 +445,7 @@ public class CtrlRscCrtApiHelper
     }
 
     Resource createResource(
-        ResourceDefinitionData rscDfn,
+        ResourceDefinition rscDfn,
         Node node,
         Integer nodeIdIntRef,
         long flags,
@@ -533,7 +532,7 @@ public class CtrlRscCrtApiHelper
     }
 
     private VolumeDefinitionData loadVlmDfn(
-        ResourceDefinitionData rscDfn,
+        ResourceDefinition rscDfn,
         int vlmNr,
         boolean failIfNull
     )
@@ -542,7 +541,7 @@ public class CtrlRscCrtApiHelper
     }
 
     private VolumeDefinitionData loadVlmDfn(
-        ResourceDefinitionData rscDfn,
+        ResourceDefinition rscDfn,
         VolumeNumber vlmNr,
         boolean failIfNull
     )
@@ -581,7 +580,7 @@ public class CtrlRscCrtApiHelper
         return vlmDfn;
     }
 
-    private void checkPeerSlotsForNewPeer(ResourceDefinitionData rscDfn)
+    private void checkPeerSlotsForNewPeer(ResourceDefinition rscDfn)
         throws AccessDeniedException
     {
         int resourceCount = 0;
@@ -621,7 +620,7 @@ public class CtrlRscCrtApiHelper
         }
     }
 
-    Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinitionData rscDfn)
+    Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinition rscDfn)
     {
         Iterator<VolumeDefinition> iterator;
         try
@@ -723,7 +722,7 @@ public class CtrlRscCrtApiHelper
         ));
     }
 
-    private List<DeviceLayerKind> getLayerStack(ResourceDefinitionData rscDfnRef)
+    private List<DeviceLayerKind> getLayerStack(ResourceDefinition rscDfnRef)
     {
         List<DeviceLayerKind> layerStack;
         try
@@ -741,7 +740,7 @@ public class CtrlRscCrtApiHelper
         return layerStack;
     }
 
-    private Set<List<DeviceLayerKind>> extractExistingLayerStacks(ResourceDefinitionData rscDfn)
+    private Set<List<DeviceLayerKind>> extractExistingLayerStacks(ResourceDefinition rscDfn)
     {
         Set<List<DeviceLayerKind>> ret;
         try

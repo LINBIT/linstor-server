@@ -12,9 +12,7 @@ import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.apidata.RscApiData;
@@ -25,6 +23,7 @@ import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.common.RscOuterClass.Rsc;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -65,10 +64,10 @@ public class RscApiTest extends ApiTestBase
 
     private ResourceName testRscName;
     private Integer testRscDfnPort;
-    private RscDfnFlags[] testRscDfnFlags;
+    private ResourceDefinition.Flags[] testRscDfnFlags;
     private String testRscDfnSecret;
     private TransportType tesTRscDfnTransportType;
-    private ResourceDefinitionData testRscDfn;
+    private ResourceDefinition testRscDfn;
 
     @Mock
     protected Peer mockSatellite;
@@ -120,7 +119,7 @@ public class RscApiTest extends ApiTestBase
 
         Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 
-        testRscDfn = resourceDefinitionDataFactory.create(
+        testRscDfn = resourceDefinitionFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testRscName,
             null,

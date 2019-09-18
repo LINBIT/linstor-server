@@ -26,13 +26,12 @@ import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
 import com.linbit.linstor.core.objects.StorPoolDataSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.StorPool.StorPoolApi;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -52,6 +51,7 @@ import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
@@ -106,7 +106,10 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
                 drbdRscDfnPojo.getAlStripes(),
                 drbdRscDfnPojo.getAlStripeSize(),
                 drbdRscDfnPojo.getPort(),
-                TransportType.valueOfIgnoreCase(drbdRscDfnPojo.getTransportType(), TransportType.IP),
+                TransportType.valueOfIgnoreCase(
+                    drbdRscDfnPojo.getTransportType(),
+                    TransportType.IP
+                ),
                 drbdRscDfnPojo.getSecret()
             );
             rscDfn.setLayerData(apiCtx, rscDfnData);

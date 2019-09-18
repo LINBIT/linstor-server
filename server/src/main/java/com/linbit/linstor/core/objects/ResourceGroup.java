@@ -35,10 +35,10 @@ public interface ResourceGroup extends TransactionObject, DbgInstanceUuid,
     String setDescription(AccessContext accCtxRef, String descriptionRef)
         throws AccessDeniedException, DatabaseException;
 
-    void addResourceDefinition(AccessContext accCtxRef, ResourceDefinitionData rscDfnRef)
+    void addResourceDefinition(AccessContext accCtxRef, ResourceDefinition rscDfnRef)
         throws AccessDeniedException;
 
-    void removeResourceDefinition(AccessContext accCtxRef, ResourceDefinitionData rscDfnRef)
+    void removeResourceDefinition(AccessContext accCtxRef, ResourceDefinition rscDfnRef)
         throws AccessDeniedException;
 
     boolean hasResourceDefinitions(AccessContext accCtxRef) throws AccessDeniedException;

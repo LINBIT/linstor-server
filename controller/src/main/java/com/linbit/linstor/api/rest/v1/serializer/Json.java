@@ -23,6 +23,7 @@ import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -186,7 +187,7 @@ public class Json
     }
 
     public static JsonGenTypes.ResourceDefinition apiToResourceDefinition(
-        ResourceDefinition.RscDfnApi rscDfnApi
+        ResourceDefinitionApi rscDfnApi
     )
     {
         JsonGenTypes.ResourceDefinition rscDfn = new JsonGenTypes.ResourceDefinition();
@@ -195,7 +196,7 @@ public class Json
         {
             rscDfn.external_name = new String(rscDfnApi.getExternalName(), StandardCharsets.UTF_8);
         }
-        rscDfn.flags = ResourceDefinition.RscDfnFlags.toStringList(rscDfnApi.getFlags());
+        rscDfn.flags = ResourceDefinition.Flags.toStringList(rscDfnApi.getFlags());
         rscDfn.props = rscDfnApi.getProps();
         rscDfn.uuid = rscDfnApi.getUuid().toString();
 

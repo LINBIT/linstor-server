@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
@@ -72,7 +72,7 @@ public class VolumeDefinitionDataSatelliteFactory
                     new TreeMap<>(),
                     new TreeMap<>()
                 );
-                ((ResourceDefinitionData) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
+                ((ResourceDefinition) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
             }
         }
         catch (Exception exc)

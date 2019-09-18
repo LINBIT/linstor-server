@@ -15,7 +15,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -81,7 +81,7 @@ public class CtrlDrbdProxyModifyApiCallHandler
         try
         {
             ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
-            ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
             if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
             {
                 throw new ApiRcException(ApiCallRcImpl

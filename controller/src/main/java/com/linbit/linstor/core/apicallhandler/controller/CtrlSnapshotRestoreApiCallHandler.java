@@ -19,7 +19,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -147,12 +147,12 @@ public class CtrlSnapshotRestoreApiCallHandler
 
         try
         {
-            ResourceDefinitionData fromRscDfn = ctrlApiDataLoader.loadRscDfn(fromRscNameStr, true);
+            ResourceDefinition fromRscDfn = ctrlApiDataLoader.loadRscDfn(fromRscNameStr, true);
 
             SnapshotName fromSnapshotName = LinstorParsingUtils.asSnapshotName(fromSnapshotNameStr);
             SnapshotDefinition fromSnapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(fromRscDfn, fromSnapshotName, true);
 
-            ResourceDefinitionData toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
+            ResourceDefinition toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
 
             if (toRscDfn.getResourceCount() != 0)
             {
@@ -229,7 +229,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
     }
 
-    private Resource restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinitionData toRscDfn, Node node)
+    private Resource restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinition toRscDfn, Node node)
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);

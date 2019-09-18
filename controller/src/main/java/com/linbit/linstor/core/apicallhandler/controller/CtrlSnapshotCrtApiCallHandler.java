@@ -24,7 +24,6 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -172,7 +171,7 @@ public class CtrlSnapshotCrtApiCallHandler
         String snapshotNameStr
     )
     {
-        final ResourceDefinitionData rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+        final ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
         final ResourceName rscName = rscDfn.getName();
 
         SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
@@ -451,7 +450,7 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
-    private void ensureSnapshotsViable(ResourceDefinitionData rscDfn)
+    private void ensureSnapshotsViable(ResourceDefinition rscDfn)
     {
         Iterator<Resource> rscIterator = ctrlSnapshotHelper.iterateResource(rscDfn);
         while (rscIterator.hasNext())
@@ -917,7 +916,7 @@ public class CtrlSnapshotCrtApiCallHandler
         return volumeSize;
     }
 
-    private Iterator<VolumeDefinition> iterateVolumeDfn(ResourceDefinitionData rscDfn)
+    private Iterator<VolumeDefinition> iterateVolumeDfn(ResourceDefinition rscDfn)
     {
         Iterator<VolumeDefinition> vlmDfnIter;
         try

@@ -10,12 +10,10 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceDefinition.InitMaps;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.SQLUtils;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -52,7 +50,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinitionDataDatabaseDriver
+public class ResourceDefinitionGenericDbDriver implements ResourceDefinitionDatabaseDriver
 {
     private static final String TBL_RES_DEF = TBL_RESOURCE_DEFINITIONS;
     private static final String RD_UUID = UUID;
@@ -103,8 +101,8 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    private final StateFlagsPersistence<ResourceDefinitionData> resDfnFlagPersistence;
-    private final CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> layerStackDriver;
+    private final StateFlagsPersistence<ResourceDefinition> resDfnFlagPersistence;
+    private final CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> layerStackDriver;
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
@@ -112,7 +110,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public ResourceDefinitionDataGenericDbDriver(
+    public ResourceDefinitionGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
@@ -133,7 +131,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(ResourceDefinitionData resourceDefinition) throws DatabaseException
+    public void create(ResourceDefinition resourceDefinition) throws DatabaseException
     {
         errorReporter.logTrace("Creating ResourceDfinition %s", getId(resourceDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(RD_INSERT))
@@ -163,18 +161,18 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         }
     }
 
-    public Map<ResourceDefinitionData, InitMaps> loadAll(Map<ResourceGroupName, ResourceGroup> rscGrpMapRef)
+    public Map<ResourceDefinition, ResourceDefinition.InitMaps> loadAll(Map<ResourceGroupName, ResourceGroup> rscGrpMapRef)
         throws DatabaseException
     {
         errorReporter.logTrace("Loading all ResourceDefinitions");
-        Map<ResourceDefinitionData, InitMaps> rscDfnMap = new TreeMap<>();
+        Map<ResourceDefinition, ResourceDefinition.InitMaps> rscDfnMap = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(RD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    Pair<ResourceDefinitionData, InitMaps> pair = restoreRscDfn(resultSet, rscGrpMapRef);
+                    Pair<ResourceDefinition, ResourceDefinition.InitMaps> pair = restoreRscDfn(resultSet, rscGrpMapRef);
                     rscDfnMap.put(pair.objA, pair.objB);
                 }
             }
@@ -187,14 +185,14 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         return rscDfnMap;
     }
 
-    private Pair<ResourceDefinitionData, InitMaps> restoreRscDfn(
+    private Pair<ResourceDefinition, ResourceDefinition.InitMaps> restoreRscDfn(
         ResultSet resultSet,
         Map<ResourceGroupName, ResourceGroup> rscGrpMapRef
     )
         throws DatabaseException
     {
-        Pair<ResourceDefinitionData, InitMaps> retPair = new Pair<>();
-        ResourceDefinitionData resDfn;
+        Pair<ResourceDefinition, ResourceDefinition.InitMaps> retPair = new Pair<>();
+        ResourceDefinition resDfn;
         ResourceName resourceName;
         try
         {
@@ -237,7 +235,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
                     )
                 );
             }
-            resDfn = new ResourceDefinitionData(
+            resDfn = new ResourceDefinition(
                 java.util.UUID.fromString(resultSet.getString(RD_UUID)),
                 objProt,
                 resourceName,
@@ -285,7 +283,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     }
 
     @Override
-    public void delete(ResourceDefinitionData resourceDefinition) throws DatabaseException
+    public void delete(ResourceDefinition resourceDefinition) throws DatabaseException
     {
         errorReporter.logTrace("Deleting ResourceDefinition %s", getId(resourceDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(RD_DELETE))
@@ -301,13 +299,13 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
     }
 
     @Override
-    public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence()
+    public StateFlagsPersistence<ResourceDefinition> getStateFlagsPersistence()
     {
         return resDfnFlagPersistence;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind> getLayerStackDriver()
+    public CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> getLayerStackDriver()
     {
         return layerStackDriver;
     }
@@ -317,7 +315,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(ResourceDefinitionData resourceDefinition)
+    private String getId(ResourceDefinition resourceDefinition)
     {
         return getId(resourceDefinition.getName().displayValue);
     }
@@ -332,24 +330,24 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         return "(ResName=" + resName + ")";
     }
 
-    private class ResDfnFlagsPersistence implements StateFlagsPersistence<ResourceDefinitionData>
+    private class ResDfnFlagsPersistence implements StateFlagsPersistence<ResourceDefinition>
     {
         @Override
-        public void persist(ResourceDefinitionData resourceDefinition, long flags)
+        public void persist(ResourceDefinition resourceDefinition, long flags)
             throws DatabaseException
         {
             try
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        RscDfnFlags.class,
+                        ResourceDefinition.Flags.class,
                         resourceDefinition.getFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        RscDfnFlags.class,
+                        ResourceDefinition.Flags.class,
                         flags
                     ),
                     ", "
@@ -384,11 +382,11 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
         }
     }
 
-    private class LayerStackDriver implements CollectionDatabaseDriver<ResourceDefinitionData, DeviceLayerKind>
+    private class LayerStackDriver implements CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind>
     {
         @Override
         public void insert(
-            ResourceDefinitionData rscDfn,
+            ResourceDefinition rscDfn,
             DeviceLayerKind newElem,
             Collection<DeviceLayerKind> backingCollection
         )
@@ -399,7 +397,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
 
         @Override
         public void remove(
-            ResourceDefinitionData rscDfn,
+            ResourceDefinition rscDfn,
             DeviceLayerKind newElem,
             Collection<DeviceLayerKind> backingCollection
         )
@@ -408,7 +406,7 @@ public class ResourceDefinitionDataGenericDbDriver implements ResourceDefinition
             update(rscDfn, backingCollection);
         }
 
-        public void update(ResourceDefinitionData rscDfn, Collection<DeviceLayerKind> backingCollection)
+        public void update(ResourceDefinition rscDfn, Collection<DeviceLayerKind> backingCollection)
             throws DatabaseException
         {
             errorReporter.logTrace(

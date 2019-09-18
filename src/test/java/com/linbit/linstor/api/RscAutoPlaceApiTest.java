@@ -26,7 +26,6 @@ import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
@@ -35,6 +34,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -921,17 +921,17 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
 
-    private ResourceDefinitionData createRscDfn(String rscNameStr, int tcpPort)
+    private ResourceDefinition createRscDfn(String rscNameStr, int tcpPort)
         throws Exception
     {
-        ResourceDefinitionData rscDfn = resourceDefinitionDataFactory.create(
+        ResourceDefinition rscDfn = resourceDefinitionFactory.create(
             BOB_ACC_CTX,
             new ResourceName(rscNameStr),
             null,
             tcpPort,
             null,
             "NotTellingYou",
-            ResourceDefinition.TransportType.IP,
+            TransportType.IP,
             Arrays.asList(DRBD, STORAGE),
             null,
             dfltRscGrp

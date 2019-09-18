@@ -4,9 +4,10 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
 import com.linbit.utils.Pair;
@@ -20,7 +21,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class RscDfnApiData implements ResourceDefinition.RscDfnApi
+public class RscDfnApiData implements ResourceDefinitionApi
 {
     private final RscDfnOuterClass.RscDfn rscDfn;
     private final List<Pair<String, RscDfnLayerDataApi>> layerData;
@@ -65,7 +66,7 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi
     @Override
     public long getFlags()
     {
-        return ResourceDefinition.RscDfnFlags.fromStringList(rscDfn.getRscDfnFlagsList());
+        return ResourceDefinition.Flags.fromStringList(rscDfn.getRscDfnFlagsList());
     }
 
     @Override

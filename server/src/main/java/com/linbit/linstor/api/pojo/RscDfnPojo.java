@@ -2,7 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.utils.Pair;
 
@@ -14,7 +14,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class RscDfnPojo implements ResourceDefinition.RscDfnApi
+public class RscDfnPojo implements ResourceDefinitionApi
 {
     private final UUID uuid;
     private final RscGrpApi rscGrpApi;

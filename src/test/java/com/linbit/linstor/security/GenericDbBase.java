@@ -34,8 +34,8 @@ import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceControllerFactory;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroupData;
 import com.linbit.linstor.core.objects.ResourceGroupDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
@@ -189,7 +189,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
     @Inject protected VolumeDataControllerFactory volumeDataFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
-    @Inject protected ResourceDefinitionDataControllerFactory resourceDefinitionDataFactory;
+    @Inject protected ResourceDefinitionControllerFactory resourceDefinitionFactory;
     @Inject protected ResourceGroupDataControllerFactory resourceGroupDataFactory;
     @Inject protected NetInterfaceFactory netInterfaceFactory;
 
@@ -587,7 +587,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         TransactionMgrSQL transMgr,
         java.util.UUID uuid,
         ResourceName resName,
-        RscDfnFlags... flags
+        ResourceDefinition.Flags... flags
     )
         throws SQLException
     {

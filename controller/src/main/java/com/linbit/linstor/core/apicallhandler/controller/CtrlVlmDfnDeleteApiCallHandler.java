@@ -44,6 +44,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -97,7 +98,8 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         while (vlmDfnIter.hasNext())
         {
             VolumeDefinition vlmDfn = vlmDfnIter.next();
-            if (!rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.RscDfnFlags.DELETE) &&
+            if (
+                !rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.DELETE) &&
                 vlmDfn.getFlags().isSet(apiCtx, VolumeDefinition.VlmDfnFlags.DELETE))
             {
                 fluxes.add(updateSatellites(rscDfn.getName(), vlmDfn.getVolumeNumber()));

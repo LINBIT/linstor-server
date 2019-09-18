@@ -6,7 +6,7 @@ import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -78,7 +78,7 @@ public class ResourceDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_DFN, request), () ->
         {
-            Stream<ResourceDefinition.RscDfnApi> rscDfnStream =
+            Stream<ResourceDefinitionApi> rscDfnStream =
                 ctrlApiCallHandler.listResourceDefinition().stream()
                     .filter(rscDfnApi -> rscName == null || rscDfnApi.getResourceName().equalsIgnoreCase(rscName));
 
