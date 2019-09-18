@@ -1,88 +1,203 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
+import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
+import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 
+import javax.inject.Provider;
+
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Snapshot volumes are stored independently of the source volumes so that we have accurate information about the
- * content of the snapshots even when the source resource is later modified or deleted.
- */
-public interface SnapshotVolume extends TransactionObject, DbgInstanceUuid, Comparable<SnapshotVolume>
+public class SnapshotVolume extends BaseTransactionObject implements DbgInstanceUuid, Comparable<SnapshotVolume>
 {
-    UUID getUuid();
+    // Object identifier
+    private final UUID objId;
 
-    Snapshot getSnapshot();
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
 
-    SnapshotVolumeDefinition getSnapshotVolumeDefinition();
+    private final Snapshot snapshot;
 
-    default Node getNode()
+    private final SnapshotVolumeDefinition snapshotVolumeDefinition;
+
+    private final StorPool storPool;
+
+    private final SnapshotVolumeDatabaseDriver dbDriver;
+
+    private final TransactionSimpleObject<SnapshotVolume, Boolean> deleted;
+
+    public SnapshotVolume(
+        UUID objIdRef,
+        Snapshot snapshotRef,
+        SnapshotVolumeDefinition snapshotVolumeDefinitionRef,
+        StorPool storPoolRef,
+        SnapshotVolumeDatabaseDriver dbDriverRef,
+        TransactionObjectFactory transObjFactory,
+        Provider<? extends TransactionMgr> transMgrProviderRef
+    )
+    {
+        super(transMgrProviderRef);
+
+        objId = objIdRef;
+        snapshot = snapshotRef;
+        snapshotVolumeDefinition = snapshotVolumeDefinitionRef;
+        storPool = storPoolRef;
+        dbDriver = dbDriverRef;
+
+        dbgInstanceId = UUID.randomUUID();
+
+        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+
+        transObjs = Arrays.asList(
+            snapshot,
+            snapshotVolumeDefinition,
+            deleted
+        );
+    }
+
+    public UUID getUuid()
+    {
+        return objId;
+    }
+
+    public Snapshot getSnapshot()
+    {
+        checkDeleted();
+        return snapshot;
+    }
+
+    public SnapshotVolumeDefinition getSnapshotVolumeDefinition()
+    {
+        checkDeleted();
+        return snapshotVolumeDefinition;
+    }
+
+    public StorPool getStorPool(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return storPool;
+    }
+
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        if (!deleted.get())
+        {
+            getResourceDefinition()
+                .getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+
+            snapshot.removeSnapshotVolume(accCtx, this);
+            snapshotVolumeDefinition.removeSnapshotVolume(accCtx, this);
+
+            activateTransMgr();
+            dbDriver.delete(this);
+
+            deleted.set(true);
+        }
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted.get())
+        {
+            throw new AccessToDeletedDataException("Access to deleted snapshot volume");
+        }
+    }
+
+    @Override
+    public String toString()
+    {
+        return snapshot + ", VlmNr: '" + getVolumeNumber() + "'";
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
+    }
+
+    public int compareTo(SnapshotVolume other)
+    {
+        int cmp = snapshot.compareTo(other.getSnapshot());
+        if (cmp == 0)
+        {
+            cmp = snapshotVolumeDefinition.compareTo(other.getSnapshotVolumeDefinition());
+        }
+        return cmp;
+    }
+
+    public SnapshotVolumeApi getApiData(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return new SnapshotVlmPojo(
+            getStorPool(accCtx).getName().getDisplayName(),
+            getStorPool(accCtx).getUuid(),
+            getSnapshotVolumeDefinition().getUuid(),
+            getUuid(),
+            getVolumeNumber().value
+        );
+    }
+
+    public Node getNode()
     {
         return getSnapshot().getNode();
     }
 
-    default SnapshotDefinition getSnapshotDefinition()
+    public SnapshotDefinition getSnapshotDefinition()
     {
         return getSnapshot().getSnapshotDefinition();
     }
 
-    default ResourceDefinition getResourceDefinition()
+    public ResourceDefinition getResourceDefinition()
     {
         return getSnapshotDefinition().getResourceDefinition();
     }
 
-    default ResourceName getResourceName()
+    public ResourceName getResourceName()
     {
         return getResourceDefinition().getName();
     }
 
-    default SnapshotName getSnapshotName()
+    public SnapshotName getSnapshotName()
     {
         return getSnapshotDefinition().getName();
     }
 
-    default NodeName getNodeName()
+    public NodeName getNodeName()
     {
         return getNode().getName();
     }
 
-    default VolumeNumber getVolumeNumber()
+    public VolumeNumber getVolumeNumber()
     {
         return getSnapshotVolumeDefinition().getVolumeNumber();
     }
 
-    StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
-
-    void delete(AccessContext accCtx)
-        throws AccessDeniedException, DatabaseException;
-
-    SnapshotVlmApi getApiData(AccessContext accCtx) throws AccessDeniedException;
-
-    default Key getKey()
+    public Key getKey()
     {
         // no access or deleted check
         return new Key(getResourceName(), getVolumeNumber(), getSnapshotName());
     }
 
-    interface SnapshotVlmApi
-    {
-        UUID getSnapshotVlmUuid();
-        UUID getSnapshotVlmDfnUuid();
-        String getStorPoolName();
-        UUID getStorPoolUuid();
-        int getSnapshotVlmNr();
-    }
-
-    class Key
+    public class Key
     {
         private final String rscName;
         private final int vlmNr;
@@ -122,8 +237,7 @@ public interface SnapshotVolume extends TransactionObject, DbgInstanceUuid, Comp
             if (eq)
             {
                 Key other = (Key) obj;
-                eq &=
-                    rscName.equalsIgnoreCase(other.rscName) &&
+                eq &= rscName.equalsIgnoreCase(other.rscName) &&
                     snapName.equalsIgnoreCase(other.snapName) &&
                     vlmNr == other.vlmNr;
             }

@@ -11,6 +11,7 @@ import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
+import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -24,7 +25,7 @@ import com.linbit.linstor.core.objects.SnapshotSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.SnapshotVolumeDataSatelliteFactory;
+import com.linbit.linstor.core.objects.SnapshotVolumeSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionSatelliteFactory;
@@ -59,7 +60,7 @@ class StltSnapshotApiCallHandler
     private final SnapshotDefinitionSatelliteFactory snapshotDefinitionFactory;
     private final SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactory;
     private final SnapshotSatelliteFactory snapshotFactory;
-    private final SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactory;
+    private final SnapshotVolumeSatelliteFactory snapshotVolumeFactory;
     private final StltRscGrpApiCallHelper rscGrpApiCallHelper;
     private final Provider<TransactionMgr> transMgrProvider;
 
@@ -75,7 +76,7 @@ class StltSnapshotApiCallHandler
         SnapshotDefinitionSatelliteFactory snapshotDefinitionFactoryRef,
         SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactoryRef,
         SnapshotSatelliteFactory snapshotFactoryRef,
-        SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactoryRef,
+        SnapshotVolumeSatelliteFactory snapshotVolumeFactoryRef,
         StltRscGrpApiCallHelper stltGrpApiCallHelperRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -90,7 +91,7 @@ class StltSnapshotApiCallHandler
         snapshotDefinitionFactory = snapshotDefinitionFactoryRef;
         snapshotVolumeDefinitionFactory = snapshotVolumeDefinitionFactoryRef;
         snapshotFactory = snapshotFactoryRef;
-        snapshotVolumeDataFactory = snapshotVolumeDataFactoryRef;
+        snapshotVolumeFactory = snapshotVolumeFactoryRef;
         rscGrpApiCallHelper = stltGrpApiCallHelperRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -244,13 +245,13 @@ class StltSnapshotApiCallHandler
         snapshot.setSuspendResource(apiCtx, snapshotRaw.getSuspendResource());
         snapshot.setTakeSnapshot(apiCtx, snapshotRaw.getTakeSnapshot());
 
-        for (SnapshotVolume.SnapshotVlmApi snapshotVlmApi : snapshotRaw.getSnapshotVlmList())
+        for (SnapshotVolumeApi snapshotVlmApi : snapshotRaw.getSnapshotVlmList())
         {
             mergeSnapshotVolume(snapshotVlmApi, snapshot);
         }
     }
 
-    private void mergeSnapshotVolume(SnapshotVolume.SnapshotVlmApi snapshotVlmApi, Snapshot snapshot)
+    private void mergeSnapshotVolume(SnapshotVolumeApi snapshotVlmApi, Snapshot snapshot)
         throws ValueOutOfRangeException, DivergentUuidsException, InvalidNameException, AccessDeniedException
     {
         VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmApi.getSnapshotVlmNr());
@@ -263,7 +264,7 @@ class StltSnapshotApiCallHandler
             );
             checkUuid(storPool, snapshotVlmApi);
 
-            snapshotVolume = snapshotVolumeDataFactory.getInstanceSatellite(
+            snapshotVolume = snapshotVolumeFactory.getInstanceSatellite(
                 apiCtx,
                 snapshotVlmApi.getSnapshotVlmUuid(),
                 snapshot,
@@ -357,7 +358,7 @@ class StltSnapshotApiCallHandler
         );
     }
 
-    private void checkUuid(SnapshotVolume snapshotVolume, SnapshotVolume.SnapshotVlmApi snapshotVlmApi)
+    private void checkUuid(SnapshotVolume snapshotVolume, SnapshotVolumeApi snapshotVlmApi)
         throws DivergentUuidsException
     {
         checkUuid(
@@ -369,7 +370,7 @@ class StltSnapshotApiCallHandler
         );
     }
 
-    private void checkUuid(StorPool storPool, SnapshotVolume.SnapshotVlmApi snapshotVlmApi)
+    private void checkUuid(StorPool storPool, SnapshotVolumeApi snapshotVlmApi)
         throws DivergentUuidsException
     {
         checkUuid(

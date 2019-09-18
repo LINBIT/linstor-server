@@ -50,7 +50,7 @@ public interface SnapshotVolumeDefinition
     void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
         throws AccessDeniedException;
 
-    void removeSnapshotVolume(AccessContext accCtx, SnapshotVolumeData snapshotVolumeData)
+    void removeSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
         throws AccessDeniedException;
 
     long getVolumeSize(AccessContext accCtx)

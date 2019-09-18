@@ -3,11 +3,11 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.SnapshotVolumeData;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -18,15 +18,15 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import java.util.UUID;
 
-public class SnapshotVolumeDataControllerFactory
+public class SnapshotVolumeControllerFactory
 {
-    private final SnapshotVolumeDataDatabaseDriver driver;
+    private final SnapshotVolumeDatabaseDriver driver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public SnapshotVolumeDataControllerFactory(
-        SnapshotVolumeDataDatabaseDriver driverRef,
+    public SnapshotVolumeControllerFactory(
+        SnapshotVolumeDatabaseDriver driverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -53,7 +53,7 @@ public class SnapshotVolumeDataControllerFactory
             throw new LinStorDataAlreadyExistsException("The SnapshotVolume already exists");
         }
 
-        snapshotVolume = new SnapshotVolumeData(
+        snapshotVolume = new SnapshotVolume(
             UUID.randomUUID(),
             snapshot,
             snapshotVolumeDefinition,

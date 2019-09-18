@@ -13,7 +13,7 @@ import com.linbit.linstor.core.objects.ResourceGroupGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinitionGenericDbDriver;
-import com.linbit.linstor.core.objects.SnapshotVolumeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.SnapshotVolumeGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDataGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
@@ -36,7 +36,7 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
@@ -82,7 +82,7 @@ public class TestDbModule extends AbstractModule
         bind(SnapshotDefinitionDatabaseDriver.class).to(SnapshotDefinitionGenericDbDriver.class);
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionGenericDbDriver.class);
         bind(SnapshotDatabaseDriver.class).to(SnapshotGenericDbDriver.class);
-        bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDataGenericDbDriver.class);
+        bind(SnapshotVolumeDatabaseDriver.class).to(SnapshotVolumeGenericDbDriver.class);
 
         bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
         bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);

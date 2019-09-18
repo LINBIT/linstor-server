@@ -1,8 +1,5 @@
 package com.linbit.linstor.core.apis;
 
-import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.SnapshotVolume.SnapshotVlmApi;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -15,5 +12,5 @@ public interface SnapshotApi
     boolean getTakeSnapshot();
     Long getFullSyncId();
     Long getUpdateId();
-    List<? extends SnapshotVolume.SnapshotVlmApi> getSnapshotVlmList();
+    List<? extends SnapshotVolumeApi> getSnapshotVlmList();
 }

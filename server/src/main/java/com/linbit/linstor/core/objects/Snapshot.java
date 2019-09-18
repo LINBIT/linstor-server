@@ -5,6 +5,7 @@ import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.core.apis.SnapshotApi;
+import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -174,13 +175,13 @@ public class Snapshot extends BaseTransactionObject implements DbgInstanceUuid, 
 
     public void removeSnapshotVolume(
         AccessContext accCtx,
-        SnapshotVolumeData snapshotVolumeData
+        SnapshotVolume snapshotVolume
     )
         throws AccessDeniedException
     {
         checkDeleted();
         requireAccess(accCtx, AccessType.CHANGE);
-        snapshotVlmMap.remove(snapshotVolumeData.getVolumeNumber());
+        snapshotVlmMap.remove(snapshotVolume.getVolumeNumber());
     }
 
     public StateFlags<Flags> getFlags()
@@ -311,7 +312,7 @@ public class Snapshot extends BaseTransactionObject implements DbgInstanceUuid, 
     public SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
-        List<SnapshotVolume.SnapshotVlmApi> snapshotVlms = new ArrayList<>();
+        List<SnapshotVolumeApi> snapshotVlms = new ArrayList<>();
 
         for (SnapshotVolume snapshotVolume : snapshotVlmMap.values())
         {

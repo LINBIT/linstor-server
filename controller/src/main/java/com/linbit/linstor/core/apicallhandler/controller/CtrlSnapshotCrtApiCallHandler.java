@@ -28,7 +28,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
-import com.linbit.linstor.core.objects.SnapshotVolumeDataControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotVolumeControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory;
@@ -86,7 +86,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final SnapshotDefinitionControllerFactory snapshotDefinitionFactory;
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
     private final SnapshotControllerFactory snapshotFactory;
-    private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
+    private final SnapshotVolumeControllerFactory snapshotVolumeControllerFactory;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
@@ -103,7 +103,7 @@ public class CtrlSnapshotCrtApiCallHandler
         SnapshotDefinitionControllerFactory snapshotDefinitionFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
         SnapshotControllerFactory snapshotFactoryRef,
-        SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
+        SnapshotVolumeControllerFactory snapshotVolumeControllerFactoryRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
@@ -119,7 +119,7 @@ public class CtrlSnapshotCrtApiCallHandler
         snapshotDefinitionFactory = snapshotDefinitionFactoryRef;
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
         snapshotFactory = snapshotFactoryRef;
-        snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
+        snapshotVolumeControllerFactory = snapshotVolumeControllerFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
@@ -443,7 +443,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitions)
         {
-            createSnapshotVolumeData(rsc, snapshot, snapshotVolumeDefinition);
+            createSnapshotVolume(rsc, snapshot, snapshotVolumeDefinition);
         }
     }
 
@@ -725,7 +725,7 @@ public class CtrlSnapshotCrtApiCallHandler
         return snapshot;
     }
 
-    private void createSnapshotVolumeData(
+    private void createSnapshotVolume(
         Resource rsc,
         Snapshot snapshot,
         SnapshotVolumeDefinition snapshotVolumeDefinition
@@ -733,7 +733,7 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         try
         {
-            snapshotVolumeDataControllerFactory.create(
+            snapshotVolumeControllerFactory.create(
                 peerAccCtx.get(),
                 snapshot,
                 snapshotVolumeDefinition,

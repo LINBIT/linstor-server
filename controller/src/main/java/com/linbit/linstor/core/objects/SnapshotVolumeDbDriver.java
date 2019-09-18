@@ -15,7 +15,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -46,7 +46,7 @@ public class SnapshotVolumeDbDriver extends
         Triple<Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot>,
             Map<Triple<ResourceName, SnapshotName, VolumeNumber>, ? extends SnapshotVolumeDefinition>,
             Map<Pair<NodeName, StorPoolName>, ? extends StorPool>>>
-    implements SnapshotVolumeDataDatabaseDriver
+    implements SnapshotVolumeDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -107,7 +107,7 @@ public class SnapshotVolumeDbDriver extends
         }
 
         return new Pair<>(
-            new SnapshotVolumeData(
+            new SnapshotVolume(
                 raw.build(UUID, java.util.UUID::fromString),
                 loadMaps.objA.get(new Triple<>(nodeName, rscName, snapName)),
                 loadMaps.objB.get(new Triple<>(rscName, snapName, vlmNr)),

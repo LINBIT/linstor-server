@@ -12,7 +12,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 @Singleton
-public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataDatabaseDriver
+public class SnapshotVolumeGenericDbDriver implements SnapshotVolumeDatabaseDriver
 {
     private static final String TBL_SNAPSHOT = DbConstants.TBL_SNAPSHOT_VOLUMES;
     private static final String SV_UUID = DbConstants.UUID;
@@ -75,7 +75,7 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public SnapshotVolumeDataGenericDbDriver(
+    public SnapshotVolumeGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -131,7 +131,7 @@ public class SnapshotVolumeDataGenericDbDriver implements SnapshotVolumeDataData
 
         try
         {
-            snapshotVolume = new SnapshotVolumeData(
+            snapshotVolume = new SnapshotVolume(
                 java.util.UUID.fromString(resultSet.getString(SV_UUID)),
                 snapshot,
                 snapshotVolumeDefinition,
