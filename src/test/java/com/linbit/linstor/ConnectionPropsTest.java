@@ -15,7 +15,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.VolumeConnectionData;
+import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -62,7 +62,7 @@ public class ConnectionPropsTest extends GenericDbBase
 
     private NodeConnection nodeCon;
     private ResourceConnection resCon;
-    private VolumeConnectionData volCon;
+    private VolumeConnection volCon;
 
     private Props nodeConProps;
     private Props resConProps;
@@ -139,7 +139,7 @@ public class ConnectionPropsTest extends GenericDbBase
 
         nodeCon = nodeConnectionFactory.create(SYS_CTX, node1, node2);
         resCon = resourceConnectionFactory.create(SYS_CTX, res1, res2, null);
-        volCon = volumeConnectionDataFactory.create(SYS_CTX, vol1, vol2);
+        volCon = volumeConnectionFactory.create(SYS_CTX, vol1, vol2);
 
         nodeConProps = nodeCon.getProps(SYS_CTX);
         resConProps = resCon.getProps(SYS_CTX);

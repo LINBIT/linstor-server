@@ -13,7 +13,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -38,8 +38,8 @@ import java.util.Map;
 
 @Singleton
 public class VolumeConnectionDbDriver extends
-    AbsDatabaseDriver<VolumeConnectionData, Void, Map<Triple<NodeName, ResourceName, VolumeNumber>, ? extends Volume>>
-    implements VolumeConnectionDataDatabaseDriver
+    AbsDatabaseDriver<VolumeConnection, Void, Map<Triple<NodeName, ResourceName, VolumeNumber>, ? extends Volume>>
+    implements VolumeConnectionDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -80,7 +80,7 @@ public class VolumeConnectionDbDriver extends
     }
 
     @Override
-    protected Pair<VolumeConnectionData, Void> load(
+    protected Pair<VolumeConnection, Void> load(
         RawParameters raw,
         Map<Triple<NodeName, ResourceName, VolumeNumber>, ? extends Volume> vlmsMap
     )
@@ -104,7 +104,7 @@ public class VolumeConnectionDbDriver extends
         }
 
         return new Pair<>(
-            new VolumeConnectionData(
+            new VolumeConnection(
                 raw.build(UUID, java.util.UUID::fromString),
                 vlmsMap.get(new Triple<>(nodeNameSrc, rscName, vlmNr)),
                 vlmsMap.get(new Triple<>(nodeNameDst, rscName, vlmNr)),
@@ -118,7 +118,7 @@ public class VolumeConnectionDbDriver extends
     }
 
     @Override
-    protected String getId(VolumeConnectionData vc) throws AccessDeniedException
+    protected String getId(VolumeConnection vc) throws AccessDeniedException
     {
         Volume srcVlm = vc.getSourceVolume(dbCtx);
         return "(SourceNode=" + srcVlm.getResource().getAssignedNode().getName().displayValue +

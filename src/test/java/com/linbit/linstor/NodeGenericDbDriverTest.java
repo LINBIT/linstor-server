@@ -28,7 +28,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
-import com.linbit.linstor.core.objects.VolumeConnectionData;
+import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -492,7 +492,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             resConUuid = resCon.getUuid();
 
             // volCon vol1 <-> vol2
-            VolumeConnectionData volCon = volumeConnectionDataFactory.create(
+            VolumeConnection volCon = volumeConnectionFactory.create(
                 SYS_CTX,
                 vol1,
                 vol2

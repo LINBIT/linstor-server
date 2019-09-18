@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -16,16 +16,16 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import java.util.UUID;
 
-public class VolumeConnectionDataFactory
+public class VolumeConnectionFactory
 {
-    private final VolumeConnectionDataDatabaseDriver dbDriver;
+    private final VolumeConnectionDatabaseDriver dbDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public VolumeConnectionDataFactory(
-        VolumeConnectionDataDatabaseDriver dbDriverRef,
+    public VolumeConnectionFactory(
+        VolumeConnectionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -37,7 +37,7 @@ public class VolumeConnectionDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public VolumeConnectionData create(
+    public VolumeConnection create(
         AccessContext accCtx,
         Volume sourceVolume,
         Volume targetVolume
@@ -47,14 +47,14 @@ public class VolumeConnectionDataFactory
         sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        VolumeConnectionData volConData = VolumeConnectionData.get(accCtx, sourceVolume, targetVolume);
+        VolumeConnection volConData = VolumeConnection.get(accCtx, sourceVolume, targetVolume);
 
         if (volConData != null)
         {
             throw new LinStorDataAlreadyExistsException("The VolumeConnection already exists");
         }
 
-        volConData = new VolumeConnectionData(
+        volConData = new VolumeConnection(
             UUID.randomUUID(),
             sourceVolume,
             targetVolume,
@@ -71,7 +71,7 @@ public class VolumeConnectionDataFactory
         return volConData;
     }
 
-    public VolumeConnectionData getInstanceSatellite(
+    public VolumeConnection getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
         Volume sourceVolume,
@@ -79,7 +79,7 @@ public class VolumeConnectionDataFactory
     )
         throws ImplementationError
     {
-        VolumeConnectionData volConData = null;
+        VolumeConnection volConData = null;
 
         Volume source;
         Volume target;
@@ -98,10 +98,10 @@ public class VolumeConnectionDataFactory
 
         try
         {
-            volConData = (VolumeConnectionData) source.getVolumeConnection(accCtx, target);
+            volConData = (VolumeConnection) source.getVolumeConnection(accCtx, target);
             if (volConData == null)
             {
-                volConData = new VolumeConnectionData(
+                volConData = new VolumeConnection(
                     uuid,
                     source,
                     target,

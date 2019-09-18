@@ -19,9 +19,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
-import com.linbit.linstor.core.objects.VolumeConnectionData;
-import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -44,7 +42,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
+public class VolumeConnectionGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VLM_CON_DFNS =
         " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " + NODE_NAME_DST + ", " +
@@ -75,13 +73,13 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     private Volume volSrc;
     private Volume volDst;
 
-    @Inject private VolumeConnectionDataGenericDbDriver driver;
+    @Inject private VolumeConnectionGenericDbDriver driver;
 
     private Integer nodeIdSrc;
     private Integer nodeIdDst;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public VolumeConnectionDataGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
+    public VolumeConnectionGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
     {
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
@@ -165,7 +163,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersist() throws Exception
     {
-        VolumeConnectionData volCon = TestFactory.createVolumeConnectionData(
+        VolumeConnection volCon = TestFactory.createVolumeConnection(
             uuid,
             volSrc,
             volDst,
@@ -183,7 +181,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        volumeConnectionDataFactory.create(SYS_CTX, volSrc, volDst);
+        volumeConnectionFactory.create(SYS_CTX, volSrc, volDst);
         commit();
 
         checkDbPersist(false);
@@ -192,7 +190,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadAll() throws Exception
     {
-        VolumeConnectionData volCon = TestFactory.createVolumeConnectionData(
+        VolumeConnection volCon = TestFactory.createVolumeConnection(
             uuid,
             volSrc,
             volDst,
@@ -206,7 +204,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         Map<Triple<NodeName, ResourceName, VolumeNumber>, Volume> vlmMap = new HashMap<>();
         addToMap(vlmMap, volSrc);
         addToMap(vlmMap, volDst);
-        List<VolumeConnectionData> cons = driver.loadAll(vlmMap);
+        List<VolumeConnection> cons = driver.loadAll(vlmMap);
 
         assertNotNull(cons);
 
@@ -235,7 +233,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        VolumeConnectionData volCon = TestFactory.createVolumeConnectionData(
+        VolumeConnection volCon = TestFactory.createVolumeConnection(
             uuid,
             volSrc,
             volDst,
@@ -248,7 +246,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         volSrc.setVolumeConnection(SYS_CTX, volCon);
         volDst.setVolumeConnection(SYS_CTX, volCon);
 
-        VolumeConnectionData loadedConDfn = VolumeConnectionData.get(
+        VolumeConnection loadedConDfn = VolumeConnection.get(
             SYS_CTX,
             volSrc,
             volDst
@@ -260,7 +258,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
-        VolumeConnectionData storedInstance = volumeConnectionDataFactory.create(
+        VolumeConnection storedInstance = volumeConnectionFactory.create(
             SYS_CTX,
             volSrc,
             volDst
@@ -268,7 +266,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, VolumeConnectionData.get(
+        assertEquals(storedInstance, VolumeConnection.get(
             SYS_CTX,
             volSrc,
             volDst
@@ -278,7 +276,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testDelete() throws Exception
     {
-        VolumeConnectionData volCon = TestFactory.createVolumeConnectionData(
+        VolumeConnection volCon = TestFactory.createVolumeConnection(
             uuid,
             volSrc,
             volDst,
@@ -348,7 +346,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        volumeConnectionDataFactory.create(SYS_CTX, volSrc, volDst);
-        volumeConnectionDataFactory.create(SYS_CTX, volSrc, volDst);
+        volumeConnectionFactory.create(SYS_CTX, volSrc, volDst);
+        volumeConnectionFactory.create(SYS_CTX, volSrc, volDst);
     }
 }

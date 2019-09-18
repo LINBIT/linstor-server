@@ -10,7 +10,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 @Singleton
-public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionDataDatabaseDriver
+public class VolumeConnectionGenericDbDriver implements VolumeConnectionDatabaseDriver
 {
     private static final String TBL_VOL_CON_DFN = DbConstants.TBL_VOLUME_CONNECTIONS;
     private static final String UUID = DbConstants.UUID;
@@ -72,7 +72,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public VolumeConnectionDataGenericDbDriver(
+    public VolumeConnectionGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -87,13 +87,13 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         transMgrProvider = transMgrProviderRef;
     }
 
-    public List<VolumeConnectionData> loadAll(
+    public List<VolumeConnection> loadAll(
         Map<Triple<NodeName, ResourceName, VolumeNumber>, ? extends Volume> vlmMap
     )
         throws DatabaseException
     {
         errorReporter.logTrace("Loading all VolumeConnections");
-        List<VolumeConnectionData> vlmConns = new ArrayList<>();
+        List<VolumeConnection> vlmConns = new ArrayList<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
@@ -105,7 +105,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
                     ResourceName rscName = new ResourceName(resultSet.getString(RES_NAME));
                     VolumeNumber vlmNr = new VolumeNumber(resultSet.getInt(VOL_NR));
 
-                    VolumeConnectionData vlmConn = restoreVolumeConnectionData(
+                    VolumeConnection vlmConn = restoreVolumeConnection(
                         resultSet,
                         vlmMap.get(new Triple<>(nodeNameSrc, rscName, vlmNr)),
                         vlmMap.get(new Triple<>(nodeNameDst, rscName, vlmNr))
@@ -135,7 +135,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         return vlmConns;
     }
 
-    private VolumeConnectionData restoreVolumeConnectionData(
+    private VolumeConnection restoreVolumeConnection(
         ResultSet resultSet,
         Volume sourceVolume,
         Volume targetVolume
@@ -144,7 +144,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
     {
         try
         {
-            return new VolumeConnectionData(
+            return new VolumeConnection(
                 java.util.UUID.fromString(resultSet.getString(UUID)),
                 sourceVolume,
                 targetVolume,
@@ -162,7 +162,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(VolumeConnectionData conDfnData) throws DatabaseException
+    public void create(VolumeConnection conDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating VolumeConnection %s", getId(conDfnData));
 
@@ -193,7 +193,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(VolumeConnectionData conDfnData) throws DatabaseException
+    public void delete(VolumeConnection conDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Deleting VolumeConnection %s", getId(conDfnData));
 
@@ -226,7 +226,7 @@ public class VolumeConnectionDataGenericDbDriver implements VolumeConnectionData
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(VolumeConnectionData volConData)
+    private String getId(VolumeConnection volConData)
     {
         String id = null;
         try

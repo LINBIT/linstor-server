@@ -56,7 +56,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeConnectionData;
+import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
@@ -398,8 +398,8 @@ public class DatabaseLoader implements DatabaseDriver
                 )
             );
 
-            List<VolumeConnectionData> loadedVlmConns = vlmConnDriver.loadAllAsList(tmpVlmMap);
-            for (VolumeConnectionData vlmConn : loadedVlmConns)
+            List<VolumeConnection> loadedVlmConns = vlmConnDriver.loadAllAsList(tmpVlmMap);
+            for (VolumeConnection vlmConn : loadedVlmConns)
             {
                 Volume sourceVolume = vlmConn.getSourceVolume(dbCtx);
                 Volume targetVolume = vlmConn.getTargetVolume(dbCtx);

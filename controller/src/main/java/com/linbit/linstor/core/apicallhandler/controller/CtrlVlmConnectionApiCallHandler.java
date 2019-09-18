@@ -20,8 +20,8 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeConnectionData;
-import com.linbit.linstor.core.objects.VolumeConnectionDataFactory;
+import com.linbit.linstor.core.objects.VolumeConnection;
+import com.linbit.linstor.core.objects.VolumeConnectionFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -43,7 +43,7 @@ class CtrlVlmConnectionApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final VolumeConnectionDataFactory volumeConnectionDataFactory;
+    private final VolumeConnectionFactory volumeConnectionFactory;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
@@ -55,7 +55,7 @@ class CtrlVlmConnectionApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        VolumeConnectionDataFactory volumeConnectionDataFactoryRef,
+        VolumeConnectionFactory volumeConnectionFactoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
@@ -66,7 +66,7 @@ class CtrlVlmConnectionApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        volumeConnectionDataFactory = volumeConnectionDataFactoryRef;
+        volumeConnectionFactory = volumeConnectionFactoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
@@ -92,7 +92,7 @@ class CtrlVlmConnectionApiCallHandler
 
         try
         {
-            VolumeConnectionData vlmConn = createVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
+            VolumeConnection vlmConn = createVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.VOLUME_CONN, vlmConnPropsMap, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
@@ -133,7 +133,7 @@ class CtrlVlmConnectionApiCallHandler
 
         try
         {
-            VolumeConnectionData vlmConn = loadVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
+            VolumeConnection vlmConn = loadVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
 
             if (rscConnUuid != null && !rscConnUuid.equals(vlmConn.getUuid()))
             {
@@ -181,7 +181,7 @@ class CtrlVlmConnectionApiCallHandler
 
         try
         {
-            VolumeConnectionData vlmConn = loadVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
+            VolumeConnection vlmConn = loadVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
             if (vlmConn == null)
             {
                 responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
@@ -209,7 +209,7 @@ class CtrlVlmConnectionApiCallHandler
         return responses;
     }
 
-    private VolumeConnectionData createVlmConn(
+    private VolumeConnection createVlmConn(
         String nodeName1Str,
         String nodeName2Str,
         String rscNameStr,
@@ -225,10 +225,10 @@ class CtrlVlmConnectionApiCallHandler
         Volume sourceVolume = getVlm(rsc1, vlmNrInt);
         Volume targetVolume = getVlm(rsc2, vlmNrInt);
 
-        VolumeConnectionData vlmConn;
+        VolumeConnection vlmConn;
         try
         {
-            vlmConn = volumeConnectionDataFactory.create(
+            vlmConn = volumeConnectionFactory.create(
                 peerAccCtx.get(),
                 sourceVolume,
                 targetVolume
@@ -256,7 +256,7 @@ class CtrlVlmConnectionApiCallHandler
         return vlmConn;
     }
 
-    private VolumeConnectionData loadVlmConn(
+    private VolumeConnection loadVlmConn(
         String nodeName1,
         String nodeName2,
         String rscNameStr,
@@ -272,10 +272,10 @@ class CtrlVlmConnectionApiCallHandler
         Volume vlm1 = getVlm(rsc1, vlmNr);
         Volume vlm2 = getVlm(rsc2, vlmNr);
 
-        VolumeConnectionData vlmConn;
+        VolumeConnection vlmConn;
         try
         {
-            vlmConn = VolumeConnectionData.get(
+            vlmConn = VolumeConnection.get(
                 peerAccCtx.get(),
                 vlm1,
                 vlm2
@@ -315,7 +315,7 @@ class CtrlVlmConnectionApiCallHandler
         return rsc.getVolume(LinstorParsingUtils.asVlmNr(vlmNr));
     }
 
-    private Props getProps(VolumeConnectionData vlmConn)
+    private Props getProps(VolumeConnection vlmConn)
     {
         Props props;
         try
@@ -333,7 +333,7 @@ class CtrlVlmConnectionApiCallHandler
         return props;
     }
 
-    private void delete(VolumeConnectionData vlmConn)
+    private void delete(VolumeConnection vlmConn)
     {
         try
         {
@@ -353,7 +353,7 @@ class CtrlVlmConnectionApiCallHandler
         }
     }
 
-    private ApiCallRcImpl updateSatellites(VolumeConnectionData vlmConn)
+    private ApiCallRcImpl updateSatellites(VolumeConnection vlmConn)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
@@ -382,7 +382,7 @@ class CtrlVlmConnectionApiCallHandler
             vlmNr;
     }
 
-    private static String getVlmConnectionDescriptionInline(AccessContext accCtx, VolumeConnectionData vlmConn)
+    private static String getVlmConnectionDescriptionInline(AccessContext accCtx, VolumeConnection vlmConn)
     {
         String descriptionInline;
         try

@@ -284,21 +284,21 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link VolumeConnectionData} without persisting it to the database
+     * Creates a new {@link VolumeConnection} without persisting it to the database
      * @throws DatabaseException
      */
-    public static VolumeConnectionData createVolumeConnectionData(
+    public static VolumeConnection createVolumeConnection(
         UUID uuidRef,
         Volume volSrcRef,
         Volume volDstRef,
-        VolumeConnectionDataGenericDbDriver driverRef,
+        VolumeConnectionGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {
-        return new VolumeConnectionData(
+        return new VolumeConnection(
             uuidRef,
             volSrcRef,
             volDstRef,

@@ -1,12 +1,13 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.objects.VolumeConnectionData;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
+import com.linbit.linstor.core.objects.VolumeConnection;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+
 import javax.inject.Inject;
 
-public class SatelliteVolConDfnDriver implements VolumeConnectionDataDatabaseDriver
+public class SatelliteVolConDfnDriver implements VolumeConnectionDatabaseDriver
 {
     private final AccessContext dbCtx;
 
@@ -17,13 +18,13 @@ public class SatelliteVolConDfnDriver implements VolumeConnectionDataDatabaseDri
     }
 
     @Override
-    public void create(VolumeConnectionData conDfnData)
+    public void create(VolumeConnection vlmConn)
     {
         // no-op
     }
 
     @Override
-    public void delete(VolumeConnectionData conDfnData)
+    public void delete(VolumeConnection vlmConn)
     {
         // no-op
     }
