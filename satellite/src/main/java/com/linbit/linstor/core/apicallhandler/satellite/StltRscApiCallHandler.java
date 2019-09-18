@@ -19,6 +19,7 @@ import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltLayerRscDataMerger;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -40,9 +41,7 @@ import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.VlmApi;
-import com.linbit.linstor.core.objects.VolumeData;
-import com.linbit.linstor.core.objects.VolumeDataFactory;
+import com.linbit.linstor.core.objects.VolumeFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
@@ -95,7 +94,7 @@ class StltRscApiCallHandler
     private final ResourceSatelliteFactory resourceFactory;
     private final StorPoolDefinitionSatelliteFactory storPoolDefinitionFactory;
     private final StorPoolSatelliteFactory storPoolFactory;
-    private final VolumeDataFactory volumeDataFactory;
+    private final VolumeFactory volumeFactory;
     private final ResourceConnectionSatelliteFactory resourceConnectionFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final StltSecurityObjects stltSecObjs;
@@ -121,7 +120,7 @@ class StltRscApiCallHandler
         ResourceSatelliteFactory resourceFactoryRef,
         StorPoolDefinitionSatelliteFactory storPoolDefinitionFactoryRef,
         StorPoolSatelliteFactory storPoolFactoryRef,
-        VolumeDataFactory volumeDataFactoryRef,
+        VolumeFactory volumeFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjsRef,
         ResourceConnectionSatelliteFactory resourceConnectionFactoryRef,
@@ -146,7 +145,7 @@ class StltRscApiCallHandler
         resourceFactory = resourceFactoryRef;
         storPoolDefinitionFactory = storPoolDefinitionFactoryRef;
         storPoolFactory = storPoolFactoryRef;
-        volumeDataFactory = volumeDataFactoryRef;
+        volumeFactory = volumeFactoryRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObjs = stltSecObjsRef;
         resourceConnectionFactory = resourceConnectionFactoryRef;
@@ -387,7 +386,7 @@ class StltRscApiCallHandler
 
                     // we do not have to care about deletion, as the merge of vlmDfns should have already marked
                     // all the corresponding volumes for deletion
-                    for (VlmApi vlmApi : rscRawData.getLocalVlms())
+                    for (VolumeApi vlmApi : rscRawData.getLocalVlms())
                     {
                         Volume localVlm = localRsc.getVolume(new VolumeNumber(vlmApi.getVlmNr()));
 
@@ -530,7 +529,7 @@ class StltRscApiCallHandler
                         {
                             // we do not have to care about deletion, as the merge of vlmDfns should have already marked
                             // all the corresponding volumes for deletion
-                            for (VlmApi remoteVlmApi : otherRsc.getVlms())
+                            for (VolumeApi remoteVlmApi : otherRsc.getVlms())
                             {
                                 Volume remoteVlm = remoteRsc.getVolume(new VolumeNumber(remoteVlmApi.getVlmNr()));
                                 if (remoteVlm == null)
@@ -663,7 +662,7 @@ class StltRscApiCallHandler
         ResourceDefinition rscDfn,
         Resource.Flags[] flags,
         Map<String, String> rscProps,
-        List<VolumeData.VlmApi> vlms,
+        List<VolumeApi> vlms,
         boolean remoteRsc,
         RscLayerDataApi rscLayerDataApi
     )
@@ -690,7 +689,7 @@ class StltRscApiCallHandler
         rscDataProps.map().putAll(rscProps);
         rscDataProps.keySet().retainAll(rscProps.keySet());
 
-        for (Volume.VlmApi vlmRaw : vlms)
+        for (VolumeApi vlmRaw : vlms)
         {
             createVlm(vlmRaw, rsc, remoteRsc);
         }
@@ -699,7 +698,7 @@ class StltRscApiCallHandler
     }
 
     private void createVlm(
-        VlmApi vlmApi,
+        VolumeApi vlmApi,
         Resource rsc,
         boolean remoteRsc
     )
@@ -708,12 +707,12 @@ class StltRscApiCallHandler
     {
         VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
-        VolumeData vlm = volumeDataFactory.getInstanceSatellite(
+        Volume vlm = volumeFactory.getInstanceSatellite(
             apiCtx,
             vlmApi.getVlmUuid(),
             rsc,
             vlmDfn,
-            Volume.VlmFlags.restoreFlags(vlmApi.getFlags())
+            Volume.Flags.restoreFlags(vlmApi.getFlags())
         );
 
         vlm.getProps(apiCtx).map().putAll(vlmApi.getVlmProps());
@@ -721,7 +720,7 @@ class StltRscApiCallHandler
         // XXX check if vlm really has expected layerStack (stack cannot be changed!)
     }
 
-    private void mergeVlm(Volume vlm, VlmApi vlmApi, boolean remoteRsc)
+    private void mergeVlm(Volume vlm, VolumeApi vlmApi, boolean remoteRsc)
         throws DivergentDataException, AccessDeniedException, DatabaseException, InvalidNameException
     {
         if (!remoteRsc)
@@ -732,10 +731,10 @@ class StltRscApiCallHandler
         Props vlmProps = vlm.getProps(apiCtx);
         vlmProps.map().putAll(vlmApi.getVlmProps());
         vlmProps.keySet().retainAll(vlmApi.getVlmProps().keySet());
-        vlm.getFlags().resetFlagsTo(apiCtx, Volume.VlmFlags.restoreFlags(vlmApi.getFlags()));
+        vlm.getFlags().resetFlagsTo(apiCtx, Volume.Flags.restoreFlags(vlmApi.getFlags()));
     }
 
-    private void restoreStorPools(Volume vlmRef, VlmApi vlmApiRef, boolean remoteRscRef)
+    private void restoreStorPools(Volume vlmRef, VolumeApi vlmApiRef, boolean remoteRscRef)
         throws AccessDeniedException, InvalidNameException, DivergentDataException, DatabaseException
     {
         VolumeNumber vlmNr = vlmRef.getVolumeDefinition().getVolumeNumber();
@@ -882,7 +881,7 @@ class StltRscApiCallHandler
 
     private void checkUuid(
         Volume vlm,
-        VlmApi vlmRaw
+        VolumeApi vlmRaw
     )
         throws DivergentUuidsException
     {

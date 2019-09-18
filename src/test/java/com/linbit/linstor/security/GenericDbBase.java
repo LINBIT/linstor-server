@@ -42,9 +42,9 @@ import com.linbit.linstor.core.objects.ResourceGroupGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionControllerFactory;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnectionDataFactory;
-import com.linbit.linstor.core.objects.VolumeDataControllerFactory;
+import com.linbit.linstor.core.objects.VolumeControllerFactory;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataControllerFactory;
 import com.linbit.linstor.core.repository.FreeSpaceMgrRepository;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -187,7 +187,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected NodeConnectionFactory nodeConnectionFactory;
     @Inject protected StorPoolControllerFactory storPoolFactory;
     @Inject protected FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
-    @Inject protected VolumeDataControllerFactory volumeDataFactory;
+    @Inject protected VolumeControllerFactory volumeFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     @Inject protected ResourceDefinitionControllerFactory resourceDefinitionFactory;
     @Inject protected ResourceGroupControllerFactory resourceGroupFactory;
@@ -654,7 +654,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         StorPoolName storPoolName,
         String blockDev,
         String metaDisk,
-        VlmFlags... flags
+        Volume.Flags... flags
     )
         throws SQLException
     {

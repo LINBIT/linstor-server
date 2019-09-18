@@ -21,7 +21,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -72,8 +72,8 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     private StorPoolDefinition storPoolDfn;
     private StorPool storPool1;
     private StorPool storPool2;
-    private VolumeData volSrc;
-    private VolumeData volDst;
+    private Volume volSrc;
+    private Volume volDst;
 
     @Inject private VolumeConnectionDataGenericDbDriver driver;
 
@@ -146,14 +146,14 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
             SYS_CTX, nodeDst, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, nodeDst)
         );
 
-        volSrc = volumeDataFactory.create(
+        volSrc = volumeFactory.create(
             SYS_CTX,
             resSrc,
             volDfn,
             null,
             Collections.singletonMap("", storPool1)
         );
-        volDst = volumeDataFactory.create(
+        volDst = volumeFactory.create(
             SYS_CTX,
             resDst,
             volDfn,
@@ -203,7 +203,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         );
         driver.create(volCon);
 
-        Map<Triple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap = new HashMap<>();
+        Map<Triple<NodeName, ResourceName, VolumeNumber>, Volume> vlmMap = new HashMap<>();
         addToMap(vlmMap, volSrc);
         addToMap(vlmMap, volDst);
         List<VolumeConnectionData> cons = driver.loadAll(vlmMap);
@@ -219,8 +219,8 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     }
 
     private void addToMap(
-        Map<Triple<NodeName, ResourceName, VolumeNumber>, VolumeData> vlmMap,
-        VolumeData vol
+        Map<Triple<NodeName, ResourceName, VolumeNumber>, Volume> vlmMap,
+        Volume vol
     )
     {
         vlmMap.put(new Triple<NodeName, ResourceName, VolumeNumber>(

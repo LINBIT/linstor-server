@@ -7,22 +7,16 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeData;
-import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -31,6 +25,7 @@ import com.linbit.utils.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,7 +34,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
+public class VolumeGenericDbDriver implements VolumeDatabaseDriver
 {
     private static final String TBL_VOL = DbConstants.TBL_VOLUMES;
     private static final String VOL_UUID = DbConstants.UUID;
@@ -80,14 +75,14 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    private final StateFlagsPersistence<VolumeData> flagPersistenceDriver;
+    private final StateFlagsPersistence<Volume> flagPersistenceDriver;
 
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public VolumeDataGenericDbDriver(
+    public VolumeGenericDbDriver(
         @SystemContext AccessContext privCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -104,13 +99,13 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         flagPersistenceDriver = new VolFlagsPersistence();
     }
 
-    public Map<VolumeData, Volume.InitMaps> loadAll(
+    public Map<Volume, Volume.InitMaps> loadAll(
         Map<Pair<NodeName, ResourceName>, ? extends Resource> rscMap,
         Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition> vlmDfnMap
     )
         throws DatabaseException
     {
-        Map<VolumeData, Volume.InitMaps> vlmMap = new TreeMap<>();
+        Map<Volume, Volume.InitMaps> vlmMap = new TreeMap<>();
         errorReporter.logTrace("Loading all Volumes");
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
@@ -124,7 +119,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
                         ResourceName rscName = new ResourceName(resultSet.getString(VOL_RES_NAME));
                         VolumeNumber vlmNr = new VolumeNumber(resultSet.getInt(VOL_ID));
 
-                        Pair<VolumeData, Volume.InitMaps> pair = restoreVlm(
+                        Pair<Volume, Volume.InitMaps> pair = restoreVlm(
                             resultSet,
                             rscMap.get(new Pair<>(nodeName, rscName)),
                             vlmDfnMap.get(new Pair<>(rscName, vlmNr))
@@ -159,7 +154,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         return vlmMap;
     }
 
-    private Pair<VolumeData, Volume.InitMaps> restoreVlm(
+    private Pair<Volume, Volume.InitMaps> restoreVlm(
         ResultSet resultSet,
         Resource rsc,
         VolumeDefinition vlmDfn
@@ -168,10 +163,10 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     {
         Map<Volume.Key, VolumeConnection> vlmConnsMap = new TreeMap<>();
 
-        VolumeData vlm;
+        Volume vlm;
 
         try {
-            vlm = new VolumeData(
+            vlm = new Volume(
                 java.util.UUID.fromString(resultSet.getString(VOL_UUID)),
                 rsc,
                 vlmDfn,
@@ -198,7 +193,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(VolumeData vol) throws DatabaseException
+    public void create(Volume vol) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
         {
@@ -225,7 +220,7 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void delete(VolumeData volume) throws DatabaseException
+    public void delete(Volume volume) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE))
         {
@@ -245,12 +240,12 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
     }
 
     @Override
-    public StateFlagsPersistence<VolumeData> getStateFlagsPersistence()
+    public StateFlagsPersistence<Volume> getStateFlagsPersistence()
     {
         return flagPersistenceDriver;
     }
 
-    private String getId(VolumeData volume)
+    private String getId(Volume volume)
     {
         return getVolId(
             volume.getResource().getAssignedNode().getName().displayValue,
@@ -269,25 +264,25 @@ public class VolumeDataGenericDbDriver implements VolumeDataDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
-    private class VolFlagsPersistence implements StateFlagsPersistence<VolumeData>
+    private class VolFlagsPersistence implements StateFlagsPersistence<Volume>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void persist(VolumeData volume, long flags)
+        public void persist(Volume volume, long flags)
             throws DatabaseException
         {
             try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_FLAGS))
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        VlmFlags.class,
+                        Volume.Flags.class,
                         volume.getFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        VlmFlags.class,
+                        Volume.Flags.class,
                         flags
                     ),
                     ", "

@@ -14,8 +14,8 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.VolumeData;
-import com.linbit.linstor.core.objects.VolumeDataControllerFactory;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeControllerFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
@@ -41,25 +41,25 @@ import java.util.TreeMap;
 public class CtrlVlmCrtApiHelper
 {
     private final AccessContext apiCtx;
-    private final VolumeDataControllerFactory volumeDataFactory;
+    private final VolumeControllerFactory volumeFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
 
     @Inject
     CtrlVlmCrtApiHelper(
         @ApiContext AccessContext apiCtxRef,
-        VolumeDataControllerFactory volumeDataFactoryRef,
+        VolumeControllerFactory volumeFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef
     )
     {
         apiCtx = apiCtxRef;
-        volumeDataFactory = volumeDataFactoryRef;
+        volumeFactory = volumeFactoryRef;
         peerAccCtx = peerAccCtxRef;
         storPoolResolveHelper = storPoolResolveHelperRef;
     }
 
-    public ApiCallRcWith<VolumeData> createVolumeResolvingStorPool(
+    public ApiCallRcWith<Volume> createVolumeResolvingStorPool(
         Resource rsc,
         VolumeDefinition vlmDfn,
         Map<StorPool.Key, Long> thinFreeCapacities
@@ -80,7 +80,7 @@ public class CtrlVlmCrtApiHelper
         ));
     }
 
-    public VolumeData createVolume(
+    public Volume createVolume(
         Resource rsc,
         VolumeDefinition vlmDfn,
         Map<String, StorPool> storPoolMapRef,
@@ -89,10 +89,10 @@ public class CtrlVlmCrtApiHelper
     {
         checkIfStorPoolsAreUsable(rsc, vlmDfn, storPoolMapRef, thinFreeCapacities);
 
-        VolumeData vlm;
+        Volume vlm;
         try
         {
-            vlm = volumeDataFactory.create(
+            vlm = volumeFactory.create(
                 peerAccCtx.get(),
                 rsc,
                 vlmDfn,

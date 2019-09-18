@@ -29,6 +29,7 @@ import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -513,7 +514,7 @@ public class Json
         return storageVolume;
     }
 
-    public static JsonGenTypes.Volume apiToVolume(Volume.VlmApi vlmApi)
+    public static JsonGenTypes.Volume apiToVolume(VolumeApi vlmApi)
     {
         JsonGenTypes.Volume volume = new JsonGenTypes.Volume();
         volume.volume_number = vlmApi.getVlmNr();
@@ -524,7 +525,7 @@ public class Json
         volume.allocated_size_kib = vlmApi.getAllocatedSize().orElse(null);
 
         volume.props = vlmApi.getVlmProps();
-        volume.flags = FlagsHelper.toStringList(Volume.VlmFlags.class, vlmApi.getFlags());
+        volume.flags = FlagsHelper.toStringList(Volume.Flags.class, vlmApi.getFlags());
         volume.uuid = vlmApi.getVlmUuid().toString();
 
         volume.layer_data_list = new ArrayList<>();

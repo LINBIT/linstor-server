@@ -7,7 +7,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -136,7 +137,7 @@ public class LuksLayer implements DeviceLayer
                     boolean ret;
                     try
                     {
-                        ret = deleteRsc || luksVlmData.getVolume().getFlags().isSet(sysCtx, VlmFlags.DELETE);
+                        ret = deleteRsc || luksVlmData.getVolume().getFlags().isSet(sysCtx, Volume.Flags.DELETE);
                     }
                     catch (AccessDeniedException exc)
                     {

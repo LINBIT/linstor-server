@@ -1,12 +1,13 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.core.objects.VolumeData;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+
 import javax.inject.Inject;
 
-public class SatelliteVolDriver implements VolumeDataDatabaseDriver
+public class SatelliteVolDriver implements VolumeDatabaseDriver
 {
     private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
     private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
@@ -18,19 +19,19 @@ public class SatelliteVolDriver implements VolumeDataDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public StateFlagsPersistence<VolumeData> getStateFlagsPersistence()
+    public StateFlagsPersistence<Volume> getStateFlagsPersistence()
     {
-        return (StateFlagsPersistence<VolumeData>) stateFlagsDriver;
+        return (StateFlagsPersistence<Volume>) stateFlagsDriver;
     }
 
     @Override
-    public void create(VolumeData vol)
+    public void create(Volume vol)
     {
         // no-op
     }
 
     @Override
-    public void delete(VolumeData data)
+    public void delete(Volume vlm)
     {
         // no-op
     }

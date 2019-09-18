@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -55,7 +55,7 @@ public class ResourceCreateCheck
      *
      * @throws ApiRcException if any constraint is violated
      */
-    public void checkCreatedResource(List<VolumeData> volumes)
+    public void checkCreatedResource(List<Volume> volumes)
     {
         ResourceRole resourceRole = getCreatedResourceRole(volumes);
         if (resourceRole != null)
@@ -119,9 +119,10 @@ public class ResourceCreateCheck
     }
 
     /**
-     * @param volumes List<VolumeData> of the resource being created
+     * @param volumes
+     *     List<Volume> of the resource being created
      */
-    private ResourceRole getCreatedResourceRole(List<VolumeData> volumes)
+    private ResourceRole getCreatedResourceRole(List<Volume> volumes)
     {
         ResourceRole ret = null;
 

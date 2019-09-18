@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -32,6 +34,7 @@ import com.linbit.utils.Either;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,8 +44,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-
-import static java.util.stream.Collectors.toList;
 
 public class StltApiCallHandlerUtils
 {

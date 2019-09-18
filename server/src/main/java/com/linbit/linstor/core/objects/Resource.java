@@ -6,6 +6,7 @@ import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -399,7 +400,7 @@ public class Resource extends BaseTransactionObject
     public ResourceApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
-        List<Volume.VlmApi> volumes = new ArrayList<>();
+        List<VolumeApi> volumes = new ArrayList<>();
         Iterator<Volume> itVolumes = iterateVolumes();
         while (itVolumes.hasNext())
         {

@@ -9,11 +9,11 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandle
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.VlmApiData;
@@ -165,7 +165,7 @@ public class RscApiTest extends ApiTestBase
         private String nodeName;
         private String rscName;
         private Map<String, String> rscPropsMap;
-        private List<VlmApi> vlmApiDataList;
+        private List<VolumeApi> vlmApiDataList;
         private List<String> flags;
 
         CrtRscCall(long... expectedRc)

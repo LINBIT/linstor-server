@@ -24,6 +24,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
@@ -453,7 +454,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         try
         {
-            vlm.getFlags().enableFlags(peerAccCtx.get(), Volume.VlmFlags.RESIZE);
+            vlm.getFlags().enableFlags(peerAccCtx.get(), Volume.Flags.RESIZE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -473,7 +474,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         try
         {
-            vlm.getFlags().disableFlags(apiCtx, Volume.VlmFlags.RESIZE);
+            vlm.getFlags().disableFlags(apiCtx, Volume.Flags.RESIZE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -489,7 +490,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         try
         {
-            vlm.getFlags().enableFlags(peerAccCtx.get(), Volume.VlmFlags.DRBD_RESIZE);
+            vlm.getFlags().enableFlags(peerAccCtx.get(), Volume.Flags.DRBD_RESIZE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -509,7 +510,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         try
         {
-            vlm.getFlags().disableFlags(apiCtx, Volume.VlmFlags.DRBD_RESIZE);
+            vlm.getFlags().disableFlags(apiCtx, Volume.Flags.DRBD_RESIZE);
         }
         catch (AccessDeniedException accDeniedExc)
         {

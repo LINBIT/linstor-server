@@ -3,7 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -17,16 +17,16 @@ import javax.inject.Provider;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class VolumeDataFactory
+public class VolumeFactory
 {
-    private final VolumeDataDatabaseDriver driver;
+    private final VolumeDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public VolumeDataFactory(
-        VolumeDataDatabaseDriver driverRef,
+    public VolumeFactory(
+        VolumeDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -38,28 +38,28 @@ public class VolumeDataFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public VolumeData create(
+    public Volume create(
         AccessContext accCtx,
         Resource rsc,
         VolumeDefinition vlmDfn,
         StorPool storPool,
         String blockDevicePathRef,
         String metaDiskPathRef,
-        Volume.VlmFlags[] flags
+        Volume.Flags[] flags
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         rsc.getObjProt().requireAccess(accCtx, AccessType.USE);
-        VolumeData volData = null;
+        Volume volData = null;
 
-        volData = (VolumeData) rsc.getVolume(vlmDfn.getVolumeNumber());
+        volData = (Volume) rsc.getVolume(vlmDfn.getVolumeNumber());
 
         if (volData != null)
         {
             throw new LinStorDataAlreadyExistsException("The Volume already exists");
         }
 
-        volData = new VolumeData(
+        volData = new Volume(
             UUID.randomUUID(),
             rsc,
             vlmDfn,
@@ -77,21 +77,21 @@ public class VolumeDataFactory
         return volData;
     }
 
-    public VolumeData getInstanceSatellite(
+    public Volume getInstanceSatellite(
         AccessContext accCtx,
         UUID vlmUuid,
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Volume.VlmFlags[] flags
+        Volume.Flags[] flags
     )
     {
-        VolumeData vlmData;
+        Volume vlmData;
         try
         {
-            vlmData = (VolumeData) rsc.getVolume(vlmDfn.getVolumeNumber());
+            vlmData = (Volume) rsc.getVolume(vlmDfn.getVolumeNumber());
             if (vlmData == null)
             {
-                vlmData = new VolumeData(
+                vlmData = new Volume(
                     vlmUuid,
                     rsc,
                     vlmDfn,

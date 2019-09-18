@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -29,7 +30,6 @@ import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -136,7 +136,7 @@ public class CtrlRscCrtApiHelper
         String rscNameStr,
         long flags,
         Map<String, String> rscPropsMap,
-        List<? extends Volume.VlmApi> vlmApiList,
+        List<? extends VolumeApi> vlmApiList,
         Integer nodeIdInt,
         Map<StorPool.Key, Long> thinFreeCapacities,
         List<String> layerStackStrListRef
@@ -200,13 +200,13 @@ public class CtrlRscCrtApiHelper
             rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
         }
 
-        List<VolumeData> createdVolumes = new ArrayList<>();
+        List<Volume> createdVolumes = new ArrayList<>();
 
-        for (Volume.VlmApi vlmApi : vlmApiList)
+        for (VolumeApi vlmApi : vlmApiList)
         {
             VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
 
-            VolumeData vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+            Volume vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                 rsc,
                 vlmDfn,
                 thinFreeCapacities
@@ -229,7 +229,7 @@ public class CtrlRscCrtApiHelper
             {
                 // not deployed yet.
 
-                VolumeData vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+                Volume vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                     rsc,
                     vlmDfn,
                     thinFreeCapacities
@@ -261,7 +261,7 @@ public class CtrlRscCrtApiHelper
         );
     }
 
-    private void setDrbdPropsForThinVolumesIfNeeded(VolumeData vlmRef)
+    private void setDrbdPropsForThinVolumesIfNeeded(Volume vlmRef)
     {
         try
         {

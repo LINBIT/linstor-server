@@ -5,11 +5,10 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -27,17 +26,17 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class VolumeDataControllerFactory
+public class VolumeControllerFactory
 {
-    private final VolumeDataDatabaseDriver driver;
+    private final VolumeDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
-    public VolumeDataControllerFactory(
-        VolumeDataDatabaseDriver driverRef,
+    public VolumeControllerFactory(
+        VolumeDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -51,26 +50,26 @@ public class VolumeDataControllerFactory
         layerStackHelper = layerStackHelperRef;
     }
 
-    public VolumeData create(
+    public Volume create(
         AccessContext accCtx,
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Volume.VlmFlags[] flags,
+        Volume.Flags[] flags,
         Map<String, StorPool> storPoolMapRef
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         rsc.getObjProt().requireAccess(accCtx, AccessType.USE);
-        VolumeData volData = null;
+        Volume volData = null;
 
-        volData = (VolumeData) rsc.getVolume(vlmDfn.getVolumeNumber());
+        volData = (Volume) rsc.getVolume(vlmDfn.getVolumeNumber());
 
         if (volData != null)
         {
             throw new LinStorDataAlreadyExistsException("The Volume already exists");
         }
 
-        volData = new VolumeData(
+        volData = new Volume(
             UUID.randomUUID(),
             rsc,
             vlmDfn,

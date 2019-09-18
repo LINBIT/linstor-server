@@ -9,7 +9,8 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
@@ -167,7 +168,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
                 Props props = DeviceLayerUtils.getInternalNamespaceStorDriver(
                     vlm.getVolumeDefinition().getProps(sysCtx)
                 );
-                if (vlm.getFlags().isSet(sysCtx, VlmFlags.DELETE))
+                if (vlm.getFlags().isSet(sysCtx, Volume.Flags.DELETE))
                 {
                     deleteList.add(vlmData);
                     errorReporter.logInfo(

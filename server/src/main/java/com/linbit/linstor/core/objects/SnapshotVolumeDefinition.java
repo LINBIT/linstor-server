@@ -148,13 +148,13 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
 
     public void removeSnapshotVolume(
         AccessContext accCtx,
-        SnapshotVolume snapshotVolumeData
+        SnapshotVolume snapshotVolume
     )
         throws AccessDeniedException
     {
         checkDeleted();
         getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
-        snapshotVlmMap.remove(snapshotVolumeData.getNodeName());
+        snapshotVlmMap.remove(snapshotVolume.getNodeName());
     }
 
     public long getVolumeSize(AccessContext accCtx)

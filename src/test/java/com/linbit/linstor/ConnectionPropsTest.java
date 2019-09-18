@@ -16,7 +16,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
-import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -57,8 +57,8 @@ public class ConnectionPropsTest extends GenericDbBase
     private StorPool storPool1;
     private StorPool storPool2;
     private VolumeDefinitionData volDfn;
-    private VolumeData vol1;
-    private VolumeData vol2;
+    private Volume vol1;
+    private Volume vol2;
 
     private NodeConnection nodeCon;
     private ResourceConnection resCon;
@@ -122,14 +122,14 @@ public class ConnectionPropsTest extends GenericDbBase
 
         volDfn = volumeDefinitionDataFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
 
-        vol1 = volumeDataFactory.create(
+        vol1 = volumeFactory.create(
             SYS_CTX,
             res1,
             volDfn,
             null,
             Collections.singletonMap("", storPool1)
         );
-        vol2 = volumeDataFactory.create(
+        vol2 = volumeFactory.create(
             SYS_CTX,
             res2,
             volDfn,

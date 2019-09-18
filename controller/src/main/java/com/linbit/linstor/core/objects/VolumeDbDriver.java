@@ -12,7 +12,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -37,18 +37,18 @@ import java.util.TreeMap;
 
 @Singleton
 public class VolumeDbDriver
-    extends AbsDatabaseDriver<VolumeData,
+    extends AbsDatabaseDriver<Volume,
         Volume.InitMaps,
         Pair<Map<Pair<NodeName, ResourceName>, ? extends Resource>,
             Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition>>>
-    implements VolumeDataDatabaseDriver
+    implements VolumeDatabaseDriver
 {
 
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
-    private final StateFlagsPersistence<VolumeData> flagsDriver;
+    private final StateFlagsPersistence<Volume> flagsDriver;
 
     @Inject
     public VolumeDbDriver(
@@ -72,18 +72,18 @@ public class VolumeDbDriver
         setColumnSetter(VLM_NR, vlm -> vlm.getVolumeDefinition().getVolumeNumber().value);
         setColumnSetter(VLM_FLAGS, vlm -> vlm.getFlags().getFlagsBits(dbCtxRef));
 
-        flagsDriver = generateFlagDriver(VLM_FLAGS, Volume.VlmFlags.class);
+        flagsDriver = generateFlagDriver(VLM_FLAGS, Volume.Flags.class);
 
     }
 
     @Override
-    public StateFlagsPersistence<VolumeData> getStateFlagsPersistence()
+    public StateFlagsPersistence<Volume> getStateFlagsPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    protected Pair<VolumeData, InitMaps> load(
+    protected Pair<Volume, Volume.InitMaps> load(
         RawParameters raw,
         Pair<Map<Pair<NodeName, ResourceName>, ? extends Resource>,
             Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition>> parentRef
@@ -111,7 +111,7 @@ public class VolumeDbDriver
 
         final Map<Volume.Key, VolumeConnection> vlmConnsMap = new TreeMap<>();
         return new Pair<>(
-            new VolumeData(
+            new Volume(
                 raw.build(UUID, java.util.UUID::fromString),
                 parentRef.objA.get(new Pair<>(nodeName, rscName)),
                 parentRef.objB.get(new Pair<>(rscName, vlmNr)),
@@ -129,7 +129,7 @@ public class VolumeDbDriver
     }
 
     @Override
-    protected String getId(VolumeData vlm)
+    protected String getId(Volume vlm)
     {
         return "(NodeName=" + vlm.getResource().getAssignedNode().getName().displayValue +
             " ResName=" + vlm.getResourceDefinition().getName().displayValue +

@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.apis;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.VlmApi;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +15,6 @@ public interface ResourceApi
     UUID getRscDfnUuid();
     Map<String, String> getProps();
     long getFlags();
-    List<? extends Volume.VlmApi> getVlmList();
+    List<? extends VolumeApi> getVlmList();
     RscLayerDataApi getLayerData();
 }

@@ -12,7 +12,8 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.propscon.Props;
@@ -242,7 +243,7 @@ public class StorageLayer implements DeviceLayer
 
             for (VlmProviderObject vlmData : vlmDataList)
             {
-                if (vlmData.exists() && vlmData.getVolume().getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE))
+                if (vlmData.exists() && vlmData.getVolume().getFlags().isSet(storDriverAccCtx, Volume.Flags.DELETE))
                 {
                     throw new ImplementationError(
                         devProvider.getClass().getSimpleName() + " did not delete the volume " + vlmData

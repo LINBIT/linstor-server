@@ -1,8 +1,8 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public class VlmApiData implements VlmApi
+public class VlmApiData implements VolumeApi
 {
     private final Vlm vlm;
 
@@ -55,7 +55,7 @@ public class VlmApiData implements VlmApi
     @Override
     public long getFlags()
     {
-        return Volume.VlmFlags.fromStringList(vlm.getVlmFlagsList());
+        return Volume.Flags.fromStringList(vlm.getVlmFlagsList());
     }
 
     @Override
@@ -92,7 +92,7 @@ public class VlmApiData implements VlmApi
         return null; // only needed for compat, not available on protobuf (as that is java-internal only)
     }
 
-    public static Vlm toVlmProto(final VlmApi vlmApi)
+    public static Vlm toVlmProto(final VolumeApi vlmApi)
     {
         Vlm.Builder builder = Vlm.newBuilder();
         builder.setVlmUuid(vlmApi.getVlmUuid().toString());
@@ -102,26 +102,26 @@ public class VlmApiData implements VlmApi
         {
             builder.setDevicePath(vlmApi.getDevicePath());
         }
-        builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
+        builder.addAllVlmFlags(Volume.Flags.toStringList(vlmApi.getFlags()));
         builder.putAllVlmProps(vlmApi.getVlmProps());
         vlmApi.getAllocatedSize().ifPresent(builder::setAllocatedSize);
 
         return builder.build();
     }
 
-    public static List<Vlm> toVlmProtoList(final List<? extends VlmApi> volumedefs)
+    public static List<Vlm> toVlmProtoList(final List<? extends VolumeApi> volumedefs)
     {
         ArrayList<Vlm> protoVlm = new ArrayList<>();
-        for (VlmApi vlmapi : volumedefs)
+        for (VolumeApi vlmapi : volumedefs)
         {
             protoVlm.add(VlmApiData.toVlmProto(vlmapi));
         }
         return protoVlm;
     }
 
-    public static List<VlmApi> toApiList(final List<Vlm> volumedefs)
+    public static List<VolumeApi> toApiList(final List<Vlm> volumedefs)
     {
-        ArrayList<VlmApi> apiVlms = new ArrayList<>();
+        ArrayList<VolumeApi> apiVlms = new ArrayList<>();
         for (Vlm vlm : volumedefs)
         {
             apiVlms.add(new VlmApiData(vlm));

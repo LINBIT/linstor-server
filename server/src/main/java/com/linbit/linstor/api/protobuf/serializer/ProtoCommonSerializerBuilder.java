@@ -24,6 +24,7 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -37,7 +38,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.VlmApi;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
@@ -703,7 +704,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         VlmDfnOuterClass.VlmDfn.Builder builder = VlmDfn.newBuilder()
             .setVlmDfnUuid(vlmDfnApi.getUuid().toString())
             .setVlmSize(vlmDfnApi.getSize())
-            .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmDfnApi.getFlags()))
+            .addAllVlmFlags(Volume.Flags.toStringList(vlmDfnApi.getFlags()))
             .putAllVlmProps(vlmDfnApi.getProps())
             .addAllLayerData(LayerObjectSerializer.seriailzeVlmDfnLayerData(vlmDfnApi.getVlmDfnLayerData()));
         if (vlmDfnApi.getVolumeNr() != null)
@@ -933,7 +934,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     )
         throws AccessDeniedException
     {
-        List<VlmApi> vlmApiList = new ArrayList<>(volumesRef.size());
+        List<VolumeApi> vlmApiList = new ArrayList<>(volumesRef.size());
         for (Volume vlm : volumesRef)
         {
             vlmApiList.add(
@@ -948,16 +949,16 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return serializeVolumeList(vlmApiList);
     }
 
-    private static List<VlmOuterClass.Vlm> serializeVolumeList(List<? extends VlmApi> vlmApiList)
+    private static List<VlmOuterClass.Vlm> serializeVolumeList(List<? extends VolumeApi> vlmApiList)
     {
         List<VlmOuterClass.Vlm> protoVlmList = new ArrayList<>(vlmApiList.size());
-        for (VlmApi vlmApi : vlmApiList)
+        for (VolumeApi vlmApi : vlmApiList)
         {
             Vlm.Builder builder = Vlm.newBuilder()
                 .setVlmUuid(vlmApi.getVlmUuid().toString())
                 .setVlmDfnUuid(vlmApi.getVlmDfnUuid().toString())
                 .setVlmNr(vlmApi.getVlmNr())
-                .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()))
+                .addAllVlmFlags(Volume.Flags.toStringList(vlmApi.getFlags()))
                 .putAllVlmProps(vlmApi.getVlmProps());
             if (vlmApi.getDevicePath() != null)
             {

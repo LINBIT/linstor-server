@@ -22,6 +22,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.types.LsIpAddress;
@@ -337,7 +338,7 @@ public class ConfFileBuilderTest
         Node assignedNode = Mockito.mock(Node.class);
         NetInterface netInterface = Mockito.mock(NetInterface.class);
         Volume volume = Mockito.mock(Volume.class);
-        StateFlags<Volume.VlmFlags> volumeFlags = Mockito.mock(VolumeStateFlags.class);
+        StateFlags<Volume.Flags> volumeFlags = Mockito.mock(VolumeStateFlags.class);
         VolumeDefinition volumeDefinition = Mockito.mock(VolumeDefinition.class);
         StorPool storPool = Mockito.mock(StorPool.class);
         rscConn = Mockito.mock(ResourceConnection.class);
@@ -358,7 +359,7 @@ public class ConfFileBuilderTest
         when(volumeDefinition.getVolumeNumber()).thenReturn(new VolumeNumber(volumeNumber));
         when(volumeDefinition.getResourceDefinition()).thenReturn(resourceDefinition);
 
-        when(volumeFlags.isUnset(any(AccessContext.class), eq(Volume.VlmFlags.DELETE)))
+        when(volumeFlags.isUnset(any(AccessContext.class), eq(Volume.Flags.DELETE)))
             .thenReturn(!volumeDeleted);
 
         when(volume.getFlags()).thenReturn(volumeFlags);
@@ -715,7 +716,7 @@ public class ConfFileBuilderTest
     {
     }
 
-    private interface VolumeStateFlags extends StateFlags<Volume.VlmFlags>
+    private interface VolumeStateFlags extends StateFlags<Volume.Flags>
     {
     }
 

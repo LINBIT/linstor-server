@@ -3,8 +3,8 @@ package com.linbit.linstor.proto.apidata;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.core.apis.ResourceApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.proto.common.RscOuterClass;
 
 import java.util.List;
@@ -74,7 +74,7 @@ public class RscApiData implements ResourceApi
     }
 
     @Override
-    public List<? extends Volume.VlmApi> getVlmList()
+    public List<? extends VolumeApi> getVlmList()
     {
         return rsc.getVlmsList().stream().map(VlmApiData::new).collect(Collectors.toList());
     }

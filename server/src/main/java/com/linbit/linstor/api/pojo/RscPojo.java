@@ -9,7 +9,7 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
-import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 
 public class RscPojo implements Comparable<RscPojo>, ResourceApi
@@ -21,7 +21,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     private final UUID localRscUuid;
     private final long localRscFlags;
     private final Map<String, String> localRscProps;
-    private final List<Volume.VlmApi> localVlms;
+    private final List<VolumeApi> localVlms;
     private final List<OtherRscPojo> otherRscs;
     private final List<ResourceConnectionApi> rscConnections;
     private final Long fullSyncId;
@@ -36,7 +36,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         final UUID localRscUuidRef,
         final long localRscFlagsRef,
         final Map<String, String> localRscPropsRef,
-        final List<Volume.VlmApi> localVlmsRef,
+        final List<VolumeApi> localVlmsRef,
         final List<OtherRscPojo> otherRscListRef,
         final List<ResourceConnectionApi> rscConnectionsRef,
         final Long fullSyncIdRef,
@@ -167,7 +167,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         return rscDefinition.getVlmDfnList();
     }
 
-    public List<Volume.VlmApi> getLocalVlms()
+    public List<VolumeApi> getLocalVlms()
     {
         return localVlms;
     }
@@ -179,7 +179,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     }
 
     @Override
-    public List<? extends Volume.VlmApi> getVlmList()
+    public List<? extends VolumeApi> getVlmList()
     {
         return localVlms;
     }
@@ -226,7 +226,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         private final UUID rscUuid;
         private final long rscFlags;
         private final Map<String, String> rscProps;
-        private final List<Volume.VlmApi> vlms;
+        private final List<VolumeApi> vlms;
         private final List<OtherNodeNetInterfacePojo> netInterfacefPojos;
         private final RscLayerDataApi rscLayerDataPojo;
 
@@ -240,7 +240,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
             UUID rscUuidRef,
             long rscFlagsRef,
             Map<String, String> rscPropsRef,
-            List<Volume.VlmApi> vlmsRef,
+            List<VolumeApi> vlmsRef,
             RscLayerDataApi rscLayerDataPojoRef
         )
         {
@@ -302,7 +302,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
             return rscProps;
         }
 
-        public List<Volume.VlmApi> getVlms()
+        public List<VolumeApi> getVlms()
         {
             return vlms;
         }

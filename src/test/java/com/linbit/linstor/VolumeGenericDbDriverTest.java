@@ -16,10 +16,10 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume.InitMaps;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
-import com.linbit.linstor.core.objects.VolumeData;
-import com.linbit.linstor.core.objects.VolumeDataGenericDbDriver;
+import com.linbit.linstor.core.objects.Volume.Flags;
+import com.linbit.linstor.core.objects.VolumeGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -42,7 +42,7 @@ import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 
-public class VolumeDataGenericDbDriverTest extends GenericDbBase
+public class VolumeGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VOLS =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " +
@@ -70,7 +70,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
     private java.util.UUID uuid;
 
-    @Inject private VolumeDataGenericDbDriver driver;
+    @Inject private VolumeGenericDbDriver driver;
 
     @Before
     @SuppressWarnings("checkstyle:magicnumber")
@@ -148,11 +148,11 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersist() throws Exception
     {
-        VolumeData vol = TestFactory.createVolumeData(
+        Volume vol = TestFactory.createVolume(
             uuid,
             res,
             volDfn,
-            VlmFlags.DELETE.flagValue,
+            Volume.Flags.DELETE.flagValue,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -170,7 +170,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
-        assertEquals(VlmFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
+        assertEquals(Volume.Flags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -181,11 +181,11 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        VolumeData volData = volumeDataFactory.create(
+        Volume volData = volumeFactory.create(
             SYS_CTX,
             res,
             volDfn,
-            new VlmFlags[] {VlmFlags.DELETE},
+            new Volume.Flags[] {Volume.Flags.DELETE},
             Collections.singletonMap("", storPool)
         );
         commit();
@@ -193,7 +193,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertNotNull(volData);
         assertNotNull(volData.getUuid());
         assertNotNull(volData.getFlags());
-        assertTrue(volData.getFlags().isSet(SYS_CTX, VlmFlags.DELETE));
+        assertTrue(volData.getFlags().isSet(SYS_CTX, Volume.Flags.DELETE));
         assertNotNull(volData.getProps(SYS_CTX));
         assertEquals(res, volData.getResource());
         assertEquals(resDfn, volData.getResourceDefinition());
@@ -206,7 +206,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
-        assertEquals(VlmFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
+        assertEquals(Volume.Flags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -217,11 +217,11 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadAll() throws Exception
     {
-        VolumeData vol = TestFactory.createVolumeData(
+        Volume vol = TestFactory.createVolume(
             uuid,
             res,
             volDfn,
-            VlmFlags.DELETE.flagValue,
+            Volume.Flags.DELETE.flagValue,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -236,22 +236,22 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         rscMap.put(new Pair<>(nodeName, resName), res);
         vlmDfnMap.put(new Pair<>(resName, volNr), volDfn);
 
-        Map<VolumeData, InitMaps> vlmMap = driver.loadAll(rscMap, vlmDfnMap);
+        Map<Volume, Volume.InitMaps> vlmMap = driver.loadAll(rscMap, vlmDfnMap);
 
         assertEquals(1, vlmMap.size());
 
-        VolumeData loadedVol = vlmMap.keySet().iterator().next();
+        Volume loadedVol = vlmMap.keySet().iterator().next();
         checkLoaded(loadedVol, uuid);
     }
 
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        VolumeData vol = TestFactory.createVolumeData(
+        Volume vol = TestFactory.createVolume(
             uuid,
             res,
             volDfn,
-            VlmFlags.DELETE.flagValue,
+            Volume.Flags.DELETE.flagValue,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -262,14 +262,14 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         volDfn.putVolume(SYS_CTX, vol);
         res.putVolume(SYS_CTX, vol);
 
-        VolumeData loadedVol = (VolumeData) res.getVolume(volDfn.getVolumeNumber());
+        Volume loadedVol = (Volume) res.getVolume(volDfn.getVolumeNumber());
         checkLoaded(loadedVol, uuid);
     }
 
     @Test
     public void testCache() throws Exception
     {
-        VolumeData storedInstance = volumeDataFactory.create(
+        Volume storedInstance = volumeFactory.create(
             SYS_CTX,
             res,
             volDfn,
@@ -285,7 +285,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testDelete() throws Exception
     {
-        VolumeData vol = TestFactory.createVolumeData(
+        Volume vol = TestFactory.createVolume(
             uuid,
             res,
             volDfn,
@@ -321,7 +321,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPropsConPersist() throws Exception
     {
-        VolumeData vol = TestFactory.createVolumeData(
+        Volume vol = TestFactory.createVolume(
             uuid,
             res,
             volDfn,
@@ -348,7 +348,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testFlagsUpdate() throws Exception
     {
-        VolumeData vol = TestFactory.createVolumeData(
+        Volume vol = TestFactory.createVolume(
             uuid,
             res,
             volDfn,
@@ -377,7 +377,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
 
     }
 
-    private void checkLoaded(VolumeData loadedVol, java.util.UUID expectedUuid) throws AccessDeniedException
+    private void checkLoaded(Volume loadedVol, java.util.UUID expectedUuid) throws AccessDeniedException
     {
         assertNotNull(loadedVol);
         if (expectedUuid == null)
@@ -389,7 +389,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
             assertEquals(uuid, loadedVol.getUuid());
         }
         assertNotNull(loadedVol.getFlags());
-        assertTrue(loadedVol.getFlags().isSet(SYS_CTX, VlmFlags.DELETE));
+        assertTrue(loadedVol.getFlags().isSet(SYS_CTX, Volume.Flags.DELETE));
         assertNotNull(loadedVol.getProps(SYS_CTX));
         assertEquals(res.getDefinition().getName(), loadedVol.getResource().getDefinition().getName());
         assertEquals(volDfn.getVolumeNumber(), loadedVol.getVolumeDefinition().getVolumeNumber());
@@ -400,7 +400,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        VolumeData vol = TestFactory.createVolumeData(
+        Volume vol = TestFactory.createVolume(
             uuid,
             res,
             volDfn,
@@ -415,7 +415,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         volDfn.putVolume(SYS_CTX, vol);
         res.putVolume(SYS_CTX, vol);
 
-        volumeDataFactory.create(
+        volumeFactory.create(
             SYS_CTX,
             res,
             volDfn,

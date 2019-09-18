@@ -42,7 +42,7 @@ public class NotifyResourceApplied implements ApiCall
         // If so, we could display to the client if a resource-adjustment is pending or if the
         // satellite is basically idle
 
-        rscInternalCallHandler.updateVolumeData(
+        rscInternalCallHandler.updateVolume(
             msgIntAppliedRsc.getRscId().getName(),
             ProtoLayerUtils.extractRscLayerData(
                 msgIntAppliedRsc.getLayerObject(),

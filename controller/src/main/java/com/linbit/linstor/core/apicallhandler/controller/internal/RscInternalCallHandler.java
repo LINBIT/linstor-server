@@ -179,7 +179,7 @@ public class RscInternalCallHandler
         }
     }
 
-    public void updateVolumeData(
+    public void updateVolume(
         String resourceName,
         RscLayerDataApi rscLayerDataPojoRef,
         List<CapacityInfoPojo> capacityInfos

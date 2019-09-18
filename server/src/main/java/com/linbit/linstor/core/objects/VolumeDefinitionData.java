@@ -228,16 +228,16 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         return flags;
     }
 
-    public void putVolume(AccessContext accCtx, VolumeData volumeData) throws AccessDeniedException
+    public void putVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        volumes.put(Resource.getStringId(volumeData.getResource()), volumeData);
+        volumes.put(Resource.getStringId(volume.getResource()), volume);
     }
 
-    public void removeVolume(AccessContext accCtx, VolumeData volumeData) throws AccessDeniedException
+    public void removeVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        volumes.remove(Resource.getStringId(volumeData.getResource()));
+        volumes.remove(Resource.getStringId(volume.getResource()));
     }
 
     @Override

@@ -6,12 +6,12 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Volume;
 
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 public interface VlmAllocatedFetcher
 {

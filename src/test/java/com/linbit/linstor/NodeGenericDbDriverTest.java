@@ -27,10 +27,10 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
-import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
@@ -436,11 +436,11 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             res1Uuid = res1.getUuid();
 
             // node1 vol
-            VolumeData vol1 = volumeDataFactory.create(
+            Volume vol1 = volumeFactory.create(
                 SYS_CTX,
                 res1,
                 volDfn,
-                new VlmFlags[] {},
+                new Volume.Flags[] {},
                 Collections.singletonMap("", storPool1)
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
@@ -462,11 +462,11 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             res2Uuid = res2.getUuid();
 
             // node2 vol
-            VolumeData vol2 = volumeDataFactory.create(
+            Volume vol2 = volumeFactory.create(
                 SYS_CTX,
                 res2,
                 volDfn,
-                new VlmFlags[] {},
+                new Volume.Flags[] {},
                 Collections.singletonMap("", storPool2)
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);

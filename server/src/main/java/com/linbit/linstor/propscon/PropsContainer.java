@@ -2254,7 +2254,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
-     * PropsCon-path for VolumeData
+     * PropsCon-path for Volume
      */
     public static String buildPath(NodeName nodeName, ResourceName resName, VolumeNumber volNr)
     {

@@ -18,6 +18,7 @@ import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
@@ -89,7 +90,7 @@ public class ApplyRsc implements ApiCall
         RscDfn rscDfn = intRscData.getRscDfn();
 
         List<VolumeDefinition.VlmDfnApi> vlmDfns = extractVlmDfns(rscDfn.getVlmDfnsList());
-        List<Volume.VlmApi> localVlms = extractRawVolumes(localRsc.getVlmsList());
+        List<VolumeApi> localVlms = extractRawVolumes(localRsc.getVlmsList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(
             intRscData.getOtherResourcesList(),
             fullSyncId,
@@ -198,9 +199,9 @@ public class ApplyRsc implements ApiCall
         return list;
     }
 
-    static List<Volume.VlmApi> extractRawVolumes(List<Vlm> localVolumesList)
+    static List<VolumeApi> extractRawVolumes(List<Vlm> localVolumesList)
     {
-        List<Volume.VlmApi> list = new ArrayList<>();
+        List<VolumeApi> list = new ArrayList<>();
         for (Vlm vol : localVolumesList)
         {
             list.add(
@@ -209,7 +210,7 @@ public class ApplyRsc implements ApiCall
                     UUID.fromString(vol.getVlmUuid()),
                     vol.getDevicePath(),
                     vol.getVlmNr(),
-                    Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
+                    Volume.Flags.fromStringList(vol.getVlmFlagsList()),
                     vol.getVlmPropsMap(),
                     Optional.empty(),
                     Optional.empty(),

@@ -21,7 +21,8 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -317,7 +318,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     while (iterateVolumes.hasNext())
                     {
                         Volume vlm = iterateVolumes.next();
-                        if (vlm.getFlags().isSet(wrkCtx, VlmFlags.DELETE))
+                        if (vlm.getFlags().isSet(wrkCtx, Volume.Flags.DELETE))
                         {
                             // verify if all VlmProviderObject were deleted correctly
                             ensureAllVlmDataDeleted(rscLayerObject, vlm.getVolumeDefinition().getVolumeNumber());

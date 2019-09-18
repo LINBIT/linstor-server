@@ -9,10 +9,10 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 
@@ -138,7 +138,7 @@ public class Volumes
                 }
                 else
                 {
-                    Stream<? extends Volume.VlmApi> vlmApiStream = resourceList.getResources()
+                    Stream<? extends VolumeApi> vlmApiStream = resourceList.getResources()
                         .get(0).getVlmList().stream().filter(
                             vlmApi -> vlmNr == null || vlmApi.getVlmNr() == vlmNr
                         );

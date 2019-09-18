@@ -9,6 +9,7 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -16,6 +17,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -127,7 +129,7 @@ public class CtrlVlmListApiCallHandler
                             // create our api object ourselves to filter the volumes by storage pools
 
                             // build volume list filtered by storage pools (if provided)
-                            List<Volume.VlmApi> volumes = new ArrayList<>();
+                            List<VolumeApi> volumes = new ArrayList<>();
                             List<RscLayerObject> storageRscList = LayerUtils.getChildLayerDataByKind(
                                 rsc.getLayerData(peerAccCtx.get()),
                                 DeviceLayerKind.STORAGE

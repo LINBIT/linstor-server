@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
 
@@ -14,7 +14,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class VlmPojo implements Volume.VlmApi
+public class VlmPojo implements VolumeApi
 {
     private final UUID vlmDfnUuid;
     private final UUID vlmUuid;

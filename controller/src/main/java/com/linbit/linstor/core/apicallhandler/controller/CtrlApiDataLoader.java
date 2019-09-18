@@ -28,7 +28,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
@@ -523,7 +523,7 @@ public class CtrlApiDataLoader
         return kvs;
     }
 
-    public VolumeData loadVlm(
+    public Volume loadVlm(
         String nodeNameStrRef,
         String rscNameStrRef,
         Integer vlmNrIntRef,
@@ -546,7 +546,7 @@ public class CtrlApiDataLoader
         );
     }
 
-    private VolumeData loadVlm(
+    private Volume loadVlm(
         NodeName nodeNameREf,
         ResourceName rscNameRef,
         VolumeNumber vlmNrRef,
@@ -565,7 +565,7 @@ public class CtrlApiDataLoader
                 .build()
             );
         }
-        return (VolumeData) vlm;
+        return (Volume) vlm;
     }
 
     public final ResourceGroup loadResourceGroup(ResourceGroupName rscGrpNameRef, boolean failIfNull)

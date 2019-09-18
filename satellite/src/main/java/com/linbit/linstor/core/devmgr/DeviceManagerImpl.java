@@ -36,6 +36,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdEventService;
@@ -983,7 +984,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                             Volume curVlm = curRsc.getVolume(volumeKey.vlmNr);
                             if (curVlm != null)
                             {
-                                curVlm.getFlags().disableFlags(wrkCtx, Volume.VlmFlags.DRBD_RESIZE);
+                                curVlm.getFlags().disableFlags(wrkCtx, Volume.Flags.DRBD_RESIZE);
                             }
                         }
                     }

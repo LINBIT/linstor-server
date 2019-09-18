@@ -23,7 +23,8 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdEventPublisher;
@@ -494,7 +495,7 @@ public class DrbdLayer implements DeviceLayer
     {
         // A resize should not be called on a resize without a disk
         // there was a bug in pre 0.9.2 versions where diskless would be chosen for the resize command
-        return drbdVlmData.getVolume().getFlags().isSet(workerCtx, VlmFlags.DRBD_RESIZE) && drbdVlmData.hasDisk();
+        return drbdVlmData.getVolume().getFlags().isSet(workerCtx, Volume.Flags.DRBD_RESIZE) && drbdVlmData.hasDisk();
     }
 
     private String generateDevicePath(DrbdVlmData drbdVlmData)
@@ -522,7 +523,7 @@ public class DrbdLayer implements DeviceLayer
 
             for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
             {
-                if (drbdVlmData.getVolume().getFlags().isSet(workerCtx, VlmFlags.DELETE))
+                if (drbdVlmData.getVolume().getFlags().isSet(workerCtx, Volume.Flags.DELETE))
                 {
                     if (drbdVlmData.hasDisk() && !drbdVlmData.hasFailed())
                     {

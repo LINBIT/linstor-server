@@ -21,7 +21,8 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.VlmFlags;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -203,7 +204,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 vlmData
             );
 
-            boolean vlmShouldExist = !vlmData.getVolume().getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE);
+            boolean vlmShouldExist = !vlmData.getVolume().getFlags().isSet(storDriverAccCtx, Volume.Flags.DELETE);
             vlmShouldExist &= !vlmData.getRscLayerObject().getResource().getStateFlags().isSet(
                 storDriverAccCtx,
                 Resource.Flags.DISK_REMOVING
@@ -221,7 +222,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 else
                 {
                     Size sizeState = vlmData.getSizeState();
-                    if (vlmData.getVolume().getFlags().isSet(storDriverAccCtx, VlmFlags.RESIZE) &&
+                    if (vlmData.getVolume().getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
                         (sizeState.equals(VlmProviderObject.Size.TOO_LARGE) ||
                         sizeState.equals(VlmProviderObject.Size.TOO_SMALL))
                     )

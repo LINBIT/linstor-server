@@ -16,7 +16,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeData;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -76,7 +76,7 @@ public class CtrlVlmApiCallHandler
 
         try
         {
-            VolumeData vlm = ctrlApiDataLoader.loadVlm(nodeNameStr, rscNameStr, vlmNrInt, true);
+            Volume vlm = ctrlApiDataLoader.loadVlm(nodeNameStr, rscNameStr, vlmNrInt, true);
 
             if (vlmUuid != null && !vlmUuid.equals(vlm.getUuid()))
             {
