@@ -11,7 +11,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
@@ -153,7 +152,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             volSize = resultSet.getLong(SVD_SIZE);
             Map<NodeName, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
-            SnapshotVolumeDefinition snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
+            SnapshotVolumeDefinition snapshotVolumeDefinition = new SnapshotVolumeDefinition(
                 java.util.UUID.fromString(resultSet.getString(SVD_UUID)),
                 snapshotDefinition,
                 volumeNumber,
@@ -361,14 +360,14 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        SnapshotVlmDfnFlags.class,
+                        SnapshotVolumeDefinition.Flags.class,
                         snapshotVolumeDefinition.getFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        SnapshotVlmDfnFlags.class,
+                        SnapshotVolumeDefinition.Flags.class,
                         flags
                     ),
                     ", "

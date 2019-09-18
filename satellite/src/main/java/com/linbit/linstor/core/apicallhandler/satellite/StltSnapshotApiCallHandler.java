@@ -12,6 +12,7 @@ import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
+import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -27,7 +28,6 @@ import com.linbit.linstor.core.objects.SnapshotDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -191,12 +191,14 @@ class StltSnapshotApiCallHandler
             .map(SnapshotVolumeDefinition::getVolumeNumber)
             .collect(Collectors.toCollection(HashSet::new));
 
-        for (SnapshotVolumeDefinition.SnapshotVlmDfnApi snapshotVlmDfnApi : snapshotDfnApi.getSnapshotVlmDfnList())
+        for (SnapshotVolumeDefinitionApi snapshotVlmDfnApi : snapshotDfnApi.getSnapshotVlmDfnList())
         {
             VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmDfnApi.getVolumeNr());
             oldVolumeNumbers.remove(volumeNumber);
 
-            SnapshotVlmDfnFlags[] snapshotVlmDfnFlags = SnapshotVlmDfnFlags.restoreFlags(snapshotVlmDfnApi.getFlags());
+            SnapshotVolumeDefinition.Flags[] snapshotVlmDfnFlags = SnapshotVolumeDefinition.Flags.restoreFlags(
+                snapshotVlmDfnApi.getFlags()
+            );
 
             SnapshotVolumeDefinition snapshotVolumeDefinition =
                 snapshotDfn.getSnapshotVolumeDefinition(apiCtx, volumeNumber);

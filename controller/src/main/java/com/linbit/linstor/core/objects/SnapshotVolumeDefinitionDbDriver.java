@@ -81,7 +81,7 @@ public class SnapshotVolumeDefinitionDbDriver extends
         setColumnSetter(VLM_SIZE, snapVlmDfn -> snapVlmDfn.getVolumeSize(dbCtxRef));
         setColumnSetter(SNAPSHOT_FLAGS, snapVlmDfn -> snapVlmDfn.getFlags().getFlagsBits(dbCtxRef));
 
-        flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, SnapshotVolumeDefinition.SnapshotVlmDfnFlags.class);
+        flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, SnapshotVolumeDefinition.Flags.class);
         sizeDriver = generateSingleColumnDriver(
             VLM_SIZE,
             snapVlmDfn -> Long.toString(snapVlmDfn.getVolumeSize(dbCtxRef)),
@@ -131,7 +131,7 @@ public class SnapshotVolumeDefinitionDbDriver extends
         }
 
         return new Pair<>(
-            new SnapshotVolumeDefinitionData(
+            new SnapshotVolumeDefinition(
                 raw.build(UUID, java.util.UUID::fromString),
                 snapDfnMap.get(
                     new Pair<>(

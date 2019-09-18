@@ -1,10 +1,10 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 
 import java.util.UUID;
 
-public class SnapshotVlmDfnPojo implements SnapshotVolumeDefinition.SnapshotVlmDfnApi
+public class SnapshotVlmDfnPojo implements SnapshotVolumeDefinitionApi
 {
     private final UUID uuid;
     private final Integer volumeNr;

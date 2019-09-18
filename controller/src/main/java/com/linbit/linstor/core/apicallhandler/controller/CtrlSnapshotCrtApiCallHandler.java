@@ -30,7 +30,6 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -618,7 +617,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 snapshotDfn,
                 vlmDfn.getVolumeNumber(),
                 volumeSize,
-                new SnapshotVlmDfnFlags[]{}
+                new SnapshotVolumeDefinition.Flags[]{}
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -862,7 +861,7 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         try
         {
-            snapshotVlmDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotVlmDfnFlags.ENCRYPTED);
+            snapshotVlmDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotVolumeDefinition.Flags.ENCRYPTED);
         }
         catch (AccessDeniedException accDeniedExc)
         {

@@ -2,7 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +13,7 @@ public class SnapshotDfnPojo implements SnapshotDefinitionApi
     private final ResourceDefinitionApi rscDfn;
     private final UUID uuid;
     private final String snapshotName;
-    private final List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns;
+    private final List<SnapshotVolumeDefinitionApi> snapshotVlmDfns;
     private final long flags;
     private final Map<String, String> props;
 
@@ -21,7 +21,7 @@ public class SnapshotDfnPojo implements SnapshotDefinitionApi
         ResourceDefinitionApi rscDfnRef,
         UUID uuidRef,
         String snapshotNameRef,
-        List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfnsRef,
+        List<SnapshotVolumeDefinitionApi> snapshotVlmDfnsRef,
         long flagsRef,
         Map<String, String> propsRef
     )
@@ -53,7 +53,7 @@ public class SnapshotDfnPojo implements SnapshotDefinitionApi
     }
 
     @Override
-    public List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> getSnapshotVlmDfnList()
+    public List<SnapshotVolumeDefinitionApi> getSnapshotVlmDfnList()
     {
         return snapshotVlmDfns;
     }

@@ -11,7 +11,7 @@ import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 
@@ -58,7 +58,7 @@ public class ApplySnapshot implements ApiCall
 
     static SnapshotPojo asSnapshotPojo(IntSnapshot snapshot, long fullSyncId, long updateId)
     {
-        List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns =
+        List<SnapshotVolumeDefinitionApi> snapshotVlmDfns =
             snapshot.getSnapshotVlmDfnsList().stream()
                 .map(snapshotVlmDfn -> new SnapshotVlmDfnPojo(
                     UUID.fromString(snapshotVlmDfn.getSnapshotVlmDfnUuid()),

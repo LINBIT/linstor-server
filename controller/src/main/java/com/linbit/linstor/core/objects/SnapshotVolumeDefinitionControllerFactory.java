@@ -3,9 +3,6 @@ package com.linbit.linstor.core.objects;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -18,6 +15,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -47,7 +45,7 @@ public class SnapshotVolumeDefinitionControllerFactory
         SnapshotDefinition snapshotDfn,
         VolumeNumber volumeNumber,
         long volSize,
-        SnapshotVolumeDefinition.SnapshotVlmDfnFlags[] initFlags
+        SnapshotVolumeDefinition.Flags[] initFlags
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, MdException
     {
@@ -61,7 +59,7 @@ public class SnapshotVolumeDefinitionControllerFactory
             throw new LinStorDataAlreadyExistsException("The SnapshotVolumeDefinition already exists");
         }
 
-        snapshotVolumeDefinition = new SnapshotVolumeDefinitionData(
+        snapshotVolumeDefinition = new SnapshotVolumeDefinition(
             UUID.randomUUID(),
             snapshotDfn,
             volumeNumber,

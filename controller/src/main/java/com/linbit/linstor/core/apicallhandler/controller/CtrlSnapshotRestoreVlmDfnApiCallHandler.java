@@ -16,12 +16,11 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -34,6 +33,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -113,7 +113,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                 Map<String, String> vlmDfnProps = getVlmDfnProps(vlmDfn).map();
 
                 boolean isEncrypted = snapshotVlmDfn.getFlags()
-                    .isSet(peerAccCtx.get(), SnapshotVolumeDefinition.SnapshotVlmDfnFlags.ENCRYPTED);
+                    .isSet(peerAccCtx.get(), SnapshotVolumeDefinition.Flags.ENCRYPTED);
                 if (isEncrypted)
                 {
                     String cryptPasswd = snapshotVlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);

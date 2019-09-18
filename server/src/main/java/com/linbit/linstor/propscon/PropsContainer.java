@@ -2308,7 +2308,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
-     * PropsCon-path for SnapshotVolumeDefinitionData
+     * PropsCon-path for SnapshotVolumeDefinition
      */
     public static String buildPath(ResourceName resName, SnapshotName snapshotName, VolumeNumber volNr)
     {

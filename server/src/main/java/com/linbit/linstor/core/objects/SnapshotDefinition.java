@@ -7,6 +7,7 @@ import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
+import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -308,7 +309,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public SnapshotDefinitionApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {
-        List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns = new ArrayList<>();
+        List<SnapshotVolumeDefinitionApi> snapshotVlmDfns = new ArrayList<>();
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitionMap.values())
         {
