@@ -41,7 +41,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinitionData;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDbDriver;
@@ -404,7 +404,7 @@ public class DatabaseLoader implements DatabaseDriver
             }
 
             // loading snapshot definitions
-            Map<SnapshotDefinitionData, SnapshotDefinition.InitMaps> loadedSnapshotDfns = snapshotDefinitionDriver.loadAll(
+            Map<SnapshotDefinition, SnapshotDefinition.InitMaps> loadedSnapshotDfns = snapshotDefinitionDriver.loadAll(
                 tmpRscDfnMap
             );
             for (SnapshotDefinition snapshotDfn : loadedSnapshotDfns.keySet())
@@ -414,7 +414,7 @@ public class DatabaseLoader implements DatabaseDriver
             }
 
             // temporary snapshot definition map
-            Map<Pair<ResourceName, SnapshotName>, SnapshotDefinitionData> tmpSnapshotDfnMap =
+            Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapshotDfnMap =
                 mapByName(loadedSnapshotDfns, snapshotDfn -> new Pair<>(
                         snapshotDfn.getResourceName(),
                         snapshotDfn.getName()

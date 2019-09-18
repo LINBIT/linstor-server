@@ -14,14 +14,15 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.util.Iterator;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler.getNodeDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
+import java.util.Iterator;
 
 @Singleton
 public class CtrlSnapshotHelper
@@ -80,7 +81,7 @@ public class CtrlSnapshotHelper
     {
         try
         {
-            if (!snapshotDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.SnapshotDfnFlags.SUCCESSFUL))
+            if (!snapshotDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SUCCESSFUL))
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR,

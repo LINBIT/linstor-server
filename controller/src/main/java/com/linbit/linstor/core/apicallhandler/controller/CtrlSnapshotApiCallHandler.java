@@ -4,6 +4,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -41,9 +42,9 @@ public class CtrlSnapshotApiCallHandler
         peerAccCtx = peerAccCtxRef;
     }
 
-    ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> listSnapshotDefinitions()
+    ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinitions()
     {
-        ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> snapshotDfns = new ArrayList<>();
+        ArrayList<SnapshotDefinitionListItemApi> snapshotDfns = new ArrayList<>();
         try
         {
             for (ResourceDefinition rscDfn : resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values())

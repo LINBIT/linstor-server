@@ -2299,7 +2299,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
-     * PropsCon-path for SnapshotDefinitionData
+     * PropsCon-path for SnapshotDefinition
      */
     public static String buildPath(ResourceName resName, SnapshotName snapshotName)
     {

@@ -1,14 +1,14 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class SnapshotDfnPojo implements SnapshotDefinition.SnapshotDfnApi
+public class SnapshotDfnPojo implements SnapshotDefinitionApi
 {
     private final ResourceDefinitionApi rscDfn;
     private final UUID uuid;

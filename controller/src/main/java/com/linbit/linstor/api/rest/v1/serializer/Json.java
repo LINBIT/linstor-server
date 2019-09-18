@@ -25,6 +25,7 @@ import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -636,7 +637,7 @@ public class Json
     }
 
     public static JsonGenTypes.Snapshot apiToSnapshot(
-        SnapshotDefinition.SnapshotDfnListItemApi snapshotDfnListItemApi
+        SnapshotDefinitionListItemApi snapshotDfnListItemApi
     )
     {
         JsonGenTypes.Snapshot snapshot = new JsonGenTypes.Snapshot();
@@ -644,9 +645,7 @@ public class Json
         snapshot.resource_name = snapshotDfnListItemApi.getRscDfn().getResourceName();
         snapshot.nodes = snapshotDfnListItemApi.getNodeNames();
         snapshot.props = snapshotDfnListItemApi.getProps();
-        snapshot.flags = FlagsHelper.toStringList(
-            SnapshotDefinition.SnapshotDfnFlags.class, snapshotDfnListItemApi.getFlags()
-        );
+        snapshot.flags = FlagsHelper.toStringList(SnapshotDefinition.Flags.class, snapshotDfnListItemApi.getFlags());
         snapshot.volume_definitions = snapshotDfnListItemApi.getSnapshotVlmDfnList().stream()
             .map(Json::apiToSnapshotVolumeDefinition)
             .collect(Collectors.toList());

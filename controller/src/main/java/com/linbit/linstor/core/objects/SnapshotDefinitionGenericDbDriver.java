@@ -7,11 +7,10 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -26,6 +25,7 @@ import com.linbit.utils.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinitionDataDatabaseDriver
+public class SnapshotDefinitionGenericDbDriver implements SnapshotDefinitionDatabaseDriver
 {
     private static final String TBL_SNAPSHOT_DFN = DbConstants.TBL_SNAPSHOT_DEFINITIONS;
     private static final String SD_UUID = DbConstants.UUID;
@@ -79,7 +79,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public SnapshotDefinitionDataGenericDbDriver(
+    public SnapshotDefinitionGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -97,7 +97,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(SnapshotDefinitionData snapshotDefinition) throws DatabaseException
+    public void create(SnapshotDefinition snapshotDefinition) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(SD_INSERT))
         {
@@ -123,7 +123,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         }
     }
 
-    private Pair<SnapshotDefinitionData, SnapshotDefinition.InitMaps> restoreSnapshotDefinition(
+    private Pair<SnapshotDefinition, SnapshotDefinition.InitMaps> restoreSnapshotDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
         SnapshotName snapshotName
@@ -131,14 +131,14 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         throws DatabaseException
     {
         errorReporter.logTrace("Restoring SnapshotDefinition %s", getId(resDfn, snapshotName));
-        SnapshotDefinitionData snapshotDfn;
-        Pair<SnapshotDefinitionData, SnapshotDefinition.InitMaps> retPair;
+        SnapshotDefinition snapshotDfn;
+        Pair<SnapshotDefinition, SnapshotDefinition.InitMaps> retPair;
 
         Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMap = new TreeMap<>();
         Map<NodeName, Snapshot> snapshotMap = new TreeMap<>();
 
         try {
-            snapshotDfn = new SnapshotDefinitionData(
+            snapshotDfn = new SnapshotDefinition(
                 java.util.UUID.fromString(resultSet.getString(SD_UUID)),
                 resDfn,
                 snapshotName,
@@ -191,7 +191,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
                         );
                     }
 
-                    Pair<SnapshotDefinitionData, SnapshotDefinition.InitMaps> pair = restoreSnapshotDefinition(
+                    Pair<SnapshotDefinition, SnapshotDefinition.InitMaps> pair = restoreSnapshotDefinition(
                         resultSet,
                         rscDfnMap.get(rscName),
                         snapshotName
@@ -211,7 +211,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     }
 
     @Override
-    public void delete(SnapshotDefinitionData snapshotDefinition) throws DatabaseException
+    public void delete(SnapshotDefinition snapshotDefinition) throws DatabaseException
     {
         errorReporter.logTrace("Deleting SnapshotDefinition %s", getId(snapshotDefinition));
         try (PreparedStatement stmt = getConnection().prepareStatement(SD_DELETE))
@@ -228,7 +228,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
     }
 
     @Override
-    public StateFlagsPersistence<SnapshotDefinitionData> getStateFlagsPersistence()
+    public StateFlagsPersistence<SnapshotDefinition> getStateFlagsPersistence()
     {
         return flagsDriver;
     }
@@ -238,7 +238,7 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(SnapshotDefinitionData snapshotDfn)
+    private String getId(SnapshotDefinition snapshotDfn)
     {
         return getId(
             snapshotDfn.getResourceDefinition(),
@@ -259,25 +259,25 @@ public class SnapshotDefinitionDataGenericDbDriver implements SnapshotDefinition
         return "(ResName=" + resName + " SnapshotName=" + snapshotName.displayValue + ")";
     }
 
-    private class FlagDriver implements StateFlagsPersistence<SnapshotDefinitionData>
+    private class FlagDriver implements StateFlagsPersistence<SnapshotDefinition>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void persist(SnapshotDefinitionData snapshotDefinition, long flags)
+        public void persist(SnapshotDefinition snapshotDefinition, long flags)
             throws DatabaseException
         {
             try (PreparedStatement stmt = getConnection().prepareStatement(SD_UPDATE_FLAGS))
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        SnapshotDfnFlags.class,
+                        SnapshotDefinition.Flags.class,
                         snapshotDefinition.getFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        SnapshotDfnFlags.class,
+                        SnapshotDefinition.Flags.class,
                         flags
                     ),
                     ", "

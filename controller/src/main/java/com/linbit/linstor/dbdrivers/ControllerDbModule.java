@@ -52,7 +52,7 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -101,7 +101,7 @@ public class ControllerDbModule extends AbstractModule
         bind(NodeConnectionDatabaseDriver.class).to(NodeConnectionDbDriver.class);
         bind(ResourceConnectionDatabaseDriver.class).to(ResourceConnectionDbDriver.class);
         bind(VolumeConnectionDataDatabaseDriver.class).to(VolumeConnectionDbDriver.class);
-        bind(SnapshotDefinitionDataDatabaseDriver.class).to(SnapshotDefinitionDbDriver.class);
+        bind(SnapshotDefinitionDatabaseDriver.class).to(SnapshotDefinitionDbDriver.class);
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionDbDriver.class);
         bind(SnapshotDatabaseDriver.class).to(SnapshotDbDriver.class);
         bind(SnapshotVolumeDataDatabaseDriver.class).to(SnapshotVolumeDbDriver.class);

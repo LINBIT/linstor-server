@@ -10,6 +10,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -21,8 +22,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
-import com.linbit.linstor.core.objects.SnapshotDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.SnapshotDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDataSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
@@ -56,7 +56,7 @@ class StltSnapshotApiCallHandler
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
     private final ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
-    private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
+    private final SnapshotDefinitionSatelliteFactory snapshotDefinitionFactory;
     private final SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactory;
     private final SnapshotSatelliteFactory snapshotFactory;
     private final SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactory;
@@ -72,7 +72,7 @@ class StltSnapshotApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         ResourceDefinitionSatelliteFactory resourceDefinitionFactoryRef,
-        SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
+        SnapshotDefinitionSatelliteFactory snapshotDefinitionFactoryRef,
         SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactoryRef,
         SnapshotSatelliteFactory snapshotFactoryRef,
         SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactoryRef,
@@ -87,7 +87,7 @@ class StltSnapshotApiCallHandler
         rscDfnMap = rscDfnMapRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         resourceDefinitionFactory = resourceDefinitionFactoryRef;
-        snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
+        snapshotDefinitionFactory = snapshotDefinitionFactoryRef;
         snapshotVolumeDefinitionFactory = snapshotVolumeDefinitionFactoryRef;
         snapshotFactory = snapshotFactoryRef;
         snapshotVolumeDataFactory = snapshotVolumeDataFactoryRef;
@@ -156,7 +156,7 @@ class StltSnapshotApiCallHandler
     }
 
     private SnapshotDefinition mergeSnapshotDefinition(
-        SnapshotDefinition.SnapshotDfnApi snapshotDfnApi,
+        SnapshotDefinitionApi snapshotDfnApi,
         ResourceDefinition rscDfn
     )
         throws AccessDeniedException, DivergentUuidsException, InvalidNameException, ValueOutOfRangeException,
@@ -167,12 +167,12 @@ class StltSnapshotApiCallHandler
         SnapshotDefinition snapshotDfn = rscDfn.getSnapshotDfn(apiCtx, snapshotName);
         if (snapshotDfn == null)
         {
-            snapshotDfn = snapshotDefinitionDataFactory.getInstanceSatellite(
+            snapshotDfn = snapshotDefinitionFactory.getInstanceSatellite(
                 apiCtx,
                 snapshotDfnApi.getUuid(),
                 rscDfn,
                 snapshotName,
-                new SnapshotDfnFlags[]{}
+                new SnapshotDefinition.Flags[]{}
             );
 
             rscDfn.addSnapshotDfn(apiCtx, snapshotDfn);
@@ -183,7 +183,7 @@ class StltSnapshotApiCallHandler
         snapshotDfnProps.map().putAll(snapshotDfnApi.getProps());
         snapshotDfnProps.keySet().retainAll(snapshotDfnApi.getProps().keySet());
 
-        snapshotDfn.getFlags().resetFlagsTo(apiCtx, SnapshotDfnFlags.restoreFlags(snapshotDfnApi.getFlags()));
+        snapshotDfn.getFlags().resetFlagsTo(apiCtx, SnapshotDefinition.Flags.restoreFlags(snapshotDfnApi.getFlags()));
 
         // Merge satellite volume definitions
         Set<VolumeNumber> oldVolumeNumbers = snapshotDfn.getAllSnapshotVolumeDefinitions(apiCtx).stream()
@@ -333,7 +333,7 @@ class StltSnapshotApiCallHandler
         );
     }
 
-    private void checkUuid(SnapshotDefinition snapshotDfn, SnapshotDefinition.SnapshotDfnApi snapshotDfnApi)
+    private void checkUuid(SnapshotDefinition snapshotDfn, SnapshotDefinitionApi snapshotDfnApi)
         throws DivergentUuidsException
     {
         checkUuid(

@@ -187,14 +187,14 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
     private class InitMapsImpl implements Node.InitMaps
     {
         private final Map<ResourceName, Resource> rscMap;
-        private final Map<Key, Snapshot> snapshotMap;
+        private final Map<SnapshotDefinition.Key, Snapshot> snapshotMap;
         private final Map<NetInterfaceName, NetInterface> netIfMap;
         private final Map<StorPoolName, StorPool> storPoolMap;
         private final Map<NodeName, NodeConnection> nodeConnMap;
 
         private InitMapsImpl(
             Map<ResourceName, Resource> rscMapRef,
-            Map<Key, Snapshot> snapshotMapRef,
+            Map<SnapshotDefinition.Key, Snapshot> snapshotMapRef,
             Map<NetInterfaceName, NetInterface> netIfMapRef,
             Map<StorPoolName, StorPool> storPoolMapRef,
             Map<NodeName, NodeConnection> nodeConnMapRef
@@ -214,7 +214,7 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
         }
 
         @Override
-        public Map<Key, Snapshot> getSnapshotMap()
+        public Map<SnapshotDefinition.Key, Snapshot> getSnapshotMap()
         {
             return snapshotMap;
         }

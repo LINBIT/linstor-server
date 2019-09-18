@@ -8,8 +8,8 @@ import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
@@ -1078,9 +1078,9 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> listSnapshotDefinition()
+    public ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinition()
     {
-        ArrayList<SnapshotDefinition.SnapshotDfnListItemApi> listSnapshotDefinitions;
+        ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinitions;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_DFN_MAP))
         {
             listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions();

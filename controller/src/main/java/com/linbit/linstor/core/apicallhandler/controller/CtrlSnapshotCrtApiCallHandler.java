@@ -27,9 +27,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
-import com.linbit.linstor.core.objects.SnapshotDefinitionData;
-import com.linbit.linstor.core.objects.SnapshotDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDataControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
@@ -85,7 +83,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlSnapshotHelper ctrlSnapshotHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
+    private final SnapshotDefinitionControllerFactory snapshotDefinitionFactory;
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
     private final SnapshotControllerFactory snapshotFactory;
     private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
@@ -102,7 +100,7 @@ public class CtrlSnapshotCrtApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlSnapshotHelper ctrlSnapshotHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactoryRef,
+        SnapshotDefinitionControllerFactory snapshotDefinitionFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
         SnapshotControllerFactory snapshotFactoryRef,
         SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
@@ -118,7 +116,7 @@ public class CtrlSnapshotCrtApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlSnapshotHelper = ctrlSnapshotHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
+        snapshotDefinitionFactory = snapshotDefinitionFactoryRef;
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
         snapshotFactory = snapshotFactoryRef;
         snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
@@ -178,7 +176,7 @@ public class CtrlSnapshotCrtApiCallHandler
         SnapshotDefinition snapshotDfn = createSnapshotDfnData(
             rscDfn,
             snapshotName,
-            new SnapshotDfnFlags[] {}
+            new SnapshotDefinition.Flags[] {}
         );
 
         ensureSnapshotsViable(rscDfn);
@@ -305,12 +303,11 @@ public class CtrlSnapshotCrtApiCallHandler
         Throwable exception
     )
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
-        SnapshotDfnFlags flag = exception instanceof CtrlResponseUtils.DelayedApiRcException &&
+        SnapshotDefinition.Flags flag = exception instanceof CtrlResponseUtils.DelayedApiRcException &&
             isFailNotConnected((CtrlResponseUtils.DelayedApiRcException) exception) ?
-            SnapshotDfnFlags.FAILED_DISCONNECT :
-            SnapshotDfnFlags.FAILED_DEPLOYMENT;
+                SnapshotDefinition.Flags.FAILED_DISCONNECT : SnapshotDefinition.Flags.FAILED_DEPLOYMENT;
 
         enableFlagPrivileged(snapshotDfn, flag);
         unsetInCreationPrivileged(snapshotDfn);
@@ -345,7 +342,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private Flux<ApiCallRc> takeSnapshotInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
         for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
         {
@@ -381,7 +378,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private Flux<ApiCallRc> resumeResourceInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
         for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
         {
@@ -417,7 +414,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private Flux<ApiCallRc> removeInProgressSnapshotsInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
         unsetInCreationPrivileged(snapshotDfn);
 
@@ -426,7 +423,7 @@ public class CtrlSnapshotCrtApiCallHandler
             setTakeSnapshotPrivileged(snapshot, false);
         }
 
-        enableFlagPrivileged(snapshotDfn, SnapshotDfnFlags.SUCCESSFUL);
+        enableFlagPrivileged(snapshotDfn, SnapshotDefinition.Flags.SUCCESSFUL);
 
         ctrlTransactionHelper.commit();
 
@@ -565,16 +562,16 @@ public class CtrlSnapshotCrtApiCallHandler
         return isDiskless;
     }
 
-    private SnapshotDefinitionData createSnapshotDfnData(
+    private SnapshotDefinition createSnapshotDfnData(
         ResourceDefinition rscDfn,
         SnapshotName snapshotName,
-        SnapshotDfnFlags[] snapshotDfnInitFlags
+        SnapshotDefinition.Flags[] snapshotDfnInitFlags
     )
     {
-        SnapshotDefinitionData snapshotDfn;
+        SnapshotDefinition snapshotDfn;
         try
         {
-            snapshotDfn = snapshotDefinitionDataFactory.create(
+            snapshotDfn = snapshotDefinitionFactory.create(
                 peerAccCtx.get(),
                 rscDfn,
                 snapshotName,
@@ -971,7 +968,7 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
-    private void enableFlagPrivileged(SnapshotDefinitionData snapshotDfn, SnapshotDfnFlags flag)
+    private void enableFlagPrivileged(SnapshotDefinition snapshotDfn, SnapshotDefinition.Flags flag)
     {
         try
         {
@@ -999,7 +996,7 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
-    private Collection<Snapshot> getAllSnapshotsPrivileged(SnapshotDefinitionData snapshotDfn)
+    private Collection<Snapshot> getAllSnapshotsPrivileged(SnapshotDefinition snapshotDfn)
     {
         Collection<Snapshot> allSnapshots;
         try

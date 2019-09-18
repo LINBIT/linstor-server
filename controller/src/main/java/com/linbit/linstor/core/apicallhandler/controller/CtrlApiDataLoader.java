@@ -22,7 +22,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinitionData;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
@@ -282,7 +282,7 @@ public class CtrlApiDataLoader
         return rsc;
     }
 
-    public final SnapshotDefinitionData loadSnapshotDfn(
+    public final SnapshotDefinition loadSnapshotDfn(
         String rscNameStr,
         String snapshotNameStr,
         boolean failIfNull
@@ -295,7 +295,7 @@ public class CtrlApiDataLoader
         );
     }
 
-    public final SnapshotDefinitionData loadSnapshotDfn(
+    public final SnapshotDefinition loadSnapshotDfn(
         ResourceName rscName,
         SnapshotName snapshotName,
         boolean failIfNull
@@ -304,16 +304,16 @@ public class CtrlApiDataLoader
         return loadSnapshotDfn(loadRscDfn(rscName, true), snapshotName, failIfNull);
     }
 
-    public final SnapshotDefinitionData loadSnapshotDfn(
+    public final SnapshotDefinition loadSnapshotDfn(
         ResourceDefinition rscDfn,
         SnapshotName snapshotName,
         boolean failIfNull
     )
     {
-        SnapshotDefinitionData snapshotDfn;
+        SnapshotDefinition snapshotDfn;
         try
         {
-            snapshotDfn = (SnapshotDefinitionData) rscDfn.getSnapshotDfn(peerAccCtx.get(), snapshotName);
+            snapshotDfn = (SnapshotDefinition) rscDfn.getSnapshotDfn(peerAccCtx.get(), snapshotName);
 
             if (failIfNull && snapshotDfn == null)
             {

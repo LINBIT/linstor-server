@@ -10,12 +10,11 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.SnapshotDefinition.InitMaps;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -42,17 +41,17 @@ import java.util.TreeMap;
 @Singleton
 public class SnapshotDefinitionDbDriver
     extends
-    AbsDatabaseDriver<SnapshotDefinitionData,
+    AbsDatabaseDriver<SnapshotDefinition,
         SnapshotDefinition.InitMaps,
         Map<ResourceName, ? extends ResourceDefinition>>
-    implements SnapshotDefinitionDataDatabaseDriver
+    implements SnapshotDefinitionDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
-    private final StateFlagsPersistence<SnapshotDefinitionData> flagsDriver;
+    private final StateFlagsPersistence<SnapshotDefinition> flagsDriver;
 
     @Inject
     public SnapshotDefinitionDbDriver(
@@ -78,17 +77,17 @@ public class SnapshotDefinitionDbDriver
         setColumnSetter(SNAPSHOT_DSP_NAME, snapDfn -> snapDfn.getName().displayValue);
         setColumnSetter(SNAPSHOT_FLAGS, snapDfn -> snapDfn.getFlags().getFlagsBits(dbCtxRef));
 
-        flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, SnapshotDefinition.SnapshotDfnFlags.class);
+        flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, SnapshotDefinition.Flags.class);
     }
 
     @Override
-    public StateFlagsPersistence<SnapshotDefinitionData> getStateFlagsPersistence()
+    public StateFlagsPersistence<SnapshotDefinition> getStateFlagsPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    protected Pair<SnapshotDefinitionData, InitMaps> load(
+    protected Pair<SnapshotDefinition, SnapshotDefinition.InitMaps> load(
         RawParameters raw,
         Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
     )
@@ -111,7 +110,7 @@ public class SnapshotDefinitionDbDriver
         }
 
         return new Pair<>(
-            new SnapshotDefinitionData(
+            new SnapshotDefinition(
                 raw.build(UUID, java.util.UUID::fromString),
                 rscDfnMap.get(raw.build(RESOURCE_NAME, ResourceName::new)),
                 raw.build(SNAPSHOT_DSP_NAME, SnapshotName::new),
@@ -128,7 +127,7 @@ public class SnapshotDefinitionDbDriver
     }
 
     @Override
-    protected String getId(SnapshotDefinitionData snapDfn) throws AccessDeniedException
+    protected String getId(SnapshotDefinition snapDfn) throws AccessDeniedException
     {
         return "(ResName=" + snapDfn.getResourceName().displayValue +
             " SnapshotName=" + snapDfn.getName().displayValue + ")";

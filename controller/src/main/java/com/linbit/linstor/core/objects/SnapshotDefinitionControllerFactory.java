@@ -4,11 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.identifier.SnapshotName;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -21,19 +18,20 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class SnapshotDefinitionDataControllerFactory
+public class SnapshotDefinitionControllerFactory
 {
-    private final SnapshotDefinitionDataDatabaseDriver driver;
+    private final SnapshotDefinitionDatabaseDriver driver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public SnapshotDefinitionDataControllerFactory(
-        SnapshotDefinitionDataDatabaseDriver driverRef,
+    public SnapshotDefinitionControllerFactory(
+        SnapshotDefinitionDatabaseDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -45,24 +43,24 @@ public class SnapshotDefinitionDataControllerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public SnapshotDefinitionData create(
+    public SnapshotDefinition create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         SnapshotName snapshotName,
-        SnapshotDefinition.SnapshotDfnFlags[] initFlags
+        SnapshotDefinition.Flags[] initFlags
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        SnapshotDefinitionData snapshotDfnData = (SnapshotDefinitionData) rscDfn.getSnapshotDfn(accCtx, snapshotName);
+        SnapshotDefinition snapshotDfnData = rscDfn.getSnapshotDfn(accCtx, snapshotName);
 
         if (snapshotDfnData != null)
         {
             throw new LinStorDataAlreadyExistsException("The SnapshotDefinition already exists");
         }
 
-        snapshotDfnData = new SnapshotDefinitionData(
+        snapshotDfnData = new SnapshotDefinition(
             UUID.randomUUID(),
             rscDfn,
             snapshotName,

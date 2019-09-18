@@ -1,99 +1,357 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
+import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
-import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
+import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
+import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
+import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsAccess;
+import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
+
+import javax.inject.Provider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, Comparable<SnapshotDefinition>
+public class SnapshotDefinition extends BaseTransactionObject implements DbgInstanceUuid, Comparable<SnapshotDefinition>
 {
-    UUID getUuid();
-
-    ResourceDefinition getResourceDefinition();
-
-    SnapshotName getName();
-
-    default ResourceName getResourceName()
+    public static interface InitMaps
     {
-        return getResourceDefinition().getName();
+        Map<NodeName, Snapshot> getSnapshotMap();
+        Map<VolumeNumber, SnapshotVolumeDefinition> getSnapshotVolumeDefinitionMap();
     }
 
-    SnapshotVolumeDefinition getSnapshotVolumeDefinition(
+    // Object identifier
+    private final UUID objId;
+
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
+    // Reference to the resource definition
+    private final ResourceDefinition resourceDfn;
+
+    private final SnapshotName snapshotName;
+
+    private final SnapshotDefinitionDatabaseDriver dbDriver;
+
+    // Properties container for this snapshot definition
+    private final Props snapshotDfnProps;
+
+    // State flags
+    private final StateFlags<Flags> flags;
+
+    private final TransactionMap<VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMap;
+
+    private final TransactionMap<NodeName, Snapshot> snapshotMap;
+
+    private final TransactionSimpleObject<SnapshotDefinition, Boolean> deleted;
+
+    // Not persisted because we do not resume snapshot creation after a restart
+    private TransactionSimpleObject<SnapshotDefinition, Boolean> inCreation;
+
+    public SnapshotDefinition(
+        UUID objIdRef,
+        ResourceDefinition resourceDfnRef,
+        SnapshotName snapshotNameRef,
+        long initFlags,
+        SnapshotDefinitionDatabaseDriver dbDriverRef,
+        TransactionObjectFactory transObjFactory,
+        PropsContainerFactory propsContainerFactory,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
+        Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMapRef,
+        Map<NodeName, Snapshot> snapshotMapRef
+    )
+        throws DatabaseException
+    {
+        super(transMgrProviderRef);
+        objId = objIdRef;
+        resourceDfn = resourceDfnRef;
+        snapshotName = snapshotNameRef;
+        dbDriver = dbDriverRef;
+
+        dbgInstanceId = UUID.randomUUID();
+
+        snapshotDfnProps = propsContainerFactory.getInstance(
+            PropsContainer.buildPath(resourceDfn.getName(), snapshotName)
+        );
+
+        flags = transObjFactory.createStateFlagsImpl(
+            resourceDfnRef.getObjProt(),
+            this,
+            Flags.class,
+            dbDriverRef.getStateFlagsPersistence(),
+            initFlags
+        );
+
+        snapshotVolumeDefinitionMap = transObjFactory.createTransactionMap(snapshotVlmDfnMapRef, null);
+
+        snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);
+
+        deleted = transObjFactory.createTransactionSimpleObject(this, Boolean.FALSE, null);
+
+        inCreation = transObjFactory.createTransactionSimpleObject(this, Boolean.FALSE, null);
+
+        transObjs = Arrays.asList(
+            resourceDfn,
+            snapshotVolumeDefinitionMap,
+            snapshotMap,
+            flags,
+            deleted,
+            inCreation
+        );
+    }
+
+    public UUID getUuid()
+    {
+        return objId;
+    }
+
+    public ResourceDefinition getResourceDefinition()
+    {
+        checkDeleted();
+        return resourceDfn;
+    }
+
+    public SnapshotName getName()
+    {
+        checkDeleted();
+        return snapshotName;
+    }
+
+    public SnapshotVolumeDefinition getSnapshotVolumeDefinition(
         AccessContext accCtx,
         VolumeNumber volumeNumber
     )
-        throws AccessDeniedException;
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return snapshotVolumeDefinitionMap.get(volumeNumber);
+    }
 
-    Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions(AccessContext accCtx)
-        throws AccessDeniedException;
-
-    void addSnapshotVolumeDefinition(
+    public void addSnapshotVolumeDefinition(
         AccessContext accCtx,
         SnapshotVolumeDefinition snapshotVolumeDefinition
     )
-        throws AccessDeniedException;
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        snapshotVolumeDefinitionMap.put(snapshotVolumeDefinition.getVolumeNumber(), snapshotVolumeDefinition);
+    }
 
-    void removeSnapshotVolumeDefinition(AccessContext accCtx, VolumeNumber volumeNumber)
-        throws AccessDeniedException;
+    public void removeSnapshotVolumeDefinition(
+        AccessContext accCtx,
+        VolumeNumber volumeNumber
+    )
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        snapshotVolumeDefinitionMap.remove(volumeNumber);
+    }
 
-    Snapshot getSnapshot(AccessContext accCtx, NodeName clNodeName)
-        throws AccessDeniedException;
+    public Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return snapshotVolumeDefinitionMap.values();
+    }
 
-    Collection<Snapshot> getAllSnapshots(AccessContext accCtx)
-        throws AccessDeniedException;
+    public Snapshot getSnapshot(AccessContext accCtx, NodeName clNodeName)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return snapshotMap.get(clNodeName);
+    }
 
-    void addSnapshot(AccessContext accCtx, Snapshot snapshotRef)
-        throws AccessDeniedException;
+    public Collection<Snapshot> getAllSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return snapshotMap.values();
+    }
 
-    void removeSnapshot(AccessContext accCtx, Snapshot snapshotRef)
-        throws AccessDeniedException;
+    public void addSnapshot(AccessContext accCtx, Snapshot snapshotRef)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        snapshotMap.put(snapshotRef.getNodeName(), snapshotRef);
+    }
 
-    Props getProps(AccessContext accCtx)
-        throws AccessDeniedException;
+    public void removeSnapshot(AccessContext accCtx, Snapshot snapshotRef)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        snapshotMap.remove(snapshotRef.getNodeName());
+    }
 
-    StateFlags<SnapshotDfnFlags> getFlags();
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, resourceDfn.getObjProt(), snapshotDfnProps);
+    }
 
-    void markDeleted(AccessContext accCtx)
-        throws AccessDeniedException, DatabaseException;
+    public StateFlags<Flags> getFlags()
+    {
+        checkDeleted();
+        return flags;
+    }
 
-    void delete(AccessContext accCtx)
-        throws AccessDeniedException, DatabaseException;
+    public void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        getFlags().enableFlags(accCtx, Flags.DELETE);
+    }
 
-    boolean isDeleted();
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        if (!deleted.get())
+        {
+            resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+
+            if (!snapshotMap.isEmpty())
+            {
+                throw new ImplementationError("Cannot delete snapshot definition which contains snapshots");
+            }
+
+            resourceDfn.removeSnapshotDfn(accCtx, snapshotName);
+
+            // Shallow copy the volume collection because calling delete results in elements being removed from it
+            Collection<SnapshotVolumeDefinition> snapshotVolumeDefinitions =
+                new ArrayList<>(snapshotVolumeDefinitionMap.values());
+            for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitions)
+            {
+                snapshotVolumeDefinition.delete(accCtx);
+            }
+
+            snapshotDfnProps.delete();
+
+            activateTransMgr();
+            dbDriver.delete(this);
+
+            deleted.set(Boolean.TRUE);
+        }
+    }
+
+    public boolean isDeleted()
+    {
+        return deleted.get();
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted.get())
+        {
+            throw new AccessToDeletedDataException("Access to deleted snapshot definition");
+        }
+    }
 
     /**
      * Is the snapshot being used for a linstor action such as creation, deletion or rollback?
+     *
      * @param accCtx
      */
-    boolean getInProgress(AccessContext accCtx)
-        throws AccessDeniedException;
+    public boolean getInProgress(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
 
-    void setInCreation(AccessContext accCtx, boolean inCreationRef)
-        throws DatabaseException, AccessDeniedException;
+        return inCreation.get() ||
+            flags.isSet(accCtx, Flags.DELETE);
+    }
 
-    SnapshotDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    public void setInCreation(AccessContext accCtx, boolean inCreationRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+        inCreation.set(inCreationRef);
+    }
 
-    SnapshotDfnListItemApi getListItemApiData(AccessContext accCtx) throws AccessDeniedException;
+    public SnapshotDefinitionApi getApiData(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns = new ArrayList<>();
+
+        for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitionMap.values())
+        {
+            snapshotVlmDfns.add(snapshotVolumeDefinition.getApiData(accCtx));
+        }
+
+        return new SnapshotDfnPojo(
+            resourceDfn.getApiData(accCtx),
+            objId,
+            snapshotName.getDisplayName(),
+            snapshotVlmDfns,
+            flags.getFlagsBits(accCtx),
+            new TreeMap<>(getProps(accCtx).map())
+        );
+    }
+
+    public SnapshotDefinitionListItemApi getListItemApiData(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return new SnapshotDfnListItemPojo(
+            getApiData(accCtx),
+            snapshotMap.values().stream()
+                .map(Snapshot::getNodeName)
+                .map(NodeName::getDisplayName)
+                .collect(Collectors.toList())
+        );
+    }
 
     @Override
-    default int compareTo(SnapshotDefinition otherSnapshotDfn)
+    public String toString()
+    {
+        return "Rsc: '" + getResourceName() + "', " +
+            "Snapshot: '" + snapshotName + "'";
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
+    }
+
+    @Override
+    public int compareTo(SnapshotDefinition otherSnapshotDfn)
     {
         int eq = getResourceDefinition().compareTo(otherSnapshotDfn.getResourceDefinition());
         if (eq == 0)
@@ -103,69 +361,10 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
         return eq;
     }
 
-    enum SnapshotDfnFlags implements Flags
-    {
-        SUCCESSFUL(1L),
-        FAILED_DEPLOYMENT(2L),
-        FAILED_DISCONNECT(4L),
-        DELETE(8L);
-
-        public final long flagValue;
-
-        SnapshotDfnFlags(long value)
-        {
-            flagValue = value;
-        }
-
-        @Override
-        public long getFlagValue()
-        {
-            return flagValue;
-        }
-
-        public static SnapshotDfnFlags[] restoreFlags(long snapshotDfnFlags)
-        {
-            List<SnapshotDfnFlags> flagList = new ArrayList<>();
-            for (SnapshotDfnFlags flag : SnapshotDfnFlags.values())
-            {
-                if ((snapshotDfnFlags & flag.flagValue) == flag.flagValue)
-                {
-                    flagList.add(flag);
-                }
-            }
-            return flagList.toArray(new SnapshotDfnFlags[0]);
-        }
-
-        public static List<String> toStringList(long flagsMask)
-        {
-            return FlagsHelper.toStringList(SnapshotDfnFlags.class, flagsMask);
-        }
-
-        public static long fromStringList(List<String> listFlags)
-        {
-            return FlagsHelper.fromStringList(SnapshotDfnFlags.class, listFlags);
-        }
-    }
-
-    public interface SnapshotDfnApi
-    {
-        ResourceDefinitionApi getRscDfn();
-        UUID getUuid();
-        String getSnapshotName();
-        long getFlags();
-        Map<String, String> getProps();
-        List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> getSnapshotVlmDfnList();
-    }
-
-    public interface SnapshotDfnListItemApi extends SnapshotDfnApi
-    {
-        List<String> getNodeNames();
-    }
-
     /**
      * Identifies a snapshot within a node.
      */
-    class Key implements Comparable<Key>
+    public static class Key implements Comparable<Key>
     {
         private final ResourceName resourceName;
 
@@ -192,9 +391,13 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
             return snapshotName;
         }
 
-        @Override
         // Code style exception: Automatically generated code
-        @SuppressWarnings({"DescendantToken", "ParameterName"})
+        @Override
+        @SuppressWarnings(
+            {
+                "DescendantToken", "ParameterName"
+            }
+        )
         public boolean equals(Object o)
         {
             if (this == o)
@@ -216,8 +419,8 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
             return Objects.hash(resourceName, snapshotName);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
+        @SuppressWarnings("unchecked")
         public int compareTo(Key other)
         {
             int eq = resourceName.compareTo(other.resourceName);
@@ -229,9 +432,50 @@ public interface SnapshotDefinition extends TransactionObject, DbgInstanceUuid, 
         }
     }
 
-    public interface InitMaps
+    public ResourceName getResourceName()
     {
-        Map<NodeName, Snapshot> getSnapshotMap();
-        Map<VolumeNumber, SnapshotVolumeDefinition> getSnapshotVolumeDefinitionMap();
+        return resourceDfn.getName();
     }
+    
+    public enum Flags implements com.linbit.linstor.stateflags.Flags
+    {
+        SUCCESSFUL(1L), FAILED_DEPLOYMENT(2L), FAILED_DISCONNECT(4L), DELETE(8L);
+
+        public final long flagValue;
+
+        Flags(long value)
+        {
+            flagValue = value;
+        }
+
+        @Override
+        public long getFlagValue()
+        {
+            return flagValue;
+        }
+
+        public static Flags[] restoreFlags(long snapshotDfnFlags)
+                {
+            List<Flags> flagList = new ArrayList<>();
+            for (Flags flag : Flags.values())
+                    {
+                if ((snapshotDfnFlags & flag.flagValue) == flag.flagValue)
+                {
+                    flagList.add(flag);
+                }
+                    }
+            return flagList.toArray(new Flags[0]);
+        }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(Flags.class, flagsMask);
+                }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(Flags.class, listFlags);
+        }
+    }
+
 }

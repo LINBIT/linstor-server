@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.core.apis.SnapshotApi;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
 {
-    private final SnapshotDefinition.SnapshotDfnApi snaphotDfn;
+    private final SnapshotDefinitionApi snaphotDfn;
     private final UUID uuid;
     private final long flags;
     private final boolean suspendResource;
@@ -19,7 +19,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     private final List<SnapshotVolume.SnapshotVlmApi> snapshotVlms;
 
     public SnapshotPojo(
-        SnapshotDefinition.SnapshotDfnApi snaphotDfnRef,
+        SnapshotDefinitionApi snaphotDfnRef,
         UUID uuidRef,
         long flagsRef,
         boolean suspendResourceRef,
@@ -40,7 +40,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     }
 
     @Override
-    public SnapshotDefinition.SnapshotDfnApi getSnaphotDfn()
+    public SnapshotDefinitionApi getSnaphotDfn()
     {
         return snaphotDfn;
     }

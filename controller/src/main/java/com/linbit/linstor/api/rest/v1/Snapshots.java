@@ -7,7 +7,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
@@ -89,7 +89,7 @@ public class Snapshots
 
             if (rscDfnExists)
             {
-                Stream<SnapshotDefinition.SnapshotDfnListItemApi> snapsStream =
+                Stream<SnapshotDefinitionListItemApi> snapsStream =
                     ctrlApiCallHandler.listSnapshotDefinition().stream();
 
                 if (limit > 0)

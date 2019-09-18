@@ -21,7 +21,6 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -38,6 +37,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,7 +88,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
         for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(apiCtx))
         {
-            if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.SnapshotDfnFlags.DELETE))
+            if (snapshotDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.DELETE))
             {
                 fluxes.add(deleteSnapshotsOnNodes(rscDfn.getName(), snapshotDfn.getName()));
             }
@@ -165,7 +165,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
     private Flux<ApiCallRc> deleteSnapshotsOnNodesInScope(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, false);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, false);
 
         Flux<ApiCallRc> flux;
         if (snapshotDfn == null)
@@ -204,7 +204,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
     private Flux<ApiCallRc> deleteDataInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, false);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, false);
 
         Flux<ApiCallRc> flux;
         if (snapshotDfn == null)
@@ -306,7 +306,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         return allSnapshots;
     }
 
-    private void deleteSnapshotDfnPrivileged(SnapshotDefinitionData snapshotDfn)
+    private void deleteSnapshotDfnPrivileged(SnapshotDefinition snapshotDfn)
     {
         try
         {

@@ -23,8 +23,8 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinitionData;
-import com.linbit.linstor.core.objects.SnapshotDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -246,7 +246,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
     private Flux<ApiCallRc> startRollbackInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
-        SnapshotDefinitionData snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
         unmarkDownPrivileged(rscDfn);
@@ -459,7 +459,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         long maxSequenceNumber;
         try
         {
-            maxSequenceNumber = SnapshotDefinitionDataControllerFactory.maxSequenceNumber(peerAccCtx.get(), rscDfn);
+            maxSequenceNumber = SnapshotDefinitionControllerFactory.maxSequenceNumber(peerAccCtx.get(), rscDfn);
         }
         catch (AccessDeniedException accDeniedExc)
         {
