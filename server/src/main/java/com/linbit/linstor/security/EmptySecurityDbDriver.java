@@ -11,15 +11,12 @@ import com.linbit.linstor.security.pojo.SignInEntryPojo;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
 import com.linbit.linstor.transaction.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionMgrUtil;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.util.List;
 
 @Singleton

@@ -3,8 +3,6 @@ package com.linbit.linstor;
 import javax.inject.Inject;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.Node;

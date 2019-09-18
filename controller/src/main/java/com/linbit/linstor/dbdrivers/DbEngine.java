@@ -10,7 +10,6 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.LUKSVolume;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver.RawParameters;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;

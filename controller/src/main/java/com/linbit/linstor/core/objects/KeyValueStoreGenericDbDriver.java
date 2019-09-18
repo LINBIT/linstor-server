@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
-import com.linbit.linstor.core.objects.KeyValueStore.InitMaps;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;

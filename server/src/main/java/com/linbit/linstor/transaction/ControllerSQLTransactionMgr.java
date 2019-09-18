@@ -2,7 +2,6 @@ package com.linbit.linstor.transaction;
 
 import com.linbit.linstor.ControllerSQLDatabase;
 
-import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 

@@ -3,10 +3,8 @@ package com.linbit.linstor.dbcp.migration;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.DATABASE_SCHEMA_NAME;
 
 import java.sql.Connection;
-import java.sql.Statement;
 
 @SuppressWarnings("checkstyle:typename")
 @Migration(

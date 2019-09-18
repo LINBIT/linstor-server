@@ -34,7 +34,6 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;

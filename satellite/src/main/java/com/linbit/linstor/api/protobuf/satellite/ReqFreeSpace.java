@@ -11,7 +11,6 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Either;
@@ -26,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBuilder.serializeApiCallRc;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_THIN_FREE_SPACE,

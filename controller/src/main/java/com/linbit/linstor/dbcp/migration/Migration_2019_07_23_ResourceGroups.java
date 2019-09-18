@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
 import com.linbit.linstor.dbdrivers.SQLUtils;

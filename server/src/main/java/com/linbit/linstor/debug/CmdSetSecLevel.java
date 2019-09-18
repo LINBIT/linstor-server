@@ -13,7 +13,6 @@ import org.slf4j.event.Level;
 
 import javax.inject.Named;
 import java.io.PrintStream;
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;

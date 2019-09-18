@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinition.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolDefinitionGenericDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;

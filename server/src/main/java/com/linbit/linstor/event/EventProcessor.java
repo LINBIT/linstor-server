@@ -14,7 +14,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
-import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 
 import javax.inject.Inject;

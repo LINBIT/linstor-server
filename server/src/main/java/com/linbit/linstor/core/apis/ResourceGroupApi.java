@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apis;
 
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.core.objects.VolumeGroup;
 
 import javax.annotation.Nullable;
 

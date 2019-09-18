@@ -4,7 +4,6 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.ControllerCmdlArguments;
 import com.linbit.linstor.core.LinstorConfigToml;
-import com.linbit.linstor.dbcp.migration.MigrationUtils;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.logging.ErrorReporter;

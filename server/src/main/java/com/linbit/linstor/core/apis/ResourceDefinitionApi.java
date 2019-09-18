@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apis;
 
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.utils.Pair;
 
 import java.util.List;

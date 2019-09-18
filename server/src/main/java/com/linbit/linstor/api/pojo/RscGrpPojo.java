@@ -3,7 +3,6 @@ package com.linbit.linstor.api.pojo;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import javax.annotation.Nullable;
 

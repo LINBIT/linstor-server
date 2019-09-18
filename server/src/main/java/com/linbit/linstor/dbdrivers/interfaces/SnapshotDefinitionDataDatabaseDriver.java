@@ -6,7 +6,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 /**
  * Database driver for {@link SnapshotDefinition}.
  */
-public interface SnapshotDefinitionDatabaseDriver extends GenericDatabaseDriver<SnapshotDefinition>
+public interface SnapshotDefinitionDataDatabaseDriver extends GenericDatabaseDriver<SnapshotDefinition>
 {
 
     /**

@@ -15,7 +15,6 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupSatelliteFactory;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.dbdrivers.DatabaseException;
