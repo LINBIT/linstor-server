@@ -17,7 +17,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -118,7 +118,7 @@ public class CtrlRscDeleteApiHelper
 
     private Flux<ApiCallRc> updateSatellitesInScope(NodeName nodeName, ResourceName rscName)
     {
-        ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
 
         Flux<ApiCallRc> flux;
 
@@ -155,7 +155,7 @@ public class CtrlRscDeleteApiHelper
 
     private Flux<ApiCallRc> deleteDataInTransaction(NodeName nodeName, ResourceName rscName)
     {
-        ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
 
         Flux<ApiCallRc> flux;
 

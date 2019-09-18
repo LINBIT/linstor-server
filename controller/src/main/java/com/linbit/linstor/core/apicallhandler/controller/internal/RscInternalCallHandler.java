@@ -133,7 +133,7 @@ public class RscInternalCallHandler
                     peer.get().sendMessage(
                         ctrlStltSerializer
                             .onewayBuilder(InternalApiConsts.API_APPLY_RSC)
-                            .resourceData(rsc, fullSyncTimestamp, updateId)
+                            .resource(rsc, fullSyncTimestamp, updateId)
                             .build()
                     );
                 }
@@ -142,7 +142,7 @@ public class RscInternalCallHandler
                     peer.get().sendMessage(
                         ctrlStltSerializer
                             .onewayBuilder(InternalApiConsts.API_APPLY_RSC_DELETED)
-                            .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
+                            .deletedResource(rscNameStr, fullSyncTimestamp, updateId)
                             .build()
                     );
                 }

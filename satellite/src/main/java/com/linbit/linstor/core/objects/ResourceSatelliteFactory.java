@@ -1,35 +1,31 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class ResourceDataSatelliteFactory
+public class ResourceSatelliteFactory
 {
-    private final ResourceDataDatabaseDriver dbDriver;
+    private final ResourceDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public ResourceDataSatelliteFactory(
-        ResourceDataDatabaseDriver dbDriverRef,
+    public ResourceSatelliteFactory(
+        ResourceDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -43,22 +39,22 @@ public class ResourceDataSatelliteFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public ResourceData getInstanceSatellite(
+    public Resource getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
         Node node,
         ResourceDefinition rscDfn,
-        Resource.RscFlags[] initFlags
+        Resource.Flags[] initFlags
     )
         throws ImplementationError
     {
-        ResourceData rscData;
+        Resource rscData;
         try
         {
-            rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());
+            rscData = node.getResource(accCtx, rscDfn.getName());
             if (rscData == null)
             {
-                rscData = new ResourceData(
+                rscData = new Resource(
                     uuid,
                     objectProtectionFactory.getInstance(accCtx, "", false),
                     rscDfn,
@@ -71,7 +67,7 @@ public class ResourceDataSatelliteFactory
                     new TreeMap<>(),
                     new TreeMap<>()
                 );
-                ((Node) node).addResource(accCtx, rscData);
+                node.addResource(accCtx, rscData);
                 ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
             }
         }

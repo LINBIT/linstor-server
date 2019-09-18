@@ -7,7 +7,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
-import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.objects.StorPool;
 
 import javax.inject.Inject;
@@ -103,7 +103,7 @@ public class View
             else
             {
                 ResourceList resourceList = apiCallRcWith.getValue();
-                Stream<Resource.RscApi> rscApiStream = resourceList.getResources().stream();
+                Stream<ResourceApi> rscApiStream = resourceList.getResources().stream();
 
                 if (limit > 0)
                 {

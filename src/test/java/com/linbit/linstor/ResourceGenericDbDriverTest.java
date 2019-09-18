@@ -1,26 +1,28 @@
 package com.linbit.linstor;
 
-import javax.inject.Inject;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.ResourceData;
-import com.linbit.linstor.core.objects.ResourceDataGenericDbDriver;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
-import com.linbit.linstor.core.objects.Resource.InitMaps;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
-import org.junit.Before;
-import org.junit.Test;
+import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,13 +31,10 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
-public class ResourceDataGenericDbDriverTest extends GenericDbBase
+public class ResourceGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RESOURCES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + RESOURCE_FLAGS +
@@ -53,10 +52,10 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     private ObjectProtection objProt;
     private long initFlags;
 
-    @Inject private ResourceDataGenericDbDriver driver;
+    @Inject private ResourceGenericDbDriver driver;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public ResourceDataGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
+    public ResourceGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
     {
         nodeName = new NodeName("TestNodeName");
         resName = new ResourceName("TestResName");
@@ -92,13 +91,13 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         resUuid = randomUUID();
         objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPath(nodeName, resName), true);
 
-        initFlags = RscFlags.CLEAN.flagValue;
+        initFlags = Resource.Flags.CLEAN.flagValue;
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        ResourceData res = TestFactory.createResourceData(
+        Resource res = TestFactory.createResource(
             resUuid,
             objProt,
             resDfn,
@@ -121,7 +120,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         assertEquals(resUuid, java.util.UUID.fromString(resultSet.getString(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
-        assertEquals(RscFlags.CLEAN.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(Resource.Flags.CLEAN.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -131,12 +130,12 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        resourceDataFactory.create(
+        resourceFactory.create(
             SYS_CTX,
             resDfn,
             node,
             nodeId,
-            new RscFlags[] {RscFlags.DELETE},
+            new Resource.Flags[] {Resource.Flags.DELETE},
             Collections.emptyList()
         );
 
@@ -149,7 +148,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         // uuid is now != resUuid because getInstance create a new resData object
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
-        assertEquals(RscFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(Resource.Flags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -159,10 +158,10 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        ResourceData loadedRes = (ResourceData) node.getResource(SYS_CTX, resDfn.getName());
+        Resource loadedRes = node.getResource(SYS_CTX, resDfn.getName());
         assertNull(loadedRes);
 
-        ResourceData res = TestFactory.createResourceData(
+        Resource res = TestFactory.createResource(
             resUuid,
             objProt,
             resDfn,
@@ -179,7 +178,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         node.addResource(SYS_CTX, res);
         resDfn.addResource(SYS_CTX, res);
 
-        loadedRes = (ResourceData) node.getResource(SYS_CTX, resDfn.getName());
+        loadedRes = node.getResource(SYS_CTX, resDfn.getName());
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
         assertEquals(resUuid, loadedRes.getUuid());
@@ -187,13 +186,13 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName, loadedRes.getAssignedNode().getName());
         assertNotNull(loadedRes.getDefinition());
         assertEquals(resName, loadedRes.getDefinition().getName());
-        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
+        assertEquals(Resource.Flags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
     }
 
     @Test
     public void testLoadAll() throws Exception
     {
-        ResourceData res = TestFactory.createResourceData(
+        Resource res = TestFactory.createResource(
             resUuid,
             objProt,
             resDfn,
@@ -211,12 +210,12 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         nodesMap.put(nodeName, node);
         rscDfnMap.put(resName, resDfn);
 
-        Map<ResourceData, InitMaps> resList = driver.loadAll(nodesMap, rscDfnMap);
+        Map<Resource, Resource.InitMaps> resList = driver.loadAll(nodesMap, rscDfnMap);
 
         assertNotNull(resList);
         assertEquals(1, resList.size());
 
-        ResourceData resData = resList.keySet().iterator().next();
+        Resource resData = resList.keySet().iterator().next();
 
         assertNotNull(resData);
         assertEquals(resUuid, resData.getUuid());
@@ -224,13 +223,13 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         assertEquals(nodeName, resData.getAssignedNode().getName());
         assertNotNull(resData.getDefinition());
         assertEquals(resName, resData.getDefinition().getName());
-        assertEquals(RscFlags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(SYS_CTX));
+        assertEquals(Resource.Flags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(SYS_CTX));
     }
 
     @Test
     public void testCache() throws Exception
     {
-        ResourceData storedInstance = resourceDataFactory.create(
+        Resource storedInstance = resourceFactory.create(
             SYS_CTX,
             resDfn,
             node,
@@ -247,7 +246,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testDelete() throws Exception
     {
-        ResourceData res = TestFactory.createResourceData(
+        Resource res = TestFactory.createResource(
             resUuid,
             objProt,
             resDfn,
@@ -277,7 +276,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testStateFlagPersistence() throws Exception
     {
-        ResourceData res = TestFactory.createResourceData(
+        Resource res = TestFactory.createResource(
             resUuid,
             objProt,
             resDfn,
@@ -292,15 +291,15 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         );
         driver.create(res);
         commit();
-        StateFlagsPersistence<ResourceData> stateFlagPersistence = driver.getStateFlagPersistence();
-        stateFlagPersistence.persist(res, StateFlagsBits.getMask(RscFlags.DELETE));
+        StateFlagsPersistence<Resource> stateFlagPersistence = driver.getStateFlagPersistence();
+        stateFlagPersistence.persist(res, StateFlagsBits.getMask(Resource.Flags.DELETE));
         commit();
 
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
-        assertEquals(RscFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(Resource.Flags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -317,7 +316,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceData res = TestFactory.createResourceData(
+        Resource res = TestFactory.createResource(
             resUuid,
             objProt,
             resDfn,
@@ -353,7 +352,7 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        ResourceData res = TestFactory.createResourceData(
+        Resource res = TestFactory.createResource(
             resUuid,
             objProt,
             resDfn,
@@ -370,6 +369,6 @@ public class ResourceDataGenericDbDriverTest extends GenericDbBase
         node.addResource(SYS_CTX, res);
         resDfn.addResource(SYS_CTX, res);
 
-        resourceDataFactory.create(SYS_CTX, resDfn, node, nodeId, null, Collections.emptyList());
+        resourceFactory.create(SYS_CTX, resDfn, node, nodeId, null, Collections.emptyList());
     }
 }

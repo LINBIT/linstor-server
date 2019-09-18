@@ -27,7 +27,6 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -65,6 +64,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -166,9 +166,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             Resource rsc = rscIter.next();
             boolean diskAddRequested =
-                rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_ADD_REQUESTED);
+                rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISK_ADD_REQUESTED);
             boolean diskRemoveRequested =
-                rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_REMOVE_REQUESTED);
+                rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISK_REMOVE_REQUESTED);
             if (diskAddRequested || diskRemoveRequested)
             {
                 NodeName nodeName = rsc.getAssignedNode().getName();
@@ -186,7 +186,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String migrateFromNodeNameStr = getPropsPrivileged(rsc).map().get(ApiConsts.KEY_RSC_MIGRATE_FROM);
 
         // Only restart the migration watch if adding the disk is complete
-        boolean diskAddRequested = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_ADD_REQUESTED);
+        boolean diskAddRequested = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISK_ADD_REQUESTED);
 
         return migrateFromNodeNameStr == null && !diskAddRequested ?
             Collections.emptySet() :
@@ -239,7 +239,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
 
-        ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
 
         if (hasDiskAddRequested(rsc))
         {
@@ -374,7 +374,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk));
     }
 
-    private Set<RscLayerObject> getResourceLayerDataPriveleged(ResourceData rsc, DeviceLayerKind kind)
+    private Set<RscLayerObject> getResourceLayerDataPriveleged(Resource rsc, DeviceLayerKind kind)
     {
         Set<RscLayerObject> rscDataSet;
         try
@@ -453,7 +453,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         Flux<ApiCallRc> responses;
 
-        ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
 
         ApiCallRcImpl offlineWarnings = new ApiCallRcImpl();
 
@@ -539,7 +539,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ResourceName rscName
     )
     {
-        ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
 
         unmarkDiskAdding(rsc);
 
@@ -574,7 +574,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
 
         if (removeDisk)
         {
@@ -705,7 +705,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         boolean set;
         try
         {
-            set = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.RscFlags.DISK_ADD_REQUESTED);
+            set = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.DISK_ADD_REQUESTED);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -723,7 +723,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         boolean set;
         try
         {
-            set = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.RscFlags.DISK_REMOVE_REQUESTED);
+            set = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.DISK_REMOVE_REQUESTED);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -740,7 +740,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            rsc.getStateFlags().enableFlags(peerAccCtx.get(), Resource.RscFlags.DISK_ADD_REQUESTED);
+            rsc.getStateFlags().enableFlags(peerAccCtx.get(), Resource.Flags.DISK_ADD_REQUESTED);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -756,7 +756,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
     }
 
-    private void removeStorageLayerData(ResourceData rscRef)
+    private void removeStorageLayerData(Resource rscRef)
     {
         try
         {
@@ -816,7 +816,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
     }
 
-    private void setMigrateFrom(ResourceData rsc, NodeName migrateFromNodeName)
+    private void setMigrateFrom(Resource rsc, NodeName migrateFromNodeName)
     {
         try
         {
@@ -836,7 +836,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            rsc.getStateFlags().enableFlags(peerAccCtx.get(), Resource.RscFlags.DISK_REMOVE_REQUESTED);
+            rsc.getStateFlags().enableFlags(peerAccCtx.get(), Resource.Flags.DISK_REMOVE_REQUESTED);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -856,7 +856,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            rsc.getStateFlags().enableFlags(apiCtx, Resource.RscFlags.DISK_ADDING);
+            rsc.getStateFlags().enableFlags(apiCtx, Resource.Flags.DISK_ADDING);
         }
         catch (AccessDeniedException | DatabaseException exc)
         {
@@ -870,8 +870,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             rsc.getStateFlags().enableFlags(
                 apiCtx,
-                Resource.RscFlags.DISKLESS,
-                Resource.RscFlags.DISK_REMOVING
+                Resource.Flags.DISKLESS,
+                Resource.Flags.DISK_REMOVING
             );
         }
         catch (AccessDeniedException | DatabaseException exc)
@@ -884,7 +884,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            rsc.getStateFlags().disableFlags(apiCtx, Resource.RscFlags.DISK_ADDING);
+            rsc.getStateFlags().disableFlags(apiCtx, Resource.Flags.DISK_ADDING);
         }
         catch (AccessDeniedException | DatabaseException exc)
         {
@@ -892,15 +892,15 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
     }
 
-    private void markDiskAdded(ResourceData rscData)
+    private void markDiskAdded(Resource rscData)
     {
         try
         {
             rscData.getStateFlags().disableFlags(
                 apiCtx,
-                Resource.RscFlags.DISKLESS,
-                Resource.RscFlags.DISK_ADDING,
-                Resource.RscFlags.DISK_ADD_REQUESTED
+                Resource.Flags.DISKLESS,
+                Resource.Flags.DISK_ADDING,
+                Resource.Flags.DISK_ADD_REQUESTED
             );
         }
         catch (AccessDeniedException | DatabaseException exc)
@@ -909,14 +909,14 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
     }
 
-    private void markDiskRemoved(ResourceData rscData)
+    private void markDiskRemoved(Resource rscData)
     {
         try
         {
             rscData.getStateFlags().disableFlags(
                 apiCtx,
-                Resource.RscFlags.DISK_REMOVING,
-                Resource.RscFlags.DISK_REMOVE_REQUESTED
+                Resource.Flags.DISK_REMOVING,
+                Resource.Flags.DISK_REMOVE_REQUESTED
             );
         }
         catch (AccessDeniedException | DatabaseException exc)

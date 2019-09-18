@@ -372,7 +372,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 vlmConn.delete(accCtx);
             }
 
-            ((ResourceData) resource).removeVolume(accCtx, this);
+            ((Resource) resource).removeVolume(accCtx, this);
             ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
 
             volumeProps.delete();

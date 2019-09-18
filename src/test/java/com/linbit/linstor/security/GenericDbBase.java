@@ -33,7 +33,7 @@ import com.linbit.linstor.core.objects.NodeConnectionFactory;
 import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionDataControllerFactory;
-import com.linbit.linstor.core.objects.ResourceDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinitionDataControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroupData;
@@ -181,7 +181,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected PropsContainerFactory propsContainerFactory;
     @Inject protected NodeControllerFactory nodeFactory;
     @Inject protected ResourceConnectionDataControllerFactory resourceConnectionDataFactory;
-    @Inject protected ResourceDataControllerFactory resourceDataFactory;
+    @Inject protected ResourceControllerFactory resourceFactory;
     @Inject protected StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
     @Inject protected VolumeConnectionDataFactory volumeConnectionDataFactory;
     @Inject protected NodeConnectionFactory nodeConnectionFactory;
@@ -607,7 +607,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         NodeName nodeName,
         ResourceName resName,
         NodeId nodeId,
-        Resource.RscFlags... resFlags
+        Resource.Flags... resFlags
     )
         throws SQLException
     {

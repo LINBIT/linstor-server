@@ -7,7 +7,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -63,7 +63,7 @@ class StltRscDfnApiCallHandler
             if (rscDfn != null)
             {
                 // set primary boolean
-                ResourceData rscData = (ResourceData) rscDfn.getResource(
+                Resource rscData = (Resource) rscDfn.getResource(
                     this.apiCtx,
                     controllerPeerConnector.getLocalNode().getName()
                 );

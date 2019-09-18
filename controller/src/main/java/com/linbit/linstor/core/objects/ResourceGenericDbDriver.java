@@ -6,17 +6,10 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceData;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Resource.InitMaps;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -25,7 +18,6 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -34,6 +26,7 @@ import com.linbit.utils.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,7 +36,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 @Singleton
-public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
+public class ResourceGenericDbDriver implements ResourceDatabaseDriver
 {
     private static final String TBL_RES = DbConstants.TBL_RESOURCES;
 
@@ -87,7 +80,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public ResourceDataGenericDbDriver(
+    public ResourceGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
@@ -107,13 +100,13 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public void create(ResourceData res) throws DatabaseException
+    public void create(Resource res) throws DatabaseException
     {
         create(dbCtx, res);
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    private void create(AccessContext accCtx, ResourceData res) throws DatabaseException
+    private void create(AccessContext accCtx, Resource res) throws DatabaseException
     {
         errorReporter.logTrace("Creating Resource %s", getId(res));
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_INSERT))
@@ -135,7 +128,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         errorReporter.logTrace("Resource created %s", getId(res));
     }
 
-    public void ensureResExists(AccessContext accCtx, ResourceData res)
+    public void ensureResExists(AccessContext accCtx, Resource res)
         throws DatabaseException
     {
         errorReporter.logTrace("Ensuring Resource exists %s", getId(res));
@@ -159,14 +152,14 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     }
 
 
-    public Map<ResourceData, Resource.InitMaps> loadAll(
+    public Map<Resource, Resource.InitMaps> loadAll(
         Map<NodeName, ? extends Node> nodesMap,
         Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
     )
         throws DatabaseException
     {
         errorReporter.logTrace("Loading all Resources");
-        Map<ResourceData, Resource.InitMaps> loadedResources = new TreeMap<>();
+        Map<Resource, Resource.InitMaps> loadedResources = new TreeMap<>();
         String nodeNameStr;
         String rscNameStr;
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT_ALL))
@@ -182,7 +175,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
                         rscNameStr = resultSet.getString(RES_NAME);
                         ResourceName rscName = new ResourceName(rscNameStr);
 
-                        Pair<ResourceData, InitMaps> pair = restoreRsc(
+                        Pair<Resource, Resource.InitMaps> pair = restoreRsc(
                             resultSet,
                             nodesMap.get(nodeName),
                             rscDfnMap.get(rscName)
@@ -210,20 +203,20 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         return loadedResources;
     }
 
-    private Pair<ResourceData, InitMaps> restoreRsc(
+    private Pair<Resource, Resource.InitMaps> restoreRsc(
         ResultSet resultSet,
         Node node,
         ResourceDefinition rscDfn
     )
         throws DatabaseException
     {
-        Map<Resource.Key, ResourceConnection> rscConnMap = new TreeMap<>();
+        Map<Resource.ResourceKey, ResourceConnection> rscConnMap = new TreeMap<>();
         Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
         ResourceInitMaps initMaps = new ResourceInitMaps(rscConnMap, vlmMap);
 
-        ResourceData rscData;
+        Resource rscData;
         try {
-            rscData = new ResourceData(
+            rscData = new Resource(
                 UUID.fromString(resultSet.getString(RES_UUID)),
                 getObjectProection(node, rscDfn.getName()),
                 rscDfn,
@@ -241,7 +234,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         {
             throw new DatabaseException(sqlExc);
         }
-        return new Pair<ResourceData, InitMaps>(rscData, initMaps);
+        return new Pair<Resource, Resource.InitMaps>(rscData, initMaps);
     }
 
     private ObjectProtection getObjectProection(Node node, ResourceName resName)
@@ -262,7 +255,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public void delete(ResourceData resource) throws DatabaseException
+    public void delete(Resource resource) throws DatabaseException
     {
         errorReporter.logTrace("Deleting Resource %s", getId(resource));
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_DELETE))
@@ -280,7 +273,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public StateFlagsPersistence<ResourceData> getStateFlagPersistence()
+    public StateFlagsPersistence<Resource> getStateFlagPersistence()
     {
         return flagDriver;
     }
@@ -293,7 +286,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         );
     }
 
-    private String getId(ResourceData res)
+    private String getId(Resource res)
     {
         return getId(
             res.getAssignedNode().getName().displayValue,
@@ -306,24 +299,24 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         return "(NodeName=" + nodeName + " ResName=" + resName + ")";
     }
 
-    private class FlagDriver implements StateFlagsPersistence<ResourceData>
+    private class FlagDriver implements StateFlagsPersistence<Resource>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void persist(ResourceData resource, long flags) throws DatabaseException
+        public void persist(Resource resource, long flags) throws DatabaseException
         {
             try
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        RscFlags.class,
+                        Resource.Flags.class,
                         resource.getStateFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        RscFlags.class,
+                        Resource.Flags.class,
                         flags
                     ),
                     ", "
@@ -368,11 +361,11 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
 
     private class ResourceInitMaps implements Resource.InitMaps
     {
-        private final Map<Resource.Key, ResourceConnection> rscConnMap;
+        private final Map<Resource.ResourceKey, ResourceConnection> rscConnMap;
         private final Map<VolumeNumber, Volume> vlmMap;
 
         ResourceInitMaps(
-            Map<Resource.Key, ResourceConnection> rscConnMapRef,
+            Map<Resource.ResourceKey, ResourceConnection> rscConnMapRef,
             Map<VolumeNumber, Volume> vlmMapRef
         )
         {
@@ -381,7 +374,7 @@ public class ResourceDataGenericDbDriver implements ResourceDataDatabaseDriver
         }
 
         @Override
-        public Map<Resource.Key, ResourceConnection> getRscConnMap()
+        public Map<Resource.ResourceKey, ResourceConnection> getRscConnMap()
         {
             return rscConnMap;
         }

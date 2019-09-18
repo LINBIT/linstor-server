@@ -18,7 +18,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -239,7 +239,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         toRscDfn.setLayerStack(peerAccCtx.get(), snapshot.getLayerStack(peerAccCtx.get()));
 
         NodeId restoredNodeId = snapshot.getNodeId();
-        ResourceData rsc = ctrlRscCrtApiHelper.createResource(
+        Resource rsc = ctrlRscCrtApiHelper.createResource(
             toRscDfn,
             node,
             restoredNodeId == null ? null : restoredNodeId.value,

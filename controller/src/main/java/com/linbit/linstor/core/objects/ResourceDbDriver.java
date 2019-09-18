@@ -8,14 +8,12 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource.InitMaps;
-import com.linbit.linstor.core.objects.Resource.Key;
 import com.linbit.linstor.core.objects.ResourceDbDriver.RscInMap;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -39,11 +37,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.InitMaps, RscInMap>
-    implements ResourceDataDatabaseDriver
+public class ResourceDbDriver extends AbsDatabaseDriver<Resource, Resource.InitMaps, RscInMap>
+    implements ResourceDatabaseDriver
 {
 
-    private final StateFlagsPersistence<ResourceData> flagsDriver;
+    private final StateFlagsPersistence<Resource> flagsDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -69,7 +67,7 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
 
-        flagsDriver = generateFlagDriver(RESOURCE_FLAGS, Resource.RscFlags.class);
+        flagsDriver = generateFlagDriver(RESOURCE_FLAGS, Resource.Flags.class);
 
         setColumnSetter(UUID, rsc -> rsc.getUuid().toString());
         setColumnSetter(NODE_NAME, rsc -> rsc.getAssignedNode().getName().value);
@@ -78,12 +76,12 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
     }
 
     @Override
-    public StateFlagsPersistence<ResourceData> getStateFlagPersistence()
+    public StateFlagsPersistence<Resource> getStateFlagPersistence()
     {
         return flagsDriver;
     }
 
-    public Map<ResourceData, Resource.InitMaps> loadAll(
+    public Map<Resource, Resource.InitMaps> loadAll(
         Map<NodeName, Node> tmpNodesMapRef,
         Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef
     )
@@ -93,7 +91,7 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
     }
 
     @Override
-    protected Pair<ResourceData, InitMaps> load(
+    protected Pair<Resource, Resource.InitMaps> load(
         RawParameters raw,
         RscInMap loadAllDataRef
     )
@@ -101,7 +99,7 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
     {
         NodeName nodeName = new NodeName(raw.get(NODE_NAME));
         ResourceName rscName = new ResourceName(raw.get(RESOURCE_NAME));
-        Map<Key, ResourceConnection> rscConMap = new TreeMap<>();
+        Map<Resource.ResourceKey, ResourceConnection> rscConMap = new TreeMap<>();
         Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
 
         final long flags;
@@ -118,7 +116,7 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
         }
 
         return new Pair<>(
-            new ResourceData(
+            new Resource(
                 raw.build(UUID, java.util.UUID::fromString),
                 getObjectProtection(ObjectProtection.buildPath(nodeName, rscName)),
                 loadAllDataRef.rscDfnMap.get(rscName),
@@ -136,7 +134,7 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
     }
 
     @Override
-    protected String getId(ResourceData rsc)
+    protected String getId(Resource rsc)
     {
         return "(NodeName=" + rsc.getAssignedNode().getName().displayValue +
             " ResName=" + rsc.getDefinition().getName().displayValue + ")";
@@ -157,11 +155,11 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
 
     public static class InitMapImpl implements Resource.InitMaps
     {
-        private final Map<Key, ResourceConnection> rscConMap;
+        private final Map<Resource.ResourceKey, ResourceConnection> rscConMap;
         private final Map<VolumeNumber, Volume> vlmMap;
 
         public InitMapImpl(
-            Map<Key, ResourceConnection> rscConMapRef,
+            Map<Resource.ResourceKey, ResourceConnection> rscConMapRef,
             Map<VolumeNumber, Volume> vlmMapRef
         )
         {
@@ -170,7 +168,7 @@ public class ResourceDbDriver extends AbsDatabaseDriver<ResourceData, Resource.I
         }
 
         @Override
-        public Map<Key, ResourceConnection> getRscConnMap()
+        public Map<Resource.ResourceKey, ResourceConnection> getRscConnMap()
         {
             return rscConMap;
         }

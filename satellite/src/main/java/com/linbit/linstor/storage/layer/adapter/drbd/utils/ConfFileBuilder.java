@@ -1,19 +1,5 @@
 package com.linbit.linstor.storage.layer.adapter.drbd.utils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
@@ -37,7 +23,6 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -54,6 +39,20 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.Pair;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.slf4j.event.Level;
 
@@ -224,7 +223,7 @@ public class ConfFileBuilder
             for (final DrbdRscData peerRscData : peerRscSet)
             {
                 Resource peerRsc = peerRscData.getResource();
-                if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE))
+                if (peerRsc.getStateFlags().isUnset(accCtx, Resource.Flags.DELETE))
                 {
                     appendLine("");
                     appendLine("on %s", peerRsc.getAssignedNode().getProps(accCtx)
@@ -254,9 +253,11 @@ public class ConfFileBuilder
                 Resource peerRsc = peerRscData.getResource();
                 // don't create a connection entry if the resource has the deleted flag
                 // or if it is a connection between two diskless nodes
-                if (peerRsc.getStateFlags().isUnset(accCtx, RscFlags.DELETE) &&
+                if (
+                    peerRsc.getStateFlags().isUnset(accCtx, Resource.Flags.DELETE) &&
                         !(peerRsc.disklessForPeers(accCtx) &&
-                            localRsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS)))
+                            localRsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS))
+                )
                 {
                     appendLine("");
                     appendLine("connection");

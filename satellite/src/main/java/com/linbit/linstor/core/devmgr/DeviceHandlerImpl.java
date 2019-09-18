@@ -18,7 +18,6 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Snapshot.SnapshotFlags;
 import com.linbit.linstor.core.objects.StorPool;
@@ -293,7 +292,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                 );
 
                 if (rscLayerObject.getLayerKind().isLocalOnly() &&
-                    rsc.getStateFlags().isUnset(wrkCtx, Resource.RscFlags.DELETE))
+                        rsc.getStateFlags().isUnset(wrkCtx, Resource.Flags.DELETE)
+                )
                 {
                     MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
                 }
@@ -306,7 +306,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                  * This also means that we only send the resourceApplied messages
                  * at the very end
                  */
-                if (rsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE))
+                if (rsc.getStateFlags().isSet(wrkCtx, Resource.Flags.DELETE))
                 {
                     rscListNotifyDelete.add(rsc);
                     notificationListener.get().notifyResourceDeleted(rsc);
@@ -341,7 +341,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
 
-                if (rsc.getStateFlags().isUnset(wrkCtx, RscFlags.DELETE))
+                if (rsc.getStateFlags().isUnset(wrkCtx, Resource.Flags.DELETE))
                 {
                     sysFsUpdateList.add(rsc);
                 }
@@ -580,7 +580,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
-    private boolean prepare(DeviceLayer layer, Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
+    private boolean prepare(DeviceLayer layer, Set<RscLayerObject> rscList, Set<Snapshot> affectedSnapshots)
     {
         boolean success;
         try
@@ -588,14 +588,14 @@ public class DeviceHandlerImpl implements DeviceHandler
             errorReporter.logTrace(
                 "Layer '%s' preparing %d resources, %d snapshots",
                 layer.getName(),
-                rscDataList.size(),
+                rscList.size(),
                 affectedSnapshots.size()
             );
-            layer.prepare(rscDataList, affectedSnapshots);
+            layer.prepare(rscList, affectedSnapshots);
             errorReporter.logTrace(
                 "Layer '%s' finished preparing %d resources, %d snapshots",
                 layer.getName(),
-                rscDataList.size(),
+                rscList.size(),
                 affectedSnapshots.size()
             );
             success = true;
@@ -626,10 +626,10 @@ public class DeviceHandlerImpl implements DeviceHandler
             ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
                 builder.build()
             );
-            for (RscLayerObject failedResourceData : rscDataList)
+            for (RscLayerObject failedResource : rscList)
             {
                 notificationListener.get().notifyResourceDispatchResponse(
-                    failedResourceData.getResourceName(),
+                    failedResource.getResourceName(),
                     apiCallRc
                 );
             }

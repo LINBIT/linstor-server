@@ -11,12 +11,12 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.ResourceApi;
+import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Resource.RscApi;
-import com.linbit.linstor.core.objects.Resource.RscWithPayloadApi;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.locks.LockGuardFactory;
@@ -27,6 +27,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHa
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -66,7 +67,7 @@ public class CtrlRscCrtApiCallHandler
     }
 
     public Flux<ApiCallRc> createResource(
-        List<Resource.RscWithPayloadApi> rscApiList
+        List<ResourceWithPayloadApi> rscApiList
     )
     {
         List<String> rscNames = rscApiList.stream()
@@ -120,7 +121,7 @@ public class CtrlRscCrtApiCallHandler
      * @param layerStackStrListRef
      */
     private Flux<ApiCallRc> createResourceInTransaction(
-        List<Resource.RscWithPayloadApi> rscApiList,
+        List<ResourceWithPayloadApi> rscApiList,
         ResponseContext context,
         Map<StorPool.Key, Long> thinFreeCapacities
     )
@@ -128,9 +129,9 @@ public class CtrlRscCrtApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         List<Resource> deployedResources = new ArrayList<>();
-        for (Resource.RscWithPayloadApi rscWithPayloadApi : rscApiList)
+        for (ResourceWithPayloadApi rscWithPayloadApi : rscApiList)
         {
-            RscApi rscapi = rscWithPayloadApi.getRscApi();
+            ResourceApi rscapi = rscWithPayloadApi.getRscApi();
             deployedResources.add(ctrlRscCrtApiHelper.createResourceDb(
                 rscapi.getNodeName(),
                 rscapi.getName(),
@@ -193,7 +194,7 @@ public class CtrlRscCrtApiCallHandler
         return responses;
     }
 
-    private ResponseContext makeRscCrtContext(List<RscWithPayloadApi> rscApiListRef, String rscNameStr)
+    private ResponseContext makeRscCrtContext(List<ResourceWithPayloadApi> rscApiListRef, String rscNameStr)
     {
         String nodeNamesStr = rscApiListRef.stream()
             .map(rscWithPayload -> rscWithPayload.getRscApi().getNodeName())

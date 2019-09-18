@@ -21,6 +21,7 @@ import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
+import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -365,7 +366,7 @@ public class Json
     }
 
     public static JsonGenTypes.ResourceWithVolumes apiToResourceWithVolumes(
-        Resource.RscApi rscApi,
+        ResourceApi rscApi,
         Map<NodeName, SatelliteState> satelliteStates,
         boolean withVolumes
     )
@@ -373,7 +374,7 @@ public class Json
         JsonGenTypes.ResourceWithVolumes rsc = new JsonGenTypes.ResourceWithVolumes();
         rsc.name = rscApi.getName();
         rsc.node_name = rscApi.getNodeName();
-        rsc.flags = FlagsHelper.toStringList(Resource.RscFlags.class, rscApi.getFlags());
+        rsc.flags = FlagsHelper.toStringList(Resource.Flags.class, rscApi.getFlags());
         rsc.props = rscApi.getProps();
         rsc.layer_object = apiToResourceLayer(rscApi.getLayerData());
         rsc.uuid = rscApi.getUuid().toString();
@@ -434,19 +435,19 @@ public class Json
     }
 
     public static JsonGenTypes.Resource apiToResource(
-        Resource.RscApi rscApi,
+        ResourceApi rscApi,
         Map<NodeName, SatelliteState> satelliteStates
     )
     {
         return apiToResourceWithVolumes(rscApi, satelliteStates, false);
     }
 
-    public static Resource.RscApi resourceToApi(JsonGenTypes.Resource resource)
+    public static ResourceApi resourceToApi(JsonGenTypes.Resource resource)
     {
         return new RscPojo(
             resource.name,
             resource.node_name,
-            FlagsHelper.fromStringList(Resource.RscFlags.class, resource.flags),
+            FlagsHelper.fromStringList(Resource.Flags.class, resource.flags),
             resource.props
         );
     }

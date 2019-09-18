@@ -12,14 +12,12 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionData;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
@@ -35,6 +33,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -214,7 +213,7 @@ public class CtrlLayerDataHelper
     }
 
     public void ensureStackDataExists(
-        ResourceData rscRef,
+        Resource rscRef,
         List<DeviceLayerKind> layerStackRef,
         LayerPayload payload
     )
@@ -320,7 +319,7 @@ public class CtrlLayerDataHelper
         }
     }
 
-    public void resetStoragePools(ResourceData rscRef)
+    public void resetStoragePools(Resource rscRef)
     {
         try
         {
@@ -463,7 +462,7 @@ public class CtrlLayerDataHelper
                 accCtxRef,
                 rscRef,
                 vlmDfn,
-                rscRef.getStateFlags().isSet(apiCtx, RscFlags.DISKLESS),
+                rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS),
                 false
             ).getValue();
 
@@ -486,7 +485,7 @@ public class CtrlLayerDataHelper
         boolean isDiskAddRequested;
         try
         {
-            isDiskAddRequested = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_ADD_REQUESTED);
+            isDiskAddRequested = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISK_ADD_REQUESTED);
         }
         catch (AccessDeniedException implError)
         {
@@ -500,7 +499,7 @@ public class CtrlLayerDataHelper
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS);
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS);
         }
         catch (AccessDeniedException implError)
         {
@@ -514,7 +513,7 @@ public class CtrlLayerDataHelper
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISK_REMOVING);
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISK_REMOVING);
         }
         catch (AccessDeniedException implError)
         {

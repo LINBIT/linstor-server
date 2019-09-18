@@ -25,7 +25,6 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
@@ -575,7 +574,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 try
                 {
                     return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME)).getStateFlags()
-                        .isSet(GenericDbBase.SYS_CTX, RscFlags.DISKLESS);
+                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DISKLESS);
                 }
                 catch (AccessDeniedException | InvalidNameException exc)
                 {
@@ -690,7 +689,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 try
                 {
                     return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME)).getStateFlags()
-                        .isSet(GenericDbBase.SYS_CTX, RscFlags.DISKLESS);
+                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DISKLESS);
                 }
                 catch (AccessDeniedException | InvalidNameException exc)
                 {

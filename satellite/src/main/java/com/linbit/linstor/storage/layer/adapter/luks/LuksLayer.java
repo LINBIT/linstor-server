@@ -5,8 +5,8 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
@@ -27,6 +27,7 @@ import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +80,7 @@ public class LuksLayer implements DeviceLayer
     @Override
     public void resourceFinished(RscLayerObject layerDataRef) throws AccessDeniedException
     {
-        if (layerDataRef.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+        if (layerDataRef.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
         {
             resourceProcessorProvider.get().sendResourceDeletedEvent(layerDataRef);
         }
@@ -126,7 +127,7 @@ public class LuksLayer implements DeviceLayer
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         LuksRscData luksRscData = (LuksRscData) rscData;
-        boolean deleteRsc = luksRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE);
+        boolean deleteRsc = luksRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE);
 
         Map<Boolean, List<LuksVlmData>> groupedByDeleteFlag =
             luksRscData.getVlmLayerObjects().values().stream().collect(

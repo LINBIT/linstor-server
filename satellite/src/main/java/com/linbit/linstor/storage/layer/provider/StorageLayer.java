@@ -8,10 +8,10 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
@@ -31,6 +31,7 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -78,7 +79,7 @@ public class StorageLayer implements DeviceLayer
     @Override
     public void resourceFinished(RscLayerObject layerDataRef) throws AccessDeniedException
     {
-        if (layerDataRef.getResource().getStateFlags().isSet(storDriverAccCtx, RscFlags.DELETE))
+        if (layerDataRef.getResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE))
         {
             resourceProcessorProvider.get().sendResourceDeletedEvent(layerDataRef);
         }

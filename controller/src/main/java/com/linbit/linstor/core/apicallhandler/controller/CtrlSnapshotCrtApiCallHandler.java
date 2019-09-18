@@ -28,16 +28,16 @@ import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotDefinitionData;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDataControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDataControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.SnapshotVlmDfnFlags;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
@@ -67,6 +67,7 @@ import static com.linbit.linstor.utils.layer.LayerVlmUtils.getStorPoolMap;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -556,7 +557,7 @@ public class CtrlSnapshotCrtApiCallHandler
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS);
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS);
         }
         catch (AccessDeniedException implError)
         {

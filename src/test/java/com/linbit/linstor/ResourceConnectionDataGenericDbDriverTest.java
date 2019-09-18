@@ -10,7 +10,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceConnectionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
@@ -59,8 +59,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     private Integer nodeIdSrc;
     private Integer nodeIdDst;
 
-    private ResourceData resSrc;
-    private ResourceData resDst;
+    private Resource resSrc;
+    private Resource resDst;
 
     @SuppressWarnings("checkstyle:magicnumber")
     public ResourceConnectionDataGenericDbDriverTest() throws InvalidNameException
@@ -104,8 +104,8 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
         nodeIdSrc = 13;
         nodeIdDst = 14;
 
-        resSrc = resourceDataFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
-        resDst = resourceDataFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
+        resSrc = resourceFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
+        resDst = resourceFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
 
         resCon = TestFactory.createResourceConnectionData(
             uuid,
@@ -144,7 +144,7 @@ public class ResourceConnectionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(resCon);
 
-        Map<Pair<NodeName, ResourceName>, ResourceData> rscmap = new HashMap<>();
+        Map<Pair<NodeName, ResourceName>, Resource> rscmap = new HashMap<>();
         rscmap.put(new Pair<NodeName, ResourceName>(sourceName, resName), resSrc);
         rscmap.put(new Pair<NodeName, ResourceName>(targetName, resName), resDst);
         List<ResourceConnectionData> cons = driver.loadAll(rscmap);

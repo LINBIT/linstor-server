@@ -16,7 +16,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -93,7 +92,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             if (
                 !rsc.getAssignedNode().getFlags().isSet(apiCtx, Node.Flags.DELETE) &&
                 !rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.RscDfnFlags.DELETE) &&
-                rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DELETE))
+                    rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DELETE)
+            )
             {
                 fluxes.add(ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(
                     rsc.getAssignedNode().getName(), rscDfn.getName()));
@@ -128,7 +128,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
     private Flux<ApiCallRc> deleteResourceInTransaction(String nodeNameStr, String rscNameStr)
     {
-        ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, false);
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, false);
 
         if (rsc == null)
         {
@@ -196,7 +196,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         }
     }
 
-    private void failIfDependentSnapshot(ResourceData rsc)
+    private void failIfDependentSnapshot(Resource rsc)
     {
         try
         {

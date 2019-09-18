@@ -206,7 +206,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             boolean vlmShouldExist = !vlmData.getVolume().getFlags().isSet(storDriverAccCtx, VlmFlags.DELETE);
             vlmShouldExist &= !vlmData.getRscLayerObject().getResource().getStateFlags().isSet(
                 storDriverAccCtx,
-                Resource.RscFlags.DISK_REMOVING
+                Resource.Flags.DISK_REMOVING
             );
 
             String lvId = vlmData.getIdentifier();
@@ -441,7 +441,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
             if (!vlmData.getVolume().getResource().getStateFlags().isSet(
                 storDriverAccCtx,
-                Resource.RscFlags.DISK_REMOVING)
+                Resource.Flags.DISK_REMOVING)
             )
             {
                 addDeletedMsg(vlmData, apiCallRc);

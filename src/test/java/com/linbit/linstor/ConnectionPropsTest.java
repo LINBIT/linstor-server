@@ -9,8 +9,8 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
@@ -51,8 +51,8 @@ public class ConnectionPropsTest extends GenericDbBase
     private Node node1;
     private Node node2;
     private ResourceDefinitionData resDfn;
-    private ResourceData res1;
-    private ResourceData res2;
+    private Resource res1;
+    private Resource res2;
     private StorPoolDefinitionData storPoolDfn;
     private StorPoolData storPool1;
     private StorPoolData storPool2;
@@ -108,8 +108,8 @@ public class ConnectionPropsTest extends GenericDbBase
             dfltRscGrp
         );
 
-        res1 = resourceDataFactory.create(SYS_CTX, resDfn, node1, nodeId1, null, Collections.emptyList());
-        res2 = resourceDataFactory.create(SYS_CTX, resDfn, node2, nodeId2, null, Collections.emptyList());
+        res1 = resourceFactory.create(SYS_CTX, resDfn, node1, nodeId1, null, Collections.emptyList());
+        res2 = resourceFactory.create(SYS_CTX, resDfn, node2, nodeId2, null, Collections.emptyList());
 
         storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
 

@@ -61,7 +61,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
         NodeName nodeName
     )
     {
-        Resource.Key resourceKey = new Resource.Key(nodeName, resourceName);
+        Resource.ResourceKey resourceKey = new Resource.ResourceKey(nodeName, resourceName);
         return update(cachedUpdates.rscUpdates.computeIfAbsent(
             resourceKey, ignored -> new UpdateNotification(rscUuid)));
     }
@@ -186,7 +186,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         public Optional<UpdateNotification> controllerUpdate = Optional.empty();
         public final Map<NodeName, UpdateNotification> nodeUpdates = new TreeMap<>();
-        public final Map<Resource.Key, UpdateNotification> rscUpdates = new TreeMap<>();
+        public final Map<Resource.ResourceKey, UpdateNotification> rscUpdates = new TreeMap<>();
         public final Map<StorPoolName, UpdateNotification> storPoolUpdates = new TreeMap<>();
         public final Map<SnapshotDefinition.Key, UpdateNotification> snapshotUpdates = new TreeMap<>();
 

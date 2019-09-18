@@ -29,9 +29,7 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -62,6 +60,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -383,15 +382,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     @Override
-    public void rscUpdateApplied(Set<Resource.Key> rscKeySet)
+    public void rscUpdateApplied(Set<Resource.ResourceKey> rscKeySet)
     {
         synchronized (sched)
         {
-            for (Resource.Key resourceKey : rscKeySet)
+            for (Resource.ResourceKey resourceKey : rscKeySet)
             {
                 markPendingDispatch(
                     rcvPendingBundle.rscUpdates.remove(resourceKey),
-                    rscKeySet.stream().map(Resource.Key::getResourceName).collect(Collectors.toSet())
+                    rscKeySet.stream().map(Resource.ResourceKey::getResourceName).collect(Collectors.toSet())
                 );
             }
             if (rcvPendingBundle.isEmpty())
@@ -794,7 +793,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         {
                             Resource otherRsc = rscIt.next();
                             if (otherRsc != rsc &&
-                                otherRsc.getStateFlags().isSet(wrkCtx, RscFlags.DELETE)
+                                otherRsc.getStateFlags().isSet(wrkCtx, Resource.Flags.DELETE)
                             )
                             {
                                 remoteResourcesToDelete.add(otherRsc);
@@ -1135,9 +1134,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
-    private void requestRscUpdates(Map<Resource.Key, UUID> rscUpdates)
+    private void requestRscUpdates(Map<Resource.ResourceKey, UUID> rscUpdates)
     {
-        for (Entry<Resource.Key, UUID> entry : rscUpdates.entrySet())
+        for (Entry<Resource.ResourceKey, UUID> entry : rscUpdates.entrySet())
         {
             errLog.logTrace("Requesting update for resource '" + entry.getKey().getResourceName().displayValue + "'");
             stltUpdateRequester.requestRscUpdate(

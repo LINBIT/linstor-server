@@ -23,8 +23,6 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPool;
@@ -409,7 +407,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         List<Resource> deployedResources = new ArrayList<>();
         for (Node node : bestCandidate.nodes)
         {
-            ResourceData rsc = ctrlRscCrtApiHelper.createResourceDb(
+            Resource rsc = ctrlRscCrtApiHelper.createResourceDb(
                 node.getName().displayValue,
                 rscNameStr,
                 0L,
@@ -446,7 +444,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                             ctrlRscCrtApiHelper.createResourceDb(
                                 disklessNode.getName().displayValue,
                                 rscNameStr,
-                                RscFlags.DISKLESS.flagValue,
+                                Resource.Flags.DISKLESS.flagValue,
                                 rscPropsMap,
                                 Collections.emptyList(),
                                 null,

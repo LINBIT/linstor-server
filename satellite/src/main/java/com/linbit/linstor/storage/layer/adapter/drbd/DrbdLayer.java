@@ -21,10 +21,8 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.drbdstate.DrbdConnection;
@@ -59,6 +57,7 @@ import com.linbit.utils.AccessUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -247,7 +246,7 @@ public class DrbdLayer implements DeviceLayer
         else
         if (
             drbdRscData.getRscDfnLayerObject().isDown() ||
-            rsc.getStateFlags().isSet(workerCtx, RscFlags.DELETE)
+                rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DELETE)
         )
         {
             deleteDrbd(drbdRscData);
@@ -291,7 +290,7 @@ public class DrbdLayer implements DeviceLayer
     {
         if (
             !drbdRscData.getResource().isDiskless(workerCtx) ||
-            drbdRscData.getResource().getStateFlags().isSet(workerCtx, RscFlags.DISK_REMOVING)
+                drbdRscData.getResource().getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
         )
         {
             RscLayerObject dataChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_DATA);
@@ -453,7 +452,7 @@ public class DrbdLayer implements DeviceLayer
                     {
                         if (!otherRsc.equals(drbdRscData) && // skip local rsc
                             !otherRsc.getResource().isDiskless(workerCtx) && // skip remote diskless resources
-                            otherRsc.getResource().getStateFlags().isSet(workerCtx, RscFlags.DELETE)
+                                otherRsc.getResource().getStateFlags().isSet(workerCtx, Resource.Flags.DELETE)
                         )
                         {
                             /*
@@ -514,7 +513,8 @@ public class DrbdLayer implements DeviceLayer
         List<DrbdVlmData> checkMetaData = new ArrayList<>();
         Resource rsc = drbdRscData.getResource();
         if (!rsc.isDiskless(workerCtx) ||
-            rsc.getStateFlags().isSet(workerCtx, RscFlags.DISK_REMOVING))
+                rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
+        )
         {
             // using a dedicated list to prevent concurrentModificationException
             List<DrbdVlmData> volumesToDelete = new ArrayList<>();
@@ -529,7 +529,7 @@ public class DrbdLayer implements DeviceLayer
                         volumesToDelete.add(drbdVlmData);
                     }
                 }
-                else if (rsc.getStateFlags().isSet(workerCtx, RscFlags.DISK_REMOVING))
+                else if (rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING))
                 {
                     if (drbdVlmData.hasDisk() && !drbdVlmData.hasFailed())
                     {
@@ -995,7 +995,7 @@ public class DrbdLayer implements DeviceLayer
         //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
         drbdRscData.setAdjustRequired(true);
 
-        boolean isRscDisklessFlagSet = localResource.getStateFlags().isSet(workerCtx, Resource.RscFlags.DISKLESS);
+        boolean isRscDisklessFlagSet = localResource.getStateFlags().isSet(workerCtx, Resource.Flags.DISKLESS);
 
         Iterator<DrbdVlmData> drbdVlmDataIter = drbdRscData.getVlmLayerObjects().values().iterator();
         while (drbdVlmDataIter.hasNext())
@@ -1102,7 +1102,8 @@ public class DrbdLayer implements DeviceLayer
             ResourceDefinition rscDfn = rsc.getDefinition();
 
             if (rscDfn.getProps(workerCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
-                rsc.getStateFlags().isUnset(workerCtx, Resource.RscFlags.DISKLESS))
+                    rsc.getStateFlags().isUnset(workerCtx, Resource.Flags.DISKLESS)
+            )
             {
                 boolean alreadyInitialized = !allVlmsMetaDataNew(drbdRscData);
                 errorReporter.logTrace(
@@ -1134,7 +1135,7 @@ public class DrbdLayer implements DeviceLayer
 
                 // Set the resource primary (--force) to trigger an initial sync of all
                 // fat provisioned volumes
-                ((ResourceData) rsc).unsetCreatePrimary();
+                rsc.unsetCreatePrimary();
                 if (haveFatVlm)
                 {
                     errorReporter.logTrace("Setting resource primary on %s", drbdRscData.getSuffixedResourceName());

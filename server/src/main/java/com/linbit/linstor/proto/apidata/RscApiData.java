@@ -2,6 +2,7 @@ package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
+import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.proto.common.RscOuterClass;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
  *
  * @author rpeinthor
  */
-public class RscApiData implements Resource.RscApi
+public class RscApiData implements ResourceApi
 {
     private final RscOuterClass.Rsc rsc;
     private final RscLayerDataApi layerObjectApiData;
@@ -69,7 +70,7 @@ public class RscApiData implements Resource.RscApi
     @Override
     public long getFlags()
     {
-        return Resource.RscFlags.fromStringList(rsc.getRscFlagsList());
+        return Resource.Flags.fromStringList(rsc.getRscFlagsList());
     }
 
     @Override

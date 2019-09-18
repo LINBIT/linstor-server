@@ -1,5 +1,10 @@
 package com.linbit.linstor;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -10,7 +15,6 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
@@ -59,13 +63,6 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Provider;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,10 +80,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class ConfFileBuilderTest
@@ -334,7 +333,7 @@ public class ConfFileBuilderTest
         ResourceDefinition resourceDefinition = Mockito.mock(ResourceDefinition.class);
         ResourceGroup rscGrp = Mockito.mock(ResourceGroup.class);
         VolumeGroup vlmGrp = Mockito.mock(VolumeGroup.class);
-        StateFlags<Resource.RscFlags> rscStateFlags = Mockito.mock(ResourceStateFlags.class);
+        StateFlags<Resource.Flags> rscStateFlags = Mockito.mock(ResourceStateFlags.class);
         StateFlags<ResourceConnection.RscConnFlags> rscConnStateFlags = Mockito.mock(ResourceConnStateFlags.class);
         Node assignedNode = Mockito.mock(Node.class);
         NetInterface netInterface = Mockito.mock(NetInterface.class);
@@ -360,12 +359,8 @@ public class ConfFileBuilderTest
         when(volumeDefinition.getVolumeNumber()).thenReturn(new VolumeNumber(volumeNumber));
         when(volumeDefinition.getResourceDefinition()).thenReturn(resourceDefinition);
 
-        when(
-                volumeFlags.isUnset(
-                        any(AccessContext.class),
-                        eq(Volume.VlmFlags.DELETE)
-                )
-        ).thenReturn(!volumeDeleted);
+        when(volumeFlags.isUnset(any(AccessContext.class), eq(Volume.VlmFlags.DELETE)))
+            .thenReturn(!volumeDeleted);
 
         when(volume.getFlags()).thenReturn(volumeFlags);
         when(volume.getVolumeDefinition()).thenReturn(volumeDefinition);
@@ -392,14 +387,12 @@ public class ConfFileBuilderTest
                 accessContext, new NetInterfaceName("eth-1"))).thenReturn(null);
         when(netInterface.getNode()).thenReturn(assignedNode);
 
-        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.RscFlags.DELETE)))
-                .thenReturn(!resourceDeleted);
-        when(
-                rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.RscFlags.DISKLESS)))
-                .thenReturn(!diskless);
-        when(
-                rscStateFlags.isSet(any(AccessContext.class), eq(Resource.RscFlags.DISKLESS)))
-                .thenReturn(diskless);
+        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.DELETE)))
+            .thenReturn(!resourceDeleted);
+        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.DISKLESS)))
+            .thenReturn(!diskless);
+        when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.DISKLESS)))
+            .thenReturn(diskless);
 
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
         when(resourceDefinition.getProps(accessContext)).thenReturn(rscDfnProps);
@@ -715,7 +708,7 @@ public class ConfFileBuilderTest
         };
     }
 
-    private interface ResourceStateFlags extends StateFlags<Resource.RscFlags>
+    private interface ResourceStateFlags extends StateFlags<Resource.Flags>
     {
     }
 

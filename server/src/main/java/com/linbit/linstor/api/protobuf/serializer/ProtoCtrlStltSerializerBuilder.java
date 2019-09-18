@@ -228,7 +228,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder resourceData(
+    public ProtoCtrlStltSerializerBuilder resource(
         Resource localResource,
         long fullSyncTimestamp,
         long updateId
@@ -237,7 +237,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgIntApplyRsc.newBuilder()
-                .setRsc(rscSerializerHelper.buildIntResourceData(localResource))
+                .setRsc(rscSerializerHelper.buildIntResource(localResource))
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
                 .build()
@@ -255,7 +255,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder deletedResourceData(
+    public ProtoCtrlStltSerializerBuilder deletedResource(
         String rscNameStr,
         long fullSyncTimestamp,
         long updateId
@@ -412,7 +412,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 if (rsc.iterateVolumes().hasNext())
                 {
-                    serializedRscs.add(rscSerializerHelper.buildIntResourceData(rsc));
+                    serializedRscs.add(rscSerializerHelper.buildIntResource(rsc));
                 }
             }
             for (Snapshot snapshot : snapshots)
@@ -797,7 +797,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     private class ResourceSerializerHelper
     {
-        private IntRsc buildIntResourceData(Resource localResource)
+        private IntRsc buildIntResource(Resource localResource)
             throws AccessDeniedException
         {
             List<Resource> otherResources = new ArrayList<>();

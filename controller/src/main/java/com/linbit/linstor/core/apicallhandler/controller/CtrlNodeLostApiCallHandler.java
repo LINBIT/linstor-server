@@ -363,7 +363,7 @@ public class CtrlNodeLostApiCallHandler
         boolean isMarkedForDeletion;
         try
         {
-            isMarkedForDeletion = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.RscFlags.DELETE);
+            isMarkedForDeletion = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.DELETE);
         }
         catch (AccessDeniedException accDeniedExc)
         {

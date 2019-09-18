@@ -71,7 +71,7 @@ public class VolumeDataFactory
             new TreeMap<>()
         );
         driver.create(volData);
-        ((ResourceData) rsc).putVolume(accCtx, volData);
+        ((Resource) rsc).putVolume(accCtx, volData);
         ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, volData);
 
         return volData;
@@ -102,7 +102,7 @@ public class VolumeDataFactory
                     transMgrProvider,
                     new TreeMap<>()
                 );
-                ((ResourceData) rsc).putVolume(accCtx, vlmData);
+                ((Resource) rsc).putVolume(accCtx, vlmData);
                 ((VolumeDefinitionData) vlmDfn).putVolume(accCtx, vlmData);
 
                 vlmData.setAllocatedSize(accCtx, vlmDfn.getVolumeSize(accCtx));

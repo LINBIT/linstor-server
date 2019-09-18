@@ -20,11 +20,11 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
@@ -44,14 +44,15 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFl
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
 public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, DrbdRscDfnData, DrbdVlmDfnData>
 {
@@ -440,7 +441,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
             String metaStorPoolStr = prioProps.getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
             if (
                 isExternalMetaDataPool(metaStorPoolStr) &&
-                rsc.getStateFlags().isUnset(accCtx, Resource.RscFlags.DISKLESS)
+                    rsc.getStateFlags().isUnset(accCtx, Resource.Flags.DISKLESS)
             )
             {
                 metaStorPool = node.getStorPool(accCtx, new StorPoolName(metaStorPoolStr));

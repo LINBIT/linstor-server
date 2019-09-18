@@ -17,7 +17,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void controllerUpdateApplied(Set<ResourceName> rscSet);
     void nodeUpdateApplied(Set<NodeName> nodeSet, Set<ResourceName> rscSet);
     void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet, ApiCallRc responses);
-    void rscUpdateApplied(Set<Resource.Key> rscSet);
+    void rscUpdateApplied(Set<Resource.ResourceKey> rscSet);
     void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
 
     void markResourceForDispatch(ResourceName name);

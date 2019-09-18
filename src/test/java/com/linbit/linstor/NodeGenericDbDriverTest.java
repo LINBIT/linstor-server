@@ -18,10 +18,8 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
@@ -423,12 +421,15 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             storPool2.getProps(SYS_CTX).setProp(storPool2TestKey, storPool2TestValue);
 
             // node1 res
-            ResourceData res1 = resourceDataFactory.create(
+            Resource res1 = resourceFactory.create(
                 SYS_CTX,
                 resDfn,
                 node1,
                 node1Id,
-                new RscFlags[] {RscFlags.CLEAN},
+                new Resource.Flags[]
+                {
+                    Resource.Flags.CLEAN
+                },
                 Collections.emptyList()
             );
             res1.getProps(SYS_CTX).setProp(res1TestKey, res1TestValue);
@@ -446,12 +447,15 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             vol1Uuid = vol1.getUuid();
 
             // node2 res
-            ResourceData res2 = resourceDataFactory.create(
+            Resource res2 = resourceFactory.create(
                 SYS_CTX,
                 resDfn,
                 node2,
                 node2Id,
-                new RscFlags[] {RscFlags.CLEAN},
+                new Resource.Flags[]
+                {
+                    Resource.Flags.CLEAN
+                },
                 Collections.emptyList()
             );
             res2.getProps(SYS_CTX).setProp(res2TestKey, res2TestValue);
@@ -557,10 +561,10 @@ public class NodeGenericDbDriverTest extends GenericDbBase
                 assertEquals(1, resProps.size());
             }
             {
-                StateFlags<RscFlags> resStateFlags = res.getStateFlags();
+                StateFlags<Resource.Flags> resStateFlags = res.getStateFlags();
                 assertNotNull(resStateFlags);
-                assertTrue(resStateFlags.isSet(SYS_CTX, RscFlags.CLEAN));
-                assertFalse(resStateFlags.isSet(SYS_CTX, RscFlags.DELETE));
+                assertTrue(resStateFlags.isSet(SYS_CTX, Resource.Flags.CLEAN));
+                assertFalse(resStateFlags.isSet(SYS_CTX, Resource.Flags.DELETE));
             }
             assertEquals(res1Uuid, res.getUuid());
             {

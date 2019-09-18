@@ -9,8 +9,6 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.LUKSVolume;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -62,7 +60,7 @@ public interface DbEngine
      * The object-specific loader method, creating the actual data object with its initialization-maps
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinitionData}, ...
      * @param <INIT_MAPS>
      *     The Linstor-object's initialization maps.
      *     For example, if DATA is {@link Node}, then INIT_MAPS should be {@link Node}.{@link Node.InitMaps},
@@ -70,7 +68,7 @@ public interface DbEngine
      *     The parent objects needed to create the DATA object. <br/>
      *     For example, {@link Node} does not need anything for initialization, so LOAD_ALL can be
      *     {@link Void}.<br />
-     *     {@link ResourceData} needs a data-structure containing a <code>Map&lt;NodeName, Node&gt;</code> and a
+     *     {@link Resource} needs a data-structure containing a <code>Map&lt;NodeName, Node&gt;</code> and a
      *     <code>Map&lt;ResourceName, ResourceDefinition&gt;</code>
      */
     @FunctionalInterface
@@ -106,10 +104,10 @@ public interface DbEngine
      * Returns a {@link StateFlagsPersistence} for the given DATA type.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinitionData}, ...
      * @param <FLAG>
      *     The flag-enum for the given DATA type. <br/>
-     *     For example {@link Flags}, {@link RscFlags}, ...
+     *     For example {@link Flags}, {@link Flags}, ...
      * @param settersRef
      *     This map contains accessors for all columns of the given {@link Table}.<br/>
      *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
@@ -134,7 +132,7 @@ public interface DbEngine
      * Returns a {@link SingleColumnDatabaseDriver} for the given DATA type.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinitionData}, ...
      * @param <INPUT_TYPE>
      *     The Linstor-type which is updated, i.e. {@link Type}, {@link String} for
      *     {@link ResourceGroup}'s description-driver, <code>byte[]</code>
@@ -170,7 +168,7 @@ public interface DbEngine
      * Returns a {@link CollectionDatabaseDriver} for the given DATA type.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinitionData}, ...
      * @param <LIST_TYPE>
      *     The type of the elements of the {@link Collection}.
      * @param setters
@@ -194,7 +192,7 @@ public interface DbEngine
      * Persists the given data object into the database.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinitionData}, ...
      * @param setters
      *     This map contains accessors for all columns of the given {@link Table}.<br/>
      *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
@@ -222,7 +220,7 @@ public interface DbEngine
      * Deletes the given data object from the database.
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinitionData}, ...
      * @param setters
      *     This map contains accessors for all columns of the given {@link Table}.<br/>
      *     Required for accessing the primary key<br />
@@ -253,7 +251,7 @@ public interface DbEngine
      * {@link ResourceDefinition}s are fully loaded)
      *
      * @param <DATA>
-     *     The Linstor-object, i.e. {@link Node}, {@link ResourceData}, {@link ResourceDefinitionData}, ...
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinitionData}, ...
      * @param <INIT_MAPS>
      *     The Linstor-object's initialization maps.
      *     For example, if DATA is {@link Node}, then INIT_MAPS should be {@link Node.InitMaps},
@@ -261,7 +259,7 @@ public interface DbEngine
      *     The parent objects needed to create the DATA object. <br/>
      *     For example, {@link Node} does not need anything for initialization, so LOAD_ALL can be
      *     {@link Void}.<br />
-     *     {@link ResourceData} needs a data-structure containing a <code>Map&lt;NodeName, Node&gt;</code> and a
+     *     {@link Resource} needs a data-structure containing a <code>Map&lt;NodeName, Node&gt;</code> and a
      *     <code>Map&lt;ResourceName, ResourceDefinition&gt;</code>
      * @param table
      *     The {@link Table} from which the given DATA objects should be loaded

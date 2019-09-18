@@ -167,7 +167,7 @@ public class ApplyRsc implements ApiCall
             UUID.fromString(localRsc.getNodeUuid()),
             rscDfnPojo,
             UUID.fromString(localRsc.getUuid()),
-            FlagsHelper.fromStringList(Resource.RscFlags.class, localRsc.getRscFlagsList()),
+            FlagsHelper.fromStringList(Resource.Flags.class, localRsc.getRscFlagsList()),
             localRsc.getPropsMap(),
             localVlms,
             otherRscList,
@@ -268,7 +268,7 @@ public class ApplyRsc implements ApiCall
                     protoNode.getPropsMap(),
                     extractNetIfs(protoNode),
                     UUID.fromString(protoRsc.getUuid()),
-                    FlagsHelper.fromStringList(Resource.RscFlags.class, protoRsc.getRscFlagsList()),
+                    FlagsHelper.fromStringList(Resource.Flags.class, protoRsc.getRscFlagsList()),
                     protoRsc.getPropsMap(),
                     extractRawVolumes(
                         protoRsc.getVlmsList()

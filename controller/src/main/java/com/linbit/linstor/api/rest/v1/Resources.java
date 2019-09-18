@@ -9,7 +9,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandle
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
-import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.apis.ResourceApi;
+import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -27,6 +28,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,7 +100,7 @@ public class Resources
                 nodes.add(nodeName);
             }
             ResourceList resourceList = ctrlApiCallHandler.listResource(rscName, nodes);
-            Stream<Resource.RscApi> rscApiStream = resourceList.getResources().stream();
+            Stream<ResourceApi> rscApiStream = resourceList.getResources().stream();
             if (limit > 0)
             {
                 rscApiStream = rscApiStream.skip(offset).limit(limit);
@@ -118,18 +120,18 @@ public class Resources
         }, false);
     }
 
-    private class ResourceDataWithPayload implements Resource.RscWithPayloadApi
+    private class ResourceWithPayload implements ResourceWithPayloadApi
     {
         private final JsonGenTypes.ResourceCreate rscPayload;
 
-        ResourceDataWithPayload(JsonGenTypes.ResourceCreate rsc, String rscName)
+        ResourceWithPayload(JsonGenTypes.ResourceCreate rsc, String rscName)
         {
             rscPayload = rsc;
             rscPayload.resource.name = rscName;
         }
 
         @Override
-        public Resource.RscApi getRscApi()
+        public ResourceApi getRscApi()
         {
             return Json.resourceToApi(rscPayload.resource);
         }
@@ -158,12 +160,12 @@ public class Resources
     {
         try
         {
-            List<JsonGenTypes.ResourceCreate> rscDatas = Arrays.asList(
+            List<JsonGenTypes.ResourceCreate> rscList = Arrays.asList(
                 objectMapper.readValue(jsonData, JsonGenTypes.ResourceCreate[].class)
             );
 
-            List<Resource.RscWithPayloadApi> rscWithPayloadApiList = rscDatas.stream()
-                .map(resourceCreateData -> new ResourceDataWithPayload(resourceCreateData, rscName))
+            List<ResourceWithPayloadApi> rscWithPayloadApiList = rscList.stream()
+                .map(resourceCreateData -> new ResourceWithPayload(resourceCreateData, rscName))
                 .collect(Collectors.toList());
 
             Flux<ApiCallRc> flux = ctrlRscCrtApiCallHandler.createResource(rscWithPayloadApiList)

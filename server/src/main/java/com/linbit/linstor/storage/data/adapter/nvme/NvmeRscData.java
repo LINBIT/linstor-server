@@ -5,7 +5,6 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -96,7 +95,7 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
 
     public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
     {
-        return rsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS);
+        return rsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS);
     }
 
     @Override

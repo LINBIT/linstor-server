@@ -7,11 +7,11 @@ import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
+import com.linbit.linstor.core.apis.ResourceApi;
+import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Resource.RscApi;
-import com.linbit.linstor.core.objects.Resource.RscWithPayloadApi;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
@@ -219,7 +219,7 @@ public class RscApiTest extends ApiTestBase
 
     }
 
-    private class RscWithPayloadApiData implements RscWithPayloadApi
+    private class RscWithPayloadApiData implements ResourceWithPayloadApi
     {
         private RscApiData rscApi;
         private Integer drbdNodeId;
@@ -238,7 +238,7 @@ public class RscApiTest extends ApiTestBase
         }
 
         @Override
-        public RscApi getRscApi()
+        public ResourceApi getRscApi()
         {
             return rscApi;
         }

@@ -2,13 +2,8 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -24,14 +19,15 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class ResourceDataControllerFactory
+public class ResourceControllerFactory
 {
-    private final ResourceDataDatabaseDriver dbDriver;
+    private final ResourceDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -39,8 +35,8 @@ public class ResourceDataControllerFactory
     private final CtrlLayerDataHelper layerStackHelper;
 
     @Inject
-    public ResourceDataControllerFactory(
-        ResourceDataDatabaseDriver dbDriverRef,
+    public ResourceControllerFactory(
+        ResourceDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -56,25 +52,25 @@ public class ResourceDataControllerFactory
         layerStackHelper = layerStackHelperRef;
     }
 
-    public ResourceData create(
+    public Resource create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
         Integer nodeIdIntRef,
-        Resource.RscFlags[] initFlags,
+        Resource.Flags[] initFlags,
         List<DeviceLayerKind> layerStackRef
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        ResourceData rscData = (ResourceData) node.getResource(accCtx, rscDfn.getName());
+        Resource rscData = node.getResource(accCtx, rscDfn.getName());
 
         if (rscData != null)
         {
             throw new LinStorDataAlreadyExistsException("The Resource already exists");
         }
 
-        rscData = new ResourceData(
+        rscData = new Resource(
             UUID.randomUUID(),
             objectProtectionFactory.getInstance(
                 accCtx,
@@ -97,7 +93,7 @@ public class ResourceDataControllerFactory
 
 
         dbDriver.create(rscData);
-        ((Node) node).addResource(accCtx, rscData);
+        node.addResource(accCtx, rscData);
         ((ResourceDefinitionData) rscDfn).addResource(accCtx, rscData);
 
         List<DeviceLayerKind> layerStack = layerStackRef;

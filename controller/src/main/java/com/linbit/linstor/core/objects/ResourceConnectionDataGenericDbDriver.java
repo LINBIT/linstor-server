@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -328,7 +329,7 @@ public class ResourceConnectionDataGenericDbDriver implements ResourceConnection
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        Resource.RscFlags.class,
+                        Resource.Flags.class,
                         flags
                     ),
                     ", "

@@ -29,7 +29,7 @@ import com.linbit.linstor.core.objects.NodeDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnectionData;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
-import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
@@ -572,7 +572,7 @@ public class DatabaseLoader implements DatabaseDriver
         {
             // initialize all non-persisted, but later serialized variables
             List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
-            layerDataHelper.ensureStackDataExists((ResourceData) rsc, layerStack, payload);
+            layerDataHelper.ensureStackDataExists((Resource) rsc, layerStack, payload);
         }
     }
 

@@ -31,6 +31,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCa
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -267,7 +268,7 @@ public class CtrlVlmCrtApiHelper
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.RscFlags.DISKLESS);
+            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS);
         }
         catch (AccessDeniedException implError)
         {

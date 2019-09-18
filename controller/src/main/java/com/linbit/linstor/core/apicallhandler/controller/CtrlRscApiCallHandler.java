@@ -22,7 +22,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionKey;
-import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
@@ -112,7 +112,7 @@ public class CtrlRscApiCallHandler
 
         try
         {
-            ResourceData rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
+            Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
 
             if (rscUuid != null && !rscUuid.equals(rsc.getUuid()))
             {

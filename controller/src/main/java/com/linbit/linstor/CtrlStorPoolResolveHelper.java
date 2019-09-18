@@ -31,6 +31,7 @@ import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.stream.Collectors;
 
 @Singleton
@@ -143,7 +144,7 @@ public class CtrlStorPoolResolveHelper
                     else
                     {
                         responses.addEntry(makeFlaggedDisklessWarning(storPool));
-                        rsc.getStateFlags().enableFlags(apiCtx, Resource.RscFlags.DISKLESS);
+                        rsc.getStateFlags().enableFlags(apiCtx, Resource.Flags.DISKLESS);
                     }
                 }
             }

@@ -24,10 +24,8 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceData;
-import com.linbit.linstor.core.objects.ResourceDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPool;
@@ -87,7 +85,7 @@ public class CtrlRscCrtApiHelper
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final ResourceDataControllerFactory resourceDataFactory;
+    private final ResourceControllerFactory resourceFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final ResourceCreateCheck resourceCreateCheck;
     private final CtrlLayerDataHelper layerDataHelper;
@@ -103,7 +101,7 @@ public class CtrlRscCrtApiHelper
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        ResourceDataControllerFactory resourceDataFactoryRef,
+        ResourceControllerFactory resourceFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ResourceCreateCheck resourceCreateCheckRef,
         CtrlLayerDataHelper layerDataHelperRef
@@ -118,7 +116,7 @@ public class CtrlRscCrtApiHelper
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        resourceDataFactory = resourceDataFactoryRef;
+        resourceFactory = resourceFactoryRef;
         peerAccCtx = peerAccCtxRef;
         resourceCreateCheck = resourceCreateCheckRef;
         layerDataHelper = layerDataHelperRef;
@@ -134,7 +132,7 @@ public class CtrlRscCrtApiHelper
      *
      * @return the newly created resource
      */
-    public ApiCallRcWith<ResourceData> createResourceDb(
+    public ApiCallRcWith<Resource> createResourceDb(
         String nodeNameStr,
         String rscNameStr,
         long flags,
@@ -193,7 +191,7 @@ public class CtrlRscCrtApiHelper
 
         resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
 
-        ResourceData rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
+        Resource rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
         Props rscProps = ctrlPropsHelper.getProps(rsc);
 
         ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
@@ -447,7 +445,7 @@ public class CtrlRscCrtApiHelper
         ), context, true));
     }
 
-    ResourceData createResource(
+    Resource createResource(
         ResourceDefinitionData rscDfn,
         Node node,
         Integer nodeIdIntRef,
@@ -460,17 +458,17 @@ public class CtrlRscCrtApiHelper
             ensureLayerStackIsAllowed(layerStackRef);
         }
 
-        ResourceData rsc;
+        Resource rsc;
         try
         {
             checkPeerSlotsForNewPeer(rscDfn);
 
-            rsc = resourceDataFactory.create(
+            rsc = resourceFactory.create(
                 peerAccCtx.get(),
                 rscDfn,
                 node,
                 nodeIdIntRef,
-                Resource.RscFlags.restoreFlags(flags),
+                Resource.Flags.restoreFlags(flags),
                 layerStackRef
             );
 
@@ -507,7 +505,7 @@ public class CtrlRscCrtApiHelper
         return rsc;
     }
 
-    private Set<DeviceLayerKind> getUnsupportedLayers(ResourceData rsc) throws AccessDeniedException
+    private Set<DeviceLayerKind> getUnsupportedLayers(Resource rsc) throws AccessDeniedException
     {
         Set<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
             rsc.getLayerData(peerAccCtx.get())
@@ -659,7 +657,7 @@ public class CtrlRscCrtApiHelper
             Iterator<Resource> rscIter = rscDfn.iterateResource(peerAccCtx.get());
             while (rscIter.hasNext())
             {
-                if (!rscIter.next().getStateFlags().isSet(peerAccCtx.get(), Resource.RscFlags.DISKLESS))
+                if (!rscIter.next().getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.DISKLESS))
                 {
                     allDiskless = false;
                 }

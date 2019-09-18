@@ -16,8 +16,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.ResourceGroupData;
@@ -43,13 +42,13 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler.getRscGrpDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmGrpApiCallHandler.getVlmGrpDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class CtrlApiDataLoader
 {
@@ -231,33 +230,33 @@ public class CtrlApiDataLoader
         return vlmDfn;
     }
 
-    public ResourceData loadRsc(String nodeName, String rscName, boolean failIfNull)
+    public Resource loadRsc(String nodeName, String rscName, boolean failIfNull)
     {
         return loadRsc(LinstorParsingUtils.asNodeName(nodeName), LinstorParsingUtils.asRscName(rscName), failIfNull);
     }
 
-    public ResourceData loadRsc(NodeName nodeName, ResourceName rscName, boolean failIfNull)
+    public Resource loadRsc(NodeName nodeName, ResourceName rscName, boolean failIfNull)
     {
         Node node = loadNode(nodeName, true);
         ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
         return loadRsc(rscDfn, node, failIfNull);
     }
 
-    public ResourceData loadRsc(ResourceDefinition rscDfn, String nodeNameStr, boolean failIfNull)
+    public Resource loadRsc(ResourceDefinition rscDfn, String nodeNameStr, boolean failIfNull)
     {
         Node node = loadNode(nodeNameStr, true);
         return loadRsc(rscDfn, node, failIfNull);
     }
 
-    public ResourceData loadRsc(ResourceDefinition rscDfn, Node node, boolean failIfNull)
+    public Resource loadRsc(ResourceDefinition rscDfn, Node node, boolean failIfNull)
     {
         ResourceName rscName = rscDfn.getName();
         NodeName nodeName = node.getName();
-        ResourceData rscData;
+        Resource rsc;
         try
         {
-            rscData = (ResourceData) node.getResource(peerAccCtx.get(), rscDfn.getName());
-            if (rscData == null && failIfNull)
+            rsc = node.getResource(peerAccCtx.get(), rscDfn.getName());
+            if (rsc == null && failIfNull)
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(
@@ -280,7 +279,7 @@ public class CtrlApiDataLoader
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-        return rscData;
+        return rsc;
     }
 
     public final SnapshotDefinitionData loadSnapshotDfn(
@@ -554,7 +553,7 @@ public class CtrlApiDataLoader
         boolean failIfNullRef
     )
     {
-        ResourceData rsc = loadRsc(nodeNameREf, rscNameRef, failIfNullRef);
+        Resource rsc = loadRsc(nodeNameREf, rscNameRef, failIfNullRef);
         Volume vlm = rsc.getVolume(vlmNrRef);
         if (vlm == null && failIfNullRef)
         {

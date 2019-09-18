@@ -27,11 +27,9 @@ import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionDataSatelliteFactory;
-import com.linbit.linstor.core.objects.ResourceData;
-import com.linbit.linstor.core.objects.ResourceDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
@@ -95,7 +93,7 @@ class StltRscApiCallHandler
     private final VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     private final NodeSatelliteFactory nodeFactory;
     private final NetInterfaceFactory netInterfaceFactory;
-    private final ResourceDataSatelliteFactory resourceDataFactory;
+    private final ResourceSatelliteFactory resourceFactory;
     private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
     private final StorPoolDataSatelliteFactory storPoolDataFactory;
     private final VolumeDataFactory volumeDataFactory;
@@ -121,7 +119,7 @@ class StltRscApiCallHandler
         VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactoryRef,
         NodeSatelliteFactory nodeFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
-        ResourceDataSatelliteFactory resourceDataFactoryRef,
+        ResourceSatelliteFactory resourceFactoryRef,
         StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
         StorPoolDataSatelliteFactory storPoolDataFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
@@ -146,7 +144,7 @@ class StltRscApiCallHandler
         volumeDefinitionDataFactory = volumeDefinitionDataFactoryRef;
         nodeFactory = nodeFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
-        resourceDataFactory = resourceDataFactoryRef;
+        resourceFactory = resourceFactoryRef;
         storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
         storPoolDataFactory = storPoolDataFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
@@ -191,7 +189,7 @@ class StltRscApiCallHandler
 
             deviceManager.rscUpdateApplied(
                 Collections.singleton(
-                    new Resource.Key(
+                    new Resource.ResourceKey(
                         controllerPeerConnector.getLocalNodeName(),
                         rscName
                     )
@@ -287,8 +285,8 @@ class StltRscApiCallHandler
             }
 
             final List<Node> nodesToRegister = new ArrayList<>();
-            final Set<Resource.Key> createdRscSet = new TreeSet<>();
-            final Set<Resource.Key> updatedRscSet = new TreeSet<>();
+            final Set<Resource.ResourceKey> createdRscSet = new TreeSet<>();
+            final Set<Resource.ResourceKey> updatedRscSet = new TreeSet<>();
             Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
             if (!rscIterator.hasNext())
             {
@@ -301,14 +299,14 @@ class StltRscApiCallHandler
                     rscRawData.getLocalRscUuid(),
                     localNode,
                     rscDfn,
-                    RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
+                    Resource.Flags.restoreFlags(rscRawData.getLocalRscFlags()),
                     rscRawData.getLocalRscProps(),
                     rscRawData.getLocalVlms(),
                     false,
                     rscRawData.getLayerData()
                 );
 
-                createdRscSet.add(new Resource.Key(localRsc));
+                createdRscSet.add(new Resource.ResourceKey(localRsc));
 
                 for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
                 {
@@ -335,11 +333,11 @@ class StltRscApiCallHandler
                     }
                     nodesToRegister.add(remoteNode);
 
-                    ResourceData remoteRsc = createRsc(
+                    Resource remoteRsc = createRsc(
                         otherRscRaw.getRscUuid(),
                         remoteNode,
                         rscDfn,
-                        RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
+                        Resource.Flags.restoreFlags(otherRscRaw.getRscFlags()),
                         otherRscRaw.getRscProps(),
                         otherRscRaw.getVlms(),
                         true,
@@ -348,7 +346,7 @@ class StltRscApiCallHandler
 
                     layerRscDataMerger.mergeLayerData(remoteRsc, otherRscRaw.getRscLayerDataPojo(), true);
 
-                    createdRscSet.add(new Resource.Key(remoteRsc));
+                    createdRscSet.add(new Resource.ResourceKey(remoteRsc));
                 }
             }
             else
@@ -413,9 +411,12 @@ class StltRscApiCallHandler
                 }
 
                 // update flags
-                localRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(rscRawData.getLocalRscFlags()));
+                localRsc.getStateFlags().resetFlagsTo(
+                    apiCtx,
+                    Resource.Flags.restoreFlags(rscRawData.getLocalRscFlags())
+                );
 
-                updatedRscSet.add(new Resource.Key(localRsc));
+                updatedRscSet.add(new Resource.ResourceKey(localRsc));
 
                 for (OtherRscPojo otherRsc : rscRawData.getOtherRscList())
                 {
@@ -494,14 +495,14 @@ class StltRscApiCallHandler
                             otherRsc.getRscUuid(),
                             remoteNode,
                             rscDfn,
-                            RscFlags.restoreFlags(otherRsc.getRscFlags()),
+                            Resource.Flags.restoreFlags(otherRsc.getRscFlags()),
                             otherRsc.getRscProps(),
                             otherRsc.getVlms(),
                             true,
                             otherRsc.getRscLayerDataPojo()
                         );
 
-                        createdRscSet.add(new Resource.Key(remoteRsc));
+                        createdRscSet.add(new Resource.ResourceKey(remoteRsc));
                     }
                     else
                     {
@@ -521,7 +522,10 @@ class StltRscApiCallHandler
                         remoteRscProps.keySet().retainAll(otherRsc.getRscProps().keySet());
 
                         // update flags
-                        remoteRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(otherRsc.getRscFlags()));
+                        remoteRsc.getStateFlags().resetFlagsTo(
+                            apiCtx,
+                            Resource.Flags.restoreFlags(otherRsc.getRscFlags())
+                        );
 
                         // update volumes
                         {
@@ -544,7 +548,7 @@ class StltRscApiCallHandler
                         // everything ok, mark the resource to be kept
                         removedList.remove(remoteRsc);
 
-                        updatedRscSet.add(new Resource.Key(remoteRsc));
+                        updatedRscSet.add(new Resource.ResourceKey(remoteRsc));
                     }
                     layerRscDataMerger.mergeLayerData(remoteRsc, otherRsc.getRscLayerDataPojo(), true);
                 }
@@ -617,7 +621,7 @@ class StltRscApiCallHandler
 
             transMgrProvider.get().commit();
 
-            Set<Resource.Key> devMgrNotifications = new TreeSet<>();
+            Set<Resource.ResourceKey> devMgrNotifications = new TreeSet<>();
 
             reportSuccess(createdRscSet, "created");
             reportSuccess(updatedRscSet, "updated");
@@ -634,9 +638,9 @@ class StltRscApiCallHandler
         }
     }
 
-    private void reportSuccess(Set<Resource.Key> rscSet, String action)
+    private void reportSuccess(Set<Resource.ResourceKey> rscSet, String action)
     {
-        for (Resource.Key rscKey : rscSet)
+        for (Resource.ResourceKey rscKey : rscSet)
         {
             StringBuilder msgBuilder = new StringBuilder();
             msgBuilder
@@ -652,11 +656,11 @@ class StltRscApiCallHandler
         }
     }
 
-    private ResourceData createRsc(
+    private Resource createRsc(
         UUID rscUuid,
         Node node,
         ResourceDefinitionData rscDfn,
-        RscFlags[] flags,
+        Resource.Flags[] flags,
         Map<String, String> rscProps,
         List<VolumeData.VlmApi> vlms,
         boolean remoteRsc,
@@ -665,7 +669,7 @@ class StltRscApiCallHandler
         throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException,
             DatabaseException
     {
-        ResourceData rsc = resourceDataFactory.getInstanceSatellite(
+        Resource rsc = resourceFactory.getInstanceSatellite(
             apiCtx,
             rscUuid,
             node,

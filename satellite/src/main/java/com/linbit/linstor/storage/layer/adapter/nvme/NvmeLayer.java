@@ -6,8 +6,8 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
@@ -24,17 +24,18 @@ import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
-import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
-import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
 
 /**
  * Class for managing NVMe Target and Initiator
@@ -82,7 +83,7 @@ public class NvmeLayer implements DeviceLayer
      *
      * @param rscData   RscLayerObject object to processed.
      *                  If diskless, rscData is an NVMe Initiator and a Target otherwise.
-     *                  Depending on its {@link RscFlags} the operation executed on the Initiator/Target is either
+     *                  Depending on its {@link Flags} the operation executed on the Initiator/Target is either
      *                  connect/configure or disconnect/delete.
      * @param snapshots Collection<Snapshot> to be processed, passed on to {@link DeviceHandler}
      * @param apiCallRc ApiCallRcImpl responses, passed on to {@link DeviceHandler}
@@ -99,12 +100,14 @@ public class NvmeLayer implements DeviceLayer
             nvmeUtils.setDevicePaths(nvmeRscData, nvmeRscData.exists());
 
             // disconnect
-            if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+            if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
             {
                 nvmeUtils.disconnect(nvmeRscData);
             }
             // connect
-            else if (!nvmeRscData.exists() && !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+            else if (!nvmeRscData.exists() &&
+                !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE)
+            )
             {
                 nvmeUtils.connect(nvmeRscData, sysCtx);
                 if (!nvmeUtils.setDevicePaths(nvmeRscData, true))
@@ -125,7 +128,7 @@ public class NvmeLayer implements DeviceLayer
         {
             nvmeRscData.setExists(nvmeUtils.isTargetConfigured(nvmeRscData));
 
-            if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+            if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
             {
                 // delete target resource
                 if (nvmeRscData.exists())
@@ -225,7 +228,7 @@ public class NvmeLayer implements DeviceLayer
         throws AccessDeniedException
     {
         NvmeRscData nvmeRscData = (NvmeRscData) layerDataRef;
-        if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+        if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
         {
             resourceProcessorProvider.get().sendResourceDeletedEvent(nvmeRscData);
         }

@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
+import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.ResourceData;
 import com.linbit.linstor.satellitestate.SatelliteState;
 
 import java.util.ArrayList;
@@ -10,10 +10,10 @@ import java.util.Map;
 
 public class ResourceList
 {
-    private ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
+    private ArrayList<ResourceApi> rscs = new ArrayList<>();
     private Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
 
-    public void addResource(ResourceData.RscApi rscApi)
+    public void addResource(ResourceApi rscApi)
     {
         rscs.add(rscApi);
     }
@@ -23,7 +23,7 @@ public class ResourceList
         satelliteStates.put(nodeName, satelliteState);
     }
 
-    public ArrayList<ResourceData.RscApi> getResources()
+    public ArrayList<ResourceApi> getResources()
     {
         return rscs;
     }

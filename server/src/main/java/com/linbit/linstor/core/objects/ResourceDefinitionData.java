@@ -251,7 +251,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         int count = 0;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
-            if (rsc.getStateFlags().isUnset(accCtx, Resource.RscFlags.DISKLESS))
+            if (rsc.getStateFlags().isUnset(accCtx, Resource.Flags.DISKLESS))
             {
                 count++;
             }
@@ -372,7 +372,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         boolean hasDiskless = false;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
-            hasDiskless = rsc.getStateFlags().isSet(accCtx, Resource.RscFlags.DISKLESS);
+            hasDiskless = rsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS);
             if (hasDiskless)
             {
                 break;
@@ -387,8 +387,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         boolean hasDisklessNotDeleting = false;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
-            if (rsc.getStateFlags().isSet(accCtx, Resource.RscFlags.DISKLESS) &&
-                rsc.getStateFlags().isUnset(accCtx, Resource.RscFlags.DELETE))
+            if (rsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS) &&
+                rsc.getStateFlags().isUnset(accCtx, Resource.Flags.DELETE))
             {
                 hasDisklessNotDeleting = true;
                 break;

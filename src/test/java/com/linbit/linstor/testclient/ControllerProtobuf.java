@@ -166,7 +166,7 @@ public class ControllerProtobuf extends ProtobufIO
         );
     }
 
-    public void sendResourceData(
+    public void sendResource(
         final Resource localResource,
         final long fullSyncTimestamp,
         final long updateId
@@ -178,7 +178,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_RSC,
                 getNextApiCallId()
             )
-            .resourceData(
+            .resource(
                 localResource,
                 fullSyncTimestamp,
                 updateId
@@ -187,7 +187,7 @@ public class ControllerProtobuf extends ProtobufIO
         );
     }
 
-    public void sendDeletedResourceData(
+    public void sendDeletedResource(
         final String rscNameStr,
         long fullSyncTimestamp,
         long updateId
@@ -199,7 +199,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_APPLY_RSC_DELETED,
                 getNextApiCallId()
             )
-            .deletedResourceData(rscNameStr, fullSyncTimestamp, updateId)
+            .deletedResource(rscNameStr, fullSyncTimestamp, updateId)
             .build()
         );
     }

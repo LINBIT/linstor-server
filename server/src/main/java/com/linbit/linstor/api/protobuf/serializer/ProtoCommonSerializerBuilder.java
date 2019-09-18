@@ -18,6 +18,8 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo;
+import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -27,18 +29,17 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnApi;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinition.RscDfnApi;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Volume.VlmApi;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.core.types.TcpPortNumber;
-import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
@@ -723,14 +724,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNodeName(rsc.getAssignedNode().getName().displayValue)
             .setRscDfnUuid(rsc.getDefinition().getUuid().toString())
             .putAllProps(rsc.getProps(accCtx).map())
-            .addAllRscFlags(Resource.RscFlags.toStringList(rsc.getStateFlags().getFlagsBits(accCtx)))
+            .addAllRscFlags(Resource.Flags.toStringList(rsc.getStateFlags().getFlagsBits(accCtx)))
             .addAllVlms(serializeVolumeList(accCtx, rsc.streamVolumes().collect(Collectors.toList())))
             .setLayerObject(LayerObjectSerializer.serializeLayerObject(rsc.getLayerData(accCtx), accCtx))
             .build();
     }
 
     public static RscOuterClass.Rsc serializeResource(
-        Resource.RscApi rscApi
+        ResourceApi rscApi
     )
     {
         return RscOuterClass.Rsc.newBuilder()
@@ -742,7 +743,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .putAllProps(rscApi.getProps())
             .addAllRscFlags(
                 FlagsHelper.toStringList(
-                    Resource.RscFlags.class,
+                    Resource.Flags.class,
                     rscApi.getFlags()
                 )
             )

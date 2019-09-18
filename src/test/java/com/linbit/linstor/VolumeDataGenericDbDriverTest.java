@@ -11,7 +11,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.ResourceData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.objects.ResourceDefinitionData;
 import com.linbit.linstor.core.objects.StorPoolData;
@@ -57,7 +57,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     private ResourceDefinitionData resDfn;
 
     private Integer nodeId;
-    private ResourceData res;
+    private Resource res;
 
     private StorPoolName storPoolName;
     private StorPoolDefinitionData storPoolDfn;
@@ -107,7 +107,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         );
 
         nodeId = 7;
-        res = resourceDataFactory.create(
+        res = resourceFactory.create(
             SYS_CTX,
             resDfn,
             node,
@@ -230,7 +230,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         );
         driver.create(vol);
 
-        Map<Pair<NodeName, ResourceName>, ResourceData> rscMap = new HashMap<>();
+        Map<Pair<NodeName, ResourceName>, Resource> rscMap = new HashMap<>();
         Map<Pair<ResourceName, VolumeNumber>, VolumeDefinitionData> vlmDfnMap = new HashMap<>();
 
         rscMap.put(new Pair<>(nodeName, resName), res);

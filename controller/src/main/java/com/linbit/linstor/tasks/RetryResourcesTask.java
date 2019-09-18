@@ -12,7 +12,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.RscFlags;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -155,7 +154,7 @@ public class RetryResourcesTask implements Task
                             )
                         );
 
-                        if (rsc.getStateFlags().isSet(sysCtx, RscFlags.DELETE))
+                        if (rsc.getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
                         {
                             flux = flux.concatWith(
                                 rscDelHelper.deleteData(

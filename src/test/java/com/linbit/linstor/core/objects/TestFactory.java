@@ -121,8 +121,8 @@ public class TestFactory
      */
     public static ResourceConnectionData createResourceConnectionData(
         UUID uuidRef,
-        ResourceData resSrcRef,
-        ResourceData resDstRef,
+        Resource resSrcRef,
+        Resource resDstRef,
         TcpPortNumber portRef,
         DynamicNumberPool tcpPortPoolRef,
         ResourceConnectionDataGenericDbDriver driverRef,
@@ -148,25 +148,25 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link ResourceData} without persisting it to the database
+     * Creates a new {@link Resource} without persisting it to the database
      * @throws DatabaseException
      */
-    public static ResourceData createResourceData(
+    public static Resource createResource(
         UUID resUuidRef,
         ObjectProtection objProtRef,
         ResourceDefinitionData resDfnRef,
         Node nodeRef,
         long initFlagsRef,
-        ResourceDataGenericDbDriver driverRef,
+        ResourceGenericDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
-        Map<Resource.Key, ResourceConnection> rscConnMapRef,
+        Map<Resource.ResourceKey, ResourceConnection> rscConnMapRef,
         Map<VolumeNumber, Volume> vlmMapRef
     )
         throws DatabaseException
     {
-        return new ResourceData(
+        return new Resource(
             resUuidRef,
             objProtRef,
             resDfnRef,
@@ -315,7 +315,7 @@ public class TestFactory
      */
     public static VolumeData createVolumeData(
         UUID uuidRef,
-        ResourceData resRef,
+        Resource resRef,
         VolumeDefinitionData volDfnRef,
         long flagValueRef,
         VolumeDataGenericDbDriver driverRef,
