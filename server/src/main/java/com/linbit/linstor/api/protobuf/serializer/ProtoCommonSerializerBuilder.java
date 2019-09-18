@@ -23,6 +23,7 @@ import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -916,7 +917,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     public static StorPoolDfnOuterClass.StorPoolDfn serializeStorPoolDfn(
-        StorPoolDefinition.StorPoolDfnApi storPoolDfnApi
+        StorPoolDefinitionApi storPoolDfnApi
     )
     {
         return StorPoolDfnOuterClass.StorPoolDfn.newBuilder()

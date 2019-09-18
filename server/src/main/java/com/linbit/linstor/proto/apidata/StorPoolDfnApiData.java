@@ -1,6 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 
 import java.util.Map;
@@ -10,7 +10,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi
+public class StorPoolDfnApiData implements StorPoolDefinitionApi
 {
     private StorPoolDfnOuterClass.StorPoolDfn storPoolDfn;
 

@@ -9,12 +9,11 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.StorPoolDefinition.InitMaps;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -37,15 +36,15 @@ import java.util.TreeMap;
 
 @Singleton
 public class StorPoolDefinitionDbDriver
-    extends AbsDatabaseDriver<StorPoolDefinitionData, StorPoolDefinition.InitMaps, Void>
-    implements StorPoolDefinitionDataDatabaseDriver
+    extends AbsDatabaseDriver<StorPoolDefinition, StorPoolDefinition.InitMaps, Void>
+    implements StorPoolDefinitionDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
-    private StorPoolDefinitionData disklessStorPoolDfn;
+    private StorPoolDefinition disklessStorPoolDfn;
 
     @Inject
     public StorPoolDefinitionDbDriver(
@@ -70,7 +69,7 @@ public class StorPoolDefinitionDbDriver
     }
 
     @Override
-    public StorPoolDefinitionData createDefaultDisklessStorPool() throws DatabaseException
+    public StorPoolDefinition createDefaultDisklessStorPool() throws DatabaseException
     {
         if (disklessStorPoolDfn == null)
         {
@@ -84,7 +83,7 @@ public class StorPoolDefinitionDbDriver
                 throw new ImplementationError("Invalid hardcoded default diskless stor pool name", exc);
             }
 
-            disklessStorPoolDfn = new StorPoolDefinitionData(
+            disklessStorPoolDfn = new StorPoolDefinition(
                 java.util.UUID.randomUUID(),
                 getObjectProtection(ObjectProtection.buildPath(storPoolName)),
                 storPoolName,
@@ -100,7 +99,7 @@ public class StorPoolDefinitionDbDriver
     }
 
     @Override
-    protected Pair<StorPoolDefinitionData, InitMaps> load(
+    protected Pair<StorPoolDefinition, StorPoolDefinition.InitMaps> load(
         RawParameters raw,
         Void ignored
     )
@@ -110,7 +109,7 @@ public class StorPoolDefinitionDbDriver
 
         final StorPoolName storPoolName = raw.build(POOL_DSP_NAME, StorPoolName::new);
 
-        StorPoolDefinitionData storPoolDfn = new StorPoolDefinitionData(
+        StorPoolDefinition storPoolDfn = new StorPoolDefinition(
             raw.build(UUID, java.util.UUID::fromString),
             getObjectProtection(ObjectProtection.buildPath(storPoolName)),
             storPoolName,
@@ -131,7 +130,7 @@ public class StorPoolDefinitionDbDriver
     }
 
     @Override
-    protected String getId(StorPoolDefinitionData data)
+    protected String getId(StorPoolDefinition data)
     {
         return " (StorPoolName=" + data.getName().displayValue + ")";
     }

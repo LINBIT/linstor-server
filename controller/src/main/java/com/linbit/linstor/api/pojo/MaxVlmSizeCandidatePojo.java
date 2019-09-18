@@ -1,12 +1,12 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.StorPoolDefinition.StorPoolDfnApi;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 
 import java.util.List;
 
 public class MaxVlmSizeCandidatePojo
 {
-    private final StorPoolDfnApi storPoolDfnApi;
+    private final StorPoolDefinitionApi storPoolDfnApi;
 
     private final boolean allThin;
 
@@ -15,7 +15,7 @@ public class MaxVlmSizeCandidatePojo
     private final long maxVlmSize;
 
     public MaxVlmSizeCandidatePojo(
-        StorPoolDfnApi storPoolDfnApiRef,
+        StorPoolDefinitionApi storPoolDfnApiRef,
         boolean allThinRef,
         List<String> nodeNamesRef,
         long capacityRef
@@ -27,7 +27,7 @@ public class MaxVlmSizeCandidatePojo
         maxVlmSize = capacityRef;
     }
 
-    public StorPoolDfnApi getStorPoolDfnApi()
+    public StorPoolDefinitionApi getStorPoolDfnApi()
     {
         return storPoolDfnApi;
     }

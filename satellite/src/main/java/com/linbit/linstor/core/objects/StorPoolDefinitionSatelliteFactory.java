@@ -4,8 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionFactory;
@@ -18,9 +18,9 @@ import javax.inject.Provider;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class StorPoolDefinitionDataSatelliteFactory
+public class StorPoolDefinitionSatelliteFactory
 {
-    private final StorPoolDefinitionDataDatabaseDriver dbDriver;
+    private final StorPoolDefinitionDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -28,8 +28,8 @@ public class StorPoolDefinitionDataSatelliteFactory
     private final StorPoolDefinitionMap storPoolDfnMap;
 
     @Inject
-    public StorPoolDefinitionDataSatelliteFactory(
-        StorPoolDefinitionDataDatabaseDriver dbDriverRef,
+    public StorPoolDefinitionSatelliteFactory(
+        StorPoolDefinitionDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -45,22 +45,22 @@ public class StorPoolDefinitionDataSatelliteFactory
         storPoolDfnMap = storPooDfnMapRef;
     }
 
-    public StorPoolDefinitionData getInstance(
+    public StorPoolDefinition getInstance(
         AccessContext accCtx,
         UUID uuid,
         StorPoolName storPoolName
     )
         throws ImplementationError
     {
-        StorPoolDefinitionData storPoolDfn = null;
+        StorPoolDefinition storPoolDfn = null;
 
         try
         {
             // we should be system-context here, so we skip the objProt-check
-            storPoolDfn = (StorPoolDefinitionData) storPoolDfnMap.get(storPoolName);
+            storPoolDfn = (StorPoolDefinition) storPoolDfnMap.get(storPoolName);
             if (storPoolDfn == null)
             {
-                storPoolDfn = new StorPoolDefinitionData(
+                storPoolDfn = new StorPoolDefinition(
                     uuid,
                     objectProtectionFactory.getInstance(
                         accCtx,

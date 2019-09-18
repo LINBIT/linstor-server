@@ -5,13 +5,13 @@ import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -42,7 +42,7 @@ public class DbDataInitializer
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final ReadWriteLock reconfigurationLock;
     private final DatabaseDriver databaseDriver;
-    private final StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriver;
+    private final StorPoolDefinitionDatabaseDriver storPoolDfnDbDriver;
     private final TransactionMgrGenerator transactionMgrGenerator;
 
     @Inject
@@ -57,7 +57,7 @@ public class DbDataInitializer
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         DatabaseDriver databaseDriverRef,
-        StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDriverRef,
+        StorPoolDefinitionDatabaseDriver storPoolDfnDbDriverRef,
         TransactionMgrGenerator transactionMgrGeneratorRef
     )
     {
@@ -158,7 +158,7 @@ public class DbDataInitializer
     private void initializeDisklessStorPoolDfn()
         throws AccessDeniedException, DatabaseException
     {
-        StorPoolDefinitionData disklessStorPoolDfn = storPoolDfnDbDriver.createDefaultDisklessStorPool();
+        StorPoolDefinition disklessStorPoolDfn = storPoolDfnDbDriver.createDefaultDisklessStorPool();
         storPoolDefinitionRepository.put(initCtx, disklessStorPoolDfn.getName(), disklessStorPoolDfn);
     }
 }

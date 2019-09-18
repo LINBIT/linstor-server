@@ -3,7 +3,7 @@ package com.linbit.linstor.core.repository;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -17,7 +17,7 @@ public interface StorPoolDefinitionRepository extends ProtectedObject
     void requireAccess(AccessContext accCtx, AccessType requested)
         throws AccessDeniedException;
 
-    StorPoolDefinitionData get(AccessContext accCtx, StorPoolName nameRef)
+    StorPoolDefinition get(AccessContext accCtx, StorPoolName nameRef)
         throws AccessDeniedException;
 
     void put(AccessContext accCtx, StorPoolName storPoolName, StorPoolDefinition storPoolDefinition)

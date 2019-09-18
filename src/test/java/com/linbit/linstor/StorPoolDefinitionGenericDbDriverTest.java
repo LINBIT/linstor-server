@@ -4,10 +4,10 @@ import javax.inject.Inject;
 
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
-import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinition.InitMaps;
+import com.linbit.linstor.core.objects.StorPoolDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import org.junit.Before;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
+public class StorPoolDefinitionGenericDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT =
         " SELECT " + UUID + ", " + POOL_NAME + ", " + POOL_DSP_NAME +
@@ -36,9 +36,9 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
     private java.util.UUID uuid;
     private ObjectProtection objProt;
 
-    private StorPoolDefinitionData spdd;
+    private StorPoolDefinition spdd;
 
-    @Inject private StorPoolDefinitionDataGenericDbDriver driver;
+    @Inject private StorPoolDefinitionGenericDbDriver driver;
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Before
@@ -54,7 +54,7 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
         uuid = randomUUID();
         spName = new StorPoolName("TestStorPool");
         objProt = objectProtectionFactory.getInstance(SYS_CTX, ObjectProtection.buildPath(spName), true);
-        spdd = TestFactory.createStorPoolDefinitionData(
+        spdd = TestFactory.createStorPoolDefinition(
             uuid,
             objProt,
             spName,
@@ -88,7 +88,7 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        StorPoolDefinitionData spd = storPoolDefinitionDataFactory.create(SYS_CTX, spName);
+        StorPoolDefinition spd = storPoolDefinitionFactory.create(SYS_CTX, spName);
         commit();
 
         assertNotNull(spd);
@@ -135,13 +135,13 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
         stmt.close();
     }
 
-    private StorPoolDefinitionData findStorPoolDefinitionDatabyName(
-        Map<StorPoolDefinitionData, InitMaps> storPoolDfnMap,
+    private StorPoolDefinition findStorPoolDefinitionbyName(
+        Map<StorPoolDefinition, StorPoolDefinition.InitMaps> storPoolDfnMap,
         StorPoolName spNameRef
     )
     {
-        StorPoolDefinitionData data = null;
-        for (StorPoolDefinitionData spddRef : storPoolDfnMap.keySet())
+        StorPoolDefinition data = null;
+        for (StorPoolDefinition spddRef : storPoolDfnMap.keySet())
         {
             if (spddRef.getName().equals(spNameRef))
             {
@@ -157,17 +157,17 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(spdd);
         StorPoolName spName2 = new StorPoolName("StorPoolName2");
-        storPoolDefinitionDataFactory.create(SYS_CTX, spName2);
+        storPoolDefinitionFactory.create(SYS_CTX, spName2);
 
-        Map<StorPoolDefinitionData, InitMaps> storpools = driver.loadAll();
+        Map<StorPoolDefinition, StorPoolDefinition.InitMaps> storpools = driver.loadAll();
 
         StorPoolName disklessStorPoolName = new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME);
-        assertNotNull(findStorPoolDefinitionDatabyName(storpools, disklessStorPoolName));
-        assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName));
-        assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName2));
+        assertNotNull(findStorPoolDefinitionbyName(storpools, disklessStorPoolName));
+        assertNotNull(findStorPoolDefinitionbyName(storpools, spName));
+        assertNotNull(findStorPoolDefinitionbyName(storpools, spName2));
         assertNotEquals(
-            findStorPoolDefinitionDatabyName(storpools, spName),
-            findStorPoolDefinitionDatabyName(storpools, spName2)
+            findStorPoolDefinitionbyName(storpools, spName),
+            findStorPoolDefinitionbyName(storpools, spName2)
         );
     }
 
@@ -176,6 +176,6 @@ public class StorPoolDefinitionDataGenericDbDriverTest extends GenericDbBase
     {
         driver.create(spdd);
         storPoolDfnMap.put(spName, spdd);
-        storPoolDefinitionDataFactory.create(SYS_CTX, spName);
+        storPoolDefinitionFactory.create(SYS_CTX, spName);
     }
 }

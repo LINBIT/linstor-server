@@ -16,8 +16,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelecto
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -140,9 +140,9 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
             .orElseGet(Stream::empty);
     }
 
-    private StorPoolDefinition.StorPoolDfnApi getStorPoolDfnApiData(StorPool storPool)
+    private StorPoolDefinitionApi getStorPoolDfnApiData(StorPool storPool)
     {
-        StorPoolDefinition.StorPoolDfnApi apiData;
+        StorPoolDefinitionApi apiData;
         try
         {
             apiData = storPool.getDefinition(apiCtx).getApiData(apiCtx);
@@ -168,7 +168,7 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
         {
             candidates.sort(ComparatorUtils.comparingWithComparator(
                 MaxVlmSizeCandidatePojo::getStorPoolDfnApi,
-                Comparator.comparing(StorPoolDefinition.StorPoolDfnApi::getName)
+                Comparator.comparing(StorPoolDefinitionApi::getName)
             ));
         }
         return new ApiCallRcWith<>(apirc, candidates);

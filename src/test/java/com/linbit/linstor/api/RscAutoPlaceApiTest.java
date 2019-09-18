@@ -28,7 +28,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -1129,11 +1129,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             );
 
             nodesMap.put(stlt.getName(), stlt);
-            StorPoolDefinitionData dfltDisklessStorPoolDfn =
+            StorPoolDefinition dfltDisklessStorPoolDfn =
                 storPoolDefinitionRepository.get(SYS_CTX, DFLT_DISKLESS_STOR_POOL_NAME);
             if (dfltDisklessStorPoolDfn == null)
             {
-                dfltDisklessStorPoolDfn = storPoolDefinitionDataFactory.create(
+                dfltDisklessStorPoolDfn = storPoolDefinitionFactory.create(
                     BOB_ACC_CTX,
                     DFLT_DISKLESS_STOR_POOL_NAME
                 );
@@ -1279,14 +1279,14 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         {
             enterScope();
 
-            StorPoolDefinitionData storPoolDfn = storPoolDefinitionRepository.get(
+            StorPoolDefinition storPoolDfn = storPoolDefinitionRepository.get(
                 ApiTestBase.BOB_ACC_CTX,
                 new StorPoolName(storPoolName)
             );
 
             if (storPoolDfn == null)
             {
-                storPoolDfn = storPoolDefinitionDataFactory.create(
+                storPoolDfn = storPoolDefinitionFactory.create(
                     ApiTestBase.BOB_ACC_CTX,
                     new StorPoolName(storPoolName)
                 );

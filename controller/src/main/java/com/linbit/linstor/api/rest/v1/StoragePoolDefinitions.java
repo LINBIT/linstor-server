@@ -4,7 +4,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
@@ -69,7 +69,7 @@ public class StoragePoolDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL_DFN, request), () ->
         {
-            Stream<StorPoolDefinition.StorPoolDfnApi> storPoolDfnStream = ctrlApiCallHandler.listStorPoolDefinition()
+            Stream<StorPoolDefinitionApi> storPoolDfnStream = ctrlApiCallHandler.listStorPoolDefinition()
                 .stream()
                 .filter(storApi -> storagePoolName == null || storApi.getName().equalsIgnoreCase(storagePoolName));
 

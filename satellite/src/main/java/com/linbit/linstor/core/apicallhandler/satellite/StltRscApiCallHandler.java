@@ -38,7 +38,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume.VlmApi;
 import com.linbit.linstor.core.objects.VolumeData;
@@ -93,7 +93,7 @@ class StltRscApiCallHandler
     private final NodeSatelliteFactory nodeFactory;
     private final NetInterfaceFactory netInterfaceFactory;
     private final ResourceSatelliteFactory resourceFactory;
-    private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionSatelliteFactory storPoolDefinitionFactory;
     private final StorPoolSatelliteFactory storPoolFactory;
     private final VolumeDataFactory volumeDataFactory;
     private final ResourceConnectionSatelliteFactory resourceConnectionFactory;
@@ -119,7 +119,7 @@ class StltRscApiCallHandler
         NodeSatelliteFactory nodeFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
         ResourceSatelliteFactory resourceFactoryRef,
-        StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionSatelliteFactory storPoolDefinitionFactoryRef,
         StorPoolSatelliteFactory storPoolFactoryRef,
         VolumeDataFactory volumeDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -144,7 +144,7 @@ class StltRscApiCallHandler
         nodeFactory = nodeFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
         resourceFactory = resourceFactoryRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDefinitionFactory = storPoolDefinitionFactoryRef;
         storPoolFactory = storPoolFactoryRef;
         volumeDataFactory = volumeDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
@@ -771,7 +771,7 @@ class StltRscApiCallHandler
                         storPoolDfnMap.get(new StorPoolName(storPoolApi.getStorPoolName()));
                     if (storPoolDfn == null)
                     {
-                        storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+                        storPoolDfn = storPoolDefinitionFactory.getInstance(
                             apiCtx,
                             storPoolApi.getStorPoolDfnUuid(),
                             new StorPoolName(storPoolApi.getStorPoolName())

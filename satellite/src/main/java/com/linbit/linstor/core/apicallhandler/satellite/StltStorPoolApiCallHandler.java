@@ -22,7 +22,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -51,7 +51,7 @@ class StltStorPoolApiCallHandler
     private final DeviceManager deviceManager;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerPeerConnector controllerPeerConnector;
-    private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionSatelliteFactory storPoolDefinitionFactory;
     private final StorPoolSatelliteFactory storPoolFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
@@ -65,7 +65,7 @@ class StltStorPoolApiCallHandler
         DeviceManager deviceManagerRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionSatelliteFactory storPoolDefinitionFactoryRef,
         StorPoolSatelliteFactory storPoolFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
@@ -78,7 +78,7 @@ class StltStorPoolApiCallHandler
         deviceManager = deviceManagerRef;
         storPoolDfnMap = storPoolDfnMapRef;
         controllerPeerConnector = controllerPeerConnectorRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDefinitionFactory = storPoolDefinitionFactoryRef;
         storPoolFactory = storPoolFactoryRef;
         transMgrProvider = transMgrProviderRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
@@ -167,7 +167,7 @@ class StltStorPoolApiCallHandler
                 StorPoolDefinition storPoolDfn = storPoolDfnMap.get(storPoolName);
                 if (storPoolDfn == null)
                 {
-                    storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+                    storPoolDfn = storPoolDefinitionFactory.getInstance(
                         apiCtx,
                         storPoolRaw.getStorPoolDfnUuid(),
                         storPoolName

@@ -8,7 +8,7 @@ import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -63,7 +63,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext sysCtxRef,
-        StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionSatelliteFactory storPoolDefinitionFactoryRef,
         NodeSatelliteFactory nodeFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         CommonSerializer commonSerializerRef

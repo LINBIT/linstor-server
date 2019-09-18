@@ -16,8 +16,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.StorPoolDefinitionControllerFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -30,7 +29,7 @@ import javax.inject.Provider;
 public class StorPoolHelper
 {
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionControllerFactory storPoolDefinitionFactory;
     private final StorPoolControllerFactory storPoolFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
@@ -38,14 +37,14 @@ public class StorPoolHelper
     @Inject
     public StorPoolHelper(
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionControllerFactory storPoolDefinitionFactoryRef,
         StorPoolControllerFactory storPoolFactoryRef,
         FreeSpaceMgrControllerFactory freeSpaceMgrFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDefinitionFactory = storPoolDefinitionFactoryRef;
         storPoolFactory = storPoolFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
         peerAccCtx = peerAccCtxRef;
@@ -59,7 +58,7 @@ public class StorPoolHelper
     )
     {
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-        StorPoolDefinitionData storPoolDef = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, false);
+        StorPoolDefinition storPoolDef = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, false);
 
         if (!isDeviceProviderKindAllowed(node, deviceProviderKindRef))
         {
@@ -77,7 +76,7 @@ public class StorPoolHelper
             if (storPoolDef == null)
             {
                 // implicitly create storage pool definition if it doesn't exist
-                storPoolDef = storPoolDefinitionDataFactory.create(
+                storPoolDef = storPoolDefinitionFactory.create(
                     peerAccCtx.get(),
                     LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                 );

@@ -29,7 +29,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
@@ -63,7 +63,7 @@ import javax.inject.Singleton;
 public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
 {
     private final StorPoolDefinitionMap storPoolDfnMap;
-    private final StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionSatelliteFactory storPoolDefinitionFactory;
     private final StorPoolSatelliteFactory storPoolFactory;
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
 
@@ -72,14 +72,14 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
         @SystemContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
-        StorPoolDefinitionDataSatelliteFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionSatelliteFactory storPoolDefinitionFactoryRef,
         StorPoolSatelliteFactory storPoolFactoryRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef
     )
     {
         super(apiCtxRef, layerDataFactoryRef);
         storPoolDfnMap = storPoolDfnMapRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDefinitionFactory = storPoolDefinitionFactoryRef;
         storPoolFactory = storPoolFactoryRef;
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
     }
@@ -356,7 +356,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
                 StorPoolDefinition storPoolDfn = storPoolDfnMap.get(new StorPoolName(storPoolApi.getStorPoolName()));
                 if (storPoolDfn == null)
                 {
-                    storPoolDfn = storPoolDefinitionDataFactory.getInstance(
+                    storPoolDfn = storPoolDefinitionFactory.getInstance(
                         apiCtx,
                         storPoolApi.getStorPoolDfnUuid(),
                         new StorPoolName(storPoolApi.getStorPoolName())

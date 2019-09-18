@@ -9,9 +9,9 @@ import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.locks.LockGuard;
@@ -495,9 +495,9 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ArrayList<StorPoolDefinitionData.StorPoolDfnApi> listStorPoolDefinition()
+    public ArrayList<StorPoolDefinitionApi> listStorPoolDefinition()
     {
-        ArrayList<StorPoolDefinitionData.StorPoolDfnApi> listStorPoolDefinitions;
+        ArrayList<StorPoolDefinitionApi> listStorPoolDefinitions;
         try (LockGuard lg = lockGuardFactory.build(READ, STOR_POOL_DFN_MAP))
         {
             listStorPoolDefinitions = storPoolDfnApiCallHandler.listStorPoolDefinitions();

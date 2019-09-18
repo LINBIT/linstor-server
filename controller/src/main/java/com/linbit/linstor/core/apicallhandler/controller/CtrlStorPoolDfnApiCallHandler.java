@@ -19,11 +19,11 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataControllerFactory;
+import com.linbit.linstor.core.objects.StorPoolDefinitionControllerFactory;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
@@ -37,6 +37,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -51,7 +52,7 @@ class CtrlStorPoolDfnApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactory;
+    private final StorPoolDefinitionControllerFactory storPoolDefinitionFactory;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
@@ -64,7 +65,7 @@ class CtrlStorPoolDfnApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        StorPoolDefinitionDataControllerFactory storPoolDefinitionDataFactoryRef,
+        StorPoolDefinitionControllerFactory storPoolDefinitionFactoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
@@ -76,7 +77,7 @@ class CtrlStorPoolDfnApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        storPoolDefinitionDataFactory = storPoolDefinitionDataFactoryRef;
+        storPoolDefinitionFactory = storPoolDefinitionFactoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         responseConverter = responseConverterRef;
@@ -99,7 +100,7 @@ class CtrlStorPoolDfnApiCallHandler
         {
             requireStorPoolDfnChangeAccess();
 
-            StorPoolDefinitionData storPoolDfn = createStorPool(storPoolNameStr);
+            StorPoolDefinition storPoolDfn = createStorPool(storPoolNameStr);
             ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
 
@@ -134,7 +135,7 @@ class CtrlStorPoolDfnApiCallHandler
         try
         {
             requireStorPoolDfnChangeAccess();
-            StorPoolDefinitionData storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true);
+            StorPoolDefinition storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true);
 
             if (storPoolDfnUuid != null && !storPoolDfnUuid.equals(storPoolDfn.getUuid()))
             {
@@ -176,7 +177,7 @@ class CtrlStorPoolDfnApiCallHandler
         {
             requireStorPoolDfnChangeAccess();
 
-            StorPoolDefinitionData storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true);
+            StorPoolDefinition storPoolDfn = ctrlApiDataLoader.loadStorPoolDfn(storPoolNameStr, true);
 
             Iterator<StorPool> storPoolIterator = getPrivilegedStorPoolIterator(storPoolDfn);
 
@@ -222,7 +223,7 @@ class CtrlStorPoolDfnApiCallHandler
         return responses;
     }
 
-    private void delete(StorPoolDefinitionData storPoolDfn)
+    private void delete(StorPoolDefinition storPoolDfn)
     {
         try
         {
@@ -242,7 +243,7 @@ class CtrlStorPoolDfnApiCallHandler
         }
     }
 
-    private Iterator<StorPool> getPrivilegedStorPoolIterator(StorPoolDefinitionData storPoolDfn)
+    private Iterator<StorPool> getPrivilegedStorPoolIterator(StorPoolDefinition storPoolDfn)
     {
         Iterator<StorPool> iterator;
         try
@@ -256,9 +257,9 @@ class CtrlStorPoolDfnApiCallHandler
         return iterator;
     }
 
-    ArrayList<StorPoolDefinitionData.StorPoolDfnApi> listStorPoolDefinitions()
+    ArrayList<StorPoolDefinitionApi> listStorPoolDefinitions()
     {
-        ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
+        ArrayList<StorPoolDefinitionApi> storPoolDfns = new ArrayList<>();
         try
         {
             for (StorPoolDefinition storPoolDfn : storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values())
@@ -284,12 +285,12 @@ class CtrlStorPoolDfnApiCallHandler
         return storPoolDfns;
     }
 
-    private StorPoolDefinitionData createStorPool(String storPoolNameStrRef)
+    private StorPoolDefinition createStorPool(String storPoolNameStrRef)
     {
-        StorPoolDefinitionData storPoolDfn;
+        StorPoolDefinition storPoolDfn;
         try
         {
-            storPoolDfn = storPoolDefinitionDataFactory.create(
+            storPoolDfn = storPoolDefinitionFactory.create(
                 peerAccCtx.get(),
                 LinstorParsingUtils.asStorPoolName(storPoolNameStrRef)
             );
@@ -335,7 +336,7 @@ class CtrlStorPoolDfnApiCallHandler
         }
     }
 
-    private Props getProps(StorPoolDefinitionData storPoolDfn)
+    private Props getProps(StorPoolDefinition storPoolDfn)
     {
         Props props;
         try
@@ -353,7 +354,7 @@ class CtrlStorPoolDfnApiCallHandler
         return props;
     }
 
-    private ApiCallRc updateSatellites(StorPoolDefinitionData storPoolDfn)
+    private ApiCallRc updateSatellites(StorPoolDefinition storPoolDfn)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 

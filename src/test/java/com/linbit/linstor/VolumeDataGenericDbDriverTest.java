@@ -14,7 +14,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume.InitMaps;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
@@ -60,7 +60,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
     private Resource res;
 
     private StorPoolName storPoolName;
-    private StorPoolDefinitionData storPoolDfn;
+    private StorPoolDefinition storPoolDfn;
     private StorPool storPool;
 
     private VolumeNumber volNr;
@@ -117,7 +117,7 @@ public class VolumeDataGenericDbDriverTest extends GenericDbBase
         );
 
         storPoolName = new StorPoolName("TestStorPoolName");
-        storPoolDfn = storPoolDefinitionDataFactory.create(
+        storPoolDfn = storPoolDefinitionFactory.create(
             SYS_CTX,
             storPoolName
         );

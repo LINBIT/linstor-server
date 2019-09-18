@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 
 import java.util.Map;
 import java.util.UUID;
@@ -9,7 +9,7 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class StorPoolDfnPojo implements StorPoolDefinition.StorPoolDfnApi
+public class StorPoolDfnPojo implements StorPoolDefinitionApi
 {
 
     private final UUID uuid;

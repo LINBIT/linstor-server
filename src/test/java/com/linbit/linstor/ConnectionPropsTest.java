@@ -14,7 +14,7 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
@@ -53,7 +53,7 @@ public class ConnectionPropsTest extends GenericDbBase
     private ResourceDefinition resDfn;
     private Resource res1;
     private Resource res2;
-    private StorPoolDefinitionData storPoolDfn;
+    private StorPoolDefinition storPoolDfn;
     private StorPool storPool1;
     private StorPool storPool2;
     private VolumeDefinitionData volDfn;
@@ -111,7 +111,7 @@ public class ConnectionPropsTest extends GenericDbBase
         res1 = resourceFactory.create(SYS_CTX, resDfn, node1, nodeId1, null, Collections.emptyList());
         res2 = resourceFactory.create(SYS_CTX, resDfn, node2, nodeId2, null, Collections.emptyList());
 
-        storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
+        storPoolDfn = storPoolDefinitionFactory.create(SYS_CTX, storPoolName);
 
         storPool1 = storPoolFactory.create(
             SYS_CTX, node1, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, node1)

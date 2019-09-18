@@ -87,7 +87,7 @@ public class StorPoolControllerFactory
         driver.create(storPool);
         freeSpaceTrackerRef.add(accCtx, storPool);
         node.addStorPool(accCtx, storPool);
-        ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPool);
+        storPoolDef.addStorPool(accCtx, storPool);
 
         return storPool;
     }

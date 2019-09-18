@@ -15,7 +15,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
@@ -69,7 +69,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
     private VolumeDefinitionData volDfn;
     private Resource resSrc;
     private Resource resDst;
-    private StorPoolDefinitionData storPoolDfn;
+    private StorPoolDefinition storPoolDfn;
     private StorPool storPool1;
     private StorPool storPool2;
     private VolumeData volSrc;
@@ -136,7 +136,7 @@ public class VolumeConnectionDataGenericDbDriverTest extends GenericDbBase
         resSrc = resourceFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
         resDst = resourceFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
 
-        storPoolDfn = storPoolDefinitionDataFactory.create(SYS_CTX, storPoolName);
+        storPoolDfn = storPoolDefinitionFactory.create(SYS_CTX, storPoolName);
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
         storPool1 = storPoolFactory.create(

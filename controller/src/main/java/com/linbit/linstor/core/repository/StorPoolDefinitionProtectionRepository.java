@@ -3,7 +3,7 @@ package com.linbit.linstor.core.repository;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -53,7 +53,7 @@ public class StorPoolDefinitionProtectionRepository implements StorPoolDefinitio
     }
 
     @Override
-    public StorPoolDefinitionData get(
+    public StorPoolDefinition get(
         AccessContext accCtx,
         StorPoolName storPoolName
     )
@@ -61,7 +61,7 @@ public class StorPoolDefinitionProtectionRepository implements StorPoolDefinitio
     {
         checkProtSet();
         storPoolDefinitionMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (StorPoolDefinitionData) storPoolDefinitionMap.get(storPoolName);
+        return (StorPoolDefinition) storPoolDefinitionMap.get(storPoolName);
     }
 
     @Override

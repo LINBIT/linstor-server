@@ -2195,7 +2195,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     /**
-     * PropsCon-path for StorPoolDefinitionData
+     * PropsCon-path for StorPoolDefinition
      */
     public static String buildPath(StorPoolName storPoolName)
     {

@@ -24,7 +24,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
@@ -392,7 +392,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
             volDfnUuid = volDfn.getUuid();
 
             // storPoolDfn
-            StorPoolDefinitionData storPoolDfn = storPoolDefinitionDataFactory.create(
+            StorPoolDefinition storPoolDfn = storPoolDefinitionFactory.create(
                 SYS_CTX,
                 poolName
             );

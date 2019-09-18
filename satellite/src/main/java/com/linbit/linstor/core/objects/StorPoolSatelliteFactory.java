@@ -77,7 +77,7 @@ public class StorPoolSatelliteFactory
                     new TreeMap<>()
                 );
                 node.addStorPool(accCtx, storPool);
-                ((StorPoolDefinitionData) storPoolDef).addStorPool(accCtx, storPool);
+                storPoolDef.addStorPool(accCtx, storPool);
             }
         }
         catch (Exception exc)

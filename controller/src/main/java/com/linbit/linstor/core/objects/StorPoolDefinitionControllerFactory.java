@@ -2,10 +2,10 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -19,9 +19,9 @@ import javax.inject.Provider;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class StorPoolDefinitionDataControllerFactory
+public class StorPoolDefinitionControllerFactory
 {
-    private final StorPoolDefinitionDataDatabaseDriver dbDriver;
+    private final StorPoolDefinitionDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -29,8 +29,8 @@ public class StorPoolDefinitionDataControllerFactory
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
 
     @Inject
-    public StorPoolDefinitionDataControllerFactory(
-        StorPoolDefinitionDataDatabaseDriver dbDriverRef,
+    public StorPoolDefinitionControllerFactory(
+        StorPoolDefinitionDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -46,13 +46,13 @@ public class StorPoolDefinitionDataControllerFactory
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
     }
 
-    public StorPoolDefinitionData create(
+    public StorPoolDefinition create(
         AccessContext accCtx,
         StorPoolName storPoolName
     )
         throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
-        StorPoolDefinitionData storPoolDfn = null;
+        StorPoolDefinition storPoolDfn = null;
 
         storPoolDfn = storPoolDefinitionRepository.get(accCtx, storPoolName);
 
@@ -61,7 +61,7 @@ public class StorPoolDefinitionDataControllerFactory
             throw new LinStorDataAlreadyExistsException("The StorPoolDefinition already exists");
         }
 
-        storPoolDfn = new StorPoolDefinitionData(
+        storPoolDfn = new StorPoolDefinition(
             UUID.randomUUID(),
             objectProtectionFactory.getInstance(
                 accCtx,

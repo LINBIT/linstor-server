@@ -18,8 +18,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDataGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.objects.StorPoolDefinitionGenericDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -51,8 +51,8 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
 
     private java.util.UUID uuid;
 
-    private StorPoolDefinitionData spdd;
-    @Inject private StorPoolDefinitionDataGenericDbDriver spdDriver;
+    private StorPoolDefinition spdd;
+    @Inject private StorPoolDefinitionGenericDbDriver spdDriver;
     @Inject private StorPoolGenericDbDriver driver;
 
     private FreeSpaceMgr fsm;
@@ -76,7 +76,7 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
         );
 
         node = nodeFactory.create(SYS_CTX, nodeName, Node.Type.SATELLITE, null);
-        spdd = storPoolDefinitionDataFactory.create(SYS_CTX, spName);
+        spdd = storPoolDefinitionFactory.create(SYS_CTX, spName);
 
         fsm = freeSpaceMgrFactory.getInstance(SYS_CTX, new FreeSpaceMgrName(node.getName(), spdd.getName()));
         disklessFsm = freeSpaceMgrFactory.getInstance(

@@ -26,7 +26,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionData;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeData;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
@@ -400,17 +400,17 @@ public class CtrlApiDataLoader
         return snapshotVolume;
     }
 
-    public final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)
+    public final StorPoolDefinition loadStorPoolDfn(String storPoolNameStr, boolean failIfNull)
     {
         return loadStorPoolDfn(LinstorParsingUtils.asStorPoolName(storPoolNameStr), failIfNull);
     }
 
-    public final StorPoolDefinitionData loadStorPoolDfn(
+    public final StorPoolDefinition loadStorPoolDfn(
         StorPoolName storPoolName,
         boolean failIfNull
     )
     {
-        StorPoolDefinitionData storPoolDfn;
+        StorPoolDefinition storPoolDfn;
         try
         {
             storPoolDfn = storPoolDefinitionRepository.get(
