@@ -1,7 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class RscGrpPojo implements RscGrpApi
+public class RscGrpPojo implements ResourceGroupApi
 {
     private final @Nullable UUID uuid;
     private final String rscGrpName;

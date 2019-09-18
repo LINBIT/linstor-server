@@ -6,7 +6,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDataDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -25,7 +25,7 @@ import java.util.UUID;
 public class VolumeGroupDataSatelliteFactory
 {
     private final AccessContext sysCtx;
-    private final ResourceGroupDataDatabaseDriver rscGrpDriver;
+    private final ResourceGroupDatabaseDriver rscGrpDriver;
     private final VolumeGroupDataDatabaseDriver vlmGrpDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
@@ -36,7 +36,7 @@ public class VolumeGroupDataSatelliteFactory
     @Inject
     public VolumeGroupDataSatelliteFactory(
         @SystemContext AccessContext sysCtxRef,
-        ResourceGroupDataDatabaseDriver rscGrpDriverRef,
+        ResourceGroupDatabaseDriver rscGrpDriverRef,
         VolumeGroupDataDatabaseDriver vlmGrpDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,

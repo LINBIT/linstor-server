@@ -9,11 +9,10 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceGroup.InitMaps;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.SQLUtils;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -46,6 +45,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.UUID;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,7 +56,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDatabaseDriver
+public class ResourceGroupGenericDbDriver implements ResourceGroupDatabaseDriver
 {
     private static final String[] RSC_GRP_FIELDS =
     {
@@ -133,16 +133,16 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    private final SingleColumnDatabaseDriver<ResourceGroupData, String> descriptionDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, DeviceLayerKind> layerStackDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroupData, Integer> replicaCountDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroupData, String>  storPoolNameDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, String> doNotPlaceWithRscListDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroupData, String> doNotPlaceWithRscRegexDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, String> replicasOnSameListDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, String> replicasOnDifferentListDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, DeviceProviderKind> allowedProviderDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroupData, Boolean> disklessOnRemainingDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, String> descriptionDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, DeviceLayerKind> layerStackDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, Integer> replicaCountDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, String>  storPoolNameDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscListDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscRegexDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnSameListDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnDifferentListDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> allowedProviderDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, Boolean> disklessOnRemainingDriver;
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
     private final PropsContainerFactory propsContainerFactory;
@@ -150,7 +150,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public ResourceGroupDataGenericDbDriver(
+    public ResourceGroupGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
@@ -200,7 +200,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
 
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void create(ResourceGroupData rscGrp) throws DatabaseException
+    public void create(ResourceGroup rscGrp) throws DatabaseException
     {
         errorReporter.logTrace("Creating ResourceGroup %s", getId(rscGrp));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
@@ -235,17 +235,17 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         }
     }
 
-    public Map<ResourceGroupData, InitMaps> loadAll() throws DatabaseException
+    public Map<ResourceGroup, ResourceGroup.InitMaps> loadAll() throws DatabaseException
     {
         errorReporter.logTrace("Loading all ResourceGroups");
-        Map<ResourceGroupData, InitMaps> rscGrpMap = new TreeMap<>();
+        Map<ResourceGroup, ResourceGroup.InitMaps> rscGrpMap = new TreeMap<>();
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RSC_GRPS))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    Pair<ResourceGroupData, InitMaps> pair = restoreResourceGroup(resultSet);
+                    Pair<ResourceGroup, ResourceGroup.InitMaps> pair = restoreResourceGroup(resultSet);
                     rscGrpMap.put(pair.objA, pair.objB);
                 }
             }
@@ -258,10 +258,10 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         return rscGrpMap;
     }
 
-    private Pair<ResourceGroupData, InitMaps> restoreResourceGroup(ResultSet resultSet) throws DatabaseException
+    private Pair<ResourceGroup, ResourceGroup.InitMaps> restoreResourceGroup(ResultSet resultSet) throws DatabaseException
     {
-        Pair<ResourceGroupData, InitMaps> retPair = new Pair<>();
-        ResourceGroupData resGrp;
+        Pair<ResourceGroup, ResourceGroup.InitMaps> retPair = new Pair<>();
+        ResourceGroup resGrp;
         ResourceGroupName rscGrpName;
         try
         {
@@ -289,7 +289,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
             Map<VolumeNumber, VolumeGroup> vlmGrpMap = new TreeMap<>();
             Map<ResourceName, ResourceDefinition> rscDfnMap = new TreeMap<>();
 
-            resGrp = new ResourceGroupData(
+            resGrp = new ResourceGroup(
                 java.util.UUID.fromString(resultSet.getString(UUID)),
                 objProt,
                 rscGrpName,
@@ -341,7 +341,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
     }
 
     @Override
-    public void delete(ResourceGroupData rscGrp) throws DatabaseException
+    public void delete(ResourceGroup rscGrp) throws DatabaseException
     {
         errorReporter.logTrace("Deleting ResourceGroup %s", getId(rscGrp));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE))
@@ -357,60 +357,60 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, String> getDescriptionDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, String> getDescriptionDriver()
     {
         return descriptionDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, DeviceLayerKind> getLayerStackDriver()
+    public CollectionDatabaseDriver<ResourceGroup, DeviceLayerKind> getLayerStackDriver()
     {
         return layerStackDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, Integer> getReplicaCountDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, Integer> getReplicaCountDriver()
     {
         return replicaCountDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, String> getStorPoolNameDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver()
     {
         return storPoolNameDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, String> getDoNotPlaceWithRscListDriver()
+    public CollectionDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscListDriver()
     {
         return doNotPlaceWithRscListDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, String> getDoNotPlaceWithRscRegexDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscRegexDriver()
     {
         return doNotPlaceWithRscRegexDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, String> getReplicasOnDifferentDriver()
+    public CollectionDatabaseDriver<ResourceGroup, String> getReplicasOnDifferentDriver()
     {
         return replicasOnDifferentListDriver;
     }
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, String> getReplicasOnSameListDriver()
+    public CollectionDatabaseDriver<ResourceGroup, String> getReplicasOnSameListDriver()
     {
         return replicasOnSameListDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, DeviceProviderKind> getAllowedProviderListDriver()
+    public CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> getAllowedProviderListDriver()
     {
         return allowedProviderDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, Boolean> getDisklessOnRemainingDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, Boolean> getDisklessOnRemainingDriver()
     {
         return disklessOnRemainingDriver;
     }
@@ -420,7 +420,7 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(ResourceGroupData rscGrp)
+    private String getId(ResourceGroup rscGrp)
     {
         return getId(rscGrp.getName().displayValue);
     }
@@ -435,10 +435,10 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         return "(RscGrpName=" + resGrpName + ")";
     }
 
-    private class DescriptionDriver implements SingleColumnDatabaseDriver<ResourceGroupData, String>
+    private class DescriptionDriver implements SingleColumnDatabaseDriver<ResourceGroup, String>
     {
         @Override
-        public void update(ResourceGroupData rscGrp, String description)
+        public void update(ResourceGroup rscGrp, String description)
             throws DatabaseException
         {
             try
@@ -473,10 +473,10 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         }
     }
 
-    private class ReplicaCountDriver implements SingleColumnDatabaseDriver<ResourceGroupData, Integer>
+    private class ReplicaCountDriver implements SingleColumnDatabaseDriver<ResourceGroup, Integer>
     {
         @Override
-        public void update(ResourceGroupData rscGrp, Integer replicaCount)
+        public void update(ResourceGroup rscGrp, Integer replicaCount)
             throws DatabaseException
         {
             try
@@ -511,10 +511,10 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         }
     }
 
-    private class StorPoolNameDriver implements SingleColumnDatabaseDriver<ResourceGroupData, String>
+    private class StorPoolNameDriver implements SingleColumnDatabaseDriver<ResourceGroup, String>
     {
         @Override
-        public void update(ResourceGroupData rscGrp, String storPoolName)
+        public void update(ResourceGroup rscGrp, String storPoolName)
             throws DatabaseException
         {
             try
@@ -549,10 +549,10 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         }
     }
 
-    private class DoNotPlaceWithRscRegexDriver implements SingleColumnDatabaseDriver<ResourceGroupData, String>
+    private class DoNotPlaceWithRscRegexDriver implements SingleColumnDatabaseDriver<ResourceGroup, String>
     {
         @Override
-        public void update(ResourceGroupData rscGrp, String doNotPlaceWithRscRegex)
+        public void update(ResourceGroup rscGrp, String doNotPlaceWithRscRegex)
             throws DatabaseException
         {
             try
@@ -587,10 +587,10 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         }
     }
 
-    private class DisklessOnRemainingDriver implements SingleColumnDatabaseDriver<ResourceGroupData, Boolean>
+    private class DisklessOnRemainingDriver implements SingleColumnDatabaseDriver<ResourceGroup, Boolean>
     {
         @Override
-        public void update(ResourceGroupData rscGrp, Boolean disklessOnRemaining)
+        public void update(ResourceGroup rscGrp, Boolean disklessOnRemaining)
             throws DatabaseException
         {
             try
@@ -633,15 +633,15 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
     }
 
     private class GenericStringListDriver<TYPE> implements
-        CollectionDatabaseDriver<ResourceGroupData, TYPE>
+        CollectionDatabaseDriver<ResourceGroup, TYPE>
     {
         private final String columnDescription;
-        private final ExceptionThrowingFunction<ResourceGroupData, Object, AccessDeniedException> getOldValueFkt;
+        private final ExceptionThrowingFunction<ResourceGroup, Object, AccessDeniedException> getOldValueFkt;
         private final String updateStmt;
 
         GenericStringListDriver(
             String columnDescriptionRef,
-            ExceptionThrowingFunction<ResourceGroupData, Object, AccessDeniedException> getOldValueFktRef,
+            ExceptionThrowingFunction<ResourceGroup, Object, AccessDeniedException> getOldValueFktRef,
             String updateStmtRef
         )
         {
@@ -651,20 +651,20 @@ public class ResourceGroupDataGenericDbDriver implements ResourceGroupDataDataba
         }
 
         @Override
-        public void insert(ResourceGroupData rscGrp, TYPE valueRef, Collection<TYPE> backingCollection)
+        public void insert(ResourceGroup rscGrp, TYPE valueRef, Collection<TYPE> backingCollection)
             throws DatabaseException
         {
             update(rscGrp, backingCollection);
         }
 
         @Override
-        public void remove(ResourceGroupData rscGrp, TYPE valueRef, Collection<TYPE> backingCollection)
+        public void remove(ResourceGroup rscGrp, TYPE valueRef, Collection<TYPE> backingCollection)
             throws DatabaseException
         {
             update(rscGrp, backingCollection);
         }
 
-        private void update(ResourceGroupData rscGrp, Collection<TYPE> backingCollection) throws DatabaseException
+        private void update(ResourceGroup rscGrp, Collection<TYPE> backingCollection) throws DatabaseException
         {
             try
             {

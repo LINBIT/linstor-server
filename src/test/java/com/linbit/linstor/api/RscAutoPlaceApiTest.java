@@ -26,7 +26,7 @@ import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.Volume;
@@ -102,7 +102,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
     @Bind @Mock
     protected FreeCapacityFetcher freeCapacityFetcher;
-    private ResourceGroupData dfltRscGrp;
+    private ResourceGroup dfltRscGrp;
 
     @Before
     @Override

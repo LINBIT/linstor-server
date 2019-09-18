@@ -21,6 +21,7 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -31,7 +32,6 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
@@ -587,7 +587,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return serializeResourceGroup(rscGrp.getApiData(accCtx));
     }
 
-    public static RscGrp serializeResourceGroup(RscGrpApi rscGrpApi)
+    public static RscGrp serializeResourceGroup(ResourceGroupApi rscGrpApi)
     {
         RscGrp.Builder builder = RscGrp.newBuilder()
             .setUuid(rscGrpApi.getUuid().toString())

@@ -35,6 +35,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDataDbDriver;

@@ -16,7 +16,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -56,23 +56,23 @@ import java.util.function.Function;
 
 @Singleton
 public class ResourceGroupDbDriver
-    extends AbsDatabaseDriver<ResourceGroupData, ResourceGroup.InitMaps, Void>
-    implements ResourceGroupDataDatabaseDriver
+    extends AbsDatabaseDriver<ResourceGroup, ResourceGroup.InitMaps, Void>
+    implements ResourceGroupDatabaseDriver
 {
 
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
-    private final SingleColumnDatabaseDriver<ResourceGroupData, String> descriptionDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, DeviceLayerKind> layerStackDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroupData, Integer> replicaCountDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroupData, String> storPoolNameDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, String> doNotPlaceWithRscListDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroupData, String> doNotPlaceWithRscRegexDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, String> replicasOnSameListDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, String> replicasOnDifferentListDriver;
-    private final CollectionDatabaseDriver<ResourceGroupData, DeviceProviderKind> allowedProviderListDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroupData, Boolean> disklessOnRemainingDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, String> descriptionDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, DeviceLayerKind> layerStackDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, Integer> replicaCountDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, String> storPoolNameDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscListDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscRegexDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnSameListDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnDifferentListDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> allowedProviderListDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, Boolean> disklessOnRemainingDriver;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
@@ -182,67 +182,67 @@ public class ResourceGroupDbDriver
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, String> getDescriptionDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, String> getDescriptionDriver()
     {
         return descriptionDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, DeviceLayerKind> getLayerStackDriver()
+    public CollectionDatabaseDriver<ResourceGroup, DeviceLayerKind> getLayerStackDriver()
     {
         return layerStackDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, Integer> getReplicaCountDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, Integer> getReplicaCountDriver()
     {
         return replicaCountDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, String> getStorPoolNameDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver()
     {
         return storPoolNameDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, String> getDoNotPlaceWithRscListDriver()
+    public CollectionDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscListDriver()
     {
         return doNotPlaceWithRscListDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, String> getDoNotPlaceWithRscRegexDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscRegexDriver()
     {
         return doNotPlaceWithRscRegexDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, String> getReplicasOnSameListDriver()
+    public CollectionDatabaseDriver<ResourceGroup, String> getReplicasOnSameListDriver()
     {
         return replicasOnSameListDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, String> getReplicasOnDifferentDriver()
+    public CollectionDatabaseDriver<ResourceGroup, String> getReplicasOnDifferentDriver()
     {
         return replicasOnDifferentListDriver;
     }
 
     @Override
-    public CollectionDatabaseDriver<ResourceGroupData, DeviceProviderKind> getAllowedProviderListDriver()
+    public CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> getAllowedProviderListDriver()
     {
         return allowedProviderListDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroupData, Boolean> getDisklessOnRemainingDriver()
+    public SingleColumnDatabaseDriver<ResourceGroup, Boolean> getDisklessOnRemainingDriver()
     {
         return disklessOnRemainingDriver;
     }
 
     @Override
-    protected Pair<ResourceGroupData, InitMaps> load(
+    protected Pair<ResourceGroup, ResourceGroup.InitMaps> load(
         RawParameters raw,
         Void loadAllDataRef
     )
@@ -289,7 +289,7 @@ public class ResourceGroupDbDriver
             throw new DatabaseException(exc);
         }
         return new Pair<>(
-            new ResourceGroupData(
+            new ResourceGroup(
                 raw.build(UUID, java.util.UUID::fromString),
                 getObjectProtection(ObjectProtection.buildPath(rscGrpName)),
                 rscGrpName,
@@ -315,7 +315,7 @@ public class ResourceGroupDbDriver
     }
 
     @Override
-    protected String getId(ResourceGroupData rscGrp)
+    protected String getId(ResourceGroup rscGrp)
     {
         return "(RscGrpName=" + rscGrp.getName().displayValue + ")";
     }

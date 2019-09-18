@@ -28,18 +28,18 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.ResourceGroupData;
-import com.linbit.linstor.core.objects.ResourceGroupDataControllerFactory;
+import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition.VlmDfnWtihCreationPayload;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.objects.VolumeGroupData;
-import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.objects.VolumeGroup.VlmGrpApi;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -84,7 +84,7 @@ public class CtrlRscGrpApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final AccessContext apiCtx;
     private final ResourceGroupRepository resourceGroupRepository;
-    private final ResourceGroupDataControllerFactory rscGrpFactory;
+    private final ResourceGroupControllerFactory rscGrpFactory;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResponseConverter responseConverter;
@@ -103,7 +103,7 @@ public class CtrlRscGrpApiCallHandler
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ResourceGroupRepository rscGrpRepoRef,
-        ResourceGroupDataControllerFactory rscGrpFactoryRef,
+        ResourceGroupControllerFactory rscGrpFactoryRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResponseConverter responseConverterRef,
@@ -132,9 +132,9 @@ public class CtrlRscGrpApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
     }
 
-    public ArrayList<RscGrpApi> listResourceGroups()
+    public ArrayList<ResourceGroupApi> listResourceGroups()
     {
-        ArrayList<ResourceGroup.RscGrpApi> rscGrps = new ArrayList<>();
+        ArrayList<ResourceGroupApi> rscGrps = new ArrayList<>();
         try
         {
             for (ResourceGroup rscGrp : resourceGroupRepository.getMapForView(peerAccCtx.get()).values())
@@ -170,7 +170,7 @@ public class CtrlRscGrpApiCallHandler
         try
         {
             requireRscGrpMapChangeAccess();
-            ResourceGroupData rscGrp = createResourceGroup(rscGrpPojoRef);
+            ResourceGroup rscGrp = createResourceGroup(rscGrpPojoRef);
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.RESOURCE_DEFINITION,
@@ -280,7 +280,7 @@ public class CtrlRscGrpApiCallHandler
         {
             requireRscGrpMapChangeAccess();
 
-            ResourceGroupData rscGrpData = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStrRef, true);
+            ResourceGroup rscGrpData = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStrRef, true);
 
             AccessContext peerCtx = peerAccCtx.get();
             if (descriptionRef != null)
@@ -394,7 +394,7 @@ public class CtrlRscGrpApiCallHandler
         try
         {
             requireRscGrpMapChangeAccess();
-            ResourceGroupData rscGrpData = ctrlApiDataLoader.loadResourceGroup(
+            ResourceGroup rscGrpData = ctrlApiDataLoader.loadResourceGroup(
                 LinstorParsingUtils.asRscGrpName(rscGrpNameStrRef),
                 false
             );
@@ -479,11 +479,11 @@ public class CtrlRscGrpApiCallHandler
         }
     }
 
-    private ResourceGroupData createResourceGroup(RscGrpPojo rscGrpPojoRef)
+    private ResourceGroup createResourceGroup(RscGrpPojo rscGrpPojoRef)
     {
         AutoSelectFilterApi autoSelectFilter = rscGrpPojoRef.getAutoSelectFilter();
 
-        ResourceGroupData rscGrp;
+        ResourceGroup rscGrp;
         try
         {
             Integer replicaCount = null;
@@ -545,7 +545,7 @@ public class CtrlRscGrpApiCallHandler
         return rscGrp;
     }
 
-    private void deleteResourceGroup(ResourceGroupData rscGrpData)
+    private void deleteResourceGroup(ResourceGroup rscGrpData)
     {
         try
         {
@@ -617,7 +617,7 @@ public class CtrlRscGrpApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            ResourceGroupData rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
+            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
             List<String> layerStackStr;
             List<DeviceLayerKind> layerStackDevLayerKind;
 

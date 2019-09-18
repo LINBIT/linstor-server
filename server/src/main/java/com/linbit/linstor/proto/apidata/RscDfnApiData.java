@@ -5,8 +5,8 @@ import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
@@ -46,7 +46,7 @@ public class RscDfnApiData implements ResourceDefinitionApi
     }
 
     @Override
-    public RscGrpApi getResourceGroup()
+    public ResourceGroupApi getResourceGroup()
     {
         return rscGrp;
     }

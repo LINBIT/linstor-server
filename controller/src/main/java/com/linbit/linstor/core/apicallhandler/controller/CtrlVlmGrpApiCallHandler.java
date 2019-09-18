@@ -22,7 +22,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.objects.VolumeGroupData;
 import com.linbit.linstor.core.objects.VolumeGroupDataControllerFactory;
@@ -87,7 +87,7 @@ public class CtrlVlmGrpApiCallHandler
     }
 
     public <T extends VlmGrpApi> List<VolumeGroupData> createVlmGrps(
-        ResourceGroupData rscGrpRef,
+        ResourceGroup rscGrpRef,
         List<T> vlmGrpPojoListRef
     )
         throws AccessDeniedException
@@ -143,7 +143,7 @@ public class CtrlVlmGrpApiCallHandler
                 );
             }
 
-            ResourceGroupData rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
+            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
 
             List<VolumeGroupData> vlmGrpsCreated = createVlmGrps(rscGrp, vlmGrpApiListRef);
 
@@ -184,7 +184,7 @@ public class CtrlVlmGrpApiCallHandler
             }
             else
             {
-                ResourceGroupData rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
+                ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
                 ret = rscGrp.getApiData(peerAccCtx.get()).getVlmGrpList();
             }
         }
@@ -304,7 +304,7 @@ public class CtrlVlmGrpApiCallHandler
     }
 
     private VolumeGroupData createVolumeGroup(
-        ResourceGroupData rscGrpRef,
+        ResourceGroup rscGrpRef,
         VlmGrpApi vlmGrpApiRef
     )
     {

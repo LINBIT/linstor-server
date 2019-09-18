@@ -12,7 +12,7 @@ import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
 import com.linbit.linstor.core.objects.VolumeConnectionData;
@@ -69,7 +69,7 @@ public class ConnectionPropsTest extends GenericDbBase
     private Props volConProps;
 
     private PriorityProps conProps;
-    private ResourceGroupData dfltRscGrp;
+    private ResourceGroup dfltRscGrp;
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Before

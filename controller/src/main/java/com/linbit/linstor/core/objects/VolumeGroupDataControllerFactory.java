@@ -67,7 +67,7 @@ public class VolumeGroupDataControllerFactory
         );
 
         driver.create(vlmGrpData);
-        ((ResourceGroupData) rscGrp).putVolumeGroup(accCtx, vlmGrpData);
+        ((ResourceGroup) rscGrp).putVolumeGroup(accCtx, vlmGrpData);
 
         return vlmGrpData;
     }

@@ -1,8 +1,8 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
-import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.utils.Pair;
 
@@ -17,7 +17,7 @@ import java.util.UUID;
 public class RscDfnPojo implements ResourceDefinitionApi
 {
     private final UUID uuid;
-    private final RscGrpApi rscGrpApi;
+    private final ResourceGroupApi rscGrpApi;
     private final String name;
     private final byte[] externalName;
     private final long flags;
@@ -27,7 +27,7 @@ public class RscDfnPojo implements ResourceDefinitionApi
 
     public RscDfnPojo(
         final UUID uuidRef,
-        final RscGrpApi rscGrpPojoRef,
+        final ResourceGroupApi rscGrpPojoRef,
         final String nameRef,
         final byte[] externalNameRef,
         final long flagsRef,
@@ -53,7 +53,7 @@ public class RscDfnPojo implements ResourceDefinitionApi
     }
 
     @Override
-    public RscGrpApi getResourceGroup()
+    public ResourceGroupApi getResourceGroup()
     {
         return rscGrpApi;
     }

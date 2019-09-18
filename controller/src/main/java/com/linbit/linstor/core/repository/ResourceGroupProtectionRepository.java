@@ -2,7 +2,7 @@ package com.linbit.linstor.core.repository;
 
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
-import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -52,7 +52,7 @@ public class ResourceGroupProtectionRepository implements ResourceGroupRepositor
     }
 
     @Override
-    public ResourceGroupData get(
+    public ResourceGroup get(
         AccessContext accCtx,
         ResourceGroupName rscGrpName
     )
@@ -60,11 +60,11 @@ public class ResourceGroupProtectionRepository implements ResourceGroupRepositor
     {
         checkProtSet();
         rscGrpMapObjProt.requireAccess(accCtx, AccessType.VIEW);
-        return (ResourceGroupData) rscGrpMap.get(rscGrpName);
+        return (ResourceGroup) rscGrpMap.get(rscGrpName);
     }
 
     @Override
-    public void put(AccessContext accCtx, ResourceGroupData rscGrp)
+    public void put(AccessContext accCtx, ResourceGroup rscGrp)
         throws AccessDeniedException
     {
         checkProtSet();

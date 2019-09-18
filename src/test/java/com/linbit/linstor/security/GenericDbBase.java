@@ -36,9 +36,9 @@ import com.linbit.linstor.core.objects.ResourceConnectionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
-import com.linbit.linstor.core.objects.ResourceGroupData;
-import com.linbit.linstor.core.objects.ResourceGroupDataControllerFactory;
-import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
+import com.linbit.linstor.core.objects.ResourceGroupGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDataControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDataControllerFactory;
@@ -57,7 +57,7 @@ import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.TestDbModule;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -190,14 +190,14 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject protected VolumeDataControllerFactory volumeDataFactory;
     @Inject protected VolumeDefinitionDataControllerFactory volumeDefinitionDataFactory;
     @Inject protected ResourceDefinitionControllerFactory resourceDefinitionFactory;
-    @Inject protected ResourceGroupDataControllerFactory resourceGroupDataFactory;
+    @Inject protected ResourceGroupControllerFactory resourceGroupFactory;
     @Inject protected NetInterfaceFactory netInterfaceFactory;
 
     @Inject protected LinStorScope testScope;
     @Inject protected TransactionObjectFactory transObjFactory;
     @Inject protected Provider<TransactionMgrSQL> transMgrProvider;
 
-    @Inject protected ResourceGroupDataDatabaseDriver rscGrpDbDriver;
+    @Inject protected ResourceGroupDatabaseDriver rscGrpDbDriver;
 
     @BeforeClass
     public static void setUpBeforeClass()
@@ -730,10 +730,10 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         return securityTestUtils.createObjectProtection(accCtx, objPath);
     }
 
-    protected ResourceGroupData createDefaultResourceGroup(AccessContext initCtx)
+    protected ResourceGroup createDefaultResourceGroup(AccessContext initCtx)
         throws InvalidNameException, AccessDeniedException, DatabaseException
     {
-        ResourceGroupData rscGrp = ((ResourceGroupDataGenericDbDriver) rscGrpDbDriver).loadAll().keySet().stream()
+        ResourceGroup rscGrp = ((ResourceGroupGenericDbDriver) rscGrpDbDriver).loadAll().keySet().stream()
             .filter(grp -> grp.getName().displayValue.equals(InternalApiConsts.DEFAULT_RSC_GRP_NAME))
             .findFirst()
             .get();

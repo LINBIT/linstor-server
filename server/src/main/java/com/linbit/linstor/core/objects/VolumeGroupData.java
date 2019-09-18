@@ -118,7 +118,7 @@ public class VolumeGroupData extends BaseTransactionObject implements VolumeGrou
         {
             rscGrp.getObjProt().requireAccess(accCtxRef, AccessType.USE);
 
-            ((ResourceGroupData) rscGrp).deleteVolumeGroup(accCtxRef, vlmNr);
+            ((ResourceGroup) rscGrp).deleteVolumeGroup(accCtxRef, vlmNr);
             vlmGrpProps.delete();
             dbDriver.delete(this);
 

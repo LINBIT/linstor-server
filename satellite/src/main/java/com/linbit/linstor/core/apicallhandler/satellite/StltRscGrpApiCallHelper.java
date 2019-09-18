@@ -9,13 +9,13 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.ResourceGroup.RscGrpApi;
-import com.linbit.linstor.core.objects.ResourceGroupData;
-import com.linbit.linstor.core.objects.ResourceGroupDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.ResourceGroupSatelliteFactory;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -39,7 +39,7 @@ class StltRscGrpApiCallHelper
     private final DeviceManager deviceManager;
     private final ControllerPeerConnector controllerPeerConnector;
     private final CoreModule.ResourceGroupMap rscGrpMap;
-    private final ResourceGroupDataSatelliteFactory resourceGroupDataFactory;
+    private final ResourceGroupSatelliteFactory resourceGroupFactory;
     private final VolumeGroupDataSatelliteFactory volumeGroupDataFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
@@ -50,7 +50,7 @@ class StltRscGrpApiCallHelper
         DeviceManager deviceManagerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CoreModule.ResourceGroupMap rscGrpMapRef,
-        ResourceGroupDataSatelliteFactory resourceGroupDataFactoryRef,
+        ResourceGroupSatelliteFactory resourceGroupFactoryRef,
         VolumeGroupDataSatelliteFactory volumeGroupDataFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -60,21 +60,21 @@ class StltRscGrpApiCallHelper
         deviceManager = deviceManagerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         rscGrpMap = rscGrpMapRef;
-        resourceGroupDataFactory = resourceGroupDataFactoryRef;
+        resourceGroupFactory = resourceGroupFactoryRef;
         volumeGroupDataFactory = volumeGroupDataFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
 
-    public ResourceGroup mergeResourceGroup(RscGrpApi rscGrpApiRef)
+    public ResourceGroup mergeResourceGroup(ResourceGroupApi rscGrpApiRef)
         throws InvalidNameException, AccessDeniedException, DatabaseException
     {
         ResourceGroupName rscGrpName = new ResourceGroupName(rscGrpApiRef.getName());
         AutoSelectFilterApi autoPlaceConfigPojo = rscGrpApiRef.getAutoSelectFilter();
 
-        ResourceGroupData rscGrp = (ResourceGroupData) rscGrpMap.get(rscGrpName);
+        ResourceGroup rscGrp = (ResourceGroup) rscGrpMap.get(rscGrpName);
         if (rscGrp == null)
         {
-            rscGrp = resourceGroupDataFactory.getInstanceSatellite(
+            rscGrp = resourceGroupFactory.getInstanceSatellite(
                 rscGrpApiRef.getUuid(),
                 rscGrpName,
                 rscGrpApiRef.getDescription(),

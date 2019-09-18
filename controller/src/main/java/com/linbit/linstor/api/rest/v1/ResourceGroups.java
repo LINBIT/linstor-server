@@ -9,8 +9,8 @@ import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -85,7 +85,7 @@ public class ResourceGroups
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_GRP, request), () ->
         {
-            Stream<ResourceGroup.RscGrpApi> rscGrpStream =
+            Stream<ResourceGroupApi> rscGrpStream =
                 ctrlApiCallHandler.listResourceGroups().stream()
                     .filter(rscGrpApi -> rscName == null || rscGrpApi.getName().equalsIgnoreCase(rscName));
 

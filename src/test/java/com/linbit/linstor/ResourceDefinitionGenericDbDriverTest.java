@@ -13,7 +13,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.SQLUtils;
@@ -62,7 +62,7 @@ public class ResourceDefinitionGenericDbDriverTest extends GenericDbBase
     @Inject private ResourceDefinitionGenericDbDriver driver;
     @Inject private ObjectProtectionDatabaseDriver objProtDriver;
 
-    private ResourceGroupData dfltRscGrp;
+    private ResourceGroup dfltRscGrp;
 
     @SuppressWarnings("checkstyle:magicnumber")
     public ResourceDefinitionGenericDbDriverTest() throws InvalidNameException

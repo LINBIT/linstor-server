@@ -12,7 +12,7 @@ import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
@@ -82,7 +82,7 @@ public class SatelliteDbModule extends AbstractModule
         bind(SnapshotDataDatabaseDriver.class).to(SatelliteSnapshotDriver.class);
         bind(SnapshotVolumeDataDatabaseDriver.class).to(SatelliteSnapshotVlmDriver.class);
 
-        bind(ResourceGroupDataDatabaseDriver.class).to(SatelliteRscGrpDriver.class);
+        bind(ResourceGroupDatabaseDriver.class).to(SatelliteRscGrpDriver.class);
         bind(VolumeGroupDataDatabaseDriver.class).to(SatelliteVlmGrpDriver.class);
 
         bind(ResourceLayerIdDatabaseDriver.class).to(SatelliteResourceLayerIdDriver.class);

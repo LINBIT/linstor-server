@@ -7,8 +7,8 @@ import com.linbit.linstor.core.apis.KvsApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinitionData;
@@ -1213,9 +1213,9 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ArrayList<ResourceGroup.RscGrpApi> listResourceGroups()
+    public ArrayList<ResourceGroupApi> listResourceGroups()
     {
-        ArrayList<ResourceGroup.RscGrpApi> listResourceGroups;
+        ArrayList<ResourceGroupApi> listResourceGroups;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_GRP_MAP))
         {
             listResourceGroups = rscGrpApiCallHandler.listResourceGroups();

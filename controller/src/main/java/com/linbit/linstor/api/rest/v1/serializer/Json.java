@@ -24,6 +24,7 @@ import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -31,7 +32,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -695,7 +695,7 @@ public class Json
     }
 
     public static JsonGenTypes.ResourceGroup apiToResourceGroup(
-        ResourceGroup.RscGrpApi rscGrpApi
+        ResourceGroupApi rscGrpApi
     )
     {
         JsonGenTypes.ResourceGroup rscGrp = new JsonGenTypes.ResourceGroup();

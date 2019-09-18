@@ -8,7 +8,7 @@ import static org.junit.Assert.assertTrue;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.InitMaps;
@@ -54,7 +54,7 @@ public class VolumeDefinitionDataGenericDbDriverTest extends GenericDbBase
 
     @Inject private VolumeDefinitionDataGenericDbDriver driver;
 
-    private ResourceGroupData dfltRscGrp;
+    private ResourceGroup dfltRscGrp;
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Before

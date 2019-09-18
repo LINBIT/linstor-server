@@ -4,7 +4,7 @@ import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -28,20 +28,20 @@ import java.util.UUID;
 public class AutoSelectorConfig extends BaseTransactionObject implements DbgInstanceUuid, ProtectedObject
 {
     private final UUID dbgInstanceId;
-    private final ResourceGroupData rscGrp;
+    private final ResourceGroup rscGrp;
 
-    private final TransactionSimpleObject<ResourceGroupData, Integer> replicaCount;
-    private final TransactionSimpleObject<ResourceGroupData, String> storPoolName;
-    private final TransactionList<ResourceGroupData, String> doNotPlaceWithRscList;
-    private final TransactionSimpleObject<ResourceGroupData, String> doNotPlaceWithRscRegex;
-    private final TransactionList<ResourceGroupData, String> replicasOnSameList;
-    private final TransactionList<ResourceGroupData, String> replicasOnDifferentList;
-    private final TransactionList<ResourceGroupData, DeviceLayerKind> layerStack;
-    private final TransactionList<ResourceGroupData, DeviceProviderKind> allowedProviderList;
-    private final TransactionSimpleObject<ResourceGroupData, Boolean> disklessOnRemaining;
+    private final TransactionSimpleObject<ResourceGroup, Integer> replicaCount;
+    private final TransactionSimpleObject<ResourceGroup, String> storPoolName;
+    private final TransactionList<ResourceGroup, String> doNotPlaceWithRscList;
+    private final TransactionSimpleObject<ResourceGroup, String> doNotPlaceWithRscRegex;
+    private final TransactionList<ResourceGroup, String> replicasOnSameList;
+    private final TransactionList<ResourceGroup, String> replicasOnDifferentList;
+    private final TransactionList<ResourceGroup, DeviceLayerKind> layerStack;
+    private final TransactionList<ResourceGroup, DeviceProviderKind> allowedProviderList;
+    private final TransactionSimpleObject<ResourceGroup, Boolean> disklessOnRemaining;
 
     public AutoSelectorConfig(
-        ResourceGroupData rscGrpRef,
+        ResourceGroup rscGrpRef,
         Integer replicaCountRef,
         String storPoolNameRef,
         List<String> doNotPlaceWithRscListRef,
@@ -51,7 +51,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         List<DeviceLayerKind> layerStackRef,
         List<DeviceProviderKind> allowedProviderListRef,
         Boolean disklessOnRemainingRef,
-        ResourceGroupDataDatabaseDriver dbDriverRef,
+        ResourceGroupDatabaseDriver dbDriverRef,
         TransactionObjectFactory transactionObjectFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )

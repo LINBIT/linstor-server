@@ -9,7 +9,7 @@ import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceGroupDataGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceGroupGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDataGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDataGenericDbDriver;
@@ -32,7 +32,7 @@ import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDataDatabaseDriver;
@@ -68,7 +68,7 @@ public class TestDbModule extends AbstractModule
 
         bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
         bind(NodeDatabaseDriver.class).to(NodeGenericDbDriver.class);
-        bind(ResourceGroupDataDatabaseDriver.class).to(ResourceGroupDataGenericDbDriver.class);
+        bind(ResourceGroupDatabaseDriver.class).to(ResourceGroupGenericDbDriver.class);
         bind(ResourceDefinitionDatabaseDriver.class).to(ResourceDefinitionGenericDbDriver.class);
         bind(ResourceDatabaseDriver.class).to(ResourceGenericDbDriver.class);
         bind(VolumeDefinitionDataDatabaseDriver.class).to(VolumeDefinitionDataGenericDbDriver.class);

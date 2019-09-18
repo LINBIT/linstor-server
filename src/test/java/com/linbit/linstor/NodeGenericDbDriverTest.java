@@ -20,7 +20,7 @@ import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGroupData;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolData;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
@@ -91,7 +91,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
     private long initialFlags;
     private Node.Type initialType;
     private Node node;
-    private ResourceGroupData dfltRscGrp;
+    private ResourceGroup dfltRscGrp;
 
     public NodeGenericDbDriverTest() throws Exception
     {

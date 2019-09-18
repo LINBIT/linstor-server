@@ -11,7 +11,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
-import com.linbit.linstor.core.objects.ResourceGroupDataSatelliteFactory;
+import com.linbit.linstor.core.objects.ResourceGroupSatelliteFactory;
 import com.linbit.linstor.core.objects.VolumeDefinitionData;
 import com.linbit.linstor.core.objects.VolumeDefinitionDataSatelliteFactory;
 import com.linbit.linstor.core.types.TcpPortNumber;
@@ -51,7 +51,7 @@ public class ResourceDefinitionSatelliteTest
 
     @Inject private VolumeDefinitionDataSatelliteFactory volumeDefinitionDataFactory;
     @Inject private ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
-    @Inject private ResourceGroupDataSatelliteFactory resourceGroupDataFactory;
+    @Inject private ResourceGroupSatelliteFactory resourceGroupFactory;
 
     @Inject private LinStorScope testScope;
     @Inject private Provider<TransactionMgr> transMgrProvider;
@@ -97,7 +97,7 @@ public class ResourceDefinitionSatelliteTest
         ResourceDefinition rscDfn = resourceDefinitionFactory.getInstanceSatellite(
             SYS_CTX,
             resDfnUuid,
-            resourceGroupDataFactory.getInstanceSatellite(
+            resourceGroupFactory.getInstanceSatellite(
                 UUID.randomUUID(),
                 new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
                 "",
@@ -135,7 +135,7 @@ public class ResourceDefinitionSatelliteTest
         ResourceDefinition rscDfn = resourceDefinitionFactory.getInstanceSatellite(
             SYS_CTX,
             resDfnUuid,
-            resourceGroupDataFactory.getInstanceSatellite(
+            resourceGroupFactory.getInstanceSatellite(
                 UUID.randomUUID(),
                 new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
                 "",
