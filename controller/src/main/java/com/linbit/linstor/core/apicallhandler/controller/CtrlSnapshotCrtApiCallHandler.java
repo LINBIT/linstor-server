@@ -25,7 +25,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDataControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotDefinitionData;
@@ -87,7 +87,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactory;
     private final SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactory;
-    private final SnapshotDataControllerFactory snapshotDataFactory;
+    private final SnapshotControllerFactory snapshotFactory;
     private final SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactory;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
@@ -104,7 +104,7 @@ public class CtrlSnapshotCrtApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         SnapshotDefinitionDataControllerFactory snapshotDefinitionDataFactoryRef,
         SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionControllerFactoryRef,
-        SnapshotDataControllerFactory snapshotDataFactoryRef,
+        SnapshotControllerFactory snapshotFactoryRef,
         SnapshotVolumeDataControllerFactory snapshotVolumeDataControllerFactoryRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
@@ -120,7 +120,7 @@ public class CtrlSnapshotCrtApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         snapshotVolumeDefinitionControllerFactory = snapshotVolumeDefinitionControllerFactoryRef;
-        snapshotDataFactory = snapshotDataFactoryRef;
+        snapshotFactory = snapshotFactoryRef;
         snapshotVolumeDataControllerFactory = snapshotVolumeDataControllerFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
@@ -441,7 +441,7 @@ public class CtrlSnapshotCrtApiCallHandler
         Resource rsc
     )
     {
-        Snapshot snapshot = createSnapshotData(snapshotDfn, rsc);
+        Snapshot snapshot = createSnapshot(snapshotDfn, rsc);
         setSuspendResource(snapshot);
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitions)
@@ -671,7 +671,7 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
-    private Snapshot createSnapshotData(SnapshotDefinition snapshotDfn, Resource rsc)
+    private Snapshot createSnapshot(SnapshotDefinition snapshotDfn, Resource rsc)
     {
         String snapshotNameStr = snapshotDfn.getName().displayValue;
         String rscNameStr = rsc.getDefinition().getName().displayValue;
@@ -690,12 +690,13 @@ public class CtrlSnapshotCrtApiCallHandler
                 nodeId = ((DrbdRscData) childLayerDataByKind.get(0)).getNodeId();
             }
 
-            snapshot = snapshotDataFactory.create(
+            snapshot = snapshotFactory.create(
                 peerAccCtx.get(),
                 rsc.getAssignedNode(),
                 snapshotDfn,
                 nodeId,
-                new Snapshot.SnapshotFlags[]{},
+                new Snapshot.Flags[]
+                {},
                 layerStackHelper.getLayerStack(rsc)
             );
         }

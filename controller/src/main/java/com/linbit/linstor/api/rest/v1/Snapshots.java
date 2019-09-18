@@ -97,13 +97,13 @@ public class Snapshots
                     snapsStream = snapsStream.skip(offset).limit(limit);
                 }
 
-                List<JsonGenTypes.Snapshot> snapshotData = snapsStream
+                List<JsonGenTypes.Snapshot> snapshot = snapsStream
                     .filter(snaphotDfn -> snaphotDfn.getRscDfn().getResourceName().equalsIgnoreCase(rscName))
                     .map(Json::apiToSnapshot)
                     .collect(Collectors.toList());
 
                 response = RequestHelper.queryRequestResponse(
-                    objectMapper, ApiConsts.FAIL_NOT_FOUND_SNAPSHOT, "Snapshot", snapName, snapshotData
+                    objectMapper, ApiConsts.FAIL_NOT_FOUND_SNAPSHOT, "Snapshot", snapName, snapshot
                 );
             }
             else

@@ -1,10 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotData;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -17,15 +14,15 @@ import java.util.Collections;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class SnapshotDataSatelliteFactory
+public class SnapshotSatelliteFactory
 {
-    private final SnapshotDataDatabaseDriver driver;
+    private final SnapshotDatabaseDriver driver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public SnapshotDataSatelliteFactory(
-        SnapshotDataDatabaseDriver driverRef,
+    public SnapshotSatelliteFactory(
+        SnapshotDatabaseDriver driverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -40,7 +37,7 @@ public class SnapshotDataSatelliteFactory
         UUID snapshotUuid,
         Node node,
         SnapshotDefinition snapshotDfn,
-        Snapshot.SnapshotFlags[] flags
+        Snapshot.Flags[] flags
     )
         throws ImplementationError
     {
@@ -50,7 +47,7 @@ public class SnapshotDataSatelliteFactory
             snapshot = snapshotDfn.getSnapshot(accCtx, node.getName());
             if (snapshot == null)
             {
-                snapshot = new SnapshotData(
+                snapshot = new Snapshot(
                     snapshotUuid,
                     snapshotDfn,
                     node,

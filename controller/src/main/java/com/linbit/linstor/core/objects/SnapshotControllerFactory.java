@@ -3,7 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -21,15 +21,15 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 @Singleton
-public class SnapshotDataControllerFactory
+public class SnapshotControllerFactory
 {
-    private final SnapshotDataDatabaseDriver driver;
+    private final SnapshotDatabaseDriver driver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public SnapshotDataControllerFactory(
-        SnapshotDataDatabaseDriver driverRef,
+    public SnapshotControllerFactory(
+        SnapshotDatabaseDriver driverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -44,7 +44,7 @@ public class SnapshotDataControllerFactory
         Node node,
         SnapshotDefinition snapshotDfn,
         NodeId nodeId,
-        Snapshot.SnapshotFlags[] initFlags,
+        Snapshot.Flags[] initFlags,
         List<DeviceLayerKind> layerStack
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
@@ -58,7 +58,7 @@ public class SnapshotDataControllerFactory
             throw new LinStorDataAlreadyExistsException("The Snapshot already exists");
         }
 
-        snapshot = new SnapshotData(
+        snapshot = new Snapshot(
             UUID.randomUUID(),
             snapshotDfn,
             node,

@@ -9,23 +9,17 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotData;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.Snapshot.SnapshotFlags;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -34,6 +28,7 @@ import com.linbit.utils.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,7 +38,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
+public class SnapshotGenericDbDriver implements SnapshotDatabaseDriver
 {
     private static final String TBL_SNAPSHOT = DbConstants.TBL_SNAPSHOTS;
 
@@ -86,7 +81,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public SnapshotDataGenericDbDriver(
+    public SnapshotGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -149,7 +144,7 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
         Map<VolumeNumber, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
         NodeId nodeId = getNodeId(resultSet, node, snapshotDefinition);
-        snapshot = new SnapshotData(
+        snapshot = new Snapshot(
             java.util.UUID.fromString(resultSet.getString(S_UUID)),
             snapshotDefinition,
             node,
@@ -304,14 +299,14 @@ public class SnapshotDataGenericDbDriver implements SnapshotDataDatabaseDriver
             {
                 String fromFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        SnapshotFlags.class,
+                        Snapshot.Flags.class,
                         snapshot.getFlags().getFlagsBits(dbCtx)
                     ),
                     ", "
                 );
                 String toFlags = StringUtils.join(
                     FlagsHelper.toStringList(
-                        SnapshotFlags.class,
+                        Snapshot.Flags.class,
                         flags
                     ),
                     ", "

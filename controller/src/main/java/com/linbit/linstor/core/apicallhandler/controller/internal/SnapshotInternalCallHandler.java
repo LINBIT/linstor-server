@@ -90,7 +90,7 @@ public class SnapshotInternalCallHandler
                 currentPeer.sendMessage(
                     ctrlStltSerializer
                         .onewayBuilder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT)
-                        .snapshotData(snapshot, fullSyncId, updateId)
+                        .snapshot(snapshot, fullSyncId, updateId)
                         .build()
                 );
             }
@@ -99,7 +99,7 @@ public class SnapshotInternalCallHandler
                 currentPeer.sendMessage(
                     ctrlStltSerializer
                         .onewayBuilder(InternalApiConsts.API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED)
-                        .endedSnapshotData(resourceNameStr, snapshotNameStr, fullSyncId, updateId)
+                        .endedSnapshot(resourceNameStr, snapshotNameStr, fullSyncId, updateId)
                         .build()
                 );
             }

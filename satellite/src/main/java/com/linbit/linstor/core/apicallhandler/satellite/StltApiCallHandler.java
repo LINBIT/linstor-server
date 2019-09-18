@@ -684,12 +684,12 @@ public class StltApiCallHandler
 
     public void applySnapshotChanges(SnapshotPojo snapshotRaw)
     {
-        applyChangedData(new ApplySnapshotData(snapshotRaw));
+        applyChangedData(new ApplySnapshot(snapshotRaw));
     }
 
     public void applyEndedSnapshotChange(String rscName, String snapshotName, long fullSyncId, long updateId)
     {
-        applyChangedData(new ApplyEndedSnapshotData(rscName, snapshotName, fullSyncId, updateId));
+        applyChangedData(new ApplyEndedSnapshot(rscName, snapshotName, fullSyncId, updateId));
     }
 
     public void setCryptKey(byte[] key, long fullSyncId, long updateId)
@@ -1048,11 +1048,11 @@ public class StltApiCallHandler
         }
     }
 
-    private class ApplySnapshotData implements ApplyData
+    private class ApplySnapshot implements ApplyData
     {
         private final SnapshotPojo snapshotPojo;
 
-        ApplySnapshotData(SnapshotPojo snapshotPojoRef)
+        ApplySnapshot(SnapshotPojo snapshotPojoRef)
         {
             snapshotPojo = snapshotPojoRef;
         }
@@ -1083,14 +1083,14 @@ public class StltApiCallHandler
         }
     }
 
-    private class ApplyEndedSnapshotData implements ApplyData
+    private class ApplyEndedSnapshot implements ApplyData
     {
         private final String rscName;
         private final String snapshotName;
         private final long fullSyncId;
         private final long updateId;
 
-        ApplyEndedSnapshotData(
+        ApplyEndedSnapshot(
             String rscNameRef,
             String snapshotNameRef,
             long fullSyncIdRef,

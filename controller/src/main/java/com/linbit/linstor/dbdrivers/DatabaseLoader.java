@@ -38,7 +38,8 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDataDbDriver;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionData;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
@@ -132,7 +133,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final StorPoolDbDriver storPoolDriver;
     private final SnapshotDefinitionDbDriver snapshotDefinitionDriver;
     private final SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriver;
-    private final SnapshotDataDbDriver snapshotDriver;
+    private final SnapshotDbDriver snapshotDriver;
     private final SnapshotVolumeDbDriver snapshotVolumeDriver;
     private final KeyValueStoreDbDriver keyValueStoreGenericDbDriver;
     private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
@@ -169,7 +170,7 @@ public class DatabaseLoader implements DatabaseDriver
         StorPoolDbDriver storPoolDriverRef,
         SnapshotDefinitionDbDriver snapshotDefinitionDriverRef,
         SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriverRef,
-        SnapshotDataDbDriver snapshotDriverRef,
+        SnapshotDbDriver snapshotDriverRef,
         SnapshotVolumeDbDriver snapshotVolumeDriverRef,
         KeyValueStoreDbDriver keyValueStoreGenericDbDriverRef,
         ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,

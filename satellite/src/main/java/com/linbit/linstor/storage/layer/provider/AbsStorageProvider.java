@@ -16,7 +16,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Snapshot.SnapshotFlags;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -182,7 +182,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     snapVlm -> AccessUtils.execPrivileged(
                         // explicit cast to make eclipse compiler happy
                         (ExceptionThrowingSupplier<Boolean, AccessDeniedException>)
-                        () -> snapVlm.getSnapshot().getFlags().isSet(storDriverAccCtx, SnapshotFlags.DELETE)
+                        () -> snapVlm.getSnapshot().getFlags().isSet(storDriverAccCtx, Snapshot.Flags.DELETE)
                     )
                 )
             );

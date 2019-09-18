@@ -55,10 +55,10 @@ public class ApplySnapshot implements ApiCall
         apiCallHandler.applySnapshotChanges(snapshotRaw);
     }
 
-    static SnapshotPojo asSnapshotPojo(IntSnapshot snapshotData, long fullSyncId, long updateId)
+    static SnapshotPojo asSnapshotPojo(IntSnapshot snapshot, long fullSyncId, long updateId)
     {
         List<SnapshotVolumeDefinition.SnapshotVlmDfnApi> snapshotVlmDfns =
-            snapshotData.getSnapshotVlmDfnsList().stream()
+            snapshot.getSnapshotVlmDfnsList().stream()
                 .map(snapshotVlmDfn -> new SnapshotVlmDfnPojo(
                     UUID.fromString(snapshotVlmDfn.getSnapshotVlmDfnUuid()),
                     snapshotVlmDfn.getVlmNr(),
@@ -68,7 +68,7 @@ public class ApplySnapshot implements ApiCall
                 .collect(Collectors.toList());
 
         List<SnapshotVolume.SnapshotVlmApi> snapshotVlms =
-            snapshotData.getSnapshotVlmsList().stream()
+            snapshot.getSnapshotVlmsList().stream()
                 .map(snapshotVlm -> new SnapshotVlmPojo(
                     snapshotVlm.getStorPoolName(),
                     UUID.fromString(snapshotVlm.getStorPoolUuid()),
@@ -81,25 +81,25 @@ public class ApplySnapshot implements ApiCall
         return new SnapshotPojo(
             new SnapshotDfnPojo(
                 new RscDfnPojo(
-                    UUID.fromString(snapshotData.getRscDfnUuid()),
-                    ProtoDeserializationUtils.parseRscGrp(snapshotData.getRscGrp()),
-                    snapshotData.getRscName(),
+                    UUID.fromString(snapshot.getRscDfnUuid()),
+                    ProtoDeserializationUtils.parseRscGrp(snapshot.getRscGrp()),
+                    snapshot.getRscName(),
                     null,
-                    snapshotData.getRscDfnFlags(),
-                    snapshotData.getRscDfnPropsMap(),
+                    snapshot.getRscDfnFlags(),
+                    snapshot.getRscDfnPropsMap(),
                     null,
                     Collections.emptyList()
                 ),
-                UUID.fromString(snapshotData.getSnapshotDfnUuid()),
-                snapshotData.getSnapshotName(),
+                UUID.fromString(snapshot.getSnapshotDfnUuid()),
+                snapshot.getSnapshotName(),
                 snapshotVlmDfns,
-                snapshotData.getSnapshotDfnFlags(),
-                snapshotData.getSnapshotDfnPropsMap()
+                snapshot.getSnapshotDfnFlags(),
+                snapshot.getSnapshotDfnPropsMap()
             ),
-            UUID.fromString(snapshotData.getSnapshotUuid()),
-            snapshotData.getFlags(),
-            snapshotData.getSuspendResource(),
-            snapshotData.getTakeSnapshot(),
+            UUID.fromString(snapshot.getSnapshotUuid()),
+            snapshot.getFlags(),
+            snapshot.getSuspendResource(),
+            snapshot.getTakeSnapshot(),
             fullSyncId,
             updateId,
             snapshotVlms

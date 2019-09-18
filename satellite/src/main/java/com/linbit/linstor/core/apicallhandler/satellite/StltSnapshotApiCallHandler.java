@@ -19,7 +19,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDataSatelliteFactory;
+import com.linbit.linstor.core.objects.SnapshotSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition.SnapshotDfnFlags;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDataSatelliteFactory;
@@ -58,7 +58,7 @@ class StltSnapshotApiCallHandler
     private final ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
     private final SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactory;
     private final SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactory;
-    private final SnapshotDataSatelliteFactory snapshotDataFactory;
+    private final SnapshotSatelliteFactory snapshotFactory;
     private final SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactory;
     private final StltRscGrpApiCallHelper rscGrpApiCallHelper;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -74,7 +74,7 @@ class StltSnapshotApiCallHandler
         ResourceDefinitionSatelliteFactory resourceDefinitionFactoryRef,
         SnapshotDefinitionDataSatelliteFactory snapshotDefinitionDataFactoryRef,
         SnapshotVolumeDefinitionSatelliteFactory snapshotVolumeDefinitionFactoryRef,
-        SnapshotDataSatelliteFactory snapshotDataFactoryRef,
+        SnapshotSatelliteFactory snapshotFactoryRef,
         SnapshotVolumeDataSatelliteFactory snapshotVolumeDataFactoryRef,
         StltRscGrpApiCallHelper stltGrpApiCallHelperRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -89,7 +89,7 @@ class StltSnapshotApiCallHandler
         resourceDefinitionFactory = resourceDefinitionFactoryRef;
         snapshotDefinitionDataFactory = snapshotDefinitionDataFactoryRef;
         snapshotVolumeDefinitionFactory = snapshotVolumeDefinitionFactoryRef;
-        snapshotDataFactory = snapshotDataFactoryRef;
+        snapshotFactory = snapshotFactoryRef;
         snapshotVolumeDataFactory = snapshotVolumeDataFactoryRef;
         rscGrpApiCallHelper = stltGrpApiCallHelperRef;
         transMgrProvider = transMgrProviderRef;
@@ -227,10 +227,10 @@ class StltSnapshotApiCallHandler
     {
         Node localNode = controllerPeerConnector.getLocalNode();
         Snapshot snapshot = snapshotDfn.getSnapshot(apiCtx, localNode.getName());
-        Snapshot.SnapshotFlags[] snapshotFlags = Snapshot.SnapshotFlags.restoreFlags(snapshotRaw.getFlags());
+        Snapshot.Flags[] snapshotFlags = Snapshot.Flags.restoreFlags(snapshotRaw.getFlags());
         if (snapshot == null)
         {
-            snapshot = snapshotDataFactory.getInstanceSatellite(
+            snapshot = snapshotFactory.getInstanceSatellite(
                 apiCtx,
                 snapshotRaw.getSnapshotUuid(),
                 localNode,

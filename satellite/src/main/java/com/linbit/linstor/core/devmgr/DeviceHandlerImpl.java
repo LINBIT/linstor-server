@@ -19,7 +19,6 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.Snapshot.SnapshotFlags;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.Volume.VlmFlags;
@@ -330,7 +329,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
                 for (Snapshot snapshot : snapshots)
                 {
-                    if (snapshot.getFlags().isSet(wrkCtx, SnapshotFlags.DELETE))
+                    if (snapshot.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
                     {
                         snapListNotifyDelete.add(snapshot);
                         notificationListener.get().notifySnapshotDeleted(snapshot);

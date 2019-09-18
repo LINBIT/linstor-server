@@ -55,8 +55,8 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder deletedResource(String rscNameStr, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder storPoolData(StorPool storPool, long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder deletedStorPoolData(String storPoolName, long fullSyncTimestamp, long updateId);
-        CtrlStltSerializerBuilder snapshotData(Snapshot snapshot, long fullSyncId, long updateId);
-        CtrlStltSerializerBuilder endedSnapshotData(
+        CtrlStltSerializerBuilder snapshot(Snapshot snapshot, long fullSyncId, long updateId);
+        CtrlStltSerializerBuilder endedSnapshot(
             String resourceNameStr,
             String snapshotNameStr,
             long fullSyncId,

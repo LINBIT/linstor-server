@@ -175,9 +175,9 @@ public class FullSync implements ApiCall
     )
     {
         ArrayList<SnapshotPojo> snapshots = new ArrayList<>(snapshotsList.size());
-        for (IntSnapshotOuterClass.IntSnapshot snapshotData : snapshotsList)
+        for (IntSnapshotOuterClass.IntSnapshot snapshot : snapshotsList)
         {
-            snapshots.add(ApplySnapshot.asSnapshotPojo(snapshotData, fullSyncId, updateId));
+            snapshots.add(ApplySnapshot.asSnapshotPojo(snapshot, fullSyncId, updateId));
         }
         return snapshots;
     }

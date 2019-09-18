@@ -366,10 +366,10 @@ public class Node extends BaseTransactionObject
     }
 
 
-    public void removeSnapshot(SnapshotData snapshotData)
+    public void removeSnapshot(Snapshot snapshot)
     {
         checkDeleted();
-        snapshotMap.remove(new SnapshotDefinition.Key(snapshotData.getSnapshotDefinition()));
+        snapshotMap.remove(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()));
     }
 
 

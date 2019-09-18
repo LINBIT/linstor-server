@@ -10,14 +10,13 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Snapshot.InitMaps;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -45,12 +44,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class SnapshotDataDbDriver extends
+public class SnapshotDbDriver extends
     AbsDatabaseDriver<Snapshot,
         Snapshot.InitMaps,
         Pair<Map<NodeName, ? extends Node>,
             Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition>>>
-    implements SnapshotDataDatabaseDriver
+    implements SnapshotDatabaseDriver
 {
 
     private final AccessContext dbCtx;
@@ -61,7 +60,7 @@ public class SnapshotDataDbDriver extends
     private final StateFlagsPersistence<Snapshot> flagsDriver;
 
     @Inject
-    public SnapshotDataDbDriver(
+    public SnapshotDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
@@ -85,7 +84,7 @@ public class SnapshotDataDbDriver extends
         setColumnSetter(NODE_ID, snap -> snap.getNodeId().value);
         setColumnSetter(LAYER_STACK, snap -> toString(StringUtils.asStrList(snap.getLayerStack(dbCtxRef))));
 
-        flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, Snapshot.SnapshotFlags.class);
+        flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, Snapshot.Flags.class);
     }
 
     @Override
@@ -95,7 +94,7 @@ public class SnapshotDataDbDriver extends
     }
 
     @Override
-    protected Pair<Snapshot, InitMaps> load(
+    protected Pair<Snapshot, Snapshot.InitMaps> load(
         RawParameters raw,
         Pair<Map<NodeName, ? extends Node>,
             Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition>> loadMaps
@@ -121,7 +120,7 @@ public class SnapshotDataDbDriver extends
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
         return new Pair<>(
-            new SnapshotData(
+            new Snapshot(
                 raw.build(UUID, java.util.UUID::fromString),
                 loadMaps.objB.get(
                     new Pair<>(

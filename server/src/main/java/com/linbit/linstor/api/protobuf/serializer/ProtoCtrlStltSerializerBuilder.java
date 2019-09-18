@@ -328,14 +328,14 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder snapshotData(
+    public ProtoCtrlStltSerializerBuilder snapshot(
         Snapshot snapshot, long fullSyncId, long updateId
     )
     {
         try
         {
             MsgIntApplySnapshot.newBuilder()
-                .setSnapshot(snapshotSerializerHelper.buildSnapshotDataMsg(snapshot))
+                .setSnapshot(snapshotSerializerHelper.buildSnapshotMsg(snapshot))
                 .setFullSyncId(fullSyncId)
                 .setUpdateId(updateId)
                 .build()
@@ -353,7 +353,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public ProtoCtrlStltSerializerBuilder endedSnapshotData(
+    public ProtoCtrlStltSerializerBuilder endedSnapshot(
         String resourceNameStr, String snapshotNameStr, long fullSyncId, long updateId
     )
     {
@@ -417,7 +417,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
             for (Snapshot snapshot : snapshots)
             {
-                serializedSnapshots.add(snapshotSerializerHelper.buildSnapshotDataMsg(snapshot));
+                serializedSnapshots.add(snapshotSerializerHelper.buildSnapshotMsg(snapshot));
             }
 
             String encodedMasterKey = "";
@@ -851,7 +851,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     private class SnapshotSerializerHelper
     {
-        private IntSnapshot buildSnapshotDataMsg(Snapshot snapshot)
+        private IntSnapshot buildSnapshotMsg(Snapshot snapshot)
             throws AccessDeniedException
         {
             SnapshotDefinition snapshotDfn = snapshot.getSnapshotDefinition();
