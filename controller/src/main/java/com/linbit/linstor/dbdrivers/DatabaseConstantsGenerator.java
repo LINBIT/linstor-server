@@ -365,12 +365,12 @@ public final class DatabaseConstantsGenerator
         private final String closeStr;
         private final boolean indentClose;
 
-        public IndentLevel()
+        IndentLevel()
         {
             this ("{", "}", true, true);
         }
 
-        public IndentLevel(
+        IndentLevel(
             String openStrRef,
             String closeStrRef,
             boolean indentOpen,

@@ -153,7 +153,7 @@ public class SnapshotDbDriver extends
     {
         private final Map<VolumeNumber, SnapshotVolume> snapVlmMap;
 
-        public InitMapsImpl(Map<VolumeNumber, SnapshotVolume> snapVlmMapRef)
+        InitMapsImpl(Map<VolumeNumber, SnapshotVolume> snapVlmMapRef)
         {
             snapVlmMap = snapVlmMapRef;
         }

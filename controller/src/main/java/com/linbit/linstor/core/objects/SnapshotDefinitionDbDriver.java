@@ -138,7 +138,7 @@ public class SnapshotDefinitionDbDriver
         private final Map<NodeName, Snapshot> snapMap;
         private final Map<VolumeNumber, SnapshotVolumeDefinition> snapVlmDfnMap;
 
-        public InitMapsImpl(
+        InitMapsImpl(
             Map<NodeName, Snapshot> snapMapRef,
             Map<VolumeNumber, SnapshotVolumeDefinition> snapVlmDfnMapRef
         )

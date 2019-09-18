@@ -123,7 +123,7 @@ public class VolumeDefinitions
     {
         JsonGenTypes.VolumeDefinitionCreate vlmCreateData;
 
-        public VlmDfnCreationWithPayload(JsonGenTypes.VolumeDefinitionCreate data)
+        VlmDfnCreationWithPayload(JsonGenTypes.VolumeDefinitionCreate data)
         {
             vlmCreateData = data;
         }

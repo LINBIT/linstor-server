@@ -514,13 +514,13 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
         private static final long serialVersionUID = -843817422915518713L;
         private final int statusCode;
 
-        public SfRscException(String message, int statusCodeRef, Exception nestedException)
+        SfRscException(String message, int statusCodeRef, Exception nestedException)
         {
             super(message, nestedException);
             statusCode = statusCodeRef;
         }
 
-        public SfRscException(String message, int statusCodeRef)
+        SfRscException(String message, int statusCodeRef)
         {
             super(message);
             statusCode = statusCodeRef;
