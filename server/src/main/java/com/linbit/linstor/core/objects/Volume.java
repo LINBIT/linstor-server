@@ -3,6 +3,8 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.core.apis.VolumeApi;
@@ -18,7 +20,6 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
@@ -32,7 +33,6 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.utils.Pair;
 
 import javax.inject.Provider;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,7 +48,7 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Comparable<Volume>
+public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Comparable<Volume>, LinstorDataObject
 {
 
     public static interface InitMaps
@@ -90,6 +90,8 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
     private final TransactionSimpleObject<Volume, Boolean> deleted;
 
     private final Key vlmKey;
+
+    private ApiCallRcImpl reports;
 
     Volume(
         UUID uuid,
@@ -135,6 +137,7 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         vlmKey = new Key(this);
+        reports = new ApiCallRcImpl();
 
         transObjs = Arrays.asList(
             resource,
@@ -466,7 +469,8 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
             Optional.ofNullable(usableSize.get()),
             layerDataList,
             compatStorPoolName,
-            compatStorPoolKind
+            compatStorPoolKind,
+            getReports()
         );
     }
 
@@ -612,4 +616,21 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         }
     }
 
+    @Override
+    public ApiCallRc getReports()
+    {
+        return reports;
+    }
+
+    @Override
+    public void addReports(ApiCallRc apiCallRc)
+    {
+        reports.addEntries(apiCallRc);
+    }
+
+    @Override
+    public void clearReports()
+    {
+        reports = new ApiCallRcImpl();
+    }
 }

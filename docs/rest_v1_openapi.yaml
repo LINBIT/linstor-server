@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.10
+      - Added `reports` array field to Volume object, contains ApiCallRcs for problems
     * 1.0.9
       - Added supports_snapshots to StoragePool
     * 1.0.8
@@ -51,7 +53,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.9
+  version: 1.0.10
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -3745,6 +3747,10 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiCallRc'
     VolumeState:
       type: object
       properties:

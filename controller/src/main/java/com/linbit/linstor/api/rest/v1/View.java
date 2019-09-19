@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.rest.v1;
 
-import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
@@ -73,7 +72,7 @@ public class View
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
-            Flux<ApiCallRcWith<ResourceList>> flux = ctrlVlmListApiCallHandler.listVlms(
+            Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
                 nodesFilter, storagePoolsFilter, resourcesFilter)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
 
@@ -85,47 +84,37 @@ public class View
     }
 
     private Mono<Response> listVolumesApiCallRcWithToResponse(
-        Flux<ApiCallRcWith<ResourceList>> apiCallRcWithFlux,
+        Flux<ResourceList> resourceListFlux,
         int limit,
         int offset
     )
     {
-        return apiCallRcWithFlux.flatMap(apiCallRcWith ->
+        return resourceListFlux.flatMap(resourceList ->
         {
             Response resp;
-            if (apiCallRcWith.hasApiCallRc())
+
+            Stream<ResourceApi> rscApiStream = resourceList.getResources().stream();
+
+            if (limit > 0)
             {
-                resp = ApiCallRcConverter.toResponse(
-                    apiCallRcWith.getApiCallRc(),
-                    Response.Status.INTERNAL_SERVER_ERROR
-                );
+                rscApiStream = rscApiStream.skip(offset).limit(limit);
             }
-            else
+
+            final List<JsonGenTypes.Resource> rscs = rscApiStream
+                .map(rscApi -> Json.apiToResourceWithVolumes(rscApi, resourceList.getSatelliteStates(), true))
+                .collect(Collectors.toList());
+
+            try
             {
-                ResourceList resourceList = apiCallRcWith.getValue();
-                Stream<ResourceApi> rscApiStream = resourceList.getResources().stream();
-
-                if (limit > 0)
-                {
-                    rscApiStream = rscApiStream.skip(offset).limit(limit);
-                }
-
-                final List<JsonGenTypes.Resource> rscs = rscApiStream
-                    .map(rscApi -> Json.apiToResourceWithVolumes(rscApi, resourceList.getSatelliteStates(), true))
-                    .collect(Collectors.toList());
-
-                try
-                {
-                    resp = Response
-                        .status(Response.Status.OK)
-                        .entity(objectMapper.writeValueAsString(rscs))
-                        .build();
-                }
-                catch (JsonProcessingException exc)
-                {
-                    exc.printStackTrace();
-                    resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                }
+                resp = Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(rscs))
+                    .build();
+            }
+            catch (JsonProcessingException exc)
+            {
+                exc.printStackTrace();
+                resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
             }
 
             return Mono.just(resp);

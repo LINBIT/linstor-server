@@ -1,5 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Volume;
@@ -127,5 +129,11 @@ public class VlmApiData implements VolumeApi
             apiVlms.add(new VlmApiData(vlm));
         }
         return apiVlms;
+    }
+
+    @Override
+    public ApiCallRc getReports()
+    {
+        return new ApiCallRcImpl();
     }
 }

@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -28,6 +30,7 @@ public class VlmPojo implements VolumeApi
 
     private final String compatStorPoolName;
     private final DeviceProviderKind compatDevProviderKind;
+    private final ApiCallRc reports;
 
     public VlmPojo(
         final UUID vlmDfnUuidRef,
@@ -40,7 +43,8 @@ public class VlmPojo implements VolumeApi
         final Optional<Long> usableSizeRef,
         final List<Pair<String, VlmLayerDataApi>> layerDataRef,
         final String compatStorPoolNameRef,
-        final DeviceProviderKind compatDevProviderKindRef
+        final DeviceProviderKind compatDevProviderKindRef,
+        final ApiCallRc reportsRef
     )
     {
         vlmDfnUuid = vlmDfnUuidRef;
@@ -54,6 +58,7 @@ public class VlmPojo implements VolumeApi
         layerData = layerDataRef;
         compatStorPoolName = compatStorPoolNameRef;
         compatDevProviderKind = compatDevProviderKindRef;
+        reports = reportsRef != null ? reportsRef : new ApiCallRcImpl();
     }
 
     @Override
@@ -120,5 +125,11 @@ public class VlmPojo implements VolumeApi
     public DeviceProviderKind getStorPoolDeviceProviderKind()
     {
         return compatDevProviderKind;
+    }
+
+    @Override
+    public ApiCallRc getReports()
+    {
+        return reports;
     }
 }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apis;
 
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Pair;
@@ -28,4 +29,6 @@ public interface VolumeApi
     @Deprecated
     /** returns the DeviceProviderKind of the storage pool of the vlmLayerObject with "" as resource name suffix */
     DeviceProviderKind getStorPoolDeviceProviderKind();
+
+    ApiCallRc getReports();
 }

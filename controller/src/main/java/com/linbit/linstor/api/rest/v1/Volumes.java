@@ -2,7 +2,6 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
@@ -29,7 +28,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -97,7 +95,7 @@ public class Volumes
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
-            Flux<ApiCallRcWith<ResourceList>> flux = ctrlVlmListApiCallHandler.listVlms(nodes, new ArrayList<>(), rscNames)
+            Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(nodes, new ArrayList<>(), rscNames)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
 
             requestHelper.doFlux(
@@ -108,7 +106,7 @@ public class Volumes
     }
 
     private Mono<Response> listVolumesApiCallRcWithToResponse(
-        Flux<ApiCallRcWith<ResourceList>> apiCallRcWithFlux,
+        Flux<ResourceList> resourceListFlux,
         final String rscName,
         final String nodeName,
         final Integer vlmNr,
@@ -116,96 +114,85 @@ public class Volumes
         int offset
     )
     {
-        return apiCallRcWithFlux.flatMap(apiCallRcWith ->
+        return resourceListFlux.flatMap(resourceList ->
         {
             Response resp;
-            if (apiCallRcWith.hasApiCallRc())
+            if (resourceList.isEmpty())
             {
-                resp = ApiCallRcConverter.toResponse(
-                    apiCallRcWith.getApiCallRc(),
-                    Response.Status.INTERNAL_SERVER_ERROR
+                resp = RequestHelper.notFoundResponse(
+                    ApiConsts.FAIL_NOT_FOUND_RSC,
+                    String.format("Resource '%s' not found on node '%s'.", rscName, nodeName)
                 );
             }
             else
             {
-                ResourceList resourceList = apiCallRcWith.getValue();
-                if (resourceList.isEmpty())
+                Stream<? extends VolumeApi> vlmApiStream = resourceList.getResources()
+                    .get(0).getVlmList().stream().filter(
+                        vlmApi -> vlmNr == null || vlmApi.getVlmNr() == vlmNr
+                    );
+
+                if (limit > 0)
+                {
+                    vlmApiStream = vlmApiStream.skip(offset).limit(limit);
+                }
+
+                final List<JsonGenTypes.Volume> vlms = vlmApiStream.map(vlmApi ->
+                {
+                    JsonGenTypes.Volume vlmData = Json.apiToVolume(vlmApi);
+
+                    JsonGenTypes.VolumeState vlmState = null;
+                    try
+                    {
+                        final ResourceName rscNameRes = new ResourceName(rscName);
+                        final NodeName linNodeName = new NodeName(nodeName);
+                        if (resourceList.getSatelliteStates().containsKey(linNodeName) &&
+                            resourceList.getSatelliteStates().get(linNodeName)
+                                .getResourceStates().containsKey(rscNameRes))
+                        {
+                            SatelliteResourceState satResState = resourceList
+                                .getSatelliteStates()
+                                .get(linNodeName)
+                                .getResourceStates()
+                                .get(rscNameRes);
+
+                            VolumeNumber vlmNumber = new VolumeNumber(vlmApi.getVlmNr());
+                            if (satResState.getVolumeStates().containsKey(vlmNumber))
+                            {
+                                vlmState = new JsonGenTypes.VolumeState();
+                                SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
+                                vlmState.disk_state = satVlmState.getDiskState();
+                            }
+                        }
+                    }
+                    catch (InvalidNameException | ValueOutOfRangeException ignored)
+                    {
+                    }
+                    vlmData.state = vlmState;
+                    return vlmData;
+                })
+                    .collect(Collectors.toList());
+
+                if (vlmNr != null && vlms.isEmpty())
                 {
                     resp = RequestHelper.notFoundResponse(
-                        ApiConsts.FAIL_NOT_FOUND_RSC,
-                        String.format("Resource '%s' not found on node '%s'.", rscName, nodeName)
+                        ApiConsts.FAIL_NOT_FOUND_VLM,
+                        String.format("Volume '%d' of resource '%s' on node '%s' not found.",
+                            vlmNr, rscName, nodeName)
                     );
                 }
                 else
                 {
-                    Stream<? extends VolumeApi> vlmApiStream = resourceList.getResources()
-                        .get(0).getVlmList().stream().filter(
-                            vlmApi -> vlmNr == null || vlmApi.getVlmNr() == vlmNr
-                        );
-
-                    if (limit > 0)
+                    try
                     {
-                        vlmApiStream = vlmApiStream.skip(offset).limit(limit);
+                        resp = Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(vlmNr != null ? vlms.get(0) : vlms))
+                            .build();
                     }
-
-                    final List<JsonGenTypes.Volume> vlms = vlmApiStream.map(vlmApi ->
+                    catch (JsonProcessingException exc)
                     {
-                        JsonGenTypes.Volume vlmData = Json.apiToVolume(vlmApi);
-
-                        JsonGenTypes.VolumeState vlmState = null;
-                        try
-                        {
-                            final ResourceName rscNameRes = new ResourceName(rscName);
-                            final NodeName linNodeName = new NodeName(nodeName);
-                            if (resourceList.getSatelliteStates().containsKey(linNodeName) &&
-                                resourceList.getSatelliteStates().get(linNodeName)
-                                    .getResourceStates().containsKey(rscNameRes))
-                            {
-                                SatelliteResourceState satResState = resourceList
-                                    .getSatelliteStates()
-                                    .get(linNodeName)
-                                    .getResourceStates()
-                                    .get(rscNameRes);
-
-                                VolumeNumber vlmNumber = new VolumeNumber(vlmApi.getVlmNr());
-                                if (satResState.getVolumeStates().containsKey(vlmNumber))
-                                {
-                                    vlmState = new JsonGenTypes.VolumeState();
-                                    SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
-                                    vlmState.disk_state = satVlmState.getDiskState();
-                                }
-                            }
-                        }
-                        catch (InvalidNameException | ValueOutOfRangeException ignored)
-                        {
-                        }
-                        vlmData.state = vlmState;
-                        return vlmData;
-                    })
-                        .collect(Collectors.toList());
-
-                    if (vlmNr != null && vlms.isEmpty())
-                    {
-                        resp = RequestHelper.notFoundResponse(
-                            ApiConsts.FAIL_NOT_FOUND_VLM,
-                            String.format("Volume '%d' of resource '%s' on node '%s' not found.",
-                                vlmNr, rscName, nodeName)
-                        );
-                    }
-                    else
-                    {
-                        try
-                        {
-                            resp = Response
-                                .status(Response.Status.OK)
-                                .entity(objectMapper.writeValueAsString(vlmNr != null ? vlms.get(0) : vlms))
-                                .build();
-                        }
-                        catch (JsonProcessingException exc)
-                        {
-                            exc.printStackTrace();
-                            resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                        }
+                        exc.printStackTrace();
+                        resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
                     }
                 }
             }

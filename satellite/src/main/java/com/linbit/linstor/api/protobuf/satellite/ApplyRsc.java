@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf.satellite;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
@@ -26,7 +27,6 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NodeOuterClass;
@@ -45,7 +45,6 @@ import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -220,7 +219,8 @@ public class ApplyRsc implements ApiCall
                     // therefore, we skip this data. satellite should get the layerData from rsc-level.
                     Collections.emptyList(),
                     null, // no need for compat on stlt
-                    null// no need for compat on stlt
+                    null, // no need for compat on stlt
+                    new ApiCallRcImpl()
                 )
             );
         }

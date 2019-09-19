@@ -217,6 +217,7 @@ public class RscInternalCallHandler
                     vlm.setDevicePath(apiCtx, vlmLayerDataPojo.getDevicePath());
                     vlm.setUsableSize(apiCtx, vlmLayerDataPojo.getUsableSize());
                     vlm.setAllocatedSize(apiCtx, ProviderUtils.getAllocatedSize(vlm, apiCtx));
+                    vlm.clearReports();
 
                     for (RscLayerObject storageRsc : storageResources)
                     {

@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -39,7 +38,6 @@ import javax.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -89,7 +87,7 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
     }
 
     @Override
-    public Mono<Tuple2<Map<Volume.Key, Long>, List<ApiCallRc>>> fetchVlmAllocated(
+    public Mono<Map<Volume.Key, VlmAllocatedResult>> fetchVlmAllocated(
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolFilter,
         Set<ResourceName> resourceFilter
@@ -224,11 +222,10 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         return peer;
     }
 
-    private Tuple2<Map<Volume.Key, Long>, List<ApiCallRc>> parseVlmAllocated(
+    private Map<Volume.Key, VlmAllocatedResult> parseVlmAllocated(
         List<Tuple2<NodeName, ByteArrayInputStream>> vlmAllocatedAnswers)
     {
-        Map<Volume.Key, Long> vlmAllocatedCapacities = new HashMap<>();
-        List<ApiCallRc> apiCallRcs = new ArrayList<>();
+        Map<Volume.Key, VlmAllocatedResult> vlmAllocatedCapacities = new HashMap<>();
 
         try
         {
@@ -240,31 +237,25 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
                 MsgIntVlmAllocated nodeVlmAllocated = MsgIntVlmAllocated.parseDelimitedFrom(vlmAllocatedMsgDataIn);
                 for (VlmAllocated vlmAllocated : nodeVlmAllocated.getAllocatedCapacitiesList())
                 {
-                    if (vlmAllocated.getErrorsCount() > 0)
+                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                    for (ApiCallResponse msgApiCallResponse : vlmAllocated.getErrorsList())
                     {
-                        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                        for (ApiCallResponse msgApiCallResponse : vlmAllocated.getErrorsList())
-                        {
-                            apiCallRc.addEntry(ProtoDeserializationUtils.parseApiCallRc(
-                                msgApiCallResponse,
-                                "Node: '" + nodeName +
-                                    "', resource: '" + vlmAllocated.getRscName() +
-                                    "', volume: " + vlmAllocated.getVlmNr() + " - "
-                            ));
-                        }
-                        apiCallRcs.add(apiCallRc);
+                        apiCallRc.addEntry(ProtoDeserializationUtils.parseApiCallRc(
+                            msgApiCallResponse,
+                            "Node: '" + nodeName +
+                                "', resource: '" + vlmAllocated.getRscName() +
+                                "', volume: " + vlmAllocated.getVlmNr() + " - "
+                        ));
                     }
-                    else
-                    {
-                        vlmAllocatedCapacities.put(
-                            new Volume.Key(
-                                nodeName,
-                                new ResourceName(vlmAllocated.getRscName()),
-                                new VolumeNumber(vlmAllocated.getVlmNr())
-                            ),
-                            vlmAllocated.getAllocated()
-                        );
-                    }
+
+                    vlmAllocatedCapacities.put(
+                        new Volume.Key(
+                            nodeName,
+                            new ResourceName(vlmAllocated.getRscName()),
+                            new VolumeNumber(vlmAllocated.getVlmNr())
+                        ),
+                        new VlmAllocatedResult(vlmAllocated.getAllocated(), apiCallRc)
+                    );
                 }
             }
         }
@@ -273,6 +264,6 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
             throw new ImplementationError(exc);
         }
 
-        return Tuples.of(vlmAllocatedCapacities, apiCallRcs);
+        return vlmAllocatedCapacities;
     }
 }

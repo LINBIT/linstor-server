@@ -9,6 +9,21 @@ public class StltProviderUtils
     public static long getAllocatedSize(VlmProviderObject vlmData, ExtCmd extCmd)
         throws StorageException
     {
-        return Commands.getBlockSizeInKib(extCmd, vlmData.getDevicePath());
+        long size;
+        if (vlmData.exists())
+        {
+            size = Commands.getBlockSizeInKib(extCmd, vlmData.getDevicePath());
+        }
+        else
+        {
+            throw new StorageException(
+                "Device does not exist.",
+                "Device does not exist.",
+                "The volume could not be found on the system.",
+                null,
+                null
+            );
+        }
+        return size;
     }
 }

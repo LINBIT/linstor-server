@@ -528,6 +528,7 @@ public class Json
         volume.props = vlmApi.getVlmProps();
         volume.flags = FlagsHelper.toStringList(Volume.Flags.class, vlmApi.getFlags());
         volume.uuid = vlmApi.getVlmUuid().toString();
+        volume.reports = apiCallRcToJson(vlmApi.getReports());
 
         volume.layer_data_list = new ArrayList<>();
 

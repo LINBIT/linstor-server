@@ -169,14 +169,30 @@ public class StltApiCallHandlerUtils
                     deviceProvider.prepare(vlmDataList, Collections.emptyList());
                     for (VlmProviderObject vlmProviderObject : vlmDataList)
                     {
-                        deviceProvider.updateAllocatedSize(vlmProviderObject);
-                    }
-                    for (VlmProviderObject vlmProviderObject : vlmDataList)
-                    {
-                        allocatedMap.put(
-                            vlmProviderObject.getVolume().getKey(),
-                            Either.left(vlmProviderObject.getAllocatedSize())
-                        );
+                        try
+                        {
+                            deviceProvider.updateAllocatedSize(vlmProviderObject);
+                            allocatedMap.put(
+                                vlmProviderObject.getVolume().getKey(),
+                                Either.left(vlmProviderObject.getAllocatedSize())
+                            );
+                        }
+                        catch (StorageException exc)
+                        {
+                            ApiRcException apiRcException = new ApiRcException(ApiCallRcImpl
+                                .entryBuilder(
+                                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                                    "Device provider threw a storage exception"
+                                )
+                                .setCause(exc.getCauseText())
+                                .setDetails(exc.getDetailsText())
+                                .build()
+                            );
+                            allocatedMap.put(
+                                vlmProviderObject.getVolume().getKey(),
+                                Either.right(apiRcException)
+                            );
+                        }
                     }
                 }
                 catch (StorageException exc)
