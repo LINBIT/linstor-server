@@ -459,8 +459,35 @@ public class DrbdLayer implements DeviceLayer
                              * If a peer is getting deleted, we issue a forget-peer (which requires
                              * a del-peer) so that the bitmap of that peer is reset to day0
                              */
-                            drbdUtils.deletePeer(otherRsc);
-                            drbdUtils.forgetPeer(otherRsc);
+                            ExtCmdFailedException delPeerExc = null;
+                            try
+                            {
+                                /*
+                                 * Race condition:
+                                 * If two linstor-resources are deleted concurrently, and one is much
+                                 * faster than the other, the slower will get an "unknown connection"
+                                 * from the drbd-utils when executing the del-peer command.
+                                 * In that case, we will still try the forget-peer.
+                                 * If the forget-peer command succeeds, ignore the exception of the failed
+                                 * del-peer command.
+                                 * If the forget-peer command also failed we ignore that exception and
+                                 * re-throw the del-peer's exception as there could be a different reason
+                                 * for the del-peer to have failed than this race-condition
+                                 */
+                                drbdUtils.deletePeer(otherRsc);
+                            }
+                            catch (ExtCmdFailedException exc)
+                            {
+                                delPeerExc = exc;
+                            }
+                            try
+                            {
+                                drbdUtils.forgetPeer(otherRsc);
+                            }
+                            catch (ExtCmdFailedException forgetPeerExc)
+                            {
+                                throw delPeerExc != null ? delPeerExc : forgetPeerExc;
+                            }
                         }
                     }
                 }
