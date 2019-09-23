@@ -38,23 +38,23 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
     }
 
     @Override
-    public CtrlStltSerializerBuilder onewayBuilder(String msgContent)
+    public CtrlStltSerializerBuilder onewayBuilder(String apiCall)
     {
-        return builder(msgContent, null, false);
+        return builder(apiCall, null, false);
     }
 
     @Override
-    public CtrlStltSerializerBuilder apiCallBuilder(String msgContent, Long apiCallId)
+    public CtrlStltSerializerBuilder apiCallBuilder(String apiCall, Long apiCallId)
     {
         checkApiCallIdNotNull(apiCallId);
-        return builder(msgContent, apiCallId, false);
+        return builder(apiCall, apiCallId, false);
     }
 
     @Override
-    public CtrlStltSerializerBuilder answerBuilder(String msgContent, Long apiCallId)
+    public CtrlStltSerializerBuilder answerBuilder(String apiCall, Long apiCallId)
     {
         checkApiCallIdNotNull(apiCallId);
-        return builder(msgContent, apiCallId, true);
+        return builder(apiCall, apiCallId, true);
     }
 
     @Override
@@ -64,9 +64,9 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         return builder(null, apiCallId, false);
     }
 
-    private CtrlStltSerializerBuilder builder(String msgContent, Long apiCallId, boolean isAnswer)
+    private CtrlStltSerializerBuilder builder(String apiCall, Long apiCallId, boolean isAnswer)
     {
         return new ProtoCtrlStltSerializerBuilder(
-            errorReporter, serializerCtx, secObjs, ctrlConf, msgContent, apiCallId, isAnswer);
+            errorReporter, serializerCtx, secObjs, ctrlConf, apiCall, apiCallId, isAnswer);
     }
 }
