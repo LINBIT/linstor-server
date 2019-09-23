@@ -775,5 +775,4 @@ public class JsonGenTypes
     private JsonGenTypes()
     {
     }
-
 }

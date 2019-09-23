@@ -26,7 +26,10 @@ def print_header(stream, class_name, package, rest_version):
     print('    public static final String REST_API_VERSION = "{v}";\n'.format(v=rest_version))
 
 
-def print_footer(stream):
+def print_footer(stream, class_name):
+    print("    private " + class_name + "()")
+    print("    {")
+    print("    }")
     print("}", file=stream)
 
 
@@ -159,7 +162,7 @@ def main():
             class_list.append(generate_class(schema, schemas[schema], schemas))
 
         print("\n".join(class_list))
-        print_footer(sys.stdout)
+        print_footer(sys.stdout, args.class_name)
 
 
 if __name__ == "__main__":
