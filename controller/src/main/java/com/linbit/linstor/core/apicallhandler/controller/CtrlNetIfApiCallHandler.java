@@ -147,9 +147,8 @@ class CtrlNetIfApiCallHandler
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.WARN_NO_STLT_CONN_DEFINED,
-                    "No active satellite-connection configured on node '" + nodeNameStr + "'! \n" +
-                        "To fix this, create at least one netInterface with a valid PORT and COMMUNICATION-TYPE."
-                ));
+                    "No active satellite-connection configured on node '" + nodeNameStr + "'!"
+                ).setCorrection("Create at least one netInterface with a valid PORT and COMMUNICATION-TYPE."));
             }
 
             responseConverter.addWithOp(responses, context,
@@ -265,9 +264,8 @@ class CtrlNetIfApiCallHandler
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.WARN_NO_STLT_CONN_DEFINED,
-                    "No active satellite-connection configured on node '" + nodeNameStr + "'! \n" +
-                        "To fix this, create at least one netInterface with a valid PORT and COMMUNICATION-TYPE."
-                ));
+                    "No active satellite-connection configured on node '" + nodeNameStr + "'!"
+                ).setCorrection("Create at least one netInterface with a valid PORT and COMMUNICATION-TYPE."));
             }
         }
         catch (Exception | ImplementationError exc)

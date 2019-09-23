@@ -83,13 +83,14 @@ public class Json
         List<JsonGenTypes.NetInterface> netIfsList =
             nodeApi.getNetInterfaces().stream().map(Json::apiToNetInterface).collect(Collectors.toList());
         NetInterfaceApi activeStltConn = nodeApi.getActiveStltConn();
-        for (JsonGenTypes.NetInterface netInterface : netIfsList)
+        if (activeStltConn != null)
         {
-            if (activeStltConn != null && netInterface.uuid.equalsIgnoreCase(activeStltConn.getUuid().toString()))
+            for (JsonGenTypes.NetInterface netInterface : netIfsList)
             {
-                netInterface.is_active = Boolean.TRUE;
+                netInterface.is_active = netInterface.uuid.equalsIgnoreCase(activeStltConn.getUuid().toString()) ?
+                    Boolean.TRUE :
+                    Boolean.FALSE;
             }
-
         }
 
         nd.net_interfaces = netIfsList;

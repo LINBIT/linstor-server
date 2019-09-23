@@ -244,7 +244,7 @@ public class CtrlRscDfnApiCallHandler
         if ((masterKey == null || masterKey.length == 0))
         {
             String warnMsg = "The master key has not yet been set. Creating volume definitions within \n" +
-                "an encrypted resource definitionto will fail!";
+                "an encrypted resource definition will fail!";
 
             errorReporter.logWarning(warnMsg);
 
