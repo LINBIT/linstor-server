@@ -135,7 +135,10 @@ public class StoragePools
                     .listStorPools(nodeNames, storPoolNames)
                     .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
-                requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, nodeName, storPoolName, limit, offset));
+                requestHelper.doFlux(
+                    asyncResponse,
+                    storPoolListToResponse(flux, nodeName, storPoolName, limit, offset)
+                );
             }
             else
             {
@@ -277,10 +280,10 @@ public class StoragePools
     )
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request), () ->
-            ApiCallRcConverter.toResponse(
-                ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName),
-                Response.Status.OK
-            ),
+                ApiCallRcConverter.toResponse(
+                    ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName),
+                    Response.Status.OK
+                ),
             true
         );
     }

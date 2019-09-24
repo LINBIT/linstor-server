@@ -442,6 +442,21 @@ paths:
       operationId: nodeStoragePoolList
       description: Lists all storage pools of a node
       parameters:
+        - name: nodes
+          in: query
+          description: Filter only for the specified nodes, if not specified no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+        - name: storage_pools
+          in: query
+          description: Filter only for the specified storage pools, if not specified
+            no filtering.
+          schema:
+            type: array
+            items:
+              type: string
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:
