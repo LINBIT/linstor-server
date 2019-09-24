@@ -200,6 +200,7 @@ public class JsonGenTypes
          * name of the linked resource group, if there is a link
          */
         public String resource_group_name;
+        public List<VolumeDefinition> volume_definitions = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

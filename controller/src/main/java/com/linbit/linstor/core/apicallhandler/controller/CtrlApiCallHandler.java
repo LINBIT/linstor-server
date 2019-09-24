@@ -28,7 +28,6 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -277,14 +276,19 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ArrayList<ResourceDefinitionApi> listResourceDefinition()
+    public ArrayList<ResourceDefinitionApi> listResourceDefinitions()
     {
-        ArrayList<ResourceDefinitionApi> listResourceDefinitions;
+        return listResourceDefinitions(Collections.emptyList());
+    }
+
+    public ArrayList<ResourceDefinitionApi> listResourceDefinitions(List<String> filterRscDfnNames)
+    {
+        ArrayList<ResourceDefinitionApi> resourceDefinitionList;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_DFN_MAP))
         {
-            listResourceDefinitions = rscDfnApiCallHandler.listResourceDefinitions();
+            resourceDefinitionList = rscDfnApiCallHandler.listResourceDefinitions(filterRscDfnNames);
         }
-        return listResourceDefinitions;
+        return resourceDefinitionList;
     }
 
     /**

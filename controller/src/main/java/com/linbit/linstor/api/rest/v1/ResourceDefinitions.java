@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceDefinition;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
@@ -24,9 +25,9 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,38 +62,53 @@ public class ResourceDefinitions
     @GET
     public Response listResourceDefinitions(
         @Context Request request,
+        @QueryParam("resource_definitions") List<String> rscDfnNames,
+        @QueryParam("with_volume_definitions") boolean withVlmDfns,
+        @QueryParam("vlmNr") Integer vlmNr,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return listResourceDefinitions(request, null, limit, offset);
+        return listResourceDefinitionsOneOrMany(request, null, rscDfnNames, withVlmDfns, limit, offset);
     }
 
     @GET
-    @Path("{rscName}")
-    public Response listResourceDefinitions(
+    @Path("{rscDfnName}")
+    public Response listSingleResourceDefinition(
         @Context Request request,
-        @PathParam("rscName") String rscName,
+        @PathParam("rscDfnName") String rscDfnName,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
+    )
+    {
+        return listResourceDefinitionsOneOrMany(
+            request, rscDfnName, Collections.singletonList(rscDfnName), false, limit, offset
+        );
+    }
+
+    private Response listResourceDefinitionsOneOrMany(
+        Request request,
+        String singleRscDfn,
+        List<String> rscDfnNames,
+        boolean withVlmDfn,
+        int limit,
+        int offset
     )
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_DFN, request), () ->
         {
-            Stream<ResourceDefinitionApi> rscDfnStream =
-                ctrlApiCallHandler.listResourceDefinition().stream()
-                    .filter(rscDfnApi -> rscName == null || rscDfnApi.getResourceName().equalsIgnoreCase(rscName));
-
+            Stream<ResourceDefinitionApi> rscDfnApiStream =
+                ctrlApiCallHandler.listResourceDefinitions(rscDfnNames).stream();
             if (limit > 0)
             {
-                rscDfnStream = rscDfnStream.skip(offset).limit(limit);
+                rscDfnApiStream = rscDfnApiStream.skip(offset).limit(limit);
             }
-
-            final List<JsonGenTypes.ResourceDefinition> rscDfns = rscDfnStream.map(Json::apiToResourceDefinition)
+            List<ResourceDefinition> rscDfnDataList = rscDfnApiStream
+                .map(rscDfnApi -> Json.apiToResourceDefinition(rscDfnApi, withVlmDfn))
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(
-                objectMapper, ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "Resource definition", rscName, rscDfns
+                objectMapper, ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "Resource definition", singleRscDfn, rscDfnDataList
             );
         }, false);
     }

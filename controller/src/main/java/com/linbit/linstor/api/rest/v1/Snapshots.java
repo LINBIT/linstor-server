@@ -81,7 +81,7 @@ public class Snapshots
     {
         return requestHelper.doInScope(ApiConsts.API_LST_SNAPSHOT_DFN, request, () ->
         {
-            boolean rscDfnExists = ctrlApiCallHandler.listResourceDefinition()
+            boolean rscDfnExists = ctrlApiCallHandler.listResourceDefinitions()
                 .parallelStream()
                 .anyMatch(rscDfnApi -> rscDfnApi.getResourceName().equalsIgnoreCase(rscName));
 

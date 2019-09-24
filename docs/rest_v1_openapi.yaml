@@ -603,6 +603,14 @@ paths:
 
         /v1/resource-definitions/rsc1
       parameters:
+        - name: resource_definitions
+          in: query
+          description: Filter only for the specified resource definitions, if not specified
+            no filtering.
+          schema:
+            type: array
+            items:
+              type: string
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -3425,6 +3433,10 @@ components:
         resource_group_name:
           type: string
           description: name of the linked resource group, if there is a link
+        volume_definitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/VolumeDefinition'
     ResourceDefinitionCreate:
       type: object
       required:

@@ -622,7 +622,7 @@ public class CtrlApiDataLoader
             {
                 vlmGrp = (VolumeGroup) rscGrp.getVolumeGroup(peerAccCtx.get(), vlmNr);
             }
-            if (failIfNull && vlmGrp == null)
+            if (failIfNull && vlmGrp == null) //FIXME
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(

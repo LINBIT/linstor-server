@@ -61,7 +61,6 @@ import static com.linbit.linstor.core.apicallhandler.controller.helpers.External
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -69,6 +68,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Singleton
@@ -363,22 +363,33 @@ public class CtrlRscDfnApiCallHandler
         return responses;
     }
 
-    ArrayList<ResourceDefinitionApi> listResourceDefinitions()
+    ArrayList<ResourceDefinitionApi> listResourceDefinitions(List<String> rscDfnNames)
     {
         ArrayList<ResourceDefinitionApi> rscdfns = new ArrayList<>();
+        final Set<ResourceName> rscDfnsFilter =
+            rscDfnNames.stream().map(LinstorParsingUtils::asRscName).collect(Collectors.toSet());
+
         try
         {
-            for (ResourceDefinition rscdfn : resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values())
-            {
-                try
-                {
-                    rscdfns.add(rscdfn.getApiData(peerAccCtx.get()));
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    // don't add resource definition without access
-                }
-            }
+            resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
+                .filter(rscDfn ->
+                    (
+                        rscDfnsFilter.isEmpty() ||
+                        rscDfnsFilter.contains(rscDfn.getName())
+                    )
+                )
+                .forEach(rscDfn ->
+                    {
+                        try
+                        {
+                            rscdfns.add(rscDfn.getApiData(peerAccCtx.get()));
+                        }
+                        catch (AccessDeniedException accDeniedExc)
+                        {
+                            // don't add resource definition without access
+                        }
+                    }
+                );
         }
         catch (AccessDeniedException accDeniedExc)
         {

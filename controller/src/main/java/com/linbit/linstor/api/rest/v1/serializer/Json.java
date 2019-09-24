@@ -191,7 +191,8 @@ public class Json
     }
 
     public static JsonGenTypes.ResourceDefinition apiToResourceDefinition(
-        ResourceDefinitionApi rscDfnApi
+        ResourceDefinitionApi rscDfnApi,
+        boolean withVlmDfns
     )
     {
         JsonGenTypes.ResourceDefinition rscDfn = new JsonGenTypes.ResourceDefinition();
@@ -205,6 +206,15 @@ public class Json
         rscDfn.uuid = rscDfnApi.getUuid().toString();
 
         rscDfn.layer_data = new ArrayList<>();
+
+        if (withVlmDfns)
+        {
+            rscDfn.volume_definitions = new ArrayList<>();
+            for (VolumeDefinitionApi vlmDfnApi : rscDfnApi.getVlmDfnList())
+            {
+                rscDfn.volume_definitions.add(apiToVolumeDefinition(vlmDfnApi));
+            }
+        }
 
         for (Pair<String, RscDfnLayerDataApi> layer : rscDfnApi.getLayerData())
         {

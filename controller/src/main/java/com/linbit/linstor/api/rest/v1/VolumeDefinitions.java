@@ -82,7 +82,7 @@ public class VolumeDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_DFN, request), () ->
         {
-            Optional<ResourceDefinitionApi> foundRscDfn = ctrlApiCallHandler.listResourceDefinition().stream()
+            Optional<ResourceDefinitionApi> foundRscDfn = ctrlApiCallHandler.listResourceDefinitions().stream()
                 .filter(rscDfnApi -> rscDfnApi.getResourceName().equalsIgnoreCase(rscName))
                 .findFirst();
             // TODO: instead of building a list of ALL rscDfns(Api) and filtering the one we are interested in
