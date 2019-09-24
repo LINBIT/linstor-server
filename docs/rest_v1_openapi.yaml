@@ -1811,6 +1811,13 @@ paths:
 
         /v1/resource-groups/rscgrp1
       parameters:
+        - name: resource_groups
+          in: query
+          description: Filter only for the specified resource groups, if not specified no filtering.
+          schema:
+            type: array
+            items:
+              type: string
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:

@@ -8,6 +8,7 @@ import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceGroup;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -28,7 +29,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -65,40 +65,53 @@ public class ResourceGroups
     }
 
     @GET
-    public Response listResourceGroups(
+    public Response listManyResourceGroups(
         @Context Request request,
+        @QueryParam("resource_groups") List<String> rscGrpNames,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return listResourceGroups(request, null, limit, offset);
+        return listResourceGroupsOneOrMany(request, null, rscGrpNames, limit, offset);
     }
 
     @GET
-    @Path("{rscName}")
-    public Response listResourceGroups(
+    @Path("{rscGrpName}")
+    public Response listSingleResourceGroup(
         @Context Request request,
-        @PathParam("rscName") String rscName,
+        @PathParam("rscGrpName") String rscGrpName,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
+    )
+    {
+        return listResourceGroupsOneOrMany(request, rscGrpName, Collections.singletonList(rscGrpName), limit, offset);
+    }
+
+    private Response listResourceGroupsOneOrMany(
+        Request request,
+        String singleRscGrp,
+        List<String> rscGrpNames,
+        int limit,
+        int offset
     )
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_GRP, request), () ->
         {
-            Stream<ResourceGroupApi> rscGrpStream =
-                ctrlApiCallHandler.listResourceGroups().stream()
-                    .filter(rscGrpApi -> rscName == null || rscGrpApi.getName().equalsIgnoreCase(rscName));
-
+            Stream<ResourceGroupApi> rscGrpApiStream = ctrlApiCallHandler.listResourceGroups(rscGrpNames).stream();
             if (limit > 0)
             {
-                rscGrpStream = rscGrpStream.skip(offset).limit(limit);
+                rscGrpApiStream = rscGrpApiStream.skip(offset).limit(limit);
             }
-
-            final List<JsonGenTypes.ResourceGroup> rscGrps = rscGrpStream.map(Json::apiToResourceGroup)
+            List<ResourceGroup> rscGrpDataList = rscGrpApiStream
+                .map(Json::apiToResourceGroup)
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(
-                objectMapper, ApiConsts.FAIL_NOT_FOUND_RSC_GRP, "Resource group", rscName, rscGrps
+                objectMapper,
+                ApiConsts.FAIL_NOT_FOUND_RSC_GRP,
+                "Resource group",
+                singleRscGrp,
+                rscGrpDataList
             );
         }, false);
     }
@@ -149,11 +162,11 @@ public class ResourceGroups
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("{rscName}")
+    @Path("{rscGrpName}")
     public void modifyResourceGroup(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
-        @PathParam("rscName") String rscName,
+        @PathParam("rscGrpName") String rscGrpName,
         String jsonData
     )
         throws JsonParseException, JsonMappingException, IOException
@@ -178,7 +191,7 @@ public class ResourceGroups
             );
         }
         Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.modify(
-            rscName,
+            rscGrpName,
             modifyData.description,
             modifyData.override_props,
             new HashSet<>(modifyData.delete_props),
@@ -191,16 +204,16 @@ public class ResourceGroups
     }
 
     @DELETE
-    @Path("{rscName}")
+    @Path("{rscGrpName}")
     public Response deleteResourceGroup(
         @Context Request request,
-        @PathParam("rscName") String rscName
+        @PathParam("rscGrpName") String rscGrpName
     )
     {
         return requestHelper.doInScope(
             requestHelper.createContext(ApiConsts.API_DEL_RSC_GRP, request),
             () -> ApiCallRcConverter.toResponse(
-                ctrlApiCallHandler.deleteResourceGroup(rscName),
+                ctrlApiCallHandler.deleteResourceGroup(rscGrpName),
                 Response.Status.OK
             ),
             true
@@ -208,12 +221,12 @@ public class ResourceGroups
     }
 
     @POST
-    @Path("{rscName}/spawn")
+    @Path("{rscGrpName}/spawn")
     @Consumes(MediaType.APPLICATION_JSON)
     public void spawnResourceDefinition(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
-        @PathParam("rscName") String rscName,
+        @PathParam("rscGrpName") String rscGrpName,
         String jsonData
     )
     {
@@ -224,7 +237,7 @@ public class ResourceGroups
                 JsonGenTypes.ResourceGroupSpawn.class
             );
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.spawn(
-                rscName,
+                rscGrpName,
                 rscGrpSpwn.resource_definition_name,
                 rscGrpSpwn.volume_sizes,
                 rscGrpSpwn.partial,

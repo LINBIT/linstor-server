@@ -1213,16 +1213,15 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ArrayList<ResourceGroupApi> listResourceGroups()
+    public List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames)
     {
-        ArrayList<ResourceGroupApi> listResourceGroups;
+        List<ResourceGroupApi> ret;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_GRP_MAP))
         {
-            listResourceGroups = rscGrpApiCallHandler.listResourceGroups();
+            ret = rscGrpApiCallHandler.listResourceGroups(rscGrpNames);
         }
-        return listResourceGroups;
+        return ret;
     }
-
 
     public ApiCallRc createResourceGroup(RscGrpPojo rscGrpPojoRef)
     {

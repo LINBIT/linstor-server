@@ -11,9 +11,9 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
@@ -58,14 +58,15 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.google.inject.Provider;
 import reactor.core.publisher.Flux;
@@ -129,29 +130,40 @@ public class CtrlRscGrpApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
     }
 
-    public ArrayList<ResourceGroupApi> listResourceGroups()
+    List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames)
     {
-        ArrayList<ResourceGroupApi> rscGrps = new ArrayList<>();
+        List<ResourceGroupApi> ret = new ArrayList<>();
+        final Set<ResourceGroupName> rscGrpsFilter =
+            rscGrpNames.stream().map(LinstorParsingUtils::asRscGrpName).collect(Collectors.toSet());
+
         try
         {
-            for (ResourceGroup rscGrp : resourceGroupRepository.getMapForView(peerAccCtx.get()).values())
-            {
-                try
-                {
-                    rscGrps.add(rscGrp.getApiData(peerAccCtx.get()));
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    // don't add resource group without access
-                }
-            }
+            resourceGroupRepository.getMapForView(peerAccCtx.get()).values().stream()
+                .filter(rscGrp ->
+                    (
+                        rscGrpsFilter.isEmpty() ||
+                        rscGrpsFilter.contains(rscGrp.getName())
+                    )
+                )
+                .forEach(rscGrp ->
+                    {
+                        try
+                        {
+                            ret.add(rscGrp.getApiData(peerAccCtx.get()));
+                        }
+                        catch (AccessDeniedException accDeniedExc)
+                        {
+                            // don't add resource group without access
+                        }
+                    }
+                );
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            // for now return an empty list.
+            // return an empty list
         }
 
-        return rscGrps;
+        return ret;
     }
 
     public ApiCallRc create(RscGrpPojo rscGrpPojoRef)
