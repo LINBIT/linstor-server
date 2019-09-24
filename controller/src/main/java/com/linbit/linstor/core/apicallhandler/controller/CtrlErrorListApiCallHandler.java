@@ -82,7 +82,7 @@ public class CtrlErrorListApiCallHandler
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
                 () -> assembleRequests(nodes, withContent, since, to, ids)
             )
-            .collect(Collectors.toList())
+            .collectList()
             .flatMapMany(errorReportAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble error report list",
