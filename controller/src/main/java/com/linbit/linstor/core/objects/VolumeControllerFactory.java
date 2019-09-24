@@ -1,10 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
@@ -19,6 +15,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -60,7 +57,7 @@ public class VolumeControllerFactory
         rsc.getObjProt().requireAccess(accCtx, AccessType.USE);
         Volume volData = null;
 
-        volData = (Volume) rsc.getVolume(vlmDfn.getVolumeNumber());
+        volData = rsc.getVolume(vlmDfn.getVolumeNumber());
 
         if (volData != null)
         {
@@ -80,8 +77,8 @@ public class VolumeControllerFactory
         );
 
         driver.create(volData);
-        ((Resource) rsc).putVolume(accCtx, volData);
-        ((VolumeDefinition) vlmDfn).putVolume(accCtx, volData);
+        rsc.putVolume(accCtx, volData);
+        vlmDfn.putVolume(accCtx, volData);
 
         LayerPayload payload = new LayerPayload();
         int vlmNr = vlmDfn.getVolumeNumber().value;
@@ -89,7 +86,7 @@ public class VolumeControllerFactory
         {
             payload.putStorageVlmPayload(entry.getKey(), vlmNr, entry.getValue().getName().displayValue);
         }
-        layerStackHelper.ensureStackDataExists((Resource) rsc, null, payload);
+        layerStackHelper.ensureStackDataExists(rsc, null, payload);
 
         return volData;
     }

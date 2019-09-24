@@ -16,7 +16,7 @@ import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -78,7 +78,7 @@ import java.util.TreeMap;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @Singleton
-public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
+public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
 {
     private static final String[] RSC_ALL_FIELDS =
     {
@@ -265,7 +265,6 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * These caches are only used during loading. Having them cleared after having loaded all data
      * these caches should never be used again.
      */
-    @Override
     public void clearLoadCache()
     {
         drbdRscDfnCache.clear();
@@ -279,7 +278,6 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * @param rscDfnMap
      * @throws DatabaseException
      */
-    @Override
     public void loadLayerData(Map<ResourceName, ResourceDefinition> rscDfnMap) throws DatabaseException
     {
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RSC_DFN_AND_VLM_DFN))
@@ -420,7 +418,6 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerDatabaseDriver
      * @throws DatabaseException
      * @throws AccessDeniedException
      */
-    @Override
     public Pair<DrbdRscData, Set<RscLayerObject>> load(
         Resource rsc,
         int id,

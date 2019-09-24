@@ -11,7 +11,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -34,6 +34,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,7 +45,7 @@ import java.util.Map;
 
 @Singleton
 @SuppressWarnings("checkstyle:magicnumber")
-public class SwordfishLayerGenericDbDriver implements SwordfishLayerDatabaseDriver
+public class SwordfishLayerGenericDbDriver implements SwordfishLayerCtrlDatabaseDriver
 {
     private static final String VLM_DFN_ALL_FIELDS =
         RESOURCE_NAME + ", " + RESOURCE_NAME_SUFFIX + ", " + VLM_NR + ", " + SF_VLM_ODATA;

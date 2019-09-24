@@ -8,7 +8,6 @@ import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 
 public interface SwordfishLayerDatabaseDriver
 {
-
     SingleColumnDatabaseDriver<SfVlmDfnData, String> getVlmDfnOdataDriver();
 
     void persist(SfVlmDfnData vlmDfnDataRef) throws DatabaseException;

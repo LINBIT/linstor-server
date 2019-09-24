@@ -9,7 +9,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -30,7 +30,7 @@ import javax.inject.Singleton;
 @Singleton
 public class KeyValueStoreDbDriver
     extends AbsDatabaseDriver<KeyValueStore, KeyValueStore.InitMaps, Void>
-    implements KeyValueStoreDatabaseDriver
+    implements KeyValueStoreCtrlDatabaseDriver
 {
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;

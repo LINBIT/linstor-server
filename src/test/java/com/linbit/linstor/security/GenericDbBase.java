@@ -53,7 +53,6 @@ import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
-import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.TestDbModule;
@@ -165,8 +164,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     protected DynamicNumberPool layerRscIdPoolMock;
     protected AtomicInteger layerRscIdAtomicId = new AtomicInteger();
 
-    @Inject private DbAccessor secureDbDriver;
-    @Inject private DatabaseDriver persistenceDbDriver;
+    // @Inject private DbAccessor secureDbDriver;
+    // @Inject private DatabaseDriver persistenceDbDriver;
     @Inject private SecurityTestUtils securityTestUtils;
     @Inject protected CoreModule.NodesMap nodesMap;
     @Inject protected CoreModule.ResourceDefinitionMap rscDfnMap;

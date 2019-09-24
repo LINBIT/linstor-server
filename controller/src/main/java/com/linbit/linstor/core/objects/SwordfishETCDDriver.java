@@ -14,7 +14,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerSwordfishVolumeDefinitions;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
-import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -39,7 +39,7 @@ import java.util.Set;
 // TODO: rework this to use the AbsDatabaseDriver
 // that also means to split this driver into single-table drivers
 @Singleton
-public class SwordfishETCDDriver extends BaseEtcdDriver implements SwordfishLayerDatabaseDriver
+public class SwordfishETCDDriver extends BaseEtcdDriver implements SwordfishLayerCtrlDatabaseDriver
 {
     private static final String DUMMY_VALUE = "intentional-null-value";
 

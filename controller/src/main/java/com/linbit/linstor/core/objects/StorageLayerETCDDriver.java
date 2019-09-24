@@ -19,7 +19,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerStorageVolumes;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -51,7 +51,7 @@ import java.util.TreeMap;
 // that also means to split this driver into single-table drivers
 // also try to merge this class with StorageLayerGenericDbDriver
 @Singleton
-public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLayerDatabaseDriver
+public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLayerCtrlDatabaseDriver
 {
     private final ErrorReporter errorReporter;
     private final ResourceLayerIdDatabaseDriver rscIdDriver;

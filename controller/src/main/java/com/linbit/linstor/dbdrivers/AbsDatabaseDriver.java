@@ -35,7 +35,8 @@ import java.util.function.Function;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements GenericDatabaseDriver<DATA>
+public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
+    implements GenericDatabaseDriver<DATA>, ControllerDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
 {
     protected static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
@@ -45,7 +46,6 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
     private final ObjectProtectionDatabaseDriver objProtDriver;
 
     private final Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters;
-
 
     public AbsDatabaseDriver(
         ErrorReporter errorReporterRef,
@@ -88,11 +88,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL> implements Ge
         }
     }
 
-    public ArrayList<DATA> loadAllAsList(LOAD_ALL loadAllData) throws DatabaseException
-    {
-        return new ArrayList<>(loadAll(loadAllData).keySet());
-    }
-
+    @Override
     public Map<DATA, INIT_MAPS> loadAll(LOAD_ALL parentRef) throws DatabaseException
     {
         // fail fast is not configured correctly

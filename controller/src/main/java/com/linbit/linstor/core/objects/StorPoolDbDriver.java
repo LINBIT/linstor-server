@@ -11,7 +11,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -42,7 +42,7 @@ public class StorPoolDbDriver
         StorPool.InitMaps,
         Pair<Map<NodeName, ? extends Node>,
             Map<StorPoolName, ? extends StorPoolDefinition>>>
-    implements StorPoolDatabaseDriver
+    implements StorPoolCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;

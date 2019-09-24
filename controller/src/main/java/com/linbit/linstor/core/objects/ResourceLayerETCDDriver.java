@@ -5,12 +5,11 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver.RscLayerInfoData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
@@ -34,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Singleton
-public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceLayerIdDatabaseDriver
+public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceLayerIdCtrlDatabaseDriver
 {
     private final ErrorReporter errorReporter;
     private final SingleColumnDatabaseDriver<AbsRscData<VlmProviderObject>, RscLayerObject> parentDriver;
@@ -71,9 +70,9 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
     }
 
     @Override
-    public List<? extends RscLayerInfo> loadAllResourceIds() throws DatabaseException
+    public List<RscLayerInfo> loadAllResourceIds() throws DatabaseException
     {
-        List<RscLayerInfoData> ret = new ArrayList<>();
+        List<RscLayerInfo> ret = new ArrayList<>();
 
         Map<String, String> allIds = namespace(GeneratedDatabaseTables.LAYER_RESOURCE_IDS).get(true);
         Set<String> pks = EtcdUtils.getComposedPkList(allIds);
@@ -84,7 +83,7 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
                 String parentIdStr = allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_PARENT_ID, layerId));
 
                 ret.add(
-                    new RscLayerInfoData(
+                    new RscLayerInfo(
                         new NodeName(allIds.get(EtcdUtils.buildKey(NODE_NAME, layerId))),
                         new ResourceName(allIds.get(EtcdUtils.buildKey(RESOURCE_NAME, layerId))),
                         Integer.parseInt(layerId),

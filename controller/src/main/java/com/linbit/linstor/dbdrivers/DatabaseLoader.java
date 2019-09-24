@@ -17,47 +17,47 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
-import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.NetInterface;
-import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
-import com.linbit.linstor.core.objects.NodeConnection;
-import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.NodeDbDriver;
-import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
+import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDbDriver;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.SnapshotVolumeDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
-import com.linbit.linstor.core.objects.VolumeConnection;
-import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDbDriver;
+import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroup;
-import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver.RscLayerInfo;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver.RscLayerInfo;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -111,28 +111,28 @@ public class DatabaseLoader implements DatabaseDriver
     }
 
     private final AccessContext dbCtx;
-    private final ResourceGroupDbDriver rscGrpDriver;
-    private final NodeDbDriver nodeDriver;
-    private final NetInterfaceDbDriver netIfDriver;
-    private final NodeConnectionDbDriver nodeConnDriver;
-    private final ResourceDefinitionDbDriver rscDfnDriver;
-    private final ResourceDbDriver rscDriver;
-    private final ResourceConnectionDbDriver rscConnDriver;
-    private final VolumeDefinitionDbDriver vlmDfnDriver;
-    private final VolumeDbDriver vlmDriver;
-    private final VolumeConnectionDbDriver vlmConnDriver;
-    private final StorPoolDefinitionDbDriver storPoolDfnDriver;
-    private final StorPoolDbDriver storPoolDriver;
-    private final SnapshotDefinitionDbDriver snapshotDefinitionDriver;
-    private final SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriver;
-    private final SnapshotDbDriver snapshotDriver;
-    private final SnapshotVolumeDbDriver snapshotVolumeDriver;
-    private final KeyValueStoreDbDriver keyValueStoreGenericDbDriver;
-    private final ResourceLayerIdDatabaseDriver rscLayerObjDriver;
-    private final DrbdLayerDatabaseDriver drbdLayerDriver;
-    private final LuksLayerDatabaseDriver luksLayerDriver;
-    private final StorageLayerDatabaseDriver storageLayerDriver;
-    private final NvmeLayerDatabaseDriver nvmeLayerDriver;
+    private final ResourceGroupCtrlDatabaseDriver rscGrpDriver;
+    private final NodeCtrlDatabaseDriver nodeDriver;
+    private final NetInterfaceCtrlDatabaseDriver netIfDriver;
+    private final NodeConnectionCtrlDatabaseDriver nodeConnDriver;
+    private final ResourceDefinitionCtrlDatabaseDriver rscDfnDriver;
+    private final ResourceCtrlDatabaseDriver rscDriver;
+    private final ResourceConnectionCtrlDatabaseDriver rscConnDriver;
+    private final VolumeDefinitionCtrlDatabaseDriver vlmDfnDriver;
+    private final VolumeCtrlDatabaseDriver vlmDriver;
+    private final VolumeConnectionCtrlDatabaseDriver vlmConnDriver;
+    private final StorPoolDefinitionCtrlDatabaseDriver storPoolDfnDriver;
+    private final StorPoolCtrlDatabaseDriver storPoolDriver;
+    private final SnapshotDefinitionCtrlDatabaseDriver snapshotDefinitionDriver;
+    private final SnapshotVolumeDefinitionCtrlDatabaseDriver snapshotVolumeDefinitionDriver;
+    private final SnapshotCtrlDatabaseDriver snapshotDriver;
+    private final SnapshotVolumeCtrlDatabaseDriver snapshotVolumeDriver;
+    private final KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriver;
+    private final ResourceLayerIdCtrlDatabaseDriver rscLayerObjDriver;
+    private final DrbdLayerCtrlDatabaseDriver drbdLayerDriver;
+    private final LuksLayerCtrlDatabaseDriver luksLayerDriver;
+    private final StorageLayerCtrlDatabaseDriver storageLayerDriver;
+    private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
     private final Provider<CtrlLayerDataHelper> ctrlLayerDataHelper;
 
     private final CoreModule.NodesMap nodesMap;
@@ -142,34 +142,34 @@ public class DatabaseLoader implements DatabaseDriver
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
-    private final VolumeGroupDbDriver vlmGrpDriver;
+    private final VolumeGroupCtrlDatabaseDriver vlmGrpDriver;
 
     @Inject
     public DatabaseLoader(
         @SystemContext AccessContext privCtx,
-        ResourceGroupDbDriver rscGrpDriverRef,
-        NodeDbDriver nodeDriverRef,
-        NetInterfaceDbDriver netIfDriverRef,
-        NodeConnectionDbDriver nodeConnDriverRef,
-        ResourceDefinitionDbDriver resesourceDefinitionDriverRef,
-        ResourceDbDriver resourceDriverRef,
-        ResourceConnectionDbDriver rscConnDriverRef,
-        VolumeGroupDbDriver vlmGrpDriverRef,
-        VolumeDefinitionDbDriver vlmDfnDriverRef,
-        VolumeDbDriver volumeDriverRef,
-        VolumeConnectionDbDriver vlmConnDriverRef,
-        StorPoolDefinitionDbDriver storPoolDefinitionDriverRef,
-        StorPoolDbDriver storPoolDriverRef,
-        SnapshotDefinitionDbDriver snapshotDefinitionDriverRef,
-        SnapshotVolumeDefinitionDbDriver snapshotVolumeDefinitionDriverRef,
-        SnapshotDbDriver snapshotDriverRef,
-        SnapshotVolumeDbDriver snapshotVolumeDriverRef,
-        KeyValueStoreDbDriver keyValueStoreGenericDbDriverRef,
-        ResourceLayerIdDatabaseDriver rscLayerObjDriverRef,
-        DrbdLayerDatabaseDriver drbdLayerDriverRef,
-        LuksLayerDatabaseDriver luksLayerDriverRef,
-        StorageLayerDatabaseDriver storageLayerDriverRef,
-        NvmeLayerDatabaseDriver nvmeLayerDriverRef,
+        ResourceGroupCtrlDatabaseDriver rscGrpDriverRef,
+        NodeCtrlDatabaseDriver nodeDriverRef,
+        NetInterfaceCtrlDatabaseDriver netIfDriverRef,
+        NodeConnectionCtrlDatabaseDriver nodeConnDriverRef,
+        ResourceDefinitionCtrlDatabaseDriver resesourceDefinitionDriverRef,
+        ResourceCtrlDatabaseDriver resourceDriverRef,
+        ResourceConnectionCtrlDatabaseDriver rscConnDriverRef,
+        VolumeGroupCtrlDatabaseDriver vlmGrpDriverRef,
+        VolumeDefinitionCtrlDatabaseDriver vlmDfnDriverRef,
+        VolumeCtrlDatabaseDriver volumeDriverRef,
+        VolumeConnectionCtrlDatabaseDriver vlmConnDriverRef,
+        StorPoolDefinitionCtrlDatabaseDriver storPoolDefinitionDriverRef,
+        StorPoolCtrlDatabaseDriver storPoolDriverRef,
+        SnapshotDefinitionCtrlDatabaseDriver snapshotDefinitionDriverRef,
+        SnapshotVolumeDefinitionCtrlDatabaseDriver snapshotVolumeDefinitionDriverRef,
+        SnapshotCtrlDatabaseDriver snapshotDriverRef,
+        SnapshotVolumeCtrlDatabaseDriver snapshotVolumeDriverRef,
+        KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriverRef,
+        ResourceLayerIdCtrlDatabaseDriver rscLayerObjDriverRef,
+        DrbdLayerCtrlDatabaseDriver drbdLayerDriverRef,
+        LuksLayerCtrlDatabaseDriver luksLayerDriverRef,
+        StorageLayerCtrlDatabaseDriver storageLayerDriverRef,
+        NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
         Provider<CtrlLayerDataHelper> ctrlLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -317,7 +317,7 @@ public class DatabaseLoader implements DatabaseDriver
 
             // loading resources
             Map<Resource, Resource.InitMaps> loadedResources =
-                Collections.unmodifiableMap(rscDriver.loadAll(tmpNodesMap, tmpRscDfnMap));
+                Collections.unmodifiableMap(rscDriver.loadAll(new Pair<>(tmpNodesMap, tmpRscDfnMap)));
             for (Resource rsc : loadedResources.keySet())
             {
                 loadedNodesMap.get(rsc.getAssignedNode()).getRscMap()
@@ -567,7 +567,7 @@ public class DatabaseLoader implements DatabaseDriver
         {
             // initialize all non-persisted, but later serialized variables
             List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
-            layerDataHelper.ensureStackDataExists((Resource) rsc, layerStack, payload);
+            layerDataHelper.ensureStackDataExists(rsc, layerStack, payload);
         }
     }
 
@@ -595,27 +595,27 @@ public class DatabaseLoader implements DatabaseDriver
             for (RscLayerInfo rli : nextRscInfoToLoad)
             {
                 Pair<? extends RscLayerObject, Set<RscLayerObject>> rscLayerObjectPair;
-                ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rli.getResourceName());
-                Resource rsc = rscDfn.getResource(dbCtx, rli.getNodeName());
+                ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rli.resourceName);
+                Resource rsc = rscDfn.getResource(dbCtx, rli.nodeName);
 
                 resourcesWithLayerData.add(rsc);
 
                 RscLayerObject parent = null;
                 Set<RscLayerObject> currentRscLayerDatasChildren = null;
-                if (rli.getParentId() != null)
+                if (rli.parentId != null)
                 {
-                    Pair<RscLayerObject, Set<RscLayerObject>> pair = rscLayerObjectChildren.get(rli.getParentId());
+                    Pair<RscLayerObject, Set<RscLayerObject>> pair = rscLayerObjectChildren.get(rli.parentId);
 
                     parent = pair.objA;
                     currentRscLayerDatasChildren = pair.objB;
                 }
-                switch (rli.getKind())
+                switch (rli.kind)
                 {
                     case DRBD:
                         rscLayerObjectPair = drbdLayerDriver.load(
                             rsc,
-                            rli.getId(),
-                            rli.getRscSuffix(),
+                            rli.id,
+                            rli.rscSuffix,
                             parent,
                             tmpStorPoolMapRef
                         );
@@ -623,32 +623,32 @@ public class DatabaseLoader implements DatabaseDriver
                     case LUKS:
                         rscLayerObjectPair = luksLayerDriver.load(
                             rsc,
-                            rli.getId(),
-                            rli.getRscSuffix(),
+                            rli.id,
+                            rli.rscSuffix,
                             parent
                         );
                         break;
                     case STORAGE:
                         rscLayerObjectPair = storageLayerDriver.load(
                             rsc,
-                            rli.getId(),
-                            rli.getRscSuffix(),
+                            rli.id,
+                            rli.rscSuffix,
                             parent
                         );
                         break;
                     case NVME:
                         rscLayerObjectPair = nvmeLayerDriver.load(
                             rsc,
-                            rli.getId(),
-                            rli.getRscSuffix(),
+                            rli.id,
+                            rli.rscSuffix,
                             parent
                         );
                         break;
                     default:
-                        throw new ImplementationError("Unhandled case for device kind '" + rli.getKind() + "'");
+                        throw new ImplementationError("Unhandled case for device kind '" + rli.kind + "'");
                 }
                 RscLayerObject rscLayerObject = rscLayerObjectPair.objA;
-                rscLayerObjectChildren.put(rli.getId(), new Pair<>(rscLayerObject, rscLayerObjectPair.objB));
+                rscLayerObjectChildren.put(rli.id, new Pair<>(rscLayerObject, rscLayerObjectPair.objB));
                 if (parent == null)
                 {
                     rsc.setLayerData(dbCtx, rscLayerObject);
@@ -659,7 +659,7 @@ public class DatabaseLoader implements DatabaseDriver
                 }
 
                 // rli will be the parent for the next iteration
-                parentIds.add(rli.getId());
+                parentIds.add(rli.id);
             }
         }
         return resourcesWithLayerData;
@@ -674,11 +674,11 @@ public class DatabaseLoader implements DatabaseDriver
         if (ids == null)
         {
             // root rscLayerObjects
-            ret = rscLayerInfoListRef.stream().filter(rlo -> rlo.getParentId() == null).collect(Collectors.toList());
+            ret = rscLayerInfoListRef.stream().filter(rlo -> rlo.parentId == null).collect(Collectors.toList());
         }
         else
         {
-            ret = rscLayerInfoListRef.stream().filter(rlo -> ids.contains(rlo.getParentId()))
+            ret = rscLayerInfoListRef.stream().filter(rlo -> ids.contains(rlo.parentId))
                 .collect(Collectors.toList());
         }
         return ret;

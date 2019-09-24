@@ -24,7 +24,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerDrbdVolumeDefin
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerDrbdVolumes;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -60,7 +60,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 @Singleton
-public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerDatabaseDriver
+public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrlDatabaseDriver
 {
     private static final String NULL = ":null";
     private final AccessContext dbCtx;

@@ -14,7 +14,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -56,7 +56,7 @@ import java.util.TreeMap;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @Singleton
-public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
+public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriver
 {
     private static final String[] VLM_ALL_FIELDS =
     {
@@ -124,7 +124,6 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         return rscIdDriver;
     }
 
-    @Override
     public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef)
         throws DatabaseException
     {
@@ -185,7 +184,6 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         }
     }
 
-    @Override
     public void clearLoadAllCache()
     {
         cachedStorVlmInfoByRscLayerId.clear();
@@ -194,13 +192,11 @@ public class StorageLayerGenericDbDriver implements StorageLayerDatabaseDriver
         sfDbDriver.clearLoadAllCache();
     }
 
-    @Override
     public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws DatabaseException
     {
         sfDbDriver.loadLayerData(tmpRscDfnMapRef);
     }
 
-    @Override
     public Pair<StorageRscData, Set<RscLayerObject>> load(
         Resource resourceRef,
         int rscIdRef,

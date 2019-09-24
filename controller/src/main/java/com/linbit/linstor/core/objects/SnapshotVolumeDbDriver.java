@@ -15,7 +15,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -46,7 +46,7 @@ public class SnapshotVolumeDbDriver extends
         Triple<Map<Triple<NodeName, ResourceName, SnapshotName>, ? extends Snapshot>,
             Map<Triple<ResourceName, SnapshotName, VolumeNumber>, ? extends SnapshotVolumeDefinition>,
             Map<Pair<NodeName, StorPoolName>, ? extends StorPool>>>
-    implements SnapshotVolumeDatabaseDriver
+    implements SnapshotVolumeCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;

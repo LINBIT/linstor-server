@@ -8,12 +8,11 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceDbDriver.RscInMap;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -37,8 +36,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class ResourceDbDriver extends AbsDatabaseDriver<Resource, Resource.InitMaps, RscInMap>
-    implements ResourceDatabaseDriver
+public class ResourceDbDriver extends
+    AbsDatabaseDriver<Resource, Resource.InitMaps, Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>>>
+    implements ResourceCtrlDatabaseDriver
 {
 
     private final StateFlagsPersistence<Resource> flagsDriver;
@@ -81,19 +81,10 @@ public class ResourceDbDriver extends AbsDatabaseDriver<Resource, Resource.InitM
         return flagsDriver;
     }
 
-    public Map<Resource, Resource.InitMaps> loadAll(
-        Map<NodeName, Node> tmpNodesMapRef,
-        Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef
-    )
-        throws DatabaseException
-    {
-        return loadAll(new RscInMap(tmpNodesMapRef, tmpRscDfnMapRef));
-    }
-
     @Override
     protected Pair<Resource, Resource.InitMaps> load(
         RawParameters raw,
-        RscInMap loadAllDataRef
+        Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>> loadAllDataRef
     )
         throws DatabaseException, InvalidNameException, InvalidIpAddressException, ValueOutOfRangeException
     {
@@ -119,8 +110,8 @@ public class ResourceDbDriver extends AbsDatabaseDriver<Resource, Resource.InitM
             new Resource(
                 raw.build(UUID, java.util.UUID::fromString),
                 getObjectProtection(ObjectProtection.buildPath(nodeName, rscName)),
-                loadAllDataRef.rscDfnMap.get(rscName),
-                loadAllDataRef.nodeMap.get(nodeName),
+                loadAllDataRef.objB.get(rscName),
+                loadAllDataRef.objA.get(nodeName),
                 flags,
                 this,
                 propsContainerFactory,
@@ -138,19 +129,6 @@ public class ResourceDbDriver extends AbsDatabaseDriver<Resource, Resource.InitM
     {
         return "(NodeName=" + rsc.getAssignedNode().getName().displayValue +
             " ResName=" + rsc.getDefinition().getName().displayValue + ")";
-    }
-
-
-    public static class RscInMap
-    {
-        Map<NodeName, Node> nodeMap;
-        Map<ResourceName, ResourceDefinition> rscDfnMap;
-
-        public RscInMap(Map<NodeName, Node> nodeMapRef, Map<ResourceName, ResourceDefinition> rscDfnMapRef)
-        {
-            nodeMap = nodeMapRef;
-            rscDfnMap = rscDfnMapRef;
-        }
     }
 
     public static class InitMapImpl implements Resource.InitMaps

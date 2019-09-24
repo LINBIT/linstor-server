@@ -16,7 +16,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -49,9 +49,8 @@ public class SnapshotDbDriver extends
         Snapshot.InitMaps,
         Pair<Map<NodeName, ? extends Node>,
             Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition>>>
-    implements SnapshotDatabaseDriver
+    implements SnapshotCtrlDatabaseDriver
 {
-
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;

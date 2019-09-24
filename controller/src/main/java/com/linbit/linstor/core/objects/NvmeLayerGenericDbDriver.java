@@ -3,7 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @Singleton
-public class NvmeLayerGenericDbDriver implements NvmeLayerDatabaseDriver
+public class NvmeLayerGenericDbDriver implements NvmeLayerCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -60,7 +60,6 @@ public class NvmeLayerGenericDbDriver implements NvmeLayerDatabaseDriver
      * is the first objects backing list of the children-resource layer data. This list is expected to be filled
      * upon further loading, without triggering transaction (and possibly database-) updates.
      */
-    @Override
     public Pair<NvmeRscData, Set<RscLayerObject>> load(
         Resource rsc,
         int id,

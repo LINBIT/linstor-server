@@ -6,7 +6,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
@@ -36,7 +36,7 @@ import java.util.List;
 import com.google.inject.Provider;
 
 @Singleton
-public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDriver
+public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDatabaseDriver
 {
     private static final String PK_FIELDS =
         NODE_NAME + ", " + RESOURCE_NAME + ", " + LAYER_RESOURCE_ID;
@@ -79,9 +79,9 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
     }
 
     @Override
-    public List<RscLayerInfoData> loadAllResourceIds() throws DatabaseException
+    public List<RscLayerInfo> loadAllResourceIds() throws DatabaseException
     {
-        List<RscLayerInfoData> ret = new ArrayList<>();
+        List<RscLayerInfo> ret = new ArrayList<>();
 
         try (PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL))
         {
@@ -94,7 +94,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
                     {
                         parentId = null;
                     }
-                    RscLayerInfoData rscInfoData = new RscLayerInfoData(
+                    RscLayerInfo rscInfoData = new RscLayerInfo(
                         new NodeName(resultSet.getString(NODE_NAME)),
                         new ResourceName(resultSet.getString(RESOURCE_NAME)),
                         resultSet.getInt(LAYER_RESOURCE_ID),
@@ -191,70 +191,6 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdDatabaseDr
             " (id: " + rscData.getRscLayerId() +
             ", rscName: " + rscData.getSuffixedResourceName() +
             ", parent: " + (rscData.getParent() == null ? "-" : rscData.getParent().getRscLayerId()) + ")";
-    }
-
-    public static class RscLayerInfoData implements RscLayerInfo
-    {
-        public final NodeName nodeName;
-        public final ResourceName resourceName;
-        public final int id;
-        public final Integer parentId;
-        public final DeviceLayerKind kind;
-        public final String rscSuffix;
-
-        RscLayerInfoData(
-            NodeName nodeNameRef,
-            ResourceName resourceNameRef,
-            int idRef,
-            Integer parentIdRef,
-            DeviceLayerKind kindRef,
-            String rscSuffixRef
-        )
-        {
-            super();
-            nodeName = nodeNameRef;
-            resourceName = resourceNameRef;
-            id = idRef;
-            parentId = parentIdRef;
-            kind = kindRef;
-            rscSuffix = rscSuffixRef;
-        }
-
-        @Override
-        public NodeName getNodeName()
-        {
-            return nodeName;
-        }
-
-        @Override
-        public ResourceName getResourceName()
-        {
-            return resourceName;
-        }
-
-        @Override
-        public int getId()
-        {
-            return id;
-        }
-
-        @Override
-        public Integer getParentId()
-        {
-            return parentId;
-        }
-
-        @Override
-        public DeviceLayerKind getKind()
-        {
-            return kind;
-        }
-
-        @Override
-        public String getRscSuffix()
-        {
-            return rscSuffix;
-        }
     }
 
     private String getId(AbsRscData<?> rscData)

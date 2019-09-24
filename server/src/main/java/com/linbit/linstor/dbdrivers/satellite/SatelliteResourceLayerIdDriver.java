@@ -1,15 +1,12 @@
 package com.linbit.linstor.dbdrivers.satellite;
 
 import com.linbit.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import java.util.List;
 
 @Singleton
 public class SatelliteResourceLayerIdDriver implements ResourceLayerIdDatabaseDriver
@@ -38,11 +35,5 @@ public class SatelliteResourceLayerIdDriver implements ResourceLayerIdDatabaseDr
     public void persist(RscLayerObject rscLayerObjectRef)
     {
         // no-op
-    }
-
-    @Override
-    public List<? extends RscLayerInfo> loadAllResourceIds() throws DatabaseException
-    {
-        return null; // should never be called
     }
 }

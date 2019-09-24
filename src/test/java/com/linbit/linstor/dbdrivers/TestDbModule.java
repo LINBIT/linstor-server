@@ -1,5 +1,8 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceGenericDbDriver;
@@ -7,21 +10,21 @@ import com.linbit.linstor.core.objects.NodeConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroupGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
-import com.linbit.linstor.core.objects.SnapshotGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinitionGenericDbDriver;
-import com.linbit.linstor.core.objects.SnapshotVolumeGenericDbDriver;
+import com.linbit.linstor.core.objects.SnapshotGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionGenericDbDriver;
-import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
+import com.linbit.linstor.core.objects.SnapshotVolumeGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionGenericDbDriver;
-import com.linbit.linstor.core.objects.VolumeGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeGenericDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
@@ -64,7 +67,29 @@ public class TestDbModule extends AbstractModule
 
         bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionGenericDbDriver.class);
 
-        bind(DatabaseDriver.class).to(DatabaseLoader.class);
+        // bind(DatabaseDriver.class).to(DatabaseLoader.class);
+        bind(DatabaseDriver.class).toInstance(new DatabaseDriver()
+        {
+
+            @Override
+            public void loadAll() throws DatabaseException
+            {
+                // noop
+            }
+
+            @Override
+            public ServiceName getDefaultServiceInstanceName()
+            {
+                try
+                {
+                    return new ServiceName("NoopTestDatabaseDriver");
+                }
+                catch (InvalidNameException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            }
+        });
 
         bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
         bind(NodeDatabaseDriver.class).to(NodeGenericDbDriver.class);

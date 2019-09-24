@@ -13,7 +13,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -39,7 +39,7 @@ import java.util.Map;
 @Singleton
 public class VolumeConnectionDbDriver extends
     AbsDatabaseDriver<VolumeConnection, Void, Map<Triple<NodeName, ResourceName, VolumeNumber>, ? extends Volume>>
-    implements VolumeConnectionDatabaseDriver
+    implements VolumeConnectionCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
