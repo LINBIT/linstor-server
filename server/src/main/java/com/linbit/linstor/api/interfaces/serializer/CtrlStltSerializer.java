@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -11,6 +12,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.storage.LsBlkEntry;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
@@ -101,6 +103,11 @@ public interface CtrlStltSerializer extends CommonSerializer
             StorPool storPoolRef,
             SpaceInfo spaceInfoRef,
             boolean supportsSnapshotsRef
+        );
+
+        CtrlStltSerializerBuilder requestPhysicalDevices(boolean filter);
+        CtrlStltSerializerBuilder physicalDevices(
+            List<LsBlkEntry> entries
         );
     }
 }

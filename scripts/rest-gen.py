@@ -63,10 +63,15 @@ def resolve_type_str(schema_lookup: OrderedDict, field_obj: OrderedDict):
                 t = "Boolean"
         elif type_str == "array":
             t = "List<" + resolve_type_str(schema_lookup, field_obj['items']) + ">"
-        elif type_str == "object" and "properties" not in field_obj:  # Properties special case
-            t = "Map<String, String>"
         elif type_str == "object":
-            t = "object"  # needed for recursive call, will NOT go to java
+            if "properties" not in field_obj:  # additionalProperties
+                if "type" in field_obj["additionalProperties"] and \
+                        field_obj["additionalProperties"]["type"] == "string":
+                    t = "Map<String, String>"
+                else:
+                    t = "Map<String, " + resolve_type_str(schema_lookup, field_obj["additionalProperties"]) + ">"
+            else:
+                t = "object"  # needed for recursive call, will NOT go to java
     elif "$ref" in field_obj:
         assert field_obj["$ref"].startswith('#/components/schemas')
         schema_name = field_obj["$ref"][len('#/components/schemas/'):]

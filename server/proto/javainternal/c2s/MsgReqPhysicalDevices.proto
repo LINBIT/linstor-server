@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+
+message MsgReqPhysicalDevices {
+    bool filter = 1;
+}

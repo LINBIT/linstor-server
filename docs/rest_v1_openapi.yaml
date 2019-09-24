@@ -23,6 +23,7 @@ info:
 
     * 1.0.10
       - Added `reports` array field to Volume object, contains ApiCallRcs for problems
+      - Added /v1/physical-storage endpoint
     * 1.0.9
       - Added supports_snapshots to StoragePool
     * 1.0.8
@@ -2995,6 +2996,28 @@ paths:
         '500':
           $ref: '#/components/responses/OperationFailed'
 
+  /v1/physical-storage:
+    get:
+      tags:
+        - developers
+      operationId: viewPhysicaStorage
+      summary: show physical storage on nodes, to be used with LINSTOR
+      description: Gives a grouped list of physical storage that can be turned into a LINSTOR storage-pool
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: physical storage list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhysicalStorage'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
 components:
   parameters:
     Resource:
@@ -4130,3 +4153,20 @@ components:
             - lz4
         compression_props:
           $ref: '#/components/schemas/Properties'
+    PhysicalStorage:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        rotational:
+          type: boolean
+        nodes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/PhysicalStorageDevice'
+    PhysicalStorageDevice:
+      type: object
+      properties:
+        device:
+          type: string

@@ -772,6 +772,20 @@ public class JsonGenTypes
         public Map<String, String> compression_props = Collections.emptyMap();
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PhysicalStorage
+    {
+        public Long size;
+        public Boolean rotational;
+        public Map<String, PhysicalStorageDevice> nodes = Collections.emptyMap();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PhysicalStorageDevice
+    {
+        public String device;
+    }
+
     private JsonGenTypes()
     {
     }

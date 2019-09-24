@@ -45,13 +45,17 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.M
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.MsgReqPhysicalDevicesOuterClass.MsgReqPhysicalDevices;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
+import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass.MsgPhysicalDevices;
 import com.linbit.linstor.proto.javainternal.s2c.MsgRscFailedOuterClass.MsgRscFailed;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
@@ -632,6 +636,49 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         }
         return this;
 
+    }
+
+    @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder requestPhysicalDevices(boolean filter)
+    {
+        try
+        {
+            MsgReqPhysicalDevices.newBuilder()
+                .setFilter(filter)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder physicalDevices(List<LsBlkEntry> entries)
+    {
+        try
+        {
+            MsgPhysicalDevices.newBuilder()
+                .addAllDevices(entries.stream().map(lsBlkEntry ->
+                    MsgPhysicalDevicesOuterClass.LsBlkEntry.newBuilder()
+                        .setName(lsBlkEntry.getName())
+                        .setSize(lsBlkEntry.getSize())
+                        .setRotational(lsBlkEntry.isRotational())
+                        .setKernelName(lsBlkEntry.getKernelName())
+                        .setParentName(lsBlkEntry.getParentName())
+                        .setMajor(lsBlkEntry.getMajor())
+                        .setMinor(lsBlkEntry.getMinor())
+                        .build()).collect(Collectors.toList()))
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
     }
 
     @Override

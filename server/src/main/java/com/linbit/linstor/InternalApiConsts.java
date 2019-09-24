@@ -52,6 +52,9 @@ public class InternalApiConsts
 
     public static final String API_ARCHIVE_LOGS = "ArchiveLogs";
 
+    public static final String API_LIST_PHYSICAL_DEVICES = "ListPhysicalDevices";
+    public static final String API_ANSWER_PHYSICAL_DEVICES = "AnswerPhysicalDevices";
+
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";

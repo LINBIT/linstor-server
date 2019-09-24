@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+message MsgPhysicalDevices {
+    repeated LsBlkEntry devices = 1;
+}
+
+message LsBlkEntry {
+    string name = 1;
+    uint64 size = 2;
+    bool rotational = 3;
+    string parent_name = 4;
+    string kernel_name = 5;
+    string fs_type = 6;
+    uint32 major = 7;
+    uint32 minor = 8;
+}
