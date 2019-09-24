@@ -127,7 +127,10 @@ public class CtrlPhysicalStorageApiCallHandler
                         lsBlkEntry.getKernelName(),
                         lsBlkEntry.getFsType(),
                         lsBlkEntry.getMajor(),
-                        lsBlkEntry.getMinor()
+                        lsBlkEntry.getMinor(),
+                        lsBlkEntry.getModel(),
+                        lsBlkEntry.getSerial(),
+                        lsBlkEntry.getWwn()
                     )
                 ).collect(Collectors.toList());
         }
@@ -156,6 +159,9 @@ public class CtrlPhysicalStorageApiCallHandler
 
                 JsonGenTypes.PhysicalStorageDevice physDev = new JsonGenTypes.PhysicalStorageDevice();
                 physDev.device = lsblkEntry.getName();
+                physDev.model = lsblkEntry.getModel();
+                physDev.serial = lsblkEntry.getSerial();
+                physDev.wwn = lsblkEntry.getWwn();
 
                 if (phys.containsKey(physEntry))
                 {

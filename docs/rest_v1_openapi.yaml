@@ -4170,3 +4170,9 @@ components:
       properties:
         device:
           type: string
+        model:
+          type: string
+        serial:
+          type: string
+        wwn:
+          type: string

@@ -33,7 +33,10 @@ public class CtrlPhysicalStorageApiCallHandlerTest
                 "sde",
                 "",
                 8,
-                9
+                9,
+                "",
+                "",
+                ""
             )
         );
 
@@ -51,7 +54,10 @@ public class CtrlPhysicalStorageApiCallHandlerTest
                 "sde",
                 "",
                 8,
-                9
+                9,
+                "",
+                "",
+                ""
             )
         );
         dataCharlie.add(
@@ -63,7 +69,10 @@ public class CtrlPhysicalStorageApiCallHandlerTest
                 "sdd",
                 "",
                 9,
-                0
+                0,
+                "",
+                "",
+                ""
             )
         );
         dataCharlie.add(
@@ -75,7 +84,10 @@ public class CtrlPhysicalStorageApiCallHandlerTest
                 "sdf",
                 "",
                 9,
-                10
+                10,
+                "",
+                "",
+                ""
             )
         );
 

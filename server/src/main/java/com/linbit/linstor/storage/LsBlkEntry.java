@@ -14,6 +14,9 @@ public class LsBlkEntry
     private String fsType;
     private int major;
     private int minor;
+    private String model;
+    private String serial;
+    private String wwn;
 
     public enum LsBlkFields {
         NAME("NAME"),
@@ -22,7 +25,10 @@ public class LsBlkEntry
         KNAME("KNAME"),
         ROTA("ROTA"),
         FSTYPE("FSTYPE"),
-        MAJ_MIN("MAJ:MIN");
+        MAJ_MIN("MAJ:MIN"),
+        MODEL("MODEL"),
+        SERIAL("SERIAL"),
+        WWN("WWN");
 
         private String value;
 
@@ -72,7 +78,10 @@ public class LsBlkEntry
         String kernelNameRef,
         String fsTypeRef,
         int majorRef,
-        int minorRef
+        int minorRef,
+        String modelRef,
+        String serialRef,
+        String wwnRef
     )
     {
         this.name = nameRef;
@@ -83,6 +92,9 @@ public class LsBlkEntry
         this.fsType = fsTypeRef;
         this.major = majorRef;
         this.minor = minorRef;
+        this.model = modelRef;
+        this.serial = serialRef;
+        this.wwn = wwnRef;
     }
 
     private void setField(LsBlkFields fieldName, String value)
@@ -114,6 +126,15 @@ public class LsBlkEntry
                     major = Integer.parseInt(majmin[0]);
                     minor = Integer.parseInt(majmin[1]);
                 }
+                break;
+            case MODEL:
+                model = value.trim();
+                break;
+            case SERIAL:
+                serial = value;
+                break;
+            case WWN:
+                wwn = value;
                 break;
             default:
                 throw new RuntimeException(String.format("Field name '%s' unknown.", fieldName));
@@ -158,6 +179,21 @@ public class LsBlkEntry
     public int getMinor()
     {
         return minor;
+    }
+
+    public String getModel()
+    {
+        return model;
+    }
+
+    public String getSerial()
+    {
+        return serial;
+    }
+
+    public String getWwn()
+    {
+        return wwn;
     }
 
     public Map<String, String> asMap()

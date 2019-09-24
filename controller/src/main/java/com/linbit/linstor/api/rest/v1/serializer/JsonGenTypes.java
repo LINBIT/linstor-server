@@ -784,6 +784,9 @@ public class JsonGenTypes
     public static class PhysicalStorageDevice
     {
         public String device;
+        public String model;
+        public String serial;
+        public String wwn;
     }
 
     private JsonGenTypes()

@@ -15,4 +15,7 @@ message LsBlkEntry {
     string fs_type = 6;
     uint32 major = 7;
     uint32 minor = 8;
+    string model = 9;
+    string serial = 10;
+    string wwn = 11;
 }
