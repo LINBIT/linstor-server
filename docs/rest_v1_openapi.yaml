@@ -3222,6 +3222,8 @@ components:
         - ZFS_THIN
         - SWORDFISH_TARGET
         - SWORDFISH_INITIATOR
+        - FILE
+        - FILE_THIN
     StoragePool:
       description: |
         Contains information about a storage pool.
