@@ -80,7 +80,7 @@ public class SnapshotDbDriver extends
         setColumnSetter(RESOURCE_NAME, snap -> snap.getResourceName().value);
         setColumnSetter(SNAPSHOT_NAME, snap -> snap.getSnapshotName().value);
         setColumnSetter(SNAPSHOT_FLAGS, snap -> snap.getFlags().getFlagsBits(dbCtxRef));
-        setColumnSetter(NODE_ID, snap -> snap.getNodeId().value);
+        setColumnSetter(NODE_ID, snap -> snap.getNodeId() == null ? null : snap.getNodeId().value);
         setColumnSetter(LAYER_STACK, snap -> toString(StringUtils.asStrList(snap.getLayerStack(dbCtxRef))));
 
         flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, Snapshot.Flags.class);
