@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.Node;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
@@ -29,9 +30,9 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -73,36 +74,47 @@ public class Nodes
     @GET
     public Response listNodes(
         @Context Request request,
+        @QueryParam("nodes") List<String> nodeNames,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return listNodes(request, null, limit, offset);
+        return listNodesOneOrMany(request, null, nodeNames, limit, offset);
     }
 
     @GET
     @Path("{nodeName}")
-    public Response listNodes(
+    public Response listSingleNode(
         @Context Request request,
         @PathParam("nodeName") String nodeName,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
+        return listNodesOneOrMany(request, nodeName, Collections.singletonList(nodeName), limit, offset);
+    }
+
+    private Response listNodesOneOrMany(
+        Request request,
+        String searchNodeName,
+        List<String> nodeNames,
+        int limit,
+        int offset
+    )
+    {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_NODE, request), () ->
         {
-            Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNode().stream()
-                .filter(nodeApi -> nodeName == null || nodeApi.getName().equalsIgnoreCase(nodeName));
-
+            Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNodes(nodeNames).stream();
             if (limit > 0)
             {
                 nodeApiStream = nodeApiStream.skip(offset).limit(limit);
             }
-            final List<JsonGenTypes.Node> nds = nodeApiStream.map(Json::apiToNode)
+            List<Node> nodeDataList = nodeApiStream
+                .map(Json::apiToNode)
                 .collect(Collectors.toList());
 
             return RequestHelper.queryRequestResponse(
-                objectMapper, ApiConsts.FAIL_NOT_FOUND_NODE, "Node", nodeName, nds
+                objectMapper, ApiConsts.FAIL_NOT_FOUND_NODE, "Node", searchNodeName, nodeDataList
             );
         }, false);
     }
@@ -230,7 +242,12 @@ public class Nodes
     {
         return requestHelper.doInScope(ApiConsts.API_LST_NET_IF, request, () ->
         {
-            List<NodeApi> nodes =  ctrlApiCallHandler.listNode();
+            List<String> nodeNameList = new ArrayList<>(1);
+            if (nodeName != null)
+            {
+                nodeNameList.add(nodeName);
+            }
+            List<NodeApi> nodes = ctrlApiCallHandler.listNodes(nodeNameList);
             Optional<NodeApi> optNode = nodes.stream()
                 .filter(nodeApi -> nodeApi.getName().equalsIgnoreCase(nodeName))
                 .findFirst();

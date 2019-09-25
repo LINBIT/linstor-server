@@ -162,16 +162,6 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ArrayList<NodeApi> listNode()
-    {
-        ArrayList<NodeApi> listNodes;
-        try (LockGuard lg = lockGuardFactory.build(READ, NODES_MAP))
-        {
-            listNodes = nodeApiCallHandler.listNodes();
-        }
-        return listNodes;
-    }
-
     public ApiCallRc createSwordfishTargetNode(String nodeName, Map<String, String> props)
     {
         ApiCallRc apiCallRc;
@@ -180,6 +170,16 @@ public class CtrlApiCallHandler
             apiCallRc = nodeApiCallHandler.createSwordfishTargetNode(nodeName, props);
         }
         return apiCallRc;
+    }
+
+    public ArrayList<NodeApi> listNodes(List<String> nodeNames)
+    {
+        ArrayList<NodeApi> nodeList;
+        try (LockGuard lg = lockGuardFactory.build(READ, NODES_MAP))
+        {
+            nodeList = nodeApiCallHandler.listNodes(nodeNames);
+        }
+        return nodeList;
     }
 
     /**

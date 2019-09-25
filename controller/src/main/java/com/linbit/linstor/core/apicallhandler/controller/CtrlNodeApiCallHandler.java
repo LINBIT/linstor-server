@@ -38,7 +38,6 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -55,7 +54,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,13 +61,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import reactor.core.scheduler.Scheduler;
 
 @Singleton
 public class CtrlNodeApiCallHandler
 {
-    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
@@ -90,7 +88,6 @@ public class CtrlNodeApiCallHandler
 
     @Inject
     public CtrlNodeApiCallHandler(
-        ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
@@ -110,7 +107,6 @@ public class CtrlNodeApiCallHandler
         Scheduler schedulerRef
     )
     {
-        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
@@ -448,24 +444,33 @@ public class CtrlNodeApiCallHandler
         return responses;
     }
 
-    ArrayList<NodeApi> listNodes()
+    ArrayList<NodeApi> listNodes(List<String> nodeNames)
     {
         ArrayList<NodeApi> nodes = new ArrayList<>();
+        final Set<NodeName> nodesFilter =
+            nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
+
         try
         {
-            for (Node node : nodeRepository.getMapForView(peerAccCtx.get()).values())
-            {
-                try
-                {
-                    nodes.add(node.getApiData(peerAccCtx.get(), null, null));
-                    // fullSyncId and updateId null, as they are not going to be serialized by
-                    // .nodeList anyways
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    // don't add nodes we have not access
-                }
-            }
+            nodeRepository.getMapForView(peerAccCtx.get()).values().stream()
+                .filter(node ->
+                    (
+                        nodesFilter.isEmpty() ||
+                        nodesFilter.contains(node.getName())
+                    )
+                )
+                .forEach(node ->
+                    {
+                        try
+                        {
+                            nodes.add(node.getApiData(peerAccCtx.get(), null, null));
+                        }
+                        catch (AccessDeniedException accDeniedExc)
+                        {
+                            // don't add node without access
+                        }
+                    }
+                );
         }
         catch (AccessDeniedException accDeniedExc)
         {
