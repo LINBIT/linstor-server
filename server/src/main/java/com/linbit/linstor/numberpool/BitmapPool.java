@@ -961,7 +961,6 @@ public class BitmapPool implements NumberPool
                                             }
                                             else
                                             {
-                                                ++nrIdx; // DEBUG -- remove when it's no longer needed
                                                 nrBitMask <<= 1;
                                                 ++nr;
                                             }
