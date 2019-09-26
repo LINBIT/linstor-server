@@ -233,7 +233,7 @@ public class Json
                     case STORAGE:
                     case NVME:
                     default:
-                        throw new ImplementationError("Not implemented Kind case");
+                        throw new ImplementationError("Not implemented kind case");
                 }
             }
             rscDfn.layer_data.add(rscDfnLayerData);
