@@ -108,13 +108,9 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
     public void allocate(int nr)
         throws ValueInUseException
     {
-        synchronized (numberPool)
+        if (!numberPool.allocate(nr))
         {
-            if (numberPool.isAllocated(nr))
-            {
-                throw new ValueInUseException(String.format(elementName + IN_USE_EXC_FORMAT, nr));
-            }
-            numberPool.allocate(nr);
+            throw new ValueInUseException(String.format(elementName + IN_USE_EXC_FORMAT, nr));
         }
     }
 
@@ -122,22 +118,16 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
     public int autoAllocate()
         throws ExhaustedPoolException
     {
-        synchronized (numberPool)
-        {
-            return numberPool.autoAllocate(
-                rangeMin,
-                rangeMax
-            );
-        }
+        return numberPool.autoAllocate(
+            rangeMin,
+            rangeMax
+        );
     }
 
     @Override
     public void deallocate(int nr)
     {
-        synchronized (numberPool)
-        {
-            numberPool.deallocate(nr);
-        }
+        numberPool.deallocate(nr);
     }
 
     public interface NumberRangeChecker
