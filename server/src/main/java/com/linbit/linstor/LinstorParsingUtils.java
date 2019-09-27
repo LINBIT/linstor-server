@@ -353,6 +353,17 @@ public class LinstorParsingUtils
     public static DeviceProviderKind asProviderKind(String stringRef)
     {
         DeviceProviderKind kind;
+
+        if (stringRef == null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_LAYER_KIND,
+                    "Given provider kind is null."
+                )
+            );
+        }
+
         switch (stringRef.toUpperCase())
         {
             case "DRBD_DISKLESS":
