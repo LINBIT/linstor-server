@@ -3017,6 +3017,37 @@ paths:
                   $ref: '#/components/schemas/PhysicalStorage'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/physical-storage/{node}:
+    post:
+      tags:
+        - developers
+      operationId: createDevicePool
+      summary: creates an LVM, LVM-thin or ZFS pool, optional VDO under it
+      description: |
+        Creates a LVM/LVM-thin, ZFS pool on the given device and if supported VDO(optional) under it.
+        logcal_size_kib parameter is only needed if LVM-thin or vdo is used is used.
+        Also note VDO can only used with LVM-fat.
+      parameters:
+        - $ref: '#/components/parameters/Node'
+      responses:
+        '201':
+          description: device pool created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhysicalStorageCreate'
+            example:
+              provider_kind: LVM_THIN
+              device_path: '/dev/sde'
+              pool_name: ssd_fast
+              logcal_size_kib: 5368709120
+              vdo_enable: false
+
 
 components:
   parameters:
@@ -4176,3 +4207,26 @@ components:
           type: string
         wwn:
           type: string
+    PhysicalStorageCreate:
+      type: object
+      required:
+        - provider_kind
+        - device_path
+      properties:
+        provider_kind:
+            $ref: '#/components/schemas/ProviderKind'
+        device_path:
+          type: string
+        pool_name:
+          type: string
+        vdo_enable:
+          default: false
+          type: boolean
+        vdo_slab_size_kib:
+          type: integer
+          format: uint64
+          default: 0
+        vdo_logical_size_kib:
+          type: integer
+          format: uint64
+          default: 0

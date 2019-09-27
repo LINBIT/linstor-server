@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+import "common/ProviderType.proto";
+
+message VdoArguments {
+    uint64 slab_size_kib = 1;
+}
+
+message MsgCreateDevicePool {
+    string device_path = 1;
+    common.ProviderType provider_kind = 2;
+    string pool_name = 3;
+    uint64 logical_size_kib = 4;
+    VdoArguments vdo_arguments = 5;
+}

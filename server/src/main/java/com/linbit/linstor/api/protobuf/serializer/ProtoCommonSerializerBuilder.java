@@ -833,7 +833,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .build();
     }
 
-    private static ProviderType asProviderType(DeviceProviderKind deviceProviderKindRef) throws ImplementationError
+    protected static ProviderType asProviderType(DeviceProviderKind deviceProviderKindRef) throws ImplementationError
     {
         ProviderType type;
         switch (deviceProviderKindRef)

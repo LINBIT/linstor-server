@@ -1,12 +1,18 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPhysicalStorageApiCallHandler;
 
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
@@ -15,6 +21,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -22,6 +29,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Path("physical-storage")
@@ -54,7 +62,7 @@ public class PhysicalStorage
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
             Mono<Response> answer = physicalStorageApiCallHandler.listPhysicalStorage()
-                .subscriberContext(requestHelper.createContext("ListPhysicalStorage", request))
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
                 .flatMap(physicalStorageMap ->
                 {
                     Response resp;
@@ -84,5 +92,41 @@ public class PhysicalStorage
 
             requestHelper.doFlux(asyncResponse, answer);
         });
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("{nodeName}")
+    public void createDevicePool(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.PhysicalStorageCreate createData = objectMapper
+                .readValue(jsonData, JsonGenTypes.PhysicalStorageCreate.class);
+
+            Flux<ApiCallRc> responses = physicalStorageApiCallHandler.createDevicePool(
+                nodeName,
+                createData.device_path,
+                LinstorParsingUtils.asProviderKind(createData.provider_kind),
+                createData.pool_name,
+                createData.vdo_enable,
+                createData.vdo_logical_size_kib,
+                createData.vdo_slab_size_kib
+            ).subscriberContext(requestHelper.createContext(ApiConsts.API_CREATE_DEVICE_POOL, request));
+
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcConverter.mapToMonoResponse(responses, Response.Status.CREATED)
+            );
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 }

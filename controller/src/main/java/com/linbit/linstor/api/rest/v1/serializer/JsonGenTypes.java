@@ -789,6 +789,17 @@ public class JsonGenTypes
         public String wwn;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PhysicalStorageCreate
+    {
+        public String provider_kind;
+        public String device_path;
+        public String pool_name;
+        public boolean vdo_enable = false;
+        public int vdo_slab_size_kib = 0;
+        public int vdo_logical_size_kib = 0;
+    }
+
     private JsonGenTypes()
     {
     }

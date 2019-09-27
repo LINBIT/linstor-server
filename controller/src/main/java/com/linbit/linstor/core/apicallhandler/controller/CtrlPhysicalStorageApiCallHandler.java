@@ -3,9 +3,15 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -15,6 +21,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass.Ms
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LsBlkEntry;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.locks.LockGuardFactory;
 
 import javax.inject.Inject;
@@ -42,6 +49,7 @@ public class CtrlPhysicalStorageApiCallHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlStltSerializer ctrlStltSerializer;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
 
     private final NodeRepository nodeRepository;
 
@@ -52,6 +60,7 @@ public class CtrlPhysicalStorageApiCallHandler
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlStltSerializer ctrlStltSerializerRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeRepository nodeRepositoryRef
     )
     {
@@ -60,6 +69,7 @@ public class CtrlPhysicalStorageApiCallHandler
         this.scopeRunner = scopeRunnerRef;
         this.lockGuardFactory = lockGuardFactoryRef;
         this.ctrlStltSerializer = ctrlStltSerializerRef;
+        this.ctrlApiDataLoader = ctrlApiDataLoaderRef;
         this.nodeRepository = nodeRepositoryRef;
     }
 
@@ -138,6 +148,92 @@ public class CtrlPhysicalStorageApiCallHandler
         {
             throw new LinStorRuntimeException("IOError parsing lsblk answer.", ioExc);
         }
+    }
+
+    public Flux<ApiCallRc> createDevicePool(
+        String nodeNameStr,
+        String devicePath,
+        DeviceProviderKind providerKindRef,
+        String poolName,
+        boolean vdoEnabled,
+        long vdoLogicalSizeKib,
+        long vdoSlabSize
+    )
+    {
+        return scopeRunner.fluxInTransactionlessScope(
+            "CreateDevicePool",
+            lockGuardFactory.buildDeferred(LockGuardFactory.LockType.READ, LockGuardFactory.LockObj.NODES_MAP),
+            () -> createDevicePoolInScope(
+                nodeNameStr,
+                devicePath,
+                providerKindRef,
+                poolName,
+                vdoEnabled,
+                vdoLogicalSizeKib,
+                vdoSlabSize
+            )
+        );
+    }
+
+    private Flux<ApiCallRc> createDevicePoolInScope(
+        String nodeNameStr,
+        String devicePath,
+        DeviceProviderKind providerKindRef,
+        String poolNameArg,
+        boolean vdoEnabled,
+        long vdoLogicalSizeKib,
+        long vdoSlabSize
+    )
+    {
+        if (vdoEnabled && providerKindRef.usesThinProvisioning())
+        {
+            throw new ApiException("VDO is only supported with LVM-fat provisioning.");
+        }
+
+        Flux<ApiCallRc> response;
+        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+
+        if (devicePath == null || devicePath.isEmpty())
+        {
+            throw new ApiException("Field 'device_path' is null or empty.");
+        }
+
+        String poolName = poolNameArg;
+        if (poolNameArg == null || poolNameArg.isEmpty())
+        {
+            // create pool name
+            final int lastSlash = devicePath.lastIndexOf('/');
+            poolName = "linstor_" + (lastSlash > 0 ? devicePath.substring(lastSlash + 1) : devicePath);
+        }
+
+        try
+        {
+            response = node.getPeer(peerAccCtx.get())
+                .apiCall(
+                    InternalApiConsts.API_CREATE_DEVICE_POOL,
+                    ctrlStltSerializer.headerlessBuilder()
+                        .createDevicePool(
+                            devicePath,
+                            providerKindRef,
+                            poolName,
+                            vdoEnabled,
+                            vdoLogicalSizeKib,
+                            vdoSlabSize
+                        ).build()
+                )
+                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
+                .map(answer -> CtrlSatelliteUpdateCaller.deserializeApiCallRc(node.getName(), answer));
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ApiAccessDeniedException(
+                accExc,
+                "get peer from node",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+
+        return response;
     }
 
     public static List<JsonGenTypes.PhysicalStorage> groupPhysicalStorageByDevice(

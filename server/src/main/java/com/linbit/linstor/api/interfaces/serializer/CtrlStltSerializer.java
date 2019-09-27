@@ -13,6 +13,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.storage.LsBlkEntry;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
@@ -108,6 +109,14 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder requestPhysicalDevices(boolean filter);
         CtrlStltSerializerBuilder physicalDevices(
             List<LsBlkEntry> entries
+        );
+        CtrlStltSerializerBuilder createDevicePool(
+            String devicePath,
+            DeviceProviderKind providerKindRef,
+            String poolName,
+            boolean vdoEnabled,
+            long vdoLogicalSizeKib,
+            long vdoSlabSizeKib
         );
     }
 }

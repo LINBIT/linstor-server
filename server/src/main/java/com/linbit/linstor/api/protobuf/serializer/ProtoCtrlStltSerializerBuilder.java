@@ -33,6 +33,8 @@ import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyControllerOuterClass.MsgIntApplyController;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedNodeOuterClass.MsgIntApplyDeletedNode;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedRscOuterClass.MsgIntApplyDeletedRsc;
@@ -56,6 +58,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgRscFailedOuterClass.MsgRscFa
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LsBlkEntry;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
@@ -645,6 +648,45 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         {
             MsgReqPhysicalDevices.newBuilder()
                 .setFilter(filter)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder createDevicePool(
+        String devicePath,
+        DeviceProviderKind providerKindRef,
+        String poolName,
+        boolean vdoEnabled,
+        long vdoLogicalSizeKib,
+        long vdoSlabSize
+    )
+    {
+        try
+        {
+            MsgCreateDevicePool.Builder msgCreateDevicePoolBuilder =
+            MsgCreateDevicePool.newBuilder()
+                .setDevicePath(devicePath)
+                .setProviderKind(asProviderType(providerKindRef))
+                .setPoolName(poolName)
+                .setLogicalSizeKib(vdoLogicalSizeKib);
+
+            if (vdoEnabled)
+            {
+                msgCreateDevicePoolBuilder.setVdoArguments(
+                    MsgCreateDevicePoolOuterClass.VdoArguments.newBuilder()
+                        .setSlabSizeKib(vdoSlabSize)
+                        .build()
+                );
+            }
+
+            msgCreateDevicePoolBuilder
                 .build()
                 .writeDelimitedTo(baos);
         }

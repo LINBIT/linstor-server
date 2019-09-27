@@ -277,6 +277,27 @@ public class ZfsCommands
         );
     }
 
+    public static OutputData createZPool(
+        ExtCmd extCmd,
+        final String devicePath,
+        final String zpoolName
+    ) throws StorageException
+    {
+        final String failMsg = "Failed to create zpool: " + zpoolName;
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "zpool",
+                "create",
+                "-f", // force otherwise zpool will cry about possible partition on device
+                zpoolName,
+                devicePath
+            },
+            failMsg,
+            failMsg
+        );
+    }
+
     private ZfsCommands()
     {
     }

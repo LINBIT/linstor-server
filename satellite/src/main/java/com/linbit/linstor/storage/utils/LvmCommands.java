@@ -91,6 +91,30 @@ public class LvmCommands
         );
     }
 
+    public static OutputData createThinPool(
+        ExtCmd extCmd,
+        String volumeGroupFull,
+        String thinPoolName,
+        String... additionalParameters
+    )
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            StringUtils.concat(
+                new String[] {
+                    "lvcreate",
+                    "-l", "100%FREE",
+                    "-T",
+                    "-n", volumeGroupFull + "/" + thinPoolName
+                },
+                additionalParameters
+            ),
+            "Failed to create lvm volume",
+            "Failed to create new lvm thin pool in volume group '" + volumeGroupFull + "'"
+        );
+    }
+
     public static OutputData createThin(
         ExtCmd extCmd,
         String volumeGroup,
@@ -391,6 +415,38 @@ public class LvmCommands
                 "-o", "vg_name",
                 "--noheadings"
             },
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static OutputData pvCreate(ExtCmd extCmd, String devicePath) throws StorageException
+    {
+        final String failMsg = "Failed to pvcreate on device: " + devicePath;
+        return genericExecutor(
+            extCmd,
+            new String[]
+                {
+                    "pvcreate",
+                    devicePath
+                },
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static OutputData vgCreate(ExtCmd extCmd, final String vgName, final String devicePath)
+        throws StorageException
+    {
+        final String failMsg = "Failed to vgcreate on device: " + devicePath;
+        return genericExecutor(
+            extCmd,
+            new String[]
+                {
+                    "vgcreate",
+                    vgName,
+                    devicePath
+                },
             failMsg,
             failMsg
         );
