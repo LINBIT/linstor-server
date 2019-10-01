@@ -124,12 +124,12 @@ public class CmdSetConfValue extends BaseDebugCmd
                 printMultiMissingParamError(debugErr, parameters, PRM_KEY, PRM_VALUE);
             }
         }
-        catch (LinStorDBRuntimeException sqlExc)
+        catch (LinStorDBRuntimeException dbExc)
         {
             printError(
                 debugErr,
                 "The database transaction to update the configuration failed.",
-                sqlExc.getCauseText(),
+                dbExc.getCauseText(),
                 null,
                 null
             );

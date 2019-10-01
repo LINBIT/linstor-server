@@ -118,8 +118,8 @@ public class CmdSetAuthPolicy extends BaseDebugCmd
             catch (DatabaseException dbExc)
             {
                 String detailsText = "Review the database error to determine the cause of the problem.";
-                String sqlErrorMsg = dbExc.getMessage();
-                if (sqlErrorMsg != null)
+                String dbErrorMsg = dbExc.getMessage();
+                if (dbErrorMsg != null)
                 {
                     detailsText += "\nThe error description provided by the database subsystem is:\n" +
                     dbExc.getMessage();

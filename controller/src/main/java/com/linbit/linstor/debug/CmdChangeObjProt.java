@@ -18,6 +18,7 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -35,7 +36,6 @@ import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
 import java.io.PrintStream;
-import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -400,13 +400,9 @@ public class CmdChangeObjProt extends BaseDebugCmd
             String[] checkParams = paramExc.getParamList();
             debugPrintHelper.printMultiMissingParamError(debugErr, parameters, checkParams);
         }
-        catch (LinStorException exc)
+        catch (DatabaseException dbExc)
         {
-            debugPrintHelper.printLsException(debugErr, exc);
-        }
-        catch (SQLException sqlExc)
-        {
-            String reportNr = errLog.reportError(Level.ERROR, sqlExc);
+            String reportNr = errLog.reportError(Level.ERROR, dbExc);
             debugPrintHelper.printError(
                 debugErr,
                 "Changing the object protection of the selected object failed",
@@ -414,6 +410,10 @@ public class CmdChangeObjProt extends BaseDebugCmd
                 "Check error report " + reportNr + " for a more information about this problem",
                 null
             );
+        }
+        catch (LinStorException exc)
+        {
+            debugPrintHelper.printLsException(debugErr, exc);
         }
         finally
         {
@@ -439,7 +439,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
         final String accessRolePrm,
         final String accessTypePrm
     )
-        throws AccessDeniedException, LinStorException, SQLException
+        throws AccessDeniedException, LinStorException, DatabaseException
     {
         final ObjectProtection objProt = obj.getObjProt();
         final TransactionMgr transMgr = trnActProvider.get();
@@ -699,9 +699,9 @@ public class CmdChangeObjProt extends BaseDebugCmd
                     }
                     catch (TransactionException ignored)
                     {
-                        // An SQL exception may have been the cause for a failed COMMIT,
-                        // but the SQL connection must still be returned to the connection pool,
-                        // therefore, catch and ignore the SQLException
+                        // A database exception may have been the cause for a failed COMMIT,
+                        // but the database connection must still be returned to the connection pool,
+                        // therefore, catch and ignore the exception
                     }
                 }
                 transMgr.returnConnection();
