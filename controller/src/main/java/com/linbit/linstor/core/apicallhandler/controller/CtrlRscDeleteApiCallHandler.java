@@ -96,7 +96,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        autoHelper.manage(responses, context, rscDfn);
+        fluxes.add(autoHelper.manage(responses, context, rscDfn));
 
         Iterator<Resource> rscIter = rscDfn.iterateResource(apiCtx);
         while (rscIter.hasNext())

@@ -188,6 +188,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         );
 
         Flux<ApiCallRc> deploymentResponses;
+        Flux<ApiCallRc> autoFlux;
         if (additionalPlaceCount == 0 && !disklessOnRemainingNodes)
         {
             responseConverter.addWithDetail(responses, context,
@@ -241,12 +242,14 @@ public class CtrlRscAutoPlaceApiCallHandler
                     layerStackStrList
                 );
 
+                autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr);
 
                 ctrlTransactionHelper.commit();
 
                 deploymentResponses = deployedResources.isEmpty() ?
-                    Flux.empty() :
-                    ctrlRscCrtApiHelper.deployResources(context, deployedResources);
+                    autoFlux :
+                    ctrlRscCrtApiHelper.deployResources(context, deployedResources)
+                        .concatWith(autoFlux);
             }
             else
             {
@@ -264,11 +267,9 @@ public class CtrlRscAutoPlaceApiCallHandler
                 );
             }
         }
-        Flux<ApiCallRc> autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr);
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
-            .concatWith(autoFlux)
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
@@ -339,11 +340,14 @@ public class CtrlRscAutoPlaceApiCallHandler
             layerStackStrList
         );
 
+        Flux<ApiCallRc> autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr);
+
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> deploymentResponses = deployedResources.isEmpty() ?
-            Flux.empty() :
-            ctrlRscCrtApiHelper.deployResources(context, deployedResources);
+            autoFlux :
+            ctrlRscCrtApiHelper.deployResources(context, deployedResources)
+                .concatWith(autoFlux);
 
         return Flux
             .<ApiCallRc>just(responses)
