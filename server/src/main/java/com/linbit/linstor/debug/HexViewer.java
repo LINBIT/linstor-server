@@ -62,7 +62,7 @@ public class HexViewer
                     System.out.printf(" | %s\u001b[0;32m\n", plainText.toString());
                     plainText.setLength(0);
                 }
-                System.out.printf("%008X | ", index);
+                System.out.printf("%08X | ", index);
             }
             else
             {
