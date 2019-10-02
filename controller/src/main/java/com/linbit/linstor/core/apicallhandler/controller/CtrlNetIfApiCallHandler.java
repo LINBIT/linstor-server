@@ -96,7 +96,7 @@ class CtrlNetIfApiCallHandler
         String address,
         Integer stltPort,
         String stltEncrType,
-        Boolean setActive
+        Boolean setActivePrm
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -105,6 +105,8 @@ class CtrlNetIfApiCallHandler
             nodeNameStr,
             netIfNameStr
         );
+
+        final boolean setActive = setActivePrm != null ? setActivePrm : false;
 
         try
         {
