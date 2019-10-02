@@ -113,6 +113,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final EventWaiter eventWaiter;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
+    private final CtrlRscAutoHelper rscAutoHelper;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -131,7 +132,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ResourceStateEvent resourceStateEventRef,
         EventWaiter eventWaiterRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        CtrlRscAutoHelper rscAutoHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -151,6 +153,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         eventWaiter = eventWaiterRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        rscAutoHelper = rscAutoHelperRef;
     }
 
     @Override
@@ -172,7 +175,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             if (diskAddRequested || diskRemoveRequested)
             {
                 NodeName nodeName = rsc.getAssignedNode().getName();
-                fluxes.add(updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested));
+                fluxes.add(updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested, context));
             }
         }
 
@@ -220,7 +223,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     rscNameStr,
                     storPoolNameStr,
                     migrateFromNodeNameStr,
-                    removeDisk
+                    removeDisk,
+                    context
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -231,7 +235,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String rscNameStr,
         String storPoolNameStr,
         String migrateFromNodeNameStr,
-        boolean removeDisk
+        boolean removeDisk,
+        ResponseContext context
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -371,7 +376,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         return Flux
             .<ApiCallRc>just(responses)
-            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk));
+            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, context));
     }
 
     private Set<RscLayerObject> getResourceLayerDataPriveleged(Resource rsc, DeviceLayerKind kind)
@@ -435,20 +440,26 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     }
 
     // Restart from here when connection established and flag set
-    private Flux<ApiCallRc> updateAndAdjustDisk(NodeName nodeName, ResourceName rscName, boolean removeDisk)
+    private Flux<ApiCallRc> updateAndAdjustDisk(
+        NodeName nodeName,
+        ResourceName rscName,
+        boolean removeDisk,
+        ResponseContext context
+    )
     {
         return scopeRunner
             .fluxInTransactionalScope(
                 "Update for disk toggle",
                 createLockGuard(),
-                () -> updateAndAdjustDiskInTransaction(nodeName, rscName, removeDisk)
+                () -> updateAndAdjustDiskInTransaction(nodeName, rscName, removeDisk, context)
             );
     }
 
     private Flux<ApiCallRc> updateAndAdjustDiskInTransaction(
         NodeName nodeName,
         ResourceName rscName,
-        boolean removeDisk
+        boolean removeDisk,
+        ResponseContext context
     )
     {
         Flux<ApiCallRc> responses;
@@ -495,7 +506,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
             String actionSelf = removeDisk ? "Removed disk on {0}" : null;
             String actionPeer = removeDisk ? null : "Prepared {0} to expect disk on ''" + nodeName.displayValue + "''";
-            Flux<ApiCallRc> nextStep = finishOperation(nodeName, rscName, removeDisk);
+            Flux<ApiCallRc> nextStep = finishOperation(nodeName, rscName, removeDisk, context);
             Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
@@ -557,20 +568,26 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
     }
 
-    private Flux<ApiCallRc> finishOperation(NodeName nodeName, ResourceName rscName, boolean removeDisk)
+    private Flux<ApiCallRc> finishOperation(
+        NodeName nodeName,
+        ResourceName rscName,
+        boolean removeDisk,
+        ResponseContext context
+    )
     {
         return scopeRunner
             .fluxInTransactionalScope(
                 "Finish disk toggle",
                 createLockGuard(),
-                () -> finishOperationInTransaction(nodeName, rscName, removeDisk)
+                () -> finishOperationInTransaction(nodeName, rscName, removeDisk, context)
             );
     }
 
     private Flux<ApiCallRc> finishOperationInTransaction(
         NodeName nodeName,
         ResourceName rscName,
-        boolean removeDisk
+        boolean removeDisk,
+        ResponseContext context
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -585,6 +602,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             markDiskAdded(rsc);
         }
+        Flux<ApiCallRc> autoFlux = rscAutoHelper.manage(responses, context, rsc.getDefinition());
 
         ctrlLayerStackHelper.resetStoragePools(rsc);
 
@@ -619,7 +637,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     actionSelf,
                     actionPeer
                 )))
-            .concatWith(migrationFlux);
+            .concatWith(migrationFlux)
+            .concatWith(autoFlux);
     }
 
     private Publisher<ApiCallRc> waitForMigration(

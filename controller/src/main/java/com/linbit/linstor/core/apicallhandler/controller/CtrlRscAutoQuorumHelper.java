@@ -162,7 +162,7 @@ public class CtrlRscAutoQuorumHelper
     private void deactivateQuorum(ApiCallRcImpl apiCallRcImpl, Props props, String reason)
         throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
-        String oldQuorum = props.setProp(PROP_VAL_QUORUM_OFF, NAMESPC_DRBD_RESOURCE_OPTIONS);
+        String oldQuorum = props.setProp(PROP_KEY_QUORUM, PROP_VAL_QUORUM_OFF, NAMESPC_DRBD_RESOURCE_OPTIONS);
         String oldOnNoQuorum = props.removeProp(PROP_KEY_ON_NO_QUORUM, NAMESPC_DRBD_RESOURCE_OPTIONS);
 
         if (oldQuorum != null && !oldQuorum.equals(PROP_VAL_QUORUM_OFF))
@@ -252,9 +252,6 @@ public class CtrlRscAutoQuorumHelper
                 }
             }
         }
-        System.out.println("diskful count: " + diskfulDrbdCount);
-        System.out.println("diskless count: " + disklessDrbdCount);
-
         return (diskfulDrbdCount == 2 && disklessDrbdCount >= 1) ||
             diskfulDrbdCount >= 3;
     }

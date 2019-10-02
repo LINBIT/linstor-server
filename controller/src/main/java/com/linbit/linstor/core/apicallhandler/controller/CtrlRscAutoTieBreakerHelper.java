@@ -23,6 +23,7 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 
+import static com.linbit.linstor.api.ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_DRBD_OPTIONS;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
@@ -192,8 +193,8 @@ public class CtrlRscAutoTieBreakerHelper
         try
         {
             String autoTieBreakerProp = getPrioProps(rscDfn)
-                .getProp(ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER, NAMESPC_DRBD_OPTIONS);
-            autoTieBreakerEnabled = ApiConsts.VAL_TRUE.equals(autoTieBreakerProp);
+                .getProp(KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER, NAMESPC_DRBD_OPTIONS);
+            autoTieBreakerEnabled = ApiConsts.VAL_TRUE.equalsIgnoreCase(autoTieBreakerProp);
         }
         catch (InvalidKeyException exc)
         {

@@ -43,6 +43,7 @@ import com.linbit.utils.Base64;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -250,7 +251,9 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
                             setMinorNr(key, namespace, normalized, apiCallRc);
                             break;
-                        case ApiConsts.KEY_SEARCH_DOMAIN:
+                        case ApiConsts.KEY_SEARCH_DOMAIN: // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER: // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
                             systemConfRepository.setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                             break;
                         case ApiConsts.KEY_EXT_CMD_WAIT_TO:
