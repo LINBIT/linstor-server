@@ -5,6 +5,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
+import com.linbit.StringConv;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.ACCESS_TYPE;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DOMAIN_NAME;
@@ -405,7 +406,11 @@ public class DbSQLPersistence implements DbAccessor<ControllerSQLDatabase>
             {
                 if (resultSet.next())
                 {
-                    authRequired = Boolean.toString(false).equalsIgnoreCase(resultSet.getString(2));
+                    final String dbValue = resultSet.getString(2);
+                    if (dbValue != null)
+                    {
+                        authRequired = StringConv.getDfltBoolean(dbValue, true);
+                    }
                 }
             }
         }
