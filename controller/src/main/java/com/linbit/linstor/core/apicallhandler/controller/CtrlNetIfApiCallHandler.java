@@ -123,14 +123,15 @@ class CtrlNetIfApiCallHandler
             NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
             NetInterface netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
 
-            if (node.getActiveStltConn(peerAccCtx.get()) == null || Boolean.TRUE.equals(setActive))
+            if (node.getActiveStltConn(peerAccCtx.get()) == null || setActive)
             {
                 if (stltPort != null && stltEncrType != null)
                 {
                     node.setActiveStltConn(apiCtx, netIf);
                     satelliteConnector.startConnecting(node, apiCtx);
                 }
-                else if (Boolean.TRUE.equals(setActive))
+                else
+                if (setActive)
                 {
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
@@ -189,7 +190,7 @@ class CtrlNetIfApiCallHandler
 
             // reconnect necessary if ip or port changes on the active stlt conn
             boolean needsReconnect =
-                !isModifyingActiveStltConn && Boolean.TRUE.equals(setActive) ||
+                !isModifyingActiveStltConn && setActive ||
                 isModifyingActiveStltConn && (addressStr != null || stltPort != null && stltEncrType != null);
 
             if (needsReconnect && Node.Type.SWORDFISH_TARGET.equals(nodeType))
@@ -223,7 +224,7 @@ class CtrlNetIfApiCallHandler
                     sfTargetPortPool.allocate(stltPort);
                     needsStartProc = true;
                 }
-                needsReconnect = setStltConn(netIf, stltPort, stltEncrType) || Boolean.TRUE.equals(setActive);
+                needsReconnect = setStltConn(netIf, stltPort, stltEncrType) || setActive;
 
                 if (needsStartProc)
                 {
@@ -231,7 +232,7 @@ class CtrlNetIfApiCallHandler
                 }
             }
 
-            if (Boolean.TRUE.equals(setActive))
+            if (setActive)
             {
                 if (netIf.isUsableAsStltConn(peerAccCtx.get()))
                 {
