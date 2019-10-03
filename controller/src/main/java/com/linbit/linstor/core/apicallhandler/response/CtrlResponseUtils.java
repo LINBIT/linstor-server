@@ -140,6 +140,10 @@ public class CtrlResponseUtils
         {
             super("Exceptions have been converted to responses");
             errors = errorsRef;
+            for (ApiRcException exc : errorsRef)
+            {
+                addSuppressed(exc);
+            }
         }
 
         public List<ApiRcException> getErrors()
