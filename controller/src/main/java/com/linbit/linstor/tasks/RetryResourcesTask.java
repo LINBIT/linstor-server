@@ -91,8 +91,8 @@ public class RetryResourcesTask implements Task
         {
             errorReporter.logWarning(
                 "RetryTask: Failed resource '%s' of node '%s' added for retry.",
-                rsc.getDefinition().getName().displayValue,
-                rsc.getAssignedNode().getName().displayValue
+                rsc.getKey().getResourceName().displayValue,
+                rsc.getKey().getNodeName().displayValue
             );
         }
         return added;
@@ -110,8 +110,8 @@ public class RetryResourcesTask implements Task
         {
             errorReporter.logInfo(
                 "RetryTask: Failed resource '%s' of node '%s' removed from retry.",
-                rsc.getDefinition().getName().displayValue,
-                rsc.getAssignedNode().getName().displayValue
+                rsc.getKey().getResourceName().displayValue,
+                rsc.getKey().getNodeName().displayValue
             );
         }
     }
