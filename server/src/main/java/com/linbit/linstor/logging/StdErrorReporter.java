@@ -279,6 +279,18 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 
                 reportExceptionDetails(output, curErrorInfo, loopCtr == 0 ? contextInfo : null);
 
+                Throwable[] suppressedExceptions = curErrorInfo.getSuppressed();
+                for (int supIdx = 0; supIdx < suppressedExceptions.length; ++supIdx)
+                {
+                    output.printf(
+                        "Suppressed exception %d of %d:\n===============\n",
+                        supIdx,
+                        suppressedExceptions.length
+                    );
+
+                    reportExceptionDetails(output, suppressedExceptions[supIdx], loopCtr == 0 ? contextInfo : null);
+                }
+
                 ++loopCtr;
             }
 
