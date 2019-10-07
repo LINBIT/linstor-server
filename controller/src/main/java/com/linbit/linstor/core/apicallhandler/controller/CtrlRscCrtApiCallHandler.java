@@ -41,7 +41,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -148,9 +147,10 @@ public class CtrlRscCrtApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        Set<String> tieBreakerResources = new HashSet<>();
+        Set<String> rscNameStrsForAutoHelper = new TreeSet<>();
         Set<Resource> deployedResources = new TreeSet<>();
         List<Flux<ApiCallRc>> autoFlux = new ArrayList<>();
+        // create all resources from the user
         for (ResourceWithPayloadApi rscWithPayloadApi : rscApiList)
         {
             ResourceApi rscapi = rscWithPayloadApi.getRscApi();
@@ -165,13 +165,13 @@ public class CtrlRscCrtApiCallHandler
                 rscWithPayloadApi.getLayerStack()
             ).extractApiCallRc(responses));
 
-            // add returns false if the parameter was already added
-            if (tieBreakerResources.add(rscapi.getName()))
-            {
-                autoFlux.add(autoHelper.manage(responses, context, rscapi.getName()));
-            }
+            rscNameStrsForAutoHelper.add(rscapi.getName());
         }
 
+        for (String rscNameStr : rscNameStrsForAutoHelper)
+        {
+            autoFlux.add(autoHelper.manage(responses, context, rscNameStr));
+        }
         ctrlTransactionHelper.commit();
 
         for (Resource rsc : deployedResources)

@@ -284,7 +284,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 {
                     output.printf(
                         "Suppressed exception %d of %d:\n===============\n",
-                        supIdx,
+                        supIdx + 1,
                         suppressedExceptions.length
                     );
 
