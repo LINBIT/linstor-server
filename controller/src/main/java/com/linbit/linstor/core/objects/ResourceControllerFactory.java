@@ -91,7 +91,6 @@ public class ResourceControllerFactory
             new TreeMap<>()
         );
 
-
         dbDriver.create(rscData);
         node.addResource(accCtx, rscData);
         rscDfn.addResource(accCtx, rscData);

@@ -242,7 +242,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     layerStackStrList
                 );
 
-                autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr);
+                autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr).getFlux();
 
                 ctrlTransactionHelper.commit();
 
@@ -340,7 +340,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             layerStackStrList
         );
 
-        Flux<ApiCallRc> autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr);
+        Flux<ApiCallRc> autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr).getFlux();
 
         ctrlTransactionHelper.commit();
 

@@ -190,7 +190,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 }
             }
 
-            autoFlux = autoHelper.manage(responses, context, toRscDfn);
+            autoFlux = autoHelper.manage(responses, context, toRscDfn).getFlux();
 
             ctrlTransactionHelper.commit();
 

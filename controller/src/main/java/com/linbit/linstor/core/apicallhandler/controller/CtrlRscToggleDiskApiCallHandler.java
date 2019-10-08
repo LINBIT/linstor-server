@@ -113,7 +113,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final EventWaiter eventWaiter;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
-    private final CtrlRscAutoHelper rscAutoHelper;
+    private final Provider<CtrlRscAutoHelper> rscAutoHelper;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -133,7 +133,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         EventWaiter eventWaiterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlRscAutoHelper rscAutoHelperRef
+        Provider<CtrlRscAutoHelper> rscAutoHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -602,7 +602,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             markDiskAdded(rsc);
         }
-        Flux<ApiCallRc> autoFlux = rscAutoHelper.manage(responses, context, rsc.getDefinition());
+        Flux<ApiCallRc> autoFlux = rscAutoHelper.get().manage(responses, context, rsc.getDefinition()).getFlux();
 
         ctrlLayerStackHelper.resetStoragePools(rsc);
 

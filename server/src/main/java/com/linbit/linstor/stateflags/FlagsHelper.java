@@ -66,6 +66,19 @@ public class FlagsHelper
         return setFlags.toArray((E[]) Array.newInstance(enumClass, setFlags.size()));
     }
 
+    public static <E extends Enum<E> & Flags> boolean isFlagEnabled(
+        long flagBits,
+        E... flags
+    )
+    {
+        long tmp = 0;
+        for (E flag : flags)
+        {
+            tmp |= flag.getFlagValue();
+        }
+        return (flagBits & tmp) == tmp;
+    }
+
     private FlagsHelper()
     {
     }

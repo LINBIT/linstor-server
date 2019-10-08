@@ -8,6 +8,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -30,6 +32,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -41,6 +44,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +66,8 @@ public class CtrlRscCrtApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerCtxProvider;
     private final CtrlRscAutoHelper autoHelper;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+    private final CtrlRscToggleDiskApiCallHandler toggleDiskHelper;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
@@ -72,7 +78,9 @@ public class CtrlRscCrtApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
-        CtrlRscAutoHelper autoHelperRef
+        CtrlRscAutoHelper autoHelperRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        CtrlRscToggleDiskApiCallHandler toggleDiskHelperRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -83,6 +91,8 @@ public class CtrlRscCrtApiCallHandler
         freeCapacityFetcher = freeCapacityFetcherRef;
         peerCtxProvider = peerCtxProviderRef;
         autoHelper = autoHelperRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        toggleDiskHelper = toggleDiskHelperRef;
     }
 
     public Flux<ApiCallRc> createResource(
@@ -154,23 +164,68 @@ public class CtrlRscCrtApiCallHandler
         for (ResourceWithPayloadApi rscWithPayloadApi : rscApiList)
         {
             ResourceApi rscapi = rscWithPayloadApi.getRscApi();
-            deployedResources.add(ctrlRscCrtApiHelper.createResourceDb(
-                rscapi.getNodeName(),
-                rscapi.getName(),
-                rscapi.getFlags(),
-                rscapi.getProps(),
-                rscapi.getVlmList(),
-                rscWithPayloadApi.getDrbdNodeId(),
-                thinFreeCapacities,
-                rscWithPayloadApi.getLayerStack()
-            ).extractApiCallRc(responses));
 
+            Resource tiebreaker = autoHelper.getTiebreakerResource(rscapi.getNodeName(), rscapi.getName());
+            if (tiebreaker == null)
+            {
+                deployedResources.add(
+                    ctrlRscCrtApiHelper.createResourceDb(
+                        rscapi.getNodeName(),
+                        rscapi.getName(),
+                        rscapi.getFlags(),
+                        rscapi.getProps(),
+                        rscapi.getVlmList(),
+                        rscWithPayloadApi.getDrbdNodeId(),
+                        thinFreeCapacities,
+                        rscWithPayloadApi.getLayerStack()
+                    ).extractApiCallRc(responses)
+                );
+            }
+            else
+            {
+                autoHelper.removeTiebreakerFlag(tiebreaker);
+                if (!FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DISKLESS))
+                {
+                    // target resource is diskful
+                    autoFlux.add(
+                        toggleDiskHelper.resourceToggleDisk(
+                            rscapi.getNodeName(),
+                            rscapi.getName(),
+                            rscapi.getProps().get(ApiConsts.KEY_STOR_POOL_NAME),
+                            null,
+                            false
+                        )
+                    );
+                }
+                else
+                {
+                    // target resource is diskless.
+                    NodeName tiebreakerNodeName = tiebreaker.getAssignedNode().getName();
+                    autoFlux.add(
+                        ctrlSatelliteUpdateCaller.updateSatellites(
+                            tiebreaker.getDefinition(),
+                            Flux.empty() // if failed, there is no need for the retry-task to wait for readyState
+                            // this is only true as long as there is no other flux concatenated after readyResponses
+                        )
+                        .transform(
+                            updateResponses -> CtrlResponseUtils.combineResponses(
+                                updateResponses,
+                                LinstorParsingUtils.asRscName(rscapi.getName()),
+                                Collections.singleton(tiebreakerNodeName),
+                                "Removed TIE_BREAKER flag from resource {1} on {0}",
+                                "Update of resource {1} on '" + tiebreakerNodeName + "' applied on node {0}"
+                            )
+                        )
+                    );
+                }
+            }
             rscNameStrsForAutoHelper.add(rscapi.getName());
         }
 
         for (String rscNameStr : rscNameStrsForAutoHelper)
         {
-            autoFlux.add(autoHelper.manage(responses, context, rscNameStr));
+            AutoHelperResult autoHelperResult = autoHelper.manage(responses, context, rscNameStr);
+            autoFlux.add(autoHelperResult.getFlux());
         }
         ctrlTransactionHelper.commit();
 
@@ -182,7 +237,15 @@ public class CtrlRscCrtApiCallHandler
             responses.addEntries(makeVolumeRegisteredEntries(rsc));
         }
 
-        Flux<ApiCallRc> deploymentResponses = ctrlRscCrtApiHelper.deployResources(context, deployedResources);
+        Flux<ApiCallRc> deploymentResponses;
+        if (deployedResources.isEmpty())
+        {
+            deploymentResponses = Flux.empty();// no new resources, only take-over of TIE_BREAKER
+        }
+        else
+        {
+            deploymentResponses = ctrlRscCrtApiHelper.deployResources(context, deployedResources);
+        }
 
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
