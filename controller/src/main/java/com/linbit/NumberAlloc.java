@@ -7,9 +7,6 @@ package com.linbit;
  */
 public class NumberAlloc
 {
-    // Maximum loop iterations; used for a mechanism for preventing infinite loops
-    public static final int MAX_LOOPS = 32;
-
     /**
      * Finds the index in the occupied where all numbers at equal or
      * greater indexes have a value equal to or greater than firstNumber
@@ -181,13 +178,8 @@ public class NumberAlloc
         int endIndex    = toIndex;
         int resultIndex = -1;
 
-        int loopGuard = 0;
         while (startIndex < endIndex)
         {
-            if (loopGuard >= MAX_LOOPS)
-            {
-                loopGuardAbort();
-            }
             int width = endIndex - startIndex;
             int midIndex = startIndex + (width >>> 1);
             if (occupied[midIndex] == firstNumber + (midIndex - fromIndex))
@@ -203,7 +195,6 @@ public class NumberAlloc
                 endIndex = midIndex;
                 resultIndex = midIndex;
             }
-            ++loopGuard;
         }
         // Check for a gap between the greatest occupied number
         // and the greatest allowed number
@@ -290,14 +281,9 @@ public class NumberAlloc
         int endIndex   = toIndex;
         int index      = 0;
 
-        int loopGuard = 0;
         boolean found = false;
         while (startIndex < endIndex)
         {
-            if (loopGuard >= MAX_LOOPS)
-            {
-                loopGuardAbort();
-            }
             int width = endIndex - startIndex;
             index = startIndex + (width >>> 1);
             if (value < numbers[index])
@@ -315,29 +301,12 @@ public class NumberAlloc
                 found = true;
                 break;
             }
-            ++loopGuard;
         }
         if (!found)
         {
             index = -index - 1;
         }
         return index;
-    }
-
-    /**
-     * Used to abort a loop if the maximum number of loop iterations is reached.
-     * This is part of a mechanism to prevent infinite loops.
-     */
-    private static void loopGuardAbort()
-    {
-        throw new ImplementationError(
-            String.format(
-                "loopGuard > MAX_LOOPS (%d), unusable data or implementation error",
-                MAX_LOOPS
-            ),
-            // No nested exception
-            null
-        );
     }
 
     private NumberAlloc()
