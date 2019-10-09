@@ -119,11 +119,7 @@ public class CtrlAutoStorPoolSelector
         storPools = filterByDoNotPlaceWithResource(selectFilter, storPools);
 
         // this method already trims the node-list to placeCount.
-        return filterByReplicasOn(
-            selectFilter,
-            storPools,
-            nodeSelectionStrategy
-        );
+        return filterByReplicasOn(selectFilter, storPools, nodeSelectionStrategy);
     }
 
     private List<String> toUpperList(List<String> list)
@@ -349,7 +345,7 @@ public class CtrlAutoStorPoolSelector
 
     /*
      * We can NOT return a Map<StorPoolName, List<Node>> here anymore, as we might have multiple
-     * node-lists per storPoolName. For example: if one of our map entry-values contain 10 nodes,
+     * node-lists per storPoolName. For example: if one of our map entry-values contains 10 nodes,
      * where 5 of them have property "A"="1" and the others have "A"="2", with a placeCount = 5 and
      * a "replicasOnSamePropList" containing "A".
      * As a result of this filter-method, we will emit 2 candidates for the given storPoolName.
@@ -358,87 +354,144 @@ public class CtrlAutoStorPoolSelector
      * Map<StorPoolName, List<List<Node>>>.
      */
     private List<Candidate> filterByReplicasOn(
-        final AutoStorPoolSelectorConfig selectFilter,
-        Map<StorPoolName, List<Node>> candidatesIn,
-        NodeSelectionStrategy nodeSelectionStartegy
+        final AutoStorPoolSelectorConfig selectFilterRef,
+        Map<StorPoolName, List<Node>> candidatesRef,
+        NodeSelectionStrategy nodeSelectionStartegyRef
     )
     {
-        List<String> replicasOnSamePropList = selectFilter.getReplicasOnSameList();
-        List<String> replicasOnDiffParamList = selectFilter.getReplicasOnDifferentList();
-        int placeCount = selectFilter.getPlaceCount();
+        List<Candidate> ret = new ArrayList<>();
+        List<Node> nodesRepOnSame = new ArrayList<>();
+        List<Node> nodesRepOnDiff = new ArrayList<>();
 
-        List<Candidate> candidatesOut = new ArrayList<>();
+        List<String> repOnSameFilter = selectFilterRef.getReplicasOnSameList();
+        List<String> repOnDiffFilter = selectFilterRef.getReplicasOnDifferentList();
+
         try
         {
-            for (Entry<StorPoolName, List<Node>> candidateEntry : candidatesIn.entrySet())
+            for (Entry<StorPoolName, List<Node>> candidateEntry : candidatesRef.entrySet())
             {
-                List<Node> candidateNodes = candidateEntry.getValue();
-                List<Node> interestingNodes = new ArrayList<>();
-
-                // Gather the prop values for the props that need to be the same
-                Map<NodeName, Map<String, String>> propsForNodes = new HashMap<>();
-                for (Node node : candidateNodes)
+                List<Node> nodesRepOn = new ArrayList<>();
+                if (!repOnSameFilter.isEmpty() || !repOnDiffFilter.isEmpty())
                 {
-                    Map<String, String> props = new HashMap<>();
-                    for (String samePropEntry : replicasOnSamePropList)
+                    // Gather the prop values for the props that need to be the same
+                    for (Node candidateNode : candidateEntry.getValue())
                     {
-                        Tuple2<String, Optional<String>> samePropTuple = parsePropTuple(samePropEntry);
-                        String propValue = node.getProps(peerAccCtx.get()).getProp(samePropTuple.getT1());
-                        if (samePropTuple.getT2().isPresent())
+                        /* 1. replicas-on-same */
+
+                        // filter nodes that have the same value of a given aux property or a specified value
+                        Map<String, String> props = new HashMap<>();
+                        for (String propEntrySame : repOnSameFilter)
                         {
-                            if (samePropTuple.getT2().get().equals(propValue))
+                            Tuple2<String, Optional<String>> propTupleSame = parsePropTuple(propEntrySame);
+                            String nodePropVal =
+                                candidateNode.getProps(peerAccCtx.get()).getProp(propTupleSame.getT1());
+
+                            boolean hasPrefPropVal = propTupleSame.getT2().isPresent();
+
+                            if (!hasPrefPropVal && nodePropVal != null ||
+                                hasPrefPropVal && propTupleSame.getT2().get().equals(nodePropVal)
+                            )
                             {
-                                props.put(samePropTuple.getT1(), propValue);
+                                props.put(propTupleSame.getT1(), nodePropVal);
                             }
                         }
-                        else if (propValue != null)
+
+                        // don't add nodes that haven't all specified replicas on same properties
+                        if (props.size() == repOnSameFilter.size())
                         {
-                            props.put(samePropTuple.getT1(), propValue);
+                            nodesRepOnSame.add(candidateNode);
                         }
-                    }
 
-                    // don't add nodes that haven't all specified replicas on same properties
-                    if (props.size() == replicasOnSamePropList.size())
-                    {
-                        interestingNodes.add(node);
-                        propsForNodes.put(node.getName(), props);
-                    }
-                }
+                        /* 2. replicas-on-different */
 
-                // Form groups of nodes where all the prop values match
-                Collection<List<Node>> nodeGroups = interestingNodes.stream()
-                    .collect(Collectors.groupingBy(node -> propsForNodes.get(node.getName())))
-                    .values();
-
-                // Eliminate elements from the groups until the nodes in each group differ in all the props that need
-                // to be different
-                for (List<Node> nodeGroup : nodeGroups)
-                {
-                    // Sort the nodes within the group so that the most preferred nodes are chosen first
-                    Comparator<Node> nodeComparator = nodeSelectionStartegy.makeComparator(
-                        candidateEntry.getKey(),
-                        peerAccCtx.get()
-                    );
-                    Collection<Node> remainingNodes = nodeGroup.stream()
-                        // descending order of preference
-                        .sorted(nodeComparator.reversed())
-                        .collect(Collectors.toCollection(ArrayList::new));
-                    for (String diffPropKey : replicasOnDiffParamList)
-                    {
-                        HashMap<String, Node> usedValues = new HashMap<>();
-                        for (Node node : remainingNodes)
+                        // filter nodes that have a different value of a given aux property or miss a specified value
+                        for (String propEntryDiff : repOnDiffFilter)
                         {
-                            String propValue = node.getProps(peerAccCtx.get()).getProp(diffPropKey);
-                            if (!usedValues.containsKey(propValue))
+                            Tuple2<String, Optional<String>> propTupleDiff = parsePropTuple(propEntryDiff);
+                            String nodePropVal =
+                                candidateNode.getProps(peerAccCtx.get()).getProp(propTupleDiff.getT1());
+
+                            if (nodePropVal == null ||
+                                nodesRepOnDiff.stream().noneMatch(filteredNode ->
+                                    existsPropValInFilteredNodes(filteredNode, propTupleDiff.getT1(), nodePropVal)
+                                ) &&
+                                !(propTupleDiff.getT2().isPresent() &&
+                                propTupleDiff.getT2().get().equals(nodePropVal))
+                            )
                             {
-                                usedValues.put(propValue, node);
+                                nodesRepOnDiff.add(candidateNode);
                             }
                         }
-                        remainingNodes = usedValues.values();
                     }
 
-                    addCandidate(candidatesOut, candidateEntry.getKey(), remainingNodes, placeCount);
+                    // sort the nodes so that the most preferred nodes are chosen first
+                    List<Node> nodesRepOnSameOrdered = nodesRepOnSame.stream().sorted(
+                        nodeSelectionStartegyRef
+                            .makeComparator(candidateEntry.getKey(), peerAccCtx.get())
+                            .reversed()
+                    ).collect(Collectors.toCollection(ArrayList::new));
+
+                    // make sure that all other nodes in the list have the same value
+                    // by removing nodes with a different one
+                    Map<String, String> prefPropValsMap = new HashMap<>();
+                    for (Node nodeRepOnSame : nodesRepOnSameOrdered)
+                    {
+                        for (String propEntrySame : repOnSameFilter)
+                        {
+                            Tuple2<String, Optional<String>> propTuple = parsePropTuple(propEntrySame);
+                            String nodePropVal =
+                                nodeRepOnSame.getProps(peerAccCtx.get()).getProp(propTuple.getT1());
+
+                            if (!propTuple.getT2().isPresent() && !prefPropValsMap.containsKey(propTuple.getT1()))
+                            {
+                                prefPropValsMap.put(propTuple.getT1(), nodePropVal);
+                            }
+                        }
+
+                        for (Entry<String, String> prefPropValsEntry : prefPropValsMap.entrySet())
+                        {
+                            if (!nodeRepOnSame.getProps(peerAccCtx.get()).getProp(prefPropValsEntry.getKey())
+                                .equals(prefPropValsEntry.getValue()))
+                            {
+                                nodesRepOnSame.remove(nodeRepOnSame);
+                                break;
+                            }
+                        }
+                    }
+
+                    // if both filters are present check for intersections of the filtered nodes first
+                    if (!repOnSameFilter.isEmpty() && !repOnDiffFilter.isEmpty())
+                    {
+                        for (Node node : nodesRepOnSame)
+                        {
+                            if (nodesRepOnDiff.contains(node))
+                            {
+                                nodesRepOn.add(node);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        nodesRepOn = repOnSameFilter.isEmpty() ? nodesRepOnDiff : nodesRepOnSame;
+                    }
                 }
+                else
+                {
+                    // make sure that nodes not corresponding to the selection strategy are removed from the result
+                    nodesRepOn = candidateEntry.getValue().stream().sorted(
+                        nodeSelectionStartegyRef
+                            .makeComparator(candidateEntry.getKey(), peerAccCtx.get())
+                            .reversed()
+                    ).collect(Collectors.toCollection(ArrayList::new));
+                }
+
+                // add filtered candidates
+                addCandidate(
+                    ret,
+                    candidateEntry.getKey(),
+                    nodesRepOn,
+                    selectFilterRef.getPlaceCount()
+                );
             }
         }
         catch (InvalidKeyException invalidKeyExc)
@@ -452,7 +505,21 @@ public class CtrlAutoStorPoolSelector
         {
             throw new ImplementationError(exc); // should have been thrown long ago
         }
-        return candidatesOut;
+        return ret;
+    }
+
+    private boolean existsPropValInFilteredNodes(Node alreadyFilteredNode, String propKey, String nodePropVal)
+    {
+        boolean propValExists = false;
+        try
+        {
+            propValExists = alreadyFilteredNode.getProps(peerAccCtx.get()).getProp(propKey).equals(nodePropVal);
+        }
+        catch (AccessDeniedException exc)
+        {
+            // do not add
+        }
+        return propValExists;
     }
 
     private void addCandidate(
