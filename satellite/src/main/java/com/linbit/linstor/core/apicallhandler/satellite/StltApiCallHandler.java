@@ -1,14 +1,10 @@
 package com.linbit.linstor.core.apicallhandler.satellite;
 
-import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ChildProcessHandler;
-import com.linbit.extproc.ExtCmd;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -23,7 +19,6 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.satellite.StltStorPoolApiCallHandler.ChangedData;
@@ -51,19 +46,17 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
-import com.linbit.linstor.storage.PrepareDisksHandler;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
-import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
+import org.slf4j.event.Level;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -81,17 +74,12 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import org.slf4j.event.Level;
-
 @Singleton
 public class StltApiCallHandler
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
 
-    private final CoreTimer timer;
-    private final FileSystemWatch fileSystemWatch;
-    private final StltConfigAccessor stltConfAccessor;
     private final ControllerPeerConnector controllerPeerConnector;
     private final UpdateMonitor updateMonitor;
     private final DeviceManager deviceManager;
@@ -102,7 +90,6 @@ public class StltApiCallHandler
     private final StltRscApiCallHandler rscHandler;
     private final StltStorPoolApiCallHandler storPoolHandler;
     private final StltSnapshotApiCallHandler snapshotHandler;
-    private final PrepareDisksHandler prepareDisksHandler;
     private final StltDeviceLayerChecker deviceLayerChecker;
 
     private final CtrlStltSerializer interComSerializer;
@@ -136,9 +123,6 @@ public class StltApiCallHandler
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CoreTimer timerRef,
-        FileSystemWatch fileSystemWatchRef,
-        StltConfigAccessor stltConfigAccessorRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         UpdateMonitor updateMonitorRef,
         DeviceManager deviceManagerRef,
@@ -149,7 +133,6 @@ public class StltApiCallHandler
         StltStorPoolApiCallHandler storPoolHandlerRef,
         StltSnapshotApiCallHandler snapshotHandlerRef,
         StltDeviceLayerChecker deviceLayerCheckerRef,
-        PrepareDisksHandler prepareDisksHandlerRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
@@ -174,9 +157,6 @@ public class StltApiCallHandler
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        timer = timerRef;
-        fileSystemWatch = fileSystemWatchRef;
-        stltConfAccessor = stltConfigAccessorRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         updateMonitor = updateMonitorRef;
         deviceManager = deviceManagerRef;
@@ -187,7 +167,6 @@ public class StltApiCallHandler
         storPoolHandler = storPoolHandlerRef;
         snapshotHandler = snapshotHandlerRef;
         deviceLayerChecker = deviceLayerCheckerRef;
-        prepareDisksHandler = prepareDisksHandlerRef;
         interComSerializer = interComSerializerRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
@@ -806,29 +785,6 @@ public class StltApiCallHandler
         return interComSerializer.answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, apiCallId.get())
             .errorReports(errorReports).build();
     }
-
-    public String getHostname()
-    {
-        String hostName = "";
-        try
-        {
-            final ExtCmd extCommand = new ExtCmd(timer, errorReporter);
-            final ExtCmd.OutputData output = extCommand.exec("uname", "-n");
-            final String stdOut = new String(output.stdoutData);
-            hostName = stdOut.trim();
-        }
-        catch (ChildProcessTimeoutException | IOException ex)
-        {
-            errorReporter.reportError(ex);
-        }
-        return hostName;
-    }
-
-    public ApiCallRc prepareDisks(final String nvmeFilter, final boolean detectPMEM)
-    {
-        return prepareDisksHandler.prepareDisks(nvmeFilter, detectPMEM);
-    }
-
 
     private interface ApplyData
     {

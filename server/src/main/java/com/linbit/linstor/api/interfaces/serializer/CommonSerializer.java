@@ -66,8 +66,6 @@ public interface CommonSerializer
 
         CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports);
 
-        CommonSerializerBuilder hostName(String hostName);
-
         CommonSerializerBuilder filter(
             Set<NodeName> nodesFilter,
             Set<StorPoolName> storPoolFilter,

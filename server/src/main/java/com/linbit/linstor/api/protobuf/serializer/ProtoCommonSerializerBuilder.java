@@ -98,7 +98,6 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.Ms
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
-import com.linbit.linstor.proto.responses.MsgHostnameOuterClass.MsgHostname;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -478,21 +477,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 }
                 msgErrorReport.build().writeDelimitedTo(baos);
             }
-        }
-        catch (IOException exc)
-        {
-            handleIOException(exc);
-        }
-        return this;
-    }
-
-    @Override
-    public CommonSerializer.CommonSerializerBuilder hostName(String hostName)
-    {
-        try
-        {
-            MsgHostname msgHostname = MsgHostname.newBuilder().setHostname(hostName).build();
-            msgHostname.writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {
