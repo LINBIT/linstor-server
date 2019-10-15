@@ -21,6 +21,7 @@ import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.RaidLevel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -424,6 +425,21 @@ public class LinstorParsingUtils
             ret.add(asProviderKind(providerStr));
         }
         return ret;
+    }
+
+    public static RaidLevel asRaidLevel(String raidLevelStr)
+    {
+        if (raidLevelStr == null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Given RAID level string is null."
+                )
+            );
+        }
+
+        return RaidLevel.valueOf(raidLevelStr.toUpperCase());
     }
 
     public static ResourceGroupName asRscGrpName(String rscGrpNameStr)

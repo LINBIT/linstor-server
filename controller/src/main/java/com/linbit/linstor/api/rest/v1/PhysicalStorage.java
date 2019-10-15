@@ -111,8 +111,9 @@ public class PhysicalStorage
 
             Flux<ApiCallRc> responses = physicalStorageApiCallHandler.createDevicePool(
                 nodeName,
-                createData.device_path,
+                createData.device_paths,
                 LinstorParsingUtils.asProviderKind(createData.provider_kind),
+                LinstorParsingUtils.asRaidLevel(createData.raid_level),
                 createData.pool_name,
                 createData.vdo_enable,
                 createData.vdo_logical_size_kib,

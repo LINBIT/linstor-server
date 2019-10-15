@@ -6,12 +6,12 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
-import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -22,6 +22,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.locks.LockGuardFactory;
 
 import javax.inject.Inject;
@@ -152,8 +153,9 @@ public class CtrlPhysicalStorageApiCallHandler
 
     public Flux<ApiCallRc> createDevicePool(
         String nodeNameStr,
-        String devicePath,
+        List<String> devicePaths,
         DeviceProviderKind providerKindRef,
+        RaidLevel raidLevel,
         String poolName,
         boolean vdoEnabled,
         long vdoLogicalSizeKib,
@@ -165,8 +167,9 @@ public class CtrlPhysicalStorageApiCallHandler
             lockGuardFactory.buildDeferred(LockGuardFactory.LockType.READ, LockGuardFactory.LockObj.NODES_MAP),
             () -> createDevicePoolInScope(
                 nodeNameStr,
-                devicePath,
+                devicePaths,
                 providerKindRef,
+                raidLevel,
                 poolName,
                 vdoEnabled,
                 vdoLogicalSizeKib,
@@ -177,8 +180,9 @@ public class CtrlPhysicalStorageApiCallHandler
 
     private Flux<ApiCallRc> createDevicePoolInScope(
         String nodeNameStr,
-        String devicePath,
+        List<String> devicePaths,
         DeviceProviderKind providerKindRef,
+        RaidLevel raidLevel,
         String poolNameArg,
         boolean vdoEnabled,
         long vdoLogicalSizeKib,
@@ -193,14 +197,15 @@ public class CtrlPhysicalStorageApiCallHandler
         Flux<ApiCallRc> response;
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
 
-        if (devicePath == null || devicePath.isEmpty())
+        if (devicePaths == null || devicePaths.isEmpty())
         {
-            throw new ApiException("Field 'device_path' is null or empty.");
+            throw new ApiException("Field 'device_paths' is null or empty.");
         }
 
         String poolName = poolNameArg;
         if (poolNameArg == null || poolNameArg.isEmpty())
         {
+            final String devicePath = devicePaths.get(0);
             // create pool name
             final int lastSlash = devicePath.lastIndexOf('/');
             poolName = "linstor_" + (lastSlash > 0 ? devicePath.substring(lastSlash + 1) : devicePath);
@@ -213,8 +218,9 @@ public class CtrlPhysicalStorageApiCallHandler
                     InternalApiConsts.API_CREATE_DEVICE_POOL,
                     ctrlStltSerializer.headerlessBuilder()
                         .createDevicePool(
-                            devicePath,
+                            devicePaths,
                             providerKindRef,
+                            raidLevel,
                             poolName,
                             vdoEnabled,
                             vdoLogicalSizeKib,
@@ -259,14 +265,32 @@ public class CtrlPhysicalStorageApiCallHandler
                 physDev.serial = lsblkEntry.getSerial();
                 physDev.wwn = lsblkEntry.getWwn();
 
+                final String nodeName = entry.getKey().displayValue;
+
                 if (phys.containsKey(physEntry))
                 {
-                    phys.get(physEntry).nodes.put(entry.getKey().displayValue, physDev);
+                    // device size found, add to node
+                    JsonGenTypes.PhysicalStorage physicalStorage = phys.get(physEntry);
+                    List<JsonGenTypes.PhysicalStorageDevice> nodeDevs = physicalStorage.nodes.get(nodeName);
+                    if (nodeDevs != null)
+                    {
+                        nodeDevs.add(physDev);
+                    }
+                    else
+                    {
+                        // no node entry yet, add new device list with device data
+                        List<JsonGenTypes.PhysicalStorageDevice> physDevices = new ArrayList<>();
+                        physDevices.add(physDev);
+                        phys.get(physEntry).nodes.put(nodeName, physDevices);
+                    }
                 }
                 else
                 {
+                    // add first device group size
                     physEntry.nodes = new HashMap<>();
-                    physEntry.nodes.put(entry.getKey().displayValue, physDev);
+                    List<JsonGenTypes.PhysicalStorageDevice> physDevices = new ArrayList<>();
+                    physDevices.add(physDev);
+                    physEntry.nodes.put(nodeName, physDevices);
                     phys.put(physEntry, physEntry);
                 }
             }

@@ -59,6 +59,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
@@ -660,8 +661,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     @Override
     public CtrlStltSerializer.CtrlStltSerializerBuilder createDevicePool(
-        String devicePath,
+        List<String> devicePaths,
         DeviceProviderKind providerKindRef,
+        RaidLevel raidLevel,
         String poolName,
         boolean vdoEnabled,
         long vdoLogicalSizeKib,
@@ -672,8 +674,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         {
             MsgCreateDevicePool.Builder msgCreateDevicePoolBuilder =
             MsgCreateDevicePool.newBuilder()
-                .setDevicePath(devicePath)
+                .addAllDevicePaths(devicePaths)
                 .setProviderKind(asProviderType(providerKindRef))
+                .setRaidLevel(MsgCreateDevicePool.RaidLevel.valueOf(raidLevel.name()))
                 .setPoolName(poolName)
                 .setLogicalSizeKib(vdoLogicalSizeKib);
 

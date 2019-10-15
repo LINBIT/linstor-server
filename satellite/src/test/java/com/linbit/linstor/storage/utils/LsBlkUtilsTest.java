@@ -48,7 +48,7 @@ public class LsBlkUtilsTest
     public void testFilterLsBlkEntries()
     {
         List<LsBlkEntry> lsBlkEntries = LsBlkUtils.parseLsblkOutput(TEST_DATA);
-        List<LsBlkEntry> filtered = LsBlkUtils.filterDeviceCandidates(lsBlkEntries);
+        List<LsBlkEntry> filtered = LsBlkUtils.filterDeviceCandidates(lsBlkEntries, new String[]{});
         Assert.assertEquals(1, filtered.size());
         Assert.assertEquals("sda", filtered.get(0).getName());
         Assert.assertEquals("Crucial_CT275MX300SSD4", filtered.get(0).getModel());

@@ -14,6 +14,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.RaidLevel;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
@@ -32,7 +33,7 @@ public interface CtrlStltSerializer extends CommonSerializer
     @Override
     CtrlStltSerializerBuilder completionBuilder(Long apiCallId);
 
-    public interface CtrlStltSerializerBuilder extends CommonSerializerBuilder
+    interface CtrlStltSerializerBuilder extends CommonSerializerBuilder
     {
         /*
          * Controller -> Satellite
@@ -111,8 +112,9 @@ public interface CtrlStltSerializer extends CommonSerializer
             List<LsBlkEntry> entries
         );
         CtrlStltSerializerBuilder createDevicePool(
-            String devicePath,
+            List<String> devicePaths,
             DeviceProviderKind providerKindRef,
+            RaidLevel raidLevel,
             String poolName,
             boolean vdoEnabled,
             long vdoLogicalSizeKib,

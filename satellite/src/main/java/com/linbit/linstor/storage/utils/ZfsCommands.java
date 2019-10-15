@@ -3,12 +3,14 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.linstor.storage.layer.provider.utils.RetryIfDeviceBusy;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 public class ZfsCommands
@@ -279,20 +281,22 @@ public class ZfsCommands
 
     public static OutputData createZPool(
         ExtCmd extCmd,
-        final String devicePath,
+        final List<String> devicePaths,
+        final RaidLevel raidLevel,  // ignore for now as we only support JBOD yet
         final String zpoolName
     ) throws StorageException
     {
         final String failMsg = "Failed to create zpool: " + zpoolName;
         return genericExecutor(
             extCmd,
-            new String[] {
-                "zpool",
-                "create",
-                "-f", // force otherwise zpool will cry about possible partition on device
-                zpoolName,
-                devicePath
-            },
+            StringUtils.concat(
+                new String[] {
+                    "zpool",
+                    "create",
+                    "-f", // force otherwise zpool will cry about possible partition on device
+                    zpoolName
+                },
+                devicePaths),
             failMsg,
             failMsg
         );

@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.ZfsCommands;
@@ -81,9 +82,9 @@ public class DevicePoolHandler
 
     public ApiCallRc createDevicePool(
         final DeviceProviderKind deviceProviderKind,
-        final String devicePath,
-        final String poolName,
-        long logicalSizeKib
+        final List<String> devicePaths,
+        final RaidLevel raidLevel,
+        final String poolName
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -91,14 +92,14 @@ public class DevicePoolHandler
         switch (deviceProviderKind)
         {
             case LVM:
-                apiCallRc.addEntries(createLVMPool(devicePath, poolName));
+                apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, poolName));
                 break;
             case LVM_THIN:
-                apiCallRc.addEntries(createLVMPool(devicePath, VG_PREFIX + poolName));
-                apiCallRc.addEntries(createLVMThinPool(VG_PREFIX + poolName, poolName, logicalSizeKib));
+                apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, VG_PREFIX + poolName));
+                apiCallRc.addEntries(createLVMThinPool(VG_PREFIX + poolName, poolName));
                 break;
             case ZFS:
-                apiCallRc.addEntries(createZPool(devicePath, poolName));
+                apiCallRc.addEntries(createZPool(devicePaths, raidLevel, poolName));
                 break;
             default:
                 apiCallRc.addEntry(
@@ -113,20 +114,26 @@ public class DevicePoolHandler
         return apiCallRc;
     }
 
-    private ApiCallRc createLVMPool(final String devicePath, final String poolName)
+    private ApiCallRc createLVMPool(final List<String> devicePaths, final RaidLevel raidLevel, final String poolName)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            LvmCommands.pvCreate(extCmdFactory.create(), devicePath);
+            for (final String devicePath : devicePaths)
+            {
+                LvmCommands.pvCreate(extCmdFactory.create(), devicePath);
+                apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
+                    String.format("PV for device '%s' created.", devicePath))
+                );
+            }
+            LvmCommands.vgCreate(extCmdFactory.create(), poolName, raidLevel, devicePaths);
             apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
-                String.format("PV for device '%s' created.", devicePath))
-            );
-            LvmCommands.vgCreate(extCmdFactory.create(), poolName, devicePath);
-            apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
-                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
-                String.format("VG for device '%s' with name '%s' created.", devicePath, poolName))
+                String.format("VG for devices [%s] with name '%s' created.",
+                    String.join(", ", devicePaths),
+                    poolName)
+                )
             );
         }
         catch (StorageException storExc)
@@ -140,8 +147,7 @@ public class DevicePoolHandler
 
     private ApiCallRc createLVMThinPool(
         final String lvmPoolName,
-        final String thinPoolName,
-        long sizeKib
+        final String thinPoolName
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -165,7 +171,8 @@ public class DevicePoolHandler
     }
 
     private ApiCallRc createZPool(
-        final String devicePath,
+        final List<String> devicePaths,
+        final RaidLevel raidLevel,
         final String zPoolName
     )
     {
@@ -175,12 +182,17 @@ public class DevicePoolHandler
         {
             ZfsCommands.createZPool(
                 extCmdFactory.create(),
-                devicePath,
+                devicePaths,
+                raidLevel,
                 zPoolName
             );
             apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
-                String.format("ZPool '%s' on device '%s' created.", zPoolName, devicePath)));
+                String.format(
+                    "ZPool '%s' on device(s) [%s] created.",
+                    zPoolName,
+                    String.join(", ", devicePaths)))
+            );
         }
         catch (StorageException storExc)
         {

@@ -83,14 +83,33 @@ public class LsBlkUtils
         return parseLsblkOutput(new String(outputData.stdoutData, StandardCharsets.UTF_8));
     }
 
-    public static List<LsBlkEntry> filterDeviceCandidates(List<LsBlkEntry> entries)
+    public static String[] blkid(ExtCmd extCmd)
+        throws StorageException
     {
+        ExtCmd.OutputData outputData = Commands.genericExecutor(
+            extCmd,
+            new String[]{
+                "blkid",
+                "-o", "device"
+            },
+            "Failed execute blkid",
+            "Failed to execute blkid"
+        );
+
+        final String blkIdResult = new String(outputData.stdoutData, StandardCharsets.UTF_8);
+        return blkIdResult.split("\n");
+    }
+
+    public static List<LsBlkEntry> filterDeviceCandidates(List<LsBlkEntry> entries, final String[] blkIdEntries)
+    {
+        final List<String> blkIds = Arrays.asList(blkIdEntries);
         return entries.stream()
             .filter(lsBlkEntry -> lsBlkEntry.getParentName().isEmpty() &&
                 lsBlkEntry.getSize() > MINIMAL_DEVICE_SIZE_BYTES &&
                 lsBlkEntry.getMajor() != MAJOR_DRBD_NR)
             .filter(lsBlkEntry -> entries.stream()
                 .noneMatch(entry -> entry.getParentName().equals(lsBlkEntry.getName())))
+            .filter(lsBlkEntry -> blkIds.stream().noneMatch(blkid -> blkid.endsWith(lsBlkEntry.getName())))
             .collect(Collectors.toList());
     }
 }

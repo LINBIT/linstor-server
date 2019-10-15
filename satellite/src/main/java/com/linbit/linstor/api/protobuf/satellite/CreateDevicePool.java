@@ -13,6 +13,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
 import com.linbit.linstor.storage.DevicePoolHandler;
+import com.linbit.linstor.storage.kinds.RaidLevel;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -20,6 +21,8 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_CREATE_DEVICE_POOL,
@@ -57,25 +60,30 @@ public class CreateDevicePool implements ApiCall
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        String devicePath = msgCreateDevicePool.getDevicePath();
+        List<String> devicePaths = msgCreateDevicePool.getDevicePathsList();
+        ArrayList<String> lvmDevicePaths = new ArrayList<>(devicePaths);
         if (msgCreateDevicePool.hasVdoArguments())
         {
-            devicePath = devicePoolHandler.createVdoDevice(
-                apiCallRc,
-                msgCreateDevicePool.getDevicePath(),
-                msgCreateDevicePool.getPoolName(),
-                msgCreateDevicePool.getLogicalSizeKib(),
-                msgCreateDevicePool.getVdoArguments().getSlabSizeKib()
-            );
+            lvmDevicePaths.clear();
+            for (final String rawDevicePath : devicePaths)
+            {
+                lvmDevicePaths.add(devicePoolHandler.createVdoDevice(
+                    apiCallRc,
+                    rawDevicePath,
+                    msgCreateDevicePool.getPoolName(),
+                    msgCreateDevicePool.getLogicalSizeKib(),
+                    msgCreateDevicePool.getVdoArguments().getSlabSizeKib()
+                ));
+            }
         }
 
-        if (devicePath != null)
+        if (!lvmDevicePaths.isEmpty())
         {
             apiCallRc.addEntries(devicePoolHandler.createDevicePool(
                 ProtoDeserializationUtils.parseDeviceProviderKind(msgCreateDevicePool.getProviderKind()),
-                devicePath,
-                msgCreateDevicePool.getPoolName(),
-                msgCreateDevicePool.getLogicalSizeKib()
+                lvmDevicePaths,
+                RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
+                msgCreateDevicePool.getPoolName()
             ));
         }
 

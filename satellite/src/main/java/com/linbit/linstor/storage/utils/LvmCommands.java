@@ -5,12 +5,14 @@ import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericEx
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.linstor.storage.layer.provider.utils.Commands.RetryHandler;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.storage.layer.provider.utils.RetryIfDeviceBusy;
 import com.linbit.utils.StringUtils;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 public class LvmCommands
@@ -435,18 +437,24 @@ public class LvmCommands
         );
     }
 
-    public static OutputData vgCreate(ExtCmd extCmd, final String vgName, final String devicePath)
+    public static OutputData vgCreate(
+        ExtCmd extCmd,
+        final String vgName,
+        final RaidLevel raidLevel,  // ignore for now as we only support JBOD
+        final List<String> devicePaths
+    )
         throws StorageException
     {
-        final String failMsg = "Failed to vgcreate on device: " + devicePath;
+        final String failMsg = "Failed to vgcreate on device(s): " + String.join(" ", devicePaths);
         return genericExecutor(
             extCmd,
-            new String[]
-                {
-                    "vgcreate",
-                    vgName,
-                    devicePath
-                },
+            StringUtils.concat(
+                new String[]
+                    {
+                        "vgcreate",
+                        vgName
+                    },
+                devicePaths),
             failMsg,
             failMsg
         );

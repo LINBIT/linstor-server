@@ -777,7 +777,7 @@ public class JsonGenTypes
     {
         public Long size;
         public Boolean rotational;
-        public Map<String, PhysicalStorageDevice> nodes = Collections.emptyMap();
+        public Map<String, List<PhysicalStorageDevice>> nodes = Collections.emptyMap();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -793,7 +793,11 @@ public class JsonGenTypes
     public static class PhysicalStorageCreate
     {
         public String provider_kind;
-        public String device_path;
+        public List<String> device_paths = Collections.emptyList();
+        /**
+         * RAID level to use for pool.
+         */
+        public String raid_level = "JBOD";
         public String pool_name;
         public boolean vdo_enable = false;
         public int vdo_slab_size_kib = 0;

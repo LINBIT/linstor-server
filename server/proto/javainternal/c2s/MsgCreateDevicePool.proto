@@ -8,9 +8,13 @@ message VdoArguments {
 }
 
 message MsgCreateDevicePool {
-    string device_path = 1;
+    repeated string device_paths = 1;
     common.ProviderType provider_kind = 2;
-    string pool_name = 3;
-    uint64 logical_size_kib = 4;
-    VdoArguments vdo_arguments = 5;
+    enum RaidLevel {
+        JBOD = 0;
+    }
+    RaidLevel raid_level = 3;
+    string pool_name = 4;
+    uint64 logical_size_kib = 5;
+    VdoArguments vdo_arguments = 6;
 }

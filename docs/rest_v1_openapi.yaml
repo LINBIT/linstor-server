@@ -4195,7 +4195,9 @@ components:
         nodes:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/PhysicalStorageDevice'
+            type: array
+            items:
+              $ref: '#/components/schemas/PhysicalStorageDevice'
     PhysicalStorageDevice:
       type: object
       properties:
@@ -4211,12 +4213,21 @@ components:
       type: object
       required:
         - provider_kind
-        - device_path
+        - device_paths
       properties:
         provider_kind:
             $ref: '#/components/schemas/ProviderKind'
-        device_path:
+        device_paths:
+          type: array
+          items:
+            type: string
+        raid_level:
           type: string
+          description: |
+            RAID level to use for pool.
+          enum:
+            - JBOD
+          default: "JBOD"
         pool_name:
           type: string
         vdo_enable:

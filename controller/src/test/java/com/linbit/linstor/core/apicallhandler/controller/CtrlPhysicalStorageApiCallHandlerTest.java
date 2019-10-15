@@ -101,6 +101,6 @@ public class CtrlPhysicalStorageApiCallHandlerTest
         Assert.assertEquals(1, physicalStorages.get(1).nodes.size());
         Assert.assertEquals(1, physicalStorages.get(2).nodes.size());
         Assert.assertTrue(physicalStorages.get(1).nodes.containsKey("charlie"));
-        Assert.assertEquals("sdf", physicalStorages.get(1).nodes.get("charlie").device);
+        Assert.assertEquals("sdf", physicalStorages.get(1).nodes.get("charlie").get(0).device);
     }
 }
