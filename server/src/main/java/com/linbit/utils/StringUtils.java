@@ -68,7 +68,7 @@ public class StringUtils
         return string == null || string.isEmpty();
     }
 
-    public static String[] concat(String[] array, Set<String> list)
+    public static String[] concat(String[] array, Collection<String> list)
     {
         List<String> result = new ArrayList<>(Arrays.asList(array));
         result.addAll(list);
