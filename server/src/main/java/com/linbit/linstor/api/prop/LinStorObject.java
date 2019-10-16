@@ -21,6 +21,7 @@ public enum LinStorObject
     // The various DRBD Proxy configuration sections are considered separate objects for the purposes of setting
     // properties, even though the properties are stored in the resource definition
     DRBD_PROXY,
+    DRBD_PROXY_ZSTD,
     DRBD_PROXY_ZLIB,
     DRBD_PROXY_LZMA,
     DRBD_PROXY_LZ4;
@@ -34,6 +35,9 @@ public enum LinStorObject
         LinStorObject linStorObject;
         switch (compressionType)
         {
+            case ApiConsts.VAL_DRBD_PROXY_COMPRESSION_ZSTD:
+                linStorObject = LinStorObject.DRBD_PROXY_ZSTD;
+                break;
             case ApiConsts.VAL_DRBD_PROXY_COMPRESSION_ZLIB:
                 linStorObject = LinStorObject.DRBD_PROXY_ZLIB;
                 break;
