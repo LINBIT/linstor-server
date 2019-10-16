@@ -43,6 +43,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
@@ -797,7 +798,7 @@ public class DrbdLayer implements DeviceLayer
                     metaDiskPath,
                     currentGi,
                     null,
-                    true,
+                    !drbdVlmData.getRscLayerObject().getFlags().isSet(workerCtx, DrbdRscFlags.INITIALIZED),
                     internal
                 );
             }

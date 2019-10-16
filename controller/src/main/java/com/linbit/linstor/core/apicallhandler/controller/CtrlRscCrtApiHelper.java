@@ -427,6 +427,7 @@ public class CtrlRscCrtApiHelper
         return satelliteUpdateResponses.concatWith(readyResponses);
     }
 
+
     public ApiCallRc makeResourceDidNotAppearMessage(ResponseContext context)
     {
         return ApiCallRcImpl.singletonApiCallRc(responseConverter.addContext(ApiCallRcImpl.simpleEntry(
@@ -548,7 +549,7 @@ public class CtrlRscCrtApiHelper
         VolumeDefinition vlmDfn;
         try
         {
-            vlmDfn = (VolumeDefinition) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
+            vlmDfn = rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
 
             if (failIfNull && vlmDfn == null)
             {

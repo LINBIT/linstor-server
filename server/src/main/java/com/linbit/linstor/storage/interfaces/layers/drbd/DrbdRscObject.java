@@ -33,7 +33,8 @@ public interface DrbdRscObject extends RscLayerObject
         DISK_ADD_REQUESTED(1L << 3),
         DISK_ADDING(1L << 4),
         DISK_REMOVE_REQUESTED(1L << 5),
-        DISK_REMOVING(1L << 6);
+        DISK_REMOVING(1L << 6),
+        INITIALIZED(1L << 7);
 
         public final long flagValue;
 
